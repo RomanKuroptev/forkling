@@ -6,6 +6,7 @@ import { DebugOverlay } from './forkling/DebugOverlay.tsx'
 import { Forkling } from './forkling/Forkling.tsx'
 import { Player } from './player/Player.tsx'
 import { Environment } from './world/Environment.tsx'
+import { Objects } from './world/Objects.tsx'
 import { Props } from './world/Props.tsx'
 import { Terrain } from './world/Terrain.tsx'
 import { Water } from './world/Water.tsx'
@@ -38,6 +39,7 @@ export function App() {
             <Physics debug={physicsDebug}>
               <Terrain />
               <Props />
+              <Objects />
               <Water />
               <Forkling />
               <Player />

@@ -88,3 +88,71 @@ body,
   opacity: 0.8;
   font-style: italic;
 }
+
+.dim {
+  opacity: 0.6;
+}
+
+.world-error {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow: auto;
+  background: #bcd7e6;
+}
+
+.world-error-card {
+  max-width: 560px;
+  width: 100%;
+  padding: 24px;
+  border-radius: 12px;
+  background: white;
+  color: #1f2d36;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 15%);
+}
+
+.world-error-card h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.world-error-card p {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.problem {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fbf3e8;
+}
+
+.problem-file {
+  font: 600 13px ui-monospace, monospace;
+}
+
+.problem ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font: 13px/1.5 ui-monospace, monospace;
+}
+
+.world-error-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.world-error-actions button {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #f2a65a;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}

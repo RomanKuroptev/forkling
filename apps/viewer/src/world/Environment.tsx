@@ -3,7 +3,7 @@ import { Sky } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { clock } from '../clock.ts'
+import { useWorld } from './WorldContext.tsx'
 
 const DAY = new THREE.Color('#bcd7e6')
 const DUSK = new THREE.Color('#e9a77c')
@@ -23,6 +23,7 @@ const smoothstep = (e0: number, e1: number, x: number) => {
 /** Sky, fog and lights driven by the time of day: the sun crosses the sky, and nights are dim and moonlit. */
 export function Environment() {
   const { scene } = useThree()
+  const { clock } = useWorld()
   const sky = useRef<THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>>(null)
   const sun = useRef<THREE.DirectionalLight>(null)
   const moon = useRef<THREE.DirectionalLight>(null)
