@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { Vec3 } from './geometry.ts'
 import { Intention, Timestamp } from './intention.ts'
-import { NeedId } from './species.ts'
+import { NeedId, type SpeciesPack } from './species.ts'
 
 const Slug = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'lowercase letters, digits and dashes')
 
@@ -74,3 +74,19 @@ export const VisitorEvent = z.discriminatedUnion('type', [
   }),
 )
 export type VisitorEvent = z.infer<typeof VisitorEvent>
+
+/**
+ * Problems with a forkling that only show up next to its species pack: a different species, needs the pack doesn't
+ * declare, or an intention that isn't one of its actions. Empty when they match.
+ */
+export function forklingPackIssues(forkling: Forkling, pack: SpeciesPack): string[] {
+  const issues: string[] = []
+  if (forkling.species !== pack.id) issues.push(`species is "${forkling.species}" but the pack is "${pack.id}"`)
+  for (const need of Object.keys(forkling.needs)) {
+    if (!(need in pack.needs)) issues.push(`a ${pack.id} has no need called "${need}"`)
+  }
+  if (!pack.actions.some((a) => a.id === forkling.intention.type)) {
+    issues.push(`"${forkling.intention.type}" is not something a ${pack.id} can do (try: ${pack.actions.map((a) => a.id).join(', ')})`)
+  }
+  return issues
+}

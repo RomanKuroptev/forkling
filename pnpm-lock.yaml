@@ -101,6 +101,22 @@ importers:
         specifier: ^0.187.0
         version: 0.187.0
 
+  templates:
+    dependencies:
+      '@forkling/schema':
+        specifier: workspace:*
+        version: link:../packages/schema
+      '@forkling/sim':
+        specifier: workspace:*
+        version: link:../packages/sim
+      '@forkling/species-cat':
+        specifier: workspace:*
+        version: link:../species/cat
+    devDependencies:
+      '@types/node':
+        specifier: ^24
+        version: 24.19.2
+
 packages:
 
   '@babel/runtime@7.29.10':

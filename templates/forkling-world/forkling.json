@@ -1,0 +1,15 @@
+{
+  "name": "Unnamed",
+  "species": "cat",
+  "needs": { "hunger": 70, "energy": 80, "curiosity": 60, "affection": 30 },
+  "position": [2, 0, 20],
+  "mood": "curious",
+  "intention": {
+    "type": "lounge",
+    "startedAt": "2026-10-30T12:00:00Z",
+    "seed": 1,
+    "reason": "I just got here. I am taking it all in."
+  },
+  "lastTickAt": "2026-10-30T12:00:00Z",
+  "timezone": "UTC"
+}

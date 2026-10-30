@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Forkling, VisitorEvent, WorldObject, objectIdFromPath } from '../src/index.ts'
+import { Forkling, SpeciesPack, VisitorEvent, WorldObject, forklingPackIssues, objectIdFromPath } from '../src/index.ts'
 
 const forkling = {
   name: 'Merge',
@@ -96,5 +96,34 @@ describe('VisitorEvent', () => {
     expect(VisitorEvent.safeParse({ ...gift, type: 'hack' }).success).toBe(false)
     expect(VisitorEvent.safeParse({ ...gift, type: 'message', payload: { text: 'x'.repeat(281) } }).success).toBe(false)
     expect(VisitorEvent.safeParse({ ...gift, type: 'message', payload: { text: 'hi Merge' } }).success).toBe(true)
+  })
+})
+
+describe('forklingPackIssues', () => {
+  const pack = SpeciesPack.parse({
+    id: 'cat',
+    displayName: 'Cat',
+    needs: { hunger: { initial: 50, decayPerHour: 10 }, energy: { initial: 50, decayPerHour: 10 } },
+    perception: { noticeRadius: 5, eyeHeight: 0.2 },
+    locomotion: { walkSpeed: 1, runSpeed: 3 },
+    actions: [
+      { id: 'lounge', satisfies: {}, durationSec: [1, 2], target: { type: 'none' }, slot: 'sit', reason: 'Resting.' },
+    ],
+  })
+  const parsed = Forkling.parse({ ...forkling, needs: { hunger: 70, energy: 80 } })
+
+  it('finds nothing wrong with a matching forkling and pack', () => {
+    expect(forklingPackIssues(parsed, pack)).toEqual([])
+  })
+
+  it('reports a species mismatch, needs the pack lacks and an unknown intention', () => {
+    const issues = forklingPackIssues(
+      { ...parsed, species: 'dog', needs: { hunger: 70, curiosity: 50 }, intention: { ...parsed.intention, type: 'fly' } },
+      pack,
+    )
+    expect(issues).toHaveLength(3)
+    expect(issues.join(' ')).toMatch(/dog/)
+    expect(issues.join(' ')).toMatch(/curiosity/)
+    expect(issues.join(' ')).toMatch(/fly/)
   })
 })

@@ -1,0 +1,17 @@
+{
+  "name": "@forkling/templates",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@forkling/schema": "workspace:*",
+    "@forkling/sim": "workspace:*",
+    "@forkling/species-cat": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24"
+  }
+}

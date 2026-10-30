@@ -1,0 +1,11 @@
+{
+  "id": "sunny-rock",
+  "kind": "rock",
+  "name": "The sunny rock",
+  "position": [5, 0, 22],
+  "rotation": [0, 0.6, 0],
+  "scale": 1.2,
+  "model": { "asset": "nature/rock_largeA" },
+  "affordances": ["sit", "perch"],
+  "reason": "It catches the morning sun before anything else on the beach."
+}
