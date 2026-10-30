@@ -33,6 +33,19 @@ describe('scoreActions', () => {
     expect(ids(scoreActions(needs, blob, { ...noon, visitorDistance: 3 }))).toContain('greet')
   })
 
+  it('offers day-only actions only outside the night', () => {
+    const needs = { hunger: 50, energy: 50, fun: 50 }
+    const dayPack = SpeciesPack.parse({
+      ...blobJson,
+      actions: blob.actions.map((a) => (a.id === 'roam' ? { ...a, requires: ['day'] } : a)),
+    })
+    const at = (timeOfDay: number) => ids(scoreActions(needs, dayPack, { ...noon, timeOfDay }))
+    expect(at(12)).toContain('roam')
+    expect(at(19)).toContain('roam')
+    expect(at(23)).not.toContain('roam')
+    expect(at(3)).not.toContain('roam')
+  })
+
   it('drops spot actions when no spot of that kind exists', () => {
     const needs = { hunger: 5, energy: 50, fun: 50 }
     expect(ids(scoreActions(needs, blob, { ...noon, spotKinds: new Set() }))).not.toContain('eat')

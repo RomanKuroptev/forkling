@@ -29,6 +29,7 @@ function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: ScoreContext): 
   for (const req of action.requires) {
     if (req === 'visitorNearby' && !nearby) return false
     if (req === 'night' && !isNight(ctx.timeOfDay)) return false
+    if (req === 'day' && isNight(ctx.timeOfDay)) return false
     if (req === 'dusk' && !isDusk(ctx.timeOfDay)) return false
   }
   if (action.target.type === 'visitor' && !nearby) return false

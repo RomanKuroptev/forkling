@@ -1,0 +1,13 @@
+{
+  "idle": "Idle",
+  "walk": "Walk",
+  "run": "Run",
+  "sit": "Sit",
+  "sleep": "Sleep",
+  "jump": "Jump",
+  "happy": "Happy",
+  "eat": "Eat",
+  "groom": "Groom",
+  "stretch": "Stretch",
+  "knead": "Knead"
+}

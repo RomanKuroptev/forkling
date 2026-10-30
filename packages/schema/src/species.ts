@@ -24,7 +24,7 @@ export type AnimationSlot = z.infer<typeof AnimationSlot>
 export const AnimationMap = z.partialRecord(AnimationSlot, z.string().min(1))
 export type AnimationMap = z.infer<typeof AnimationMap>
 
-export const ActionRequirement = z.enum(['visitorNearby', 'night', 'dusk'])
+export const ActionRequirement = z.enum(['visitorNearby', 'night', 'day', 'dusk'])
 export type ActionRequirement = z.infer<typeof ActionRequirement>
 
 /** Where an action takes place. `spot` kinds (`sunbeam`, `perch`, `food`...) are resolved by the world. */

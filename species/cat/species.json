@@ -1,0 +1,216 @@
+{
+  "id": "cat",
+  "displayName": "Cat",
+  "needs": {
+    "hunger": {
+      "initial": 65,
+      "decayPerHour": 60
+    },
+    "energy": {
+      "initial": 75,
+      "decayPerHour": 45
+    },
+    "curiosity": {
+      "initial": 55,
+      "decayPerHour": 75
+    },
+    "affection": {
+      "initial": 35,
+      "decayPerHour": 20
+    }
+  },
+  "perception": {
+    "noticeRadius": 5,
+    "eyeHeight": 0.2
+  },
+  "locomotion": {
+    "walkSpeed": 1.1,
+    "runSpeed": 4.5
+  },
+  "actions": [
+    {
+      "id": "eat",
+      "satisfies": {
+        "hunger": 55
+      },
+      "durationSec": [
+        12,
+        20
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "food"
+      },
+      "slot": "eat",
+      "reason": "My belly said it was time to eat."
+    },
+    {
+      "id": "nap",
+      "satisfies": {
+        "energy": 50
+      },
+      "durationSec": [
+        45,
+        90
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "sunbeam"
+      },
+      "slot": "sleep",
+      "reason": "There was a warm patch of sun and it was calling me.",
+      "requires": [
+        "day"
+      ]
+    },
+    {
+      "id": "sleep_night",
+      "satisfies": {
+        "energy": 80
+      },
+      "durationSec": [
+        120,
+        240
+      ],
+      "target": {
+        "type": "none"
+      },
+      "slot": "sleep",
+      "requires": [
+        "night"
+      ],
+      "reason": "It is dark. I am sleeping. Do not wake me."
+    },
+    {
+      "id": "explore",
+      "satisfies": {
+        "curiosity": 40,
+        "energy": -6
+      },
+      "durationSec": [
+        15,
+        35
+      ],
+      "target": {
+        "type": "wander",
+        "radius": 25
+      },
+      "slot": "idle",
+      "reason": "I wanted to see what was over there.",
+      "requires": [
+        "day"
+      ]
+    },
+    {
+      "id": "perch",
+      "satisfies": {
+        "curiosity": 25
+      },
+      "durationSec": [
+        30,
+        70
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "perch"
+      },
+      "slot": "sit",
+      "reason": "Everything looks better from up high.",
+      "requires": [
+        "day"
+      ]
+    },
+    {
+      "id": "play",
+      "satisfies": {
+        "curiosity": 20,
+        "energy": -10
+      },
+      "durationSec": [
+        6,
+        12
+      ],
+      "target": {
+        "type": "wander",
+        "radius": 10
+      },
+      "slot": "jump",
+      "gait": "run",
+      "reason": "Something moved. Probably. I pounced anyway.",
+      "requires": [
+        "day"
+      ]
+    },
+    {
+      "id": "approach_visitor",
+      "satisfies": {
+        "affection": 35
+      },
+      "durationSec": [
+        8,
+        16
+      ],
+      "target": {
+        "type": "visitor"
+      },
+      "slot": "happy",
+      "requires": [
+        "visitorNearby"
+      ],
+      "reason": "I decided you could stay. For now."
+    },
+    {
+      "id": "ignore_visitor",
+      "satisfies": {},
+      "durationSec": [
+        5,
+        12
+      ],
+      "target": {
+        "type": "none"
+      },
+      "slot": "sit",
+      "requires": [
+        "visitorNearby"
+      ],
+      "reason": "I noticed you. I am choosing to look elsewhere."
+    },
+    {
+      "id": "zoomies",
+      "satisfies": {
+        "curiosity": 20,
+        "energy": -15
+      },
+      "durationSec": [
+        4,
+        9
+      ],
+      "target": {
+        "type": "wander",
+        "radius": 22
+      },
+      "slot": "jump",
+      "gait": "run",
+      "requires": [
+        "dusk"
+      ],
+      "reason": "The evening hit me like a wave. I must run."
+    }
+  ],
+  "weights": {
+    "nap": 1.2,
+    "sleep_night": 8,
+    "approach_visitor": 0.55,
+    "ignore_visitor": 2,
+    "zoomies": 4
+  },
+  "starterSpots": [
+    {
+      "kind": "food",
+      "offset": [
+        5,
+        4
+      ]
+    }
+  ]
+}

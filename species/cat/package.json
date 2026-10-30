@@ -1,0 +1,26 @@
+{
+  "name": "@forkling/species-cat",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./species.json": "./species.json",
+    "./animations.json": "./animations.json",
+    "./persona.md": "./persona.md",
+    "./behaviors": "./src/behaviors.ts",
+    "./model.glb": "./model.glb"
+  },
+  "scripts": {
+    "build:model": "node scripts/build-model.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@forkling/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@forkling/sim": "workspace:*",
+    "@types/node": "^24.19.2",
+    "@types/three": "^0.187.0",
+    "three": "^0.187.0"
+  }
+}

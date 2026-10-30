@@ -79,6 +79,25 @@ importers:
         specifier: workspace:*
         version: link:../schema
 
+  species/cat:
+    dependencies:
+      '@forkling/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+    devDependencies:
+      '@forkling/sim':
+        specifier: workspace:*
+        version: link:../../packages/sim
+      '@types/node':
+        specifier: ^24.19.2
+        version: 24.19.2
+      '@types/three':
+        specifier: ^0.187.0
+        version: 0.187.0
+      three:
+        specifier: ^0.187.0
+        version: 0.187.0
+
 packages:
 
   '@babel/runtime@7.29.10':
