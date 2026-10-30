@@ -1,0 +1,11 @@
+{
+  "id": "tall-rock",
+  "kind": "rock",
+  "name": "The lookout rock",
+  "position": [-2.5, 0, 23.5],
+  "rotation": [0, 0.3, 0],
+  "scale": 1.6,
+  "model": { "asset": "nature/rock_tallA" },
+  "affordances": ["perch"],
+  "reason": "From the top you can see who is coming up the beach."
+}

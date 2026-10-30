@@ -5,6 +5,8 @@ export interface LoadedWorld {
   ref: WorldRef
   /** The commit everything was read from. */
   sha: string
+  /** When that commit was made: the moment the repo state describes. */
+  committedAt: string | null
   forkling: Forkling
   pack: SpeciesPack
   objects: WorldObject[]
@@ -48,6 +50,8 @@ async function api<T>(deps: LoadDeps, ref: WorldRef, path: string): Promise<T> {
   try {
     res = await deps.fetch(`https://api.github.com/repos/${ref.owner}/${ref.repo}/${path}`, {
       headers: { Accept: 'application/vnd.github+json' },
+      // GitHub says max-age=60; revalidate so a push shows on the next refresh. A 304 doesn't count against the rate limit.
+      cache: 'no-cache',
     })
   } catch {
     throw new LoadFailure({ kind: 'network', title: "Couldn't reach GitHub", message: 'Check your connection and refresh.', problems: [] })
@@ -94,7 +98,7 @@ async function raw(deps: LoadDeps, ref: WorldRef, sha: string, path: string): Pr
  */
 export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResult> {
   try {
-    const commit = await api<{ sha: string }>(deps, ref, `commits/${encodeURIComponent(ref.ref ?? 'HEAD')}`)
+    const commit = await api<{ sha: string; commit?: { committer?: { date?: string } } }>(deps, ref, `commits/${encodeURIComponent(ref.ref ?? 'HEAD')}`)
     const tree = await api<{ tree: { path: string; type: string }[] }>(deps, ref, `git/trees/${commit.sha}?recursive=1`)
     const paths = tree.tree.filter((e) => e.type === 'blob').map((e) => e.path)
 
@@ -150,6 +154,7 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
       world: {
         ref,
         sha: commit.sha,
+        committedAt: commit.commit?.committer?.date ?? null,
         forkling: forkling.forkling,
         pack: forkling.pack,
         objects: objects.filter((o): o is WorldObject => o !== null),

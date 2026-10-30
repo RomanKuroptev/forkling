@@ -52,7 +52,13 @@ export function Forkling() {
   }, [model, gltf, species])
 
   const input = useMemo<PlaybackInput>(
-    () => ({ forkling: world.forkling, pack: species.pack, behaviors: species.behaviors, world: simWorld }),
+    () => ({
+      forkling: world.forkling,
+      pack: species.pack,
+      behaviors: species.behaviors,
+      world: simWorld,
+      stateTime: world.committedAt ? Date.parse(world.committedAt) / 1000 : undefined,
+    }),
     [world, species, simWorld],
   )
 

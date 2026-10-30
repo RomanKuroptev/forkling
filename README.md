@@ -49,9 +49,11 @@ Each forkling lives in its own public GitHub repo, made from the [forkling-world
 - `objects/<id>.json`: things in the world, drawn from the viewer's shipped models (for example `nature/rock_largeA`)
 - `memory/` and `journal/`: what it remembers and writes (filled in from M4)
 
+Push an edit and refresh to see it. GitHub can take up to a minute to serve a new commit, so give it a moment. The repo state counts from its commit time: an edited `position` is where the forkling is at the moment you pushed.
+
 The templates live in `templates/`, and CI checks every file in them against the schemas, the species pack and the island.
 
-The body is played back, not simulated per browser: it starts from `forkling.json` at an anchor (the intention's `startedAt`, or the start of the current 30-minute epoch once that is older) and steps on a fixed grid of instants, so two windows show the same cat. Visitors only affect their own browser's copy. Until the mind arrives in M4 and writes fresh state each tick, Merge returns to its repo position at each epoch boundary.
+The body is played back, not simulated per browser: it starts from `forkling.json` at an anchor (the intention's `startedAt`, or the start of the current 30-minute epoch once that is older) and steps on a fixed grid of instants, so two windows show the same cat. A visitor who comes close forks a local copy that reacts to them; once they leave, it rejoins the shared timeline, so windows only disagree while someone is playing with the forkling. Until the mind arrives in M4 and writes fresh state each tick, Merge returns to its repo position at each epoch boundary.
 
 ## Species packs
 

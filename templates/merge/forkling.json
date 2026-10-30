@@ -1,9 +1,18 @@
 {
   "name": "Merge",
   "species": "cat",
-  "needs": { "hunger": 70, "energy": 80, "curiosity": 60, "affection": 30 },
-  "position": [2, 0, 20],
-  "mood": "curious",
+  "needs": {
+    "hunger": 70,
+    "energy": 80,
+    "curiosity": 60,
+    "affection": 30
+  },
+  "position": [
+    -6,
+    0,
+    12
+  ],
+  "mood": "sleepy",
   "intention": {
     "type": "lounge",
     "startedAt": "2026-10-30T21:00:00Z",

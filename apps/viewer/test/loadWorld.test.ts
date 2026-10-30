@@ -37,7 +37,7 @@ function github(files: Files, opts: { status?: number; rateLimited?: boolean } =
     if (url.startsWith('https://api.github.com/')) {
       if (opts.rateLimited) return json({ message: 'API rate limit exceeded' }, 403, { 'x-ratelimit-remaining': '0' })
       if (opts.status) return json({ message: 'Not Found' }, opts.status)
-      if (url.includes('/commits/')) return json({ sha: SHA })
+      if (url.includes('/commits/')) return json({ sha: SHA, commit: { committer: { date: '2026-10-30T21:05:00Z' } } })
       if (url.includes(`/git/trees/${SHA}`)) {
         return json({ tree: Object.keys(files).map((path) => ({ path, type: 'blob' })), truncated: false })
       }
@@ -63,6 +63,7 @@ describe('loadWorld', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.world.sha).toBe(SHA)
+    expect(result.world.committedAt).toBe('2026-10-30T21:05:00Z')
     expect(result.world.forkling.name).toBe('Merge')
     expect(result.world.objects.map((o) => o.id)).toEqual(['sunny-rock'])
   })
@@ -118,6 +119,20 @@ describe('loadWorld', () => {
     if (result.ok) return
     expect(result.error.problems.map((p) => p.file).sort()).toEqual(['objects/statue.json', 'objects/sunny-rock.json'])
     expect(result.error.problems.find((p) => p.file === 'objects/statue.json')!.lines.join(' ')).toMatch(/nature\/statue/)
+  })
+
+  it('revalidates API answers so a push shows up on the next refresh', async () => {
+    const modes: (RequestCache | undefined)[] = []
+    const base = deps({ 'forkling.json': forkling })
+    await loadWorld(ref, {
+      ...base,
+      fetch: (input, init) => {
+        if (String(input).startsWith('https://api.github.com/')) modes.push(init?.cache)
+        return base.fetch(input, init)
+      },
+    })
+    expect(modes.length).toBeGreaterThan(0)
+    expect(modes.every((m) => m === 'no-cache')).toBe(true)
   })
 
   it('loads a branch when one is asked for', async () => {

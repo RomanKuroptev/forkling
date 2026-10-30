@@ -16,6 +16,8 @@ export interface PlaybackInput {
   pack: SpeciesPack
   behaviors: MicroBehavior[]
   world: StarterWorld
+  /** Unix seconds when the repo state was written (its commit time). Edits then take effect from that moment. */
+  stateTime?: number
 }
 
 /** Where playback starts: a moment, and the seed that makes everything after it deterministic. */
@@ -24,8 +26,8 @@ export interface Anchor {
   time: number
   seed: number
   epoch: number
-  /** True when anchored at the repo intention, false when restarting at an epoch boundary. */
-  fromIntention: boolean
+  /** What the anchor is: the intention starting, the repo being changed, or a stale state restarting at the epoch. */
+  source: 'intention' | 'commit' | 'epoch'
 }
 
 /** A body being played back. Every viewer that plays the same input steps on the same grid of instants. */
@@ -56,13 +58,20 @@ function mixSeed(seed: number, epoch: number): number {
   return h >>> 0
 }
 
-export function anchorFor(forkling: Forkling, nowSec: number): Anchor {
+/**
+ * Where playback starts. The repo state describes the forkling as of the later of its intention starting and its last
+ * commit, as long as that is in the current epoch; otherwise it restarts from the repo state at the epoch start.
+ */
+export function anchorFor(forkling: Forkling, nowSec: number, stateTime?: number): Anchor {
   const epoch = epochOf(nowSec)
+  const inEpoch = (t: number) => t <= nowSec && epochOf(t) === epoch
   const started = Date.parse(forkling.intention.startedAt) / 1000
-  if (started <= nowSec && epochOf(started) === epoch) {
-    return { time: started, seed: forkling.intention.seed, epoch, fromIntention: true }
+  const seed = forkling.intention.seed
+  if (stateTime !== undefined && inEpoch(stateTime) && (!inEpoch(started) || stateTime > started)) {
+    return { time: stateTime, seed: mixSeed(seed, Math.floor(stateTime)), epoch, source: 'commit' }
   }
-  return { time: epoch * EPOCH_SECONDS, seed: mixSeed(forkling.intention.seed, epoch), epoch, fromIntention: false }
+  if (inEpoch(started)) return { time: started, seed, epoch, source: 'intention' }
+  return { time: epoch * EPOCH_SECONDS, seed: mixSeed(seed, epoch), epoch, source: 'epoch' }
 }
 
 const formatters = new Map<string, Intl.DateTimeFormat>()
@@ -119,7 +128,7 @@ function stepTo(pb: Playback, nowSec: number, visitor: Point2 | null): void {
  */
 export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
   const { forkling, pack, behaviors, world } = input
-  const anchor = anchorFor(forkling, nowMs / 1000)
+  const anchor = anchorFor(forkling, nowMs / 1000, input.stateTime)
   const [x, , z] = forkling.position
   const start = nearestWalkable(world.nav.grid, { x, z }, 25) ?? { x: world.spawn.x, z: world.spawn.z }
   const state = createForkling(pack, behaviors, anchor.seed, start, {

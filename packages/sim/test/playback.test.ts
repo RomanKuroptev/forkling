@@ -48,14 +48,14 @@ describe('anchorFor', () => {
     const a = anchorFor(input().forkling, EPOCH_START + 600)
     expect(a.time).toBe(EPOCH_START + 60)
     expect(a.seed).toBe(99)
-    expect(a.fromIntention).toBe(true)
+    expect(a.source).toBe('intention')
   })
 
   it('anchors at the epoch start when the intention is older', () => {
     const now = EPOCH_START + EPOCH_SECONDS * 3 + 100
     const a = anchorFor(input().forkling, now)
     expect(a.time).toBe(EPOCH_START + EPOCH_SECONDS * 3)
-    expect(a.fromIntention).toBe(false)
+    expect(a.source).toBe('epoch')
   })
 
   it('gives each stale epoch its own seed, stable within the epoch', () => {
@@ -67,10 +67,23 @@ describe('anchorFor', () => {
     expect(a.seed).not.toBe(c.seed)
   })
 
+  it('anchors at the commit when the repo changed after the intention started, so edits show at once', () => {
+    const a = anchorFor(input().forkling, EPOCH_START + 600, EPOCH_START + 300)
+    expect(a.time).toBe(EPOCH_START + 300)
+    expect(a.source).toBe('commit')
+    expect(a.seed).not.toBe(99)
+    expect(anchorFor(input().forkling, EPOCH_START + 900, EPOCH_START + 300)).toEqual(a)
+  })
+
+  it('ignores a commit from an earlier epoch or from the future', () => {
+    expect(anchorFor(input().forkling, EPOCH_START + 600, EPOCH_START - 300).source).toBe('intention')
+    expect(anchorFor(input().forkling, EPOCH_START + 600, EPOCH_START + 700).source).toBe('intention')
+  })
+
   it('ignores an intention from the future, which can happen with clock skew', () => {
     const a = anchorFor(input({}, EPOCH_START + 900).forkling, EPOCH_START + 300)
     expect(a.time).toBe(EPOCH_START)
-    expect(a.fromIntention).toBe(false)
+    expect(a.source).toBe('epoch')
   })
 })
 
@@ -97,6 +110,12 @@ describe('startPlayback', () => {
   it('fills needs the file leaves out from the species defaults', () => {
     const pb = startPlayback(input({ needs: { hunger: 10 } }), (EPOCH_START + 60) * 1000)
     expect(pb.state.needs).toEqual({ hunger: 10, energy: 70, fun: 50 })
+  })
+
+  it('starts at the edited position right after a commit', () => {
+    const edited = { ...input({ position: [3, 0, -4] }), stateTime: EPOCH_START + 600 }
+    const pb = startPlayback(edited, (EPOCH_START + 600) * 1000)
+    expect(Math.hypot(pb.state.pos.x - 3, pb.state.pos.z + 4)).toBeLessThan(1.5)
   })
 
   it('begins with the intention from the file', () => {
@@ -144,7 +163,7 @@ describe('advancePlayback', () => {
     for (let t = (EPOCH_START + 1700) * 1000; t < next; t += 500) live = advancePlayback(live, t, null)
     live = advancePlayback(live, next, null)
     expect(snapshot(live)).toEqual(snapshot(startPlayback(input(), next)))
-    expect(live.anchor.fromIntention).toBe(false)
+    expect(live.anchor.source).toBe('epoch')
   })
 
   it('stays on the shared timeline while no visitor comes close', () => {

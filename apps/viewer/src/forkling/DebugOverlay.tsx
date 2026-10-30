@@ -68,7 +68,7 @@ export function DebugOverlay() {
         {ref.owner}/{ref.repo}
         {ref.ref ? `@${ref.ref}` : ''} · {sha.slice(0, 7)}
         <br />
-        playing from {formatTime(pb.anchor.time, forkling.timezone)} ({pb.anchor.fromIntention ? 'intention' : 'epoch'})
+        playing from {formatTime(pb.anchor.time, forkling.timezone)} ({pb.anchor.source})
         {pb.local ? ' · reacting to you' : ' · in sync'}
       </div>
     </div>
