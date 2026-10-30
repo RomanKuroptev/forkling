@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Ecctrl, type EcctrlHandle } from 'ecctrl'
 import { useEffect, useRef } from 'react'
 import { spawn } from '../island.ts'
+import { visitor } from '../visitor.ts'
 
 const CAPSULE_RADIUS = 0.3
 const CAPSULE_HALF_HEIGHT = 0.45
@@ -43,6 +44,7 @@ export function Player() {
     if (!b || !c) return
     b.setMovement(getKeys())
     const p = b.currPos
+    visitor.position = { x: p.x, z: p.z }
     c.moveTo(p.x, p.y + EYE_OFFSET, p.z, true)
   })
 

@@ -31,3 +31,60 @@ body,
   font-size: 18px;
   pointer-events: none;
 }
+
+.debug {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 240px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 45%);
+  color: white;
+  font: 12px/1.5 ui-monospace, monospace;
+  pointer-events: none;
+  user-select: none;
+}
+
+.debug-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.debug-title span {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.need {
+  display: grid;
+  grid-template-columns: 70px 1fr 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.need span:last-child {
+  text-align: right;
+}
+
+.bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 20%);
+  overflow: hidden;
+}
+
+.bar div {
+  height: 100%;
+  background: #f2a65a;
+}
+
+.debug-line {
+  margin-top: 6px;
+}
+
+.quote {
+  opacity: 0.8;
+  font-style: italic;
+}

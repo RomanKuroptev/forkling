@@ -2,6 +2,8 @@ import { KeyboardControls, Stats, useProgress, type KeyboardControlsEntry } from
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { Suspense } from 'react'
+import { DebugOverlay } from './forkling/DebugOverlay.tsx'
+import { Forkling } from './forkling/Forkling.tsx'
 import { Player } from './player/Player.tsx'
 import { Environment } from './world/Environment.tsx'
 import { Props } from './world/Props.tsx'
@@ -37,6 +39,7 @@ export function App() {
               <Terrain />
               <Props />
               <Water />
+              <Forkling />
               <Player />
             </Physics>
           </Suspense>
@@ -44,8 +47,9 @@ export function App() {
         </Canvas>
       </KeyboardControls>
       <Loading />
+      <DebugOverlay />
       <div className="hud">
-        WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom
+        WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · F3 for Merge’s mind
       </div>
     </>
   )

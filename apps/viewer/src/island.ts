@@ -1,14 +1,11 @@
-import { IslandConfig } from '@forkling/schema'
-import { findSpawn, scatterProps, type PropRule } from '@forkling/sim'
+import { starterPropRules, starterWorld } from '@forkling/sim'
 
-/** The hardcoded M1 island. From M3 on this comes from the world repo. */
-export const island = IslandConfig.parse({ seed: 1234 })
+/** The hardcoded starter island, shared with the sim tests. From M3 on this comes from the world repo. */
+const world = starterWorld()
 
-export const spawn = findSpawn(island)
-
-export const rules: PropRule[] = [
-  { kind: 'tree', variants: 3, count: 70, minSpacing: 3.5, minHeight: island.waterLevel + 1.2, maxHeight: island.maxHeight * 0.75 },
-  { kind: 'rock', variants: 3, count: 35, minSpacing: 2.5, minHeight: island.waterLevel + 0.2, maxHeight: island.maxHeight },
-]
-
-export const props = scatterProps(island, rules, { clear: [{ x: spawn.x, z: spawn.z, radius: 5 }] })
+export const island = world.cfg
+export const spawn = world.spawn
+export const props = world.placements
+export const rules = starterPropRules
+/** Walkability and shadow casters, for the forkling's pathfinding and sunbeams. */
+export const nav = world.nav
