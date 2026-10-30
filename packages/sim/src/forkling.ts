@@ -69,6 +69,17 @@ export interface ForklingState {
   progressPos: Point2
   stuckSeconds: number
   repaths: number
+  /** An action to start with instead of choosing, e.g. the intention from `forkling.json`. Used once. */
+  firstAction: string | null
+}
+
+export interface CreateOptions {
+  /** Sim clock at creation, in seconds. Playback uses Unix time. */
+  time?: number
+  /** Starting needs. Needs the pack declares but this leaves out start at the pack's initial value. */
+  needs?: Needs
+  /** Start with this action id if the pack has it and its target can be reached. */
+  firstAction?: string
 }
 
 const IDLE_ACTION: SpeciesAction = {
@@ -86,16 +97,28 @@ const IDLE_ACTION: SpeciesAction = {
 /** Used when nothing the pack offers can be reached, so a forkling always has something to do. */
 const PAUSE_ACTION: SpeciesAction = { ...IDLE_ACTION, id: 'pause', durationSec: [2, 4] }
 
-export function createForkling(pack: SpeciesPack, behaviors: MicroBehavior[], seed: number, start: Point2): ForklingState {
+export function createForkling(
+  pack: SpeciesPack,
+  behaviors: MicroBehavior[],
+  seed: number,
+  start: Point2,
+  opts: CreateOptions = {},
+): ForklingState {
+  const time = opts.time ?? 0
+  const needs = initialNeeds(pack)
+  for (const id of Object.keys(needs) as (keyof Needs)[]) {
+    const given = opts.needs?.[id]
+    if (given !== undefined) needs[id] = given
+  }
   return {
     pack,
     behaviors,
     rng: createPrng(seed),
-    time: 0,
+    time,
     pos: { ...start },
     heading: 0,
-    needs: initialNeeds(pack),
-    intention: { type: IDLE_ACTION.id, startedAt: 0, seed: seed >>> 0, reason: IDLE_ACTION.reason },
+    needs,
+    intention: { type: IDLE_ACTION.id, startedAt: time, seed: seed >>> 0, reason: IDLE_ACTION.reason },
     action: IDLE_ACTION,
     phase: 'acting',
     slot: 'idle',
@@ -111,6 +134,7 @@ export function createForkling(pack: SpeciesPack, behaviors: MicroBehavior[], se
     progressPos: { ...start },
     stuckSeconds: 0,
     repaths: 0,
+    firstAction: opts.firstAction ?? null,
   }
 }
 
@@ -259,6 +283,10 @@ function startActing(s: ForklingState): void {
 }
 
 function finishAction(s: ForklingState, ctx: StepContext): void {
+  if (s.firstAction) {
+    replan(s, ctx)
+    return
+  }
   const micro = rollMicro(s, s.action.slot === 'sleep' ? 'afterWake' : 'idle') ?? (isDusk(ctx.timeOfDay) ? rollMicro(s, 'dusk') : null)
   if (micro) startMicro(s, micro, 'replan')
   else replan(s, ctx)
@@ -277,6 +305,16 @@ function replan(s: ForklingState, ctx: StepContext): void {
   if (!isWalkable(ctx.grid, s.pos.x, s.pos.z)) {
     const snapped = nearestWalkable(ctx.grid, s.pos, 10)
     if (snapped) s.pos = { ...snapped }
+  }
+
+  if (s.firstAction) {
+    const first = s.pack.actions.find((a) => a.id === s.firstAction)
+    s.firstAction = null
+    const target = first ? resolveTarget(s, first, ctx) : null
+    if (first && target) {
+      begin(s, first, target)
+      return
+    }
   }
 
   const spotKinds = new Set(Object.keys(ctx.spots).filter((k) => (ctx.spots[k]?.length ?? 0) > 0))
