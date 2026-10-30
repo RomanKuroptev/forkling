@@ -1,0 +1,52 @@
+import { KeyboardControls, Stats, useProgress, type KeyboardControlsEntry } from '@react-three/drei'
+import { Canvas } from '@react-three/fiber'
+import { Physics } from '@react-three/rapier'
+import { Suspense } from 'react'
+import { Player } from './player/Player.tsx'
+import { Environment } from './world/Environment.tsx'
+import { Props } from './world/Props.tsx'
+import { Terrain } from './world/Terrain.tsx'
+import { Water } from './world/Water.tsx'
+
+const keyboardMap: KeyboardControlsEntry[] = [
+  { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
+  { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
+  { name: 'leftward', keys: ['ArrowLeft', 'KeyA'] },
+  { name: 'rightward', keys: ['ArrowRight', 'KeyD'] },
+  { name: 'jump', keys: ['Space'] },
+  { name: 'run', keys: ['ShiftLeft', 'ShiftRight'] },
+]
+
+const params = new URLSearchParams(location.search)
+const debug = params.has('debug')
+const physicsDebug = params.get('debug') === 'physics'
+
+function Loading() {
+  const { active, progress } = useProgress()
+  return active ? <div className="loading">Loading island… {Math.round(progress)}%</div> : null
+}
+
+export function App() {
+  return (
+    <>
+      <KeyboardControls map={keyboardMap}>
+        <Canvas shadows="percentage" dpr={[1, 1.5]} camera={{ fov: 55, near: 0.1, far: 400 }}>
+          <Suspense fallback={null}>
+            <Environment />
+            <Physics debug={physicsDebug}>
+              <Terrain />
+              <Props />
+              <Water />
+              <Player />
+            </Physics>
+          </Suspense>
+          {debug && <Stats />}
+        </Canvas>
+      </KeyboardControls>
+      <Loading />
+      <div className="hud">
+        WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom
+      </div>
+    </>
+  )
+}

@@ -1,0 +1,33 @@
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #bcd7e6;
+  font-family: system-ui, sans-serif;
+}
+
+.hud {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 35%);
+  color: white;
+  font-size: 13px;
+  line-height: 1.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+.loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #2d4a5a;
+  font-size: 18px;
+  pointer-events: none;
+}
