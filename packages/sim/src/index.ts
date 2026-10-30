@@ -1,3 +1,7 @@
 export * from './prng.ts'
 export * from './noise.ts'
 export * from './island.ts'
+export * from './animation.ts'
+export * from './needs.ts'
+export * from './time.ts'
+export * from './utility.ts'

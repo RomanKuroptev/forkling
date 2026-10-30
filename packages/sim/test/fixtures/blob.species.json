@@ -1,0 +1,21 @@
+{
+  "id": "blob",
+  "displayName": "Blob",
+  "needs": {
+    "hunger": { "initial": 60, "decayPerHour": 240 },
+    "energy": { "initial": 70, "decayPerHour": 180 },
+    "fun": { "initial": 50, "decayPerHour": 300 }
+  },
+  "perception": { "noticeRadius": 4, "eyeHeight": 0.5 },
+  "locomotion": { "walkSpeed": 1.5, "runSpeed": 3.5 },
+  "actions": [
+    { "id": "eat", "satisfies": { "hunger": 70 }, "durationSec": [5, 10], "target": { "type": "spot", "kind": "food" }, "slot": "idle", "reason": "Blob was hungry." },
+    { "id": "rest", "satisfies": { "energy": 60 }, "durationSec": [10, 20], "target": { "type": "none" }, "slot": "sleep", "reason": "Blob was tired." },
+    { "id": "roam", "satisfies": { "fun": 30 }, "durationSec": [2, 5], "target": { "type": "wander", "radius": 20 }, "slot": "walk", "reason": "Blob felt like a stroll." },
+    { "id": "dash", "satisfies": { "fun": 40, "energy": -15 }, "durationSec": [2, 4], "target": { "type": "wander", "radius": 12 }, "slot": "run", "gait": "run", "reason": "Blob had energy to burn." },
+    { "id": "greet", "satisfies": { "fun": 25 }, "durationSec": [3, 6], "target": { "type": "visitor" }, "slot": "happy", "requires": ["visitorNearby"], "reason": "Blob wanted to say hi." },
+    { "id": "ignore", "satisfies": {}, "durationSec": [2, 4], "target": { "type": "none" }, "slot": "idle", "requires": ["visitorNearby"], "reason": "Blob was busy being a blob." }
+  ],
+  "weights": { "greet": 1.5 },
+  "starterSpots": [{ "kind": "food", "offset": [4, 3] }]
+}
