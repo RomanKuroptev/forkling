@@ -55,8 +55,8 @@ export interface ForklingState {
   phase: Phase
   /** The animation slot to play right now. The viewer resolves it against the pack's clips. */
   slot: AnimationSlot
-  /** The micro-behavior in progress, if any, and what to do when it ends. */
-  micro: { behavior: MicroBehavior; resume: 'acting' | 'replan' } | null
+  /** The micro-behavior in progress, if any, and what to do when it ends: resume the action (for its full duration) or choose anew. */
+  micro: { behavior: MicroBehavior; resume: 'acting' | 'replan'; actingDuration?: number } | null
   /** Seconds into the current acting or micro phase. */
   elapsed: number
   duration: number
@@ -243,11 +243,12 @@ function act(s: ForklingState, dt: number, ctx: StepContext): void {
 function tickMicro(s: ForklingState, dt: number, ctx: StepContext): void {
   s.elapsed += dt
   if (s.elapsed < s.duration || !s.micro) return
-  const { resume } = s.micro
+  const { resume, actingDuration } = s.micro
   s.micro = null
   if (resume === 'acting') {
     s.phase = 'acting'
     s.elapsed = 0
+    s.duration = actingDuration ?? 0
     s.slot = s.action.slot
   } else {
     replan(s, ctx)
@@ -263,7 +264,8 @@ function rollMicro(s: ForklingState, when: MicroBehavior['when']): MicroBehavior
 
 function startMicro(s: ForklingState, behavior: MicroBehavior, resume: 'acting' | 'replan'): void {
   s.phase = 'micro'
-  s.micro = { behavior, resume }
+  // The micro borrows elapsed/duration, so remember how long the action it interrupts should last.
+  s.micro = resume === 'acting' ? { behavior, resume, actingDuration: s.duration } : { behavior, resume }
   s.elapsed = 0
   s.duration = behavior.durationSec
   s.slot = behavior.slot ?? 'idle'

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { SpeciesPack, type MicroBehavior } from '@forkling/schema'
 import blobJson from './fixtures/blob.species.json'
 import { resolveSlot } from '../src/animation.ts'
+import { createForkling, stepForkling, STEP, type StepContext } from '../src/forkling.ts'
+import { world } from './helpers/world.ts'
 import { runHeadless, type HeadlessOptions } from '../src/headless.ts'
 
 const blob = SpeciesPack.parse(blobJson)
@@ -99,5 +101,25 @@ describe('a visitor never raises needs by themselves', () => {
     const run = simulate({ seed: 5, startHour: 10, seconds: 300, pack, visitor: { arrive: 20, leave: 280 } })
     expect(run.noticeStep).not.toBeNull()
     expect(run.illegalRises).toEqual([])
+  })
+})
+
+describe('acting after a micro-behavior', () => {
+  it('keeps the full action duration when a before-sleep behavior runs first', () => {
+    const tuck: MicroBehavior = { id: 'tuck', when: 'beforeSleep', chance: 1, durationSec: 1.2 }
+    const start = { x: 2, z: 20 }
+    const state = createForkling(blob, [tuck], 1, start, { firstAction: 'rest' })
+    const ctx: StepContext = { grid: world.grid, visitor: null, timeOfDay: 12, spots: {} }
+    let sawTuck = false
+    let restingSteps = 0
+    for (let i = 0; i < 400; i++) {
+      stepForkling(state, STEP, ctx)
+      if (state.micro?.behavior.id === 'tuck') sawTuck = true
+      else if (sawTuck && state.action.id === 'rest' && state.phase === 'acting') restingSteps++
+      else if (sawTuck && restingSteps > 0) break
+    }
+    expect(sawTuck).toBe(true)
+    // blob's rest lasts 10 to 20 seconds; the tuck must not cut it short.
+    expect(restingSteps * STEP).toBeGreaterThanOrEqual(10)
   })
 })
