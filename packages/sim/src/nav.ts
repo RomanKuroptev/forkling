@@ -94,15 +94,49 @@ export function isWalkable(grid: NavGrid, x: number, z: number): boolean {
   return cell !== null && grid.walkable[cell.row * grid.cols + cell.col] === 1
 }
 
-/** True when the straight segment from `a` to `b` stays on walkable cells. */
+/**
+ * True when the straight segment from `a` to `b` only touches walkable cells. Walks every cell the
+ * segment crosses (Amanatides-Woo), so no sliver of a blocked cell is missed. Passing exactly through a
+ * corner needs both cells beside it to be open.
+ */
 export function lineOfSight(grid: NavGrid, a: Point2, b: Point2): boolean {
-  const length = Math.hypot(b.x - a.x, b.z - a.z)
-  const steps = Math.max(1, Math.ceil(length / (grid.cellSize * 0.25)))
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps
-    if (!isWalkable(grid, a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t)) return false
+  const open = (col: number, row: number) =>
+    col >= 0 && row >= 0 && col < grid.cols && row < grid.rows && grid.walkable[row * grid.cols + col] === 1
+
+  const x0 = (a.x - grid.originX) / grid.cellSize
+  const z0 = (a.z - grid.originZ) / grid.cellSize
+  const dx = (b.x - grid.originX) / grid.cellSize - x0
+  const dz = (b.z - grid.originZ) / grid.cellSize - z0
+  let col = Math.floor(x0)
+  let row = Math.floor(z0)
+  const endCol = Math.floor(x0 + dx)
+  const endRow = Math.floor(z0 + dz)
+  const stepCol = Math.sign(dx)
+  const stepRow = Math.sign(dz)
+  const deltaX = dx === 0 ? Infinity : Math.abs(1 / dx)
+  const deltaZ = dz === 0 ? Infinity : Math.abs(1 / dz)
+  let nextX = dx === 0 ? Infinity : (dx > 0 ? col + 1 - x0 : x0 - col) * deltaX
+  let nextZ = dz === 0 ? Infinity : (dz > 0 ? row + 1 - z0 : z0 - row) * deltaZ
+
+  const limit = Math.abs(endCol - col) + Math.abs(endRow - row) + 2
+  for (let i = 0; i < limit; i++) {
+    if (!open(col, row)) return false
+    if (col === endCol && row === endRow) return true
+    if (nextX < nextZ) {
+      col += stepCol
+      nextX += deltaX
+    } else if (nextZ < nextX) {
+      row += stepRow
+      nextZ += deltaZ
+    } else {
+      if (!open(col + stepCol, row) || !open(col, row + stepRow)) return false
+      col += stepCol
+      row += stepRow
+      nextX += deltaX
+      nextZ += deltaZ
+    }
   }
-  return true
+  return open(col, row) && col === endCol && row === endRow
 }
 
 /** The point itself if it is walkable, else the centre of the closest walkable cell within `maxRadius` meters. */
