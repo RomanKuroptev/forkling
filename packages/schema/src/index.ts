@@ -1,2 +1,4 @@
 export * from './geometry.ts'
 export * from './island.ts'
+export * from './species.ts'
+export * from './behaviors.ts'
