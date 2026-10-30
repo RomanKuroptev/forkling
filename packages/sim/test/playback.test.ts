@@ -147,6 +147,28 @@ describe('advancePlayback', () => {
     expect(live.anchor.fromIntention).toBe(false)
   })
 
+  it('stays on the shared timeline while no visitor comes close', () => {
+    let live = startPlayback(input(), (EPOCH_START + 300) * 1000)
+    const far = { x: 45, z: -45 }
+    for (let t = (EPOCH_START + 300) * 1000; t <= (EPOCH_START + 400) * 1000; t += 100) live = advancePlayback(live, t, far)
+    expect(live.local).toBe(false)
+    expect(snapshot(live)).toEqual(snapshot(startPlayback(input(), (EPOCH_START + 400) * 1000)))
+  })
+
+  it('forks a local body when a visitor comes close, and rejoins the shared one after they leave', () => {
+    let live = startPlayback(input(), (EPOCH_START + 300) * 1000)
+    let t = (EPOCH_START + 300) * 1000
+    // Stand right next to the forkling for a minute.
+    for (; t <= (EPOCH_START + 360) * 1000; t += 100) {
+      live = advancePlayback(live, t, { x: live.state.pos.x + 1.5, z: live.state.pos.z })
+    }
+    expect(live.local).toBe(true)
+    // Walk away, and give it time to finish whatever it was doing with the visitor.
+    for (; t <= (EPOCH_START + 600) * 1000; t += 100) live = advancePlayback(live, t, null)
+    expect(live.local).toBe(false)
+    expect(snapshot(live)).toEqual(snapshot(startPlayback(input(), t - 100)))
+  })
+
   it('lets a local visitor change only the local body', () => {
     const at = (EPOCH_START + 400) * 1000
     let live = startPlayback(input(), (EPOCH_START + 300) * 1000)

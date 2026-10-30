@@ -79,6 +79,7 @@ export function Forkling() {
             time: s.time,
             steps: live.playback!.steps,
             anchor: live.playback!.anchor,
+            local: live.playback!.local,
           }
         },
       })

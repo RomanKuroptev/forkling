@@ -69,6 +69,7 @@ export function DebugOverlay() {
         {ref.ref ? `@${ref.ref}` : ''} · {sha.slice(0, 7)}
         <br />
         playing from {formatTime(pb.anchor.time, forkling.timezone)} ({pb.anchor.fromIntention ? 'intention' : 'epoch'})
+        {pb.local ? ' · reacting to you' : ' · in sync'}
       </div>
     </div>
   )

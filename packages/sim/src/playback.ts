@@ -35,6 +35,11 @@ export interface Playback {
   state: ForklingState
   /** Fixed steps taken since the anchor. */
   steps: number
+  /**
+   * True while this browser's visitor is interacting with the forkling. The body then reacts to them and may drift from
+   * what other viewers see; once the visitor leaves and the interaction ends, it rejoins the shared timeline.
+   */
+  local: boolean
   ctx: StepContext
   spotMinute: number
   hourCache: { minute: number; hour: number }
@@ -127,6 +132,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     anchor,
     state,
     steps: 0,
+    local: false,
     ctx: { grid: world.nav.grid, visitor: null, timeOfDay: 0, spots: {} },
     spotMinute: -1,
     hourCache: { minute: -1, hour: 0 },
@@ -136,12 +142,22 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
 }
 
 /**
- * Run a live body forward to `nowMs` on the shared step grid. The visitor is this browser's own and only nudges the
- * local body. Crossing into a new epoch re-syncs to the canonical state.
+ * Run a live body forward to `nowMs` on the shared step grid. It follows the canonical timeline until this browser's
+ * visitor comes within notice range, reacts to them locally, and rejoins the canonical timeline once they have left and
+ * it is no longer busy with them. Crossing into a new epoch always re-syncs.
  */
 export function advancePlayback(pb: Playback, nowMs: number, visitor: Point2 | null): Playback {
   const nowSec = nowMs / 1000
   if (epochOf(nowSec) !== pb.anchor.epoch) return startPlayback(pb.input, nowMs)
-  stepTo(pb, nowSec, visitor)
+
+  const radius = pb.input.pack.perception.noticeRadius
+  const distance = visitor ? Math.hypot(visitor.x - pb.state.pos.x, visitor.z - pb.state.pos.z) : Infinity
+  if (!pb.local && distance <= radius) pb.local = true
+  stepTo(pb, nowSec, pb.local ? visitor : null)
+
+  if (pb.local) {
+    const gone = !visitor || Math.hypot(visitor.x - pb.state.pos.x, visitor.z - pb.state.pos.z) > radius * 1.5
+    if (gone && pb.state.intention.targetId !== 'visitor') return startPlayback(pb.input, nowMs)
+  }
   return pb
 }
