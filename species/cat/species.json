@@ -4,19 +4,19 @@
   "needs": {
     "hunger": {
       "initial": 65,
-      "decayPerHour": 60
+      "decayPerHour": 120
     },
     "energy": {
       "initial": 75,
-      "decayPerHour": 45
+      "decayPerHour": 80
     },
     "curiosity": {
       "initial": 55,
-      "decayPerHour": 75
+      "decayPerHour": 120
     },
     "affection": {
       "initial": 35,
-      "decayPerHour": 20
+      "decayPerHour": 30
     }
   },
   "perception": {
@@ -61,7 +61,8 @@
       "reason": "There was a warm patch of sun and it was calling me.",
       "requires": [
         "day"
-      ]
+      ],
+      "spontaneous": 0.15
     },
     {
       "id": "sleep_night",
@@ -99,7 +100,8 @@
       "reason": "I wanted to see what was over there.",
       "requires": [
         "day"
-      ]
+      ],
+      "spontaneous": 0.8
     },
     {
       "id": "perch",
@@ -118,7 +120,24 @@
       "reason": "Everything looks better from up high.",
       "requires": [
         "day"
-      ]
+      ],
+      "spontaneous": 0.4
+    },
+    {
+      "id": "lounge",
+      "satisfies": {},
+      "durationSec": [
+        8,
+        20
+      ],
+      "target": {
+        "type": "none"
+      },
+      "slot": "sit",
+      "requires": [
+        "day"
+      ],
+      "reason": "I am resting my eyes. And the rest of me."
     },
     {
       "id": "play",
@@ -139,7 +158,8 @@
       "reason": "Something moved. Probably. I pounced anyway.",
       "requires": [
         "day"
-      ]
+      ],
+      "spontaneous": 0.6
     },
     {
       "id": "approach_visitor",
@@ -179,7 +199,7 @@
       "id": "zoomies",
       "satisfies": {
         "curiosity": 20,
-        "energy": -15
+        "energy": -5
       },
       "durationSec": [
         4,
@@ -194,7 +214,8 @@
       "requires": [
         "dusk"
       ],
-      "reason": "The evening hit me like a wave. I must run."
+      "reason": "The evening hit me like a wave. I must run.",
+      "spontaneous": 1
     }
   ],
   "weights": {
@@ -202,7 +223,10 @@
     "sleep_night": 8,
     "approach_visitor": 0.55,
     "ignore_visitor": 2,
-    "zoomies": 4
+    "zoomies": 2,
+    "lounge": 1.2,
+    "explore": 1.5,
+    "play": 2
   },
   "starterSpots": [
     {

@@ -71,6 +71,7 @@ const IDLE_ACTION: SpeciesAction = {
   slot: 'idle',
   gait: 'walk',
   requires: [],
+  spontaneous: 0,
   reason: 'Just looking around.',
 }
 

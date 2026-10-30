@@ -51,6 +51,36 @@ describe('scoreActions', () => {
     expect(ids(scoreActions(needs, blob, { ...noon, spotKinds: new Set() }))).not.toContain('eat')
   })
 
+  it('makes actions whose needs are already met far less attractive than doing nothing', () => {
+    const full = { hunger: 100, energy: 100, fun: 100 }
+    const scored = scoreActions(full, blob, { ...noon, visitorDistance: 2 })
+    // Ignoring a visitor satisfies nothing, so it should beat eating when full.
+    expect(scoreOf(scored, 'ignore')).toBeGreaterThan(scoreOf(scored, 'eat') * 5)
+    expect(scoreOf(scored, 'ignore')).toBeGreaterThan(scoreOf(scored, 'rest') * 5)
+  })
+
+  it('lets spontaneous actions stay appealing when their needs are met', () => {
+    const full = { hunger: 100, energy: 100, fun: 100 }
+    const wanderer = SpeciesPack.parse({
+      ...blobJson,
+      actions: blob.actions.map((a) => (a.id === 'roam' ? { ...a, spontaneous: 0.8 } : a)),
+    })
+    const plain = scoreOf(scoreActions(full, blob, noon), 'roam')
+    const eager = scoreOf(scoreActions(full, wanderer, noon), 'roam')
+    expect(eager).toBeGreaterThan(plain * 10)
+    // And it never makes an action better than one that is genuinely needed.
+    const hungry = scoreActions({ hunger: 10, energy: 100, fun: 100 }, wanderer, noon)
+    expect(scoreOf(hungry, 'eat')).toBeGreaterThan(scoreOf(hungry, 'roam') * 3)
+  })
+
+  it('still lets a half-met need drive the action fully', () => {
+    const half = scoreOf(scoreActions({ hunger: 40, energy: 100, fun: 100 }, blob, noon), 'eat')
+    const empty = scoreOf(scoreActions({ hunger: 0, energy: 100, fun: 100 }, blob, noon), 'eat')
+    const full = scoreOf(scoreActions({ hunger: 100, energy: 100, fun: 100 }, blob, noon), 'eat')
+    expect(empty).toBeGreaterThan(half)
+    expect(half).toBeGreaterThan(full * 10)
+  })
+
   it('keeps every eligible score positive so nothing is impossible', () => {
     const scored = scoreActions({ hunger: 100, energy: 100, fun: 100 }, blob, noon)
     for (const s of scored) expect(s.score).toBeGreaterThan(0)
@@ -64,7 +94,8 @@ describe('scoreActions', () => {
 })
 
 describe('pickAction', () => {
-  const scored = scoreActions({ hunger: 5, energy: 90, fun: 90 }, blob, noon)
+  // Hungry and fairly tired, so eating leads but resting is a real alternative.
+  const scored = scoreActions({ hunger: 20, energy: 35, fun: 90 }, blob, noon)
   const picks = (seed: number, n: number) => {
     const rng = createPrng(seed)
     return Array.from({ length: n }, () => pickAction(scored, rng).id)
@@ -77,7 +108,8 @@ describe('pickAction', () => {
   it('mostly picks the best action but not always', () => {
     const all = picks(11, 500)
     const eatShare = all.filter((p) => p === 'eat').length / all.length
-    expect(eatShare).toBeGreaterThan(0.6)
-    expect(eatShare).toBeLessThan(1)
+    expect(eatShare).toBeGreaterThan(0.5)
+    expect(eatShare).toBeLessThan(0.95)
+    expect(all.filter((p) => p === 'rest').length).toBeGreaterThan(0)
   })
 })

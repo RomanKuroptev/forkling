@@ -46,6 +46,11 @@ export const SpeciesAction = z.object({
   slot: AnimationSlot,
   gait: z.enum(['walk', 'run']).default('walk'),
   requires: z.array(ActionRequirement).default([]),
+  /**
+   * How much of the action's appeal survives when the needs it raises are already met, 0 to 1. Low for eating (a
+   * full cat doesn't eat), high for things done for fun, like exploring. Actions that raise nothing are unaffected.
+   */
+  spontaneous: z.number().min(0).max(1).default(0.05),
   /** One sentence in the forkling's voice, used as the intention `reason` until the mind (M4) writes its own. */
   reason: z.string().min(1).max(200),
 })

@@ -51,6 +51,7 @@ describe('SpeciesPack', () => {
     const pack = SpeciesPack.parse(base)
     expect(pack.actions[0]!.gait).toBe('walk')
     expect(pack.actions[0]!.requires).toEqual([])
+    expect(pack.actions[0]!.spontaneous).toBe(0.05)
     expect(pack.starterSpots).toEqual([])
   })
 
@@ -77,6 +78,13 @@ describe('SpeciesPack', () => {
   it('rejects a duration range that is backwards', () => {
     const bad = { ...base, actions: [{ ...base.actions[0]!, durationSec: [20, 10] }] }
     expect(SpeciesPack.safeParse(bad).success).toBe(false)
+  })
+
+  it('accepts a spontaneous appeal from 0 to 1 and rejects anything else', () => {
+    const with_ = (spontaneous: number) => ({ ...base, actions: [{ ...base.actions[0]!, spontaneous }, base.actions[1]] })
+    expect(SpeciesPack.safeParse(with_(0.6)).success).toBe(true)
+    expect(SpeciesPack.safeParse(with_(1.5)).success).toBe(false)
+    expect(SpeciesPack.safeParse(with_(-0.1)).success).toBe(false)
   })
 
   it('requires at least one action and one need', () => {
