@@ -2,13 +2,17 @@ import { CameraControls, CameraControlsImpl, useKeyboardControls } from '@react-
 import { useFrame } from '@react-three/fiber'
 import { Ecctrl, type EcctrlHandle } from 'ecctrl'
 import { useEffect, useRef } from 'react'
-import { spawn } from '../island.ts'
+import { heightAt } from '@forkling/sim'
+import { island, spawn } from '../island.ts'
 import { visitor } from '../visitor.ts'
 
 const CAPSULE_RADIUS = 0.3
 const CAPSULE_HALF_HEIGHT = 0.45
 /** Camera looks slightly above the body centre, roughly at head height. */
 const EYE_OFFSET = 0.5
+
+/** `?clip=Sit` pins the forkling in front of the visitor, so this camera frames it from the side instead. */
+const clipMode = new URLSearchParams(location.search).has('clip')
 
 /** The visitor: a simple capsule avatar driven by ecctrl, with an orbiting follow camera. */
 export function Player() {
@@ -25,6 +29,13 @@ export function Player() {
     }
     c.mouseButtons.right = CameraControlsImpl.ACTION.NONE
     c.mouseButtons.middle = CameraControlsImpl.ACTION.NONE
+    if (clipMode) {
+      const forward = { x: Math.sin(spawn.yaw), z: Math.cos(spawn.yaw) }
+      const cat = { x: spawn.x + forward.x * 3.5, z: spawn.z + forward.z * 3.5 }
+      const y = heightAt(cat.x, cat.z, island)
+      c.setLookAt(cat.x + forward.z * 1.4, y + 0.5, cat.z - forward.x * 1.4, cat.x, y + 0.2, cat.z, false)
+      return
+    }
     // Start behind the visitor, looking inland.
     const back = 7
     c.setLookAt(
@@ -45,7 +56,7 @@ export function Player() {
     b.setMovement(getKeys())
     const p = b.currPos
     visitor.position = { x: p.x, z: p.z }
-    c.moveTo(p.x, p.y + EYE_OFFSET, p.z, true)
+    if (!clipMode) c.moveTo(p.x, p.y + EYE_OFFSET, p.z, true)
   })
 
   return (

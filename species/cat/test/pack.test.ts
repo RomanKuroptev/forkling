@@ -160,6 +160,16 @@ describe('cat in the headless sim', () => {
     expect(night.intentionTypes.has('zoomies')).toBe(false)
   })
 
+  it('goes straight to sleep at night, whatever its needs say', () => {
+    const seeds = Array.from({ length: 40 }, (_, i) => i + 1)
+    const firstDecisions = seeds.map((seed) => {
+      const night = runHeadless({ pack, behaviors, seed, startHour: 23, seconds: 30 })
+      return night.trace.filter((e) => e.includes('@')).map((e) => e.split('@')[0]).find((type) => type !== 'idle')
+    })
+    const asleep = firstDecisions.filter((d) => d === 'sleep_night').length
+    expect(asleep / seeds.length, firstDecisions.join(',')).toBeGreaterThanOrEqual(0.9)
+  })
+
   it('plays its signature behaviors across a day of watching', () => {
     const runs = [11, 12, 13].map((seed) => runHeadless({ pack, behaviors, seed, startHour: 14, seconds: 900 }))
     const seen = new Set(runs.flatMap((r) => r.micros.map((m) => m.id)))

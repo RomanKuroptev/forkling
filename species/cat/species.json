@@ -80,7 +80,8 @@
       "requires": [
         "night"
       ],
-      "reason": "It is dark. I am sleeping. Do not wake me."
+      "reason": "It is dark. I am sleeping. Do not wake me.",
+      "spontaneous": 1
     },
     {
       "id": "explore",
