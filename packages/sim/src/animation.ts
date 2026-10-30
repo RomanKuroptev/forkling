@@ -9,6 +9,7 @@ const FALLBACKS: Record<AnimationSlot, AnimationSlot[]> = {
   sleep: ['sit', 'idle'],
   jump: ['idle'],
   happy: ['idle'],
+  eat: ['idle'],
   groom: ['sit', 'idle'],
   stretch: ['idle'],
   knead: ['idle'],

@@ -13,6 +13,7 @@ export const AnimationSlot = z.enum([
   'sleep',
   'jump',
   'happy',
+  'eat',
   'groom',
   'stretch',
   'knead',

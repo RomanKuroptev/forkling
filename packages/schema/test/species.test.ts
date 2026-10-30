@@ -40,7 +40,7 @@ describe('vocabularies', () => {
   })
 
   it('includes the engine animation slots', () => {
-    for (const s of ['idle', 'walk', 'run', 'sit', 'sleep', 'jump', 'happy']) {
+    for (const s of ['idle', 'walk', 'run', 'sit', 'sleep', 'jump', 'happy', 'eat']) {
       expect(AnimationSlot.safeParse(s).success).toBe(true)
     }
   })

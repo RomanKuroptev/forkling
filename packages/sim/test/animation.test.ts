@@ -24,6 +24,10 @@ describe('resolveSlot', () => {
     expect(resolveSlot('climb', slots('walk'))).toBeNull()
   })
 
+  it('falls back from eat to idle', () => {
+    expect(resolveSlot('eat', slots('idle', 'sit'))).toBe('idle')
+  })
+
   it('does not let a species climb without a climb clip', () => {
     expect(resolveSlot('climb', slots('idle', 'jump'))).not.toBe('climb')
   })
