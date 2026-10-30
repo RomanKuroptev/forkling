@@ -106,3 +106,59 @@ export function scatterProps(cfg: IslandConfig, rules: PropRule[], opts: Scatter
   }
   return placed.map(({ p }) => p)
 }
+
+export interface Spawn {
+  x: number
+  y: number
+  z: number
+  /** Rotation around y, in radians, facing the island centre. */
+  yaw: number
+}
+
+/** A dry spot on the beach, found by walking outward from the centre along a few directions. */
+export function findSpawn(cfg: IslandConfig): Spawn {
+  const half = cfg.size / 2
+  for (let i = 0; i < 16; i++) {
+    const angle = (i / 16) * Math.PI * 2
+    const dx = Math.sin(angle)
+    const dz = Math.cos(angle)
+    for (let r = 0; r < half; r += 0.5) {
+      const x = dx * r
+      const z = dz * r
+      const y = heightAt(x, z, cfg)
+      if (y < cfg.waterLevel) break
+      if (y < cfg.waterLevel + 1.5 && y > cfg.waterLevel + 0.3) {
+        return { x, y, z, yaw: Math.atan2(-x, -z) }
+      }
+    }
+  }
+  return { x: 0, y: heightAt(0, 0, cfg), z: 0, yaw: 0 }
+}
+
+/**
+ * Points where the sea first gets `depth` meters deep, walking out from the centre at evenly spaced angles.
+ * The viewer builds the invisible boundary wall along this ring, so visitors can paddle but not dive.
+ */
+export function shoreline(cfg: IslandConfig, segments: number, depth: number): { x: number; z: number }[] {
+  const limit = cfg.waterLevel - depth
+  const half = cfg.size / 2
+  const step = 0.1
+  const points: { x: number; z: number }[] = []
+  for (let i = 0; i < segments; i++) {
+    const angle = (i / segments) * Math.PI * 2
+    const dx = Math.sin(angle)
+    const dz = Math.cos(angle)
+    let r = 0
+    while (r < half && heightAt(dx * r, dz * r, cfg) >= limit) r += step
+    // Bisect between the last shallow and first deep sample.
+    let lo = Math.max(0, r - step)
+    let hi = r
+    for (let k = 0; k < 20; k++) {
+      const mid = (lo + hi) / 2
+      if (heightAt(dx * mid, dz * mid, cfg) >= limit) lo = mid
+      else hi = mid
+    }
+    points.push({ x: dx * lo, z: dz * lo })
+  }
+  return points
+}

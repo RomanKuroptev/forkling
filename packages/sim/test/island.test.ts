@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { IslandConfig } from '@forkling/schema'
-import { generateHeightfield, heightAt, scatterProps, type PropRule } from '../src/island.ts'
+import { findSpawn, generateHeightfield, heightAt, scatterProps, shoreline, type PropRule } from '../src/island.ts'
 
 const cfg = IslandConfig.parse({ seed: 1234 })
 
@@ -108,6 +108,49 @@ describe('scatterProps', () => {
       for (const p of ofKind) {
         expect(p.variant).toBeGreaterThanOrEqual(0)
         expect(p.variant).toBeLessThan(rule.variants)
+      }
+    }
+  })
+})
+
+describe('findSpawn', () => {
+  it('returns a dry beach spot near the coast, deterministically', () => {
+    const s = findSpawn(cfg)
+    expect(findSpawn(cfg)).toEqual(s)
+    const h = heightAt(s.x, s.z, cfg)
+    expect(h).toBeGreaterThan(cfg.waterLevel)
+    expect(h).toBeLessThan(cfg.waterLevel + 2)
+    expect(s.y).toBeCloseTo(h, 6)
+  })
+
+  it('faces the island centre', () => {
+    const s = findSpawn(cfg)
+    // yaw points from spawn towards the origin
+    const dx = -s.x
+    const dz = -s.z
+    expect(Math.cos(s.yaw - Math.atan2(dx, dz))).toBeCloseTo(1, 6)
+  })
+})
+
+describe('shoreline', () => {
+  const depth = 0.6
+  const ring = shoreline(cfg, 64, depth)
+
+  it('returns one point per segment, deterministically', () => {
+    expect(ring).toHaveLength(64)
+    expect(shoreline(cfg, 64, depth)).toEqual(ring)
+  })
+
+  it('sits where the water reaches the given depth', () => {
+    for (const p of ring) {
+      expect(heightAt(p.x, p.z, cfg)).toBeCloseTo(cfg.waterLevel - depth, 0)
+    }
+  })
+
+  it('has only shallower ground between the centre and each point', () => {
+    for (const p of ring) {
+      for (let t = 0.05; t < 1; t += 0.05) {
+        expect(heightAt(p.x * t, p.z * t, cfg)).toBeGreaterThan(cfg.waterLevel - depth - 0.05)
       }
     }
   })
