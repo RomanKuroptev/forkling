@@ -6,7 +6,7 @@ export const island = IslandConfig.parse({ seed: 1234 })
 
 export const spawn = findSpawn(island)
 
-const rules: PropRule[] = [
+export const rules: PropRule[] = [
   { kind: 'tree', variants: 3, count: 70, minSpacing: 3.5, minHeight: island.waterLevel + 1.2, maxHeight: island.maxHeight * 0.75 },
   { kind: 'rock', variants: 3, count: 35, minSpacing: 2.5, minHeight: island.waterLevel + 0.2, maxHeight: island.maxHeight },
 ]
