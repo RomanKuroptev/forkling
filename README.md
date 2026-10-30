@@ -32,3 +32,7 @@ Debug flags: `?debug` shows an FPS meter, `?debug=physics` also draws the Rapier
 ## Deploying the viewer
 
 `.github/workflows/deploy-pages.yml` builds the viewer and publishes it to GitHub Pages on every push to `main`. One-time setup: in the repo's **Settings → Pages**, set **Source** to **GitHub Actions**. The site is served at `https://<owner>.github.io/<repo>/`.
+
+## Credits
+
+Trees and rocks are from the [Nature Kit](https://kenney.nl/assets/nature-kit) by Kenney (CC0), in `apps/viewer/public/models/nature/`. The kit's colours are overridden in code to match the island palette.
