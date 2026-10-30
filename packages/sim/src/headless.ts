@@ -1,5 +1,5 @@
 import { Intention, type MicroBehavior, type SpeciesPack } from '@forkling/schema'
-import { createForkling, stepForkling, STEP, type StepContext } from './forkling.ts'
+import { createForkling, stepForkling, STEP, toRepoIntention, type StepContext } from './forkling.ts'
 import { isWalkable, nearestWalkable, type Point2 } from './nav.ts'
 import { sunDirection } from './sky.ts'
 import { starterWorld, type StarterWorld } from './starter.ts'
@@ -117,7 +117,7 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
     if (state.intention.startedAt !== lastIntentionStart) {
       lastIntentionStart = state.intention.startedAt
       run.intentionTypes.add(state.intention.type)
-      if (!Intention.safeParse(state.intention).success) run.badIntentions++
+      if (!Intention.safeParse(toRepoIntention(state.intention)).success) run.badIntentions++
       run.trace.push(`${state.intention.type}@${state.intention.startedAt.toFixed(1)}`)
     }
     if (state.micro) {

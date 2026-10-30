@@ -28,6 +28,14 @@ export interface StepContext {
 
 export type Phase = 'moving' | 'acting' | 'micro'
 
+/** An intention as the body tracks it: like the repo's `Intention`, but with `startedAt` in seconds on the sim clock. */
+export type BodyIntention = Omit<Intention, 'startedAt'> & { startedAt: number }
+
+/** The repo form of a body intention. The sim clock is in seconds since the Unix epoch once playback anchors it. */
+export function toRepoIntention(intention: BodyIntention): Intention {
+  return { ...intention, startedAt: new Date(intention.startedAt * 1000).toISOString() }
+}
+
 /**
  * A forkling's body: where it is, what it is doing and why. Plain data plus a seeded PRNG. `stepForkling`
  * mutates it in place, so the render loop and tests share one code path.
@@ -42,7 +50,7 @@ export interface ForklingState {
   /** Yaw in radians, 0 facing +z. */
   heading: number
   needs: Needs
-  intention: Intention
+  intention: BodyIntention
   action: SpeciesAction
   phase: Phase
   /** The animation slot to play right now. The viewer resolves it against the pack's clips. */
