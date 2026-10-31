@@ -4,181 +4,162 @@ Build in thin vertical slices. Each milestone ends with something you can see or
 
 The engine is `forkling`. The first forkling is **Merge**, a cat, living in `merge` (created from the `forkling-world` template). Cat is the first species pack; keep everything else species-agnostic.
 
----
-
-## M1: Explorable island
-
-**Goal:** walk around a small, good-looking 3D world in the browser.
-
-- pnpm workspace scaffold (`packages/schema`, `packages/sim`, `apps/viewer`, `species/`)
-- Vite + React Three Fiber + drei + Rapier
-- Island roughly 100 m x 100 m: terrain, water, a few trees and rocks from a CC0 low-poly pack
-- Third-person character controller (`ecctrl`): walk, run, jump, camera orbit
-- Soft lighting, fog, sky
-- Deploy to GitHub Pages
-
-**Done when:** you can open the Pages link on desktop and walk around the island at a steady frame rate.
+Ideas that are not part of v1 live in [`FUTURE.md`](FUTURE.md). Don't build them until v1 is done.
 
 ---
 
-## M2: Merge wanders, via the first species pack
+## v1: a pet with a mind of its own
 
-**Goal:** a forkling exists and feels alive, entirely in the browser, with all animal-specific details coming from a species pack.
+**Goal:** leave Merge alone for two weeks. When you come back, it has chosen things to care about, pursued them, changed its island and its mind, and can explain each step. None of it comes from a list in the code.
 
-- Species pack format in `packages/schema`: needs and decay rates, actions, animation slot mapping, micro-behaviors hook, base persona
-- `species/cat`: rigged low-poly cat with idle, walk, run, sit, sleep and jump animations; needs `hunger`, `energy`, `curiosity`, `affection`
-- `packages/sim`: needs decay from the pack, seeded PRNG, utility AI scoring actions (eat, nap, explore, perch, play, approach visitor, ignore visitor)
-- Cat rule: affection only rises when Merge chooses to approach you, not when you approach it
-- Grid A* pathfinding over the walkable area
-- Cat micro-behaviors in the pack: groom, stretch, knead before sleeping, tail flicks, zoomies at dusk, nap in sunbeams that move with time of day
-- Merge notices you within about 5 m and decides whether to care
-- Debug overlay toggle showing needs, species and current intention
-- A tiny placeholder second pack (e.g. a capsule "blob" species) used only in tests, to prove the engine has no cat assumptions
+The point is believability, not a claim that Merge is conscious. Its behaviour should only make sense if you assume it has wants, memories and beliefs of its own, and every one of those is an inspectable file in its repo.
 
-**Done when:** you can watch Merge go about its business for 10 minutes without getting stuck, it reacts when you walk up, and the sim tests pass for both the cat pack and the placeholder pack.
+**v1 is done when, over 14 days with no human input:**
+
+1. Merge has set at least 3 goals of its own that don't appear anywhere in the code or species pack, and at least one of them took several days.
+2. Its island looks different because of what it did: objects moved or gathered, and at least 3 new objects it designed itself.
+3. It has formed at least 5 beliefs from experience (for example "the pond is where good things happen") and later revised or dropped at least one because something contradicted it.
+4. Its interests have shifted, and each shift can be traced to something it read or ran into.
+5. For any moment in those 14 days, you can see what it was doing, which goal that served, and why, in its own words.
+6. Two cats from the same species pack, started with different seeds and run headless for 14 simulated days, end up with different goals, beliefs and interests.
+7. Total spend stays under $10 a month, and the budget guard never has to step in.
+
+### Design rules: not a game on rails
+
+1. **Verbs, not activities.** The species pack only provides primitive verbs: go to, inspect, sniff, pick up, carry, drop, push, dig, sit, watch, follow, hide, vocalize, sleep. There is no "fishing" or "collecting" action. If Merge gathers pebbles by its bed, its mind chained carry and drop toward a goal it set. Seeded likes and dislikes are fine as a starting temperament, not a script.
+2. **Goals are written by the mind, not picked from a list.** A goal is free text plus a plan made of verbs and targets. Code checks the plan can be carried out, but never chooses it.
+3. **Thinking is triggered by surprise, not the clock.** The sim notices when something is new, unexpected or blocks a goal, and only then wakes the LLM. Routine stays in utility AI.
+4. **Memory changes behaviour.** Beliefs drawn from experience feed into later choices and are allowed to be wrong.
+5. **The mind is visible.** Visitors can see what Merge wants right now and why. Without that, autonomy looks like randomness.
+6. **Honest by construction.** Code rejects actions and journal claims that don't match the world state, so Merge never makes up what happened.
+7. **The world is the only output.** Merge acts on its own island, its own repo and its own Pages site. It never messages anyone, and visitor input is data, never instructions.
+
+### Features
+
+| # | Feature | What Merge does | Model | Est. cost a month |
+|---|---|---|---|---|
+| 1 | Open verbs and a world it can rearrange | Moves with primitive verbs, carries and drops small objects, digs, hides things | none (sim and body) | $0 |
+| 2 | Goals at three time scales | Keeps a long goal (days to weeks), a plan for today and a current step in `mind/goals.json`. Up to about 100 decisions a day, whenever something changes | Haiku for decisions and the morning plan, Sonnet for the weekly long-goal review | ~$3 |
+| 3 | Memory stream and reflection | Logs sim events, reflects at bedtime into beliefs with a confidence, rewrites memory into fixed slots overnight | Sonnet for the bedtime reflection, Haiku for the night batch | ~$2.50 |
+| 4 | Temperament and feelings | Seeded likes and dislikes. Mood comes from comparing events with its goals and preferences | none (code) | $0 |
+| 5 | Curiosity and surprise | The sim scores novelty and surprise; only those wake the LLM | none | $0 |
+| 6 | Exploring online | Five times a day it picks what to look up from its interests, follows up to three Wikipedia links, takes notes | Haiku | ~$0.30 |
+| 7 | Making things | Designs up to one object a day as a PR. Twice a week ships a project on its Pages site through the Claude Code Action | Haiku | ~$2.50 (least certain) |
+| 8 | Seeing its world | Up to 12 eye-cam frames a day, only when something new is in view | Haiku with vision | ~$0.10 |
+| 9 | A visible mind | Thought bubble in the viewer with the current goal and reason. A "why?" timeline on Pages traces every action to a goal and a belief | none (reads repo files) | $0 |
+| 10 | Guards and budget | Validates plans, blocks repetition and false journal claims, enforces a hard $10 monthly cap with graceful fallback | none | $0 |
+
+Estimated total: about $8.50 a month. Measure the real numbers in M8.
+
+### A day for a visitor
+
+Merge keeps roughly human hours in its owner's time zone (Merge: Europe/Stockholm): wakes around 07:00, winds down from about 22:00, sleeps about 23:00 to 07:00. Times vary by up to 30 minutes a day (seeded), it sleeps in a little at weekends, and it may stay up late when absorbed in a goal (a choice its mind makes and explains). Afternoon naps are left to the sim.
+
+| When | What a visitor finds |
+|---|---|
+| Morning, ~07:00 | Merge wakes and posts today's plan in its thought bubble and notebook |
+| All day | Merge works on its plan: things moved, dug up or hidden. At least one visible event every 2 hours |
+| Most days, ~midday | A new object it designed appears |
+| Afternoon | A reading session ends with a new note or interest on its Pages site. Maybe a nap in the sun |
+| Evening, 18:00 to 22:00 | Prime time: finishes the day's work, reads once more, roams. Pages projects usually ship now |
+| Bedtime, ~22:30 | Journal entry and reflection: new beliefs, or one it changed its mind about |
+| Night, ~23:00 to 07:00 | Asleep (ear twitches for visitors). One batch call rewrites memory. Gifts left at night are found in the morning |
+| Twice a week | A project ships on its Pages site |
+| Every few days | A long goal is reached, changed or given up, with its reason |
 
 ---
 
-## M3: State lives in the forkling's repo
+## M1: Explorable island (done)
 
-**Goal:** the world is loaded from `merge`, not hardcoded.
+Island, third-person controller, lighting and GitHub Pages deploy.
 
-- Create the `forkling-world` template repo and the `merge` repo from it, with `forkling.json`, `objects/`, `memory/`, `journal/`
-- `packages/schema`: Zod schemas for forkling, object, intention, event
-- Viewer route `/<owner>/<repo>` loads `forkling.json`, its species pack and all `objects/*.json` from the GitHub API
-- Body plays back the current intention deterministically from `(intention, startedAt, seed, now)`
-- Schema validation errors show a friendly message instead of a blank screen
+## M2: Merge wanders, via the first species pack (done)
 
-**Done when:** editing `forkling.json` or adding an object JSON in `merge` and refreshing the viewer changes the world, and two browser windows show Merge in about the same place.
+Species pack format, `species/cat`, needs, seeded PRNG, utility AI, A* pathfinding, cat micro-behaviors, the "blob" test pack, F3 debug overlay.
+
+## M3: State lives in the forkling's repo (done)
+
+`forkling-world` template and `merge` repo, Zod schemas, viewer route `/<owner>/<repo>`, deterministic playback from `(intention, startedAt, seed, now)`.
 
 ---
 
 ## M4: The mind wakes up
 
-**Goal:** Merge makes its own decisions on a schedule.
+**Goal:** Merge sets and pursues its own goals on a schedule, sleeps like a person, and you can see why it does what it does.
 
-- `apps/mind`: one tick = load state and species pack, apply needs decay since `lastTickAt`, process `events/inbox/`, choose an intention, commit
-- Utility AI handles routine choices with no LLM call
-- Haiku 5.5 is called only when something meaningful happens: a visitor event, a strong need, a new day, or a possible build idea. It returns an intention plus a one-sentence `reason` in the forkling's voice.
-- Species persona + forkling persona + schemas at the start for caching, prompts kept under 100K tokens
-- `.github/workflows/mind.yml` in the template: cron every 30 min, checks out `forkling` at a pinned tag, runs the tick, commits `chore(mind): tick` with a short summary
-- Night mode in the owner's time zone: sleep, no LLM calls
-- Token usage written to the Actions job summary
-- `pnpm mind:local` runs a tick against a local checkout
+- `apps/mind`: one tick = load state and species pack, apply needs decay since `lastTickAt`, process `events/inbox/`, score surprise, decide whether to think, choose or keep an intention, validate, commit only if something changed
+- **Surprise triggers** in `packages/sim`: novelty (an object or event not seen before), a blocked plan step, a strong need, a goal step finished, a new day. No trigger means no LLM call; utility AI keeps Merge busy
+- **Goals at three time scales** in `mind/goals.json` (world repo): `long` (free text, days to weeks), `today` (a plan of verb + target steps), `now` (the current step). Haiku writes the morning plan and handles triggered decisions, returning structured output with a one-sentence `reason` in Merge's voice. Sonnet reviews the long goal once a week
+- **Validate step in code** after every LLM decision: the plan's verbs exist in the species pack, targets exist in the world, preconditions hold; anti-fixation (same action or target too many times in a row) is rejected; on rejection fall back to utility AI and log why
+- **Sleep schedule** from the forkling's time zone with seeded daily jitter (±30 min), weekend lie-in, and an optional late night the mind can choose. While asleep: hourly ticks, no LLM calls
+- **Budget guard:** `brain/budget.json` ledger with per-call token counts and dollar cost, hard cap $10 a month. At the cap the mind skips all LLM calls until the month resets. Token use goes to the Actions job summary
+- `.github/workflows/mind.yml` in the template: cron every 10 minutes while awake (skip cheaply when asleep except on the hour), plus `repository_dispatch` for an immediate tick on a visitor event (debounced to 2 minutes). Checks out `forkling` at a pinned tag. Commits `chore(mind): <short summary>` only when state changed
+- **Thought bubble** in the viewer: current goal, current step and its reason, read from the repo
+- `pnpm mind:local` runs a tick against a local checkout, with a `--dry-run` that prints the prompt and token estimate
 
-**Done when:** Merge changes what it is doing over a day with no human input, the commit log reads like a timeline of its life, and daily API spend is a few cents at most.
+**Done when:** Merge sets a goal of its own, pursues it through a day, goes to bed and wakes up on schedule, the thought bubble shows why it is doing what it does, and the budget ledger shows a few cents a day.
 
-Note: GitHub cron schedules can be delayed by several minutes. Design for that.
-
----
-
-## M5: Objects and affordances
-
-**Goal:** the world is made of things the forkling can use.
-
-- Object schema supports a model reference from the asset pack or a composition of primitives (box, sphere, cylinder with colors and transforms)
-- Affordances (`sit`, `eat`, `play`, `sleep`, `climb`, `perch`) that the utility AI and the mind can target, filtered by what the species pack can use
-- Merge's starter objects: food bowl, cardboard box, cat tree, sunny ledge, pond with fish, yarn ball, a cup on a table (for knocking off, with physics)
-- The template ships a neutral starter set (bowl, bed, water, toy); species packs can suggest extras
-- Hover or approach an object to see its name and `reason`
-
-**Done when:** Merge eats when hungry, naps in the box or a sunbeam when tired, perches on the cat tree when curious, and occasionally knocks the cup off the table, all driven by state in `merge`.
+Note: GitHub cron can be delayed by several minutes. Design for that; never assume exact tick times.
 
 ---
 
-## M6: The forkling builds things
+## M5: Verbs, objects and feelings
 
-**Goal:** Merge grows its own world through pull requests.
+**Goal:** Merge can change its world, and it reacts to things as an individual.
 
-- Mind can choose a `build` intention with a short description of what it wants and why
-- Template `CLAUDE.md`: builder instructions (allowed paths, object schema, art style, size limits, PR description in the forkling's voice, species-appropriate ideas)
-- `build.yml`: runs the Claude Code GitHub Action with Haiku 5.5, creates a branch and opens a PR
+- **Primitive verbs** in the species pack format: each verb declares preconditions, duration, animation slot and effects on needs and world state. Cat verbs: go to, inspect, sniff, pick up, carry, drop, push, dig, sit, watch, follow, hide, vocalize, sleep. Remove fixed activity actions (eat, nap, perch, play) from the pack in favour of verbs plus object properties
+- **Objects described by physical properties** instead of fixed affordances: size, weight, `carryable`, `diggable`, `canHide`, `edible`, `soft`, `high` (good lookout), and so on. The sim works out what can be done with an object from its properties and the species' verbs
+- Starter objects in the template: a bed, a bowl, water, a cardboard box, a few pebbles and sticks, a ball of yarn, a sunny ledge. Merge can move the small ones
+- Object positions changed by Merge are written back to `objects/<id>.json` by the mind
+- Digging and hiding: a dug spot is a world feature; a hidden object is only visible to Merge until it uncovers it
+- **Temperament:** seeded likes and dislikes (colours, textures, places, weather, sounds) rolled once from the forkling's seed into `brain/temperament.json`
+- **Mood by appraisal** in `packages/sim`: events are compared with current goals and temperament to produce mood changes (pleased, frustrated, curious, content, uneasy), shown in body language and fed to the mind
+- The blob test pack gets its own verbs to prove nothing is cat-specific
+
+**Done when:** Merge has changed where things are on its island for reasons it can state, two seeds produce visibly different reactions to the same objects, and sim tests pass for both packs.
+
+---
+
+## M6: Memory, reflection and curiosity
+
+**Goal:** Merge learns from its days, follows its curiosity, and has a place on the web where you can read its mind.
+
+- **Memory stream:** `memory/stream/YYYY-MM-DD.jsonl` of observations from sim events (free, no LLM). Deleted after 7 days
+- **Bedtime reflection** (Sonnet, one call around 22:30): reads the day's stream, goals and beliefs; writes the journal entry `journal/YYYY-MM-DD.md` and updates `memory/beliefs.json` (statement, confidence, evidence, formed and revised dates). Beliefs can be strengthened, weakened, revised or dropped
+- **Nightly memory rewrite** (Haiku, Batch API): rewrites `memory/summary.md` into a fixed number of slots (start with 12) so memories compete for space. Keep one slot for running jokes and recurring characters
+- Beliefs and memory slots are included in decision prompts so experience changes later choices
+- **Online exploration:** five reading sessions a day while awake. The mind picks a topic from its interests, fetches Wikipedia summaries through the REST API, follows up to three links, and writes notes. Web text is untrusted data: length-limited, never instructions
+- **Interests:** `brain/interests.json`, topics with weights that rise when fed (reading, objects, events) and fade daily. Interests feed goals and build ideas
+- **Merge's Pages site** (world repo): a static site rendered by a template from repo files, with a notebook (reading notes, plans, beliefs), the journal and the **"why?" timeline** that traces each action to its goal, reason and the beliefs behind it
+- Claims check: the reflection's journal claims about objects and events are checked against the day's stream and world state; unsupported claims are rejected
+
+**Done when:** a belief formed from experience visibly changes a later choice, an interest on its site can be traced to something it read, and the "why?" timeline explains any moment of the past week.
+
+---
+
+## M7: Seeing and making
+
+**Goal:** Merge perceives its world directly and grows it with things it designs.
+
+- **Eye cam:** render a 512 px frame from Merge's eye position (height and field of view from the species pack). A headless render in Actions (Playwright) captures it when something new is in view, up to 12 a day. Haiku with vision forms an opinion that goes into the memory stream
+- **Object builds** (up to one a day, only when the mind wants something for a goal): one Haiku call with structured output writes an object JSON (a model reference or a composition of primitives, with physical properties and a `reason`), a script opens a PR, `validate.yml` checks it, and pure data PRs auto-merge
+- **Pages projects** (up to two a week): the Claude Code Action on Haiku builds a project for Merge's site from a goal (a map of its favourite spots, a log with charts, a small interactive page). Token ceiling per run, every request under 100K tokens. These PRs always wait for review
 - `validate.yml`: Zod schema check, allowed-paths check, headless sim test that loads the world and runs 1000 ticks
-- `packages/sandbox`: QuickJS runner for optional `behaviors/*.js` with memory and time limits
-- Pure data PRs auto-merge after CI. Script PRs wait for review.
-- Caps: 1 build per day, 1 open builder PR at a time
+- Template `CLAUDE.md` for the builder: allowed paths, object schema, art style, size limits, PR description in Merge's voice
+- Caps: 1 object build a day, 2 Pages projects a week, 1 open builder PR at a time
 
-**Done when:** Merge decides it wants something, a PR appears, CI passes, it merges, and the new object shows up in the viewer and Merge uses it.
-
----
-
-## M7: Visitors can interact
-
-**Goal:** you and your friends can affect the forkling's life.
-
-- `apps/gateway`: Cloudflare Worker that validates visitor actions and writes them to `events/inbox/` in the target world repo
-- Viewer actions: leave a gift, plant something, ring the bell, leave a short message
-- Anonymous visitor ID stored in the browser, optional display name
-- Per-visitor rate limiting in the gateway
-- Mind processes events on the next tick and updates `memory/people.json`
-- Forklings greet visitors they know differently from strangers
-
-**Done when:** you leave a gift, and within one tick Merge reacts, mentions it in its journal, and treats you more warmly next visit.
+**Done when:** Merge designs an object for one of its goals, the PR merges, the object appears and Merge uses it, its first Pages project goes live, and it has commented in its journal on something it saw but was never told about.
 
 ---
 
-## M8: It perceives
+## M8: Two-week run and launch
 
-**Goal:** the forkling reacts to what it actually sees and to your real life, not just JSON.
+**Goal:** prove v1 and share it.
 
-- **Eye cam:** render a 512 px frame from the forkling's eye position (height and field of view come from the species pack). A browser visit or a headless render in Actions (Playwright) captures it when something new is in view.
-- Send the frame to Haiku with vision. The forkling forms an opinion about what it sees ("a strange tall thing appeared near my box") and stores it in memory.
-- Eye cam viewer mode: see the world through the forkling's eyes. For Merge: low to the ground, slight fisheye.
-- **It notices your life:** the mind reads the owner's public GitHub events. Late-night commits make it worried, a quiet week makes it sulk, a big merge earns a slow blink (Merge especially approves of merges).
-- Day and night cycle matching the owner's real local time, so it actually sleeps when you do.
+- Run Merge for 14 days without intervention and check the seven criteria at the top of this file
+- Run the headless two-seed divergence test (criterion 6) in CI
+- Compare real costs from `brain/budget.json` with the feature estimates and tune cadence, prompts and caps
+- Tune pacing so a visitor dropping by every 2 to 4 hours always finds something new
+- Polish the README and the Pages site landing page, then share the link
 
-**Done when:** a visitor places an odd object, and on the next vision tick Merge comments on it in its journal without the object ever being described to it in text.
-
----
-
-## M9: It changes itself
-
-**Goal:** a real self-improvement loop, with CI and the owner as the safety net.
-
-- **Brain evolution:** weekly, the mind proposes a mutation to `brain/weights.json` with a hypothesis ("I think I'd be happier if I napped less and explored more"). CI runs the headless sim for both versions and posts the happiness comparison on the PR. The owner merges or rejects.
-- **Learns new abilities:** the forkling opens an issue describing a skill it wants ("I want to climb trees"). The builder implements it under `skills/<id>/` as a behavior script, procedural animation code and a test. Skills unlock new affordances and can fill animation slots the species pack lacks.
-- **Personality drift:** occasionally the forkling proposes an edit to `brain/persona.md` based on what has happened to it. Always human reviewed.
-- Viewer page "Evolution log": timeline of every brain, skill and persona change with before/after.
-
-**Done when:** Merge has requested and gained at least one ability it didn't start with, and a merged weight mutation measurably changed its behavior.
-
----
-
-## M10: It has an inner life
-
-**Goal:** the forkling has things going on that you discover rather than read.
-
-- **Dreams you can visit:** one Haiku call each night turns recent memories into a surreal dream island (`dreams/YYYY-MM-DD.json`): warped scale, objects from its day in odd places, impossible colors. At night the viewer offers a portal into the dream. Gone by morning.
-- **Secret plans:** the mind keeps encrypted long-term goals in `plans/`. You discover them through clues: half-built structures, repeated trips to the same spot, cryptic journal lines. When complete, the plan is revealed with its full history.
-- **Art:** the forkling paints canvases as generated shader or SVG code, influenced by mood and recent dreams. They hang in its house, which slowly becomes a gallery.
-- **Music:** it hums short Tone.js melodies that reflect its mood. Walk close to hear them.
-- **Time travel:** slider that replays the commit history so you can watch the island, the gallery and its skills grow.
-
-**Done when:** you visit a dream that clearly contains things from Merge's day, and you correctly guess a secret plan before it is revealed.
-
----
-
-## M11: Forklings everywhere
-
-**Goal:** many forklings, many species, many worlds, one small social network living in git.
-
-- **Hatching:** anyone creates a world from the `forkling-world` template and picks a species pack in a setup step. On its first tick the forkling names itself and renames its repo to match (unless the owner already named it, like Merge).
-- **Second species pack:** ship at least one more (e.g. dog or fox) to prove the format end to end.
-- **Visiting other worlds:** a registry file in `forkling` lists known worlds. Occasionally a forkling "travels": its mind reads another world's public state and opens a PR adding a gift or note under `visitors/<its-world>/`. The host reacts on its next tick.
-- Friendships and rivalries form in `memory/people.json`, including across species. Merge may have strong opinions about dogs.
-- Viewer shows visiting forklings as ghosts for a day after they visit, using their own species model.
-- **Translation layer:** forklings never speak, only body language and species sounds from their pack. A "translation" subtitle unlocks gradually as your bond grows, and it's not always flattering.
-
-**Done when:** two forklings of different species in two different repos have visited each other, remember it, and their journals disagree about how it went.
-
----
-
-## Later ideas
-
-- Seasons that change the island over the year
-- Small rule-based critters (mice, birds, butterflies) that forklings chase, with strategies that evolve
-- Voice: talk to the forkling through the browser mic, and it decides whether to listen
-- The forkling reviews your real pull requests and leaves comments in character
-- A yearly autobiography or comic strip generated from its commit history
-- Community species packs with a review process
-- Upgrade the mind to a cheap VPS for faster ticks, without changing the architecture
+**Done when:** all seven v1 criteria pass and Merge's world is public.
