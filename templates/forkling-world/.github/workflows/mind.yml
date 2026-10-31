@@ -23,7 +23,7 @@ permissions:
 env:
   # The engine release this world runs on. Change it on purpose, after reading what changed.
   FORKLING_REPO: RomanKuroptev/forkling
-  FORKLING_REF: v0.5.0
+  FORKLING_REF: v0.5.1
 
 jobs:
   tick:

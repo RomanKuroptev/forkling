@@ -231,6 +231,16 @@ describe('what the model is shown about making', () => {
     expect(user).toMatch(/"id":"workbench".*"unlocks":\["join","build"\]/)
   })
 
+  it('asks for a long goal a person might have, not an animal instinct', async () => {
+    const llm = fakeLlm(decision(null))
+    await tick(0, llm)
+    const { system, user } = llm.calls[0]!
+    expect(system).toMatch(/something you want to make, learn, grow or understand/)
+    expect(system).toMatch(/not just an animal instinct/)
+    expect(system).not.toMatch(/a place you mean to claim/)
+    expect(user).toMatch(/the kind of thing a person might care about/)
+  })
+
   it('keeps the cacheable prefix free of anything that changes, and species words out of the engine rules', async () => {
     const llm = fakeLlm(decision(null))
     await tick(0, llm)

@@ -121,7 +121,7 @@ export function buildSystem(input: SystemInput): string {
     '- A plan is a list of steps. Each step is one verb (from the list above, spelled exactly), where it happens, a reason in your voice, and how many minutes to spend on it.',
     '- A step is a window of time, not a single act: for those minutes you keep coming back to that verb at that place, and when the minutes are up its effect happens once. A body that is hungry, tired or curious still does what it must, so do not plan around that.',
     '- Plans are your own. Nobody gives you goals. Follow what you are curious about, what you liked or disliked before, and what you saw.',
-    '- The long goal is a want that takes days: an ambition, a place you mean to claim, a mystery. Write it as free text. It is not a chore and not an item from a list.',
+    '- The long goal is a want that takes days: something you want to make, learn, grow or understand, an ambition or a mystery. Write it as free text, the way a person would put their own aim. It is not a chore, not an item from a list, and not just an animal instinct like claiming territory.',
     '- Use only objects and places that are listed as being in the world. Do not invent any. Never give a verb a target it does not take.',
     '- Do not repeat the same verb or the same place again and again. Variety is part of being alive.',
     '- Respect the time of day. Verbs marked "only day" need you awake, which is most of the day; dusk is 18:00 to 21:00 local time and a verb marked "only dusk" can only be planned for a step that starts then. Sleep is handled for you.',
@@ -177,7 +177,7 @@ const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
       `It is a new day. Write today's plan: ${i.hoursLeft >= 6 ? '4 to 8' : '2 to 5'} steps whose minutes roughly fill the time until bedtime at ${i.bedTime}. Leave slack: nobody schedules every minute.`,
       i.goals.long
         ? 'You already have a long goal. Leave longGoal null unless you truly want to change it; if you do, give the new text and the reason.'
-        : 'You have no long goal yet. Set one in longGoal: a want of your own that could take several days.',
+        : 'You have no long goal yet. Set one in longGoal: a want of your own that could take several days, the kind of thing a person might care about.',
       'The first step starts now. Put in thought why you begin with it. Set plan to your steps and planReason to one sentence about the day.',
       'Set stayUpLate only if there is something you truly want to stay up for tonight; otherwise null.',
     ].join('\n'),
