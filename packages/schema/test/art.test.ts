@@ -12,6 +12,7 @@ describe('Artifact', () => {
       recipe: { ingredients: [{ name: 'produce', grams: 200 }], steps: ['Chop it.', 'Cook it.'] },
       broadcast: { script: 'Good evening, island.' },
       labnote: { question: 'Does clay float?', method: 'I dropped a cup in the pond.', result: 'It sank.' },
+      photo: { image: 'photos/the-pond.jpg', caption: 'The pond at dusk.', opinion: 'Too wet, but pretty.', noticed: false },
     } as const
     expect(Object.keys(made).sort()).toEqual([...ARTIFACT_KINDS].sort())
     for (const kind of ARTIFACT_KINDS) expect(Artifact.safeParse({ ...base, kind, content: made[kind] }).success, kind).toBe(true)
@@ -46,5 +47,16 @@ describe('ArtOutput', () => {
     expect(ArtOutput.writing.safeParse({ title: 'Warm', text: 'The rock is warm.' }).success).toBe(true)
     expect(ArtOutput.melody.safeParse({ title: 'Tune', bpm: 90, notes: [{ pitch: 'C4', beats: 1 }] }).success).toBe(true)
     expect(Object.keys(ArtOutput).sort()).toEqual([...ARTIFACT_KINDS].sort())
+  })
+
+  it('keeps a photo to a jpg under art/photos and its words short', () => {
+    const photo = { image: 'photos/the-pond.jpg', caption: 'The pond.', opinion: 'Fine.', noticed: true }
+    expect(Artifact.safeParse({ ...base, kind: 'photo', content: photo }).success).toBe(true)
+    expect(Artifact.safeParse({ ...base, kind: 'photo', content: { ...photo, subjectId: 'water-bowl' } }).success).toBe(true)
+    for (const image of ['../secret.jpg', 'photos/x.svg', 'https://evil.example/x.jpg', 'x.jpg', 'photos/a/b.jpg']) {
+      expect(Artifact.safeParse({ ...base, kind: 'photo', content: { ...photo, image } }).success, image).toBe(false)
+    }
+    expect(Artifact.safeParse({ ...base, kind: 'photo', content: { ...photo, caption: 'x'.repeat(401) } }).success).toBe(false)
+    expect(Artifact.safeParse({ ...base, kind: 'photo', content: { ...photo, opinion: 'x'.repeat(301) } }).success).toBe(false)
   })
 })

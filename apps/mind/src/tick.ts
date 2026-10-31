@@ -2,6 +2,7 @@ import type { z } from 'zod'
 import {
   Forkling,
   ArtOutput,
+  MAX_PHOTOS_PER_DAY,
   MemorySlots,
   ReadingNote,
   type TimelineEntry,
@@ -13,6 +14,7 @@ import {
   type Intention,
   type MicroBehavior,
   type MindState,
+  type PhotoShot,
   type PlanStep,
   type SpeciesPack,
   type TemperamentPools,
@@ -27,6 +29,7 @@ import {
   collectSpots,
   decayFeelings,
   EPOCH_SECONDS,
+  eyeShot,
   eveningOf,
   fadeInterests,
   eventsFromStep,
@@ -55,6 +58,7 @@ import {
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger, type ModelId } from './budget.ts'
 import { clampText, Decision, planStepFrom, type LlmStep } from './decision.ts'
 import { artifactFrom, buildArtUser, MAX_ARTIFACTS_PER_DAY } from './art.ts'
+import { enqueueShot, noticedSubject, photosLeft, shotIdFor } from './photos.ts'
 import { readFeeds, type FeedItem, type GetJson } from './feeds/index.ts'
 import type { CallKind, LlmClient, LlmResult } from './llm.ts'
 import { buildSystem, buildUser, type ThinkKind } from './prompts.ts'
@@ -89,6 +93,8 @@ export interface TickResult {
   /** Why things did or didn't happen: skipped calls, rejected plans. */
   notes: string[]
   calls: BudgetCall[]
+  /** Eye-cam shots waiting to be rendered and captioned (the `photos` step). */
+  photos: number
   /** The prompt of the call this tick would make or made, for dry runs and logs. */
   prompt?: { model: ModelId; kind: CallKind; system: string; user: string; tokens: number; maxUsd: number }
 }
@@ -219,6 +225,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   let pendingReading: { depth: number; topic: string | null } | null = null
   /** Set when a creative step finishes: what it made is written after the step is applied. */
   let pendingArt: { kind: ArtifactKind; verb: string; step: PlanStep; index: number } | null = null
+  /** Set when a photograph step finishes: the shot is queued after the step is applied. */
+  let pendingPhoto: { step: PlanStep; index: number } | null = null
   const touched = new Set<string>()
   const gone = new Set<string>()
   const appraisals: AppraisalEvent[] = []
@@ -253,7 +261,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
         stored = result.world.stored
         objects = [...result.world.objects]
         skills = addXp(skills, result.group, result.xp)
-        if (verb.artifact) pendingArt = { kind: verb.artifact, verb: verb.id, step: finishing, index: goals.now.index }
+        if (verb.artifact === 'photo') pendingPhoto = { step: finishing, index: goals.now.index }
+        else if (verb.artifact) pendingArt = { kind: verb.artifact, verb: verb.id, step: finishing, index: goals.now.index }
         if (verb.effect === 'read' || verb.effect === 'study') pendingReading = { depth: verb.effect === 'study' ? 4 : 1, topic: finishing.topic ?? null }
         for (const id of result.upserted) {
           touched.add(id)
@@ -356,6 +365,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
             position: { x: body.pos.x, z: body.pos.z },
             skills,
             creativeLeft: Math.max(0, MAX_ARTIFACTS_PER_DAY - (mind.arts?.date === today ? mind.arts.count : 0)),
+            photosLeft: photosLeft(mind, today),
             seed: intentionSeed(forkling.seed, nowMs),
           })
     return { usable, check }
@@ -504,6 +514,51 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     }
   }
   if (arts.count !== (mind.arts?.count ?? 0) || (arts.count > 0 && mind.arts?.date !== today)) mind.arts = arts
+
+  // Seeing: a shot of what it is looking at is queued here, free. The frame is rendered and captioned after the tick.
+  const queueShot = (why: PhotoShot['why'], subject: WorldObject | undefined, reason: string, goalRef?: string): boolean => {
+    const { eye, look } = eyeShot({
+      pos: body.pos,
+      heading: body.heading,
+      pack,
+      island: world.cfg,
+      ...(subject ? { target: { position: subject.position, size: subject.properties.size } } : {}),
+    })
+    const taken = new Set([...w.art.map((a) => a.id), ...(mind.photos?.queue ?? []).map((s) => s.id)])
+    const r2 = (n: number) => Math.round(n * 100) / 100
+    const shot: PhotoShot = {
+      id: shotIdFor(subject?.id, taken),
+      at: nowIso,
+      eye: [r2(eye[0]), r2(eye[1]), r2(eye[2])],
+      look: [r2(look[0]), r2(look[1]), r2(look[2])],
+      ...(subject ? { subjectId: subject.id } : {}),
+      why,
+      ...(goalRef ? { goalRef } : {}),
+      reason: clampText(reason, 200),
+    }
+    const next = enqueueShot(mind, shot, today)
+    if (!next) return false
+    mind.photos = next
+    return true
+  }
+  if (pendingPhoto) {
+    const { step: shotStep, index } = pendingPhoto
+    const subject = shotStep.targetId ? objects.find((o) => o.id === shotStep.targetId) : undefined
+    if (queueShot('photograph', subject, shotStep.reason, `today:${index}`)) {
+      remember.push({ at: nowIso, kind: 'step', text: `Took a photo${subject ? ` of ${subject.name}` : ''}.`, verb: 'photograph', ...(subject ? { objectId: subject.id } : {}), goalRef: `today:${index}` })
+      parts.push('took a photo')
+    } else {
+      notes.push(`photo limit reached (${MAX_PHOTOS_PER_DAY} a day): the photograph left no frame`)
+    }
+  }
+  if (!asleep && triggers.some((t) => t.kind === 'novelty')) {
+    // Something new came into view that it was not looking for.
+    const photographed = new Set([...w.art, ...(mind.photos?.queue ?? [])].flatMap((a) => ('subjectId' in a && a.subjectId ? [a.subjectId] : 'content' in a && a.kind === 'photo' && a.content.subjectId ? [a.content.subjectId] : [])))
+    const subject = noticedSubject({ objects, known: new Set([...mind.knownObjects, ...photographed]), pos: body.pos, range: pack.perception.noticeRadius * 3 })
+    if (subject && queueShot('noticed', subject, `${subject.name} is new here.`)) {
+      remember.push({ at: nowIso, kind: 'event', text: `Noticed ${subject.name} and took a photo.`, objectId: subject.id })
+    }
+  }
 
 
   let decision: Decision | null = null
@@ -831,5 +886,5 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   }
 
   const summary = parts.length > 0 ? parts.join(', ') : written.length > 0 ? 'sync' : ''
-  return { changed: written.length > 0, summary, written, notes, calls, ...(prompt ? { prompt } : {}) }
+  return { changed: written.length > 0, summary, written, notes, calls, photos: mind.photos?.queue.length ?? 0, ...(prompt ? { prompt } : {}) }
 }

@@ -117,6 +117,19 @@ describe('renderSite', () => {
     expect(html).toMatch(/skill 2/i)
   })
 
+  it('shows a photo with its caption and copies the frame next to the pages', () => {
+    put('art/the-pond.json', { id: 'the-pond', kind: 'photo', title: 'The <i>pond</i>', content: { image: 'photos/the-pond.jpg', caption: 'The pond at dusk.', opinion: 'Wetter than I thought.', subjectId: 'water-bowl', noticed: true }, skillLevel: 1, createdAt: '2026-11-03T14:00:00Z' })
+    mkdirSync(join(world, 'art/photos'), { recursive: true })
+    writeFileSync(join(world, 'art/photos/the-pond.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]))
+    renderSite(world, out)
+    const html = page('gallery/index.html')
+    expect(html).toContain('src="../photos/the-pond.jpg"')
+    expect(html).toContain('The pond at dusk.')
+    expect(html).toContain('Wetter than I thought.')
+    expect(html).not.toContain('<i>pond</i>')
+    expect(readFileSync(join(out, 'photos/the-pond.jpg')).length).toBe(4)
+  })
+
   it('loads the sound library only when there is a melody to play', () => {
     renderSite(world, out)
     expect(page('gallery/index.html')).toMatch(/cdnjs\.cloudflare\.com\/ajax\/libs\/tone\/\d+\.\d+\.\d+\//)

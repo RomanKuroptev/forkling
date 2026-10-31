@@ -37,6 +37,9 @@ h3 { margin: 0 0 0.2rem; }
 .quiet { color: var(--quiet); font-size: 0.9rem; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
 .card h1, .card h2 { font-size: 1.2rem; margin-top: 0; }
+.photo { margin: 0; }
+.photo img { width: 100%; max-width: 24rem; height: auto; border-radius: 4px; }
+.photo figcaption { color: var(--quiet, #666); font-size: 0.9rem; }
 .drawing svg { width: 100%; max-width: 24rem; height: auto; background: #fff; border-radius: 4px; }
 .play { font: inherit; cursor: pointer; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--accent); background: none; color: var(--accent); }
 .script { white-space: pre-wrap; }

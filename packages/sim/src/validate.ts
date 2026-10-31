@@ -33,6 +33,8 @@ export interface PlanContext {
   skills?: Skills
   /** How many more things it may make today (a creative step leaves something in `art/`). Missing means no limit. */
   creativeLeft?: number
+  /** How many more eye-cam frames it may take today. Photographing has its own limit and does not use `creativeLeft`. Missing means no limit. */
+  photosLeft?: number
   /** Seed for the looks of what the plan makes. Only matters to what the simulation leaves behind, never to whether it works. */
   seed?: number
 }
@@ -127,8 +129,15 @@ export function validatePlan(steps: readonly PlanStep[], ctx: PlanContext): Plan
   if (minutes > MAX_PLAN_MINUTES) reasons.push(`the plan takes ${Math.round(minutes / 60)} hours, more than a day's waking`)
 
   if (ctx.creativeLeft !== undefined) {
-    const making = steps.filter((s) => ctx.pack.actions.find((a) => a.id === s.verb)?.artifact !== undefined).length
+    const making = steps.filter((s) => {
+      const artifact = ctx.pack.actions.find((a) => a.id === s.verb)?.artifact
+      return artifact !== undefined && artifact !== 'photo'
+    }).length
     if (making > ctx.creativeLeft) reasons.push(`the plan would make ${making} ${making === 1 ? 'thing' : 'things'}, but there is room for ${ctx.creativeLeft} more today`)
+  }
+  if (ctx.photosLeft !== undefined) {
+    const photographs = steps.filter((s) => ctx.pack.actions.find((a) => a.id === s.verb)?.artifact === 'photo').length
+    if (photographs > ctx.photosLeft) reasons.push(`the plan would take ${photographs} ${photographs === 1 ? 'photograph' : 'photographs'}, but there ${ctx.photosLeft === 1 ? 'is 1 frame' : `are ${ctx.photosLeft} frames`} left today`)
   }
 
   const verb = fixation(verbKeys, MAX_VERB_RUN)

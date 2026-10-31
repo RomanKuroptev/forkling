@@ -5,6 +5,24 @@ import { VerbGroup } from './species.ts'
 /** Hard monthly ceiling per forkling, in US dollars. */
 export const MONTHLY_CAP_USD = 10
 
+/** At most this many eye-cam frames a day: each costs a render and a vision call. */
+export const MAX_PHOTOS_PER_DAY = 12
+
+/** One frame the eye cam should take: where the eye is and what it looks at, in world meters. Rendered after the tick. */
+export const PhotoShot = z.object({
+  id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,60}$/),
+  at: Timestamp,
+  eye: z.tuple([z.number(), z.number(), z.number()]),
+  look: z.tuple([z.number(), z.number(), z.number()]),
+  subjectId: z.string().max(60).optional(),
+  /** Asked for with the photograph verb, or something new came into view. */
+  why: z.enum(['photograph', 'noticed']),
+  goalRef: z.string().max(40).optional(),
+  /** Its reason, in its voice. */
+  reason: z.string().max(200),
+})
+export type PhotoShot = z.infer<typeof PhotoShot>
+
 /** `mind/state.json`: what the mind has already seen, so it can tell what is new. */
 export const MindState = z.object({
   /** Object ids the forkling has met. An id not in here is a novelty. */
@@ -31,6 +49,8 @@ export const MindState = z.object({
   readings: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), skimmed: z.boolean().default(false) }).optional(),
   /** Things made so far on a local date, for the daily limit. */
   arts: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
+  /** Eye-cam frames taken so far on a local date, for the daily limit, and the shots waiting to be rendered. */
+  photos: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), queue: z.array(PhotoShot).max(MAX_PHOTOS_PER_DAY) }).optional(),
   /** Why the validator last turned a plan down, newest last.*/
   rejections: z.array(z.object({ at: Timestamp, reasons: z.array(z.string()) })).max(10).default([]),
 })

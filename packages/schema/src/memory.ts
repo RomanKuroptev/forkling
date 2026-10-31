@@ -5,7 +5,7 @@ import { Timestamp } from './intention.ts'
 export const MAX_ACTIVE_BELIEFS = 30
 export const MEMORY_SLOTS = 12
 
-export const StreamKind = z.enum(['step', 'made', 'event', 'visitor', 'thought', 'trigger', 'rejected', 'sleep', 'wake', 'reading'])
+export const StreamKind = z.enum(['step', 'made', 'event', 'visitor', 'thought', 'trigger', 'rejected', 'sleep', 'wake', 'reading', 'seen'])
 export type StreamKind = z.infer<typeof StreamKind>
 
 /** `YYYY-MM-DD#n`: the local day and the entry's place in it. Reflection cites entries by this id. */

@@ -7,7 +7,7 @@
     "curiosity": { "initial": 55, "decayPerHour": 120 },
     "affection": { "initial": 35, "decayPerHour": 30 }
   },
-  "perception": { "noticeRadius": 5, "eyeHeight": 0.2 },
+  "perception": { "noticeRadius": 5, "eyeHeight": 0.2, "fovDeg": 70 },
   "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
   "bodyPlans": {
     "quadruped": ["body"],
@@ -509,6 +509,19 @@
       "slot": "holdUp",
       "requires": ["dusk"],
       "reason": "The sky is doing something. I should write it down."
+    },
+    {
+      "id": "photograph",
+      "group": "mind",
+      "body": "upright",
+      "effect": "create",
+      "artifact": "photo",
+      "satisfies": { "curiosity": 20 },
+      "durationSec": [6, 12],
+      "target": { "type": "object" },
+      "slot": "holdUp",
+      "requires": ["day"],
+      "reason": "I want to keep how this looks right now."
     }
   ],
   "weights": {

@@ -14,13 +14,24 @@ const writer = {
   satisfies: {},
   reason: 'Words want to be put somewhere.',
 }
+const snapper = {
+  id: 'snap',
+  group: 'mind',
+  effect: 'create',
+  artifact: 'photo',
+  target: { type: 'object' },
+  slot: 'idle',
+  durationSec: [5, 9],
+  satisfies: {},
+  reason: 'I want to keep this.',
+}
 const sitter = { id: 'muse', group: 'body', target: { type: 'none' }, slot: 'sit', durationSec: [5, 9], satisfies: {}, reason: 'Thinking.' }
 
 const base = makerJson as unknown as { bodyPlans: Record<string, string[]>; actions: unknown[] }
 const pack = SpeciesPack.parse({
   ...makerJson,
   bodyPlans: Object.fromEntries(Object.entries(base.bodyPlans).map(([plan, groups]) => [plan, [...groups, 'mind']])),
-  actions: [...base.actions, writer, sitter],
+  actions: [...base.actions, writer, snapper, sitter],
 })
 
 const desk = WorldObject.parse({ id: 'desk', kind: 'desk', name: 'A desk', position: [10, 0, 10], model: { asset: 'nature/rock_largeA' }, unlocks: ['write'], reason: 'For ideas.' })
@@ -38,6 +49,7 @@ const ctx = (extra: Partial<PlanContext> = {}): PlanContext => ({
 
 const step = (verb: string, extra: Record<string, unknown> = {}) => PlanStep.parse({ verb, reason: 'I want to.', minutes: 10, ...extra })
 const writeStep = () => step('write', { targetId: 'desk', topic: 'the sea' })
+const snapStep = () => step('snap', { targetId: 'desk' })
 const reasons = (steps: PlanStep[], c = ctx()) => {
   const r = validatePlan(steps, c)
   return r.ok ? [] : r.reasons
@@ -65,5 +77,27 @@ describe('validatePlan: the creative limit', () => {
 
   it('has no limit when none is given', () => {
     expect(reasons([writeStep(), step('muse'), writeStep(), step('muse'), writeStep()], ctx())).toEqual([])
+  })
+})
+
+describe('validatePlan: the photo limit', () => {
+  it('accepts as many photographs as it has frames left', () => {
+    expect(reasons([snapStep(), step('muse'), snapStep()], ctx({ photosLeft: 2 }))).toEqual([])
+  })
+
+  it('turns down a plan with more photographs than frames, and says how many', () => {
+    const r = reasons([snapStep(), step('muse'), snapStep(), step('muse'), snapStep()], ctx({ photosLeft: 2 }))
+    expect(r).toHaveLength(1)
+    expect(r[0]).toMatch(/3 photographs/)
+    expect(r[0]).toMatch(/2 frames/)
+  })
+
+  it('does not spend the creative limit on a photograph, nor the photo limit on a poem', () => {
+    expect(reasons([snapStep()], ctx({ creativeLeft: 0, photosLeft: 1 }))).toEqual([])
+    expect(reasons([writeStep()], ctx({ creativeLeft: 1, photosLeft: 0 }))).toEqual([])
+  })
+
+  it('has no limit when none is given', () => {
+    expect(reasons([snapStep(), step('muse'), snapStep()], ctx())).toEqual([])
   })
 })

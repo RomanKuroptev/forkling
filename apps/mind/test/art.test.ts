@@ -62,6 +62,27 @@ describe('artifactFrom', () => {
   })
 })
 
+describe('artifactFrom for a photo', () => {
+  const photo = { id: 'pond-1', noticed: true, subjectId: 'water-bowl' }
+
+  it('keeps the frame under the id of the shot, with its words cut to fit', () => {
+    const a = artifactFrom('photo', { title: 'The pond', caption: 'x'.repeat(900), opinion: 'Wet.' }, { ...meta, photo })!
+    expect(Artifact.safeParse(a).success).toBe(true)
+    expect(a).toMatchObject({ id: 'pond-1', kind: 'photo', content: { image: 'photos/pond-1.jpg', opinion: 'Wet.', noticed: true, subjectId: 'water-bowl' } })
+    expect(a.kind === 'photo' && a.content.caption.length).toBe(400)
+  })
+
+  it('leaves out the subject when it was not pointed at anything', () => {
+    const a = artifactFrom('photo', { title: 'Sky', caption: 'Blue.', opinion: 'Fine.' }, { ...meta, photo: { id: 'sky-1', noticed: false } })!
+    expect(a.kind === 'photo' && 'subjectId' in a.content).toBe(false)
+  })
+
+  it('makes nothing without a shot to belong to, or with nothing said', () => {
+    expect(artifactFrom('photo', { title: 'Sky', caption: 'Blue.', opinion: 'Fine.' }, meta)).toBeNull()
+    expect(artifactFrom('photo', { title: 'Sky', caption: '  ', opinion: 'Fine.' }, { ...meta, photo })).toBeNull()
+  })
+})
+
 describe('buildArtUser', () => {
   const temperament: TemperamentRoll = { likes: [{ category: 'material', value: 'clay' }], dislikes: [], quirks: [{ id: 'perfectionist', text: 'Redoes things.' }] }
   const input = {
