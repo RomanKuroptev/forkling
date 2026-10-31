@@ -15,7 +15,7 @@ import {
   type Trigger,
 } from '@forkling/sim'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger, type ModelId } from './budget.ts'
-import { clampText, planStepFrom, type Decision } from './decision.ts'
+import { clampText, planStepFrom, type Decision, type LlmStep } from './decision.ts'
 import type { LlmClient } from './llm.ts'
 import { buildSystem, buildUser, type ThinkKind } from './prompts.ts'
 import { deleteFile, readWorld, writeJson } from './world.ts'
@@ -147,6 +147,25 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   }
 
   let prompt: TickResult['prompt']
+  /** The plan as plan steps, and whether the body could really carry it out. */
+  const checkPlan = (plan: LlmStep[]) => {
+    const steps = plan.map(planStepFrom)
+    const usable = steps.filter((s): s is PlanStep => s !== null)
+    const check =
+      usable.length !== steps.length
+        ? ({ ok: false, reasons: ['a step was missing its verb or its reason'] } as const)
+        : validatePlan(usable, {
+            pack,
+            spotKinds: new Set([...spotKeys].filter((k) => !objectIds.has(k))),
+            objects,
+            startMs: nowMs,
+            asleepAt: (ms) => isAsleepAt(ms, sleepOpts),
+            hourAt: (ms) => hourInZone(tz, ms),
+            recent: mind.recent,
+          })
+    return { usable, check }
+  }
+
   let decision: Decision | null = null
   let thought = false
   if (thinkKind) {
@@ -180,20 +199,38 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     } else if (!canSpend(budget, maxUsd)) {
       notes.push(`monthly budget reached ($${budget.spentUsd.toFixed(2)} of $${budget.capUsd}): no call`)
     } else {
-      try {
-        const result = await deps.llm.complete({ model, system, user, maxTokens: MAX_OUTPUT_TOKENS, effort: model === 'claude-sonnet-5-5' ? 'medium' : 'low' })
-        const call: BudgetCall = { at: nowIso, kind: thinkKind, model, ...result.usage, usd: costUsd(model, result.usage) }
-        calls.push(call)
-        budget = recordCall(budget, call)
-        mind.lastThinkAt = nowIso
-        if (result.decision) {
+      const effort = model === 'claude-sonnet-5-5' ? 'medium' : 'low'
+      let asking = user
+      // A plan the body cannot carry out gets one more chance, with the reasons, before the body falls back on itself.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const result = await deps.llm.complete({ model, system, user: asking, maxTokens: MAX_OUTPUT_TOKENS, effort })
+          const call: BudgetCall = { at: nowIso, kind: thinkKind, model, ...result.usage, usd: costUsd(model, result.usage) }
+          calls.push(call)
+          budget = recordCall(budget, call)
+          mind.lastThinkAt = nowIso
+          if (!result.decision) {
+            notes.push(`no usable answer (stopped: ${result.stopReason ?? 'unknown'})`)
+            break
+          }
           decision = result.decision
           thought = true
-        } else {
-          notes.push(`no usable answer (stopped: ${result.stopReason ?? 'unknown'})`)
+          const checked = decision.plan && decision.plan.length > 0 ? checkPlan(decision.plan) : null
+          if (!checked || checked.check.ok || attempt === 1) break
+          if (!canSpend(budget, maxUsd)) break
+          notes.push(`plan turned down (${checked.check.reasons.join('; ')}): asking again`)
+          asking = [
+            user,
+            '',
+            '## Your plan was turned down',
+            'It cannot be carried out as written:',
+            ...checked.check.reasons.map((r) => `- ${r}`),
+            'Write the whole plan again so that every step can happen.',
+          ].join('\n')
+        } catch (e) {
+          notes.push(`call failed: ${(e as Error).message}`)
+          break
         }
-      } catch (e) {
-        notes.push(`call failed: ${(e as Error).message}`)
       }
     }
   }
@@ -232,20 +269,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     mind.seenEventTypes = [...new Set([...mind.seenEventTypes, ...events.map((e) => e.type)])]
 
     if (decision.plan && decision.plan.length > 0) {
-      const steps = decision.plan.map(planStepFrom)
-      const usable = steps.filter((s): s is PlanStep => s !== null)
-      const check =
-        usable.length !== steps.length
-          ? ({ ok: false, reasons: ['a step was missing its verb or its reason'] } as const)
-          : validatePlan(usable, {
-              pack,
-              spotKinds: new Set([...spotKeys].filter((k) => !objectIds.has(k))),
-              objects,
-              startMs: nowMs,
-              asleepAt: (ms) => isAsleepAt(ms, sleepOpts),
-              hourAt: (ms) => hourInZone(tz, ms),
-              recent: mind.recent,
-            })
+      const { usable, check } = checkPlan(decision.plan)
       if (check.ok) {
         goals.today = { date: today, steps: usable, reason: clampText((decision.planReason ?? decision.thought).trim() || 'This is what I feel like doing.', 200) }
         startStep(0, decision.thought)

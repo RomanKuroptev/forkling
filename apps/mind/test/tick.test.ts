@@ -166,9 +166,25 @@ describe('strong needs', () => {
 })
 
 describe('the validator', () => {
-  it('turns down a plan with a verb the cat does not have, and says why', async () => {
-    const llm = fakeLlm({ ...morning, plan: [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30 }] })
+  const badPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30 }]
+
+  it('asks again once with the reasons, and uses the corrected plan', async () => {
+    let n = 0
+    const llm = fakeLlm(() => (n++ === 0 ? { ...morning, plan: badPlan } : morning))
+    await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls).toHaveLength(2)
+    expect(llm.calls[1]!.user).toMatch(/turned down/)
+    expect(llm.calls[1]!.user).toMatch(/"fish"/)
+    expect(llm.calls[1]!.system).toBe(llm.calls[0]!.system)
+    expect(Goals.parse(readJson('mind/goals.json')).today?.steps.map((s) => s.verb)).toEqual(['perch', 'explore', 'eat'])
+    expect(MindState.parse(readJson('mind/state.json')).rejections).toEqual([])
+    expect(BudgetLedger.parse(readJson('brain/budget.json')).calls).toHaveLength(2)
+  })
+
+  it('turns down a plan that is still wrong after asking again, and says why', async () => {
+    const llm = fakeLlm({ ...morning, plan: badPlan })
     const result = await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls).toHaveLength(2)
     const goals = Goals.parse(readJson('mind/goals.json'))
     expect(goals.now).toBeUndefined()
     expect(goals.long?.text).toBe('Make the sunny rock mine.')
@@ -184,7 +200,14 @@ describe('the validator', () => {
     const llm = fakeLlm({ ...morning, plan: [{ verb: 'fish', target: null, x: null, z: null, reason: 'x', minutes: 30 }] })
     await runTick(dir, at(NOW, { llm }))
     await runTick(dir, at(minutesAfter(10), { llm }))
-    expect(llm.calls).toHaveLength(1)
+    expect(llm.calls).toHaveLength(2)
+  })
+
+  it('does not ask again when the budget cannot cover it', async () => {
+    writeJson('brain/budget.json', { month: '2026-11', spentUsd: 9.9999 })
+    const llm = fakeLlm({ ...morning, plan: badPlan })
+    await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls.length).toBeLessThanOrEqual(1)
   })
 })
 
@@ -278,6 +301,7 @@ describe('what the model is shown', () => {
     expect(llm.calls[0]!.system).not.toMatch(/\d{4}-\d{2}-\d{2}/)
     expect(llm.calls[0]!.system).toContain('You are a cat')
     expect(llm.calls[0]!.system).toContain('- perch: target: "perch"')
+    expect(llm.calls[0]!.system).toMatch(/dusk is 18:00 to 21:00/)
   })
 
   it('shows visitor text only as data, then clears the inbox', async () => {

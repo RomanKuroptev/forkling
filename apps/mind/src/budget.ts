@@ -57,11 +57,12 @@ export function recordCall(ledger: BudgetLedger, call: BudgetCall): BudgetLedger
 /** A new month starts from zero. The old month is kept as a one-line total. */
 export function rollLedger(ledger: BudgetLedger, month: string): BudgetLedger {
   if (ledger.month === month) return ledger
+  const unused = ledger.spentUsd === 0 && ledger.calls.length === 0
   return {
     month,
     capUsd: ledger.capUsd,
     spentUsd: 0,
     calls: [],
-    history: [...ledger.history, { month: ledger.month, spentUsd: ledger.spentUsd, calls: ledger.calls.length }],
+    history: unused ? ledger.history : [...ledger.history, { month: ledger.month, spentUsd: ledger.spentUsd, calls: ledger.calls.length }],
   }
 }

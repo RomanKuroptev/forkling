@@ -52,7 +52,7 @@ export function buildSystem(input: SystemInput): string {
     '- The long goal is a want that takes days: an ambition, a place you mean to claim, a mystery. Write it as free text. It is not a chore and not an item from a list.',
     '- Use only objects and places that are listed as being in the world. Do not invent any. Never give a verb a target it does not take.',
     '- Do not repeat the same verb or the same place again and again. Variety is part of being alive.',
-    '- Respect the time of day: you cannot nap at night. Sleep is handled for you.',
+    '- Respect the time of day. Verbs marked "only day" need you awake, which is most of the day; dusk is 18:00 to 21:00 local time and a verb marked "only dusk" can only be planned for a step that starts then. Sleep is handled for you.',
     '- Keep every reason to one sentence in the first person, in your voice, never needy.',
     '',
     '## Rules about what you are shown',

@@ -63,6 +63,10 @@ describe('ledger', () => {
     expect(canSpend(BudgetLedger.parse({ month: '2026-11', spentUsd: 10 }), 0.0001)).toBe(false)
   })
 
+  it('does not keep an empty month in the history', () => {
+    expect(rollLedger(ledger, '2026-12').history).toEqual([])
+  })
+
   it('starts a fresh month and keeps a total of the old one', () => {
     const used = recordCall(ledger, call)
     const rolled = rollLedger(used, '2026-12')
