@@ -60,7 +60,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|art\/.+|mind\/.+|brain\/.+|events\/.+|\.github\/workflows\/(mind|heartbeat)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|art\/.+|mind\/.+|brain\/.+|events\/.+|\.github\/workflows\/(mind|heartbeat|pages)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
@@ -104,6 +104,34 @@ describe('templates/forkling-world', () => {
     expect(workflow).toMatch(/if \[ -z "\$ANTHROPIC_API_KEY" \]; then unset ANTHROPIC_API_KEY; fi/)
     expect(workflow).toMatch(/ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/)
     expect(workflow).toMatch(/git commit -m "chore\(mind\): /)
+  })
+})
+
+describe('templates/forkling-world website', () => {
+  const read = (name: string) => readFileSync(join(root, 'forkling-world', '.github/workflows', name), 'utf8')
+
+  it('is built on request from the pinned engine, one at a time, and deployed to Pages', () => {
+    const text = read('pages.yml')
+    expect(text).toMatch(/on:\s+workflow_dispatch:/)
+    expect(text).toMatch(/concurrency:\s+group: pages\s+cancel-in-progress: false/)
+    expect(text).toMatch(/pages: write/)
+    expect(text).toMatch(/id-token: write/)
+    expect(text).toMatch(/FORKLING_REF: v\d+\.\d+\.\d+\s/)
+    expect(text).toMatch(/pnpm --filter @forkling\/site build --world/)
+    expect(text).toMatch(/actions\/upload-pages-artifact@v3/)
+    expect(text).toMatch(/actions\/deploy-pages@v4/)
+  })
+
+  it('pins the same engine release as the mind', () => {
+    const ref = (text: string) => /FORKLING_REF: (v\d+\.\d+\.\d+)/.exec(text)?.[1]
+    expect(ref(read('pages.yml'))).toBe(ref(read('mind.yml')))
+  })
+
+  it('is started by the mind after a commit that changes what the site shows', () => {
+    const mind = read('mind.yml')
+    expect(mind).toMatch(/actions: write/)
+    expect(mind).toMatch(/gh workflow run pages\.yml/)
+    for (const path of ['journal/', 'art/', 'notebook/', 'memory/beliefs', 'memory/timeline/', 'brain/interests']) expect(mind).toContain(path)
   })
 })
 

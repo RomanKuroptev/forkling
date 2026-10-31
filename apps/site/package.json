@@ -1,0 +1,18 @@
+{
+  "name": "@forkling/site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node src/cli.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@forkling/schema": "workspace:*",
+    "@forkling/sim": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2"
+  }
+}
