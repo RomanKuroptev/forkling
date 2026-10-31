@@ -13,10 +13,13 @@ export interface WorldClock {
 
 /**
  * The world's clock. By default it is the real time, so every viewer sees the same moment. `?time=18:30` jumps to that
- * hour in the world's time zone and `?timescale=60` runs the world (sun and forkling alike) that many times faster.
+ * hour in the world's time zone, `?at=` stops it at an exact moment, and `?timescale=60` runs the world (sun and forkling alike) that many times faster.
  */
 export function createWorldClock(timezone: string, search: string): WorldClock {
   const params = new URLSearchParams(search)
+  // `?at=<ISO time>` holds the world at that exact moment: the eye cam uses it to see the light a photo was taken in.
+  const at = Date.parse(params.get('at') ?? '')
+  if (Number.isFinite(at)) return { now: () => at, hour: () => hourInZone(timezone, at), timezone, synced: false }
   const target = parseHour(params.get('time'))
   const timescale = Math.max(0.01, Number(params.get('timescale')) || 1)
   const synced = target === null && timescale === 1

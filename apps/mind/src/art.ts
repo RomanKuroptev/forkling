@@ -16,11 +16,13 @@ export interface ArtMeta {
   nowIso: string
   /** Ids already in `art/`. */
   takenIds: ReadonlySet<string>
+  /** For a photo: the shot it came from. The frame is `photos/<id>.jpg`, and the artifact takes the shot's id. */
+  photo?: { id: string; subjectId?: string | undefined; noticed: boolean } | undefined
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo))
 
-function uniqueId(title: string, kind: string, taken: ReadonlySet<string>): string {
+export function uniqueId(title: string, kind: string, taken: ReadonlySet<string>): string {
   const base = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '') || kind
   if (!taken.has(base)) return base
   for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`
@@ -35,6 +37,7 @@ export function artifactFrom<K extends ArtifactKind>(kind: K, output: ArtOutputs
   const text = (s: string, max = MAX_ARTIFACT_TEXT) => clampText(s.trim(), max)
   const o = output as ArtOutputs[ArtifactKind]
   let content: unknown
+  let id = uniqueId(title, kind, meta.takenIds)
   switch (kind) {
     case 'writing':
       content = { text: text((o as ArtOutputs['writing']).text) }
@@ -69,9 +72,22 @@ export function artifactFrom<K extends ArtifactKind>(kind: K, output: ArtOutputs
       content = { question: text(l.question, 300), method: text(l.method), result: text(l.result) }
       break
     }
+    case 'photo': {
+      const p = o as ArtOutputs['photo']
+      if (!meta.photo) return null
+      id = meta.photo.id
+      content = {
+        image: `photos/${meta.photo.id}.jpg`,
+        caption: text(p.caption, 400),
+        opinion: text(p.opinion, 300),
+        ...(meta.photo.subjectId ? { subjectId: meta.photo.subjectId } : {}),
+        noticed: meta.photo.noticed,
+      }
+      break
+    }
   }
   const parsed = Artifact.safeParse({
-    id: uniqueId(title, kind, meta.takenIds),
+    id,
     kind,
     title,
     content,
@@ -92,6 +108,7 @@ const FORMATS: Record<ArtifactKind, string> = {
   recipe: 'Write a recipe: ingredients with amounts in grams, and numbered steps. Use things that could really be found or made on a small island.',
   broadcast: 'Write the script of a short radio show for an audience of nobody, in your own voice. Under 1500 characters.',
   labnote: 'Write a lab note about a small experiment or observation on the island: the question, what you did, and what happened.',
+  photo: 'Say what you see in the picture: a title, a caption of what is in it, and your own opinion of it.',
 }
 
 /** How good the work is follows how practised the hand is: early work is simple, and only practice changes that. */

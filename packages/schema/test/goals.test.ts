@@ -149,3 +149,20 @@ describe('Forkling seed', () => {
     expect(Forkling.safeParse({ ...forkling, seed: 1.5 }).success).toBe(false)
   })
 })
+
+describe('MindState photos', () => {
+  const shot = { id: 'pond-1', at: '2026-11-03T10:00:00Z', eye: [1, 0.2, 2], look: [3, 0.5, 4], why: 'photograph', reason: 'The pond looks good.' }
+
+  it('starts without photos', () => {
+    expect(MindState.parse({}).photos).toBeUndefined()
+  })
+
+  it('keeps a queue of shots and a count for the day', () => {
+    const state = MindState.parse({ photos: { date: '2026-11-03', count: 1, queue: [shot] } })
+    expect(state.photos?.queue[0]?.why).toBe('photograph')
+  })
+
+  it('rejects a shot with a made-up reason for being taken', () => {
+    expect(MindState.safeParse({ photos: { date: '2026-11-03', count: 1, queue: [{ ...shot, why: 'bored' }] } }).success).toBe(false)
+  })
+})

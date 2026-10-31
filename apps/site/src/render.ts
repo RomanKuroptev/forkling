@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { z } from 'zod'
 import { Artifact, Beliefs, Forkling, Goals, Interests, TimelineEntry, type Belief, type InterestSource } from '@forkling/schema'
@@ -105,7 +105,7 @@ function renderBelief(b: Belief, root: string): string {
   return `<li id="${esc(b.id)}"><strong>${esc(b.statement)}</strong> <span class="quiet">${esc(b.id)}, ${b.confidence} sure, ${esc(b.status)}${b.revisedAt ? `, changed ${esc(b.revisedAt.slice(0, 10))}` : ''}</span>${history ? `<ul class="history">${history}</ul>` : ''}</li>`
 }
 
-function renderArtifact(a: Artifact): string {
+function renderArtifact(a: Artifact, root: string): string {
   let content: string
   switch (a.kind) {
     case 'writing':
@@ -127,6 +127,9 @@ function renderArtifact(a: Artifact): string {
       break
     case 'labnote':
       content = `<dl><dt>Question</dt><dd>${esc(a.content.question)}</dd><dt>What I did</dt><dd>${esc(a.content.method)}</dd><dt>What happened</dt><dd>${esc(a.content.result)}</dd></dl>`
+      break
+    case 'photo':
+      content = `<figure class="photo"><img src="${esc(root)}${esc(a.content.image)}" alt="${esc(a.content.caption)}" width="512" height="512" loading="lazy"><figcaption>${esc(a.content.caption)}</figcaption></figure><p><em>${esc(a.content.opinion)}</em>${a.content.noticed ? ' <span class="quiet">(I noticed this on my own.)</span>' : ''}</p>`
       break
   }
   const served = [a.goalRef ? `for ${esc(a.goalRef)}` : '', a.obsessionRef ? `while obsessed with ${esc(a.obsessionRef)}` : ''].filter(Boolean).join(', ')
@@ -236,7 +239,7 @@ export function renderSite(world: string, out: string): { pages: string[] } {
   add('gallery/index.html', {
     title: 'Gallery',
     active: 'gallery/',
-    body: `<h1>Gallery</h1>\n${art.length > 0 ? `<p class="quiet">${art.length} ${art.length === 1 ? 'piece' : 'pieces'}, ${kinds.size} ${kinds.size === 1 ? 'kind' : 'kinds'}.</p>\n${art.map(renderArtifact).join('\n')}` : empty('Everything it makes is kept here.')}`,
+    body: `<h1>Gallery</h1>\n${art.length > 0 ? `<p class="quiet">${art.length} ${art.length === 1 ? 'piece' : 'pieces'}, ${kinds.size} ${kinds.size === 1 ? 'kind' : 'kinds'}.</p>\n${art.map((a) => renderArtifact(a, '../')).join('\n')}` : empty('Everything it makes is kept here.')}`,
     ...(hasMelody
       ? {
           scripts: `<script src="${TONE}"></script>
@@ -313,5 +316,13 @@ document.querySelectorAll('[data-melody]').forEach(function (button) {
   }
   for (const [rel, html] of pages) write(rel, html)
   write('style.css', STYLE)
+  for (const a of art) {
+    if (a.kind !== 'photo') continue
+    const from = join(world, 'art', a.content.image)
+    if (!existsSync(from)) continue
+    mkdirSync(dirname(join(out, a.content.image)), { recursive: true })
+    copyFileSync(from, join(out, a.content.image))
+    written.push(a.content.image)
+  }
   return { pages: written }
 }

@@ -107,6 +107,28 @@ describe('templates/forkling-world', () => {
   })
 })
 
+describe('templates/forkling-world eye cam', () => {
+  const mind = readFileSync(join(root, 'forkling-world', '.github/workflows/mind.yml'), 'utf8')
+  const after = (needle: string) => mind.indexOf(needle)
+
+  it('renders and captions the queued shots after the tick, only when the tick asked for photos', () => {
+    expect(mind).toMatch(/steps\.tick\.outputs\.photos == 'true'/)
+    expect(mind).toMatch(/playwright install --with-deps chromium/)
+    expect(mind).toMatch(/@forkling\/viewer eyecam --world "\$GITHUB_WORKSPACE\/world"/)
+    expect(mind).toMatch(/@forkling\/mind photos --world "\$GITHUB_WORKSPACE\/world" --frames/)
+    expect(after('- name: Tick')).toBeLessThan(after('--frames'))
+  })
+
+  it('lands in the same commit as the tick, and the site rebuilds for it', () => {
+    expect(after('--frames')).toBeLessThan(after('chore(mind): '))
+    expect(mind).toMatch(/steps\.tick\.outputs\.changed == 'true' \|\| steps\.tick\.outputs\.photos == 'true'/)
+  })
+
+  it('asks for a fresh identity token, because each one is accepted only once', () => {
+    expect(mind.match(/audience=https:\/\/api\.anthropic\.com/g)).toHaveLength(2)
+  })
+})
+
 describe('templates/forkling-world website', () => {
   const read = (name: string) => readFileSync(join(root, 'forkling-world', '.github/workflows', name), 'utf8')
 

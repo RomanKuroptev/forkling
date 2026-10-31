@@ -25,12 +25,13 @@ permissions:
 env:
   # The engine release this world runs on. Change it on purpose, after reading what changed.
   FORKLING_REPO: RomanKuroptev/forkling
-  FORKLING_REF: v0.6.0
+  FORKLING_REF: v0.7.0
 
 jobs:
   tick:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Most ticks take under a minute; one that takes photos also installs a browser and builds the viewer.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -109,8 +110,40 @@ jobs:
           if [ -z "$ANTHROPIC_API_KEY" ]; then unset ANTHROPIC_API_KEY; fi
           pnpm --filter @forkling/mind tick --world "$GITHUB_WORKSPACE/world"
 
+      # Seeing: when the tick queued eye-cam shots, render each one through the forkling's eyes in a headless browser,
+      # then have it say what it saw. A frame that fails to render is skipped; the rest still land in this commit.
+      - name: Install the eye cam
+        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.photos == 'true'
+        working-directory: engine
+        run: |
+          pnpm install --frozen-lockfile --filter "@forkling/viewer..."
+          pnpm --filter @forkling/viewer exec playwright install --with-deps chromium
+          VITE_BASE=/ pnpm --filter @forkling/viewer build
+
+      - name: Fetch a fresh identity token for the photos
+        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.photos == 'true' && vars.ANTHROPIC_FEDERATION_RULE_ID != ''
+        env:
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+        run: |
+          token_file="$RUNNER_TEMP/anthropic-identity-token-photos"
+          curl -sS --fail -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" | jq -r .value > "$token_file"
+          echo "ANTHROPIC_IDENTITY_TOKEN_FILE=$token_file" >> "$GITHUB_ENV"
+
+      - name: Take the photos
+        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.photos == 'true'
+        working-directory: engine
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then unset ANTHROPIC_API_KEY; fi
+          pnpm --filter @forkling/viewer eyecam --world "$GITHUB_WORKSPACE/world" --out "$RUNNER_TEMP/frames" || echo "the eye cam failed; no frames this time"
+          pnpm --filter @forkling/mind photos --world "$GITHUB_WORKSPACE/world" --frames "$RUNNER_TEMP/frames"
+
       - name: Commit what changed
-        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.changed == 'true'
+        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.photos == 'true')
         working-directory: world
         env:
           SUMMARY: ${{ steps.tick.outputs.summary }}
@@ -126,7 +159,7 @@ jobs:
       # The website is built from the files of this repo, so rebuild it when one of them changed. Dispatches that arrive
       # while a build runs collapse into one waiting build (see pages.yml).
       - name: Update the website
-        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.changed == 'true'
+        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.photos == 'true')
         working-directory: world
         env:
           GH_TOKEN: ${{ github.token }}

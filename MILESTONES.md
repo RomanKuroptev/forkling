@@ -185,7 +185,7 @@ Built in three slices, each released and run live before the next: **A** memory 
 
 ---
 
-## M7: Seeing, building and coding
+## M7: Seeing, building and coding (in progress: slice A built on `m7-eyecam`)
 
 **Goal:** Merge perceives its world directly and grows it and its website with things it designs.
 
@@ -196,6 +196,8 @@ Built in three slices, each released and run live before the next: **A** memory 
 - `validate.yml`: Zod schema check, allowed-paths check, headless sim test that loads the world and runs 1000 ticks
 - Template `CLAUDE.md` for the builder: allowed paths, object schema, art style, size limits, PR description in Merge's voice
 - Caps: 1 object build a day, 2 coded projects a week, 1 open builder PR at a time
+
+Built in four slices, each released and run live before the next: **A** eye cam and the `photograph` verb (v0.7.0), **B** object builds, `validate.yml`, `build.yml` and auto-merge (v0.7.1), **C** tinker contraptions (v0.7.2), **D** coded Pages projects (v0.7.3). Photos are 512 px jpegs kept at `art/photos/<id>.jpg` next to an `art/<id>.json` photo artifact; contraptions are designed in the object-build call and checked with a headless Rapier run before they land.
 
 **Done when:** Merge designs an object for one of its goals, the PR merges, the object appears and Merge uses it, a contraption it built runs for visitors, its first coded project goes live, and it has commented in its journal on something it photographed but was never told about.
 

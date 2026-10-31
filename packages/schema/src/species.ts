@@ -128,8 +128,10 @@ export const SpeciesPack = z
     perception: z.object({
       /** Distance in meters at which the forkling notices a visitor. */
       noticeRadius: z.number().positive(),
-      /** Eye height in meters, used by the eye cam in M8. */
+      /** Eye height in meters, used by the eye cam. */
       eyeHeight: z.number().positive(),
+      /** Vertical field of view of the eye cam, in degrees. */
+      fovDeg: z.number().min(20).max(120).default(70),
     }),
     locomotion: z.object({
       walkSpeed: z.number().positive(),

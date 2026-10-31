@@ -116,7 +116,9 @@ function describeAction(a: SpeciesAction): string {
   const paws = a.hands === 'empty' ? 'needs empty paws' : a.hands === 'full' ? 'needs something in your paws' : ''
   const works = a.accepts.length > 0 ? `works with ${a.accepts.join(', ')}` : ''
   const when = a.requires.length > 0 ? `only ${a.requires.join(' and ')}` : ''
-  return `- ${a.id}: ${[where, paws, works, needs, when, EFFECTS[a.effect]].filter(Boolean).join('; ')}`
+  // A photograph is of what is in front of the eyes; it has no topic to set.
+  const effect = a.artifact === 'photo' ? 'takes a picture through your own eyes and keeps it with your caption' : EFFECTS[a.effect]
+  return `- ${a.id}: ${[where, paws, works, needs, when, effect].filter(Boolean).join('; ')}`
 }
 
 /**
@@ -154,6 +156,7 @@ export function buildSystem(input: SystemInput): string {
     '- A plant has to be watered before it ripens, which takes about two days. Practice makes you better, and what you make neater.',
     '- To read or study, plan the step at a place that unlocks the verb (a bookshelf) and put what you want to read about in topic, in a few words of your own. Read about what you are curious about, not only what you already know.',
     '- To write, draw, compose, experiment, observe or broadcast, plan the step at a place that unlocks the verb (a desk, a drum, a workbench, a telescope) and put what it is about in topic. Each of these leaves something behind that is kept and shown on your website; you can only make about four things a day, and the better you are at it the better it is. Playing an instrument leaves nothing.',
+    '- To photograph, plan the step with any object as its target (or none, to photograph what is ahead of you). You look through your own eyes, and the picture is kept with your caption on your website. You can take about twelve a day. Things that come into view for the first time are photographed on their own.',
     '- Your plan is checked against what you hold and what is in the world, step by step, before you begin. If a step needs something an earlier step does not leave you with, it is turned down.',
     '',
     '## Rules about what you are shown',

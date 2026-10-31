@@ -4,7 +4,16 @@ import type { z } from 'zod'
 import type { ModelId, Usage } from './budget.ts'
 
 /** What a call is for. Goes into the ledger, and lets a test fake answer each kind in turn. */
-export type CallKind = 'morning' | 'weekly' | 'decide' | 'bedtime' | 'memory' | 'read' | 'art'
+export type CallKind = 'morning' | 'weekly' | 'decide' | 'bedtime' | 'memory' | 'read' | 'art' | 'vision'
+
+/** A picture for the model to look at: the eye-cam frame. */
+export interface LlmImage {
+  mediaType: 'image/jpeg'
+  base64: string
+}
+
+/** What a 512 px frame costs in input tokens, near enough for a budget guard. */
+export const IMAGE_TOKENS = 350
 
 export interface LlmRequest<T = unknown> {
   kind: CallKind
@@ -13,6 +22,8 @@ export interface LlmRequest<T = unknown> {
   system: string
   /** Everything that changes from call to call. */
   user: string
+  /** Pictures that come before the text of `user`. */
+  images?: readonly LlmImage[]
   maxTokens: number
   effort: 'low' | 'medium'
   /** The shape of the answer, as structured output. */
@@ -41,6 +52,15 @@ export interface LlmClient {
 
 const BATCH_REQUEST_ID = 'request'
 
+/** The user turn of a call: plain text, or the pictures followed by the text. */
+export function userContent(user: string, images: readonly LlmImage[] = []) {
+  if (images.length === 0) return user
+  return [
+    ...images.map((image) => ({ type: 'image' as const, source: { type: 'base64' as const, media_type: image.mediaType, data: image.base64 } })),
+    { type: 'text' as const, text: user },
+  ]
+}
+
 function usageOf(u: { input_tokens: number; cache_read_input_tokens?: number | null; cache_creation_input_tokens?: number | null; output_tokens: number }): Usage {
   return { input: u.input_tokens, cacheRead: u.cache_read_input_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0, output: u.output_tokens }
 }
@@ -53,7 +73,7 @@ export function anthropicClient(): LlmClient {
     model: request.model,
     max_tokens: request.maxTokens,
     system: [{ type: 'text' as const, text: request.system, cache_control: { type: 'ephemeral' as const } }],
-    messages: [{ role: 'user' as const, content: request.user }],
+    messages: [{ role: 'user' as const, content: userContent(request.user, request.images) }],
     output_config: { effort: request.effort, format: zodOutputFormat(request.schema) },
   })
   return {

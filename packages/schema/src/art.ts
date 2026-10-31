@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { Timestamp } from './intention.ts'
 
-export const ARTIFACT_KINDS = ['writing', 'drawing', 'melody', 'recipe', 'broadcast', 'labnote'] as const
+export const ARTIFACT_KINDS = ['writing', 'drawing', 'melody', 'recipe', 'broadcast', 'labnote', 'photo'] as const
 export const ArtifactKind = z.enum(ARTIFACT_KINDS)
 export type ArtifactKind = z.infer<typeof ArtifactKind>
 
@@ -30,6 +30,16 @@ export const ArtContent = {
   }),
   broadcast: z.object({ script: Text }),
   labnote: z.object({ question: z.string().min(1).max(300), method: z.string().min(1).max(MAX_ARTIFACT_TEXT), result: z.string().min(1).max(MAX_ARTIFACT_TEXT) }),
+  photo: z.object({
+    /** The frame, relative to `art/`: always a jpg straight under `photos/`. */
+    image: z.string().regex(/^photos\/[a-z0-9][a-z0-9-]{0,60}\.jpg$/, 'like photos/the-pond.jpg'),
+    caption: z.string().min(1).max(400),
+    opinion: z.string().min(1).max(300),
+    /** The object it was pointed at, if any. */
+    subjectId: z.string().max(60).optional(),
+    /** True when nothing asked for it: something new came into view. */
+    noticed: z.boolean(),
+  }),
 } as const
 
 const Meta = z.object({
@@ -51,6 +61,7 @@ export const Artifact = z.discriminatedUnion('kind', [
   Meta.extend({ kind: z.literal('recipe'), content: ArtContent.recipe }),
   Meta.extend({ kind: z.literal('broadcast'), content: ArtContent.broadcast }),
   Meta.extend({ kind: z.literal('labnote'), content: ArtContent.labnote }),
+  Meta.extend({ kind: z.literal('photo'), content: ArtContent.photo }),
 ])
 export type Artifact = z.infer<typeof Artifact>
 
@@ -65,4 +76,6 @@ export const ArtOutput = {
   recipe: z.object({ title: z.string(), ingredients: z.array(z.object({ name: z.string(), grams: z.number() })), steps: z.array(z.string()) }),
   broadcast: z.object({ title: z.string(), script: z.string() }),
   labnote: z.object({ title: z.string(), question: z.string(), method: z.string(), result: z.string() }),
+  /** What it makes of a frame it took. The frame itself and where it was taken come from code. */
+  photo: z.object({ title: z.string(), caption: z.string(), opinion: z.string() }),
 } as const
