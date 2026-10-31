@@ -15,5 +15,11 @@ export const Intention = z.object({
   seed: z.number().int().nonnegative(),
   /** One sentence in the forkling's voice. */
   reason: z.string().min(1).max(200),
+  /** Which goal this serves: `long`, or `today:<step index>`. Absent for utility AI choices. */
+  goalRef: z.string().regex(/^(long|today:\d+)$/, 'long or today:<n>').optional(),
+  /** While now is before this, the body favours this action and target. Absent means no focus. */
+  until: Timestamp.optional(),
+  /** `[x, z]` in meters, when the target is a place rather than an object. */
+  position: z.tuple([z.number().finite(), z.number().finite()]).optional(),
 })
 export type Intention = z.infer<typeof Intention>

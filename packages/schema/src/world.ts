@@ -26,6 +26,10 @@ export const Forkling = z.object({
   mood: z.string().min(1).max(40),
   intention: Intention,
   lastTickAt: Timestamp,
+  /** True between bedtime and waking, as decided by the mind from the sleep schedule. */
+  asleep: z.boolean().default(false),
+  /** Local date (`YYYY-MM-DD`) on which the mind chose to stay up late. */
+  lateNight: z.iso.date().optional(),
   /** IANA time zone of the forkling's world, so every viewer agrees on the time of day. */
   timezone: z.string().refine(isTimezone, 'not a known IANA time zone').default('UTC'),
 })
