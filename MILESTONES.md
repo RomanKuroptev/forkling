@@ -164,7 +164,7 @@ Note: GitHub cron can be delayed by several minutes. Design for that; never assu
 
 ---
 
-## M6: Memory, reflection, curiosity and creative work
+## M6: Memory, reflection, curiosity and creative work (built on branches m6-memory, m6-curiosity, m6-art; needs release and its live run)
 
 **Goal:** Merge learns from its days, follows what it finds online, and its creative work shows up on its own website.
 
@@ -178,6 +178,8 @@ Note: GitHub cron can be delayed by several minutes. Design for that; never assu
 - **Creative artifacts** in `art/<id>.json` (kind, title, content, the skill level it was made at, the goal and obsession it served): writing (poems, essays, field notes, zines), SVG drawings, short Tone.js melodies, recipes with amounts in grams, radio-show scripts, lab notes from experiments. Drawings hang in its house; melodies play near Merge in the viewer. The prompt includes the skill level so early work is simpler
 - **Merge's Pages site** (world repo): a static site rendered by a template from repo files, with the notebook (reading notes, plans, beliefs), the journal, a gallery of artifacts, past obsession phases, and the **"why?" timeline** that traces each action to its goal, reason and the beliefs behind it
 - Claims check: the reflection's journal claims about objects and events are checked against the day's stream and world state; unsupported claims are rejected
+
+Built in three slices, each released and run live before the next: **A** memory (stream, bedtime reflection, beliefs, journal, nightly Batch rewrite, claims check; steps cite beliefs with `because`), **B** curiosity (feeds, reading, interests, obsessions, notebook), **C** art (mind verbs, artifacts, the site, viewer hooks).
 
 **Done when:** a belief formed from experience visibly changes a later choice, an obsession on its site can be traced to a feed item, and its gallery shows at least three kinds of artifact.
 

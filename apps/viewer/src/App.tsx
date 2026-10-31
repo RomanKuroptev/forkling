@@ -4,6 +4,8 @@ import { Physics } from '@react-three/rapier'
 import { Suspense } from 'react'
 import { DebugOverlay } from './forkling/DebugOverlay.tsx'
 import { Forkling } from './forkling/Forkling.tsx'
+import { GalleryWall } from './art/GalleryWall.tsx'
+import { Melody } from './art/Melody.tsx'
 import { Player } from './player/Player.tsx'
 import { Environment } from './world/Environment.tsx'
 import { Objects } from './world/Objects.tsx'
@@ -40,6 +42,7 @@ export function App() {
               <Terrain />
               <Props />
               <Objects />
+              <GalleryWall />
               <Water />
               <Forkling />
               <Player />
@@ -50,6 +53,7 @@ export function App() {
       </KeyboardControls>
       <Loading />
       <DebugOverlay />
+      <Melody />
       <div className="hud">
         WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · F3 for Merge’s mind
       </div>

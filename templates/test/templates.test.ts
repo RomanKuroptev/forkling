@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { BudgetLedger, Forkling, forklingPackIssues, Goals, MindState, objectIdFromPath, PlanStep, Skills, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, objectIdFromPath, PlanStep, Skills, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
 import { collectSpots, isWalkable, matchesTarget, runPlan, starterWorld, sunDirection, worldWithObjects } from '@forkling/sim'
 import catSpecies from '@forkling/species-cat/species.json'
 
@@ -48,13 +48,24 @@ for (const template of ['forkling-world', 'merge']) {
       expect(Array.isArray(read(join(dir, 'memory/people.json')))).toBe(true)
     })
 
+    it('starts with no beliefs, and a place for the memory stream', () => {
+      if (!paths.includes('memory/beliefs.json')) return
+      expect(Beliefs.parse(read(join(dir, 'memory/beliefs.json')))).toEqual([])
+      expect(paths).toContain('memory/stream/.gitkeep')
+    })
+
+    it('keeps art/ for what it makes, with only valid artifacts in it', () => {
+      if (!paths.includes('art/.gitkeep')) return
+      for (const path of paths.filter((p) => p.startsWith('art/') && p.endsWith('.json'))) expect(Artifact.safeParse(read(join(dir, path))).success, path).toBe(true)
+    })
+
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|mind\/.+|brain\/.+|events\/.+|\.github\/workflows\/(mind|heartbeat)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|art\/.+|mind\/.+|brain\/.+|events\/.+|\.github\/workflows\/(mind|heartbeat|pages)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
     it('has mind files that fit their schemas', () => {
-      const schemas = { 'mind/goals.json': Goals, 'mind/state.json': MindState, 'brain/budget.json': BudgetLedger, 'brain/skills.json': Skills }
+      const schemas = { 'mind/goals.json': Goals, 'mind/state.json': MindState, 'brain/budget.json': BudgetLedger, 'brain/skills.json': Skills, 'brain/interests.json': Interests }
       for (const [path, schema] of Object.entries(schemas)) {
         if (paths.includes(path)) expect(schema.safeParse(read(join(dir, path))).success, path).toBe(true)
       }
@@ -93,6 +104,34 @@ describe('templates/forkling-world', () => {
     expect(workflow).toMatch(/if \[ -z "\$ANTHROPIC_API_KEY" \]; then unset ANTHROPIC_API_KEY; fi/)
     expect(workflow).toMatch(/ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/)
     expect(workflow).toMatch(/git commit -m "chore\(mind\): /)
+  })
+})
+
+describe('templates/forkling-world website', () => {
+  const read = (name: string) => readFileSync(join(root, 'forkling-world', '.github/workflows', name), 'utf8')
+
+  it('is built on request from the pinned engine, one at a time, and deployed to Pages', () => {
+    const text = read('pages.yml')
+    expect(text).toMatch(/on:\s+workflow_dispatch:/)
+    expect(text).toMatch(/concurrency:\s+group: pages\s+cancel-in-progress: false/)
+    expect(text).toMatch(/pages: write/)
+    expect(text).toMatch(/id-token: write/)
+    expect(text).toMatch(/FORKLING_REF: v\d+\.\d+\.\d+\s/)
+    expect(text).toMatch(/pnpm --filter @forkling\/site build --world/)
+    expect(text).toMatch(/actions\/upload-pages-artifact@v3/)
+    expect(text).toMatch(/actions\/deploy-pages@v4/)
+  })
+
+  it('pins the same engine release as the mind', () => {
+    const ref = (text: string) => /FORKLING_REF: (v\d+\.\d+\.\d+)/.exec(text)?.[1]
+    expect(ref(read('pages.yml'))).toBe(ref(read('mind.yml')))
+  })
+
+  it('is started by the mind after a commit that changes what the site shows', () => {
+    const mind = read('mind.yml')
+    expect(mind).toMatch(/actions: write/)
+    expect(mind).toMatch(/gh workflow run pages\.yml/)
+    for (const path of ['journal/', 'art/', 'notebook/', 'memory/beliefs', 'memory/timeline/', 'brain/interests']) expect(mind).toContain(path)
   })
 })
 
@@ -145,7 +184,7 @@ describe('templates/forkling-world starter objects', () => {
     for (const id of ['house', 'desk', 'workbench', 'kitchen', 'garden', 'bookshelf', 'drum', 'telescope', 'bed', 'bowl', 'water-bowl']) {
       expect(byId(id), id).toBeDefined()
     }
-    expect(byId('desk').unlocks).toEqual(expect.arrayContaining(['write', 'draw', 'code']))
+    expect(byId('desk').unlocks).toEqual(expect.arrayContaining(['write', 'draw', 'code', 'broadcast']))
     expect(byId('workbench').unlocks).toEqual(expect.arrayContaining(['build', 'join', 'shape', 'sew', 'paint', 'tinker']))
     expect(byId('kitchen').unlocks).toEqual(['cook'])
     expect(byId('garden').unlocks).toEqual(['plant'])

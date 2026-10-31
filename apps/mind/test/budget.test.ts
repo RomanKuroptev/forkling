@@ -20,6 +20,12 @@ describe('costUsd', () => {
   })
 })
 
+describe('costUsd for the Batch API', () => {
+  it('charges half', () => {
+    expect(costUsd('claude-haiku-5-5', usage, { batch: true })).toBeCloseTo(costUsd('claude-haiku-5-5', usage) / 2, 12)
+  })
+})
+
 describe('estimates', () => {
   it('counts about four characters per token, rounding up', () => {
     expect(estimateTokens('abcd')).toBe(1)

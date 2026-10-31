@@ -17,13 +17,15 @@ concurrency:
 
 permissions:
   contents: write
+  # Lets it start the website build (see the last step).
+  actions: write
   # Lets the job ask GitHub for an identity token, so no API key has to be stored (see the README).
   id-token: write
 
 env:
   # The engine release this world runs on. Change it on purpose, after reading what changed.
   FORKLING_REPO: RomanKuroptev/forkling
-  FORKLING_REF: v0.5.1
+  FORKLING_REF: v0.6.0
 
 jobs:
   tick:
@@ -120,3 +122,15 @@ jobs:
           # Another run or a merged PR may have landed since checkout.
           git pull --rebase
           git push
+
+      # The website is built from the files of this repo, so rebuild it when one of them changed. Dispatches that arrive
+      # while a build runs collapse into one waiting build (see pages.yml).
+      - name: Update the website
+        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.changed == 'true'
+        working-directory: world
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --name-only HEAD~1 HEAD | grep -qE '^(journal/|art/|notebook/|memory/beliefs\.json|memory/timeline/|brain/interests\.json)'; then
+            gh workflow run pages.yml || echo "could not start the website build (is pages.yml on this branch?)"
+          fi

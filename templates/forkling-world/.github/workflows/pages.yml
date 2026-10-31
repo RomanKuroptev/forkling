@@ -1,0 +1,68 @@
+name: pages
+
+# The forkling's website: its diary, notebook, gallery, obsessions and the "why?" timeline, built from the files of
+# this repo. The mind starts this after a commit that changes any of them (a commit made with the workflow token does
+# not start other workflows by itself, but an explicit dispatch does). Turn it on once under Settings > Pages, with
+# "GitHub Actions" as the source.
+on:
+  workflow_dispatch:
+
+# A burst of changes collapses into one waiting deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  # The engine release this world runs on. Keep it the same as in mind.yml.
+  FORKLING_REPO: RomanKuroptev/forkling
+  FORKLING_REF: v0.6.0
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: world
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.FORKLING_REPO }}
+          ref: ${{ env.FORKLING_REF }}
+          path: engine
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: engine/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: engine/pnpm-lock.yaml
+
+      - name: Install the site builder
+        working-directory: engine
+        run: pnpm install --frozen-lockfile --filter "@forkling/site..."
+
+      - name: Build the site
+        working-directory: engine
+        run: pnpm --filter @forkling/site build --world "$GITHUB_WORKSPACE/world" --out "$GITHUB_WORKSPACE/_site"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

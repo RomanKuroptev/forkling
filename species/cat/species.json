@@ -11,7 +11,7 @@
   "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
   "bodyPlans": {
     "quadruped": ["body"],
-    "upright": ["body", "hands", "making", "growing"]
+    "upright": ["body", "hands", "making", "growing", "mind"]
   },
   "actions": [
     {
@@ -383,6 +383,7 @@
       "group": "growing",
       "body": "upright",
       "effect": "cook",
+      "artifact": "recipe",
       "accepts": ["produce", "flowers"],
       "satisfies": {},
       "durationSec": [4, 8],
@@ -400,6 +401,114 @@
       "target": { "type": "object", "where": { "edible": true, "carryable": true } },
       "slot": "eat",
       "reason": "I made this, so I am allowed to eat it."
+    },
+    {
+      "id": "read",
+      "group": "mind",
+      "body": "upright",
+      "effect": "read",
+      "satisfies": { "curiosity": 20 },
+      "durationSec": [10, 20],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "holdUp",
+      "requires": ["day"],
+      "reason": "There is a page I want to see."
+    },
+    {
+      "id": "study",
+      "group": "mind",
+      "body": "upright",
+      "effect": "study",
+      "satisfies": { "curiosity": 30 },
+      "durationSec": [14, 28],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "holdUp",
+      "requires": ["day"],
+      "reason": "I want to understand this properly."
+    },
+    {
+      "id": "write",
+      "group": "mind",
+      "body": "upright",
+      "effect": "create",
+      "artifact": "writing",
+      "satisfies": { "curiosity": 10 },
+      "durationSec": [10, 20],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "Words want to be put somewhere."
+    },
+    {
+      "id": "draw",
+      "group": "mind",
+      "body": "upright",
+      "effect": "create",
+      "artifact": "drawing",
+      "satisfies": { "curiosity": 10 },
+      "durationSec": [10, 20],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "I can see it. I need to get it onto paper."
+    },
+    {
+      "id": "compose",
+      "group": "mind",
+      "body": "upright",
+      "effect": "create",
+      "artifact": "melody",
+      "satisfies": { "curiosity": 10 },
+      "durationSec": [10, 20],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "There is a tune in my head and it will not leave."
+    },
+    {
+      "id": "play",
+      "group": "mind",
+      "body": "upright",
+      "effect": "none",
+      "satisfies": { "curiosity": 15 },
+      "durationSec": [12, 24],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "I want to hear it, not think about it."
+    },
+    {
+      "id": "broadcast",
+      "group": "mind",
+      "body": "upright",
+      "effect": "create",
+      "artifact": "broadcast",
+      "satisfies": { "curiosity": 10 },
+      "durationSec": [10, 20],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "Somebody might be listening. Probably not. I will say it anyway."
+    },
+    {
+      "id": "experiment",
+      "group": "mind",
+      "body": "upright",
+      "effect": "create",
+      "artifact": "labnote",
+      "satisfies": { "curiosity": 25 },
+      "durationSec": [10, 20],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "I want to know what happens if I do this."
+    },
+    {
+      "id": "observe",
+      "group": "mind",
+      "body": "upright",
+      "effect": "create",
+      "artifact": "labnote",
+      "satisfies": { "curiosity": 30 },
+      "durationSec": [10, 20],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "holdUp",
+      "requires": ["dusk"],
+      "reason": "The sky is doing something. I should write it down."
     }
   ],
   "weights": {

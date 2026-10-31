@@ -1,7 +1,7 @@
 import type { Forkling, Goals, MindState, NeedId, VisitorEvent, WorldObject } from '@forkling/schema'
 import { localDate, sleepWindow } from './sleep.ts'
 
-export type TriggerKind = 'novelty' | 'blocked' | 'need' | 'stepDone' | 'newDay' | 'weekly'
+export type TriggerKind = 'novelty' | 'blocked' | 'need' | 'stepDone' | 'newDay' | 'weekly' | 'bedtime'
 
 /** A reason to wake the LLM. Anything the sim can tell on its own stays with the utility AI. */
 export interface Trigger {
@@ -25,13 +25,26 @@ export interface SurpriseInput {
   spotKinds: ReadonlySet<string>
 }
 
+function previousDate(date: string): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  return new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10)
+}
+
+/** The local date whose evening it is. Before it has woken, the evening it is still up in belongs to yesterday: a late night can run past midnight. */
+export function eveningOf(timezone: string, seed: number, nowMs: number): string {
+  const today = localDate(timezone, nowMs)
+  return nowMs < sleepWindow(today, seed, timezone).wakeMs ? previousDate(today) : today
+}
+
 /** A need below this many points is strong enough to think about. */
 export const STRONG_NEED = 15
 const WEEK_MS = 7 * 24 * 3_600_000
+/** The day is reflected on this long before bed, which is a few ticks of room even if GitHub's cron runs late. */
+export const REFLECT_BEFORE_BED_MS = 30 * 60_000
 
 /**
  * What, if anything, is surprising right now: new things, a blocked step, a strong need, a step that ran out, a new
- * day, a long goal due for review. Pure and deterministic. Empty means no LLM call. Never wakes the mind in bed.
+ * day, bedtime, a long goal due for review. Pure and deterministic. Empty means no LLM call. Never wakes the mind in bed.
  */
 export function scoreSurprise(input: SurpriseInput): Trigger[] {
   const { forkling, goals, mindState, objects, events, nowMs, asleep, spotKinds } = input
@@ -72,6 +85,12 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
   const awakeToday = sleepWindow(today, forkling.seed, forkling.timezone).wakeMs <= nowMs
   if (mindState.lastPlanDate !== today && awakeToday) {
     found.push({ kind: 'newDay', score: 1, detail: `it is ${today} and no plan has been made for it` })
+  }
+
+  const evening = eveningOf(forkling.timezone, forkling.seed, nowMs)
+  const { bedMs } = sleepWindow(evening, forkling.seed, forkling.timezone, forkling.lateNight === evening)
+  if (mindState.lastReflectDate !== evening && nowMs >= bedMs - REFLECT_BEFORE_BED_MS && nowMs < bedMs) {
+    found.push({ kind: 'bedtime', score: 0.95, detail: `bedtime is near and ${evening} has not been reflected on` })
   }
 
   if (goals.long && nowMs - Date.parse(goals.long.reviewedAt) >= WEEK_MS) {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ArtifactKind } from './art.ts'
 import { Material, PropertyFilter } from './properties.ts'
 
 /** How a body gets about: on four legs, or upright with paws free. A pack may offer both. */
@@ -27,6 +28,9 @@ export const VerbEffect = z.enum([
   'harvest',
   'cook',
   'eat',
+  'read',
+  'study',
+  'create',
 ])
 export type VerbEffect = z.infer<typeof VerbEffect>
 
@@ -96,6 +100,8 @@ export const SpeciesAction = z.object({
   body: BodyPlan.optional(),
   /** What it changes in the world when a planned step of it completes. */
   effect: VerbEffect.default('none'),
+  /** The kind of thing a finished step leaves behind in `art/`: a poem, a drawing, a tune. Every creative act leaves one. */
+  artifact: ArtifactKind.optional(),
   /** Whether the paws must be empty or full to do it. */
   hands: z.enum(['any', 'empty', 'full']).default('any'),
   /** Materials it works with. Empty means any. */

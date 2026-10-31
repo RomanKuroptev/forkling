@@ -1,5 +1,13 @@
+import type { z } from 'zod'
 import {
   Forkling,
+  ArtOutput,
+  MemorySlots,
+  ReadingNote,
+  type TimelineEntry,
+  Reflection,
+  type Artifact,
+  type ArtifactKind,
   type BudgetCall,
   type Goals,
   type Intention,
@@ -13,13 +21,18 @@ import {
 import {
   addXp,
   appraise,
+  applyBeliefOps,
   applyStep,
+  checkReflection,
   collectSpots,
   decayFeelings,
   EPOCH_SECONDS,
+  eveningOf,
+  fadeInterests,
   eventsFromStep,
   hourInZone,
   isAsleepAt,
+  liveBeliefs,
   localDate,
   moodLabel,
   quirkWeights,
@@ -30,6 +43,7 @@ import {
   startPlayback,
   sunDirection,
   toRepoIntention,
+  updatePhases,
   validatePlan,
   worldWithObjects,
   type AppraisalEvent,
@@ -39,10 +53,15 @@ import {
   type Trigger,
 } from '@forkling/sim'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger, type ModelId } from './budget.ts'
-import { clampText, planStepFrom, type Decision, type LlmStep } from './decision.ts'
-import type { LlmClient } from './llm.ts'
+import { clampText, Decision, planStepFrom, type LlmStep } from './decision.ts'
+import { artifactFrom, buildArtUser, MAX_ARTIFACTS_PER_DAY } from './art.ts'
+import { readFeeds, type FeedItem, type GetJson } from './feeds/index.ts'
+import type { CallKind, LlmClient, LlmResult } from './llm.ts'
 import { buildSystem, buildUser, type ThinkKind } from './prompts.ts'
-import { deleteFile, readWorld, writeJson } from './world.ts'
+import { buildMemoryUser, buildReflectionUser, renderJournal, renderSummary } from './reflect.ts'
+import { applyReading, buildReadingUser, gatherPages, MAX_READINGS_PER_DAY, renderPlan, renderReadingNote } from './reading.ts'
+import { appendStream, appendTimeline, prune, readStream, type NewEntry } from './stream.ts'
+import { deleteFile, readText, readWorld, writeJson, writeText } from './world.ts'
 
 export interface TickDeps {
   now: Date
@@ -54,6 +73,8 @@ export interface TickDeps {
   speciesPersona: string
   /** Where likes, dislikes and quirks are rolled from. Without it a forkling has no temperament and keeps whatever mood the model gives it. */
   pools?: TemperamentPools | null
+  /** Reads a public URL as JSON, for the feeds and Wikipedia. Without it the forkling reads nothing. */
+  get?: GetJson
   /** Work out the prompt and what it would cost, but call nothing and write nothing. */
   dryRun?: boolean
 }
@@ -69,12 +90,17 @@ export interface TickResult {
   notes: string[]
   calls: BudgetCall[]
   /** The prompt of the call this tick would make or made, for dry runs and logs. */
-  prompt?: { model: ModelId; kind: ThinkKind; system: string; user: string; tokens: number; maxUsd: number }
+  prompt?: { model: ModelId; kind: CallKind; system: string; user: string; tokens: number; maxUsd: number }
 }
 
 /** Strong needs wake the model at most this often. */
 const NEED_COOLDOWN_MS = 30 * 60_000
 const MAX_OUTPUT_TOKENS = 3000
+/** The diary and the belief changes take more room than a plan. */
+const REFLECT_OUTPUT_TOKENS = 4000
+const MEMORY_OUTPUT_TOKENS = 3000
+const MAX_READING_TOKENS = 1500
+const MAX_ART_TOKENS = 3000
 const MAX_RECENT = 20
 /** A late night is only a choice for the evening. */
 const LATE_NIGHT_FROM_HOUR = 18
@@ -94,8 +120,9 @@ function intentionSeed(seed: number, ms: number): number {
   return (Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b) ^ Math.floor(ms / 1000)) >>> 0
 }
 
-function thinkKindFor(triggers: readonly Trigger[]): ThinkKind {
+function thinkKindFor(triggers: readonly Trigger[]): ThinkKind | 'bedtime' {
   if (triggers.some((t) => t.kind === 'newDay')) return 'morning'
+  if (triggers.some((t) => t.kind === 'bedtime')) return 'bedtime'
   if (triggers.some((t) => t.kind === 'weekly')) return 'weekly'
   return 'decide'
 }
@@ -118,6 +145,8 @@ const PAST: Record<StepEvent['kind'], string> = {
   cooked: 'cooked',
   ate: 'ate',
   ateSpoiled: 'ate (it had gone off)',
+  read: 'read at',
+  created: 'made something at',
 }
 
 /** What a step did, in a line the model can read. Names come from the objects, which may hold the forkling's own words. */
@@ -147,11 +176,15 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   const notes: string[] = []
   const parts: string[] = []
   const calls: BudgetCall[] = []
+  /** What happened this tick, for the day's memory stream. Written by code from sim events, no model. */
+  const remember: NewEntry[] = []
+  const steps: TimelineEntry[] = []
 
   const sleepOpts = { seed: forkling.seed, timezone: tz, lateNight: forkling.lateNight }
   const asleep = isAsleepAt(nowMs, sleepOpts)
   const window = sleepWindow(today, forkling.seed, tz, forkling.lateNight === today)
   let budget = rollLedger(w.budget, monthOf(tz, nowMs))
+  if (asleep !== forkling.asleep) remember.push({ at: nowIso, kind: asleep ? 'sleep' : 'wake', text: asleep ? 'Went to bed.' : 'Woke up.' })
 
   // Who it is: rolled once from its seed, then fixed for life.
   let temperament = w.temperament
@@ -181,6 +214,11 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   let holding = forkling.holding
   let stored: Stored = { ...forkling.stored }
   let skills = w.skills
+  let interests = w.interests
+  /** Set when a read or study step finishes: the visit to the shelf comes after the step is applied. */
+  let pendingReading: { depth: number; topic: string | null } | null = null
+  /** Set when a creative step finishes: what it made is written after the step is applied. */
+  let pendingArt: { kind: ArtifactKind; verb: string; step: PlanStep; index: number } | null = null
   const touched = new Set<string>()
   const gone = new Set<string>()
   const appraisals: AppraisalEvent[] = []
@@ -215,6 +253,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
         stored = result.world.stored
         objects = [...result.world.objects]
         skills = addXp(skills, result.group, result.xp)
+        if (verb.artifact) pendingArt = { kind: verb.artifact, verb: verb.id, step: finishing, index: goals.now.index }
+        if (verb.effect === 'read' || verb.effect === 'study') pendingReading = { depth: verb.effect === 'study' ? 4 : 1, topic: finishing.topic ?? null }
         for (const id of result.upserted) {
           touched.add(id)
           gone.delete(id)
@@ -227,12 +267,22 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
         mind.knownObjects = [...new Set([...mind.knownObjects, ...result.upserted])]
         appraisals.push(...eventsFromStep(result.events, [...before, ...objects]))
         justNow.push(...result.events.map((e) => describeEvent(e, [...before, ...objects])))
+        for (const e of result.events) {
+          remember.push({
+            at: nowIso,
+            kind: e.kind === 'finished' ? 'made' : 'step',
+            text: `${finishing.verb}: ${describeEvent(e, [...before, ...objects])}`,
+            verb: finishing.verb,
+            ...(e.objectId ? { objectId: e.objectId } : {}),
+          })
+        }
         if (result.events.length > 0) parts.push(`${finishing.verb}: ${result.events.map((e) => PAST[e.kind]).join(', ')}`)
         spotKeys = spotsFor(objects)
       } else {
         failed = true
         notes.push(`step ${goals.now.index + 1} (${finishing.verb}) could not happen: ${result.reason}`)
         justNow.push(`${finishing.verb} did not work out: ${result.reason}`)
+        remember.push({ at: nowIso, kind: 'event', text: `${finishing.verb} did not work out: ${result.reason}`, verb: finishing.verb })
         appraisals.push({ kind: 'blocked' })
         triggers = [...triggers, { kind: 'blocked', score: 0.9, detail: `${finishing.verb} did not work out: ${result.reason}` }]
       }
@@ -254,6 +304,19 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
       goalRef: `today:${index}`,
     }
     mind.recent = [...mind.recent, { verb: step.verb, ...(step.targetId ? { targetId: step.targetId } : {}), at: nowIso }].slice(-MAX_RECENT)
+    const goalRef = `today:${index}`
+    const heldBeliefs = step.because && step.because.length > 0 ? { beliefRefs: step.because } : {}
+    const targetName = step.targetId ? (objects.find((o) => o.id === step.targetId)?.name ?? step.targetId) : ''
+    remember.push({
+      at: nowIso,
+      kind: 'step',
+      text: `Started ${step.verb}${targetName ? ` (${targetName})` : ''}: ${started.reason}`,
+      verb: step.verb,
+      ...(step.targetId && objectIds.has(step.targetId) ? { objectId: step.targetId } : {}),
+      goalRef,
+      ...heldBeliefs,
+    })
+    steps.push({ at: nowIso, verb: step.verb, ...(step.targetId ? { targetId: step.targetId } : {}), reason: started.reason, goalRef, ...heldBeliefs })
     parts.push(`step ${index + 1}/${goals.today!.steps.length}: ${step.verb}`)
   }
 
@@ -261,7 +324,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   const onlyStepDone = triggers.length === 1 && triggers[0]!.kind === 'stepDone'
   const nextIndex = goals.now ? goals.now.index + 1 : 0
   const moreSteps = goals.today ? nextIndex < goals.today.steps.length : false
-  let thinkKind: ThinkKind | null = null
+  let thinkKind: ThinkKind | 'bedtime' | null = null
   if (onlyStepDone && moreSteps) {
     startStep(nextIndex)
   } else if (triggers.length > 0) {
@@ -271,9 +334,11 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   }
 
   let prompt: TickResult['prompt']
+  let beliefs = w.beliefs
+  const beliefIds = new Set(liveBeliefs(beliefs).map((b) => b.id))
   /** The plan as plan steps, and whether the body could really carry it out, played out from what it holds now. */
   const checkPlan = (plan: LlmStep[]) => {
-    const steps = plan.map(planStepFrom)
+    const steps = plan.map((s) => planStepFrom(s, beliefIds))
     const usable = steps.filter((s): s is PlanStep => s !== null)
     const check =
       usable.length !== steps.length
@@ -290,16 +355,162 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
             stored,
             position: { x: body.pos.x, z: body.pos.z },
             skills,
+            creativeLeft: Math.max(0, MAX_ARTIFACTS_PER_DAY - (mind.arts?.date === today ? mind.arts.count : 0)),
             seed: intentionSeed(forkling.seed, nowMs),
           })
     return { usable, check }
   }
 
+  const system = buildSystem({ pack, name: forkling.name, speciesPersona: deps.speciesPersona, persona: w.persona })
+
+  /** Every call to a model goes through here, so every one meets the same guards: prompt size, dry run, key, budget. */
+  const ask = async <T>(kind: CallKind, model: ModelId, user: string, schema: z.ZodType<T>, maxTokens = MAX_OUTPUT_TOKENS): Promise<LlmResult<T> | null> => {
+    const tokens = estimateTokens(system) + estimateTokens(user)
+    const maxUsd = estimateCallUsd(model, tokens, maxTokens)
+    prompt ??= { model, kind, system, user, tokens, maxUsd }
+    if (tokens > MAX_PROMPT_TOKENS) {
+      notes.push(`prompt too long (about ${tokens} tokens): no call`)
+    } else if (deps.dryRun) {
+      notes.push(`dry run: ${kind} call to ${model}, about ${tokens} tokens, at most $${maxUsd.toFixed(4)}`)
+    } else if (!deps.llm) {
+      notes.push('no credentials: no call')
+    } else if (!canSpend(budget, maxUsd)) {
+      notes.push(`monthly budget reached ($${budget.spentUsd.toFixed(2)} of $${budget.capUsd}): no call`)
+    } else {
+      try {
+        const effort = model === 'claude-sonnet-5-5' ? 'medium' : 'low'
+        const result = await deps.llm.complete({ kind, model, system, user, maxTokens, effort, schema })
+        const call: BudgetCall = { at: nowIso, kind, model, ...result.usage, usd: costUsd(model, result.usage) }
+        calls.push(call)
+        budget = recordCall(budget, call)
+        mind.lastThinkAt = nowIso
+        return result
+      } catch (e) {
+        notes.push(`call failed: ${(e as Error).message}`)
+      }
+    }
+    return null
+  }
+
+  // Curiosity: a morning skim of the feeds, and a visit to the shelf whenever a read or study step finishes. Each is one
+  // Haiku call that writes a note to its notebook and moves its interests. What it reads is data, never instructions.
+  const notebook: { path: string; text: string }[] = []
+  let readings = mind.readings?.date === today ? mind.readings : { date: today, count: 0, skimmed: false }
+  const readSession = async (kind: 'skim' | 'topic', items: readonly FeedItem[], topic: string | null): Promise<boolean> => {
+    if (readings.count >= MAX_READINGS_PER_DAY) {
+      notes.push(`reading limit reached (${MAX_READINGS_PER_DAY} a day): no reading`)
+      return false
+    }
+    const user = buildReadingUser({ kind, date: today, items, interests, temperament, topic })
+    const result = await ask('read', 'claude-haiku-5-5', user, ReadingNote, MAX_READING_TOKENS)
+    if (!result) return false
+    if (!result.parsed) {
+      notes.push(`no usable reading (stopped: ${result.stopReason ?? 'unknown'})`)
+      return false
+    }
+    const applied = applyReading(interests, result.parsed, items, nowIso)
+    interests = applied.interests
+    readings = { ...readings, count: readings.count + 1 }
+    notebook.push({ path: `notebook/reading/${today}-${readings.count}.md`, text: renderReadingNote(today, result.parsed, items) })
+    const title = clampText(result.parsed.note.title.trim() || 'something', 80)
+    remember.push({ at: nowIso, kind: 'reading', text: `Read ${kind === 'skim' ? 'the news of the world' : `about ${topic}`}: "${title}"` })
+    justNow.push(`read ${kind === 'skim' ? 'what is happening in the world' : `about ${topic}`}: ${title}`)
+    parts.push(kind === 'skim' ? 'skimmed the feeds' : `read about ${topic}`)
+    return true
+  }
+
+  if (thinkKind === 'morning') {
+    // A new day: what it was into fades a little, and an obsession that has burnt out ends.
+    if (mind.readings?.date !== today) {
+      interests = fadeInterests(interests)
+      mind.readings = readings
+    }
+    if (!readings.skimmed) {
+      if (deps.dryRun) {
+        notes.push('dry run: would skim the feeds')
+      } else if (deps.get && deps.llm) {
+        const feeds = await readFeeds(deps.get, nowMs)
+        if (feeds.failed.length > 0) notes.push(`feeds that failed: ${feeds.failed.join(', ')}`)
+        readings = { ...readings, skimmed: true }
+        if (feeds.items.length === 0) notes.push('no feed answered: no skim')
+        else await readSession('skim', feeds.items, null)
+      }
+    }
+    interests = updatePhases(interests, nowIso)
+  }
+
+  if (pendingReading) {
+    const topic = pendingReading.topic ?? interests.current?.topic ?? null
+    if (deps.dryRun) {
+      notes.push('dry run: would go to the shelf')
+    } else if (!deps.get || !deps.llm) {
+      notes.push('nothing to read with: no reading')
+    } else if (!topic) {
+      notes.push('it opened a book with no topic in mind: no reading')
+    } else if (readings.count >= MAX_READINGS_PER_DAY) {
+      notes.push(`reading limit reached (${MAX_READINGS_PER_DAY} a day): no reading`)
+    } else {
+      try {
+        const pages = await gatherPages(deps.get, topic, pendingReading.depth, intentionSeed(forkling.seed, nowMs))
+        if (pages.length === 0) notes.push(`found nothing to read about "${topic}"`)
+        else if (await readSession('topic', pages, topic)) interests = updatePhases(interests, nowIso)
+      } catch (e) {
+        notes.push(`could not read about "${topic}": ${(e as Error).message}`)
+      }
+    }
+  }
+  if (readings.count !== mind.readings?.count || readings.skimmed !== mind.readings?.skimmed) mind.readings = readings
+
+  // Making things: when a creative step finishes, one Haiku call writes what it made to art/. Skill sets how good it is.
+  const madeArt: Artifact[] = []
+  let arts = mind.arts?.date === today ? mind.arts : { date: today, count: 0 }
+  if (pendingArt) {
+    if (arts.count >= MAX_ARTIFACTS_PER_DAY) {
+      notes.push(`art limit reached (${MAX_ARTIFACTS_PER_DAY} a day): ${pendingArt.verb} left nothing behind`)
+    } else {
+      const { kind, step: made, index } = pendingArt
+      const user = buildArtUser({
+        kind,
+        topic: made.topic ?? interests.current?.topic ?? null,
+        reason: made.reason,
+        skillLevel: skillLevel(skills, 'mind'),
+        obsession: interests.current?.topic ?? null,
+        recentTitles: [...w.art].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5).map((a) => a.title),
+        interests,
+        temperament,
+        date: today,
+      })
+      const result = await ask('art', 'claude-haiku-5-5', user, ArtOutput[kind] as z.ZodType<unknown>, MAX_ART_TOKENS)
+      if (result && !result.parsed) {
+        notes.push(`no usable ${kind} (stopped: ${result.stopReason ?? 'unknown'})`)
+      } else if (result) {
+        const art = artifactFrom(kind, result.parsed as never, {
+          skillLevel: skillLevel(skills, 'mind'),
+          goalRef: `today:${index}`,
+          obsessionRef: interests.current?.topic,
+          nowIso,
+          takenIds: new Set(w.art.map((a) => a.id)),
+        })
+        if (art) {
+          madeArt.push(art)
+          arts = { ...arts, count: arts.count + 1 }
+          remember.push({ at: nowIso, kind: 'made', text: `Made a ${kind}: "${art.title}"`, verb: pendingArt.verb, goalRef: `today:${index}` })
+          justNow.push(`made a ${kind}: "${art.title}"`)
+          parts.push(`made a ${kind}`)
+        } else {
+          notes.push(`the ${kind} it made was not usable`)
+        }
+      }
+    }
+  }
+  if (arts.count !== (mind.arts?.count ?? 0) || (arts.count > 0 && mind.arts?.date !== today)) mind.arts = arts
+
+
   let decision: Decision | null = null
   let thought = false
-  if (thinkKind) {
+  let planPage = false
+  if (thinkKind && thinkKind !== 'bedtime') {
     const model: ModelId = thinkKind === 'weekly' ? 'claude-sonnet-5-5' : 'claude-haiku-5-5'
-    const system = buildSystem({ pack, name: forkling.name, speciesPersona: deps.speciesPersona, persona: w.persona })
     const user = buildUser({
       kind: thinkKind,
       forkling,
@@ -321,52 +532,134 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
       temperament,
       feelings: describeFeelings(feelings),
       justNow,
+      beliefs,
+      memory: w.summary,
+      interests,
     })
-    const tokens = estimateTokens(system) + estimateTokens(user)
-    const maxUsd = estimateCallUsd(model, tokens, MAX_OUTPUT_TOKENS)
-    prompt = { model, kind: thinkKind, system, user, tokens, maxUsd }
+    let asking = user
+    // A plan the body cannot carry out gets one more chance, with the reasons, before the body falls back on itself.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await ask(thinkKind, model, asking, Decision)
+      if (!result) break
+      if (!result.parsed) {
+        notes.push(`no usable answer (stopped: ${result.stopReason ?? 'unknown'})`)
+        break
+      }
+      decision = result.parsed
+      thought = true
+      const checked = decision.plan && decision.plan.length > 0 ? checkPlan(decision.plan) : null
+      if (!checked || checked.check.ok || attempt === 1) break
+      notes.push(`plan turned down (${checked.check.reasons.join('; ')}): asking again`)
+      asking = [
+        user,
+        '',
+        '## Your plan was turned down',
+        'It cannot be carried out as written:',
+        ...checked.check.reasons.map((r) => `- ${r}`),
+        'Write the whole plan again so that every step can happen.',
+      ].join('\n')
+    }
+  }
 
-    if (tokens > MAX_PROMPT_TOKENS) {
-      notes.push(`prompt too long (about ${tokens} tokens): no call`)
-    } else if (deps.dryRun) {
-      notes.push(`dry run: ${thinkKind} call to ${model}, about ${tokens} tokens, at most $${maxUsd.toFixed(4)}`)
-    } else if (!deps.llm) {
-      notes.push('no credentials: no call')
-    } else if (!canSpend(budget, maxUsd)) {
-      notes.push(`monthly budget reached ($${budget.spentUsd.toFixed(2)} of $${budget.capUsd}): no call`)
+  // Bedtime: the day goes into a diary entry and into what it believes. Only what the day's stream backs up is kept.
+  const evening = eveningOf(tz, forkling.seed, nowMs)
+  let journal: { date: string; text: string } | null = null
+  if (thinkKind === 'bedtime') {
+    const stream = readStream(dir, evening)
+    if (stream.length === 0) {
+      mind.lastReflectDate = evening
+      notes.push('nothing to reflect on today: no call')
     } else {
-      const effort = model === 'claude-sonnet-5-5' ? 'medium' : 'low'
-      let asking = user
-      // A plan the body cannot carry out gets one more chance, with the reasons, before the body falls back on itself.
+      const ids = new Set(stream.map((e) => e.id))
+      let turnedDown: string[] | undefined
       for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          const result = await deps.llm.complete({ model, system, user: asking, maxTokens: MAX_OUTPUT_TOKENS, effort })
-          const call: BudgetCall = { at: nowIso, kind: thinkKind, model, ...result.usage, usd: costUsd(model, result.usage) }
-          calls.push(call)
-          budget = recordCall(budget, call)
-          mind.lastThinkAt = nowIso
-          if (!result.decision) {
-            notes.push(`no usable answer (stopped: ${result.stopReason ?? 'unknown'})`)
-            break
-          }
-          decision = result.decision
-          thought = true
-          const checked = decision.plan && decision.plan.length > 0 ? checkPlan(decision.plan) : null
-          if (!checked || checked.check.ok || attempt === 1) break
-          if (!canSpend(budget, maxUsd)) break
-          notes.push(`plan turned down (${checked.check.reasons.join('; ')}): asking again`)
-          asking = [
-            user,
-            '',
-            '## Your plan was turned down',
-            'It cannot be carried out as written:',
-            ...checked.check.reasons.map((r) => `- ${r}`),
-            'Write the whole plan again so that every step can happen.',
-          ].join('\n')
-        } catch (e) {
-          notes.push(`call failed: ${(e as Error).message}`)
+        const user = buildReflectionUser({
+          name: forkling.name,
+          date: evening,
+          localTime: `${weekday(tz, nowMs)} ${today} ${clock(tz, nowMs)}`,
+          timeZone: tz,
+          goals,
+          beliefs,
+          summary: w.summary,
+          stream,
+          ...(turnedDown ? { turnedDown } : {}),
+        })
+        const result = await ask('bedtime', 'claude-sonnet-5-5', user, Reflection, REFLECT_OUTPUT_TOKENS)
+        if (!result) break
+        if (!result.parsed) {
+          notes.push(`no usable reflection (stopped: ${result.stopReason ?? 'unknown'})`)
           break
         }
+        const checked = checkReflection(result.parsed, ids, beliefs)
+        if (checked.retry && attempt === 0) {
+          notes.push(`reflection turned down (${checked.dropped.length} unsupported claims): asking again`)
+          turnedDown = checked.dropped
+          continue
+        }
+        notes.push(...checked.dropped.map((d) => `claim dropped, ${d}`))
+        const text = renderJournal(evening, checked.reflection)
+        const before = beliefs
+        beliefs = applyBeliefOps(beliefs, checked.reflection.beliefOps, nowIso)
+        if (text) {
+          journal = { date: evening, text }
+          parts.push('wrote the journal')
+        }
+        const changed = beliefs.filter((b) => !same(b, before.find((o) => o.id === b.id))).length
+        if (changed > 0) parts.push(`${changed} belief${changed === 1 ? '' : 's'} changed`)
+        mind.lastReflectDate = evening
+        break
+      }
+    }
+  }
+
+  // Overnight the memory is rewritten on the Batch API, at half price: sent once after the diary, collected when ready.
+  let summaryNext: string | null = null
+  if (mind.memoryBatch) {
+    if (!deps.dryRun && deps.llm) {
+      try {
+        const outcome = await deps.llm.fetchBatch(mind.memoryBatch.id, MemorySlots)
+        if (outcome.status === 'pending') {
+          notes.push('the memory rewrite is still running')
+        } else {
+          mind.memoryBatch = null
+          if (outcome.status === 'failed') {
+            notes.push(`the memory rewrite ${outcome.reason}: keeping the old memory`)
+          } else {
+            const call: BudgetCall = { at: nowIso, kind: 'memory', model: 'claude-haiku-5-5', ...outcome.usage, usd: costUsd('claude-haiku-5-5', outcome.usage, { batch: true }) }
+            calls.push(call)
+            budget = recordCall(budget, call)
+            const slots = MemorySlots.safeParse(outcome.parsed)
+            summaryNext = slots.success ? renderSummary(slots.data) : null
+            if (summaryNext) parts.push('rewrote its memory')
+            else notes.push('the memory rewrite had nothing usable: keeping the old memory')
+          }
+        }
+      } catch (e) {
+        notes.push(`could not check the memory rewrite: ${(e as Error).message}`)
+      }
+    }
+  } else if (asleep && mind.lastReflectDate === evening && mind.lastMemoryDate !== evening) {
+    const diary = journal?.text ?? readText(dir, `journal/${evening}.md`)
+    const user = buildMemoryUser({ date: evening, summary: w.summary, journal: diary, beliefs })
+    const tokens = estimateTokens(system) + estimateTokens(user)
+    const maxUsd = estimateCallUsd('claude-haiku-5-5', tokens, MEMORY_OUTPUT_TOKENS) / 2
+    prompt ??= { model: 'claude-haiku-5-5', kind: 'memory', system, user, tokens, maxUsd }
+    if (tokens > MAX_PROMPT_TOKENS) {
+      notes.push(`prompt too long (about ${tokens} tokens): no memory rewrite`)
+    } else if (deps.dryRun) {
+      notes.push(`dry run: memory rewrite on the Batch API, about ${tokens} tokens, at most $${maxUsd.toFixed(4)}`)
+    } else if (!deps.llm) {
+      notes.push('no credentials: no memory rewrite')
+    } else if (!canSpend(budget, maxUsd)) {
+      notes.push(`monthly budget reached ($${budget.spentUsd.toFixed(2)} of $${budget.capUsd}): no memory rewrite`)
+    } else {
+      try {
+        const id = await deps.llm.submitBatch({ kind: 'memory', model: 'claude-haiku-5-5', system, user, maxTokens: MEMORY_OUTPUT_TOKENS, effort: 'low', schema: MemorySlots })
+        mind.memoryBatch = { id, date: evening }
+        mind.lastMemoryDate = evening
+        parts.push('sent its memory off to be rewritten')
+      } catch (e) {
+        notes.push(`could not send the memory rewrite: ${(e as Error).message}`)
       }
     }
   }
@@ -398,6 +691,13 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
       parts.push('staying up late')
     }
 
+    // What the mind took in and thought, for the day's stream.
+    for (const t of triggers) {
+      if (t.kind === 'novelty' || t.kind === 'blocked' || t.kind === 'need') remember.push({ at: nowIso, kind: 'trigger', text: t.detail })
+    }
+    for (const e of events) remember.push({ at: nowIso, kind: 'visitor', text: `A visitor left a ${e.type}.` })
+    if (decision.thought.trim()) remember.push({ at: nowIso, kind: 'thought', text: decision.thought.trim() })
+
     // What the mind took in counts for how it feels: something new, a need running low, a plan that did not work out.
     for (const t of triggers) {
       if (t.kind === 'novelty' || t.kind === 'need' || (t.kind === 'blocked' && !failed)) appraisals.push({ kind: t.kind })
@@ -410,12 +710,14 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     if (decision.plan && decision.plan.length > 0) {
       const { usable, check } = checkPlan(decision.plan)
       if (check.ok) {
+        planPage = true
         goals.today = { date: today, steps: usable, reason: clampText((decision.planReason ?? decision.thought).trim() || 'This is what I feel like doing.', 200) }
         startStep(0, decision.thought)
         if (thinkKind !== 'morning') parts.push('new plan')
       } else {
         mind.rejections = [...mind.rejections, { at: nowIso, reasons: check.reasons.slice(0, 8) }].slice(-10)
         notes.push(`plan rejected: ${check.reasons.join('; ')}`)
+        remember.push({ at: nowIso, kind: 'rejected', text: `A plan was turned down: ${check.reasons[0] ?? 'it could not be carried out'}` })
         parts.push('plan rejected')
         // The body falls back to its own judgement: no focus, and no stale plan from another day.
         delete goals.now
@@ -443,6 +745,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   const mindChanged = !same(mind, w.mindState)
   const budgetChanged = !same(budget, w.budget)
   const skillsChanged = !same(skills, w.skills)
+  const beliefsChanged = !same(beliefs, w.beliefs)
+  const interestsChanged = !same(interests, w.interests)
   const carryingChanged = !same(holding, forkling.holding) || !same(stored, forkling.stored)
   const writeBody =
     started !== null ||
@@ -501,6 +805,23 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     if (budgetChanged && writeJson(dir, 'brain/budget.json', budget)) written.push('brain/budget.json')
     if (skillsChanged && writeJson(dir, 'brain/skills.json', skills)) written.push('brain/skills.json')
     if (rolled && temperament && writeJson(dir, 'brain/temperament.json', temperament)) written.push('brain/temperament.json')
+    if (beliefsChanged && writeJson(dir, 'memory/beliefs.json', beliefs)) written.push('memory/beliefs.json')
+    if (interestsChanged && writeJson(dir, 'brain/interests.json', interests)) written.push('brain/interests.json')
+    if (planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)
+    for (const art of madeArt) if (writeJson(dir, `art/${art.id}.json`, art)) written.push(`art/${art.id}.json`)
+    for (const page of notebook) if (writeText(dir, page.path, page.text)) written.push(page.path)
+    if (journal && writeText(dir, `journal/${journal.date}.md`, journal.text)) written.push(`journal/${journal.date}.md`)
+    if (summaryNext && writeText(dir, 'memory/summary.md', summaryNext)) written.push('memory/summary.md')
+    if (remember.length > 0) {
+      appendStream(dir, today, remember)
+      written.push(`memory/stream/${today}.jsonl`)
+    }
+    if (steps.length > 0) {
+      for (const entry of steps) appendTimeline(dir, today, entry)
+      written.push(`memory/timeline/${today}.jsonl`)
+    }
+    // A new morning clears out streams past their keeping time.
+    if (!asleep && forkling.asleep) written.push(...prune(dir, today))
     if (inboxConsumed) {
       for (const item of w.inbox) {
         deleteFile(dir, item.path)

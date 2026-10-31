@@ -7,6 +7,7 @@ import { BudgetLedger, Forkling, Goals, MindState, type SpeciesPack } from '@for
 import { moodLabel } from '@forkling/sim'
 import type { Decision } from '../src/decision.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
+import { noBatch } from './noBatch.ts'
 import { loadSpecies } from '../src/species.ts'
 import { runTick, type TickDeps } from '../src/tick.ts'
 
@@ -23,9 +24,9 @@ const morning: Decision = {
   longGoal: { text: 'Make the sunny rock mine.', reason: 'It is the warmest place I have found.' },
   dropLongGoal: false,
   plan: [
-    { verb: 'watch', target: 'sunny-rock', x: null, z: null, reason: 'I want the best seat on the beach.', minutes: 30, materials: null, makes: null },
-    { verb: 'explore', target: null, x: -10, z: 5, reason: 'There is shoreline I have not seen.', minutes: 25, materials: null, makes: null },
-    { verb: 'sit', target: null, x: null, z: null, reason: 'Breakfast can wait while I think.', minutes: 10, materials: null, makes: null },
+    { verb: 'watch', target: 'sunny-rock', x: null, z: null, reason: 'I want the best seat on the beach.', minutes: 30, materials: null, makes: null, because: null, topic: null },
+    { verb: 'explore', target: null, x: -10, z: 5, reason: 'There is shoreline I have not seen.', minutes: 25, materials: null, makes: null, because: null, topic: null },
+    { verb: 'sit', target: null, x: null, z: null, reason: 'Breakfast can wait while I think.', minutes: 10, materials: null, makes: null, because: null, topic: null },
   ],
   planReason: 'A day for claiming things.',
   stayUpLate: null,
@@ -41,10 +42,11 @@ function fakeLlm(decision: Decision | ((req: LlmRequest) => Decision | null) = m
   const calls: LlmRequest[] = []
   return {
     calls,
-    async complete(req) {
+    ...noBatch,
+    async complete<T>(req: LlmRequest<T>) {
       calls.push(req)
       const d = typeof decision === 'function' ? decision(req) : decision
-      return { decision: d, stopReason: d ? 'end_turn' : 'refusal', usage: { input: 800, cacheRead: 0, cacheWrite: 3000, output: 400 } }
+      return { parsed: d as T | null, stopReason: d ? 'end_turn' : 'refusal', usage: { input: 800, cacheRead: 0, cacheWrite: 3000, output: 400 } }
     },
   }
 }
@@ -168,7 +170,7 @@ describe('strong needs', () => {
 })
 
 describe('the validator', () => {
-  const badPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null }]
+  const badPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null, because: null, topic: null }]
 
   it('asks again once with the reasons, and uses the corrected plan', async () => {
     let n = 0
@@ -199,7 +201,7 @@ describe('the validator', () => {
   })
 
   it('does not ask again the same morning after a rejected plan', async () => {
-    const llm = fakeLlm({ ...morning, plan: [{ verb: 'fish', target: null, x: null, z: null, reason: 'x', minutes: 30, materials: null, makes: null }] })
+    const llm = fakeLlm({ ...morning, plan: [{ verb: 'fish', target: null, x: null, z: null, reason: 'x', minutes: 30, materials: null, makes: null, because: null, topic: null }] })
     await runTick(dir, at(NOW, { llm }))
     await runTick(dir, at(minutesAfter(10), { llm }))
     expect(llm.calls).toHaveLength(2)
@@ -265,6 +267,7 @@ describe('the budget', () => {
 
   it('survives a model that fails', async () => {
     const llm: LlmClient = {
+      ...noBatch,
       async complete() {
         throw new Error('overloaded')
       },

@@ -22,9 +22,13 @@ export const MAX_PROMPT_TOKENS = 100_000
 /** The ledger lists this many latest calls; `spentUsd` always covers all of them. */
 const MAX_LOGGED_CALLS = 500
 
-export function costUsd(model: ModelId, usage: Usage): number {
+/** The Batch API charges half. */
+const BATCH_DISCOUNT = 0.5
+
+export function costUsd(model: ModelId, usage: Usage, opts: { batch?: boolean } = {}): number {
   const p = PRICES[model]
-  return (usage.input * p.input + usage.cacheRead * p.cacheRead + usage.cacheWrite * p.cacheWrite + usage.output * p.output) / 1e6
+  const full = (usage.input * p.input + usage.cacheRead * p.cacheRead + usage.cacheWrite * p.cacheWrite + usage.output * p.output) / 1e6
+  return opts.batch ? full * BATCH_DISCOUNT : full
 }
 
 /** About four characters to a token. Only a guard and a dry-run figure, since real usage is recorded after the call. */

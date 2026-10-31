@@ -196,3 +196,35 @@ describe('loadWorld', () => {
     expect(seen[0]).toContain('/commits/builder%2Fnew-box')
   })
 })
+
+describe('loadWorld art', () => {
+  const piece = (id: string, createdAt: string) => ({ id, kind: 'writing', title: id, content: { text: 'x' }, skillLevel: 1, createdAt })
+
+  it('reads what it has made, newest first', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'art/a.json': piece('a', '2026-11-01T10:00:00Z'), 'art/b.json': piece('b', '2026-11-03T10:00:00Z') }))
+    expect(result.ok && result.world.art.map((a) => a.id)).toEqual(['b', 'a'])
+  })
+
+  it('has no art in a world that has made none', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling }))
+    expect(result.ok && result.world.art).toEqual([])
+  })
+
+  it('leaves out a piece that does not fit instead of failing the world', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'art/ok.json': piece('ok', '2026-11-01T10:00:00Z'), 'art/bad.json': { id: 'bad', kind: 'melody', content: { text: 'no' } } }))
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.world.art.map((a) => a.id)).toEqual(['ok'])
+  })
+
+  it('ignores files in art/ that are not artifacts', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'art/.gitkeep': '', 'art/notes.txt': 'hello' }))
+    expect(result.ok && result.world.art).toEqual([])
+  })
+
+  it('reads at most thirty', async () => {
+    const files: Record<string, unknown> = { 'forkling.json': forkling }
+    for (let n = 0; n < 40; n++) files[`art/p${String(n).padStart(2, '0')}.json`] = piece(`p${n}`, `2026-11-01T10:${String(n).padStart(2, '0')}:00Z`)
+    const result = await loadWorld(ref, deps(files))
+    expect(result.ok && result.world.art).toHaveLength(30)
+  })
+})
