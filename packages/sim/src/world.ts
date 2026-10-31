@@ -85,7 +85,7 @@ export function collectSpots(
     if (!p) continue
     spots[o.id] = [p]
     for (const kind of o.affordances) (spots[kind] ??= []).push(p)
-    if (o.properties.high) (spots.perch ??= []).push(p)
+    if (o.properties.high && !o.affordances.includes('perch')) (spots.perch ??= []).push(p)
     for (const verb of pack.actions) {
       if (verb.target.type === 'object' && matchesTarget(verb.target, verb.id, o)) (spots[`for:${verb.id}`] ??= []).push(p)
     }

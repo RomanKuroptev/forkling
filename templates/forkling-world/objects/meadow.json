@@ -1,0 +1,116 @@
+{
+  "id": "meadow",
+  "kind": "meadow",
+  "name": "The flower meadow",
+  "position": [
+    6,
+    0,
+    12
+  ],
+  "rotation": [
+    0,
+    0,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "cylinder",
+        "size": [
+          1.6,
+          0.05,
+          1.6
+        ],
+        "at": [
+          0,
+          0.025,
+          0
+        ],
+        "color": "#7cb342"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.14,
+          0.14,
+          0.14
+        ],
+        "at": [
+          0.3,
+          0.2,
+          0.2
+        ],
+        "color": "#e86fa0"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.14,
+          0.14,
+          0.14
+        ],
+        "at": [
+          -0.4,
+          0.2,
+          0.1
+        ],
+        "color": "#f0ad4e"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.14,
+          0.14,
+          0.14
+        ],
+        "at": [
+          0.1,
+          0.2,
+          -0.4
+        ],
+        "color": "#9b59b6"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.14,
+          0.14,
+          0.14
+        ],
+        "at": [
+          -0.2,
+          0.2,
+          -0.3
+        ],
+        "color": "#e86fa0"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.14,
+          0.14,
+          0.14
+        ],
+        "at": [
+          0.5,
+          0.2,
+          -0.1
+        ],
+        "color": "#f2e2d0"
+      }
+    ]
+  },
+  "properties": {
+    "size": 1.6,
+    "weightKg": 100,
+    "soft": true,
+    "material": "flowers"
+  },
+  "unlocks": [],
+  "yields": {
+    "material": "flowers",
+    "max": 8,
+    "respawnHours": 24
+  },
+  "reason": "Colour for no reason, which is the best reason."
+}

@@ -14,6 +14,8 @@
     12
   ],
   "mood": "sleepy",
+  "feelings": { "valence": 0, "arousal": 0.3 },
+  "stored": {},
   "intention": {
     "type": "sit",
     "startedAt": "2026-10-30T21:00:00Z",

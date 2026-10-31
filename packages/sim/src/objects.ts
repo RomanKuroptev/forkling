@@ -169,6 +169,11 @@ export function composeMade(input: MadeInput): { parts: ModelPart[]; size: numbe
   return { parts, size: round3(Math.max(top, reach * 2)) }
 }
 
+/** Whether an object is somewhere the world offers as a spot of this kind: by its old affordances, or because it is high up (a perch). */
+export function offersSpot(obj: WorldObject, kind: string): boolean {
+  return obj.affordances.includes(kind as never) || (kind === 'perch' && obj.properties.high)
+}
+
 /** Whether `obj` is a target for a verb: it matches the verb's property filter and, if asked, unlocks the verb. */
 export function matchesTarget(target: Extract<ActionTarget, { type: 'object' }>, verbId: string, obj: WorldObject): boolean {
   if (target.unlocked && !obj.unlocks.includes(verbId)) return false

@@ -1,6 +1,7 @@
 import type { Holding, PlanStep, Skills, SpeciesAction, SpeciesPack, WorldObject } from '@forkling/schema'
 import { applyStep, type StepWorld, type Stored } from './effects.ts'
 import type { Point2 } from './nav.ts'
+import { offersSpot } from './objects.ts'
 import { skillLevel } from './skills.ts'
 import { isDusk } from './time.ts'
 
@@ -40,7 +41,7 @@ export type PlanResult = { ok: true } | { ok: false; reasons: string[] }
 function reachableTarget(action: SpeciesAction & { target: { type: 'spot'; kind: string } }, targetId: string, objects: readonly WorldObject[], ctx: PlanContext): boolean {
   const kind = action.target.kind
   if (targetId === kind) return ctx.spotKinds.has(kind)
-  return objects.some((o) => o.id === targetId && o.affordances.includes(kind as never))
+  return objects.some((o) => o.id === targetId && offersSpot(o, kind))
 }
 
 /** What can be told about a step without playing it out: the verb exists, its target has the right shape, the time suits. */

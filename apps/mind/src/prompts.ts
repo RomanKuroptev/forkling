@@ -24,10 +24,23 @@ export interface SystemInput {
   persona: string
 }
 
+/** How each object property reads as a description, when it is wanted and when it is not. */
+const PHRASES: Record<string, [string, string]> = {
+  carryable: ['carryable', 'too big to carry'],
+  diggable: ['diggable', 'not diggable'],
+  canHide: ['big enough to hide in', 'too small to hide in'],
+  edible: ['edible', 'not food'],
+  soft: ['soft', 'hard'],
+  high: ['high up', 'low'],
+  storage: ['a storage place', 'not for storing things'],
+  yields: ['a source of material', 'not a source of material'],
+  grows: ['a plant', 'not a plant'],
+}
+
 function describeFilter(where: Record<string, unknown>): string {
   return Object.entries(where)
     .filter(([, v]) => v !== undefined)
-    .map(([k, v]) => (v === true ? k : v === false ? `not ${k}` : `${k} ${String(v)}`))
+    .map(([k, v]) => (k === 'material' ? `made of ${String(v)}` : (PHRASES[k]?.[v ? 0 : 1] ?? k)))
     .join(' and ')
 }
 
@@ -59,6 +72,13 @@ const GROUPS: Record<VerbGroup, string> = {
   mind: 'Mind',
 }
 
+/** Which objects a verb works on, as the model should read it. */
+function describeObjectTarget(verb: string, t: Extract<SpeciesAction['target'], { type: 'object' }>): string {
+  if (t.unlocked) return `target: the id of an object that unlocks "${verb}"`
+  const filter = describeFilter(t.where)
+  return filter ? `target: the id of an object that is ${filter}` : 'target: the id of any object'
+}
+
 function describeAction(a: SpeciesAction): string {
   const t = a.target
   const where =
@@ -69,7 +89,7 @@ function describeAction(a: SpeciesAction): string {
         : t.type === 'visitor'
           ? 'only when a visitor is near, so it cannot be planned'
           : t.type === 'object'
-            ? `target: the id of an object ${t.unlocked ? `that unlocks "${a.id}"` : `that is ${describeFilter(t.where) || 'anything'}`}`
+            ? describeObjectTarget(a.id, t)
             : `target: "${t.kind}", or the id of an object that offers "${t.kind}"`
   const needs = Object.entries(a.satisfies)
     .map(([id, n]) => `${n > 0 ? '+' : ''}${n} ${id}`)

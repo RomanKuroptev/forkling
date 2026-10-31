@@ -5,6 +5,8 @@
   "needs": { "hunger": 70, "energy": 80, "curiosity": 60, "affection": 30 },
   "position": [2, 0, 20],
   "mood": "curious",
+  "feelings": { "valence": 0, "arousal": 0.3 },
+  "stored": {},
   "intention": {
     "type": "sit",
     "startedAt": "2026-10-30T12:00:00Z",

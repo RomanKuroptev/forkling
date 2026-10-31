@@ -306,7 +306,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
       goals,
       mindState: mind,
       objects,
-      spotKinds: [...spotKeys].filter((k) => !objectIds.has(k)),
+      spotKinds: [...spotKeys].filter((k) => !objectIds.has(k) && !k.startsWith('for:')),
       triggers,
       events,
       localTime: `${weekday(tz, nowMs)} ${today} ${clock(tz, nowMs)}`,

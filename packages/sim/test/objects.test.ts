@@ -9,6 +9,7 @@ import {
   matchesTarget,
   neededSessions,
   objectStatusAt,
+  offersSpot,
 } from '../src/objects.ts'
 import { sunDirection } from '../src/sky.ts'
 import { starterWorld, worldWithObjects } from '../src/starter.ts'
@@ -285,5 +286,25 @@ describe('object footprints follow size', () => {
 
   it('still sees a placed object where the island has none', () => {
     expect(worldWithObjects([made(1)]).placements.length).toBe(starterWorld().placements.length + 1)
+  })
+})
+
+describe('offersSpot', () => {
+  it('counts a high object as a perch, and an old affordance as itself', () => {
+    expect(offersSpot(obj({ properties: { high: true } }), 'perch')).toBe(true)
+    expect(offersSpot(obj({ affordances: ['perch'] }), 'perch')).toBe(true)
+    expect(offersSpot(obj(), 'perch')).toBe(false)
+    expect(offersSpot(obj({ properties: { high: true } }), 'sunbeam')).toBe(false)
+  })
+
+  it('gives a high object one perch spot, not two, even if it also says perch the old way', () => {
+    const rock = obj({ id: 'tall', affordances: ['perch'], properties: { high: true } })
+    const world = worldWithObjects([rock])
+    const spots = collectSpots(
+      SpeciesPack.parse({ id: 'x', displayName: 'X', needs: { energy: { initial: 50, decayPerHour: 1 } }, perception: { noticeRadius: 3, eyeHeight: 0.3 }, locomotion: { walkSpeed: 1, runSpeed: 2 }, actions: [{ id: 'sit', satisfies: {}, durationSec: [1, 2], target: { type: 'none' }, slot: 'sit', reason: 'Sitting.' }] }),
+      world.cfg, world.nav, world.spawn, sunDirection(12), world.objects,
+    )
+    const own = spots.perch!.filter((p) => Math.hypot(p.x - 2, p.z - 20) < 5)
+    expect(own).toHaveLength(1)
   })
 })

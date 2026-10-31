@@ -6,6 +6,6 @@
   "rotation": [0, 0.3, 0],
   "scale": 1.6,
   "model": { "asset": "nature/rock_tallA" },
-  "affordances": ["perch"],
+  "properties": { "size": 1.6, "weightKg": 2500, "high": true, "material": "stone" },
   "reason": "From the top you can see who is coming up the beach."
 }

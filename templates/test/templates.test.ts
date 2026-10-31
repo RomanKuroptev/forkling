@@ -2,8 +2,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { BudgetLedger, Forkling, forklingPackIssues, Goals, MindState, objectIdFromPath, SpeciesPack, WorldObject } from '@forkling/schema'
-import { isWalkable, starterWorld } from '@forkling/sim'
+import { BudgetLedger, Forkling, forklingPackIssues, Goals, MindState, objectIdFromPath, PlanStep, Skills, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
+import { collectSpots, isWalkable, matchesTarget, runPlan, starterWorld, sunDirection, worldWithObjects } from '@forkling/sim'
 import catSpecies from '@forkling/species-cat/species.json'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -54,7 +54,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('has mind files that fit their schemas', () => {
-      const schemas = { 'mind/goals.json': Goals, 'mind/state.json': MindState, 'brain/budget.json': BudgetLedger }
+      const schemas = { 'mind/goals.json': Goals, 'mind/state.json': MindState, 'brain/budget.json': BudgetLedger, 'brain/skills.json': Skills }
       for (const [path, schema] of Object.entries(schemas)) {
         if (paths.includes(path)) expect(schema.safeParse(read(join(dir, path))).success, path).toBe(true)
       }
@@ -127,5 +127,94 @@ describe('templates/merge', () => {
   it('has a persona of its own for the owner to review', () => {
     const persona = readFileSync(join(root, 'merge', 'brain/persona.md'), 'utf8')
     expect(persona.trim().length).toBeGreaterThan(40)
+  })
+})
+
+describe('templates/forkling-world starter objects', () => {
+  const pack = packs.cat!
+  const readAll = (template: string) => {
+    const dir = join(root, template, 'objects')
+    return readdirSync(dir)
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => WorldObject.parse(read(join(dir, f))))
+  }
+  const starter = readAll('forkling-world')
+  const byId = (id: string) => starter.find((o) => o.id === id)!
+
+  it('has a home, tools and places, each unlocking verbs of its own', () => {
+    for (const id of ['house', 'desk', 'workbench', 'kitchen', 'garden', 'bookshelf', 'drum', 'telescope', 'bed', 'bowl', 'water-bowl']) {
+      expect(byId(id), id).toBeDefined()
+    }
+    expect(byId('desk').unlocks).toEqual(expect.arrayContaining(['write', 'draw', 'code']))
+    expect(byId('workbench').unlocks).toEqual(expect.arrayContaining(['build', 'join', 'shape', 'sew', 'paint', 'tinker']))
+    expect(byId('kitchen').unlocks).toEqual(['cook'])
+    expect(byId('garden').unlocks).toEqual(['plant'])
+    expect(byId('bookshelf').unlocks).toEqual(expect.arrayContaining(['read', 'study']))
+    expect(byId('drum').unlocks).toEqual(expect.arrayContaining(['play', 'compose']))
+    expect(byId('telescope').unlocks).toEqual(['observe'])
+  })
+
+  it('gives every material a source that refills slowly', () => {
+    const gives = new Map(starter.filter((o) => o.yields).map((o) => [o.yields!.material, o.yields!]))
+    for (const material of ['wood', 'stone', 'clay', 'flowers', 'fibre', 'shells', 'produce'] as Material[]) {
+      const source = gives.get(material)
+      expect(source, material).toBeDefined()
+      expect(source!.respawnHours).toBeGreaterThanOrEqual(12)
+    }
+  })
+
+  it('has a bowl to eat from that is never used up, and a place to keep things', () => {
+    expect(byId('bowl').properties).toMatchObject({ edible: true, carryable: false })
+    expect(starter.some((o) => o.properties.storage)).toBe(true)
+  })
+
+  it('gives every object verb of the cat something to work on, except what must be made first', () => {
+    const needsMaking = new Set(['dine', 'water', 'harvest'])
+    for (const verb of pack.actions) {
+      if (verb.target.type !== 'object' || needsMaking.has(verb.id)) continue
+      const target = verb.target
+      expect(
+        starter.some((o) => matchesTarget(target, verb.id, o)),
+        `nothing in the starter world for ${verb.id}`,
+      ).toBe(true)
+    }
+  })
+
+  it('uses ids that do not collide with the objects of a specific world', () => {
+    const ids = new Set(starter.map((o) => o.id))
+    for (const o of readAll('merge')) expect(ids.has(o.id), o.id).toBe(false)
+  })
+
+  it('puts everything where the body can reach it', () => {
+    const world = worldWithObjects([...starter, ...readAll('merge')])
+    const spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(12), world.objects)
+    for (const o of starter) {
+      expect(spots[o.id]?.length, `${o.id} is somewhere unreachable`).toBe(1)
+      expect(isWalkable(world.nav.grid, spots[o.id]![0]!.x, spots[o.id]![0]!.z), o.id).toBe(true)
+    }
+  })
+
+  it('lets a cat gather, put away and build, all the way through, with nothing but these files', () => {
+    const step = (verb: string, extra: Record<string, unknown> = {}) => PlanStep.parse({ verb, reason: 'Because I can.', minutes: 5, ...extra })
+    const run = runPlan({
+      pack: { ...pack, needs: Object.fromEntries(Object.entries(pack.needs).map(([id, n]) => [id, { ...n!, decayPerHour: 0 }])) },
+      seed: 12,
+      startMs: Date.parse('2026-11-03T09:00:00Z'),
+      objects: starter,
+      steps: [
+        step('pick_up', { targetId: 'driftwood' }),
+        step('put_on', { targetId: 'house' }),
+        step('pick_up', { targetId: 'pebbles' }),
+        step('put_on', { targetId: 'house' }),
+        step('build', { targetId: 'workbench', materials: ['wood', 'stone'], makes: 'a driftwood marker' }),
+        step('pick_up', { targetId: 'meadow' }),
+        step('put_on', { targetId: 'house' }),
+        step('plant', { targetId: 'garden', materials: ['flowers'], makes: 'a first flower' }),
+      ],
+    })
+    expect(run.steps.map((s) => s.reason ?? 'ok')).toEqual(Array(8).fill('ok'))
+    expect(run.objects.find((o) => o.id === 'a-driftwood-marker')?.made?.done).toBe(true)
+    expect(run.objects.find((o) => o.id === 'a-first-flower')?.grows?.gives).toBe('flowers')
+    expect(run.stored).toEqual({})
   })
 })

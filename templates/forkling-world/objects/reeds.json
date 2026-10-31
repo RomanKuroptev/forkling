@@ -1,0 +1,127 @@
+{
+  "id": "reeds",
+  "kind": "reeds",
+  "name": "The reeds",
+  "position": [
+    18,
+    0,
+    16
+  ],
+  "rotation": [
+    0,
+    0,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "cylinder",
+        "size": [
+          0.04,
+          0.9,
+          0.04
+        ],
+        "at": [
+          0,
+          0.45,
+          0
+        ],
+        "color": "#9aa95a",
+        "rotation": [
+          0.05,
+          0,
+          0
+        ]
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.04,
+          0.8,
+          0.04
+        ],
+        "at": [
+          0.12,
+          0.4,
+          0.05
+        ],
+        "color": "#9aa95a",
+        "rotation": [
+          -0.1,
+          0,
+          0.1
+        ]
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.04,
+          1,
+          0.04
+        ],
+        "at": [
+          -0.1,
+          0.5,
+          0.1
+        ],
+        "color": "#9aa95a",
+        "rotation": [
+          0.1,
+          0,
+          -0.05
+        ]
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.04,
+          0.7,
+          0.04
+        ],
+        "at": [
+          0.05,
+          0.35,
+          -0.12
+        ],
+        "color": "#9aa95a",
+        "rotation": [
+          0,
+          0,
+          0.12
+        ]
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.04,
+          0.85,
+          0.04
+        ],
+        "at": [
+          -0.15,
+          0.425,
+          -0.05
+        ],
+        "color": "#9aa95a",
+        "rotation": [
+          -0.08,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "properties": {
+    "size": 1.0,
+    "weightKg": 5,
+    "soft": true,
+    "material": "fibre"
+  },
+  "unlocks": [],
+  "yields": {
+    "material": "fibre",
+    "max": 6,
+    "respawnHours": 24
+  },
+  "reason": "Long and bendy. Good for tying things."
+}
