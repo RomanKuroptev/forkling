@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useWorld } from '../world/WorldContext.tsx'
+import { debugOpen } from './debugOpen.ts'
 import { live } from './live.ts'
-
-const startOn = new URLSearchParams(location.search).has('debug')
 
 const formatHour = (h: number) =>
   `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`
@@ -13,14 +12,14 @@ const formatTime = (sec: number, timezone: string) =>
 /** Needs, mood and current intention for the forkling, and where its state came from. Toggle with F3. */
 export function DebugOverlay() {
   const { world, species, clock } = useWorld()
-  const [open, setOpen] = useState(startOn)
+  const open = useSyncExternalStore(debugOpen.subscribe, debugOpen.get)
   const [, refresh] = useState(0)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'F3') return
       e.preventDefault()
-      setOpen((o) => !o)
+      debugOpen.toggle()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

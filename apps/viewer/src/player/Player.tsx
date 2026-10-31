@@ -1,10 +1,13 @@
 import { CameraControls, CameraControlsImpl, useKeyboardControls } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { Ecctrl, type EcctrlHandle } from 'ecctrl'
+import { useButtonStore, useJoystickStore } from 'ecctrl/input'
 import { useEffect, useRef } from 'react'
 import { heightAt } from '@forkling/sim'
 import { island, spawn } from '../island.ts'
+import { touchUi } from '../touch.ts'
 import { visitor } from '../visitor.ts'
+import { mergeMovement } from './touchInput.ts'
 
 const CAPSULE_RADIUS = 0.3
 const CAPSULE_HALF_HEIGHT = 0.45
@@ -29,6 +32,11 @@ export function Player() {
     }
     c.mouseButtons.right = CameraControlsImpl.ACTION.NONE
     c.mouseButtons.middle = CameraControlsImpl.ACTION.NONE
+    if (touchUi) {
+      // One finger turns the camera. Two pinch to zoom, and must not pan: the camera follows the visitor.
+      c.touches.two = CameraControlsImpl.ACTION.TOUCH_DOLLY
+      c.touches.three = CameraControlsImpl.ACTION.NONE
+    }
     if (clipMode) {
       const forward = { x: Math.sin(spawn.yaw), z: Math.cos(spawn.yaw) }
       const cat = { x: spawn.x + forward.x * 3.5, z: spawn.z + forward.z * 3.5 }
@@ -53,7 +61,9 @@ export function Player() {
     const b = body.current
     const c = camera.current
     if (!b || !c) return
-    b.setMovement(getKeys())
+    // The touch controls add to the keyboard; with nothing touched this is the keyboard's state unchanged.
+    const stick = useJoystickStore.getState().joysticks.default
+    b.setMovement(mergeMovement(getKeys(), stick ?? { x: 0, y: 0, active: false }, { jump: useButtonStore.getState().buttons.jump }))
     const p = b.currPos
     visitor.position = { x: p.x, z: p.z }
     if (!clipMode) c.moveTo(p.x, p.y + EYE_OFFSET, p.z, true)

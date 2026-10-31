@@ -7,6 +7,8 @@ import { Forkling } from './forkling/Forkling.tsx'
 import { GalleryWall } from './art/GalleryWall.tsx'
 import { Melody } from './art/Melody.tsx'
 import { Player } from './player/Player.tsx'
+import { touchUi } from './touch.ts'
+import { TouchControls } from './ui/TouchControls.tsx'
 import { Environment } from './world/Environment.tsx'
 import { Objects } from './world/Objects.tsx'
 import { Props } from './world/Props.tsx'
@@ -35,7 +37,7 @@ export function App() {
   return (
     <>
       <KeyboardControls map={keyboardMap}>
-        <Canvas shadows="percentage" dpr={[1, 1.5]} camera={{ fov: 55, near: 0.1, far: 400 }}>
+        <Canvas shadows="percentage" dpr={touchUi ? [1, 1.25] : [1, 1.5]} camera={{ fov: 55, near: 0.1, far: 400 }}>
           <Suspense fallback={null}>
             <Environment />
             <Physics debug={physicsDebug}>
@@ -53,10 +55,15 @@ export function App() {
       </KeyboardControls>
       <Loading />
       <DebugOverlay />
+      {touchUi && <TouchControls />}
       <Melody />
-      <div className="hud">
-        WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · E near a contraption sets it off · F3 for Merge’s mind
-      </div>
+      {touchUi ? (
+        <div className="hud hud-touch">Left stick to walk · push to the edge to run · drag to look · pinch to zoom</div>
+      ) : (
+        <div className="hud">
+          WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · E near a contraption sets it off · F3 for Merge’s mind
+        </div>
+      )}
     </>
   )
 }

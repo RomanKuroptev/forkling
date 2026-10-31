@@ -6,7 +6,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { live } from '../forkling/live.ts'
 import { island } from '../island.ts'
 import { visitor } from '../visitor.ts'
-import { bodyOf, shouldRun, TINKER_RANGE } from './contraptionRules.ts'
+import { bodyOf, shouldRun, TINKER_RANGE, VISITOR_RANGE } from './contraptionRules.ts'
+import { interactPress, reach } from './interact.ts'
 import { disposeParts, partsGroup } from './primitives.ts'
 
 /** Rolling and air resistance, the same as the headless run the mind records, so a run looks the way it was told. */
@@ -78,15 +79,18 @@ export function Contraption({ object }: { object: WorldObject }) {
   const [x, , z] = object.position
   const y = heightAt(x, z, island)
   const [run, setRun] = useState<number | null>(null)
-  const state = useRef({ wasTinkering: false, pressed: false, until: 0, count: 0 })
+  const state = useRef({ wasTinkering: false, pressed: false, until: 0, count: 0, seenPresses: interactPress.count() })
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'KeyE' && !e.repeat) state.current.pressed = true
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      reach.forget(object.id)
+    }
+  }, [object.id])
 
   useFrame(() => {
     const s = state.current
@@ -94,7 +98,12 @@ export function Contraption({ object }: { object: WorldObject }) {
     const tinkering = Boolean(playback && playback.state.action.id === 'tinker' && Math.hypot(playback.state.pos.x - x, playback.state.pos.z - z) <= TINKER_RANGE)
     const vp = visitor.position
     const running = run !== null
-    if (shouldRun({ running, tinkering, wasTinkering: s.wasTinkering, visitorPressed: s.pressed, visitorDistance: vp ? Math.hypot(vp.x - x, vp.z - z) : Infinity })) {
+    const distance = vp ? Math.hypot(vp.x - x, vp.z - z) : Infinity
+    reach.report(object.id, distance <= VISITOR_RANGE && !running)
+    // The touch button counts as the E key: a press since this contraption last looked.
+    const touched = interactPress.count() !== s.seenPresses
+    s.seenPresses = interactPress.count()
+    if (shouldRun({ running, tinkering, wasTinkering: s.wasTinkering, visitorPressed: s.pressed || touched, visitorDistance: distance })) {
       s.count += 1
       s.until = performance.now() + c.runSec * 1000
       setRun(s.count)
