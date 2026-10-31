@@ -21,6 +21,10 @@ export const MindState = z.object({
   lateNightReason: z.string().max(200).optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */
   recent: z.array(z.object({ verb: z.string(), targetId: z.string().optional(), at: Timestamp })).max(20).default([]),
+  /** Local date of the last bedtime reflection, so it happens once a day. */
+  lastReflectDate: z.iso.date().optional(),
+  /** The nightly memory rewrite waiting on the Batch API. */
+  memoryBatch: z.object({ id: z.string().min(1), date: z.iso.date() }).nullable().default(null),
   /** Why the validator last turned a plan down, newest last. */
   rejections: z.array(z.object({ at: Timestamp, reasons: z.array(z.string()) })).max(10).default([]),
 })
