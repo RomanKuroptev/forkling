@@ -1,6 +1,7 @@
 import { Intention, type MicroBehavior, type SpeciesPack } from '@forkling/schema'
-import { createForkling, stepForkling, STEP, toRepoIntention, type StepContext } from './forkling.ts'
+import { createForkling, stepForkling, STEP, toRepoIntention, type Focus, type StepContext } from './forkling.ts'
 import { isWalkable, nearestWalkable, type Point2 } from './nav.ts'
+import type { Needs } from './needs.ts'
 import { sunDirection } from './sky.ts'
 import { starterWorld, type StarterWorld } from './starter.ts'
 import { collectSpots } from './world.ts'
@@ -15,6 +16,10 @@ export interface HeadlessOptions {
   /** A visitor that stalks the forkling from `arrive` seconds, stops near it, and leaves at `leave`. */
   visitor?: { arrive: number; leave: number }
   world?: StarterWorld
+  /** Starting need values; the rest start at the pack's initial values. */
+  needs?: Needs
+  /** Favour this action and target until `until` seconds into the run. */
+  focus?: Focus
 }
 
 export interface HeadlessRun {
@@ -34,6 +39,10 @@ export interface HeadlessRun {
   /** When the forkling first noticed the visitor, and when its current intention started at that moment. */
   noticeStep: { time: number; startedAt: number } | null
   slots: Set<string>
+  /** `action:target` for every intention started (`action:` when it had no target). */
+  targets: string[]
+  /** Where it was, sampled every second. */
+  positions: Point2[]
 }
 
 /**
@@ -44,7 +53,7 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
   const { pack, behaviors = [] } = opts
   const world = opts.world ?? starterWorld()
   const start = nearestWalkable(world.nav.grid, { x: 0, z: 0 })!
-  const state = createForkling(pack, behaviors, opts.seed, start)
+  const state = createForkling(pack, behaviors, opts.seed, start, { ...(opts.needs ? { needs: opts.needs } : {}), ...(opts.focus ? { focus: opts.focus } : {}) })
   const run: HeadlessRun = {
     trace: [],
     intentionTypes: new Set(),
@@ -56,6 +65,8 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
     badIntentions: 0,
     noticeStep: null,
     slots: new Set(),
+    targets: [],
+    positions: [],
   }
   const radius = pack.perception.noticeRadius
   let visitor: Point2 | null = null
@@ -71,7 +82,7 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
     // Sunbeams are refreshed once a simulated minute, like the viewer does.
     if (Math.floor(t / 60) !== lastMinute) {
       lastMinute = Math.floor(t / 60)
-      spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(hour))
+      spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(hour), world.objects)
     }
 
     if (opts.visitor && t >= opts.visitor.arrive && t < opts.visitor.leave) {
@@ -118,6 +129,7 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
       lastIntentionStart = state.intention.startedAt
       run.intentionTypes.add(state.intention.type)
       if (!Intention.safeParse(toRepoIntention(state.intention)).success) run.badIntentions++
+      run.targets.push(`${state.intention.type}:${state.intention.targetId ?? ''}`)
       run.trace.push(`${state.intention.type}@${state.intention.startedAt.toFixed(1)}`)
     }
     if (state.micro) {
@@ -125,6 +137,7 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
       if (!run.micros.some((m) => m.id === id && Math.abs(m.hour - hour) < 0.05)) run.micros.push({ id, hour })
     }
     run.slots.add(state.slot)
+    if (i % 10 === 0) run.positions.push({ x: state.pos.x, z: state.pos.z })
     if (i % 10 === 0) run.trace.push(`${state.pos.x.toFixed(2)},${state.pos.z.toFixed(2)}`)
   }
   return run

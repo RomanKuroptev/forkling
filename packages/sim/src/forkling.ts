@@ -28,6 +28,22 @@ export interface StepContext {
   spots: Record<string, Point2[]>
 }
 
+/**
+ * What the mind wants it to be doing for now: favoured when it chooses, never forced. Its needs and a visitor still win.
+ * `until` is on the sim clock, in seconds.
+ */
+export interface Focus {
+  action: string
+  /** An object id or a spot kind to go to. */
+  targetId?: string
+  /** A place to go to, for actions that wander. */
+  position?: Point2
+  until: number
+}
+
+/** A focused action's score is at least this and doubled, so it beats idle drift but not a starving need. */
+const FOCUS_SCORE = 1
+
 export type Phase = 'moving' | 'acting' | 'micro'
 
 /** An intention as the body tracks it: like the repo's `Intention`, but with `startedAt` in seconds on the sim clock. */
@@ -73,6 +89,7 @@ export interface ForklingState {
   repaths: number
   /** An action to start with instead of choosing, e.g. the intention from `forkling.json`. Used once. */
   firstAction: string | null
+  focus: Focus | null
 }
 
 export interface CreateOptions {
@@ -82,6 +99,7 @@ export interface CreateOptions {
   needs?: Needs
   /** Start with this action id if the pack has it and its target can be reached. */
   firstAction?: string
+  focus?: Focus
 }
 
 const IDLE_ACTION: SpeciesAction = {
@@ -137,10 +155,13 @@ export function createForkling(
     stuckSeconds: 0,
     repaths: 0,
     firstAction: opts.firstAction ?? null,
+    focus: opts.focus ?? null,
   }
 }
 
 const dist = (a: Point2, b: Point2) => Math.hypot(a.x - b.x, a.z - b.z)
+
+const activeFocus = (s: ForklingState): Focus | null => (s.focus && s.time < s.focus.until ? s.focus : null)
 
 export function stepForkling(s: ForklingState, dt: number, ctx: StepContext): void {
   s.time += dt
@@ -328,6 +349,10 @@ function replan(s: ForklingState, ctx: StepContext): void {
     ...(ctx.asleep !== undefined ? { asleep: ctx.asleep } : {}),
     spotKinds,
   })
+  const focus = activeFocus(s)
+  if (focus) {
+    candidates = candidates.map((c) => (c.action.id === focus.action ? { ...c, score: Math.max(c.score * 2, FOCUS_SCORE) } : c))
+  }
   for (let attempt = 0; attempt < 5 && candidates.length > 0; attempt++) {
     const action = pickAction(candidates, s.rng)
     const target = resolveTarget(s, action, ctx)
@@ -367,11 +392,17 @@ function begin(s: ForklingState, action: SpeciesAction, target: Resolved): void 
 
 function resolveTarget(s: ForklingState, action: SpeciesAction, ctx: StepContext): Resolved | null {
   const target = action.target
+  const focus = activeFocus(s)?.action === action.id ? s.focus : null
   switch (target.type) {
     case 'none':
       return { path: [], goal: null, chasing: false }
 
     case 'wander': {
+      if (focus?.position) {
+        const goal = nearestWalkable(ctx.grid, focus.position, 8)
+        const path = goal ? findPath(ctx.grid, s.pos, goal) : null
+        if (goal && path) return { path, goal, chasing: false }
+      }
       for (let i = 0; i < 6; i++) {
         const angle = s.rng.range(0, Math.PI * 2)
         const r = s.rng.range(target.radius * 0.3, target.radius)
@@ -391,7 +422,9 @@ function resolveTarget(s: ForklingState, action: SpeciesAction, ctx: StepContext
     }
 
     case 'spot': {
-      const spots = [...(ctx.spots[target.kind] ?? [])].sort((a, b) => dist(s.pos, a) - dist(s.pos, b) || a.x - b.x || a.z - b.z)
+      // A focus on a particular object goes there; otherwise any spot of the action's kind will do.
+      const label = focus?.targetId && (ctx.spots[focus.targetId]?.length ?? 0) > 0 ? focus.targetId : target.kind
+      const spots = [...(ctx.spots[label] ?? [])].sort((a, b) => dist(s.pos, a) - dist(s.pos, b) || a.x - b.x || a.z - b.z)
       const n = Math.min(spots.length, 4)
       if (n === 0) return null
       // Mostly the nearest spots, but not always the same one.
@@ -399,7 +432,7 @@ function resolveTarget(s: ForklingState, action: SpeciesAction, ctx: StepContext
       for (let i = 0; i < n; i++) {
         const goal = nearestWalkable(ctx.grid, spots[(first + i) % n]!, 3)
         const path = goal ? findPath(ctx.grid, s.pos, goal) : null
-        if (goal && path) return { path, goal, chasing: false, targetId: target.kind }
+        if (goal && path) return { path, goal, chasing: false, targetId: label }
       }
       return null
     }

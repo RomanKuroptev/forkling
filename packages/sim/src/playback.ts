@@ -1,5 +1,5 @@
 import type { Forkling, MicroBehavior, SpeciesPack } from '@forkling/schema'
-import { createForkling, STEP, stepForkling, type ForklingState, type StepContext } from './forkling.ts'
+import { createForkling, STEP, stepForkling, type Focus, type ForklingState, type StepContext } from './forkling.ts'
 import { nearestWalkable, type Point2 } from './nav.ts'
 import { isAsleepAt } from './sleep.ts'
 import { sunDirection } from './sky.ts'
@@ -126,7 +126,7 @@ function stepOnce(pb: Playback, visitor: Point2 | null): void {
   const minute = Math.floor(t / 60)
   if (minute !== pb.spotMinute) {
     pb.spotMinute = minute
-    pb.ctx.spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(pb.ctx.timeOfDay))
+    pb.ctx.spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(pb.ctx.timeOfDay), world.objects)
   }
   pb.ctx.visitor = visitor
   stepForkling(pb.state, STEP, pb.ctx)
@@ -136,6 +136,20 @@ function stepOnce(pb: Playback, visitor: Point2 | null): void {
 function stepTo(pb: Playback, nowSec: number, visitor: Point2 | null): void {
   const target = Math.floor((nowSec - pb.anchor.time) / STEP + 1e-9)
   while (pb.steps < target) stepOnce(pb, visitor)
+}
+
+/** The focus the mind wrote into the intention, if there is one. */
+function focusFor(forkling: Forkling): { focus?: Focus } {
+  const { until, type, targetId, position } = forkling.intention
+  if (!until) return {}
+  return {
+    focus: {
+      action: type,
+      ...(targetId ? { targetId } : {}),
+      ...(position ? { position: { x: position[0], z: position[1] } } : {}),
+      until: Date.parse(until) / 1000,
+    },
+  }
 }
 
 /**
@@ -151,6 +165,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     time: anchor.time,
     needs: forkling.needs,
     firstAction: forkling.intention.type,
+    ...focusFor(forkling),
   })
   const pb: Playback = {
     input,

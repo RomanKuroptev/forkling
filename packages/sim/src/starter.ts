@@ -29,6 +29,8 @@ export interface StarterWorld {
   spawn: Spawn
   placements: PropPlacement[]
   nav: WorldNav
+  /** The world repo's objects, which can also be where the forkling goes (by id or by affordance). */
+  objects: WorldObject[]
 }
 
 let cached: StarterWorld | null = null
@@ -39,7 +41,7 @@ export function starterWorld(): StarterWorld {
     const cfg = starterIsland
     const spawn = findSpawn(cfg)
     const placements = scatterProps(cfg, starterPropRules, { clear: [{ x: spawn.x, z: spawn.z, radius: 5 }] })
-    cached = { cfg, spawn, placements, nav: buildWorldNav(cfg, placements, DEFAULT_FOOTPRINTS) }
+    cached = { cfg, spawn, placements, nav: buildWorldNav(cfg, placements, DEFAULT_FOOTPRINTS), objects: [] }
   }
   return cached
 }
@@ -71,5 +73,5 @@ export function worldWithObjects(objects: readonly WorldObject[]): StarterWorld 
     scale: o.scale,
   }))
   const placements = [...starter.placements, ...extra]
-  return { ...starter, placements, nav: buildWorldNav(starter.cfg, placements, OBJECT_FOOTPRINTS) }
+  return { ...starter, placements, nav: buildWorldNav(starter.cfg, placements, OBJECT_FOOTPRINTS), objects: [...objects] }
 }
