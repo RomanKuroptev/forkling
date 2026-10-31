@@ -169,6 +169,14 @@ describe('templates/forkling-world builder', () => {
     expect(text).toMatch(/pull-requests: write/)
   })
 
+  it('tells gh which repository to talk to, because the world is checked out in a subfolder, not the workspace root', () => {
+    const text = read('validate.yml')
+    for (const step of ['Merge a data-only pull request from the builder', 'Flag it for a person']) {
+      const body = text.slice(text.indexOf(`- name: ${step}`), text.indexOf('run: |', text.indexOf(`- name: ${step}`)))
+      expect(body, step).toMatch(/GH_REPO: \$\{\{ github\.repository \}\}/)
+    }
+  })
+
   it('has Claude Code on Haiku write a coded project, allowed to write only in its own folder, and never merges it', () => {
     const text = read('build.yml')
     expect(text).toMatch(/needs\.plan\.outputs\.kind == 'code'/)

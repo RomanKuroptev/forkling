@@ -69,6 +69,7 @@ jobs:
         if: success() && steps.check.outputs.dataonly == 'true' && github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PR: ${{ inputs.pr }}
         run: |
           head=$(gh pr view "$PR" --json headRefName --jq .headRefName)
@@ -79,6 +80,7 @@ jobs:
         if: failure() || (success() && steps.check.outputs.dataonly != 'true' && github.event_name == 'workflow_dispatch')
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number || inputs.pr }}
         run: |
           gh label create needs-review --color d93f0b --description "A person has to look at this before it merges" 2>/dev/null || true
