@@ -1,5 +1,6 @@
 import type { IslandConfig, SpeciesPack, WorldObject } from '@forkling/schema'
 import { heightAt, type PropPlacement } from './island.ts'
+import { matchesTarget } from './objects.ts'
 import { buildNavGrid, isWalkable, nearestWalkable, type NavGrid, type Obstacle, type Point2 } from './nav.ts'
 import { findSunbeams, type Caster, type Vec3Tuple } from './sky.ts'
 
@@ -58,7 +59,8 @@ export function perchSpots(cfg: IslandConfig, grid: NavGrid, count = 6, spacing 
 /**
  * The spots the world offers, by kind: `food` from the pack's starter spots (until objects arrive in M5),
  * `perch` from high ground, and `sunbeam` from the current sun. Objects add a spot under each of their affordances
- * (so a rock that can be perched on is one more `perch`) and one under their own id, so a goal can name a single one.
+ * and a `perch` when they are high (so a rock that can be perched on is one more `perch`) and one under their own id, so a goal can name a single one.
+ * A verb that targets objects gets `for:<verb>`: the objects its properties filter or unlocks match.
  * Any pack's actions may target these kinds.
  */
 export function collectSpots(
@@ -77,11 +79,16 @@ export function collectSpots(
   spots.perch = perchSpots(cfg, nav.grid)
   spots.sunbeam = findSunbeams(cfg, nav.grid, sun, nav.casters)
   for (const o of objects) {
+    if (o.state.held) continue
     // Objects block walking, so the spot is the nearest ground beside them.
     const p = nearestWalkable(nav.grid, { x: o.position[0], z: o.position[2] }, 4)
     if (!p) continue
     spots[o.id] = [p]
     for (const kind of o.affordances) (spots[kind] ??= []).push(p)
+    if (o.properties.high && !o.affordances.includes('perch')) (spots.perch ??= []).push(p)
+    for (const verb of pack.actions) {
+      if (verb.target.type === 'object' && matchesTarget(verb.target, verb.id, o)) (spots[`for:${verb.id}`] ??= []).push(p)
+    }
   }
   return spots
 }

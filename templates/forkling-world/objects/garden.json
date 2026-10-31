@@ -1,0 +1,98 @@
+{
+  "id": "garden",
+  "kind": "garden",
+  "name": "The garden plot",
+  "position": [
+    -5,
+    0,
+    18
+  ],
+  "rotation": [
+    0,
+    0,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "box",
+        "size": [
+          1.8,
+          0.15,
+          1.2
+        ],
+        "at": [
+          0,
+          0.075,
+          0
+        ],
+        "color": "#5a3d2b"
+      },
+      {
+        "shape": "box",
+        "size": [
+          1.9,
+          0.12,
+          0.08
+        ],
+        "at": [
+          0,
+          0.1,
+          -0.62
+        ],
+        "color": "#a67c52"
+      },
+      {
+        "shape": "box",
+        "size": [
+          1.9,
+          0.12,
+          0.08
+        ],
+        "at": [
+          0,
+          0.1,
+          0.62
+        ],
+        "color": "#a67c52"
+      },
+      {
+        "shape": "box",
+        "size": [
+          0.08,
+          0.12,
+          1.2
+        ],
+        "at": [
+          -0.95,
+          0.1,
+          0
+        ],
+        "color": "#a67c52"
+      },
+      {
+        "shape": "box",
+        "size": [
+          0.08,
+          0.12,
+          1.2
+        ],
+        "at": [
+          0.95,
+          0.1,
+          0
+        ],
+        "color": "#a67c52"
+      }
+    ]
+  },
+  "properties": {
+    "size": 2,
+    "weightKg": 800,
+    "diggable": true
+  },
+  "unlocks": [
+    "plant"
+  ],
+  "reason": "Dirt that wants something planted in it."
+}

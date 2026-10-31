@@ -1,0 +1,102 @@
+{
+  "id": "berry-bush",
+  "kind": "berry-bush",
+  "name": "The berry bush",
+  "position": [
+    12,
+    0,
+    18
+  ],
+  "rotation": [
+    0,
+    0,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "sphere",
+        "size": [
+          0.9,
+          0.7,
+          0.9
+        ],
+        "at": [
+          0,
+          0.4,
+          0
+        ],
+        "color": "#4f7d3a"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.1,
+          0.1,
+          0.1
+        ],
+        "at": [
+          0.35,
+          0.55,
+          0.2
+        ],
+        "color": "#c0392b"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.1,
+          0.1,
+          0.1
+        ],
+        "at": [
+          -0.3,
+          0.45,
+          0.3
+        ],
+        "color": "#c0392b"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.1,
+          0.1,
+          0.1
+        ],
+        "at": [
+          0.1,
+          0.65,
+          -0.35
+        ],
+        "color": "#c0392b"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.1,
+          0.1,
+          0.1
+        ],
+        "at": [
+          -0.25,
+          0.6,
+          -0.2
+        ],
+        "color": "#c0392b"
+      }
+    ]
+  },
+  "properties": {
+    "size": 1.0,
+    "weightKg": 30,
+    "canHide": true,
+    "material": "produce"
+  },
+  "unlocks": [],
+  "yields": {
+    "material": "produce",
+    "max": 6,
+    "respawnHours": 36
+  },
+  "reason": "Small and red and, so far, not poisonous."
+}

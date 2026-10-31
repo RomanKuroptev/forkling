@@ -7,14 +7,14 @@ const goals = Goals.parse({
   today: {
     date: '2026-11-03',
     steps: [
-      { verb: 'perch', targetId: 'sunny-rock', reason: 'I want the best seat on the beach.', minutes: 30 },
+      { verb: 'watch', targetId: 'sunny-rock', reason: 'I want the best seat on the beach.', minutes: 30 },
       { verb: 'explore', position: [3, 4], reason: 'There is shoreline I have not seen.', minutes: 25 },
     ],
     reason: 'A day for claiming things.',
   },
   now: { index: 0, startedAt: '2026-11-03T09:00:00Z', until: '2026-11-03T09:30:00Z' },
 })
-const intention = { type: 'perch', startedAt: '2026-11-03T09:00:00Z', seed: 1, reason: 'The rock catches the sun first.' }
+const intention = { type: 'watch', startedAt: '2026-11-03T09:00:00Z', seed: 1, reason: 'The rock catches the sun first.' }
 const at = (iso: string) => Date.parse(iso)
 
 describe('bubbleLines', () => {
@@ -26,8 +26,17 @@ describe('bubbleLines', () => {
     const lines = bubbleLines(goals, intention, false, at('2026-11-03T09:10:00Z'))!
     expect(lines.map((l) => l.kind)).toEqual(['goal', 'step', 'reason'])
     expect(lines[0]!.text).toBe('Make the sunny rock mine.')
-    expect(lines[1]!.text).toBe('perch at sunny-rock: I want the best seat on the beach.')
+    expect(lines[1]!.text).toBe('watch at sunny-rock: I want the best seat on the beach.')
     expect(lines[2]!.text).toBe('The rock catches the sun first.')
+  })
+
+  it('says what is being made, in its own words', () => {
+    const making = Goals.parse({
+      ...goals,
+      today: { ...goals.today, steps: [{ verb: 'build', targetId: 'workbench', makes: 'a wooden shelf', materials: ['wood'], reason: 'Somewhere for my finds.', minutes: 20 }] },
+    })
+    const lines = bubbleLines(making, intention, false, at('2026-11-03T09:10:00Z'))!
+    expect(lines[1]!.text).toBe('build “a wooden shelf” at workbench: Somewhere for my finds.')
   })
 
   it('drops the step once its time is up, so a stale plan is not shown as current', () => {

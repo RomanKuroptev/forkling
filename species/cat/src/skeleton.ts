@@ -22,6 +22,7 @@ export const BONES = [
   'legBL2',
   'legBR1',
   'legBR2',
+  'holdR',
 ] as const
 
 export type BoneName = (typeof BONES)[number]
@@ -46,6 +47,8 @@ export const PARENT: Record<BoneName, BoneName | null> = {
   legBL2: 'legBL1',
   legBR1: 'hips',
   legBR2: 'legBR1',
+  // Where a held item sits: at the right paw, so it follows the arm.
+  holdR: 'legFR2',
 }
 
 export const REST: Record<BoneName, [number, number, number]> = {
@@ -68,4 +71,5 @@ export const REST: Record<BoneName, [number, number, number]> = {
   legBL2: [0, -0.09, 0],
   legBR1: [-0.07, -0.03, -0.04],
   legBR2: [0, -0.09, 0],
+  holdR: [0, -0.075, 0.02],
 }

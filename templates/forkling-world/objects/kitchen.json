@@ -1,0 +1,69 @@
+{
+  "id": "kitchen",
+  "kind": "kitchen",
+  "name": "The kitchen corner",
+  "position": [
+    -4,
+    0,
+    12
+  ],
+  "rotation": [
+    0,
+    -0.1,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "box",
+        "size": [
+          1.4,
+          0.9,
+          0.6
+        ],
+        "at": [
+          0,
+          0.45,
+          0
+        ],
+        "color": "#f2e2d0"
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.4,
+          0.05,
+          0.4
+        ],
+        "at": [
+          -0.3,
+          0.92,
+          0
+        ],
+        "color": "#333333"
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.25,
+          0.2,
+          0.25
+        ],
+        "at": [
+          -0.3,
+          1.04,
+          0
+        ],
+        "color": "#9aa5b1"
+      }
+    ]
+  },
+  "properties": {
+    "size": 1.5,
+    "weightKg": 120
+  },
+  "unlocks": [
+    "cook"
+  ],
+  "reason": "Hot food is better than cold food."
+}

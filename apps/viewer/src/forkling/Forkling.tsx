@@ -1,4 +1,4 @@
-import { advancePlayback, heightAt, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
+import { advancePlayback, heightAt, materialColor, quirkWeights, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
@@ -7,6 +7,7 @@ import * as THREE from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { island, spawn } from '../island.ts'
 import { visitor } from '../visitor.ts'
+import { disposeParts, partsGroup } from '../world/primitives.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { live } from './live.ts'
 import { ThoughtBubble } from './ThoughtBubble.tsx'
@@ -60,9 +61,33 @@ export function Forkling() {
       world: simWorld,
       goals: world.goals,
       stateTime: world.committedAt ? Date.parse(world.committedAt) / 1000 : undefined,
+      ...(world.temperament ? { quirkWeights: quirkWeights(world.temperament, species.pools) } : {}),
     }),
     [world, species, simWorld],
   )
+
+  // Whatever is in its paws is shown at the right paw, and follows the arm.
+  const holding = world.forkling.holding
+  useEffect(() => {
+    const bone = rig.bones.holdR
+    if (!bone || !holding) return
+    let prop: THREE.Group
+    if ('material' in holding) {
+      prop = partsGroup([{ shape: 'sphere', size: [0.1, 0.08, 0.1], at: [0, 0, 0], color: materialColor(holding.material) }])
+    } else {
+      const object = world.objects.find((o) => o.id === holding.objectId)
+      const parts = object && 'parts' in object.model ? object.model.parts : [{ shape: 'box' as const, size: [0.15, 0.15, 0.15] as [number, number, number], at: [0, 0.075, 0] as [number, number, number], color: '#c9b79c' }]
+      prop = partsGroup(parts)
+      // Nothing it holds is bigger than it can carry.
+      prop.scale.setScalar(Math.min(1, 0.25 / Math.max(0.01, object?.properties.size ?? 0.15)))
+    }
+    prop.position.set(0, 0.02, 0.03)
+    bone.add(prop)
+    return () => {
+      bone.remove(prop)
+      disposeParts(prop)
+    }
+  }, [holding, rig, world.objects])
 
   const view = useMemo(
     () => ({ shown: null as { x: number; z: number } | null, heading: 0, current: null as THREE.AnimationAction | null, currentSlot: '' }),
@@ -143,6 +168,7 @@ export function Forkling() {
     if (micro?.animate && !FORCED_CLIP) {
       micro.animate({ bones: rig.bones, t: sim.elapsed, progress: Math.min(1, sim.elapsed / micro.durationSec) })
     }
+    if (!FORCED_CLIP) species.moodPose?.({ bones: rig.bones, t: sim.time, feelings: world.forkling.feelings })
   })
 
   return (

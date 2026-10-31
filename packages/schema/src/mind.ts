@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { Timestamp } from './intention.ts'
+import { VerbGroup } from './species.ts'
 
 /** Hard monthly ceiling per forkling, in US dollars. */
 export const MONTHLY_CAP_USD = 10
@@ -12,6 +13,8 @@ export const MindState = z.object({
   seenEventTypes: z.array(z.string()).default([]),
   /** Local date of the last morning plan. */
   lastPlanDate: z.iso.date().optional(),
+  /** When the step whose effect was last applied began, so a step's effect happens once however many ticks follow it. */
+  appliedStepAt: Timestamp.optional(),
   /** When the LLM was last asked, so strong needs don't wake it every tick. */
   lastThinkAt: Timestamp.optional(),
   /** Why the mind chose to stay up late, in its own words. */
@@ -46,3 +49,17 @@ export const BudgetLedger = z.object({
   history: z.array(z.object({ month: z.string(), spentUsd: z.number().nonnegative(), calls: z.number().int().nonnegative() })).default([]),
 })
 export type BudgetLedger = z.infer<typeof BudgetLedger>
+
+/** `brain/skills.json`: practice per verb group. Level only rises with use, and sets how good the things it makes are. */
+export const Skills = z.partialRecord(VerbGroup, z.object({ xp: z.number().nonnegative(), level: z.number().int().min(0).max(10) }))
+export type Skills = z.infer<typeof Skills>
+
+const Trait = z.object({ category: z.string().min(1), value: z.string().min(1) })
+
+/** `brain/temperament.json`: likes, dislikes and quirks rolled once from the seed. Quirk weights come from the species pack. */
+export const TemperamentRoll = z.object({
+  likes: z.array(Trait),
+  dislikes: z.array(Trait),
+  quirks: z.array(z.object({ id: z.string().min(1), text: z.string().min(1).max(200) })),
+})
+export type TemperamentRoll = z.infer<typeof TemperamentRoll>

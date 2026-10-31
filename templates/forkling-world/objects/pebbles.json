@@ -1,0 +1,101 @@
+{
+  "id": "pebbles",
+  "kind": "pebbles",
+  "name": "The pebbles",
+  "position": [
+    4,
+    0,
+    27
+  ],
+  "rotation": [
+    0,
+    0,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "sphere",
+        "size": [
+          0.22,
+          0.154,
+          0.22
+        ],
+        "at": [
+          0,
+          0.077,
+          0
+        ],
+        "color": "#8a8d91"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.16,
+          0.112,
+          0.16
+        ],
+        "at": [
+          0.25,
+          0.056,
+          0.1
+        ],
+        "color": "#8a8d91"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.18,
+          0.126,
+          0.18
+        ],
+        "at": [
+          -0.2,
+          0.063,
+          0.15
+        ],
+        "color": "#8a8d91"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.12,
+          0.084,
+          0.12
+        ],
+        "at": [
+          0.1,
+          0.042,
+          -0.2
+        ],
+        "color": "#8a8d91"
+      },
+      {
+        "shape": "sphere",
+        "size": [
+          0.14,
+          0.098,
+          0.14
+        ],
+        "at": [
+          -0.15,
+          0.049,
+          -0.18
+        ],
+        "color": "#8a8d91"
+      }
+    ]
+  },
+  "properties": {
+    "size": 0.6,
+    "weightKg": 30,
+    "material": "stone"
+  },
+  "unlocks": [],
+  "yields": {
+    "material": "stone",
+    "max": 8,
+    "respawnHours": 24
+  },
+  "reason": "Round, smooth and free."
+}

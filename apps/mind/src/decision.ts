@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { PlanStep } from '@forkling/schema'
+import { Material, PlanStep } from '@forkling/schema'
 
 /**
  * What the model returns, for every kind of thinking. Kept to plain strings, numbers and nulls so it fits structured
@@ -14,12 +14,14 @@ export const LlmStep = z.object({
   z: z.number().nullable(),
   reason: z.string(),
   minutes: z.number(),
+  /** What a making, planting or cooking step uses, up to four; null otherwise. */
+  materials: z.array(z.string()).nullable(),
+  /** A few words for what the step makes; null otherwise. */
+  makes: z.string().nullable(),
 })
 export type LlmStep = z.infer<typeof LlmStep>
 
 export const Decision = z.object({
-  /** One or two words for how it feels now. */
-  mood: z.string(),
   /** One sentence in its own voice: why it does what it does next. */
   thought: z.string(),
   /** Set or replace the long goal. Null leaves it as it is. */
@@ -47,11 +49,18 @@ export function planStepFrom(step: LlmStep): PlanStep | null {
   const verb = step.verb.trim()
   if (!verb || !reason) return null
   const target = step.target?.trim()
+  const materials = (step.materials ?? []).flatMap((m) => {
+    const parsed = Material.safeParse(m.trim().toLowerCase())
+    return parsed.success ? [parsed.data] : []
+  })
+  const makes = step.makes?.trim()
   const place = step.x !== null && step.z !== null && Number.isFinite(step.x) && Number.isFinite(step.z)
   const parsed = PlanStep.safeParse({
     verb,
     ...(target ? { targetId: target } : {}),
     ...(place && !target ? { position: [clamp(step.x!, -MAX_COORD, MAX_COORD), clamp(step.z!, -MAX_COORD, MAX_COORD)] } : {}),
+    ...(materials.length > 0 ? { materials: materials.slice(0, 4) } : {}),
+    ...(makes ? { makes: clampText(makes, 40) } : {}),
     reason: clampText(reason, 200),
     minutes: clamp(Math.round(Number.isFinite(step.minutes) ? step.minutes : 10), 1, 240),
   })

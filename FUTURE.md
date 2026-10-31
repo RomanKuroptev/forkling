@@ -46,4 +46,6 @@ Cost labels: **Free** means sim or data only, no LLM. **Pennies** means well und
 | Time travel slider over the commit history | Free | Old M10 |
 | Hatching new forklings, more species packs, visiting other worlds | Free to Pennies | Old M11 |
 | Translation layer that unlocks with your bond | Pennies | Old M11 |
+| Reddit as a trend feed (needs an approved app under Reddit's Responsible Builder Policy and API secrets; apply early) | Free | Trend feeds discussion |
+| Bluesky popular feeds as a trend source (check what still works without logging in) | Free | Trend feeds discussion |
 | Seasons, critters to chase, voice, in-character PR reviews, a yearly autobiography, community species packs, a cheap VPS mind | varies | Later ideas |

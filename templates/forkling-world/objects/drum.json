@@ -1,0 +1,57 @@
+{
+  "id": "drum",
+  "kind": "drum",
+  "name": "The drum",
+  "position": [
+    -14,
+    0,
+    16
+  ],
+  "rotation": [
+    0,
+    0,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "cylinder",
+        "size": [
+          0.5,
+          0.4,
+          0.5
+        ],
+        "at": [
+          0,
+          0.2,
+          0
+        ],
+        "color": "#c2703d"
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.46,
+          0.02,
+          0.46
+        ],
+        "at": [
+          0,
+          0.41,
+          0
+        ],
+        "color": "#f2e2d0"
+      }
+    ]
+  },
+  "properties": {
+    "size": 0.8,
+    "weightKg": 6,
+    "carryable": false
+  },
+  "unlocks": [
+    "play",
+    "compose"
+  ],
+  "reason": "It makes a sound when hit. That seemed worth keeping."
+}

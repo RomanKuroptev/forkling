@@ -1,4 +1,4 @@
-import type { MicroBehavior } from '@forkling/schema'
+import type { MicroBehavior, MoodPose } from '@forkling/schema'
 
 /**
  * A cat's signature micro-behaviors. Clip-driven ones just name a slot. `animate` hooks run after the
@@ -46,3 +46,20 @@ export const behaviors: MicroBehavior[] = [
     },
   },
 ]
+
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
+
+/**
+ * How a cat's feelings show: tail up and a little quiver when pleased, ears back and tail low when uneasy, and a
+ * restless tail tip when wound up.
+ */
+export const moodPose: MoodPose = ({ bones, t, feelings }) => {
+  const pleased = clamp01(feelings.valence)
+  const uneasy = clamp01(-feelings.valence)
+  const wound = clamp01((feelings.arousal - 0.6) / 0.4)
+
+  if (bones.tail1) bones.tail1.rotation.x += pleased * 0.5 - uneasy * 0.5
+  if (bones.tail4) bones.tail4.rotation.y += Math.sin(t * 7) * 0.15 * wound
+  if (bones.earL) bones.earL.rotation.z -= uneasy * 0.4
+  if (bones.earR) bones.earR.rotation.z += uneasy * 0.4
+}

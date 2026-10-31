@@ -2,240 +2,419 @@
   "id": "cat",
   "displayName": "Cat",
   "needs": {
-    "hunger": {
-      "initial": 65,
-      "decayPerHour": 120
-    },
-    "energy": {
-      "initial": 75,
-      "decayPerHour": 80
-    },
-    "curiosity": {
-      "initial": 55,
-      "decayPerHour": 120
-    },
-    "affection": {
-      "initial": 35,
-      "decayPerHour": 30
-    }
+    "hunger": { "initial": 65, "decayPerHour": 120 },
+    "energy": { "initial": 75, "decayPerHour": 80 },
+    "curiosity": { "initial": 55, "decayPerHour": 120 },
+    "affection": { "initial": 35, "decayPerHour": 30 }
   },
-  "perception": {
-    "noticeRadius": 5,
-    "eyeHeight": 0.2
-  },
-  "locomotion": {
-    "walkSpeed": 1.1,
-    "runSpeed": 4.5
+  "perception": { "noticeRadius": 5, "eyeHeight": 0.2 },
+  "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
+  "bodyPlans": {
+    "quadruped": ["body"],
+    "upright": ["body", "hands", "making", "growing"]
   },
   "actions": [
     {
-      "id": "eat",
-      "satisfies": {
-        "hunger": 55
-      },
-      "durationSec": [
-        12,
-        20
-      ],
-      "target": {
-        "type": "spot",
-        "kind": "food"
-      },
+      "id": "go_to",
+      "group": "body",
+      "body": "upright",
+      "satisfies": { "curiosity": 8 },
+      "durationSec": [2, 6],
+      "target": { "type": "object" },
+      "slot": "stand",
+      "requires": ["day"],
+      "spontaneous": 0.5,
+      "reason": "I wanted to see it up close."
+    },
+    {
+      "id": "inspect",
+      "group": "body",
+      "body": "upright",
+      "satisfies": { "curiosity": 25 },
+      "durationSec": [6, 14],
+      "target": { "type": "object" },
+      "slot": "holdUp",
+      "requires": ["day"],
+      "spontaneous": 0.6,
+      "reason": "That looks new. I will look at it properly."
+    },
+    {
+      "id": "sniff",
+      "group": "body",
+      "satisfies": { "curiosity": 12 },
+      "durationSec": [4, 9],
+      "target": { "type": "object" },
       "slot": "eat",
-      "reason": "My belly said it was time to eat."
+      "requires": ["day"],
+      "spontaneous": 0.5,
+      "reason": "It needs smelling."
     },
     {
-      "id": "nap",
-      "satisfies": {
-        "energy": 50
-      },
-      "durationSec": [
-        45,
-        90
-      ],
-      "target": {
-        "type": "spot",
-        "kind": "sunbeam"
-      },
-      "slot": "sleep",
-      "reason": "There was a warm patch of sun and it was calling me.",
-      "requires": [
-        "day"
-      ],
-      "spontaneous": 0.15
-    },
-    {
-      "id": "sleep_night",
-      "satisfies": {
-        "energy": 80
-      },
-      "durationSec": [
-        120,
-        240
-      ],
-      "target": {
-        "type": "none"
-      },
-      "slot": "sleep",
-      "requires": [
-        "night"
-      ],
-      "reason": "It is dark. I am sleeping. Do not wake me.",
-      "spontaneous": 1
-    },
-    {
-      "id": "explore",
-      "satisfies": {
-        "curiosity": 40,
-        "energy": -6
-      },
-      "durationSec": [
-        15,
-        35
-      ],
-      "target": {
-        "type": "wander",
-        "radius": 25
-      },
-      "slot": "idle",
-      "reason": "I wanted to see what was over there.",
-      "requires": [
-        "day"
-      ],
-      "spontaneous": 0.8
-    },
-    {
-      "id": "perch",
-      "satisfies": {
-        "curiosity": 25
-      },
-      "durationSec": [
-        30,
-        70
-      ],
-      "target": {
-        "type": "spot",
-        "kind": "perch"
-      },
-      "slot": "sit",
-      "reason": "Everything looks better from up high.",
-      "requires": [
-        "day"
-      ],
-      "spontaneous": 0.4
-    },
-    {
-      "id": "lounge",
+      "id": "sit",
+      "group": "body",
       "satisfies": {},
-      "durationSec": [
-        8,
-        20
-      ],
-      "target": {
-        "type": "none"
-      },
+      "durationSec": [8, 20],
+      "target": { "type": "none" },
       "slot": "sit",
-      "requires": [
-        "day"
-      ],
+      "requires": ["day"],
       "reason": "I am resting my eyes. And the rest of me."
     },
     {
-      "id": "play",
-      "satisfies": {
-        "curiosity": 20,
-        "energy": -10
-      },
-      "durationSec": [
-        6,
-        12
-      ],
-      "target": {
-        "type": "wander",
-        "radius": 10
-      },
-      "slot": "jump",
-      "gait": "run",
-      "reason": "Something moved. Probably. I pounced anyway.",
-      "requires": [
-        "day"
-      ],
-      "spontaneous": 0.6
+      "id": "watch",
+      "group": "body",
+      "satisfies": { "curiosity": 25 },
+      "durationSec": [30, 70],
+      "target": { "type": "spot", "kind": "perch" },
+      "slot": "sit",
+      "requires": ["day"],
+      "spontaneous": 0.4,
+      "reason": "Everything looks better from up high."
     },
     {
-      "id": "approach_visitor",
-      "satisfies": {
-        "affection": 35
-      },
-      "durationSec": [
-        8,
-        16
-      ],
-      "target": {
-        "type": "visitor"
-      },
+      "id": "follow",
+      "group": "body",
+      "satisfies": { "affection": 35 },
+      "durationSec": [8, 16],
+      "target": { "type": "visitor" },
       "slot": "happy",
-      "requires": [
-        "visitorNearby"
-      ],
+      "requires": ["visitorNearby"],
       "reason": "I decided you could stay. For now."
     },
     {
       "id": "ignore_visitor",
+      "group": "body",
       "satisfies": {},
-      "durationSec": [
-        5,
-        12
-      ],
-      "target": {
-        "type": "none"
-      },
+      "durationSec": [5, 12],
+      "target": { "type": "none" },
       "slot": "sit",
-      "requires": [
-        "visitorNearby"
-      ],
+      "requires": ["visitorNearby"],
       "reason": "I noticed you. I am choosing to look elsewhere."
     },
     {
-      "id": "zoomies",
-      "satisfies": {
-        "curiosity": 20,
-        "energy": -5
-      },
-      "durationSec": [
-        4,
-        9
-      ],
-      "target": {
-        "type": "wander",
-        "radius": 22
-      },
-      "slot": "jump",
+      "id": "hide",
+      "group": "body",
+      "effect": "hide",
+      "satisfies": { "energy": 10 },
+      "durationSec": [20, 50],
+      "target": { "type": "object", "where": { "canHide": true } },
+      "slot": "sit",
+      "requires": ["day"],
+      "spontaneous": 0.2,
+      "reason": "Nobody can see me in here. That is the point."
+    },
+    {
+      "id": "vocalize",
+      "group": "body",
+      "satisfies": {},
+      "durationSec": [2, 4],
+      "target": { "type": "none" },
+      "slot": "happy",
+      "requires": ["day"],
+      "spontaneous": 0.1,
+      "reason": "I had something to say. It was brief."
+    },
+    {
+      "id": "nap",
+      "group": "body",
+      "satisfies": { "energy": 50 },
+      "durationSec": [45, 90],
+      "target": { "type": "spot", "kind": "sunbeam" },
+      "slot": "sleep",
+      "requires": ["day"],
+      "spontaneous": 0.15,
+      "reason": "There was a warm patch of sun and it was calling me."
+    },
+    {
+      "id": "sleep",
+      "group": "body",
+      "satisfies": { "energy": 80 },
+      "durationSec": [120, 240],
+      "target": { "type": "none" },
+      "slot": "sleep",
+      "requires": ["night"],
+      "spontaneous": 1,
+      "reason": "It is dark. I am sleeping. Do not wake me."
+    },
+    {
+      "id": "stretch",
+      "group": "body",
+      "satisfies": {},
+      "durationSec": [3, 4],
+      "target": { "type": "none" },
+      "slot": "stretch",
+      "requires": ["day"],
+      "spontaneous": 0.2,
+      "reason": "Everything needed lengthening."
+    },
+    {
+      "id": "explore",
+      "group": "body",
+      "satisfies": { "curiosity": 40, "energy": -6 },
+      "durationSec": [15, 35],
+      "target": { "type": "wander", "radius": 25 },
+      "slot": "idle",
+      "requires": ["day"],
+      "spontaneous": 0.8,
+      "reason": "I wanted to see what was over there."
+    },
+    {
+      "id": "pounce",
+      "group": "body",
       "gait": "run",
-      "requires": [
-        "dusk"
-      ],
-      "reason": "The evening hit me like a wave. I must run.",
-      "spontaneous": 1
+      "satisfies": { "curiosity": 20, "energy": -10 },
+      "durationSec": [6, 12],
+      "target": { "type": "wander", "radius": 10 },
+      "slot": "jump",
+      "requires": ["day"],
+      "spontaneous": 0.6,
+      "reason": "Something moved. Probably. I pounced anyway."
+    },
+    {
+      "id": "zoomies",
+      "group": "body",
+      "gait": "run",
+      "satisfies": { "curiosity": 20, "energy": -5 },
+      "durationSec": [4, 9],
+      "target": { "type": "wander", "radius": 22 },
+      "slot": "jump",
+      "requires": ["dusk"],
+      "spontaneous": 1,
+      "reason": "The evening hit me like a wave. I must run."
+    },
+    {
+      "id": "eat",
+      "group": "growing",
+      "satisfies": { "hunger": 55 },
+      "durationSec": [12, 20],
+      "target": { "type": "object", "where": { "edible": true, "carryable": false } },
+      "slot": "eat",
+      "reason": "My belly said it was time to eat."
+    },
+    {
+      "id": "pick_up",
+      "group": "hands",
+      "body": "upright",
+      "effect": "pickUp",
+      "hands": "empty",
+      "satisfies": {},
+      "durationSec": [3, 6],
+      "target": { "type": "object" },
+      "slot": "work",
+      "reason": "This one is coming with me."
+    },
+    {
+      "id": "carry",
+      "group": "hands",
+      "body": "upright",
+      "hands": "full",
+      "satisfies": {},
+      "durationSec": [2, 6],
+      "target": { "type": "object" },
+      "slot": "carry",
+      "reason": "I am taking this over there."
+    },
+    {
+      "id": "drop",
+      "group": "hands",
+      "body": "upright",
+      "effect": "drop",
+      "hands": "full",
+      "satisfies": {},
+      "durationSec": [2, 4],
+      "target": { "type": "none" },
+      "slot": "stand",
+      "reason": "I have put it down. It stays there now."
+    },
+    {
+      "id": "put_on",
+      "group": "hands",
+      "body": "upright",
+      "effect": "putOn",
+      "hands": "full",
+      "satisfies": {},
+      "durationSec": [2, 5],
+      "target": { "type": "object" },
+      "slot": "work",
+      "reason": "That is where it goes."
+    },
+    {
+      "id": "give",
+      "group": "hands",
+      "body": "upright",
+      "effect": "give",
+      "hands": "full",
+      "satisfies": {},
+      "durationSec": [3, 6],
+      "target": { "type": "visitor" },
+      "slot": "happy",
+      "requires": ["visitorNearby"],
+      "reason": "This is for you. Do not make it strange."
+    },
+    {
+      "id": "open",
+      "group": "hands",
+      "body": "upright",
+      "effect": "open",
+      "satisfies": {},
+      "durationSec": [2, 4],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "work",
+      "reason": "It was closed. Now it is not."
+    },
+    {
+      "id": "close",
+      "group": "hands",
+      "body": "upright",
+      "effect": "close",
+      "satisfies": {},
+      "durationSec": [2, 4],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "work",
+      "reason": "Closed. Better."
+    },
+    {
+      "id": "cut",
+      "group": "making",
+      "body": "upright",
+      "effect": "cut",
+      "hands": "empty",
+      "satisfies": {},
+      "durationSec": [4, 8],
+      "target": { "type": "object", "where": { "yields": true } },
+      "slot": "useTool",
+      "reason": "I need some of that, so I am taking some."
+    },
+    {
+      "id": "join",
+      "group": "making",
+      "body": "upright",
+      "effect": "make",
+      "accepts": ["wood", "fibre", "stone", "clay"],
+      "satisfies": {},
+      "durationSec": [4, 8],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "work",
+      "reason": "These belong together."
+    },
+    {
+      "id": "shape",
+      "group": "making",
+      "body": "upright",
+      "effect": "make",
+      "accepts": ["clay", "stone", "shells", "wood"],
+      "satisfies": {},
+      "durationSec": [4, 8],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "work",
+      "reason": "It is nearly the right shape."
+    },
+    {
+      "id": "build",
+      "group": "making",
+      "body": "upright",
+      "effect": "make",
+      "accepts": ["wood", "stone", "clay", "shells", "fibre"],
+      "satisfies": {},
+      "durationSec": [4, 8],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "I am making something. Do not ask what yet."
+    },
+    {
+      "id": "sew",
+      "group": "making",
+      "body": "upright",
+      "effect": "make",
+      "accepts": ["fibre", "flowers"],
+      "satisfies": {},
+      "durationSec": [4, 8],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "work",
+      "reason": "One small stitch at a time."
+    },
+    {
+      "id": "paint",
+      "group": "making",
+      "body": "upright",
+      "effect": "paint",
+      "satisfies": {},
+      "durationSec": [4, 8],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "It needed more colour."
+    },
+    {
+      "id": "plant",
+      "group": "growing",
+      "body": "upright",
+      "effect": "plant",
+      "accepts": ["flowers", "produce"],
+      "satisfies": {},
+      "durationSec": [4, 8],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "work",
+      "reason": "Something will come up here, if I am patient."
+    },
+    {
+      "id": "water",
+      "group": "growing",
+      "body": "upright",
+      "effect": "water",
+      "satisfies": {},
+      "durationSec": [3, 6],
+      "target": { "type": "object", "where": { "grows": true } },
+      "slot": "work",
+      "reason": "It looked thirsty."
+    },
+    {
+      "id": "harvest",
+      "group": "growing",
+      "body": "upright",
+      "effect": "harvest",
+      "hands": "empty",
+      "satisfies": {},
+      "durationSec": [3, 6],
+      "target": { "type": "object", "where": { "grows": true } },
+      "slot": "work",
+      "reason": "It is ready, and so am I."
+    },
+    {
+      "id": "cook",
+      "group": "growing",
+      "body": "upright",
+      "effect": "cook",
+      "accepts": ["produce", "flowers"],
+      "satisfies": {},
+      "durationSec": [4, 8],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "Something is about to smell wonderful."
+    },
+    {
+      "id": "dine",
+      "group": "growing",
+      "body": "upright",
+      "effect": "eat",
+      "satisfies": { "hunger": 55 },
+      "durationSec": [8, 14],
+      "target": { "type": "object", "where": { "edible": true, "carryable": true } },
+      "slot": "eat",
+      "reason": "I made this, so I am allowed to eat it."
     }
   ],
   "weights": {
+    "go_to": 0.5,
+    "sniff": 0.8,
+    "hide": 0.4,
+    "vocalize": 0.5,
+    "stretch": 0.6,
     "nap": 1.2,
-    "sleep_night": 8,
-    "approach_visitor": 0.55,
+    "sleep": 8,
+    "follow": 0.55,
     "ignore_visitor": 2,
     "zoomies": 2,
-    "lounge": 1.2,
+    "sit": 1.2,
     "explore": 1.5,
-    "play": 2
-  },
-  "starterSpots": [
-    {
-      "kind": "food",
-      "offset": [
-        5,
-        4
-      ]
-    }
-  ]
+    "pounce": 2
+  }
 }

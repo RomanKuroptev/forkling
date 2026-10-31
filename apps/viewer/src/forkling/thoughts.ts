@@ -17,7 +17,8 @@ export function bubbleLines(goals: Goals, intention: Pick<Intention, 'reason'>, 
   const step = goals.now && nowMs < Date.parse(goals.now.until) ? goals.today?.steps[goals.now.index] : undefined
   if (step) {
     const where = step.targetId ? ` at ${step.targetId}` : step.position ? ` somewhere near ${step.position[0]}, ${step.position[1]}` : ''
-    lines.push({ kind: 'step', text: `${step.verb}${where}: ${step.reason}` })
+    const what = step.makes ? `${step.verb} “${step.makes}”` : step.verb
+    lines.push({ kind: 'step', text: `${what}${where}: ${step.reason}` })
   }
 
   lines.push({ kind: 'reason', text: intention.reason })

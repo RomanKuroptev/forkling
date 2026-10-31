@@ -1,0 +1,73 @@
+{
+  "id": "house",
+  "kind": "house",
+  "name": "The house",
+  "position": [
+    -16,
+    0,
+    14
+  ],
+  "rotation": [
+    0,
+    0.3,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "box",
+        "size": [
+          2.4,
+          1.4,
+          2
+        ],
+        "at": [
+          0,
+          0.7,
+          0
+        ],
+        "color": "#a67c52"
+      },
+      {
+        "shape": "cone",
+        "size": [
+          3.2,
+          1.1,
+          3
+        ],
+        "at": [
+          0,
+          1.95,
+          0
+        ],
+        "color": "#b5543c"
+      },
+      {
+        "shape": "box",
+        "size": [
+          0.5,
+          0.9,
+          0.06
+        ],
+        "at": [
+          0,
+          0.45,
+          1.03
+        ],
+        "color": "#7a5230"
+      }
+    ]
+  },
+  "properties": {
+    "size": 3,
+    "weightKg": 5000,
+    "storage": true,
+    "canHide": true,
+    "material": "wood"
+  },
+  "unlocks": [
+    "open",
+    "close"
+  ],
+  "reason": "Somewhere to keep things, and to be out of the weather."
+}

@@ -6,6 +6,7 @@
   "exports": {
     "./species.json": "./species.json",
     "./animations.json": "./animations.json",
+    "./temperament.json": "./temperament.json",
     "./persona.md": "./persona.md",
     "./behaviors": "./src/behaviors.ts",
     "./model.glb": "./model.glb"

@@ -1,0 +1,100 @@
+{
+  "id": "desk",
+  "kind": "desk",
+  "name": "The desk",
+  "position": [
+    -18,
+    0,
+    12
+  ],
+  "rotation": [
+    0,
+    -0.2,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "box",
+        "size": [
+          1.2,
+          0.08,
+          0.6
+        ],
+        "at": [
+          0,
+          0.72,
+          0
+        ],
+        "color": "#a67c52"
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.08,
+          0.7,
+          0.08
+        ],
+        "at": [
+          -0.55,
+          0.35,
+          -0.25
+        ],
+        "color": "#7a5230"
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.08,
+          0.7,
+          0.08
+        ],
+        "at": [
+          -0.55,
+          0.35,
+          0.25
+        ],
+        "color": "#7a5230"
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.08,
+          0.7,
+          0.08
+        ],
+        "at": [
+          0.55,
+          0.35,
+          -0.25
+        ],
+        "color": "#7a5230"
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.08,
+          0.7,
+          0.08
+        ],
+        "at": [
+          0.55,
+          0.35,
+          0.25
+        ],
+        "color": "#7a5230"
+      }
+    ]
+  },
+  "properties": {
+    "size": 1.4,
+    "weightKg": 30,
+    "material": "wood"
+  },
+  "unlocks": [
+    "write",
+    "draw",
+    "code"
+  ],
+  "reason": "A flat place for ideas that need one."
+}

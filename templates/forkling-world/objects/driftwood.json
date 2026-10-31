@@ -1,0 +1,89 @@
+{
+  "id": "driftwood",
+  "kind": "driftwood",
+  "name": "The driftwood pile",
+  "position": [
+    -6,
+    0,
+    27
+  ],
+  "rotation": [
+    0,
+    0,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "cylinder",
+        "size": [
+          0.14,
+          1.2,
+          0.14
+        ],
+        "at": [
+          0,
+          0.12,
+          0
+        ],
+        "color": "#c9b79c",
+        "rotation": [
+          1.571,
+          0,
+          0.3
+        ]
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.12,
+          1,
+          0.12
+        ],
+        "at": [
+          0.1,
+          0.28,
+          0.1
+        ],
+        "color": "#c9b79c",
+        "rotation": [
+          1.571,
+          0,
+          -0.5
+        ]
+      },
+      {
+        "shape": "cylinder",
+        "size": [
+          0.1,
+          0.8,
+          0.1
+        ],
+        "at": [
+          -0.1,
+          0.4,
+          -0.05
+        ],
+        "color": "#c9b79c",
+        "rotation": [
+          1.571,
+          0,
+          1
+        ]
+      }
+    ]
+  },
+  "properties": {
+    "size": 1.2,
+    "weightKg": 40,
+    "canHide": true,
+    "material": "wood"
+  },
+  "unlocks": [],
+  "yields": {
+    "material": "wood",
+    "max": 6,
+    "respawnHours": 24
+  },
+  "reason": "The sea leaves wood here and does not come back for it."
+}

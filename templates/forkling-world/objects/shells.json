@@ -1,0 +1,107 @@
+{
+  "id": "shells",
+  "kind": "shells",
+  "name": "The shells",
+  "position": [
+    -10,
+    0,
+    27
+  ],
+  "rotation": [
+    0,
+    0,
+    0
+  ],
+  "model": {
+    "parts": [
+      {
+        "shape": "cone",
+        "size": [
+          0.14,
+          0.1,
+          0.14
+        ],
+        "at": [
+          0,
+          0.05,
+          0
+        ],
+        "color": "#f2e2d0",
+        "rotation": [
+          0,
+          0,
+          0.3
+        ]
+      },
+      {
+        "shape": "cone",
+        "size": [
+          0.14,
+          0.1,
+          0.14
+        ],
+        "at": [
+          0.2,
+          0.05,
+          0.1
+        ],
+        "color": "#f2e2d0",
+        "rotation": [
+          0,
+          0,
+          -0.4
+        ]
+      },
+      {
+        "shape": "cone",
+        "size": [
+          0.14,
+          0.1,
+          0.14
+        ],
+        "at": [
+          -0.15,
+          0.05,
+          0.15
+        ],
+        "color": "#f2e2d0",
+        "rotation": [
+          0,
+          0,
+          0.8
+        ]
+      },
+      {
+        "shape": "cone",
+        "size": [
+          0.14,
+          0.1,
+          0.14
+        ],
+        "at": [
+          0.05,
+          0.05,
+          -0.2
+        ],
+        "color": "#f2e2d0",
+        "rotation": [
+          0,
+          0,
+          2.5
+        ]
+      }
+    ]
+  },
+  "properties": {
+    "size": 0.5,
+    "weightKg": 3,
+    "material": "shells"
+  },
+  "unlocks": [],
+  "yields": {
+    "material": "shells",
+    "max": 5,
+    "respawnHours": 24
+  },
+  "reason": "Left behind by something that no longer needed them."
+}

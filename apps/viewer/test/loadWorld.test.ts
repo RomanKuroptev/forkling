@@ -12,7 +12,7 @@ const forkling = {
   needs: { hunger: 70, energy: 80 },
   position: [2, 0, 20],
   mood: 'curious',
-  intention: { type: 'lounge', startedAt: '2026-10-30T21:00:00Z', seed: 1, reason: 'New island.' },
+  intention: { type: 'sit', startedAt: '2026-10-30T21:00:00Z', seed: 1, reason: 'New island.' },
   lastTickAt: '2026-10-30T21:00:00Z',
   timezone: 'Europe/Stockholm',
 }
@@ -55,6 +55,31 @@ const deps = (files: Files, opts?: Parameters<typeof github>[1]): LoadDeps => ({
   fetch: github(files, opts),
   species: { cat: SpeciesPack.parse(catSpecies) },
   assets: new Set(['nature/rock_largeA']),
+})
+
+describe('loadWorld temperament', () => {
+  const roll = { likes: [{ category: 'material', value: 'stone' }], dislikes: [], quirks: [{ id: 'hoarder', text: 'Keeps everything.' }] }
+
+  it('reads brain/temperament.json when the world has one', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'brain/temperament.json': roll }))
+    expect(result.ok && result.world.temperament?.quirks[0]?.id).toBe('hoarder')
+  })
+
+  it('treats a world without one as not yet rolled', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling }))
+    expect(result.ok && result.world.temperament).toBeNull()
+  })
+
+  it('reports a temperament file that does not fit, by name', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'brain/temperament.json': { likes: 3 } }))
+    expect(!result.ok && result.error.problems.map((p) => p.file)).toEqual(['brain/temperament.json'])
+  })
+
+  it('accepts objects the forkling made out of parts', async () => {
+    const made = { ...rock, id: 'a-shelf', model: { parts: [{ shape: 'box', size: [0.5, 0.2, 0.5], at: [0, 0.1, 0], color: '#a67c52' }] } }
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'objects/a-shelf.json': made }))
+    expect(result.ok && result.world.objects.map((o) => o.id)).toEqual(['a-shelf'])
+  })
 })
 
 describe('loadWorld goals', () => {

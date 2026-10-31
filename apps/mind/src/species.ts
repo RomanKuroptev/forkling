@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { SpeciesPack, type MicroBehavior } from '@forkling/schema'
+import { SpeciesPack, TemperamentPools, type MicroBehavior } from '@forkling/schema'
 import { behaviors as catBehaviors } from '@forkling/species-cat/behaviors'
 
 /** Everything the mind needs to know about a species. The mind never hardcodes one; it reads the pack. */
@@ -8,6 +8,8 @@ export interface SpeciesEntry {
   behaviors: MicroBehavior[]
   /** The species `persona.md`. */
   persona: string
+  /** Where its likes, dislikes and quirks are rolled from. */
+  pools: TemperamentPools
 }
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
@@ -17,6 +19,7 @@ const entries: Record<string, () => SpeciesEntry> = {
     pack: SpeciesPack.parse(JSON.parse(read('../../../species/cat/species.json'))),
     behaviors: catBehaviors,
     persona: read('../../../species/cat/persona.md'),
+    pools: TemperamentPools.parse(JSON.parse(read('../../../species/cat/temperament.json'))),
   }),
 }
 

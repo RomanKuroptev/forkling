@@ -65,13 +65,19 @@ function footprintKind(asset: string): string {
 export function worldWithObjects(objects: readonly WorldObject[]): StarterWorld {
   const starter = starterWorld()
   if (objects.length === 0) return starter
-  const extra: PropPlacement[] = objects.map((o) => ({
-    kind: footprintKind(o.model.asset),
-    variant: 0,
-    position: [o.position[0], heightAt(o.position[0], o.position[2], starter.cfg), o.position[2]],
-    rotationY: o.rotation[1],
-    scale: o.scale,
-  }))
+  // A held object is in the paws, not on the ground, so it blocks nothing.
+  const extra: PropPlacement[] = objects
+    .filter((o) => !o.state.held)
+    .map((o) => {
+      const kind = 'asset' in o.model ? footprintKind(o.model.asset) : 'object'
+      return {
+        kind,
+        variant: 0,
+        position: [o.position[0], heightAt(o.position[0], o.position[2], starter.cfg), o.position[2]],
+        rotationY: o.rotation[1],
+        scale: kind === 'object' ? o.scale * o.properties.size : o.scale,
+      }
+    })
   const placements = [...starter.placements, ...extra]
   return { ...starter, placements, nav: buildWorldNav(starter.cfg, placements, OBJECT_FOOTPRINTS), objects: [...objects] }
 }

@@ -8,12 +8,16 @@
   },
   "perception": { "noticeRadius": 4, "eyeHeight": 0.5 },
   "locomotion": { "walkSpeed": 1.5, "runSpeed": 3.5 },
+  "bodyPlans": { "quadruped": ["body", "hands", "making"] },
   "actions": [
     { "id": "eat", "satisfies": { "hunger": 70 }, "durationSec": [5, 10], "target": { "type": "spot", "kind": "food" }, "slot": "idle", "reason": "Blob was hungry." },
     { "id": "rest", "satisfies": { "energy": 60 }, "durationSec": [10, 20], "target": { "type": "none" }, "slot": "sleep", "reason": "Blob was tired." },
     { "id": "roam", "satisfies": { "fun": 30 }, "durationSec": [2, 5], "target": { "type": "wander", "radius": 20 }, "slot": "walk", "reason": "Blob felt like a stroll." },
     { "id": "dash", "satisfies": { "fun": 40, "energy": -15 }, "durationSec": [2, 4], "target": { "type": "wander", "radius": 12 }, "slot": "run", "gait": "run", "reason": "Blob had energy to burn." },
     { "id": "greet", "satisfies": { "fun": 25 }, "durationSec": [3, 6], "target": { "type": "visitor" }, "slot": "happy", "requires": ["visitorNearby"], "reason": "Blob wanted to say hi." },
+    { "id": "grab", "group": "hands", "effect": "pickUp", "hands": "empty", "satisfies": {}, "durationSec": [2, 4], "target": { "type": "object" }, "slot": "idle", "reason": "Blob absorbed it." },
+    { "id": "stash", "group": "hands", "effect": "putOn", "hands": "full", "satisfies": {}, "durationSec": [2, 4], "target": { "type": "object" }, "slot": "idle", "reason": "Blob put it away inside itself, near the pit." },
+    { "id": "goo_up", "group": "making", "effect": "make", "accepts": ["stone", "clay"], "satisfies": {}, "durationSec": [3, 6], "target": { "type": "object", "unlocked": true }, "slot": "idle", "reason": "Blob made a lump." },
     { "id": "ignore", "satisfies": {}, "durationSec": [2, 4], "target": { "type": "none" }, "slot": "idle", "requires": ["visitorNearby"], "reason": "Blob was busy being a blob." }
   ],
   "weights": { "greet": 1.5 },

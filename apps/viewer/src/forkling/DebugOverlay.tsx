@@ -36,6 +36,11 @@ export function DebugOverlay() {
   if (!open || !pb) return null
   const sim = pb.state
   const { ref, sha, forkling } = world
+  const holding = forkling.holding ? ('material' in forkling.holding ? forkling.holding.material : forkling.holding.objectId) : 'empty'
+  const stored = Object.entries(forkling.stored)
+    .filter(([, n]) => (n ?? 0) > 0)
+    .map(([m, n]) => `${n} ${m}`)
+    .join(', ')
 
   return (
     <div className="debug">
@@ -51,6 +56,22 @@ export function DebugOverlay() {
           <span>{Math.round(value)}</span>
         </div>
       ))}
+      <div className="debug-line dim">
+        feeling {forkling.feelings.valence >= 0 ? '+' : ''}
+        {forkling.feelings.valence.toFixed(2)} · arousal {forkling.feelings.arousal.toFixed(2)}
+      </div>
+      <div className="debug-line dim">
+        paws: {holding}
+        {stored ? ` · stored: ${stored}` : ''}
+      </div>
+      {world.temperament && (
+        <div className="debug-line dim">
+          likes {world.temperament.likes.map((t) => t.value).join(', ') || 'nothing'} · dislikes{' '}
+          {world.temperament.dislikes.map((t) => t.value).join(', ') || 'nothing'}
+          <br />
+          quirks: {world.temperament.quirks.map((q) => q.id).join(', ') || 'none'}
+        </div>
+      )}
       <div className="debug-line">
         <b>{sim.intention.type}</b>
         {sim.intention.targetId ? ` → ${sim.intention.targetId}` : ''}

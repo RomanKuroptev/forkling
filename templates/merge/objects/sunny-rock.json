@@ -6,6 +6,6 @@
   "rotation": [0, 0.6, 0],
   "scale": 1.2,
   "model": { "asset": "nature/rock_largeA" },
-  "affordances": ["sit", "perch"],
+  "properties": { "size": 1.2, "weightKg": 900, "high": true, "material": "stone" },
   "reason": "It catches the morning sun before anything else on the beach."
 }

@@ -1,0 +1,71 @@
+{
+  "traits": {
+    "material": ["wood", "stone", "clay", "flowers", "fibre", "shells"],
+    "feel": ["soft", "high", "hideaway", "diggable"],
+    "food": ["produce", "dish"],
+    "weather": ["rain", "sun", "wind", "fog", "snow"],
+    "sound": ["birdsong", "waves", "purring", "silence", "thunder"]
+  },
+  "likes": 4,
+  "dislikes": 3,
+  "quirkCount": [2, 3],
+  "quirks": [
+    {
+      "id": "hoarder",
+      "text": "Cannot leave a good thing behind, and has a pile for everything.",
+      "weights": { "inspect": 1.6, "sniff": 1.4 }
+    },
+    {
+      "id": "perfectionist",
+      "text": "Redoes anything that wobbles, and minds when a plan goes wrong.",
+      "weights": { "stretch": 1.5, "sit": 1.2 },
+      "appraisal": { "blocked": 1.5, "finished": 1.3 }
+    },
+    {
+      "id": "maximalist",
+      "text": "If one is good, twelve are better. Never stops at enough.",
+      "weights": { "explore": 1.5, "go_to": 1.4 },
+      "appraisal": { "finished": 0.8, "started": 1.4 }
+    },
+    {
+      "id": "showman",
+      "text": "Does everything where it can be seen, and announces it.",
+      "weights": { "watch": 1.6, "vocalize": 2 },
+      "appraisal": { "finished": 1.2 }
+    },
+    {
+      "id": "completionist",
+      "text": "Cannot rest until what was started is finished.",
+      "appraisal": { "finished": 1.6, "blocked": 1.4, "worked": 1.3 }
+    },
+    {
+      "id": "conspiracy-theorist",
+      "text": "Sees patterns in the island that nobody put there, and keeps notes on them.",
+      "weights": { "watch": 1.6, "inspect": 1.5, "sniff": 1.4 },
+      "appraisal": { "novelty": 1.5 }
+    },
+    {
+      "id": "napper",
+      "text": "Will sleep anywhere with a patch of sun in it.",
+      "weights": { "nap": 2.2, "sit": 1.3 }
+    },
+    {
+      "id": "glutton",
+      "text": "Thinks about the next meal during this one.",
+      "weights": { "eat": 1.8 },
+      "appraisal": { "ate": 1.5, "cooked": 1.4 }
+    },
+    {
+      "id": "explorer",
+      "text": "Has to know what is behind everything.",
+      "weights": { "explore": 1.8, "go_to": 1.3, "pounce": 1.3 },
+      "appraisal": { "novelty": 1.4 }
+    },
+    {
+      "id": "shy",
+      "text": "Prefers things to be quiet, and a place to disappear to.",
+      "weights": { "hide": 2.5, "follow": 0.5, "vocalize": 0.5 },
+      "appraisal": { "novelty": 0.6 }
+    }
+  ]
+}

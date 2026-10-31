@@ -1,4 +1,8 @@
-import type { PlanStep, SpeciesAction, SpeciesPack, WorldObject } from '@forkling/schema'
+import type { Holding, PlanStep, Skills, SpeciesAction, SpeciesPack, WorldObject } from '@forkling/schema'
+import { applyStep, type StepWorld, type Stored } from './effects.ts'
+import type { Point2 } from './nav.ts'
+import { offersSpot } from './objects.ts'
+import { skillLevel } from './skills.ts'
 import { isDusk } from './time.ts'
 
 /** The same verb this many times in a row is a fixation. */
@@ -21,18 +25,27 @@ export interface PlanContext {
   hourAt: (ms: number) => number
   /** The steps it took just before this plan, oldest first. */
   recent: readonly { verb: string; targetId?: string | undefined }[]
+  /** What is in its paws and stored at home when the plan starts. Missing means nothing. */
+  holding?: Holding | undefined
+  stored?: Stored
+  /** Where it stands when the plan starts, in meters. */
+  position?: Point2
+  skills?: Skills
+  /** Seed for the looks of what the plan makes. Only matters to what the simulation leaves behind, never to whether it works. */
+  seed?: number
 }
 
 export type PlanResult = { ok: true } | { ok: false; reasons: string[] }
 
 /** Whether `targetId` is a place `action` can happen: its own spot kind, or an object that offers that kind. */
-function reachableTarget(action: SpeciesAction & { target: { type: 'spot'; kind: string } }, targetId: string, ctx: PlanContext): boolean {
+function reachableTarget(action: SpeciesAction & { target: { type: 'spot'; kind: string } }, targetId: string, objects: readonly WorldObject[], ctx: PlanContext): boolean {
   const kind = action.target.kind
   if (targetId === kind) return ctx.spotKinds.has(kind)
-  return ctx.objects.some((o) => o.id === targetId && o.affordances.includes(kind as never))
+  return objects.some((o) => o.id === targetId && offersSpot(o, kind))
 }
 
-function checkStep(step: PlanStep, n: number, startMs: number, ctx: PlanContext): string[] {
+/** What can be told about a step without playing it out: the verb exists, its target has the right shape, the time suits. */
+function checkStep(step: PlanStep, n: number, startMs: number, objects: readonly WorldObject[], ctx: PlanContext): string[] {
   const action = ctx.pack.actions.find((a) => a.id === step.verb)
   if (!action) return [`step ${n}: "${step.verb}" is not something a ${ctx.pack.id} can do`]
   const label = `step ${n} ("${step.verb}")`
@@ -47,9 +60,11 @@ function checkStep(step: PlanStep, n: number, startMs: number, ctx: PlanContext)
     if (step.targetId !== undefined || step.position !== undefined) reasons.push(`${label} goes nowhere in particular, so it takes no target`)
   } else if (target.type === 'wander') {
     if (step.targetId !== undefined) reasons.push(`${label} wanders, so it takes a position, not "${step.targetId}"`)
+  } else if (target.type === 'object') {
+    if (step.position !== undefined) reasons.push(`${label} happens at an object, so it takes no position`)
   } else {
     if (step.position !== undefined) reasons.push(`${label} happens at a ${target.kind}, so it takes no position`)
-    if (step.targetId !== undefined && !reachableTarget({ ...action, target }, step.targetId, ctx)) {
+    if (step.targetId !== undefined && !reachableTarget({ ...action, target }, step.targetId, objects, ctx)) {
       reasons.push(`${label}: "${step.targetId}" is not somewhere ${step.verb} can happen`)
     }
   }
@@ -74,23 +89,44 @@ function fixation(keys: readonly (string | undefined)[], limit: number): string 
 
 /**
  * Whether a plan can actually be carried out, and why not if it can't. The mind's plans are free text and verbs; this
- * is the only gate between them and the body. Reports every problem it finds, not just the first.
+ * is the only gate between them and the body. It plays the plan out on a copy of the world, so a step that needs wood
+ * is turned down unless an earlier one left wood in its paws. Reports every problem it finds, not just the first.
  */
 export function validatePlan(steps: readonly PlanStep[], ctx: PlanContext): PlanResult {
   const reasons: string[] = []
   if (steps.length < 1 || steps.length > MAX_STEPS) reasons.push(`a plan needs 1 to ${MAX_STEPS} steps, not ${steps.length}`)
 
+  let world: StepWorld = { holding: ctx.holding, stored: ctx.stored ?? {}, position: ctx.position ?? { x: 0, z: 0 }, objects: ctx.objects }
+  const verbKeys: (string | undefined)[] = ctx.recent.map((s) => s.verb)
+  const targetKeys: (string | undefined)[] = ctx.recent.map((s) => s.targetId)
+
   let minutes = 0
   steps.forEach((step, i) => {
-    reasons.push(...checkStep(step, i + 1, ctx.startMs + minutes * 60_000, ctx))
+    const n = i + 1
+    const startMs = ctx.startMs + minutes * 60_000
+    const found = checkStep(step, n, startMs, world.objects, ctx)
+    reasons.push(...found)
+
+    const verb = ctx.pack.actions.find((a) => a.id === step.verb)
+    // Carrying on with something half made is not a fixation, however many sessions it takes.
+    let continuing = false
+    if (found.length === 0 && verb) {
+      const target = step.targetId === undefined ? undefined : world.objects.find((o) => o.id === step.targetId)
+      continuing = verb.effect === 'make' && target?.made !== undefined && !target.made.done
+      const result = applyStep(world, step, verb, { nowMs: startMs, skill: skillLevel(ctx.skills ?? {}, verb.group), seed: ctx.seed ?? 0 })
+      // A step that cannot happen is taken to have done nothing, so later steps are judged on what really is there.
+      if (result.ok) world = result.world
+      else reasons.push(`step ${n} ("${step.verb}"): ${result.reason}`)
+    }
+    verbKeys.push(continuing ? undefined : step.verb)
+    targetKeys.push(step.targetId)
     minutes += step.minutes
   })
   if (minutes > MAX_PLAN_MINUTES) reasons.push(`the plan takes ${Math.round(minutes / 60)} hours, more than a day's waking`)
 
-  const all = [...ctx.recent, ...steps]
-  const verb = fixation(all.map((s) => s.verb), MAX_VERB_RUN)
+  const verb = fixation(verbKeys, MAX_VERB_RUN)
   if (verb) reasons.push(`"${verb}" would be done more than ${MAX_VERB_RUN} times in a row`)
-  const target = fixation(all.map((s) => s.targetId), MAX_TARGET_RUN)
+  const target = fixation(targetKeys, MAX_TARGET_RUN)
   if (target) reasons.push(`"${target}" would be the target more than ${MAX_TARGET_RUN} times in a row`)
 
   return reasons.length === 0 ? { ok: true } : { ok: false, reasons }
