@@ -94,6 +94,17 @@ describe('validateWorld', () => {
     expect(check().problems.join('\n')).toMatch(/clay-shelf.*(water|reach|land)/i)
   })
 
+  it('accepts a coded project that is small and offline', () => {
+    put('site/projects/gate-toy/index.html', '<!doctype html><canvas></canvas><script src="app.js"></script>')
+    put('site/projects/gate-toy/app.js', 'document.title = "x"')
+    expect(check().problems).toEqual([])
+  })
+
+  it('names a coded project that calls out to the network', () => {
+    put('site/projects/gate-toy/index.html', '<!doctype html><script>fetch("https://evil.example/")</script>')
+    expect(check().problems.join('\n')).toMatch(/site\/projects\/gate-toy.*(fetch|evil\.example)/s)
+  })
+
   it('refuses a world with no forkling', () => {
     const empty = mkdtempSync(join(tmpdir(), 'validate-empty-'))
     expect(validateWorld(empty, { pack: cat.pack, behaviors: cat.behaviors }).problems.length).toBeGreaterThan(0)

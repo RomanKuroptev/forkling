@@ -19,6 +19,8 @@ export interface ArtMeta {
   /** For a photo: the shot it came from. The frame is `photos/<id>.jpg`, and the artifact takes the shot's id. */
   photo?: { id: string; subjectId?: string | undefined; noticed: boolean } | undefined
   /** For a contraption: how its run went, as the physics measured it. */
+  /** For a coded project: the folder it lives in under `site/projects/`. */
+  code?: { project: string } | undefined
   contraption?: { objectId: string; moved: boolean; maxTravel: number; settled: boolean } | undefined
 }
 
@@ -74,6 +76,13 @@ export function artifactFrom<K extends ArtifactKind>(kind: K, output: ArtOutputs
       content = { question: text(l.question, 300), method: text(l.method), result: text(l.result) }
       break
     }
+    case 'code': {
+      const c = o as ArtOutputs['code']
+      if (!meta.code) return null
+      id = meta.code.project
+      content = { project: meta.code.project, idea: text(c.idea, 300), howItPlays: text(c.howItPlays, 300) }
+      break
+    }
     case 'contraption': {
       const c = o as ArtOutputs['contraption']
       if (!meta.contraption) return null
@@ -123,6 +132,7 @@ const FORMATS: Record<ArtifactKind, string> = {
   recipe: 'Write a recipe: ingredients with amounts in grams, and numbered steps. Use things that could really be found or made on a small island.',
   broadcast: 'Write the script of a short radio show for an audience of nobody, in your own voice. Under 1500 characters.',
   labnote: 'Write a lab note about a small experiment or observation on the island: the question, what you did, and what happened.',
+  code: 'Describe a small program for your website: a toy, a game or an interactive page. Give it a title, the idea in one or two sentences, and how it plays: what a visitor does and sees. Keep it small enough to be plain HTML, CSS and JavaScript in a few files.',
   contraption: 'Say what happened when your contraption ran (what moved, how it ended) in your own words, and what you think of it. What happened is given to you: do not claim anything else.',
   photo: 'Say what you see in the picture: a title, a caption of what is in it, and your own opinion of it.',
 }
@@ -173,7 +183,7 @@ export function buildArtUser(i: ArtInput): string {
     '</topic>',
     '',
     '## Your task',
-    `It is ${i.date}. You are making a ${i.kind}. Your reason: ${i.reason}`,
+    `It is ${i.date}. You are making a ${i.kind === 'code' ? 'coded project' : i.kind}. Your reason: ${i.reason}`,
     FORMATS[i.kind],
     `Your skill level is ${i.skillLevel} of 10. ${skillGuide(i.skillLevel)}`,
     ...(i.obsession ? [`You are obsessed with "${i.obsession}" at the moment, so it may show.`] : []),

@@ -60,7 +60,7 @@ import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, 
 import { clampText, Decision, planStepFrom, type LlmStep } from './decision.ts'
 import { artifactFrom, buildArtUser, MAX_ARTIFACTS_PER_DAY } from './art.ts'
 import { runContraption } from './physics.ts'
-import { buildIdFor, checkBuildRequest, settleOpenBuild } from './builds.ts'
+import { buildIdFor, checkBuildRequest, codeSlotsLeft, settleOpenBuild, weekOf } from './builds.ts'
 import { enqueueShot, noticedSubject, photosLeft, shotIdFor } from './photos.ts'
 import { readFeeds, type FeedItem, type GetJson } from './feeds/index.ts'
 import type { CallKind, LlmClient, LlmResult } from './llm.ts'
@@ -115,6 +115,8 @@ const MAX_ART_TOKENS = 3000
 const MAX_RECENT = 20
 /** What a design call may cost, held back before a request is accepted. */
 const DESIGN_ESTIMATE_USD = 0.02
+/** What a coded project may cost the builder, held back before it is asked for. */
+const CODE_ESTIMATE_USD = 0.3
 /** A late night is only a choice for the evening. */
 const LATE_NIGHT_FROM_HOUR = 18
 
@@ -235,6 +237,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   let pendingArt: { kind: ArtifactKind; verb: string; step: PlanStep; index: number } | null = null
   /** Set when a photograph step finishes: the shot is queued after the step is applied. */
   let pendingPhoto: { step: PlanStep; index: number } | null = null
+  /** Set when a code step finishes: the brief for the builder is written after the step is applied. */
+  let pendingCode: { step: PlanStep; index: number } | null = null
   const touched = new Set<string>()
   const gone = new Set<string>()
   const appraisals: AppraisalEvent[] = []
@@ -249,11 +253,13 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   let started: Intention | null = null
 
   // A build it asked for earlier: closed when its object is in the world (that is the answer; nobody asks GitHub), or given up on.
-  const settled = settleOpenBuild(mind, new Set(w.objects.map((o) => o.id)), nowMs)
+  const settled = settleOpenBuild(mind, new Set(mind.openBuild?.kind === 'code' ? w.art.map((a) => a.id) : w.objects.map((o) => o.id)), nowMs)
   if (settled.outcome === 'arrived' || settled.outcome === 'expired') {
-    const id = mind.openBuild!.id
+    const { id, kind: builtKind } = mind.openBuild!
     mind.openBuild = null
-    const text = settled.outcome === 'arrived' ? `The object I asked for has arrived: ${w.objects.find((o) => o.id === id)?.name ?? id}.` : `The object I asked for (${id}) never came.`
+    const what = builtKind === 'code' ? 'project' : 'object'
+    const name = (builtKind === 'code' ? w.art.find((a) => a.id === id)?.title : w.objects.find((o) => o.id === id)?.name) ?? id
+    const text = settled.outcome === 'arrived' ? `The ${what} I asked for has arrived: ${name}.` : `The ${what} I asked for (${id}) never came.`
     remember.push({ at: nowIso, kind: settled.outcome === 'arrived' ? 'made' : 'event', text, objectId: id })
     justNow.push(text)
   }
@@ -280,6 +286,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
         objects = [...result.world.objects]
         skills = addXp(skills, result.group, result.xp)
         if (verb.artifact === 'photo') pendingPhoto = { step: finishing, index: goals.now.index }
+        else if (verb.artifact === 'code') pendingCode = { step: finishing, index: goals.now.index }
         else if (verb.artifact) pendingArt = { kind: verb.artifact, verb: verb.id, step: finishing, index: goals.now.index }
         if (verb.effect === 'read' || verb.effect === 'study') pendingReading = { depth: verb.effect === 'study' ? 4 : 1, topic: finishing.topic ?? null }
         for (const id of result.upserted) {
@@ -382,6 +389,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
             stored,
             position: { x: body.pos.x, z: body.pos.z },
             skills,
+            codeLeft: codeSlotsLeft(mind, today),
             creativeLeft: Math.max(0, MAX_ARTIFACTS_PER_DAY - (mind.arts?.date === today ? mind.arts.count : 0)),
             photosLeft: photosLeft(mind, today),
             seed: intentionSeed(forkling.seed, nowMs),
@@ -550,6 +558,50 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     }
   }
   if (arts.count !== (mind.arts?.count ?? 0) || (arts.count > 0 && mind.arts?.date !== today)) mind.arts = arts
+
+  // Coding: the brief for a small program is written here, and the builder makes the files. Nothing is kept in `art/` until
+  // the project's pull request has merged, so the site never shows a project that is not there.
+  if (pendingCode && !deps.dryRun) {
+    const { step: codeStep, index } = pendingCode
+    const verdict = checkBuildRequest({ state: mind, today, asleep, canAfford: canSpend(budget, CODE_ESTIMATE_USD), kind: 'code' })
+    if (!verdict.ok) {
+      notes.push(`coding: ${verdict.reason}`)
+    } else {
+      const user = buildArtUser({
+        kind: 'code',
+        topic: codeStep.topic ?? interests.current?.topic ?? null,
+        reason: codeStep.reason,
+        skillLevel: skillLevel(skills, 'mind'),
+        obsession: interests.current?.topic ?? null,
+        recentTitles: [...w.art].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5).map((a) => a.title),
+        interests,
+        temperament,
+        date: today,
+      })
+      const result = await ask('art', 'claude-haiku-5-5', user, ArtOutput.code, MAX_ART_TOKENS)
+      if (result && !result.parsed) {
+        notes.push(`no usable brief for a coded project (stopped: ${result.stopReason ?? 'unknown'})`)
+      } else if (result?.parsed) {
+        const title = clampText(result.parsed.title.trim() || 'A small program', 60)
+        const request: BuildRequest = {
+          id: buildIdFor(title, new Set([...objects.map((o) => o.id), ...w.art.map((a) => a.id)])),
+          kind: 'code',
+          name: title,
+          purpose: clampText(result.parsed.idea.trim(), 300),
+          howItPlays: clampText(result.parsed.howItPlays.trim(), 300),
+          goalRef: `today:${index}`,
+          contraption: false,
+          requestedAt: nowIso,
+        }
+        buildRequests.push(request)
+        mind.openBuild = { id: request.id, kind: 'code', requestedAt: nowIso }
+        mind.codeWeek = { week: weekOf(today), count: (mind.codeWeek?.week === weekOf(today) ? mind.codeWeek.count : 0) + 1 }
+        remember.push({ at: nowIso, kind: 'made', text: `Started a coded project: "${request.name}": ${request.purpose}`, verb: 'code', goalRef: request.goalRef! })
+        justNow.push(`started a coded project: "${request.name}"`)
+        parts.push(`started a coded project`)
+      }
+    }
+  }
 
   // Seeing: a shot of what it is looking at is queued here, free. The frame is rendered and captioned after the tick.
   const queueShot = (why: PhotoShot['why'], subject: WorldObject | undefined, reason: string, goalRef?: string): boolean => {

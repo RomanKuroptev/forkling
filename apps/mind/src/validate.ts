@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { Artifact, BuildRequest, forklingPackIssues, type MicroBehavior, type SpeciesPack, type WorldObject } from '@forkling/schema'
 import { heightAt, isWalkable, runHeadless, starterIsland, worldWithObjects } from '@forkling/sim'
+import { checkProject } from './project.ts'
 import { runContraption } from './physics.ts'
 import { MAX_FRAME_BYTES } from './photos.ts'
 import { readWorld } from './world.ts'
@@ -77,6 +78,12 @@ export function validateWorld(dir: string, species: { pack: SpeciesPack; behavio
       const bytes = readFileSync(join(photos, f))
       const jpeg = bytes.length > 4 && bytes[0] === 0xff && bytes[1] === 0xd8
       if (!f.endsWith('.jpg') || !jpeg || statSync(join(photos, f)).size > MAX_FRAME_BYTES) problems.push(`art/photos/${f}: not a jpeg of a sane size`)
+    }
+  }
+  const projects = join(dir, 'site/projects')
+  if (existsSync(projects)) {
+    for (const id of readdirSync(projects).filter((d) => statSync(join(projects, d)).isDirectory())) {
+      for (const problem of checkProject(dir, id).problems) problems.push(`site/projects/${id}: ${problem}`)
     }
   }
   for (const rel of jsonFiles(dir, 'mind/builds')) {

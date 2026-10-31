@@ -534,6 +534,18 @@
       "slot": "holdUp",
       "requires": ["day"],
       "reason": "I want to keep how this looks right now."
+    },
+    {
+      "id": "code",
+      "group": "mind",
+      "body": "upright",
+      "effect": "create",
+      "artifact": "code",
+      "satisfies": { "curiosity": 20 },
+      "durationSec": [14, 26],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "useTool",
+      "reason": "I have an idea for something that runs. Let me write it down."
     }
   ],
   "weights": {

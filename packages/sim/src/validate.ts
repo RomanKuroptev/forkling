@@ -35,6 +35,8 @@ export interface PlanContext {
   creativeLeft?: number
   /** How many more eye-cam frames it may take today. Photographing has its own limit and does not use `creativeLeft`. Missing means no limit. */
   photosLeft?: number
+  /** How many more coded projects it may ask for this week. Missing means no limit. */
+  codeLeft?: number
   /** Seed for the looks of what the plan makes. Only matters to what the simulation leaves behind, never to whether it works. */
   seed?: number
 }
@@ -131,13 +133,18 @@ export function validatePlan(steps: readonly PlanStep[], ctx: PlanContext): Plan
   if (ctx.creativeLeft !== undefined) {
     const making = steps.filter((s) => {
       const artifact = ctx.pack.actions.find((a) => a.id === s.verb)?.artifact
-      return artifact !== undefined && artifact !== 'photo'
+      return artifact !== undefined && artifact !== 'photo' && artifact !== 'code'
     }).length
     if (making > ctx.creativeLeft) reasons.push(`the plan would make ${making} ${making === 1 ? 'thing' : 'things'}, but there is room for ${ctx.creativeLeft} more today`)
   }
   if (ctx.photosLeft !== undefined) {
     const photographs = steps.filter((s) => ctx.pack.actions.find((a) => a.id === s.verb)?.artifact === 'photo').length
     if (photographs > ctx.photosLeft) reasons.push(`the plan would take ${photographs} ${photographs === 1 ? 'photograph' : 'photographs'}, but there ${ctx.photosLeft === 1 ? 'is 1 frame' : `are ${ctx.photosLeft} frames`} left today`)
+  }
+
+  if (ctx.codeLeft !== undefined) {
+    const coding = steps.filter((s) => ctx.pack.actions.find((a) => a.id === s.verb)?.artifact === 'code').length
+    if (coding > ctx.codeLeft) reasons.push(`the plan would start ${coding} coded ${coding === 1 ? 'project' : 'projects'}, but there is room for ${ctx.codeLeft} this week`)
   }
 
   const verb = fixation(verbKeys, MAX_VERB_RUN)

@@ -42,15 +42,15 @@ describe('cat species pack', () => {
       hands: ['pick_up', 'carry', 'drop', 'put_on', 'give', 'open', 'close'],
       making: ['cut', 'join', 'shape', 'build', 'paint', 'sew', 'tinker'],
       growing: ['plant', 'water', 'harvest', 'cook', 'eat'],
-      mind: ['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph'],
+      mind: ['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph', 'code'],
     }
     for (const [group, verbs] of Object.entries(wanted)) {
       for (const verb of verbs) expect(ids.has(verb), `${group}: ${verb}`).toBe(true)
     }
-    for (const later of ['code']) {
+    for (const later of [] as string[]) {
       expect(ids.has(later), later).toBe(false)
     }
-    expect(pack.actions.filter((a) => a.group === 'mind').map((a) => a.id)).toEqual(['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph'])
+    expect(pack.actions.filter((a) => a.group === 'mind').map((a) => a.id)).toEqual(['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph', 'code'])
   })
 
   it('is made of verbs, not activities', () => {

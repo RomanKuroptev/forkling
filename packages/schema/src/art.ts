@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { Timestamp } from './intention.ts'
 
-export const ARTIFACT_KINDS = ['writing', 'drawing', 'melody', 'recipe', 'broadcast', 'labnote', 'photo', 'contraption'] as const
+export const ARTIFACT_KINDS = ['writing', 'drawing', 'melody', 'recipe', 'broadcast', 'labnote', 'photo', 'contraption', 'code'] as const
 export const ArtifactKind = z.enum(ARTIFACT_KINDS)
 export type ArtifactKind = z.infer<typeof ArtifactKind>
 
@@ -30,6 +30,12 @@ export const ArtContent = {
   }),
   broadcast: z.object({ script: Text }),
   labnote: z.object({ question: z.string().min(1).max(300), method: z.string().min(1).max(MAX_ARTIFACT_TEXT), result: z.string().min(1).max(MAX_ARTIFACT_TEXT) }),
+  code: z.object({
+    /** The folder under `site/projects/` it lives in, which is also its address on the site. */
+    project: z.string().regex(/^[a-z0-9][a-z0-9-]{0,60}$/, 'lowercase words with dashes'),
+    idea: z.string().min(1).max(300),
+    howItPlays: z.string().min(1).max(300),
+  }),
   contraption: z.object({
     objectId: z.string().min(1).max(60),
     /** What the physics did, measured by the sim. The model never writes these. */
@@ -72,6 +78,7 @@ export const Artifact = z.discriminatedUnion('kind', [
   Meta.extend({ kind: z.literal('labnote'), content: ArtContent.labnote }),
   Meta.extend({ kind: z.literal('photo'), content: ArtContent.photo }),
   Meta.extend({ kind: z.literal('contraption'), content: ArtContent.contraption }),
+  Meta.extend({ kind: z.literal('code'), content: ArtContent.code }),
 ])
 export type Artifact = z.infer<typeof Artifact>
 
@@ -90,4 +97,6 @@ export const ArtOutput = {
   photo: z.object({ title: z.string(), caption: z.string(), opinion: z.string() }),
   /** What it makes of a run of a contraption. How it went is measured and handed to it as data. */
   contraption: z.object({ title: z.string(), notes: z.string(), opinion: z.string() }),
+  /** The brief for a small program for its website. The files themselves are written by the builder. */
+  code: z.object({ title: z.string(), idea: z.string(), howItPlays: z.string() }),
 } as const

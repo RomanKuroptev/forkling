@@ -7,6 +7,8 @@ export const MONTHLY_CAP_USD = 10
 
 /** One designed object (or coded project) a day, and a request that is never answered is given up on after this long. */
 export const MAX_BUILDS_PER_DAY = 1
+/** Coded Pages projects a week. */
+export const MAX_CODE_PER_WEEK = 2
 export const BUILD_EXPIRES_HOURS = 72
 
 export const BuildKind = z.enum(['object', 'code'])
@@ -19,6 +21,8 @@ export const BuildRequest = z.object({
   name: z.string().min(1).max(60),
   /** What it wants it for, in its voice. */
   purpose: z.string().min(1).max(300),
+  /** For a coded project: what a visitor does and sees. */
+  howItPlays: z.string().max(300).optional(),
   goalRef: z.string().max(40).optional(),
   /** A mechanism that runs a physics sequence, not a plain object. */
   contraption: z.boolean().default(false),
@@ -74,6 +78,8 @@ export const MindState = z.object({
   photos: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), queue: z.array(PhotoShot).max(MAX_PHOTOS_PER_DAY) }).optional(),
   /** Builds asked for so far on a local date, for the daily limit. */
   builds: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
+  /** Coded projects asked for so far in an ISO week like `2026-W45`, for the weekly limit. */
+  codeWeek: z.object({ week: z.string().regex(/^\d{4}-W\d{2}$/), count: z.number().int().nonnegative() }).optional(),
   /** The build waiting on the builder: it ends when the object turns up in `objects/`, or after `BUILD_EXPIRES_HOURS`. */
   openBuild: z.object({ id: z.string().min(1), kind: BuildKind, requestedAt: Timestamp }).nullable().default(null),
   /** Why the validator last turned a plan down, newest last.*/

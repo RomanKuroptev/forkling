@@ -141,6 +141,44 @@ describe('renderSite', () => {
     expect(html).toContain('Again.')
   })
 
+  describe('coded projects', () => {
+    const codeArt = { id: 'gate-toy', kind: 'code', title: 'Gate <b>toy</b>', content: { project: 'gate-toy', idea: 'A toy of <i>logic</i> gates.', howItPlays: 'Click the switches.' }, skillLevel: 2, createdAt: '2026-11-03T16:00:00Z' }
+    beforeEach(() => {
+      put('art/gate-toy.json', codeArt)
+      put('site/projects/gate-toy/index.html', '<!doctype html><title>Gate toy</title><script src="app.js"></script>')
+      put('site/projects/gate-toy/app.js', 'console.log(1)')
+      put('site/projects/gate-toy/notes/readme.json', '{}')
+      put('site/projects/gate-toy/payload.exe', 'MZ')
+      put('site/projects/unreviewed/index.html', '<!doctype html>')
+    })
+
+    it('puts the project on the site, next to the pages, and links it from the gallery', () => {
+      renderSite(world, out)
+      expect(readFileSync(join(out, 'projects/gate-toy/index.html'), 'utf8')).toContain('Gate toy')
+      expect(readFileSync(join(out, 'projects/gate-toy/app.js'), 'utf8')).toBe('console.log(1)')
+      expect(readFileSync(join(out, 'projects/gate-toy/notes/readme.json'), 'utf8')).toBe('{}')
+      const html = page('gallery/index.html')
+      expect(html).toContain('href="../projects/gate-toy/"')
+      expect(html).toContain('A toy of &lt;i&gt;logic&lt;/i&gt; gates.')
+      expect(html).toContain('Click the switches.')
+      expect(html).not.toContain('<i>logic</i>')
+    })
+
+    it('copies only the file types a project may have, and only for a project with an artifact', () => {
+      renderSite(world, out)
+      expect(existsSync(join(out, 'projects/gate-toy/payload.exe'))).toBe(false)
+      expect(existsSync(join(out, 'projects/unreviewed'))).toBe(false)
+    })
+
+    it('shows the card without a link when the project folder is missing', () => {
+      put('art/ghost.json', { ...codeArt, id: 'ghost', title: 'Ghost', content: { ...codeArt.content, project: 'ghost' } })
+      renderSite(world, out)
+      const html = page('gallery/index.html')
+      expect(html).toContain('Ghost')
+      expect(html).not.toContain('href="../projects/ghost/"')
+    })
+  })
+
   it('loads the sound library only when there is a melody to play', () => {
     renderSite(world, out)
     expect(page('gallery/index.html')).toMatch(/cdnjs\.cloudflare\.com\/ajax\/libs\/tone\/\d+\.\d+\.\d+\//)

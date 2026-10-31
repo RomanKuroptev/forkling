@@ -14,6 +14,7 @@ describe('Artifact', () => {
       labnote: { question: 'Does clay float?', method: 'I dropped a cup in the pond.', result: 'It sank.' },
       photo: { image: 'photos/the-pond.jpg', caption: 'The pond at dusk.', opinion: 'Too wet, but pretty.', noticed: false },
       contraption: { objectId: 'marble-run', moved: true, maxTravel: 1.1, settled: true, notes: 'The marble rolled off the end.', opinion: 'Again.' },
+      code: { project: 'gate-toy', idea: 'A toy of logic gates.', howItPlays: 'Click the switches.' },
     } as const
     expect(Object.keys(made).sort()).toEqual([...ARTIFACT_KINDS].sort())
     for (const kind of ARTIFACT_KINDS) expect(Artifact.safeParse({ ...base, kind, content: made[kind] }).success, kind).toBe(true)
