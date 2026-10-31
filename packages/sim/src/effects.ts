@@ -46,6 +46,7 @@ export type StepEvent = {
     | 'ate'
     | 'ateSpoiled'
     | 'read'
+    | 'created'
   objectId?: string
   material?: Material
 }
@@ -193,6 +194,13 @@ export function applyStep(world: StepWorld, step: PlanStep, verb: SpeciesAction,
       const t = needTarget()
       if (typeof t === 'string') return fail(t)
       return done(world, [], [], [{ kind: 'read', objectId: t.id }])
+    }
+
+    // Creating changes nothing in the world either: the mind writes what it made to `art/`.
+    case 'create': {
+      const t = needTarget()
+      if (typeof t === 'string') return fail(t)
+      return done(world, [], [], [{ kind: 'created', objectId: t.id }])
     }
 
     case 'pickUp':

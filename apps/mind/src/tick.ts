@@ -1,10 +1,13 @@
 import type { z } from 'zod'
 import {
   Forkling,
+  ArtOutput,
   MemorySlots,
   ReadingNote,
   type TimelineEntry,
   Reflection,
+  type Artifact,
+  type ArtifactKind,
   type BudgetCall,
   type Goals,
   type Intention,
@@ -51,6 +54,7 @@ import {
 } from '@forkling/sim'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger, type ModelId } from './budget.ts'
 import { clampText, Decision, planStepFrom, type LlmStep } from './decision.ts'
+import { artifactFrom, buildArtUser, MAX_ARTIFACTS_PER_DAY } from './art.ts'
 import { readFeeds, type FeedItem, type GetJson } from './feeds/index.ts'
 import type { CallKind, LlmClient, LlmResult } from './llm.ts'
 import { buildSystem, buildUser, type ThinkKind } from './prompts.ts'
@@ -96,6 +100,7 @@ const MAX_OUTPUT_TOKENS = 3000
 const REFLECT_OUTPUT_TOKENS = 4000
 const MEMORY_OUTPUT_TOKENS = 3000
 const MAX_READING_TOKENS = 1500
+const MAX_ART_TOKENS = 3000
 const MAX_RECENT = 20
 /** A late night is only a choice for the evening. */
 const LATE_NIGHT_FROM_HOUR = 18
@@ -141,6 +146,7 @@ const PAST: Record<StepEvent['kind'], string> = {
   ate: 'ate',
   ateSpoiled: 'ate (it had gone off)',
   read: 'read at',
+  created: 'made something at',
 }
 
 /** What a step did, in a line the model can read. Names come from the objects, which may hold the forkling's own words. */
@@ -211,6 +217,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   let interests = w.interests
   /** Set when a read or study step finishes: the visit to the shelf comes after the step is applied. */
   let pendingReading: { depth: number; topic: string | null } | null = null
+  /** Set when a creative step finishes: what it made is written after the step is applied. */
+  let pendingArt: { kind: ArtifactKind; verb: string; step: PlanStep; index: number } | null = null
   const touched = new Set<string>()
   const gone = new Set<string>()
   const appraisals: AppraisalEvent[] = []
@@ -245,6 +253,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
         stored = result.world.stored
         objects = [...result.world.objects]
         skills = addXp(skills, result.group, result.xp)
+        if (verb.artifact) pendingArt = { kind: verb.artifact, verb: verb.id, step: finishing, index: goals.now.index }
         if (verb.effect === 'read' || verb.effect === 'study') pendingReading = { depth: verb.effect === 'study' ? 4 : 1, topic: finishing.topic ?? null }
         for (const id of result.upserted) {
           touched.add(id)
@@ -346,6 +355,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
             stored,
             position: { x: body.pos.x, z: body.pos.z },
             skills,
+            creativeLeft: Math.max(0, MAX_ARTIFACTS_PER_DAY - (mind.arts?.date === today ? mind.arts.count : 0)),
             seed: intentionSeed(forkling.seed, nowMs),
           })
     return { usable, check }
@@ -450,6 +460,51 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     }
   }
   if (readings.count !== mind.readings?.count || readings.skimmed !== mind.readings?.skimmed) mind.readings = readings
+
+  // Making things: when a creative step finishes, one Haiku call writes what it made to art/. Skill sets how good it is.
+  const madeArt: Artifact[] = []
+  let arts = mind.arts?.date === today ? mind.arts : { date: today, count: 0 }
+  if (pendingArt) {
+    if (arts.count >= MAX_ARTIFACTS_PER_DAY) {
+      notes.push(`art limit reached (${MAX_ARTIFACTS_PER_DAY} a day): ${pendingArt.verb} left nothing behind`)
+    } else {
+      const { kind, step: made, index } = pendingArt
+      const user = buildArtUser({
+        kind,
+        topic: made.topic ?? interests.current?.topic ?? null,
+        reason: made.reason,
+        skillLevel: skillLevel(skills, 'mind'),
+        obsession: interests.current?.topic ?? null,
+        recentTitles: [...w.art].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5).map((a) => a.title),
+        interests,
+        temperament,
+        date: today,
+      })
+      const result = await ask('art', 'claude-haiku-5-5', user, ArtOutput[kind] as z.ZodType<unknown>, MAX_ART_TOKENS)
+      if (result && !result.parsed) {
+        notes.push(`no usable ${kind} (stopped: ${result.stopReason ?? 'unknown'})`)
+      } else if (result) {
+        const art = artifactFrom(kind, result.parsed as never, {
+          skillLevel: skillLevel(skills, 'mind'),
+          goalRef: `today:${index}`,
+          obsessionRef: interests.current?.topic,
+          nowIso,
+          takenIds: new Set(w.art.map((a) => a.id)),
+        })
+        if (art) {
+          madeArt.push(art)
+          arts = { ...arts, count: arts.count + 1 }
+          remember.push({ at: nowIso, kind: 'made', text: `Made a ${kind}: "${art.title}"`, verb: pendingArt.verb, goalRef: `today:${index}` })
+          justNow.push(`made a ${kind}: "${art.title}"`)
+          parts.push(`made a ${kind}`)
+        } else {
+          notes.push(`the ${kind} it made was not usable`)
+        }
+      }
+    }
+  }
+  if (arts.count !== (mind.arts?.count ?? 0) || (arts.count > 0 && mind.arts?.date !== today)) mind.arts = arts
+
 
   let decision: Decision | null = null
   let thought = false
@@ -753,6 +808,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     if (beliefsChanged && writeJson(dir, 'memory/beliefs.json', beliefs)) written.push('memory/beliefs.json')
     if (interestsChanged && writeJson(dir, 'brain/interests.json', interests)) written.push('brain/interests.json')
     if (planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)
+    for (const art of madeArt) if (writeJson(dir, `art/${art.id}.json`, art)) written.push(`art/${art.id}.json`)
     for (const page of notebook) if (writeText(dir, page.path, page.text)) written.push(page.path)
     if (journal && writeText(dir, `journal/${journal.date}.md`, journal.text)) written.push(`journal/${journal.date}.md`)
     if (summaryNext && writeText(dir, 'memory/summary.md', summaryNext)) written.push('memory/summary.md')

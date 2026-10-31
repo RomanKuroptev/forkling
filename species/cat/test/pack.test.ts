@@ -35,22 +35,22 @@ describe('cat species pack', () => {
     expect(pack.bodyPlans.upright).toEqual(['body', 'hands', 'making', 'growing', 'mind'])
   })
 
-  it('has every verb of the groups M5 ships, the M6 reading verbs, and none of the later ones', () => {
+  it('has every verb of the groups M5 ships, the M6 mind verbs, and none of the later ones', () => {
     const ids = new Set(pack.actions.map((a) => a.id))
     const wanted = {
       body: ['go_to', 'inspect', 'sniff', 'sit', 'watch', 'follow', 'hide', 'vocalize', 'sleep', 'nap', 'stretch'],
       hands: ['pick_up', 'carry', 'drop', 'put_on', 'give', 'open', 'close'],
       making: ['cut', 'join', 'shape', 'build', 'paint', 'sew'],
       growing: ['plant', 'water', 'harvest', 'cook', 'eat'],
-      mind: ['read', 'study'],
+      mind: ['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe'],
     }
     for (const [group, verbs] of Object.entries(wanted)) {
       for (const verb of verbs) expect(ids.has(verb), `${group}: ${verb}`).toBe(true)
     }
-    for (const later of ['write', 'draw', 'compose', 'play', 'observe', 'experiment', 'broadcast', 'photograph', 'code', 'tinker']) {
+    for (const later of ['photograph', 'code', 'tinker']) {
       expect(ids.has(later), later).toBe(false)
     }
-    expect(pack.actions.filter((a) => a.group === 'mind').map((a) => a.id)).toEqual(['read', 'study'])
+    expect(pack.actions.filter((a) => a.group === 'mind').map((a) => a.id)).toEqual(['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe'])
   })
 
   it('is made of verbs, not activities', () => {

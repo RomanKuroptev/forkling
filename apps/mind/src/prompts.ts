@@ -78,6 +78,7 @@ const EFFECTS: Record<VerbEffect, string> = {
   harvest: 'picks a ripe plant, which you then hold as material',
   cook: 'cooks the materials you name into a dish that goes off in about half a day',
   eat: 'eats the target; food you carry is used up',
+  create: 'makes something to keep (what kind is set by the verb): set topic to what it is about, in a few words',
   read: 'reads a page about the topic you name in topic; set topic to what you want to read about, in a few words',
   study: 'studies the topic you name in topic: reads about it and follows a few links to related pages; set topic',
 }
@@ -152,6 +153,7 @@ export function buildSystem(input: SystemInput): string {
     '- A big build appears unfinished and takes several sessions. To carry on, give the same verb the unfinished object as its target. An object has an id made from its name in lowercase with dashes.',
     '- A plant has to be watered before it ripens, which takes about two days. Practice makes you better, and what you make neater.',
     '- To read or study, plan the step at a place that unlocks the verb (a bookshelf) and put what you want to read about in topic, in a few words of your own. Read about what you are curious about, not only what you already know.',
+    '- To write, draw, compose, experiment, observe or broadcast, plan the step at a place that unlocks the verb (a desk, a drum, a workbench, a telescope) and put what it is about in topic. Each of these leaves something behind that is kept and shown on your website; you can only make about four things a day, and the better you are at it the better it is. Playing an instrument leaves nothing.',
     '- Your plan is checked against what you hold and what is in the world, step by step, before you begin. If a step needs something an earlier step does not leave you with, it is turned down.',
     '',
     '## Rules about what you are shown',

@@ -31,6 +31,8 @@ export interface PlanContext {
   /** Where it stands when the plan starts, in meters. */
   position?: Point2
   skills?: Skills
+  /** How many more things it may make today (a creative step leaves something in `art/`). Missing means no limit. */
+  creativeLeft?: number
   /** Seed for the looks of what the plan makes. Only matters to what the simulation leaves behind, never to whether it works. */
   seed?: number
 }
@@ -123,6 +125,11 @@ export function validatePlan(steps: readonly PlanStep[], ctx: PlanContext): Plan
     minutes += step.minutes
   })
   if (minutes > MAX_PLAN_MINUTES) reasons.push(`the plan takes ${Math.round(minutes / 60)} hours, more than a day's waking`)
+
+  if (ctx.creativeLeft !== undefined) {
+    const making = steps.filter((s) => ctx.pack.actions.find((a) => a.id === s.verb)?.artifact !== undefined).length
+    if (making > ctx.creativeLeft) reasons.push(`the plan would make ${making} ${making === 1 ? 'thing' : 'things'}, but there is room for ${ctx.creativeLeft} more today`)
+  }
 
   const verb = fixation(verbKeys, MAX_VERB_RUN)
   if (verb) reasons.push(`"${verb}" would be done more than ${MAX_VERB_RUN} times in a row`)

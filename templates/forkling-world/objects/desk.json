@@ -94,6 +94,7 @@
   "unlocks": [
     "write",
     "draw",
+    "broadcast",
     "code"
   ],
   "reason": "A flat place for ideas that need one."

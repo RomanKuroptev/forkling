@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, Skills, TemperamentRoll, VisitorEvent, WorldObject } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, Skills, TemperamentRoll, VisitorEvent, WorldObject } from '@forkling/schema'
 
 /** Most inbox events one tick will look at. Newer ones win; the rest are dropped with the rest of the inbox. */
 export const MAX_INBOX_EVENTS = 20
@@ -33,6 +33,8 @@ export interface WorldFiles {
   summary: string
   /** `brain/interests.json`: what it is into, and its obsessions. */
   interests: Interests
+  /** Everything in `art/`. */
+  art: Artifact[]
   inbox: InboxItem[]
 }
 
@@ -107,6 +109,14 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
     beliefs: readJson(dir, 'memory/beliefs.json', Beliefs, []),
     summary: existsSync(summaryPath) ? readFileSync(summaryPath, 'utf8') : '',
     interests: readJson(dir, 'brain/interests.json', Interests, {}),
+    art: listJson(dir, 'art').flatMap((rel) => {
+      try {
+        const parsed = Artifact.safeParse(JSON.parse(readFileSync(join(dir, rel), 'utf8')))
+        return parsed.success ? [parsed.data] : []
+      } catch {
+        return []
+      }
+    }),
     inbox,
   }
 }

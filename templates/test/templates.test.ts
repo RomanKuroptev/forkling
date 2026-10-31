@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, objectIdFromPath, PlanStep, Skills, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, objectIdFromPath, PlanStep, Skills, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
 import { collectSpots, isWalkable, matchesTarget, runPlan, starterWorld, sunDirection, worldWithObjects } from '@forkling/sim'
 import catSpecies from '@forkling/species-cat/species.json'
 
@@ -54,8 +54,13 @@ for (const template of ['forkling-world', 'merge']) {
       expect(paths).toContain('memory/stream/.gitkeep')
     })
 
+    it('keeps art/ for what it makes, with only valid artifacts in it', () => {
+      if (!paths.includes('art/.gitkeep')) return
+      for (const path of paths.filter((p) => p.startsWith('art/') && p.endsWith('.json'))) expect(Artifact.safeParse(read(join(dir, path))).success, path).toBe(true)
+    })
+
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|mind\/.+|brain\/.+|events\/.+|\.github\/workflows\/(mind|heartbeat)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|art\/.+|mind\/.+|brain\/.+|events\/.+|\.github\/workflows\/(mind|heartbeat)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
@@ -151,7 +156,7 @@ describe('templates/forkling-world starter objects', () => {
     for (const id of ['house', 'desk', 'workbench', 'kitchen', 'garden', 'bookshelf', 'drum', 'telescope', 'bed', 'bowl', 'water-bowl']) {
       expect(byId(id), id).toBeDefined()
     }
-    expect(byId('desk').unlocks).toEqual(expect.arrayContaining(['write', 'draw', 'code']))
+    expect(byId('desk').unlocks).toEqual(expect.arrayContaining(['write', 'draw', 'code', 'broadcast']))
     expect(byId('workbench').unlocks).toEqual(expect.arrayContaining(['build', 'join', 'shape', 'sew', 'paint', 'tinker']))
     expect(byId('kitchen').unlocks).toEqual(['cook'])
     expect(byId('garden').unlocks).toEqual(['plant'])

@@ -29,6 +29,8 @@ export const MindState = z.object({
   memoryBatch: z.object({ id: z.string().min(1), date: z.iso.date() }).nullable().default(null),
   /** Reading sessions so far on a local date, for the daily limit; and whether the morning skim of the feeds is done. */
   readings: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), skimmed: z.boolean().default(false) }).optional(),
+  /** Things made so far on a local date, for the daily limit. */
+  arts: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   /** Why the validator last turned a plan down, newest last.*/
   rejections: z.array(z.object({ at: Timestamp, reasons: z.array(z.string()) })).max(10).default([]),
 })
