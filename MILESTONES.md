@@ -164,7 +164,7 @@ Note: GitHub cron can be delayed by several minutes. Design for that; never assu
 
 ---
 
-## M6: Memory, reflection, curiosity and creative work (in progress: A memory and B curiosity built; C art next)
+## M6: Memory, reflection, curiosity and creative work (built on branches m6-memory, m6-curiosity, m6-art; needs release and its live run)
 
 **Goal:** Merge learns from its days, follows what it finds online, and its creative work shows up on its own website.
 
