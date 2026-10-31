@@ -6,6 +6,8 @@
   "scripts": {
     "tick": "node src/cli.ts",
     "photos": "node src/photos-cli.ts",
+    "design": "node src/design-cli.ts",
+    "validate": "node src/validate-cli.ts",
     "typecheck": "tsc -p .",
     "feeds:check": "node src/feeds/check.ts"
   },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BudgetLedger, Forkling, Goals, Intention, MindState, PlanStep } from '../src/index.ts'
+import { BudgetLedger, BuildRequest, Forkling, Goals, Intention, MindState, PlanStep } from '../src/index.ts'
 
 const step = { verb: 'perch', targetId: 'sunny-rock', reason: 'I want the best view of the beach.', minutes: 30 }
 
@@ -164,5 +164,38 @@ describe('MindState photos', () => {
 
   it('rejects a shot with a made-up reason for being taken', () => {
     expect(MindState.safeParse({ photos: { date: '2026-11-03', count: 1, queue: [{ ...shot, why: 'bored' }] } }).success).toBe(false)
+  })
+})
+
+describe('MindState builds', () => {
+  it('starts with no build open', () => {
+    const state = MindState.parse({})
+    expect(state.openBuild).toBeNull()
+    expect(state.builds).toBeUndefined()
+  })
+
+  it('keeps what it has asked to have built', () => {
+    const state = MindState.parse({ builds: { date: '2026-11-03', count: 1 }, openBuild: { id: 'clay-shelf', kind: 'object', requestedAt: '2026-11-03T10:00:00Z' } })
+    expect(state.openBuild?.kind).toBe('object')
+  })
+
+  it('knows only objects and code as things to build', () => {
+    expect(MindState.safeParse({ openBuild: { id: 'x', kind: 'song', requestedAt: '2026-11-03T10:00:00Z' } }).success).toBe(false)
+  })
+})
+
+describe('BuildRequest', () => {
+  const request = { id: 'clay-shelf', kind: 'object', name: 'A clay shelf', purpose: 'Somewhere to keep my cups.', requestedAt: '2026-11-03T10:00:00Z' }
+
+  it('parses a request', () => {
+    expect(BuildRequest.parse(request)).toMatchObject({ id: 'clay-shelf', kind: 'object' })
+  })
+
+  it('refuses an id that is not a plain file name, so it cannot point anywhere else', () => {
+    for (const id of ['../x', 'a/b', 'A B', '']) expect(BuildRequest.safeParse({ ...request, id }).success, id).toBe(false)
+  })
+
+  it('limits the words', () => {
+    expect(BuildRequest.safeParse({ ...request, purpose: 'x'.repeat(301) }).success).toBe(false)
   })
 })

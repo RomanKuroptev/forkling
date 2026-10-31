@@ -4,7 +4,7 @@ import type { z } from 'zod'
 import type { ModelId, Usage } from './budget.ts'
 
 /** What a call is for. Goes into the ledger, and lets a test fake answer each kind in turn. */
-export type CallKind = 'morning' | 'weekly' | 'decide' | 'bedtime' | 'memory' | 'read' | 'art' | 'vision'
+export type CallKind = 'morning' | 'weekly' | 'decide' | 'bedtime' | 'memory' | 'read' | 'art' | 'vision' | 'design'
 
 /** A picture for the model to look at: the eye-cam frame. */
 export interface LlmImage {

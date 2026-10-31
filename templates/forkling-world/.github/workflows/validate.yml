@@ -1,0 +1,86 @@
+name: validate
+
+# Checks a pull request before anything merges: it may only touch what the builder is allowed to touch, every file
+# must fit its schema, and the world must run for a thousand ticks. A pure object-data PR from the builder that passes
+# is merged here; anything else waits for a person.
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: The pull request number to check (the builder starts this for the PRs it opens)
+        required: true
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+env:
+  FORKLING_REPO: RomanKuroptev/forkling
+  FORKLING_REF: v0.7.1
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: world
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/head', inputs.pr) || '' }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.FORKLING_REPO }}
+          ref: ${{ env.FORKLING_REF }}
+          path: engine
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: engine/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: engine/pnpm-lock.yaml
+
+      - name: Install the mind
+        working-directory: engine
+        run: pnpm install --frozen-lockfile --filter "@forkling/mind..."
+
+      - name: Check the pull request
+        id: check
+        working-directory: engine
+        run: |
+          git -C "$GITHUB_WORKSPACE/world" fetch origin main
+          git -C "$GITHUB_WORKSPACE/world" diff --name-only origin/main...HEAD > "$RUNNER_TEMP/changed.txt"
+          pnpm --filter @forkling/mind validate --world "$GITHUB_WORKSPACE/world" --changed "$RUNNER_TEMP/changed.txt" 2>&1 | tee "$RUNNER_TEMP/validate.txt"
+          exit "${PIPESTATUS[0]}"
+
+      # The builder's own pull requests, and only those, are merged here when they are pure object data.
+      - name: Merge a data-only pull request from the builder
+        if: success() && steps.check.outputs.dataonly == 'true' && github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pr }}
+        run: |
+          head=$(gh pr view "$PR" --json headRefName --jq .headRefName)
+          case "$head" in build/*) ;; *) echo "not a builder branch: $head"; exit 0 ;; esac
+          gh pr merge "$PR" --squash --delete-branch
+
+      - name: Flag it for a person
+        if: failure() || (success() && steps.check.outputs.dataonly != 'true' && github.event_name == 'workflow_dispatch')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          gh label create needs-review --color d93f0b --description "A person has to look at this before it merges" 2>/dev/null || true
+          gh pr edit "$PR" --add-label needs-review
+          gh pr comment "$PR" --body "$(printf 'This waits for a person.\n\n```\n%s\n```\n' "$(cat "$RUNNER_TEMP/validate.txt" 2>/dev/null | head -40)")"
