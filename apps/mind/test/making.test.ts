@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { Forkling, Skills, TemperamentRoll, WorldObject, type SpeciesPack } from '@forkling/schema'
 import type { Decision, LlmStep } from '../src/decision.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
+import { noBatch } from './noBatch.ts'
 import { loadSpecies } from '../src/species.ts'
 import { runTick, type TickDeps } from '../src/tick.ts'
 
@@ -26,6 +27,7 @@ const step = (verb: string, target: string | null, minutes: number, extra: Parti
   minutes,
   materials: null,
   makes: null,
+  because: null,
   ...extra,
 })
 
@@ -45,9 +47,10 @@ function fakeLlm(answer: Decision | null): FakeLlm {
   const calls: LlmRequest[] = []
   return {
     calls,
-    async complete(req) {
+    ...noBatch,
+    async complete<T>(req: LlmRequest<T>) {
       calls.push(req)
-      return { decision: answer, stopReason: 'end_turn', usage: { input: 800, cacheRead: 0, cacheWrite: 3000, output: 400 } }
+      return { parsed: answer as T | null, stopReason: 'end_turn', usage: { input: 800, cacheRead: 0, cacheWrite: 3000, output: 400 } }
     },
   }
 }

@@ -23,6 +23,8 @@ export const MindState = z.object({
   recent: z.array(z.object({ verb: z.string(), targetId: z.string().optional(), at: Timestamp })).max(20).default([]),
   /** Local date of the last bedtime reflection, so it happens once a day. */
   lastReflectDate: z.iso.date().optional(),
+  /** Local date of the last nightly memory rewrite that was sent, so it is sent once a night. */
+  lastMemoryDate: z.iso.date().optional(),
   /** The nightly memory rewrite waiting on the Batch API. */
   memoryBatch: z.object({ id: z.string().min(1), date: z.iso.date() }).nullable().default(null),
   /** Why the validator last turned a plan down, newest last. */

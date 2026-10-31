@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { BudgetLedger, Forkling, forklingPackIssues, Goals, MindState, objectIdFromPath, PlanStep, Skills, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
+import { Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, MindState, objectIdFromPath, PlanStep, Skills, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
 import { collectSpots, isWalkable, matchesTarget, runPlan, starterWorld, sunDirection, worldWithObjects } from '@forkling/sim'
 import catSpecies from '@forkling/species-cat/species.json'
 
@@ -46,6 +46,12 @@ for (const template of ['forkling-world', 'merge']) {
     it('keeps people.json a list', () => {
       if (!paths.includes('memory/people.json')) return
       expect(Array.isArray(read(join(dir, 'memory/people.json')))).toBe(true)
+    })
+
+    it('starts with no beliefs, and a place for the memory stream', () => {
+      if (!paths.includes('memory/beliefs.json')) return
+      expect(Beliefs.parse(read(join(dir, 'memory/beliefs.json')))).toEqual([])
+      expect(paths).toContain('memory/stream/.gitkeep')
     })
 
     it('only contains files a world repo is allowed to have', () => {

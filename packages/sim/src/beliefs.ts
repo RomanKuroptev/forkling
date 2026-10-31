@@ -20,7 +20,7 @@ export function liveBeliefs(beliefs: readonly Belief[]): Belief[] {
  * can be traced through its revisions. Operations on beliefs that do not exist are ignored. Pure.
  */
 export function applyBeliefOps(beliefs: readonly Belief[], ops: readonly BeliefOp[], nowIso: string): Belief[] {
-  let next: Belief[] = beliefs.map((b) => structuredClone(b))
+  let next: Belief[] = beliefs.map((b) => ({ ...b, evidence: [...b.evidence], history: b.history.map((h) => ({ ...h })) }))
   const find = (id: string | null) => (id ? next.find((b) => b.id === id && b.status !== 'dropped') : undefined)
   const remember = (b: Belief, why: string) => {
     b.history = [...b.history, { at: nowIso, statement: b.statement, confidence: b.confidence, why }]

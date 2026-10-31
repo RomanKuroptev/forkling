@@ -1,4 +1,5 @@
 import type {
+  Belief,
   Forkling,
   Goals,
   MindState,
@@ -11,9 +12,11 @@ import type {
   VisitorEvent,
   WorldObject,
 } from '@forkling/schema'
-import { objectStatusAt, type Trigger } from '@forkling/sim'
+import { liveBeliefs, objectStatusAt, type Trigger } from '@forkling/sim'
 
 export type ThinkKind = 'morning' | 'weekly' | 'decide'
+
+export const describeBelief = (b: Belief) => `${b.id} (${b.confidence}): ${b.statement}${b.status === 'revised' ? ' [you changed your mind about this once]' : ''}`
 
 export interface SystemInput {
   pack: SpeciesPack
@@ -126,6 +129,7 @@ export function buildSystem(input: SystemInput): string {
     '- Do not repeat the same verb or the same place again and again. Variety is part of being alive.',
     '- Respect the time of day. Verbs marked "only day" need you awake, which is most of the day; dusk is 18:00 to 21:00 local time and a verb marked "only dusk" can only be planned for a step that starts then. Sleep is handled for you.',
     '- Keep every reason to one sentence in the first person, in your voice, never needy.',
+    '- You remember (<memory>) and you believe things (<beliefs>, each with an id and how sure you are). They came from your own days and may be wrong. Let them shape what you choose, and when a step follows from a belief, put its id in because (up to three). Never invent an id.',
     '',
     '## Hands, materials and making',
     '- Your paws hold one thing at a time. A source (an object that gives wood, stone and so on) gives one piece per step of pick_up or cut, and is slow to refill. Material you hold can be put on a storage place to keep it at home.',
@@ -169,6 +173,10 @@ export interface UserInput {
   feelings: string
   /** What its last step did, one line each. */
   justNow: readonly string[]
+  /** `memory/beliefs.json`; dropped ones are left out of the prompt. */
+  beliefs: readonly Belief[]
+  /** `memory/summary.md`. */
+  memory: string
 }
 
 const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
@@ -260,6 +268,8 @@ export function buildUser(i: UserInput): string {
           '</you>',
         ]
       : []),
+    ...(i.memory.trim() ? ['', '<memory>', i.memory.trim(), '</memory>'] : []),
+    ...(liveBeliefs(i.beliefs).length > 0 ? ['', '<beliefs>', ...liveBeliefs(i.beliefs).map(describeBelief), '</beliefs>'] : []),
     '',
     '<goals>',
     json({

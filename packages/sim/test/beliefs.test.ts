@@ -87,7 +87,7 @@ describe('applyBeliefOps', () => {
 
   it('does not change its input', () => {
     const input = [belief()]
-    const copy = structuredClone(input)
+    const copy = JSON.parse(JSON.stringify(input))
     applyBeliefOps(input, [op({ op: 'drop', beliefId: 'b1' })], NOW)
     expect(input).toEqual(copy)
   })

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { BudgetLedger, Forkling, Goals, MindState, objectIdFromPath, Skills, TemperamentRoll, VisitorEvent, WorldObject } from '@forkling/schema'
+import { Beliefs, BudgetLedger, Forkling, Goals, MindState, objectIdFromPath, Skills, TemperamentRoll, VisitorEvent, WorldObject } from '@forkling/schema'
 
 /** Most inbox events one tick will look at. Newer ones win; the rest are dropped with the rest of the inbox. */
 export const MAX_INBOX_EVENTS = 20
@@ -27,6 +27,10 @@ export interface WorldFiles {
   temperament: TemperamentRoll | null
   /** The forkling's own `brain/persona.md`, or empty. */
   persona: string
+  /** `memory/beliefs.json`: everything it has believed, dropped ones included. */
+  beliefs: Beliefs
+  /** `memory/summary.md`: its long-term memory, or empty. */
+  summary: string
   inbox: InboxItem[]
 }
 
@@ -75,6 +79,7 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
     return object
   })
   const personaPath = join(dir, 'brain/persona.md')
+  const summaryPath = join(dir, 'memory/summary.md')
 
   const inbox = listJson(dir, 'events/inbox')
     .slice(-MAX_INBOX_EVENTS * 5)
@@ -97,6 +102,8 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
     skills: readJson(dir, 'brain/skills.json', Skills, {}),
     temperament: existsSync(join(dir, 'brain/temperament.json')) ? readJson(dir, 'brain/temperament.json', TemperamentRoll) : null,
     persona: existsSync(personaPath) ? readFileSync(personaPath, 'utf8') : '',
+    beliefs: readJson(dir, 'memory/beliefs.json', Beliefs, []),
+    summary: existsSync(summaryPath) ? readFileSync(summaryPath, 'utf8') : '',
     inbox,
   }
 }
@@ -107,6 +114,21 @@ const normalize = (text: string) => text.replace(/\r\n/g, '\n')
 export function writeJson(dir: string, rel: string, value: unknown): boolean {
   const full = join(dir, rel)
   const text = `${JSON.stringify(value, null, 2)}\n`
+  if (existsSync(full) && normalize(readFileSync(full, 'utf8')) === text) return false
+  mkdirSync(dirname(full), { recursive: true })
+  writeFileSync(full, text)
+  return true
+}
+
+/** A text file of the world, or null if it isn't there. */
+export function readText(dir: string, rel: string): string | null {
+  const full = join(dir, rel)
+  return existsSync(full) ? readFileSync(full, 'utf8') : null
+}
+
+/** Writes a text file (a journal entry, the memory summary). Returns whether the content changed. */
+export function writeText(dir: string, rel: string, text: string): boolean {
+  const full = join(dir, rel)
   if (existsSync(full) && normalize(readFileSync(full, 'utf8')) === text) return false
   mkdirSync(dirname(full), { recursive: true })
   writeFileSync(full, text)
