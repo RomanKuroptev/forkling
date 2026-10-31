@@ -28,6 +28,7 @@ const step = (verb: string, target: string | null, minutes: number, extra: Parti
   materials: null,
   makes: null,
   because: null,
+  topic: null,
   ...extra,
 })
 

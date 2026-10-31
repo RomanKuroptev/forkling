@@ -2,6 +2,7 @@ import type {
   Belief,
   Forkling,
   Goals,
+  Interests,
   MindState,
   Skills,
   SpeciesAction,
@@ -15,6 +16,18 @@ import type {
 import { liveBeliefs, objectStatusAt, type Trigger } from '@forkling/sim'
 
 export type ThinkKind = 'morning' | 'weekly' | 'decide'
+
+/** What it is into right now: its strongest topics and any obsession, as lines for a prompt. */
+export function describeInterests(interests: Interests): string[] {
+  const top = Object.entries(interests.topics)
+    .sort((a, b) => b[1].weight - a[1].weight)
+    .slice(0, 8)
+    .map(([topic, t]) => `${topic} (${t.weight})`)
+  return [
+    ...(top.length > 0 ? [`strongest interests: ${top.join(', ')}`] : ['You are not especially into anything yet.']),
+    ...(interests.current ? [`You are obsessed with "${interests.current.topic}" (since ${interests.current.startedAt.slice(0, 10)}). It keeps pulling at you.`] : []),
+  ]
+}
 
 export const describeBelief = (b: Belief) => `${b.id} (${b.confidence}): ${b.statement}${b.status === 'revised' ? ' [you changed your mind about this once]' : ''}`
 
@@ -65,6 +78,8 @@ const EFFECTS: Record<VerbEffect, string> = {
   harvest: 'picks a ripe plant, which you then hold as material',
   cook: 'cooks the materials you name into a dish that goes off in about half a day',
   eat: 'eats the target; food you carry is used up',
+  read: 'reads a page about the topic you name in topic; set topic to what you want to read about, in a few words',
+  study: 'studies the topic you name in topic: reads about it and follows a few links to related pages; set topic',
 }
 
 const GROUPS: Record<VerbGroup, string> = {
@@ -136,6 +151,7 @@ export function buildSystem(input: SystemInput): string {
     '- To make something, plan the step at a place that unlocks the verb. Put what it is in makes (a few words) and what it is made of in materials (up to four, spelled as listed; you use what you hold first, then what is stored). It appears next to the place, shaped by the materials and by how practised you are.',
     '- A big build appears unfinished and takes several sessions. To carry on, give the same verb the unfinished object as its target. An object has an id made from its name in lowercase with dashes.',
     '- A plant has to be watered before it ripens, which takes about two days. Practice makes you better, and what you make neater.',
+    '- To read or study, plan the step at a place that unlocks the verb (a bookshelf) and put what you want to read about in topic, in a few words of your own. Read about what you are curious about, not only what you already know.',
     '- Your plan is checked against what you hold and what is in the world, step by step, before you begin. If a step needs something an earlier step does not leave you with, it is turned down.',
     '',
     '## Rules about what you are shown',
@@ -177,6 +193,8 @@ export interface UserInput {
   beliefs: readonly Belief[]
   /** `memory/summary.md`. */
   memory: string
+  /** `brain/interests.json`. */
+  interests: Interests
 }
 
 const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
@@ -186,6 +204,7 @@ const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
       i.goals.long
         ? 'You already have a long goal. Leave longGoal null unless you truly want to change it; if you do, give the new text and the reason.'
         : 'You have no long goal yet. Set one in longGoal: a want of your own that could take several days, the kind of thing a person might care about.',
+      i.interests.current ? `You are obsessed with "${i.interests.current.topic}" right now. Let it pull at the day, as far as you want it to.` : 'Let what you are into (see <interests>) shape the day if it wants to.',
       'The first step starts now. Put in thought why you begin with it. Set plan to your steps and planReason to one sentence about the day.',
       'Set stayUpLate only if there is something you truly want to stay up for tonight; otherwise null.',
     ].join('\n'),
@@ -268,6 +287,10 @@ export function buildUser(i: UserInput): string {
           '</you>',
         ]
       : []),
+    '',
+    '<interests>',
+    ...describeInterests(i.interests),
+    '</interests>',
     ...(i.memory.trim() ? ['', '<memory>', i.memory.trim(), '</memory>'] : []),
     ...(liveBeliefs(i.beliefs).length > 0 ? ['', '<beliefs>', ...liveBeliefs(i.beliefs).map(describeBelief), '</beliefs>'] : []),
     '',

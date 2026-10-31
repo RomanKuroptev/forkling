@@ -27,6 +27,8 @@ export const VerbEffect = z.enum([
   'harvest',
   'cook',
   'eat',
+  'read',
+  'study',
 ])
 export type VerbEffect = z.infer<typeof VerbEffect>
 

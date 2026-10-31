@@ -18,6 +18,8 @@ export const LlmStep = z.object({
   materials: z.array(z.string()).nullable(),
   /** A few words for what the step makes; null otherwise. */
   makes: z.string().nullable(),
+  /** What a read or study step is about, in a few words; null otherwise. */
+  topic: z.string().nullable(),
   /** Ids of beliefs this step follows from (from the beliefs list), up to three; null if none. */
   because: z.array(z.string()).nullable(),
 })
@@ -56,6 +58,7 @@ export function planStepFrom(step: LlmStep, beliefIds: ReadonlySet<string> = new
     return parsed.success ? [parsed.data] : []
   })
   const makes = step.makes?.trim()
+  const topic = step.topic?.trim()
   // Only beliefs it really holds count; a made-up id is dropped, not trusted.
   const because = [...new Set((step.because ?? []).map((b) => b.trim()))].filter((b) => beliefIds.has(b)).slice(0, 3)
   const place = step.x !== null && step.z !== null && Number.isFinite(step.x) && Number.isFinite(step.z)
@@ -66,6 +69,7 @@ export function planStepFrom(step: LlmStep, beliefIds: ReadonlySet<string> = new
     ...(materials.length > 0 ? { materials: materials.slice(0, 4) } : {}),
     ...(makes ? { makes: clampText(makes, 40) } : {}),
     reason: clampText(reason, 200),
+    ...(topic ? { topic: clampText(topic, 80) } : {}),
     ...(because.length > 0 ? { because } : {}),
     minutes: clamp(Math.round(Number.isFinite(step.minutes) ? step.minutes : 10), 1, 240),
   })

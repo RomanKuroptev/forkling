@@ -2,6 +2,7 @@ import { appendFileSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { hasCredentials } from './credentials.ts'
+import { httpGetJson } from './feeds/index.ts'
 import { anthropicClient } from './llm.ts'
 import { loadSpecies } from './species.ts'
 import { runTick } from './tick.ts'
@@ -43,6 +44,7 @@ async function main(): Promise<void> {
     behaviors: species.behaviors,
     speciesPersona: species.persona,
     pools: species.pools,
+    get: httpGetJson,
     dryRun: values['dry-run'],
   })
 

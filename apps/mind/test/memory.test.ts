@@ -27,6 +27,7 @@ const step = (verb: string, target: string | null, because: string[] | null = nu
   materials: null,
   makes: null,
   because,
+  topic: null,
 })
 
 const plan = (because: string[] | null = null): Decision => ({

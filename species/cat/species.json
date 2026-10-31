@@ -11,7 +11,7 @@
   "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
   "bodyPlans": {
     "quadruped": ["body"],
-    "upright": ["body", "hands", "making", "growing"]
+    "upright": ["body", "hands", "making", "growing", "mind"]
   },
   "actions": [
     {
@@ -400,6 +400,30 @@
       "target": { "type": "object", "where": { "edible": true, "carryable": true } },
       "slot": "eat",
       "reason": "I made this, so I am allowed to eat it."
+    },
+    {
+      "id": "read",
+      "group": "mind",
+      "body": "upright",
+      "effect": "read",
+      "satisfies": { "curiosity": 20 },
+      "durationSec": [10, 20],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "holdUp",
+      "requires": ["day"],
+      "reason": "There is a page I want to see."
+    },
+    {
+      "id": "study",
+      "group": "mind",
+      "body": "upright",
+      "effect": "study",
+      "satisfies": { "curiosity": 30 },
+      "durationSec": [14, 28],
+      "target": { "type": "object", "unlocked": true },
+      "slot": "holdUp",
+      "requires": ["day"],
+      "reason": "I want to understand this properly."
     }
   ],
   "weights": {

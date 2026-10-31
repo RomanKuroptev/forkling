@@ -24,9 +24,9 @@ const morning: Decision = {
   longGoal: { text: 'Make the sunny rock mine.', reason: 'It is the warmest place I have found.' },
   dropLongGoal: false,
   plan: [
-    { verb: 'watch', target: 'sunny-rock', x: null, z: null, reason: 'I want the best seat on the beach.', minutes: 30, materials: null, makes: null, because: null },
-    { verb: 'explore', target: null, x: -10, z: 5, reason: 'There is shoreline I have not seen.', minutes: 25, materials: null, makes: null, because: null },
-    { verb: 'sit', target: null, x: null, z: null, reason: 'Breakfast can wait while I think.', minutes: 10, materials: null, makes: null, because: null },
+    { verb: 'watch', target: 'sunny-rock', x: null, z: null, reason: 'I want the best seat on the beach.', minutes: 30, materials: null, makes: null, because: null, topic: null },
+    { verb: 'explore', target: null, x: -10, z: 5, reason: 'There is shoreline I have not seen.', minutes: 25, materials: null, makes: null, because: null, topic: null },
+    { verb: 'sit', target: null, x: null, z: null, reason: 'Breakfast can wait while I think.', minutes: 10, materials: null, makes: null, because: null, topic: null },
   ],
   planReason: 'A day for claiming things.',
   stayUpLate: null,
@@ -170,7 +170,7 @@ describe('strong needs', () => {
 })
 
 describe('the validator', () => {
-  const badPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null, because: null }]
+  const badPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null, because: null, topic: null }]
 
   it('asks again once with the reasons, and uses the corrected plan', async () => {
     let n = 0
@@ -201,7 +201,7 @@ describe('the validator', () => {
   })
 
   it('does not ask again the same morning after a rejected plan', async () => {
-    const llm = fakeLlm({ ...morning, plan: [{ verb: 'fish', target: null, x: null, z: null, reason: 'x', minutes: 30, materials: null, makes: null, because: null }] })
+    const llm = fakeLlm({ ...morning, plan: [{ verb: 'fish', target: null, x: null, z: null, reason: 'x', minutes: 30, materials: null, makes: null, because: null, topic: null }] })
     await runTick(dir, at(NOW, { llm }))
     await runTick(dir, at(minutesAfter(10), { llm }))
     expect(llm.calls).toHaveLength(2)

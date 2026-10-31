@@ -45,6 +45,7 @@ export type StepEvent = {
     | 'cooked'
     | 'ate'
     | 'ateSpoiled'
+    | 'read'
   objectId?: string
   material?: Material
 }
@@ -185,6 +186,14 @@ export function applyStep(world: StepWorld, step: PlanStep, verb: SpeciesAction,
     case 'hide':
     case 'give':
       return done(world, [], [], [])
+
+    // Reading changes nothing in the world. What it reads and learns is the mind's business, from the topic of the step.
+    case 'read':
+    case 'study': {
+      const t = needTarget()
+      if (typeof t === 'string') return fail(t)
+      return done(world, [], [], [{ kind: 'read', objectId: t.id }])
+    }
 
     case 'pickUp':
     case 'cut': {
