@@ -1,6 +1,7 @@
 import type { Forkling, MicroBehavior, SpeciesPack } from '@forkling/schema'
 import { createForkling, STEP, stepForkling, type ForklingState, type StepContext } from './forkling.ts'
 import { nearestWalkable, type Point2 } from './nav.ts'
+import { isAsleepAt } from './sleep.ts'
 import { sunDirection } from './sky.ts'
 import type { StarterWorld } from './starter.ts'
 import { collectSpots } from './world.ts'
@@ -45,6 +46,7 @@ export interface Playback {
   ctx: StepContext
   spotMinute: number
   hourCache: { minute: number; hour: number }
+  asleepCache: { minute: number; asleep: boolean }
 }
 
 const epochOf = (sec: number) => Math.floor(sec / EPOCH_SECONDS)
@@ -103,10 +105,24 @@ function hourAt(pb: Playback, sec: number): number {
   return (pb.hourCache.hour + (sec - minute * 60) / 3600) % 24
 }
 
+/** Whether the forkling is in bed at a sim instant, by its sleep schedule. Looked up once per minute. */
+function asleepAt(pb: Playback, sec: number): boolean {
+  const minute = Math.floor(sec / 60)
+  if (minute !== pb.asleepCache.minute) {
+    const { forkling } = pb.input
+    pb.asleepCache = {
+      minute,
+      asleep: isAsleepAt(minute * 60_000, { seed: forkling.seed, timezone: forkling.timezone, lateNight: forkling.lateNight }),
+    }
+  }
+  return pb.asleepCache.asleep
+}
+
 function stepOnce(pb: Playback, visitor: Point2 | null): void {
   const { pack, world } = pb.input
   const t = pb.anchor.time + (pb.steps + 1) * STEP
   pb.ctx.timeOfDay = hourAt(pb, t)
+  pb.ctx.asleep = asleepAt(pb, t)
   const minute = Math.floor(t / 60)
   if (minute !== pb.spotMinute) {
     pb.spotMinute = minute
@@ -145,6 +161,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     ctx: { grid: world.nav.grid, visitor: null, timeOfDay: 0, spots: {} },
     spotMinute: -1,
     hourCache: { minute: -1, hour: 0 },
+    asleepCache: { minute: -1, asleep: false },
   }
   stepTo(pb, nowMs / 1000, null)
   return pb

@@ -199,3 +199,16 @@ describe('advancePlayback', () => {
     expect(live.state.noticed).toBe(true)
   })
 })
+
+describe('sleep schedule in playback', () => {
+  it('keeps the body asleep-eligible only between bedtime and waking, by the forkling schedule', () => {
+    const inp = input({ seed: 11 })
+    const tz = inp.forkling.timezone
+    // 22:00 local on 2026-11-03 is before any bedtime (22:30 earliest); 03:00 local is inside every night.
+    const evening = startPlayback(inp, Date.parse('2026-11-03T21:01:00Z'))
+    const night = startPlayback(inp, Date.parse('2026-11-04T02:01:00Z'))
+    expect(evening.ctx.asleep).toBe(false)
+    expect(night.ctx.asleep).toBe(true)
+    expect(hourInZone(tz, Date.parse('2026-11-04T02:00:00Z'))).toBeCloseTo(3, 0)
+  })
+})

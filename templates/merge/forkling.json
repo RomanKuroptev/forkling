@@ -1,6 +1,7 @@
 {
   "name": "Merge",
   "species": "cat",
+  "seed": 20260101,
   "needs": {
     "hunger": 70,
     "energy": 80,

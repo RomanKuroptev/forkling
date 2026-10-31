@@ -22,6 +22,8 @@ export interface StepContext {
   visitor: Point2 | null
   /** Hours since midnight, 0 to 24. */
   timeOfDay: number
+  /** Bedtime by the sleep schedule. When absent, night hours stand in for it. */
+  asleep?: boolean
   /** Spots the world offers, by kind (`food`, `perch`, `sunbeam`...). */
   spots: Record<string, Point2[]>
 }
@@ -323,6 +325,7 @@ function replan(s: ForklingState, ctx: StepContext): void {
   let candidates = scoreActions(s.needs, s.pack, {
     visitorDistance: ctx.visitor ? dist(s.pos, ctx.visitor) : null,
     timeOfDay: ctx.timeOfDay,
+    ...(ctx.asleep !== undefined ? { asleep: ctx.asleep } : {}),
     spotKinds,
   })
   for (let attempt = 0; attempt < 5 && candidates.length > 0; attempt++) {

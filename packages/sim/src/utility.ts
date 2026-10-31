@@ -8,6 +8,8 @@ export interface ScoreContext {
   visitorDistance: number | null
   /** Hours since midnight, 0 to 24. */
   timeOfDay: number
+  /** Whether it is bedtime by the sleep schedule. When absent, night hours stand in for it. */
+  asleep?: boolean
   /** Kinds of spots the world can currently offer, e.g. `food`, `sunbeam`, `perch`. */
   spotKinds: ReadonlySet<string>
 }
@@ -30,8 +32,9 @@ function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: ScoreContext): 
   const nearby = ctx.visitorDistance !== null && ctx.visitorDistance <= pack.perception.noticeRadius
   for (const req of action.requires) {
     if (req === 'visitorNearby' && !nearby) return false
-    if (req === 'night' && !isNight(ctx.timeOfDay)) return false
-    if (req === 'day' && isNight(ctx.timeOfDay)) return false
+    const asleep = ctx.asleep ?? isNight(ctx.timeOfDay)
+    if (req === 'night' && !asleep) return false
+    if (req === 'day' && asleep) return false
     if (req === 'dusk' && !isDusk(ctx.timeOfDay)) return false
   }
   if (action.target.type === 'visitor' && !nearby) return false

@@ -124,3 +124,22 @@ describe('BudgetLedger', () => {
     expect(BudgetLedger.safeParse({ month: 'November' }).success).toBe(false)
   })
 })
+
+describe('Forkling seed', () => {
+  const forkling = {
+    name: 'Merge',
+    species: 'cat',
+    needs: { hunger: 70 },
+    position: [0, 0, 22],
+    mood: 'curious',
+    intention: { type: 'lounge', startedAt: '2026-10-30T12:00:00Z', seed: 7, reason: 'Warm.' },
+    lastTickAt: '2026-10-30T12:00:00Z',
+  }
+
+  it('defaults to 0 and must be a non-negative integer', () => {
+    expect(Forkling.parse(forkling).seed).toBe(0)
+    expect(Forkling.parse({ ...forkling, seed: 20260101 }).seed).toBe(20260101)
+    expect(Forkling.safeParse({ ...forkling, seed: -1 }).success).toBe(false)
+    expect(Forkling.safeParse({ ...forkling, seed: 1.5 }).success).toBe(false)
+  })
+})

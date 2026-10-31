@@ -19,6 +19,8 @@ export const Forkling = z.object({
   name: z.string().min(1).max(40),
   /** Species pack id, e.g. `cat`. */
   species: Slug,
+  /** Fixed at hatching. Makes this forkling's hours, temperament and tie-breaks its own. */
+  seed: z.number().int().nonnegative().default(0),
   /** Current need values, 0 to 100. Which needs exist is up to the species pack. */
   needs: z.partialRecord(NeedId, z.number().min(0).max(100)),
   /** Where it is, in meters. y is ignored: the body snaps to the terrain. */
