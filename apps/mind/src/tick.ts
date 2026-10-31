@@ -59,6 +59,7 @@ import {
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger, type ModelId } from './budget.ts'
 import { clampText, Decision, planStepFrom, type LlmStep } from './decision.ts'
 import { artifactFrom, buildArtUser, MAX_ARTIFACTS_PER_DAY } from './art.ts'
+import { runContraption } from './physics.ts'
 import { buildIdFor, checkBuildRequest, settleOpenBuild } from './builds.ts'
 import { enqueueShot, noticedSubject, photosLeft, shotIdFor } from './photos.ts'
 import { readFeeds, type FeedItem, type GetJson } from './feeds/index.ts'
@@ -496,6 +497,21 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
       notes.push(`art limit reached (${MAX_ARTIFACTS_PER_DAY} a day): ${pendingArt.verb} left nothing behind`)
     } else {
       const { kind, step: made, index } = pendingArt
+      // A contraption is run here, headless, so what is recorded is what the physics did: the model only says what it thought.
+      let run: { objectId: string; name: string; moved: boolean; maxTravel: number; settled: boolean } | null = null
+      if (kind === 'contraption') {
+        const mechanism = objects.find((o) => o.id === made.targetId)
+        const outcome = mechanism ? await runContraption(mechanism) : null
+        if (mechanism && outcome) {
+          run = { objectId: mechanism.id, name: mechanism.name, moved: outcome.moved, maxTravel: outcome.maxTravel, settled: outcome.settled }
+          const ran = { ...mechanism, contraption: { ...mechanism.contraption!, lastRun: { at: nowIso, moved: outcome.moved, maxTravel: outcome.maxTravel, settled: outcome.settled } } }
+          objects = objects.map((o) => (o.id === mechanism.id ? ran : o))
+          touched.add(mechanism.id)
+        }
+      }
+      if (kind === 'contraption' && !run) {
+        notes.push(`tinker: ${made.targetId ?? 'its target'} is not a mechanism: nothing to run`)
+      } else {
       const user = buildArtUser({
         kind,
         topic: made.topic ?? interests.current?.topic ?? null,
@@ -506,6 +522,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
         interests,
         temperament,
         date: today,
+        run: run ?? undefined,
       })
       const result = await ask('art', 'claude-haiku-5-5', user, ArtOutput[kind] as z.ZodType<unknown>, MAX_ART_TOKENS)
       if (result && !result.parsed) {
@@ -517,6 +534,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
           obsessionRef: interests.current?.topic,
           nowIso,
           takenIds: new Set(w.art.map((a) => a.id)),
+          ...(run ? { contraption: run } : {}),
         })
         if (art) {
           madeArt.push(art)
@@ -527,6 +545,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
         } else {
           notes.push(`the ${kind} it made was not usable`)
         }
+      }
       }
     }
   }
@@ -767,6 +786,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
           kind: 'object',
           name,
           purpose: clampText(decision.design.purpose.trim(), 300),
+          contraption: decision.design.contraption === true,
           ...(goals.now ? { goalRef: `today:${goals.now.index}` } : {}),
           requestedAt: nowIso,
         }

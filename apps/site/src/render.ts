@@ -128,6 +128,9 @@ function renderArtifact(a: Artifact, root: string): string {
     case 'labnote':
       content = `<dl><dt>Question</dt><dd>${esc(a.content.question)}</dd><dt>What I did</dt><dd>${esc(a.content.method)}</dd><dt>What happened</dt><dd>${esc(a.content.result)}</dd></dl>`
       break
+    case 'contraption':
+      content = `<p>${esc(a.content.notes)}</p><p class="quiet">${a.content.moved ? `Something moved ${a.content.maxTravel} m` : 'Nothing moved'}, and it ${a.content.settled ? 'came to rest' : 'was still moving at the end'}. It is the ${esc(a.content.objectId)}.</p><p><em>${esc(a.content.opinion)}</em></p>`
+      break
     case 'photo':
       content = `<figure class="photo"><img src="${esc(root)}${esc(a.content.image)}" alt="${esc(a.content.caption)}" width="512" height="512" loading="lazy"><figcaption>${esc(a.content.caption)}</figcaption></figure><p><em>${esc(a.content.opinion)}</em>${a.content.noticed ? ' <span class="quiet">(I noticed this on my own.)</span>' : ''}</p>`
       break

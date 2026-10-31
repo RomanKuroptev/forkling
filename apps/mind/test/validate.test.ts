@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { checkPaths, validateWorld, BUILDER_PATHS } from '../src/validate.ts'
+import { WorldObject } from '@forkling/schema'
+import { checkPaths, validateContraptions, validateWorld, BUILDER_PATHS } from '../src/validate.ts'
 import { loadSpecies } from '../src/species.ts'
 
 const merge = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
@@ -110,5 +111,32 @@ describe('validateWorld', () => {
     copyFileSync(join(dir, 'forkling.json'), join(dir, 'forkling.copy'))
     check()
     expect(readFileSync(join(dir, 'forkling.json'), 'utf8')).toBe(before)
+  })
+})
+
+describe('validateContraptions', () => {
+  const marble = (impulse: [number, number, number], extra: Record<string, unknown> = {}) =>
+    WorldObject.parse({
+      id: 'marble-run',
+      kind: 'contraption',
+      name: 'A marble run',
+      position: [4, 0, 5],
+      model: { parts: [{ shape: 'sphere', size: [0.2, 0.2, 0.2], at: [0, 0.1, 0], color: '#cc3333' }] },
+      contraption: { bodies: [{ part: 0, body: 'dynamic', massKg: 0.2 }], trigger: { part: 0, impulse }, runSec: 12 },
+      reason: 'To watch it roll.',
+      ...extra,
+    })
+
+  it('has nothing to say about objects that are not mechanisms', async () => {
+    expect(await validateContraptions([marble([0.1, 0, 0], { contraption: undefined })])).toEqual([])
+  })
+
+  it('accepts a mechanism that moves and comes to rest', async () => {
+    expect(await validateContraptions([marble([0.1, 0, 0])])).toEqual([])
+  })
+
+  it('names one that does nothing, and one that throws its parts off the island', async () => {
+    expect((await validateContraptions([marble([0.0005, 0, 0])])).join('\n')).toMatch(/marble-run.*nothing moved/)
+    expect((await validateContraptions([marble([20, 0, 0])])).join('\n')).toMatch(/marble-run.*off the island/)
   })
 })

@@ -40,14 +40,14 @@ describe('cat species pack', () => {
     const wanted = {
       body: ['go_to', 'inspect', 'sniff', 'sit', 'watch', 'follow', 'hide', 'vocalize', 'sleep', 'nap', 'stretch'],
       hands: ['pick_up', 'carry', 'drop', 'put_on', 'give', 'open', 'close'],
-      making: ['cut', 'join', 'shape', 'build', 'paint', 'sew'],
+      making: ['cut', 'join', 'shape', 'build', 'paint', 'sew', 'tinker'],
       growing: ['plant', 'water', 'harvest', 'cook', 'eat'],
       mind: ['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph'],
     }
     for (const [group, verbs] of Object.entries(wanted)) {
       for (const verb of verbs) expect(ids.has(verb), `${group}: ${verb}`).toBe(true)
     }
-    for (const later of ['code', 'tinker']) {
+    for (const later of ['code']) {
       expect(ids.has(later), later).toBe(false)
     }
     expect(pack.actions.filter((a) => a.group === 'mind').map((a) => a.id)).toEqual(['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph'])

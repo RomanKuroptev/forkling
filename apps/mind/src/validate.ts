@@ -1,7 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { Artifact, BuildRequest, forklingPackIssues, type MicroBehavior, type SpeciesPack } from '@forkling/schema'
+import { Artifact, BuildRequest, forklingPackIssues, type MicroBehavior, type SpeciesPack, type WorldObject } from '@forkling/schema'
 import { heightAt, isWalkable, runHeadless, starterIsland, worldWithObjects } from '@forkling/sim'
+import { runContraption } from './physics.ts'
 import { MAX_FRAME_BYTES } from './photos.ts'
 import { readWorld } from './world.ts'
 
@@ -104,4 +105,17 @@ export function validateWorld(dir: string, species: { pack: SpeciesPack; behavio
   if (run.needsOutOfRange > 0) problems.push('a need left its range of 0 to 100')
   if (run.badIntentions > 0) problems.push(`the body chose ${run.badIntentions} intentions that do not exist in the pack`)
   return { problems, ticks: HEADLESS_SECONDS * STEPS_PER_SECOND }
+}
+
+/** Runs every mechanism in the world headless: each has to move something, keep everything on the island, and come to rest. */
+export async function validateContraptions(objects: readonly WorldObject[]): Promise<string[]> {
+  const problems: string[] = []
+  for (const o of objects) {
+    if (!o.contraption) continue
+    const run = await runContraption(o)
+    if (!run) continue
+    const flaw = run.escaped ? 'its parts were flung off the island' : !run.moved ? 'nothing moved' : !run.settled ? 'it never came to rest' : null
+    if (flaw) problems.push(`objects/${o.id}.json: ${o.id} does not work: ${flaw}`)
+  }
+  return problems
 }

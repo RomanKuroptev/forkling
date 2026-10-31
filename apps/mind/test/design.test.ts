@@ -14,7 +14,7 @@ const merge = fileURLToPath(new URL('../../../templates/merge', import.meta.url)
 const world = fileURLToPath(new URL('../../../templates/forkling-world', import.meta.url))
 const cat = loadSpecies('cat')
 
-const request: BuildRequest = { id: 'clay-shelf', kind: 'object', name: 'A clay shelf', purpose: 'Somewhere to keep my cups.', requestedAt: '2026-11-03T10:00:00Z' }
+const request: BuildRequest = { id: 'clay-shelf', kind: 'object', name: 'A clay shelf', purpose: 'Somewhere to keep my cups.', contraption: false, requestedAt: '2026-11-03T10:00:00Z' }
 const NOW = new Date('2026-11-03T12:00:00Z')
 
 const output = (extra: Partial<DesignOutput> = {}): DesignOutput => ({
@@ -241,5 +241,88 @@ describe('runDesign', () => {
     expect(llm.calls).toHaveLength(0)
     expect(result.written).toEqual([])
     expect(existsSync(file('objects/clay-shelf.json'))).toBe(false)
+  })
+})
+
+describe('a designed contraption', () => {
+  const contraptionRequest: BuildRequest = { ...request, id: 'marble-run', name: 'A marble run', purpose: 'To watch a marble roll.', contraption: true }
+  const ctx = { pack: cat.pack, objects: [] as WorldObject[], home: [0, 0] as [number, number], nowIso: NOW.toISOString(), skill: 0 }
+  const run = (extra: Partial<DesignOutput> = {}): DesignOutput =>
+    output({
+      kind: 'marble-run',
+      parts: [
+        { shape: 'box', size: [1.5, 0.1, 0.4], at: [0, 0.4, 0], color: '#b5651d' },
+        { shape: 'sphere', size: [0.2, 0.2, 0.2], at: [-0.5, 0.55, 0], color: '#cc3333' },
+      ],
+      contraption: { bodies: [{ part: 0, dynamic: false, massKg: 1 }, { part: 1, dynamic: true, massKg: 0.2 }], triggerPart: 1, impulse: [0.1, 0, 0], runSec: 8 },
+      ...extra,
+    })
+
+  it('makes the mechanism from the parts, with the trigger on a part that moves', () => {
+    const o = objectFromDesign(run(), contraptionRequest, ctx)!
+    expect(o.contraption).toMatchObject({ trigger: { part: 1, impulse: [0.1, 0, 0] }, runSec: 8 })
+    expect(o.contraption?.bodies).toEqual([{ part: 0, body: 'fixed', massKg: 1 }, { part: 1, body: 'dynamic', massKg: 0.2 }])
+  })
+
+  it('forces the numbers into range: a small push, a short run, parts that exist', () => {
+    const o = objectFromDesign(run({ contraption: { bodies: [{ part: 1, dynamic: true, massKg: 900 }, { part: 7, dynamic: true, massKg: 1 }, { part: 1, dynamic: false, massKg: 1 }], triggerPart: 1, impulse: [300, 400, 0], runSec: 99 } }), contraptionRequest, ctx)!
+    expect(o.contraption!.bodies).toEqual([{ part: 1, body: 'dynamic', massKg: 100 }])
+    expect(Math.hypot(...o.contraption!.trigger.impulse)).toBeLessThanOrEqual(20)
+    expect(o.contraption!.runSec).toBe(15)
+  })
+
+  it('moves the trigger to a part that moves if it was pointed at one that does not', () => {
+    expect(objectFromDesign(run({ contraption: { bodies: [{ part: 0, dynamic: false, massKg: 1 }, { part: 1, dynamic: true, massKg: 0.2 }], triggerPart: 0, impulse: [0.1, 0, 0], runSec: 8 } }), contraptionRequest, ctx)!.contraption!.trigger.part).toBe(1)
+  })
+
+  it('refuses a request for a contraption when nothing in the design moves', () => {
+    expect(objectFromDesign(run({ contraption: { bodies: [{ part: 0, dynamic: false, massKg: 1 }], triggerPart: 0, impulse: [1, 0, 0], runSec: 8 } }), contraptionRequest, ctx)).toBeNull()
+    expect(objectFromDesign(run({ contraption: null }), contraptionRequest, ctx)).toBeNull()
+  })
+
+  it('ignores a mechanism it was not asked for', () => {
+    expect(objectFromDesign(run(), { ...contraptionRequest, contraption: false }, ctx)!.contraption).toBeUndefined()
+  })
+
+  it('keeps indexes meaning the same part even when a shape has to be corrected', () => {
+    const o = objectFromDesign(run({ parts: [{ shape: 'pyramid', size: [1.5, 0.1, 0.4], at: [0, 0.4, 0], color: '#b5651d' }, { shape: 'sphere', size: [0.2, 0.2, 0.2], at: [-0.5, 0.55, 0], color: '#cc3333' }] }), contraptionRequest, ctx)!
+    expect('parts' in o.model && o.model.parts[1]!.shape).toBe('sphere')
+    expect(o.contraption!.trigger.part).toBe(1)
+  })
+
+  describe('in a run of the designer', () => {
+    const go = (answer: DesignOutput) => {
+      const dir2 = mkdtempSync(join(tmpdir(), 'design-c-'))
+      copyFileSync(join(merge, 'forkling.json'), join(dir2, 'forkling.json'))
+      mkdirSync(join(dir2, 'objects'))
+      for (const f of readdirSync(join(world, 'objects'))) copyFileSync(join(world, 'objects', f), join(dir2, 'objects', f))
+      mkdirSync(join(dir2, 'mind/builds'), { recursive: true })
+      writeFileSync(join(dir2, 'mind/builds/marble-run.json'), JSON.stringify(contraptionRequest))
+      writeFileSync(join(dir2, 'mind/state.json'), JSON.stringify({ ...MindState.parse({}), openBuild: { id: 'marble-run', kind: 'object', requestedAt: request.requestedAt } }))
+      return { dir2, result: runDesign(dir2, { now: NOW, llm: fake(answer), pack: cat.pack, speciesPersona: cat.persona, id: 'marble-run' }) }
+    }
+
+    it('proposes a contraption that works, with the run it did recorded', async () => {
+      const { dir2, result } = go(run())
+      const r = await result
+      expect(r.ok).toBe(true)
+      const o = WorldObject.parse(JSON.parse(readFileSync(join(dir2, 'objects/marble-run.json'), 'utf8')))
+      expect(o.contraption?.lastRun).toMatchObject({ moved: true })
+    })
+
+    it('turns down one that does nothing, and says why', async () => {
+      const { dir2, result } = go(run({ contraption: { bodies: [{ part: 1, dynamic: true, massKg: 0.2 }], triggerPart: 1, impulse: [0.0005, 0, 0], runSec: 8 } }))
+      const r = await result
+      expect(r.ok).toBe(false)
+      expect(existsSync(join(dir2, 'objects/marble-run.json'))).toBe(false)
+      expect(readFileSync(join(dir2, 'memory/stream/2026-11-03.jsonl'), 'utf8')).toMatch(/nothing moved/)
+    })
+
+    it('turns down one that flings its parts off the island', async () => {
+      const { result } = go(run({ contraption: { bodies: [{ part: 1, dynamic: true, massKg: 0.01 }], triggerPart: 1, impulse: [20, 0, 0], runSec: 8 } }))
+      const r = await result
+      expect(r.ok).toBe(false)
+      expect(r.notes.join(' ')).toMatch(/flung|left the island/)
+    })
   })
 })

@@ -55,7 +55,7 @@ export function App() {
       <DebugOverlay />
       <Melody />
       <div className="hud">
-        WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · F3 for Merge’s mind
+        WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · E near a contraption sets it off · F3 for Merge’s mind
       </div>
     </>
   )

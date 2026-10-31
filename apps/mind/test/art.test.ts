@@ -83,6 +83,22 @@ describe('artifactFrom for a photo', () => {
   })
 })
 
+describe('artifactFrom for a contraption', () => {
+  const run = { objectId: 'marble-run', moved: true, maxTravel: 1.234567, settled: true }
+
+  it('keeps what the physics did next to what it made of it', () => {
+    const a = artifactFrom('contraption', { title: 'Run one', notes: 'The marble rolled off the end.', opinion: 'Again.' }, { ...meta, contraption: run })!
+    expect(Artifact.safeParse(a).success).toBe(true)
+    expect(a).toMatchObject({ kind: 'contraption', content: { objectId: 'marble-run', moved: true, settled: true, notes: 'The marble rolled off the end.', opinion: 'Again.' } })
+    expect(a.kind === 'contraption' && a.content.maxTravel).toBeCloseTo(1.23, 2)
+  })
+
+  it('makes nothing without a run to describe, or with nothing said', () => {
+    expect(artifactFrom('contraption', { title: 'Run', notes: 'x', opinion: 'y' }, meta)).toBeNull()
+    expect(artifactFrom('contraption', { title: 'Run', notes: ' ', opinion: 'y' }, { ...meta, contraption: run })).toBeNull()
+  })
+})
+
 describe('buildArtUser', () => {
   const temperament: TemperamentRoll = { likes: [{ category: 'material', value: 'clay' }], dislikes: [], quirks: [{ id: 'perfectionist', text: 'Redoes things.' }] }
   const input = {

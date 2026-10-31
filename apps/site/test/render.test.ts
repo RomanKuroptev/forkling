@@ -130,6 +130,17 @@ describe('renderSite', () => {
     expect(readFileSync(join(out, 'photos/the-pond.jpg')).length).toBe(4)
   })
 
+  it('shows a contraption run with what the physics did and what it made of it', () => {
+    put('art/run-one.json', { id: 'run-one', kind: 'contraption', title: 'Run <b>one</b>', content: { objectId: 'marble-run', moved: true, maxTravel: 1.23, settled: false, notes: 'It rolled <i>off</i> the end.', opinion: 'Again.' }, skillLevel: 1, createdAt: '2026-11-03T15:00:00Z' })
+    renderSite(world, out)
+    const html = page('gallery/index.html')
+    expect(html).toContain('It rolled &lt;i&gt;off&lt;/i&gt; the end.')
+    expect(html).not.toContain('<i>off</i>')
+    expect(html).toMatch(/moved 1\.23 m/)
+    expect(html).toMatch(/still moving/)
+    expect(html).toContain('Again.')
+  })
+
   it('loads the sound library only when there is a melody to play', () => {
     renderSite(world, out)
     expect(page('gallery/index.html')).toMatch(/cdnjs\.cloudflare\.com\/ajax\/libs\/tone\/\d+\.\d+\.\d+\//)

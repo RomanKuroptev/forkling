@@ -177,7 +177,8 @@ export function offersSpot(obj: WorldObject, kind: string): boolean {
 /** Whether `obj` is a target for a verb: it matches the verb's property filter and, if asked, unlocks the verb. */
 export function matchesTarget(target: Extract<ActionTarget, { type: 'object' }>, verbId: string, obj: WorldObject): boolean {
   if (target.unlocked && !obj.unlocks.includes(verbId)) return false
-  const { yields, grows, material, ...flags } = target.where
+  const { yields, grows, mechanism, material, ...flags } = target.where
+  if (mechanism !== undefined && (obj.contraption !== undefined) !== mechanism) return false
   if (yields !== undefined && (obj.yields !== undefined) !== yields) return false
   if (grows !== undefined && (obj.grows !== undefined) !== grows) return false
   if (material !== undefined && obj.properties.material !== material) return false

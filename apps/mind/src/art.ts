@@ -18,6 +18,8 @@ export interface ArtMeta {
   takenIds: ReadonlySet<string>
   /** For a photo: the shot it came from. The frame is `photos/<id>.jpg`, and the artifact takes the shot's id. */
   photo?: { id: string; subjectId?: string | undefined; noticed: boolean } | undefined
+  /** For a contraption: how its run went, as the physics measured it. */
+  contraption?: { objectId: string; moved: boolean; maxTravel: number; settled: boolean } | undefined
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo))
@@ -72,6 +74,19 @@ export function artifactFrom<K extends ArtifactKind>(kind: K, output: ArtOutputs
       content = { question: text(l.question, 300), method: text(l.method), result: text(l.result) }
       break
     }
+    case 'contraption': {
+      const c = o as ArtOutputs['contraption']
+      if (!meta.contraption) return null
+      content = {
+        objectId: meta.contraption.objectId,
+        moved: meta.contraption.moved,
+        maxTravel: Math.round(Math.max(0, meta.contraption.maxTravel) * 100) / 100,
+        settled: meta.contraption.settled,
+        notes: text(c.notes),
+        opinion: text(c.opinion, 300),
+      }
+      break
+    }
     case 'photo': {
       const p = o as ArtOutputs['photo']
       if (!meta.photo) return null
@@ -108,6 +123,7 @@ const FORMATS: Record<ArtifactKind, string> = {
   recipe: 'Write a recipe: ingredients with amounts in grams, and numbered steps. Use things that could really be found or made on a small island.',
   broadcast: 'Write the script of a short radio show for an audience of nobody, in your own voice. Under 1500 characters.',
   labnote: 'Write a lab note about a small experiment or observation on the island: the question, what you did, and what happened.',
+  contraption: 'Say what happened when your contraption ran (what moved, how it ended) in your own words, and what you think of it. What happened is given to you: do not claim anything else.',
   photo: 'Say what you see in the picture: a title, a caption of what is in it, and your own opinion of it.',
 }
 
@@ -133,6 +149,8 @@ export interface ArtInput {
   interests: Interests
   temperament: TemperamentRoll | null
   date: string
+  /** For a contraption: how the run went, as the physics measured it. It is handed over as fact. */
+  run?: { name: string; moved: boolean; maxTravel: number; settled: boolean } | undefined
 }
 
 /** The user part of an artifact call (Haiku). */
@@ -147,6 +165,9 @@ export function buildArtUser(i: ArtInput): string {
       ? ['<you>', `likes: ${taste(i.temperament.likes)}`, `dislikes: ${taste(i.temperament.dislikes)}`, ...i.temperament.quirks.map((q) => `quirk (${q.id}): ${q.text}`), '</you>', '']
       : []),
     ...(top.length > 0 ? ['<interests>', top.join(', '), '</interests>', ''] : []),
+    ...(i.run
+      ? ['<run>', `contraption: ${clampText(i.run.name, 60)}`, `what happened: ${i.run.moved ? `something moved ${Math.round(i.run.maxTravel * 100) / 100} m` : 'nothing moved'}; ${i.run.settled ? 'everything came to rest' : 'it was still moving at the end'}`, '</run>', '']
+      : []),
     '<topic>',
     i.topic ?? 'whatever is on your mind',
     '</topic>',

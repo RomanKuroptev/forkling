@@ -333,6 +333,18 @@
       "reason": "One small stitch at a time."
     },
     {
+      "id": "tinker",
+      "group": "making",
+      "body": "upright",
+      "effect": "create",
+      "artifact": "contraption",
+      "satisfies": { "curiosity": 25 },
+      "durationSec": [8, 16],
+      "target": { "type": "object", "where": { "mechanism": true } },
+      "slot": "useTool",
+      "reason": "I want to see what it does when I set it off."
+    },
+    {
       "id": "paint",
       "group": "making",
       "body": "upright",

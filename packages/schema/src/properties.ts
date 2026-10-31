@@ -39,6 +39,8 @@ export const PropertyFilter = z
     yields: flag,
     /** True for plants (`grows`). */
     grows: flag,
+    /** True for contraptions: things that run a physics sequence. */
+    mechanism: flag,
     material: Material.optional(),
   })
   .strict()

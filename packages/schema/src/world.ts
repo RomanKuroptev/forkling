@@ -103,6 +103,31 @@ export const MadeInfo = z.object({
 })
 export type MadeInfo = z.infer<typeof MadeInfo>
 
+/** The most a trigger may push a part, in newton-seconds, and the longest a contraption runs. */
+export const MAX_IMPULSE = 20
+export const MAX_RUN_SEC = 15
+
+/** Which of the object's parts is fixed in place and which moves, and how heavy the moving ones are. */
+export const ContraptionBody = z.object({
+  /** Index into `model.parts`. */
+  part: z.number().int().min(0).max(23),
+  body: z.enum(['fixed', 'dynamic']),
+  massKg: z.number().min(0.01).max(100).default(1),
+})
+
+/**
+ * What makes an object a mechanism: a physics sequence the viewer plays as a show and the mind runs headless to know
+ * how it ended. One push on a moving part sets it off, and the rest is physics.
+ */
+export const Contraption = z.object({
+  bodies: z.array(ContraptionBody).min(1).max(24),
+  trigger: z.object({ part: z.number().int().min(0).max(23), impulse: Vec3 }),
+  runSec: z.number().min(1).max(MAX_RUN_SEC),
+  /** What happened the last time it ran. */
+  lastRun: z.object({ at: Timestamp, moved: z.boolean(), maxTravel: z.number().min(0), settled: z.boolean() }).optional(),
+})
+export type Contraption = z.infer<typeof Contraption>
+
 /** `objects/<id>.json`: one thing in the world. */
 export const WorldObject = z.object({
   id: Slug,
@@ -124,12 +149,32 @@ export const WorldObject = z.object({
   spoilsAfterHours: z.number().positive().optional(),
   state: ObjectState.default({}),
   made: MadeInfo.optional(),
+  /** Set when the object is a mechanism that runs a physics sequence when triggered (needs `model.parts`). */
+  contraption: Contraption.optional(),
   affordances: z.array(Affordance).default([]),
   /** Optional sandboxed script for the object (M6). */
   behavior: z.string().regex(/^behaviors\/[a-z0-9-]+\.js$/, 'a file under behaviors/').optional(),
   /** Why the forkling wanted it. */
   reason: z.string().min(1).max(200),
 })
+  .superRefine((o, ctx) => {
+    const c = o.contraption
+    if (!c) return
+    if (!('parts' in o.model)) {
+      ctx.addIssue({ code: 'custom', path: ['contraption'], message: 'a contraption needs a model made of parts' })
+      return
+    }
+    const count = o.model.parts.length
+    const seen = new Set<number>()
+    c.bodies.forEach((b, i) => {
+      if (b.part >= count) ctx.addIssue({ code: 'custom', path: ['contraption', 'bodies', i, 'part'], message: `part ${b.part} does not exist (the model has ${count})` })
+      if (seen.has(b.part)) ctx.addIssue({ code: 'custom', path: ['contraption', 'bodies', i, 'part'], message: `part ${b.part} is listed twice` })
+      seen.add(b.part)
+    })
+    const pushed = c.bodies.find((b) => b.part === c.trigger.part)
+    if (!pushed || pushed.body !== 'dynamic') ctx.addIssue({ code: 'custom', path: ['contraption', 'trigger', 'part'], message: 'the trigger has to push a part that moves' })
+    if (Math.hypot(...c.trigger.impulse) > MAX_IMPULSE) ctx.addIssue({ code: 'custom', path: ['contraption', 'trigger', 'impulse'], message: `the push is limited to ${MAX_IMPULSE}` })
+  })
 export type WorldObject = z.infer<typeof WorldObject>
 
 /** The object id for an `objects/<id>.json` path, or null for anything else. */
