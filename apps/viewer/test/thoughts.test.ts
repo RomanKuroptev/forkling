@@ -30,6 +30,15 @@ describe('bubbleLines', () => {
     expect(lines[2]!.text).toBe('The rock catches the sun first.')
   })
 
+  it('says what is being made, in its own words', () => {
+    const making = Goals.parse({
+      ...goals,
+      today: { ...goals.today, steps: [{ verb: 'build', targetId: 'workbench', makes: 'a wooden shelf', materials: ['wood'], reason: 'Somewhere for my finds.', minutes: 20 }] },
+    })
+    const lines = bubbleLines(making, intention, false, at('2026-11-03T09:10:00Z'))!
+    expect(lines[1]!.text).toBe('build “a wooden shelf” at workbench: Somewhere for my finds.')
+  })
+
   it('drops the step once its time is up, so a stale plan is not shown as current', () => {
     const lines = bubbleLines(goals, intention, false, at('2026-11-03T09:40:00Z'))!
     expect(lines.map((l) => l.kind)).toEqual(['goal', 'reason'])

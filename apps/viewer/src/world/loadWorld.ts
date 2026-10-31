@@ -1,4 +1,4 @@
-import { Forkling, forklingPackIssues, Goals, objectIdFromPath, WorldObject, type SpeciesPack } from '@forkling/schema'
+import { Forkling, forklingPackIssues, Goals, objectIdFromPath, TemperamentRoll, WorldObject, type SpeciesPack } from '@forkling/schema'
 import type { WorldRef } from './route.ts'
 
 export interface LoadedWorld {
@@ -12,6 +12,8 @@ export interface LoadedWorld {
   objects: WorldObject[]
   /** `mind/goals.json`, or empty for a world whose forkling has no mind yet. */
   goals: Goals
+  /** `brain/temperament.json`: likes, dislikes and quirks. Null until the mind has rolled it. */
+  temperament: TemperamentRoll | null
 }
 
 /** A file that didn't fit, and what is wrong with it, one line per problem. */
@@ -133,6 +135,13 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         })
       : {}
 
+    const temperament: TemperamentRoll | null = paths.includes('brain/temperament.json')
+      ? await readFile<TemperamentRoll>(deps, ref, commit.sha, 'brain/temperament.json', problems, (data) => {
+          const parsed = TemperamentRoll.safeParse(data)
+          return parsed.success ? { value: parsed.data } : { lines: zodLines(parsed.error) }
+        })
+      : null
+
     const objectPaths = paths.filter((p) => objectIdFromPath(p) !== null).slice(0, MAX_OBJECTS)
     const objects = await Promise.all(
       objectPaths.map((path) =>
@@ -170,6 +179,7 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         pack: forkling.pack,
         objects: objects.filter((o): o is WorldObject => o !== null),
         goals: goals ?? {},
+        temperament,
       },
     }
   } catch (e) {
