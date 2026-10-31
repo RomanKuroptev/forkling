@@ -1,5 +1,6 @@
 import { Joystick, VirtualButton } from 'ecctrl/input'
 import { useSyncExternalStore } from 'react'
+import { bubbleHidden } from '../forkling/bubbleHidden.ts'
 import { debugOpen } from '../forkling/debugOpen.ts'
 import { JOYSTICK_RADIUS } from '../touch.ts'
 import { contraptionNear, interactPress } from '../world/interact.ts'
@@ -15,6 +16,7 @@ const inset = (side: 'left' | 'right' | 'bottom' | 'top', px: number) => `calc($
 export function TouchControls() {
   const near = useSyncExternalStore(contraptionNear.subscribe, contraptionNear.get)
   const mindOpen = useSyncExternalStore(debugOpen.subscribe, debugOpen.get)
+  const textHidden = useSyncExternalStore(bubbleHidden.subscribe, bubbleHidden.get)
 
   return (
     <div className="touch-controls">
@@ -41,6 +43,18 @@ export function TouchControls() {
           Set it off
         </button>
       )}
+      <button
+        type="button"
+        className="touch-text"
+        aria-pressed={textHidden}
+        style={{ right: inset('right', 20), bottom: inset('bottom', 112) }}
+        onPointerDown={(e) => {
+          e.stopPropagation()
+          bubbleHidden.toggle()
+        }}
+      >
+        {textHidden ? 'Show text' : 'Hide text'}
+      </button>
       <button
         type="button"
         className="touch-mind"

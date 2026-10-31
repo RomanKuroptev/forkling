@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createFlag } from '../src/ui/flag.ts'
+import { createFlag, createPersistedFlag } from '../src/ui/flag.ts'
 import { detectTouch } from '../src/touch.ts'
 import { DEAD_ZONE, mergeMovement, RUN_THRESHOLD } from '../src/player/touchInput.ts'
 import { createPress, createReach } from '../src/world/interact.ts'
@@ -135,5 +135,52 @@ describe('createReach', () => {
     reach.report('a', true)
     reach.forget('a')
     expect(flag.get()).toBe(false)
+  })
+})
+
+describe('createPersistedFlag', () => {
+  const memory = (initial: Record<string, string> = {}) => {
+    const data = new Map(Object.entries(initial))
+    return {
+      data,
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, v),
+    }
+  }
+
+  it('starts from what was saved, and from the default when nothing was', () => {
+    expect(createPersistedFlag('k', false, memory({ k: '1' })).get()).toBe(true)
+    expect(createPersistedFlag('k', true, memory({ k: '0' })).get()).toBe(false)
+    expect(createPersistedFlag('k', true, memory()).get()).toBe(true)
+  })
+
+  it('saves each change', () => {
+    const storage = memory()
+    const flag = createPersistedFlag('k', false, storage)
+    flag.set(true)
+    expect(storage.data.get('k')).toBe('1')
+    flag.toggle()
+    expect(storage.data.get('k')).toBe('0')
+  })
+
+  it('still works when the browser will not store anything', () => {
+    const broken = {
+      getItem: () => {
+        throw new Error('blocked')
+      },
+      setItem: () => {
+        throw new Error('blocked')
+      },
+    }
+    const flag = createPersistedFlag('k', true, broken)
+    expect(flag.get()).toBe(true)
+    flag.toggle()
+    expect(flag.get()).toBe(false)
+  })
+
+  it('works with no storage at all', () => {
+    const flag = createPersistedFlag('k', false, undefined)
+    flag.set(true)
+    expect(flag.get()).toBe(true)
   })
 })
