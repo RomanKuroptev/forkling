@@ -5,7 +5,7 @@ import { Timestamp } from './intention.ts'
 export const MAX_ACTIVE_BELIEFS = 30
 export const MEMORY_SLOTS = 12
 
-export const StreamKind = z.enum(['step', 'made', 'event', 'visitor', 'thought', 'trigger', 'rejected', 'sleep', 'wake'])
+export const StreamKind = z.enum(['step', 'made', 'event', 'visitor', 'thought', 'trigger', 'rejected', 'sleep', 'wake', 'reading'])
 export type StreamKind = z.infer<typeof StreamKind>
 
 /** `YYYY-MM-DD#n`: the local day and the entry's place in it. Reflection cites entries by this id. */
@@ -83,3 +83,55 @@ export const MemorySlots = z.object({
   slots: z.array(z.object({ title: z.string(), text: z.string() })),
 })
 export type MemorySlots = z.infer<typeof MemorySlots>
+
+/** Where an interest came from: a feed item or a page it read. The first source of a topic is its origin. */
+export const InterestSource = z.object({
+  /** Like `hn:12345` or `wiki:Moon`. */
+  id: z.string().min(1).max(80),
+  title: z.string().max(200),
+  url: z.string().max(300),
+  at: Timestamp,
+})
+export type InterestSource = z.infer<typeof InterestSource>
+
+export const Topic = z.object({
+  /** 0 to 1. Rises when fed, fades daily. */
+  weight: z.number().min(0).max(1),
+  firstSeen: Timestamp,
+  lastFed: Timestamp,
+  /** The first is the origin; later ones are the latest few. */
+  sources: z.array(InterestSource).max(5).default([]),
+})
+export type Topic = z.infer<typeof Topic>
+
+/** An interest that spiked: it biases goals and art until it burns out. */
+export const Obsession = z.object({
+  topic: z.string().min(1).max(60),
+  startedAt: Timestamp,
+  origin: InterestSource,
+})
+export type Obsession = z.infer<typeof Obsession>
+
+/** `brain/interests.json`: topics with weights that rise when fed and fade daily, and the obsession phases they cause. */
+export const Interests = z.object({
+  topics: z.record(z.string(), Topic).default({}),
+  current: Obsession.nullable().default(null),
+  past: z.array(Obsession.extend({ endedAt: Timestamp })).max(30).default([]),
+})
+export type Interests = z.infer<typeof Interests>
+
+/** What a reading session returns: a note for its notebook and how it moved its interests. */
+export const ReadingNote = z.object({
+  note: z.object({ title: z.string(), text: z.string() }),
+  interests: z.array(
+    z.object({
+      topic: z.string(),
+      /** -1 to 1: how much this fed (or bored) it. */
+      delta: z.number(),
+      why: z.string(),
+      /** The id of the item or page that caused it, as listed in the data. */
+      sourceId: z.string().nullable(),
+    }),
+  ),
+})
+export type ReadingNote = z.infer<typeof ReadingNote>

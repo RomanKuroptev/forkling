@@ -18,6 +18,8 @@ export const PlanStep = z
     makes: z.string().min(1).max(40).optional(),
     /** One sentence in the forkling's voice. */
     reason: z.string().min(1).max(200),
+    /** What a read or study step is about, in the forkling's words. Untrusted text. */
+    topic: z.string().min(1).max(80).optional(),
     /** Beliefs (`memory/beliefs.json` ids) this step follows from, so a change of mind can be traced to a changed choice. */
     because: z.array(z.string().regex(/^b\d+$/)).max(3).optional(),
     minutes: z.number().int().min(1).max(240),
