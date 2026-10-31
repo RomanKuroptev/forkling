@@ -3,6 +3,7 @@ import { Sky } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
+import { touchUi } from '../touch.ts'
 import { useWorld } from './WorldContext.tsx'
 
 const DAY = new THREE.Color('#bcd7e6')
@@ -75,7 +76,7 @@ export function Environment() {
         intensity={2.2}
         color="#fff3dc"
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={touchUi ? [1024, 1024] : [2048, 2048]}
         shadow-camera-left={-55}
         shadow-camera-right={55}
         shadow-camera-top={55}

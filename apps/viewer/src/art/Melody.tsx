@@ -25,8 +25,15 @@ export function Melody() {
     let nextAt = 0
     let synth: { triggerAttackRelease(note: string, duration: number, time: number): void; dispose(): void } | null = null
     let disposed = false
+    // iPhones only unlock sound inside the tap or key press itself, so the sound library is loaded ahead of time and
+    // started right there in the handler, not later from the timer.
+    let tone: typeof import('tone') | null = null
+    void import('tone').then((m) => {
+      tone = m
+    })
     const allow = () => {
       allowed = true
+      void tone?.start().catch(() => undefined)
     }
     window.addEventListener('pointerdown', allow)
     window.addEventListener('keydown', allow)
@@ -37,7 +44,7 @@ export function Melody() {
       if (!hearsMelody(playback.state.action, playback.state.pos, visitor.position)) return
       nextAt = performance.now() / 1000 + length + PAUSE_SECONDS
       try {
-        const Tone = await import('tone')
+        const Tone = tone ?? (await import('tone'))
         await Tone.start()
         if (disposed) return
         if (!synth) {

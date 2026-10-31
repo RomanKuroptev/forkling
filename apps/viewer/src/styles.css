@@ -197,3 +197,97 @@ body,
   font-size: 18px;
   letter-spacing: 0.2em;
 }
+
+/* ---- Phones and tablets: added after the desktop rules, which stay as they are. ---- */
+
+/* Use the visible height, not the height with the address bar out of view. Equal to the old value on a desktop. */
+@supports (height: 100dvh) {
+  html,
+  body,
+  #root {
+    height: 100dvh;
+  }
+}
+
+html[data-input='touch'] body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* Everything the touch UI draws. The stick and Jump come from ecctrl; these are the buttons around them. */
+.touch-controls button {
+  position: fixed;
+  z-index: 11;
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgb(255 255 255 / 55%);
+  border-radius: 22px;
+  background: rgb(0 0 0 / 45%);
+  color: white;
+  font: 600 14px system-ui, sans-serif;
+  touch-action: none;
+  user-select: none;
+}
+
+.touch-controls .touch-action {
+  background: rgb(217 119 6 / 85%);
+}
+
+.touch-controls .touch-mind[aria-pressed='true'] {
+  background: rgb(255 255 255 / 80%);
+  color: #1f2d38;
+}
+
+/* The hint for touch fades out once it has been read. */
+.hud-touch {
+  /* Top left, beside the Mind button, so it never sits on the stick or the buttons. */
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  bottom: auto;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  max-width: calc(100vw - 150px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+  animation: hud-fade 1s ease 9s forwards;
+}
+
+@keyframes hud-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+/* The mind overlay becomes a compact sheet under the Mind button, and the thought bubble stops being wider than the screen. */
+html[data-input='touch'] .debug,
+html[data-input='touch'] .hud {
+  font-size: 11px;
+}
+
+@media (max-width: 640px), (pointer: coarse) {
+  .debug {
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    right: calc(8px + env(safe-area-inset-right, 0px));
+    left: calc(8px + env(safe-area-inset-left, 0px));
+    width: auto;
+    max-height: 42dvh;
+    overflow: hidden;
+  }
+
+  .thought {
+    width: min(260px, 70vw);
+  }
+}
+
+/* A phone on its side has little height: the overlay moves to the right edge, narrower, with the fine print left out. */
+@media (pointer: coarse) and (orientation: landscape), (max-width: 640px) and (orientation: landscape) {
+  .debug {
+    left: auto;
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    width: min(300px, 40vw);
+    max-height: calc(100dvh - 80px);
+  }
+
+  .debug .dim {
+    display: none;
+  }
+}
