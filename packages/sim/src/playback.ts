@@ -21,6 +21,8 @@ export interface PlaybackInput {
   goals?: Goals
   /** Unix seconds when the repo state was written (its commit time). Edits then take effect from that moment. */
   stateTime?: number
+  /** What the forkling's quirks do to each verb's appeal (see `quirkWeights`). */
+  quirkWeights?: Record<string, number>
 }
 
 /** Where playback starts: a moment, and the seed that makes everything after it deterministic. */
@@ -168,6 +170,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     needs: forkling.needs,
     firstAction: forkling.intention.type,
     holding: forkling.holding !== undefined,
+    ...(input.quirkWeights ? { quirkWeights: input.quirkWeights } : {}),
     ...focusFor(input.goals),
   })
   const pb: Playback = {

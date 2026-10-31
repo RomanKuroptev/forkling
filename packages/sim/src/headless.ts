@@ -24,6 +24,7 @@ export interface HeadlessOptions {
   focus?: Focus
   /** Start with full paws. */
   holding?: boolean
+  quirkWeights?: Record<string, number>
 }
 
 export interface HeadlessRun {
@@ -61,6 +62,7 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
     ...(opts.needs ? { needs: opts.needs } : {}),
     ...(opts.focus ? { focus: opts.focus } : {}),
     ...(opts.holding ? { holding: true } : {}),
+    ...(opts.quirkWeights ? { quirkWeights: opts.quirkWeights } : {}),
   })
   const run: HeadlessRun = {
     trace: [],

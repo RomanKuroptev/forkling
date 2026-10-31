@@ -276,6 +276,7 @@ describe('temperament', () => {
     expect(parsed.dislikes).toBe(2)
     expect(parsed.quirkCount).toEqual([2, 3])
     expect(parsed.quirks[1]!.weights).toEqual({})
+    expect(parsed.quirks[1]!.appraisal).toEqual({})
   })
 
   it('rejects pools too small to roll from', () => {

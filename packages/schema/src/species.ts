@@ -167,6 +167,8 @@ export const Quirk = z.object({
   /** How it shows, in a sentence. Shown to the mind and on the site. */
   text: z.string().min(1).max(200),
   weights: z.record(z.string(), z.number().min(0)).default({}),
+  /** Multipliers on how strongly an event kind (`finished`, `blocked`...) moves its feelings: a perfectionist minds a blocked step more. */
+  appraisal: z.record(z.string(), z.number().min(0)).default({}),
 })
 export type Quirk = z.infer<typeof Quirk>
 

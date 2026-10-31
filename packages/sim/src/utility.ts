@@ -14,6 +14,8 @@ export interface ScoreContext {
   spotKinds: ReadonlySet<string>
   /** The verb the mind has asked for. Verbs that change the world are only ever chosen when they are this one. */
   focusAction?: string
+  /** What the forkling's quirks do to each verb's appeal, by verb id. Missing means 1. */
+  quirkWeights?: Record<string, number>
 }
 
 export interface ScoredAction {
@@ -77,7 +79,7 @@ export function scoreActions(needs: Needs, pack: SpeciesPack, ctx: ScoreContext)
     // An action that only raises needs which are already met keeps just its `spontaneous` share of the baseline: a full
     // cat doesn't eat, but still wanders for fun. Actions that raise nothing (idling) keep all of it.
     const usefulness = wanted > 0 ? Math.max(action.spontaneous, Math.min(1, (room / wanted) * 3)) : 1
-    const weight = pack.weights[action.id] ?? 1
+    const weight = (pack.weights[action.id] ?? 1) * (ctx.quirkWeights?.[action.id] ?? 1)
     scored.push({ action, score: Math.max(0.001, BASELINE * usefulness + benefit) * weight })
   }
   return scored
