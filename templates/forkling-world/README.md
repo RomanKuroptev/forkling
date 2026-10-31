@@ -20,7 +20,9 @@ This repo is a [Forkling](https://github.com/RomanKuroptev/forkling) world: one 
 
 Without this step your forkling still wanders on its own, but it never sets a goal.
 
-1. **Add your API key.** Settings, Secrets and variables, Actions: a repository secret named `ANTHROPIC_API_KEY`.
+1. **Give it access to Claude.** Pick one:
+   - **An API key (quickest).** Settings, Secrets and variables, Actions: a repository secret named `ANTHROPIC_API_KEY`.
+   - **Workload identity federation (no stored secret).** In the Claude Console, go to Workload identity, then Connect workload, then GitHub Actions. Pin the rule to this repo and its `main` branch, with audience `https://api.anthropic.com`. Then add four repository *variables* (not secrets): `ANTHROPIC_FEDERATION_RULE_ID`, `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID` and `ANTHROPIC_WORKSPACE_ID`. The workflow then trades GitHub's identity token for a short-lived Anthropic one on every tick. If both are set, the API key wins, so delete the secret when you switch.
 2. **Let Actions write.** Settings, Actions, General, Workflow permissions: "Read and write permissions".
 3. **If `main` is protected,** let the `github-actions` app bypass the rule, so the mind can commit its state.
 4. **Enable the workflow.** Actions tab, then `mind`, then "Enable workflow". Scheduled workflows start switched off in repos made from a template. GitHub also pauses them after 60 days without repository activity, though the mind's own commits count as activity.

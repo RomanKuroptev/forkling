@@ -17,11 +17,13 @@ concurrency:
 
 permissions:
   contents: write
+  # Lets the job ask GitHub for an identity token, so no API key has to be stored (see the README).
+  id-token: write
 
 env:
   # The engine release this world runs on. Change it on purpose, after reading what changed.
   FORKLING_REPO: RomanKuroptev/forkling
-  FORKLING_REF: v0.4.0
+  FORKLING_REF: v0.4.1
 
 jobs:
   tick:
@@ -74,13 +76,36 @@ jobs:
         working-directory: engine
         run: pnpm install --frozen-lockfile --filter "@forkling/mind..."
 
+      # Keyless auth: when the four repository variables are set, trade GitHub's identity token for a short-lived
+      # Anthropic one. A fresh token each tick, because Anthropic accepts each identity token only once.
+      - name: Fetch identity token
+        if: steps.gate.outputs.run == 'true' && vars.ANTHROPIC_FEDERATION_RULE_ID != ''
+        env:
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+        run: |
+          token_file="$RUNNER_TEMP/anthropic-identity-token"
+          curl -sS --fail -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN"             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" | jq -r .value > "$token_file"
+          {
+            echo "ANTHROPIC_FEDERATION_RULE_ID=$ANTHROPIC_FEDERATION_RULE_ID"
+            echo "ANTHROPIC_ORGANIZATION_ID=$ANTHROPIC_ORGANIZATION_ID"
+            echo "ANTHROPIC_SERVICE_ACCOUNT_ID=$ANTHROPIC_SERVICE_ACCOUNT_ID"
+            echo "ANTHROPIC_WORKSPACE_ID=$ANTHROPIC_WORKSPACE_ID"
+            echo "ANTHROPIC_IDENTITY_TOKEN_FILE=$token_file"
+          } >> "$GITHUB_ENV"
+
       - name: Tick
         id: tick
         if: steps.gate.outputs.run == 'true'
         working-directory: engine
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: pnpm --filter @forkling/mind tick --world "$GITHUB_WORKSPACE/world"
+        run: |
+          # An unset secret arrives as an empty variable, which would still outrank federation.
+          if [ -z "$ANTHROPIC_API_KEY" ]; then unset ANTHROPIC_API_KEY; fi
+          pnpm --filter @forkling/mind tick --world "$GITHUB_WORKSPACE/world"
 
       - name: Commit what changed
         if: steps.gate.outputs.run == 'true' && steps.tick.outputs.changed == 'true'

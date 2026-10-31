@@ -1,6 +1,7 @@
 import { appendFileSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
+import { hasCredentials } from './credentials.ts'
 import { anthropicClient } from './llm.ts'
 import { loadSpecies } from './species.ts'
 import { runTick } from './tick.ts'
@@ -34,11 +35,10 @@ async function main(): Promise<void> {
 
   const speciesId = (JSON.parse(readFileSync(join(dir, 'forkling.json'), 'utf8')) as { species?: string }).species ?? 'cat'
   const species = loadSpecies(speciesId)
-  const hasKey = Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN)
 
   const result = await runTick(dir, {
     now,
-    llm: values['no-llm'] || !hasKey ? null : anthropicClient(),
+    llm: values['no-llm'] || !hasCredentials(process.env) ? null : anthropicClient(),
     pack: species.pack,
     behaviors: species.behaviors,
     speciesPersona: species.persona,

@@ -176,7 +176,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     } else if (deps.dryRun) {
       notes.push(`dry run: ${thinkKind} call to ${model}, about ${tokens} tokens, at most $${maxUsd.toFixed(4)}`)
     } else if (!deps.llm) {
-      notes.push('no API key: no call')
+      notes.push('no credentials: no call')
     } else if (!canSpend(budget, maxUsd)) {
       notes.push(`monthly budget reached ($${budget.spentUsd.toFixed(2)} of $${budget.capUsd}): no call`)
     } else {

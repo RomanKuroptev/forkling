@@ -234,7 +234,7 @@ describe('the budget', () => {
 
   it('makes no call without an API key', async () => {
     const result = await runTick(dir, at(NOW, { llm: null }))
-    expect(result.notes.join(' ')).toMatch(/API key/)
+    expect(result.notes.join(' ')).toMatch(/credentials/)
     expect(existsSync(file('mind/goals.json'))).toBe(false)
   })
 
