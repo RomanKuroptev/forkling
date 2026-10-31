@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { Timestamp } from './intention.ts'
 
-export const ARTIFACT_KINDS = ['writing', 'drawing', 'melody', 'recipe', 'broadcast', 'labnote', 'photo'] as const
+export const ARTIFACT_KINDS = ['writing', 'drawing', 'melody', 'recipe', 'broadcast', 'labnote', 'photo', 'contraption'] as const
 export const ArtifactKind = z.enum(ARTIFACT_KINDS)
 export type ArtifactKind = z.infer<typeof ArtifactKind>
 
@@ -30,6 +30,15 @@ export const ArtContent = {
   }),
   broadcast: z.object({ script: Text }),
   labnote: z.object({ question: z.string().min(1).max(300), method: z.string().min(1).max(MAX_ARTIFACT_TEXT), result: z.string().min(1).max(MAX_ARTIFACT_TEXT) }),
+  contraption: z.object({
+    objectId: z.string().min(1).max(60),
+    /** What the physics did, measured by the sim. The model never writes these. */
+    moved: z.boolean(),
+    maxTravel: z.number().min(0),
+    settled: z.boolean(),
+    notes: z.string().min(1).max(MAX_ARTIFACT_TEXT),
+    opinion: z.string().min(1).max(300),
+  }),
   photo: z.object({
     /** The frame, relative to `art/`: always a jpg straight under `photos/`. */
     image: z.string().regex(/^photos\/[a-z0-9][a-z0-9-]{0,60}\.jpg$/, 'like photos/the-pond.jpg'),
@@ -62,6 +71,7 @@ export const Artifact = z.discriminatedUnion('kind', [
   Meta.extend({ kind: z.literal('broadcast'), content: ArtContent.broadcast }),
   Meta.extend({ kind: z.literal('labnote'), content: ArtContent.labnote }),
   Meta.extend({ kind: z.literal('photo'), content: ArtContent.photo }),
+  Meta.extend({ kind: z.literal('contraption'), content: ArtContent.contraption }),
 ])
 export type Artifact = z.infer<typeof Artifact>
 
@@ -78,4 +88,6 @@ export const ArtOutput = {
   labnote: z.object({ title: z.string(), question: z.string(), method: z.string(), result: z.string() }),
   /** What it makes of a frame it took. The frame itself and where it was taken come from code. */
   photo: z.object({ title: z.string(), caption: z.string(), opinion: z.string() }),
+  /** What it makes of a run of a contraption. How it went is measured and handed to it as data. */
+  contraption: z.object({ title: z.string(), notes: z.string(), opinion: z.string() }),
 } as const

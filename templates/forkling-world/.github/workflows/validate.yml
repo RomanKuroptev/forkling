@@ -22,7 +22,7 @@ permissions:
 
 env:
   FORKLING_REPO: RomanKuroptev/forkling
-  FORKLING_REF: v0.7.1
+  FORKLING_REF: v0.7.2
 
 jobs:
   validate:

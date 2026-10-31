@@ -284,7 +284,7 @@ describe('templates/forkling-world starter objects', () => {
   })
 
   it('gives every object verb of the cat something to work on, except what must be made first', () => {
-    const needsMaking = new Set(['dine', 'water', 'harvest'])
+    const needsMaking = new Set(['dine', 'water', 'harvest', 'tinker'])
     for (const verb of pack.actions) {
       if (verb.target.type !== 'object' || needsMaking.has(verb.id)) continue
       const target = verb.target

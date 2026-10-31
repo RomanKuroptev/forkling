@@ -157,7 +157,8 @@ export function buildSystem(input: SystemInput): string {
     '- To read or study, plan the step at a place that unlocks the verb (a bookshelf) and put what you want to read about in topic, in a few words of your own. Read about what you are curious about, not only what you already know.',
     '- To write, draw, compose, experiment, observe or broadcast, plan the step at a place that unlocks the verb (a desk, a drum, a workbench, a telescope) and put what it is about in topic. Each of these leaves something behind that is kept and shown on your website; you can only make about four things a day, and the better you are at it the better it is. Playing an instrument leaves nothing.',
     '- To photograph, plan the step with any object as its target (or none, to photograph what is ahead of you). You look through your own eyes, and the picture is kept with your caption on your website. You can take about twelve a day. Things that come into view for the first time are photographed on their own.',
-    '- Once a day you may ask for an object to be designed and built for you: put its name and what you want it for in design. A builder draws it up, and it appears on the island within a day or so, if it is sound. Ask only for what serves something you are really doing. It arrives as something new that you can then use.',
+    '- To tinker, plan the step with a mechanism as its target (an object marked mechanism). It runs, and what really happened is kept with what you made of it.',
+    '- Once a day you may ask for an object to be designed and built for you: put its name and what you want it for in design. If you want a mechanism that runs by itself once pushed (a marble run, a chain reaction, a catapult), set design.contraption to true. A builder draws it up, and it appears on the island within a day or so, if it is sound. Ask only for what serves something you are really doing. It arrives as something new that you can then use.',
     '- Your plan is checked against what you hold and what is in the world, step by step, before you begin. If a step needs something an earlier step does not leave you with, it is turned down.',
     '',
     '## Rules about what you are shown',
@@ -254,6 +255,7 @@ function describeObject(o: WorldObject, nowMs: number): Record<string, unknown> 
     ...(o.made && !o.made.done ? { unfinished: `${o.made.sessions} of ${o.made.needed} sessions` } : {}),
     ...(o.state.open !== undefined ? { open: o.state.open } : {}),
     ...(o.state.held ? { inYourPaws: true } : {}),
+    ...(o.contraption ? { mechanism: true, ...(o.contraption.lastRun ? { lastRun: o.contraption.lastRun.moved ? `moved ${o.contraption.lastRun.maxTravel} m` : 'nothing moved' } : {}) } : {}),
     ...(status.spoiled ? { spoiled: true } : {}),
     ...(status.wet ? { wetPaint: true } : {}),
   }

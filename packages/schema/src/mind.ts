@@ -20,6 +20,8 @@ export const BuildRequest = z.object({
   /** What it wants it for, in its voice. */
   purpose: z.string().min(1).max(300),
   goalRef: z.string().max(40).optional(),
+  /** A mechanism that runs a physics sequence, not a plain object. */
+  contraption: z.boolean().default(false),
   requestedAt: Timestamp,
 })
 export type BuildRequest = z.infer<typeof BuildRequest>

@@ -1,9 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
-import { BuildRequest, Material, WorldObject, type BudgetCall, type SpeciesPack, type TemperamentRoll } from '@forkling/schema'
+import { BuildRequest, Material, MAX_IMPULSE, MAX_RUN_SEC, WorldObject, type BudgetCall, type SpeciesPack, type TemperamentRoll } from '@forkling/schema'
 import { createPrng, heightAt, localDate, MAX_CARRY_KG, skillLevel, starterIsland } from '@forkling/sim'
 import { skillGuide } from './art.ts'
+import { runContraption } from './physics.ts'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger } from './budget.ts'
 import { clampText } from './decision.ts'
 import type { LlmClient } from './llm.ts'
@@ -43,6 +44,15 @@ export const DesignOutput = z.object({
   material: z.string().nullable(),
   /** Verbs it makes possible, from the list it was given. */
   unlocks: z.array(z.string()),
+  /** Only when a contraption was asked for: which parts move, and the one push that sets it off. */
+  contraption: z
+    .object({
+      bodies: z.array(z.object({ part: z.number(), dynamic: z.boolean(), massKg: z.number() })),
+      triggerPart: z.number(),
+      impulse: z.array(z.number()),
+      runSec: z.number(),
+    })
+    .nullish(),
   /** Why it wanted it, in its voice. */
   reason: z.string(),
   /** The pull request that brings it to the island, in its voice. */
@@ -102,16 +112,32 @@ export function unlockableVerbs(pack: SpeciesPack): string[] {
  * properties measured from the parts, only real verbs unlocked, a spot found near home. Null when nothing usable is left.
  */
 export function objectFromDesign(design: DesignOutput, request: BuildRequest, ctx: DesignContext): WorldObject | null {
-  const parts = design.parts
-    .filter((p) => SHAPES.has(p.shape) && p.size.length >= 3 && p.at.length >= 3)
-    .slice(0, MAX_PARTS)
-    .map((p) => ({
-      shape: p.shape,
-      size: [clamp(p.size[0]!, 0.02, MAX_EXTENT), clamp(p.size[1]!, 0.02, MAX_EXTENT), clamp(p.size[2]!, 0.02, MAX_EXTENT)],
-      at: [clamp(p.at[0]!, -MAX_EXTENT, MAX_EXTENT), clamp(p.at[1]!, 0, MAX_EXTENT), clamp(p.at[2]!, -MAX_EXTENT, MAX_EXTENT)],
-      color: /^#[0-9a-fA-F]{6}$/.test(p.color) ? p.color.toLowerCase() : '#888888',
-    }))
+  // A part that is wrong is corrected, never dropped, so the numbers a mechanism uses still mean the same part.
+  const parts = design.parts.slice(0, MAX_PARTS).map((p) => ({
+    shape: SHAPES.has(p.shape) ? p.shape : 'box',
+    size: [clamp(p.size[0] ?? 0.2, 0.02, MAX_EXTENT), clamp(p.size[1] ?? 0.2, 0.02, MAX_EXTENT), clamp(p.size[2] ?? 0.2, 0.02, MAX_EXTENT)],
+    at: [clamp(p.at[0] ?? 0, -MAX_EXTENT, MAX_EXTENT), clamp(p.at[1] ?? 0, 0, MAX_EXTENT), clamp(p.at[2] ?? 0, -MAX_EXTENT, MAX_EXTENT)],
+    color: /^#[0-9a-fA-F]{6}$/.test(p.color) ? p.color.toLowerCase() : '#888888',
+  }))
   if (parts.length === 0) return null
+
+  let contraption: unknown
+  if (request.contraption) {
+    const c = design.contraption
+    const bodies: { part: number; body: 'fixed' | 'dynamic'; massKg: number }[] = []
+    for (const b of c?.bodies ?? []) {
+      const part = Math.round(b.part)
+      if (part < 0 || part >= parts.length || bodies.some((x) => x.part === part)) continue
+      bodies.push({ part, body: b.dynamic ? 'dynamic' : 'fixed', massKg: Math.round(clamp(b.massKg, 0.01, 100) * 100) / 100 })
+    }
+    const moving = bodies.filter((b) => b.body === 'dynamic')
+    if (!c || moving.length === 0) return null
+    const trigger = moving.find((b) => b.part === Math.round(c.triggerPart)) ?? moving[0]!
+    const push = [c.impulse[0] ?? 0, c.impulse[1] ?? 0, c.impulse[2] ?? 0].map((n) => (Number.isFinite(n) ? n : 0))
+    const strength = Math.hypot(...push)
+    const eased = strength > MAX_IMPULSE ? push.map((n) => (n / strength) * MAX_IMPULSE) : push
+    contraption = { bodies, trigger: { part: trigger.part, impulse: eased.map((n) => Math.round(n * 1000) / 1000) }, runSec: clamp(c.runSec, 1, MAX_RUN_SEC) }
+  }
 
   // How big it is, from where its parts are, not from what the model says. Too big, and it is scaled down to fit.
   const extent = Math.max(
@@ -144,6 +170,7 @@ export function objectFromDesign(design: DesignOutput, request: BuildRequest, ct
       ...(material.success ? { material: material.data } : {}),
     },
     unlocks: [...new Set(design.unlocks.filter((v) => unlockable.has(v)))].slice(0, MAX_UNLOCKS),
+    ...(contraption ? { contraption } : {}),
     reason: clampText(design.reason.trim() || request.purpose, 200),
   })
   return parsed.success ? parsed.data : null
@@ -169,6 +196,11 @@ export function buildDesignUser(input: { request: BuildRequest; temperament: Tem
     `- Build it from at most ${MAX_PARTS} simple parts: box, sphere, cylinder or cone. Each has size [x, y, z] in meters and at [x, y, z], its centre, y up. Things rest on y = 0. The whole object fits in ${MAX_EXTENT} meters.`,
     '- Colours are #rrggbb. Keep to a few that go together, in the low-poly style of the island.',
     `- unlocks lists what it makes possible, only from: ${input.verbs.join(', ')}. Leave it empty if it is just a thing.`,
+    ...(input.request.contraption
+      ? [
+          '- This one is a contraption: a mechanism that runs by itself once pushed. List in contraption which parts move (dynamic) and which stay fixed, by their number in parts (the first is 0), each moving part\'s mass in kg, the part that gets pushed (triggerPart, which has to move) and the push as impulse [x, y, z] in newton-seconds (a few tenths is a gentle push; the most allowed is 20), and runSec, how long to watch (1 to 15). Parts that are not listed stay fixed as scenery. It runs on flat ground with gravity, so use ramps, drops and things that knock into each other. It must actually do something, and nothing must fly off the island.',
+        ]
+      : []),
     '- Say honestly how heavy it is and whether a cat could carry it (under 5 kg), whether it is soft, whether something small could hide in it, whether it is a lookout, and whether things can be put away in it.',
     '- reason is one sentence in your voice about why you wanted it. prTitle and prBody are what you say when you hand it over, in your voice, plainly: no mentions of other people.',
     `Your skill at making is ${input.skill} of 10. ${skillGuide(input.skill)}`,
@@ -258,8 +290,12 @@ export async function runDesign(dir: string, deps: DesignDeps): Promise<DesignRe
 
       const house = w.objects.find((o) => o.id === 'house')?.position ?? w.forkling.position
       const object = answer.parsed ? objectFromDesign(answer.parsed, request, { pack: deps.pack, objects: w.objects, home: [house[0], house[2]], nowIso, skill: skillLevel(w.skills, 'making') }) : null
-      if (!answer.parsed || !object) {
-        close(answer.parsed ? 'nothing in the design could be built' : `no usable design (stopped: ${answer.stopReason ?? 'unknown'})`)
+      // A contraption has to work before it is proposed: it runs headless here, and what it did is kept with it.
+      const ran = object?.contraption ? await runContraption(object) : null
+      const flaw = ran ? (ran.escaped ? 'its parts were flung off the island' : !ran.moved ? 'nothing moved' : !ran.settled ? 'it never came to rest' : null) : null
+      if (object?.contraption && ran && !flaw) object.contraption.lastRun = { at: nowIso, moved: ran.moved, maxTravel: ran.maxTravel, settled: ran.settled }
+      if (!answer.parsed || !object || flaw) {
+        close(flaw ? `the mechanism did not work: ${flaw}` : answer.parsed ? 'nothing in the design could be built' : `no usable design (stopped: ${answer.stopReason ?? 'unknown'})`)
       } else {
         writeJson(dir, `objects/${object.id}.json`, object)
         result.written.push(`objects/${object.id}.json`)

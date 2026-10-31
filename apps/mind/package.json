@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
+    "@dimforge/rapier3d-compat": "^0.21.0",
     "@forkling/schema": "workspace:*",
     "@forkling/sim": "workspace:*",
     "@forkling/species-cat": "workspace:*",

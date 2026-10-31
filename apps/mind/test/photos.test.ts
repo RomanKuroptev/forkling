@@ -95,5 +95,7 @@ describe('the prompt about seeing', () => {
     expect(line).toContain('takes a picture through your own eyes')
     expect(line).not.toContain('set topic')
     expect(system).toContain('about twelve a day')
+    expect(system.split('\n').find((l) => l.startsWith('- tinker:'))).toBeTruthy()
+    expect(system).toContain('design.contraption')
   })
 })
