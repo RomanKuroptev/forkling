@@ -13,16 +13,14 @@ export function Objects() {
   const { world } = useWorld()
   return (
     <>
-      {world.objects.map((o) => (
-        <RepoObject key={o.id} object={o} />
-      ))}
+      {world.objects.map((o) => ('asset' in o.model ? <RepoObject key={o.id} object={o} asset={o.model.asset} /> : null))}
     </>
   )
 }
 
-function RepoObject({ object }: { object: WorldObject }) {
-  const gltf = useGLTF(assetUrl(object.model.asset))
-  const model = useMemo(() => bakePropModel(gltf.scene, assetHeight(object.model.asset)), [gltf, object.model.asset])
+function RepoObject({ object, asset }: { object: WorldObject; asset: string }) {
+  const gltf = useGLTF(assetUrl(asset))
+  const model = useMemo(() => bakePropModel(gltf.scene, assetHeight(asset)), [gltf, asset])
   const [x, , z] = object.position
   const y = heightAt(x, z, island)
   const halfHeight = (model.height * object.scale) / 2

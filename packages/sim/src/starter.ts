@@ -66,7 +66,7 @@ export function worldWithObjects(objects: readonly WorldObject[]): StarterWorld 
   const starter = starterWorld()
   if (objects.length === 0) return starter
   const extra: PropPlacement[] = objects.map((o) => ({
-    kind: footprintKind(o.model.asset),
+    kind: 'asset' in o.model ? footprintKind(o.model.asset) : 'object',
     variant: 0,
     position: [o.position[0], heightAt(o.position[0], o.position[2], starter.cfg), o.position[2]],
     rotationY: o.rotation[1],

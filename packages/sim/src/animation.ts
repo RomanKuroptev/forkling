@@ -13,6 +13,12 @@ const FALLBACKS: Record<AnimationSlot, AnimationSlot[]> = {
   groom: ['sit', 'idle'],
   stretch: ['idle'],
   knead: ['idle'],
+  stand: ['idle'],
+  walkUpright: ['walk', 'idle'],
+  work: ['stand', 'idle'],
+  useTool: ['work', 'stand', 'idle'],
+  holdUp: ['stand', 'idle'],
+  carry: ['walkUpright', 'walk', 'idle'],
   // No fallback: a species can't climb until a skill adds the clip.
   climb: [],
 }

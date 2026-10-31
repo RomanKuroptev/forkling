@@ -141,8 +141,9 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
           if (!parsed.success) return { lines: zodLines(parsed.error) }
           const lines: string[] = []
           if (parsed.data.id !== objectIdFromPath(path)) lines.push(`id: "${parsed.data.id}" should match the file name`)
-          if (!deps.assets.has(parsed.data.model.asset)) {
-            lines.push(`model.asset: "${parsed.data.model.asset}" isn't a model the viewer ships (available: ${[...deps.assets].join(', ')})`)
+          const model = parsed.data.model
+          if ('asset' in model && !deps.assets.has(model.asset)) {
+            lines.push(`model.asset: "${model.asset}" isn't a model the viewer ships (available: ${[...deps.assets].join(', ')})`)
           }
           return lines.length ? { lines } : { value: parsed.data }
         }),

@@ -39,7 +39,7 @@ for (const template of ['forkling-world', 'merge']) {
       for (const path of paths.filter((p) => p.startsWith('objects/') && p.endsWith('.json'))) {
         const object = WorldObject.parse(read(join(dir, path)))
         expect(objectIdFromPath(path), path).toBe(object.id)
-        expect(existsSync(join(assets, `${object.model.asset}.glb`)), `${path}: ${object.model.asset}`).toBe(true)
+        if ('asset' in object.model) expect(existsSync(join(assets, `${object.model.asset}.glb`)), `${path}: ${object.model.asset}`).toBe(true)
       }
     })
 

@@ -47,6 +47,9 @@ function checkStep(step: PlanStep, n: number, startMs: number, ctx: PlanContext)
     if (step.targetId !== undefined || step.position !== undefined) reasons.push(`${label} goes nowhere in particular, so it takes no target`)
   } else if (target.type === 'wander') {
     if (step.targetId !== undefined) reasons.push(`${label} wanders, so it takes a position, not "${step.targetId}"`)
+  } else if (target.type === 'object') {
+    if (step.position !== undefined) reasons.push(`${label} happens at an object, so it takes no position`)
+    if (step.targetId !== undefined && !ctx.objects.some((o) => o.id === step.targetId)) reasons.push(`${label}: there is no object "${step.targetId}"`)
   } else {
     if (step.position !== undefined) reasons.push(`${label} happens at a ${target.kind}, so it takes no position`)
     if (step.targetId !== undefined && !reachableTarget({ ...action, target }, step.targetId, ctx)) {

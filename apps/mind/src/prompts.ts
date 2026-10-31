@@ -12,6 +12,13 @@ export interface SystemInput {
   persona: string
 }
 
+function describeFilter(where: Record<string, unknown>): string {
+  return Object.entries(where)
+    .filter(([, v]) => v !== undefined)
+    .map(([k, v]) => (v === true ? k : v === false ? `not ${k}` : `${k} ${String(v)}`))
+    .join(' and ')
+}
+
 function describeAction(a: SpeciesAction): string {
   const t = a.target
   const where =
@@ -21,7 +28,9 @@ function describeAction(a: SpeciesAction): string {
         ? `target: a position (x, z) in meters, anywhere on the island (it usually wanders within ${t.radius} m)`
         : t.type === 'visitor'
           ? 'only when a visitor is near, so it cannot be planned'
-          : `target: "${t.kind}", or the id of an object that offers "${t.kind}"`
+          : t.type === 'object'
+            ? `target: the id of an object ${t.unlocked ? `that unlocks "${a.id}"` : `that is ${describeFilter(t.where) || 'anything'}`}`
+            : `target: "${t.kind}", or the id of an object that offers "${t.kind}"`
   const needs = Object.entries(a.satisfies)
     .map(([id, n]) => `${n > 0 ? '+' : ''}${n} ${id}`)
     .join(', ')

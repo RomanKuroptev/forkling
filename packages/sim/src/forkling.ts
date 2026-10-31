@@ -112,6 +112,10 @@ const IDLE_ACTION: SpeciesAction = {
   requires: [],
   spontaneous: 0,
   reason: 'Just looking around.',
+  group: 'body',
+  effect: 'none',
+  hands: 'any',
+  accepts: [],
 }
 
 /** Used when nothing the pack offers can be reached, so a forkling always has something to do. */
@@ -436,5 +440,8 @@ function resolveTarget(s: ForklingState, action: SpeciesAction, ctx: StepContext
       }
       return null
     }
+
+    case 'object':
+      return null
   }
 }
