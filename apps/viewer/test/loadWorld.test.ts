@@ -57,6 +57,28 @@ const deps = (files: Files, opts?: Parameters<typeof github>[1]): LoadDeps => ({
   assets: new Set(['nature/rock_largeA']),
 })
 
+describe('loadWorld goals', () => {
+  const goals = {
+    long: { text: 'Own the rock.', reason: 'Warm.', setAt: '2026-11-03T07:10:00Z', reviewedAt: '2026-11-03T07:10:00Z' },
+  }
+
+  it('reads mind/goals.json when the world has one', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'mind/goals.json': goals }))
+    expect(result.ok && result.world.goals.long?.text).toBe('Own the rock.')
+  })
+
+  it('treats a world without one as having no goals yet', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling }))
+    expect(result.ok && result.world.goals).toEqual({})
+  })
+
+  it('reports a goals file that does not fit, by name', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'mind/goals.json': { now: { index: -1 } } }))
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error.problems.map((p) => p.file)).toEqual(['mind/goals.json'])
+  })
+})
+
 describe('loadWorld', () => {
   it('loads the forkling and its objects at the latest commit', async () => {
     const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'objects/sunny-rock.json': rock, 'journal/2026-10-30.md': '# hi' }))

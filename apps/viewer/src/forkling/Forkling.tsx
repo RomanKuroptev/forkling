@@ -9,6 +9,7 @@ import { island, spawn } from '../island.ts'
 import { visitor } from '../visitor.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { live } from './live.ts'
+import { ThoughtBubble } from './ThoughtBubble.tsx'
 
 const params = new URLSearchParams(location.search)
 /** `?clip=Sit` pins the forkling in front of the visitor looping one clip, to check animation by eye. */
@@ -57,6 +58,7 @@ export function Forkling() {
       pack: species.pack,
       behaviors: species.behaviors,
       world: simWorld,
+      goals: world.goals,
       stateTime: world.committedAt ? Date.parse(world.committedAt) / 1000 : undefined,
     }),
     [world, species, simWorld],
@@ -147,6 +149,7 @@ export function Forkling() {
     <>
       <group ref={group}>
         <primitive object={model} />
+        <ThoughtBubble />
       </group>
       <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[spawn.x, 0, spawn.z]}>
         <CapsuleCollider args={[0.1, 0.22]} position={[0, 0.32, 0]} />
