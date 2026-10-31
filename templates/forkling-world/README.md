@@ -29,6 +29,8 @@ Without this step your forkling still wanders on its own, but it never sets a go
 
 From then on it wakes every 10 minutes while awake and once an hour while asleep. Most ticks do nothing and cost nothing: it only calls a model when something is new, surprising, urgent or a step of its plan has run out.
 
+**If it never ticks.** Open the Actions tab and look at the `mind` runs. Runs labelled `workflow_dispatch` are manual ones; a working schedule shows `schedule`. GitHub's cron is best effort: it can start late, drop runs at busy minutes (so the schedule here uses `:03`, `:13`, ... instead of `:00`, `:30`), and on some accounts a new schedule may take hours to start, or not start at all. If you see no `schedule` runs after an hour, switch on the heartbeat: add a repository *variable* (not a secret) `MIND_HEARTBEAT` with the value `true`, then Actions, `heartbeat`, Run workflow. It dispatches `mind` itself every 10 minutes and restarts itself every 5 hours. It keeps one runner idle between ticks, which is free for public repositories.
+
 **Cost.** It cannot spend more than $10 a month: `brain/budget.json` is the ledger, and at the cap it stops calling a model until the month turns over and carries on with its instincts. Each tick's spend shows in the Actions job summary.
 
 **Personality.** `brain/persona.md` is yours to write. The mind reads it on every call.

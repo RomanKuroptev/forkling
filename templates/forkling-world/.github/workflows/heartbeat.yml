@@ -1,0 +1,52 @@
+name: heartbeat
+
+# Optional. GitHub's scheduler is best effort and, on some accounts, may not start `mind` on its cron at all. When it
+# doesn't, set the repository variable MIND_HEARTBEAT=true and start this once (Actions, heartbeat, Run workflow):
+# it dispatches `mind` itself every 10 minutes, at :03, :13, :23 and so on, for about 5 hours, then starts a fresh run
+# of itself. A dispatch made with the workflow's own token does start a new run; that is the documented exception to
+# GitHub's "workflows don't trigger workflows" rule.
+#
+# It keeps one runner idle between ticks, which is free for public repositories. Leave the variable unset if the
+# schedule in mind.yml works for you.
+on:
+  schedule:
+    # A restarter, in case the chain was ever broken. Runs queue behind the live one, so this never doubles it.
+    - cron: '7-59/30 * * * *'
+  workflow_dispatch:
+
+# One heartbeat at a time. Its own group, so a sleeping heartbeat never holds up a `mind` tick (or a visitor event).
+concurrency:
+  group: heartbeat
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  beat:
+    if: vars.MIND_HEARTBEAT == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Tick every 10 minutes
+        run: |
+          end=$(( $(date +%s) + 5 * 3600 ))
+          while :; do
+            now=$(date +%s)
+            # The next :03, :13, :23 ... in UTC. The :03 tick is also the one that runs hourly while asleep.
+            next=$(( now / 600 * 600 + 180 ))
+            if [ "$next" -le "$now" ]; then next=$(( next + 600 )); fi
+            if [ "$next" -ge "$end" ]; then break; fi
+            sleep $(( next - now ))
+            # Skip if a tick started in the last 4 minutes (the schedule in mind.yml may be working after all).
+            last=$(gh run list --workflow mind.yml --limit 1 --json createdAt --jq '.[0].createdAt // empty')
+            if [ -n "$last" ] && [ $(( $(date +%s) - $(date -u -d "$last" +%s) )) -lt 240 ]; then continue; fi
+            gh workflow run mind.yml || echo "could not start a tick, trying again next round"
+          done
+
+      - name: Hand over to a fresh run
+        run: gh workflow run heartbeat.yml

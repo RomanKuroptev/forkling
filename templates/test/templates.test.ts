@@ -49,7 +49,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|mind\/.+|brain\/.+|events\/.+|\.github\/workflows\/mind\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|mind\/.+|brain\/.+|events\/.+|\.github\/workflows\/(mind|heartbeat)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
@@ -81,7 +81,8 @@ describe('templates/forkling-world', () => {
 
   it('wakes the mind on a schedule and on visitor events, one run at a time, from a pinned engine', () => {
     const workflow = readFileSync(join(root, 'forkling-world', '.github/workflows/mind.yml'), 'utf8')
-    expect(workflow).toMatch(/cron: '\*\/10 \* \* \* \*'/)
+    // Off the busy :00 and :30 marks, and under 10 so the hourly sleeping-hours tick still lands on it.
+    expect(workflow).toMatch(/cron: '[3-9]-59\/10 \* \* \* \*'/)
     expect(workflow).toMatch(/repository_dispatch:\s+types: \[visitor-event\]/)
     expect(workflow).toMatch(/concurrency:\s+group: mind\s+cancel-in-progress: false/)
     expect(workflow).toMatch(/FORKLING_REF: v\d+\.\d+\.\d+\s/)
@@ -92,6 +93,33 @@ describe('templates/forkling-world', () => {
     expect(workflow).toMatch(/if \[ -z "\$ANTHROPIC_API_KEY" \]; then unset ANTHROPIC_API_KEY; fi/)
     expect(workflow).toMatch(/ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/)
     expect(workflow).toMatch(/git commit -m "chore\(mind\): /)
+  })
+})
+
+describe('templates/forkling-world heartbeat', () => {
+  const heartbeat = () => readFileSync(join(root, 'forkling-world', '.github/workflows/heartbeat.yml'), 'utf8')
+
+  it('is opt-in, so worlds whose cron works do not keep a runner busy', () => {
+    expect(heartbeat()).toMatch(/if: vars\.MIND_HEARTBEAT == 'true'/)
+  })
+
+  it('runs one at a time, in its own group so it never blocks a mind tick', () => {
+    expect(heartbeat()).toMatch(/concurrency:\s+group: heartbeat\s+cancel-in-progress: false/)
+    expect(heartbeat()).not.toMatch(/group: mind/)
+  })
+
+  it('dispatches the mind every 10 minutes at :03, skips if one just ran, and hands over to itself before the 6 hour limit', () => {
+    const text = heartbeat()
+    expect(text).toMatch(/permissions:\s+actions: write/)
+    expect(text).toMatch(/\* 600 \+ 180/)
+    expect(text).toMatch(/gh workflow run mind\.yml/)
+    expect(text).toMatch(/gh workflow run heartbeat\.yml/)
+    expect(text).toMatch(/-lt 240/)
+    expect(text).toMatch(/timeout-minutes: 3[0-4]\d/)
+  })
+
+  it('keeps a restarter on a staggered cron', () => {
+    expect(heartbeat()).toMatch(/cron: '\d-59\/30 \* \* \* \*'/)
   })
 })
 
