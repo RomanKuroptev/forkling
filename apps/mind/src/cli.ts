@@ -42,6 +42,7 @@ async function main(): Promise<void> {
     pack: species.pack,
     behaviors: species.behaviors,
     speciesPersona: species.persona,
+    pools: species.pools,
     dryRun: values['dry-run'],
   })
 

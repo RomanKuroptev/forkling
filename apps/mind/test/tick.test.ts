@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { BudgetLedger, Forkling, Goals, MindState, type SpeciesPack } from '@forkling/schema'
+import { moodLabel } from '@forkling/sim'
 import type { Decision } from '../src/decision.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
 import { loadSpecies } from '../src/species.ts'
@@ -18,20 +19,19 @@ const pack: SpeciesPack = { ...cat.pack, needs: Object.fromEntries(Object.entrie
 const NOW = '2026-11-03T09:00:00Z' // 10:00 in Stockholm, a Tuesday, long after waking
 
 const morning: Decision = {
-  mood: 'curious',
   thought: 'The rock catches the sun first, so I start there.',
   longGoal: { text: 'Make the sunny rock mine.', reason: 'It is the warmest place I have found.' },
   dropLongGoal: false,
   plan: [
-    { verb: 'watch', target: 'sunny-rock', x: null, z: null, reason: 'I want the best seat on the beach.', minutes: 30 },
-    { verb: 'explore', target: null, x: -10, z: 5, reason: 'There is shoreline I have not seen.', minutes: 25 },
-    { verb: 'sit', target: null, x: null, z: null, reason: 'Breakfast can wait while I think.', minutes: 10 },
+    { verb: 'watch', target: 'sunny-rock', x: null, z: null, reason: 'I want the best seat on the beach.', minutes: 30, materials: null, makes: null },
+    { verb: 'explore', target: null, x: -10, z: 5, reason: 'There is shoreline I have not seen.', minutes: 25, materials: null, makes: null },
+    { verb: 'sit', target: null, x: null, z: null, reason: 'Breakfast can wait while I think.', minutes: 10, materials: null, makes: null },
   ],
   planReason: 'A day for claiming things.',
   stayUpLate: null,
 }
 
-const keep: Decision = { mood: 'content', thought: 'Nothing to change.', longGoal: null, dropLongGoal: false, plan: null, planReason: null, stayUpLate: null }
+const keep: Decision = { thought: 'Nothing to change.', longGoal: null, dropLongGoal: false, plan: null, planReason: null, stayUpLate: null }
 
 interface FakeLlm extends LlmClient {
   calls: LlmRequest[]
@@ -60,7 +60,7 @@ const writeJson = (rel: string, value: unknown) => {
 const patchForkling = (patch: Record<string, unknown>) => writeJson('forkling.json', { ...readJson('forkling.json'), ...patch })
 
 function deps(over: Partial<TickDeps> = {}): TickDeps {
-  return { now: new Date(NOW), llm: fakeLlm(), pack, behaviors: cat.behaviors, speciesPersona: cat.persona, ...over }
+  return { now: new Date(NOW), llm: fakeLlm(), pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools, ...over }
 }
 const at = (iso: string, over: Partial<TickDeps> = {}) => deps({ now: new Date(iso), ...over })
 const minutesAfter = (min: number) => new Date(Date.parse(NOW) + min * 60_000).toISOString()
@@ -87,7 +87,7 @@ describe('a morning tick', () => {
 
     const forkling = Forkling.parse(readJson('forkling.json'))
     expect(forkling.intention).toMatchObject({ type: 'watch', targetId: 'sunny-rock', goalRef: 'today:0', reason: 'The rock catches the sun first, so I start there.' })
-    expect(forkling.mood).toBe('curious')
+    expect(forkling.mood).toBe(moodLabel(forkling.feelings))
     expect(forkling.lastTickAt).toBe('2026-11-03T09:00:00.000Z')
 
     const state = MindState.parse(readJson('mind/state.json'))
@@ -157,7 +157,9 @@ describe('strong needs', () => {
     await runTick(dir, at(minutesAfter(35), { llm }))
     expect(llm.calls).toHaveLength(1)
     expect(llm.calls[0]!.user).toMatch(/need: affection is at/)
-    expect(readJson('forkling.json').mood).toBe('content')
+    const felt = Forkling.parse(readJson('forkling.json'))
+    expect(felt.feelings.valence).toBeLessThan(0)
+    expect(felt.mood).toBe(moodLabel(felt.feelings))
 
     patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 3 } })
     await runTick(dir, at(minutesAfter(45), { llm }))
@@ -166,7 +168,7 @@ describe('strong needs', () => {
 })
 
 describe('the validator', () => {
-  const badPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30 }]
+  const badPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null }]
 
   it('asks again once with the reasons, and uses the corrected plan', async () => {
     let n = 0
@@ -197,7 +199,7 @@ describe('the validator', () => {
   })
 
   it('does not ask again the same morning after a rejected plan', async () => {
-    const llm = fakeLlm({ ...morning, plan: [{ verb: 'fish', target: null, x: null, z: null, reason: 'x', minutes: 30 }] })
+    const llm = fakeLlm({ ...morning, plan: [{ verb: 'fish', target: null, x: null, z: null, reason: 'x', minutes: 30, materials: null, makes: null }] })
     await runTick(dir, at(NOW, { llm }))
     await runTick(dir, at(minutesAfter(10), { llm }))
     expect(llm.calls).toHaveLength(2)

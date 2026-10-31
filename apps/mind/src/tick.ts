@@ -1,17 +1,41 @@
-import { Forkling, type BudgetCall, type Goals, type Intention, type MicroBehavior, type MindState, type PlanStep, type SpeciesPack } from '@forkling/schema'
 import {
+  Forkling,
+  type BudgetCall,
+  type Goals,
+  type Intention,
+  type MicroBehavior,
+  type MindState,
+  type PlanStep,
+  type SpeciesPack,
+  type TemperamentPools,
+  type WorldObject,
+} from '@forkling/schema'
+import {
+  addXp,
+  appraise,
+  applyStep,
   collectSpots,
+  decayFeelings,
   EPOCH_SECONDS,
+  eventsFromStep,
   hourInZone,
   isAsleepAt,
   localDate,
+  moodLabel,
+  quirkWeights,
+  rollTemperament,
   scoreSurprise,
+  skillLevel,
   sleepWindow,
   startPlayback,
   sunDirection,
   toRepoIntention,
   validatePlan,
   worldWithObjects,
+  type AppraisalEvent,
+  type Feelings,
+  type StepEvent,
+  type Stored,
   type Trigger,
 } from '@forkling/sim'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger, type ModelId } from './budget.ts'
@@ -28,6 +52,8 @@ export interface TickDeps {
   behaviors: MicroBehavior[]
   /** The species `persona.md`. */
   speciesPersona: string
+  /** Where likes, dislikes and quirks are rolled from. Without it a forkling has no temperament and keeps whatever mood the model gives it. */
+  pools?: TemperamentPools | null
   /** Work out the prompt and what it would cost, but call nothing and write nothing. */
   dryRun?: boolean
 }
@@ -74,6 +100,38 @@ function thinkKindFor(triggers: readonly Trigger[]): ThinkKind {
   return 'decide'
 }
 
+const PAST: Record<StepEvent['kind'], string> = {
+  gathered: 'gathered',
+  pickedUp: 'picked up',
+  stored: 'put away',
+  placed: 'put down',
+  dropped: 'dropped',
+  opened: 'opened',
+  closed: 'closed',
+  started: 'started',
+  worked: 'worked on',
+  finished: 'finished',
+  painted: 'painted',
+  planted: 'planted',
+  watered: 'watered',
+  harvested: 'harvested',
+  cooked: 'cooked',
+  ate: 'ate',
+  ateSpoiled: 'ate (it had gone off)',
+}
+
+/** What a step did, in a line the model can read. Names come from the objects, which may hold the forkling's own words. */
+function describeEvent(event: StepEvent, objects: readonly WorldObject[]): string {
+  const name = event.objectId ? (objects.find((o) => o.id === event.objectId)?.name ?? event.objectId) : ''
+  return [PAST[event.kind], event.material && event.kind !== 'planted' ? `${event.material} from` : '', name].filter(Boolean).join(' ')
+}
+
+function describeFeelings({ valence, arousal }: Feelings): string {
+  const how = valence > 0.15 ? 'feeling good' : valence < -0.15 ? 'feeling bad' : 'feeling neutral'
+  const energy = arousal > 0.55 ? 'wound up' : arousal < 0.2 ? 'drowsy' : 'calm'
+  return `${how}, ${energy}`
+}
+
 /**
  * One tick of a forkling's mind: replay the body to now, see whether anything is surprising, think only if so, check
  * the answer, and write the new state. Pure with respect to everything but the world directory and the injected model.
@@ -83,7 +141,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   const nowMs = deps.now.getTime()
   const nowIso = deps.now.toISOString()
   const w = readWorld(dir, (f) => monthOf(f.timezone, nowMs))
-  const { forkling, objects } = w
+  const { forkling } = w
   const tz = forkling.timezone
   const today = localDate(tz, nowMs)
   const notes: string[] = []
@@ -95,17 +153,40 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   const window = sleepWindow(today, forkling.seed, tz, forkling.lateNight === today)
   let budget = rollLedger(w.budget, monthOf(tz, nowMs))
 
+  // Who it is: rolled once from its seed, then fixed for life.
+  let temperament = w.temperament
+  const rolled = !temperament && !!deps.pools
+  if (!temperament && deps.pools) {
+    temperament = rollTemperament(forkling.seed, deps.pools)
+    parts.push('rolled its temperament')
+  }
+  const weights = temperament && deps.pools ? quirkWeights(temperament, deps.pools) : {}
+
   // Where the body is now: exactly what a viewer would have seen since the last commit.
-  const world = worldWithObjects(objects)
+  const world = worldWithObjects(w.objects)
   const playback = startPlayback(
-    { forkling, pack, behaviors, world, goals: w.goals, stateTime: Date.parse(forkling.lastTickAt) / 1000 },
+    { forkling, pack, behaviors, world, goals: w.goals, stateTime: Date.parse(forkling.lastTickAt) / 1000, quirkWeights: weights },
     nowMs,
   )
   const body = playback.state
-  const spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(hourInZone(tz, nowMs)), world.objects)
-  const spotKeys = new Set(Object.keys(spots).filter((k) => (spots[k]?.length ?? 0) > 0))
-  const objectIds = new Set(objects.map((o) => o.id))
+  const spotsFor = (objects: readonly WorldObject[]) => {
+    const w2 = worldWithObjects(objects)
+    const spots = collectSpots(pack, w2.cfg, w2.nav, w2.spawn, sunDirection(hourInZone(tz, nowMs)), w2.objects)
+    return new Set(Object.keys(spots).filter((k) => (spots[k]?.length ?? 0) > 0))
+  }
   const events = w.inbox.flatMap((item) => (item.event ? [item.event] : []))
+
+  // What it has and what is around it. A finished step can change all of this.
+  let objects: WorldObject[] = [...w.objects]
+  let holding = forkling.holding
+  let stored: Stored = { ...forkling.stored }
+  let skills = w.skills
+  const touched = new Set<string>()
+  const gone = new Set<string>()
+  const appraisals: AppraisalEvent[] = []
+  const justNow: string[] = []
+  let feelings = decayFeelings(forkling.feelings, Math.max(0, (nowMs - Date.parse(forkling.lastTickAt)) / 3_600_000))
+  let spotKeys = spotsFor(objects)
 
   let goals: Goals = structuredClone(w.goals)
   let mind: MindState = structuredClone(w.mindState)
@@ -115,6 +196,49 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
 
   let triggers = scoreSurprise({ forkling: { ...forkling, needs: body.needs }, goals, mindState: mind, objects, events, nowMs, asleep, spotKinds: spotKeys })
   if (mind.lastThinkAt && nowMs - Date.parse(mind.lastThinkAt) < NEED_COOLDOWN_MS) triggers = triggers.filter((t) => t.kind !== 'need')
+
+  // A step's effect lands once, when its time is up: what it gathered, made or ate becomes true here.
+  let failed = false
+  const finishing = goals.now ? goals.today?.steps[goals.now.index] : undefined
+  if (finishing && goals.now && triggers.some((t) => t.kind === 'stepDone') && mind.appliedStepAt !== goals.now.startedAt && !asleep) {
+    mind.appliedStepAt = goals.now.startedAt
+    const verb = pack.actions.find((a) => a.id === finishing.verb)
+    if (verb) {
+      const before = objects
+      const result = applyStep({ holding, stored, position: { x: body.pos.x, z: body.pos.z }, objects }, finishing, verb, {
+        nowMs,
+        skill: skillLevel(skills, verb.group),
+        seed: intentionSeed(forkling.seed, nowMs),
+      })
+      if (result.ok) {
+        holding = result.world.holding
+        stored = result.world.stored
+        objects = [...result.world.objects]
+        skills = addXp(skills, result.group, result.xp)
+        for (const id of result.upserted) {
+          touched.add(id)
+          gone.delete(id)
+        }
+        for (const id of result.removed) {
+          gone.add(id)
+          touched.delete(id)
+        }
+        // Things it made itself are not news to it.
+        mind.knownObjects = [...new Set([...mind.knownObjects, ...result.upserted])]
+        appraisals.push(...eventsFromStep(result.events, [...before, ...objects]))
+        justNow.push(...result.events.map((e) => describeEvent(e, [...before, ...objects])))
+        if (result.events.length > 0) parts.push(`${finishing.verb}: ${result.events.map((e) => PAST[e.kind]).join(', ')}`)
+        spotKeys = spotsFor(objects)
+      } else {
+        failed = true
+        notes.push(`step ${goals.now.index + 1} (${finishing.verb}) could not happen: ${result.reason}`)
+        justNow.push(`${finishing.verb} did not work out: ${result.reason}`)
+        appraisals.push({ kind: 'blocked' })
+        triggers = [...triggers, { kind: 'blocked', score: 0.9, detail: `${finishing.verb} did not work out: ${result.reason}` }]
+      }
+    }
+  }
+  const objectIds = new Set(objects.map((o) => o.id))
 
   /** Begins step `index` of today's plan: a focus window for the body, and an intention that says why. */
   const startStep = (index: number, reason?: string) => {
@@ -147,7 +271,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   }
 
   let prompt: TickResult['prompt']
-  /** The plan as plan steps, and whether the body could really carry it out. */
+  /** The plan as plan steps, and whether the body could really carry it out, played out from what it holds now. */
   const checkPlan = (plan: LlmStep[]) => {
     const steps = plan.map(planStepFrom)
     const usable = steps.filter((s): s is PlanStep => s !== null)
@@ -162,6 +286,11 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
             asleepAt: (ms) => isAsleepAt(ms, sleepOpts),
             hourAt: (ms) => hourInZone(tz, ms),
             recent: mind.recent,
+            holding,
+            stored,
+            position: { x: body.pos.x, z: body.pos.z },
+            skills,
+            seed: intentionSeed(forkling.seed, nowMs),
           })
     return { usable, check }
   }
@@ -185,6 +314,13 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
       bedTime: clock(tz, window.bedMs),
       hoursLeft: Math.max(0, Math.round((window.bedMs - nowMs) / 3_600_000)),
       body: { x: body.pos.x, z: body.pos.z, needs: body.needs as Record<string, number> },
+      nowMs,
+      holding,
+      stored,
+      skills,
+      temperament,
+      feelings: describeFeelings(feelings),
+      justNow,
     })
     const tokens = estimateTokens(system) + estimateTokens(user)
     const maxUsd = estimateCallUsd(model, tokens, MAX_OUTPUT_TOKENS)
@@ -256,12 +392,15 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
       goals.long = { ...goals.long, reviewedAt: nowIso }
     }
 
-    if (decision.mood.trim()) mood = clampText(decision.mood.trim(), 40)
-
     if (decision.stayUpLate?.trim() && !asleep && hourInZone(tz, nowMs) >= LATE_NIGHT_FROM_HOUR) {
       lateNight = today
       mind.lateNightReason = clampText(decision.stayUpLate.trim(), 200)
       parts.push('staying up late')
+    }
+
+    // What the mind took in counts for how it feels: something new, a need running low, a plan that did not work out.
+    for (const t of triggers) {
+      if (t.kind === 'novelty' || t.kind === 'need' || (t.kind === 'blocked' && !failed)) appraisals.push({ kind: t.kind })
     }
 
     if (thinkKind === 'morning') mind.lastPlanDate = today
@@ -289,19 +428,32 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     }
   }
 
+  // How it feels now, from what happened, its taste and its quirks.
+  if (temperament && deps.pools) {
+    const felt = appraise(feelings, appraisals, temperament, deps.pools)
+    // Stored to two places, so the label always matches what the file says.
+    feelings = { valence: round(felt.valence, 2), arousal: round(felt.arousal, 2) }
+    mood = moodLabel(feelings)
+  }
+
   // Wake, bedtime and the body: written when something happened, or once per half hour so the repo stays fresh.
   if (asleep !== forkling.asleep) parts.push(asleep ? 'went to bed' : 'woke up')
   const inboxConsumed = thought && w.inbox.length > 0
   const goalsChanged = !same(goals, w.goals)
   const mindChanged = !same(mind, w.mindState)
   const budgetChanged = !same(budget, w.budget)
+  const skillsChanged = !same(skills, w.skills)
+  const carryingChanged = !same(holding, forkling.holding) || !same(stored, forkling.stored)
   const writeBody =
     started !== null ||
     goalsChanged ||
     mindChanged ||
     inboxConsumed ||
+    skillsChanged ||
+    carryingChanged ||
+    rolled ||
     asleep !== forkling.asleep ||
-    mood !== forkling.mood ||
+    (appraisals.length > 0 && mood !== forkling.mood) ||
     lateNight !== forkling.lateNight ||
     epochOf(nowMs) !== epochOf(Date.parse(forkling.lastTickAt))
 
@@ -320,21 +472,35 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
           : inPack
             ? bodyIntention
             : forkling.intention)
+      const { holding: _held, ...rest } = forkling
       const next = Forkling.parse({
-        ...forkling,
+        ...rest,
         needs: Object.fromEntries(Object.entries(body.needs).map(([id, v]) => [id, round(v, 1)])),
         position: [round(body.pos.x, 2), 0, round(body.pos.z, 2)],
         mood,
+        feelings: { valence: round(feelings.valence, 2), arousal: round(feelings.arousal, 2) },
         intention,
+        ...(holding ? { holding } : {}),
+        stored,
         asleep,
         ...(lateNight ? { lateNight } : {}),
         lastTickAt: nowIso,
       })
       if (writeJson(dir, 'forkling.json', next)) written.push('forkling.json')
     }
+    for (const id of touched) {
+      const object = objects.find((o) => o.id === id)
+      if (object && writeJson(dir, `objects/${id}.json`, object)) written.push(`objects/${id}.json`)
+    }
+    for (const id of gone) {
+      deleteFile(dir, `objects/${id}.json`)
+      written.push(`objects/${id}.json`)
+    }
     if (goalsChanged && writeJson(dir, 'mind/goals.json', goals)) written.push('mind/goals.json')
     if (mindChanged && writeJson(dir, 'mind/state.json', mind)) written.push('mind/state.json')
     if (budgetChanged && writeJson(dir, 'brain/budget.json', budget)) written.push('brain/budget.json')
+    if (skillsChanged && writeJson(dir, 'brain/skills.json', skills)) written.push('brain/skills.json')
+    if (rolled && temperament && writeJson(dir, 'brain/temperament.json', temperament)) written.push('brain/temperament.json')
     if (inboxConsumed) {
       for (const item of w.inbox) {
         deleteFile(dir, item.path)

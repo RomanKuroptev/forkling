@@ -13,6 +13,8 @@ export const MindState = z.object({
   seenEventTypes: z.array(z.string()).default([]),
   /** Local date of the last morning plan. */
   lastPlanDate: z.iso.date().optional(),
+  /** When the step whose effect was last applied began, so a step's effect happens once however many ticks follow it. */
+  appliedStepAt: Timestamp.optional(),
   /** When the LLM was last asked, so strong needs don't wake it every tick. */
   lastThinkAt: Timestamp.optional(),
   /** Why the mind chose to stay up late, in its own words. */
