@@ -116,7 +116,9 @@ function describeAction(a: SpeciesAction): string {
   const paws = a.hands === 'empty' ? 'needs empty paws' : a.hands === 'full' ? 'needs something in your paws' : ''
   const works = a.accepts.length > 0 ? `works with ${a.accepts.join(', ')}` : ''
   const when = a.requires.length > 0 ? `only ${a.requires.join(' and ')}` : ''
-  return `- ${a.id}: ${[where, paws, works, needs, when, EFFECTS[a.effect]].filter(Boolean).join('; ')}`
+  // A photograph is of what is in front of the eyes; it has no topic to set.
+  const effect = a.artifact === 'photo' ? 'takes a picture through your own eyes and keeps it with your caption' : EFFECTS[a.effect]
+  return `- ${a.id}: ${[where, paws, works, needs, when, effect].filter(Boolean).join('; ')}`
 }
 
 /**

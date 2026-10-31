@@ -84,3 +84,16 @@ describe('noticedSubject', () => {
     expect(noticedSubject({ ...base, objects: [held], known: new Set() })).toBeNull()
   })
 })
+
+describe('the prompt about seeing', () => {
+  it('tells the mind a photograph is a picture through its own eyes, with no topic to set', async () => {
+    const { buildSystem } = await import('../src/prompts.ts')
+    const { loadSpecies } = await import('../src/species.ts')
+    const cat = loadSpecies('cat')
+    const system = buildSystem({ pack: cat.pack, name: 'Merge', speciesPersona: cat.persona, persona: '' })
+    const line = system.split('\n').find((l) => l.startsWith('- photograph:'))!
+    expect(line).toContain('takes a picture through your own eyes')
+    expect(line).not.toContain('set topic')
+    expect(system).toContain('about twelve a day')
+  })
+})
