@@ -1,6 +1,7 @@
 {
   "name": "Unnamed",
   "species": "cat",
+  "seed": 1,
   "needs": { "hunger": 70, "energy": 80, "curiosity": 60, "affection": 30 },
   "position": [2, 0, 20],
   "mood": "curious",
@@ -10,6 +11,7 @@
     "seed": 1,
     "reason": "I just got here. I am taking it all in."
   },
+  "asleep": false,
   "lastTickAt": "2026-10-30T12:00:00Z",
   "timezone": "UTC"
 }

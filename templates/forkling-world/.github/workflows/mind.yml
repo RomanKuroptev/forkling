@@ -1,0 +1,97 @@
+name: mind
+
+# The forkling's mind: one tick every 10 minutes (GitHub may run it a few minutes late; nothing here assumes exact
+# times), plus an immediate tick when the viewer reports a visitor event. While the forkling sleeps, only the first
+# tick of each hour does anything.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  repository_dispatch:
+    types: [visitor-event]
+  workflow_dispatch:
+
+# Ticks must never overlap: two minds writing one repo would corrupt its state.
+concurrency:
+  group: mind
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  # The engine release this world runs on. Change it on purpose, after reading what changed.
+  FORKLING_REPO: RomanKuroptev/forkling
+  FORKLING_REF: v0.4.0
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: world
+
+      - name: Decide whether to tick
+        id: gate
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          asleep=$(jq -r '.asleep // false' world/forkling.json)
+          last=$(jq -r '.lastTickAt' world/forkling.json)
+          minute=$((10#$(date -u +%M)))
+          run=true
+          if [ "$EVENT" = repository_dispatch ]; then
+            # A burst of visitors counts as one: at most one event-driven tick every 2 minutes.
+            age=$(( $(date -u +%s) - $(date -u -d "$last" +%s) ))
+            if [ "$age" -lt 120 ]; then run=false; fi
+          elif [ "$asleep" = true ] && [ "$minute" -ge 10 ]; then
+            run=false
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          repository: ${{ env.FORKLING_REPO }}
+          ref: ${{ env.FORKLING_REF }}
+          path: engine
+
+      - uses: pnpm/action-setup@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          package_json_file: engine/package.json
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version-file: engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: engine/pnpm-lock.yaml
+
+      - name: Install the mind
+        if: steps.gate.outputs.run == 'true'
+        working-directory: engine
+        run: pnpm install --frozen-lockfile --filter "@forkling/mind..."
+
+      - name: Tick
+        id: tick
+        if: steps.gate.outputs.run == 'true'
+        working-directory: engine
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: pnpm --filter @forkling/mind tick --world "$GITHUB_WORKSPACE/world"
+
+      - name: Commit what changed
+        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.changed == 'true'
+        working-directory: world
+        env:
+          SUMMARY: ${{ steps.tick.outputs.summary }}
+        run: |
+          git config user.name "forkling-mind"
+          git config user.email "forkling-mind@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(mind): ${SUMMARY:-tick}"
+          # Another run or a merged PR may have landed since checkout.
+          git pull --rebase
+          git push
