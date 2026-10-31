@@ -7,7 +7,7 @@
     "curiosity": { "initial": 55, "decayPerHour": 120 },
     "affection": { "initial": 35, "decayPerHour": 30 }
   },
-  "perception": { "noticeRadius": 5, "eyeHeight": 0.2, "fovDeg": 70 },
+  "perception": { "noticeRadius": 5, "eyeHeight": 0.55, "fovDeg": 70 },
   "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
   "bodyPlans": {
     "quadruped": ["body"],

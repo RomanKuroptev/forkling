@@ -1,8 +1,11 @@
 import { Component, useEffect, useState, type ReactNode } from 'react'
 import { App } from './App.tsx'
+import { EyeCam } from './eyecam/EyeCam.tsx'
+import { parseEyeCam } from './eyecam/params.ts'
 import { speciesPacks } from './species/registry.ts'
 import { ASSETS } from './world/assets.ts'
 import { loadWorld, type LoadedWorld, type LoadResult, type WorldError } from './world/loadWorld.ts'
+import { LOCAL_REF, localFetch } from './world/localWorld.ts'
 import { parseRoute, type WorldRef } from './world/route.ts'
 import { WorldErrorPanel } from './world/WorldErrorPanel.tsx'
 import { WorldProvider } from './world/WorldContext.tsx'
@@ -18,11 +21,13 @@ type State =
 /** One request per world per page, even when StrictMode mounts twice. */
 const loads = new Map<string, Promise<LoadResult>>()
 
-function load(ref: WorldRef): Promise<LoadResult> {
+function load(ref: WorldRef, local: boolean): Promise<LoadResult> {
   const key = `${ref.owner}/${ref.repo}@${ref.ref ?? ''}`
   let pending = loads.get(key)
   if (!pending) {
-    pending = loadWorld(ref, { fetch: (input, init) => fetch(input, init), species: speciesPacks, assets: ASSETS })
+    const real: typeof fetch = (input, init) => fetch(input, init)
+    // `?world=local` reads the world from files served next to the viewer, not from GitHub.
+    pending = loadWorld(ref, { fetch: local ? localFetch(`${location.origin}${import.meta.env.BASE_URL}`, real) : real, species: speciesPacks, assets: ASSETS })
     loads.set(key, pending)
   }
   return pending
@@ -34,7 +39,8 @@ export function Root() {
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL
-    let route = parseRoute(location.pathname, base, location.search)
+    const local = new URLSearchParams(location.search).get('world') === 'local'
+    let route: ReturnType<typeof parseRoute> = local ? { kind: 'world', ref: LOCAL_REF } : parseRoute(location.pathname, base, location.search)
     if (route.kind === 'home') {
       history.replaceState(null, '', `${base}${DEFAULT_WORLD}${location.search}`)
       route = parseRoute(location.pathname, base, location.search)
@@ -46,7 +52,7 @@ export function Root() {
     }
     const ref = route.ref
     let cancelled = false
-    load(ref)
+    load(ref, local)
       .then((result) => {
         if (cancelled) return
         setState(result.ok ? { status: 'ready', world: result.world } : { status: 'error', error: result.error, ref })
@@ -64,13 +70,12 @@ export function Root() {
     }
   }, [])
 
+  const eyeCam = parseEyeCam(location.search)
   if (state.status === 'loading') return <div className="loading">Finding the world…</div>
   if (state.status === 'error') return <WorldErrorPanel error={state.error} worldRef={state.ref} />
   return (
     <WorldProvider world={state.world}>
-      <RenderGuard worldRef={state.world.ref}>
-        <App />
-      </RenderGuard>
+      <RenderGuard worldRef={state.world.ref}>{eyeCam ? <EyeCam shot={eyeCam} /> : <App />}</RenderGuard>
     </WorldProvider>
   )
 }

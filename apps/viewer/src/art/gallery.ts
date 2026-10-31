@@ -11,6 +11,17 @@ export function pickDrawings(art: readonly Artifact[], count: number): Extract<A
   return art.filter((a): a is Extract<Artifact, { kind: 'drawing' }> => a.kind === 'drawing').sort(newestFirst).slice(0, count)
 }
 
+/** The newest photos it has taken, for the frames beside its drawings. */
+export function pickPhotos(art: readonly Artifact[], count: number): Extract<Artifact, { kind: 'photo' }>[] {
+  return art.filter((a): a is Extract<Artifact, { kind: 'photo' }> => a.kind === 'photo').sort(newestFirst).slice(0, count)
+}
+
+/** Where a photo's frame can be loaded from: its file in the repo at the commit the world was read from. */
+export function photoUrl(ref: { owner: string; repo: string }, sha: string, image: string): string | null {
+  if (!/^photos\/[a-z0-9][a-z0-9-]{0,60}\.jpg$/.test(image)) return null
+  return `https://raw.githubusercontent.com/${ref.owner}/${ref.repo}/${sha}/art/${image}`
+}
+
 /** The newest tune it has made. */
 export function pickMelody(art: readonly Artifact[]): Extract<Artifact, { kind: 'melody' }> | null {
   return art.filter((a): a is Extract<Artifact, { kind: 'melody' }> => a.kind === 'melody').sort(newestFirst)[0] ?? null

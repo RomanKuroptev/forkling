@@ -1,12 +1,13 @@
 import type { Artifact } from '@forkling/schema'
 import { heightAt } from '@forkling/sim'
 import { useEffect, useMemo, useState } from 'react'
-import { CanvasTexture, DoubleSide, SRGBColorSpace } from 'three'
+import { CanvasTexture, DoubleSide, SRGBColorSpace, TextureLoader, type Texture } from 'three'
 import { island } from '../island.ts'
 import { useWorld } from '../world/WorldContext.tsx'
-import { pickDrawings, svgDataUrl } from './gallery.ts'
+import { LOCAL_REF } from '../world/localWorld.ts'
+import { photoUrl, pickDrawings, pickPhotos, svgDataUrl } from './gallery.ts'
 
-/** How many of its latest drawings stand by the house. */
+/** How many of its latest drawings, and of its latest photos, stand by the house. */
 const FRAMES = 3
 const SIZE = 512
 
@@ -42,11 +43,36 @@ function useDrawingTexture(svg: string): CanvasTexture | null {
   return texture
 }
 
-function Frame({ drawing, x, z }: { drawing: Extract<Artifact, { kind: 'drawing' }>; x: number; z: number }) {
-  const texture = useDrawingTexture(drawing.content.svg)
+/** A photo as a texture, loaded from its file. Stays null if it can't be loaded: a missing picture never breaks the world. */
+function usePhotoTexture(url: string | null): Texture | null {
+  const [texture, setTexture] = useState<Texture | null>(null)
+  useEffect(() => {
+    if (!url) return
+    let cancelled = false
+    let made: Texture | null = null
+    new TextureLoader().load(
+      url,
+      (loaded) => {
+        if (cancelled) return loaded.dispose()
+        loaded.colorSpace = SRGBColorSpace
+        made = loaded
+        setTexture(loaded)
+      },
+      undefined,
+      () => undefined,
+    )
+    return () => {
+      cancelled = true
+      made?.dispose()
+    }
+  }, [url])
+  return texture
+}
+
+function Frame({ name, texture, x, z }: { name: string; texture: Texture | null; x: number; z: number }) {
   const y = heightAt(x, z, island)
   return (
-    <group position={[x, y, z]} name={`drawing-${drawing.id}`}>
+    <group position={[x, y, z]} name={name}>
       <mesh position={[-0.55, 0.6, 0]} castShadow>
         <boxGeometry args={[0.08, 1.2, 0.08]} />
         <meshStandardMaterial color="#7a5a3a" />
@@ -68,19 +94,34 @@ function Frame({ drawing, x, z }: { drawing: Extract<Artifact, { kind: 'drawing'
   )
 }
 
+function DrawingFrame({ drawing, x, z }: { drawing: Extract<Artifact, { kind: 'drawing' }>; x: number; z: number }) {
+  return <Frame name={`drawing-${drawing.id}`} texture={useDrawingTexture(drawing.content.svg)} x={x} z={z} />
+}
+
+function PhotoFrame({ photo, x, z }: { photo: Extract<Artifact, { kind: 'photo' }>; x: number; z: number }) {
+  const { world } = useWorld()
+  const local = world.ref.owner === LOCAL_REF.owner && world.ref.repo === LOCAL_REF.repo
+  const url = local ? `${import.meta.env.BASE_URL}world/art/${photo.content.image}` : photoUrl(world.ref, world.sha, photo.content.image)
+  return <Frame name={`photo-${photo.id}`} texture={usePhotoTexture(url)} x={x} z={z} />
+}
+
 /**
- * Its latest drawings, framed on posts beside the house, so a visitor sees what it has been making. Nothing is
- * solid: they are for looking at.
+ * Its latest drawings and photos, framed on posts beside the house, so a visitor sees what it has been making and
+ * seeing. Nothing is solid: they are for looking at.
  */
 export function GalleryWall() {
   const { world } = useWorld()
   const drawings = useMemo(() => pickDrawings(world.art, FRAMES), [world.art])
-  if (drawings.length === 0) return null
+  const photos = useMemo(() => pickPhotos(world.art, FRAMES), [world.art])
+  if (drawings.length === 0 && photos.length === 0) return null
   const home = world.objects.find((o) => o.id === 'house')?.position ?? world.forkling.position
   return (
     <>
       {drawings.map((d, i) => (
-        <Frame key={d.id} drawing={d} x={home[0] + 5} z={home[2] - 2 + i * 1.9} />
+        <DrawingFrame key={d.id} drawing={d} x={home[0] + 5} z={home[2] - 2 + i * 1.9} />
+      ))}
+      {photos.map((p, i) => (
+        <PhotoFrame key={p.id} photo={p} x={home[0] + 7} z={home[2] - 2 + i * 1.9} />
       ))}
     </>
   )
