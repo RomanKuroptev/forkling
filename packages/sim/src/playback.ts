@@ -1,4 +1,4 @@
-import type { Forkling, MicroBehavior, SpeciesPack } from '@forkling/schema'
+import type { Forkling, Goals, MicroBehavior, SpeciesPack } from '@forkling/schema'
 import { createForkling, STEP, stepForkling, type Focus, type ForklingState, type StepContext } from './forkling.ts'
 import { nearestWalkable, type Point2 } from './nav.ts'
 import { isAsleepAt } from './sleep.ts'
@@ -17,6 +17,8 @@ export interface PlaybackInput {
   pack: SpeciesPack
   behaviors: MicroBehavior[]
   world: StarterWorld
+  /** `mind/goals.json`. The current step of today's plan is what the body favours while it lasts. */
+  goals?: Goals
   /** Unix seconds when the repo state was written (its commit time). Edits then take effect from that moment. */
   stateTime?: number
 }
@@ -138,16 +140,16 @@ function stepTo(pb: Playback, nowSec: number, visitor: Point2 | null): void {
   while (pb.steps < target) stepOnce(pb, visitor)
 }
 
-/** The focus the mind wrote into the intention, if there is one. */
-function focusFor(forkling: Forkling): { focus?: Focus } {
-  const { until, type, targetId, position } = forkling.intention
-  if (!until) return {}
+/** The focus the mind set: the current step of today's plan, until its time is up. */
+function focusFor(goals: Goals | undefined): { focus?: Focus } {
+  const step = goals?.now ? goals.today?.steps[goals.now.index] : undefined
+  if (!goals?.now || !step) return {}
   return {
     focus: {
-      action: type,
-      ...(targetId ? { targetId } : {}),
-      ...(position ? { position: { x: position[0], z: position[1] } } : {}),
-      until: Date.parse(until) / 1000,
+      action: step.verb,
+      ...(step.targetId ? { targetId: step.targetId } : {}),
+      ...(step.position ? { position: { x: step.position[0], z: step.position[1] } } : {}),
+      until: Date.parse(goals.now.until) / 1000,
     },
   }
 }
@@ -165,7 +167,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     time: anchor.time,
     needs: forkling.needs,
     firstAction: forkling.intention.type,
-    ...focusFor(forkling),
+    ...focusFor(input.goals),
   })
   const pb: Playback = {
     input,

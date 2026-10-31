@@ -50,9 +50,9 @@ describe('Intention (M4 additions)', () => {
     expect(Intention.safeParse(base).success).toBe(true)
   })
 
-  it('accepts a goal reference, a focus deadline and a position', () => {
-    const parsed = Intention.parse({ ...base, goalRef: 'today:2', until: '2026-11-01T07:40:00Z', position: [3, 4] })
-    expect(parsed.goalRef).toBe('today:2')
+  it('accepts a goal reference', () => {
+    expect(Intention.parse({ ...base, goalRef: 'today:2' }).goalRef).toBe('today:2')
+    expect(Intention.parse({ ...base, goalRef: 'long' }).goalRef).toBe('long')
   })
 
   it('rejects a malformed goal reference', () => {
@@ -88,6 +88,12 @@ describe('MindState', () => {
     expect(state.seenEventTypes).toEqual([])
     expect(state.recent).toEqual([])
     expect(state.rejections).toEqual([])
+    expect(state.lastThinkAt).toBeUndefined()
+  })
+
+  it('remembers when it last thought and why it stayed up late', () => {
+    const state = MindState.parse({ lastThinkAt: '2026-11-01T07:10:00Z', lateNightReason: 'The moon is on the water.' })
+    expect(state.lateNightReason).toBe('The moon is on the water.')
   })
 
   it('keeps the recent steps and rejections as short lists', () => {

@@ -212,3 +212,16 @@ describe('sleep schedule in playback', () => {
     expect(hourInZone(tz, Date.parse('2026-11-04T02:00:00Z'))).toBeCloseTo(3, 0)
   })
 })
+
+describe('focus from goals in playback', () => {
+  it('favours the current plan step while it lasts and only then', () => {
+    const goals = {
+      today: { date: '2026-10-30', steps: [{ verb: 'dash', position: [0, 0] as [number, number], reason: 'Go.', minutes: 10 }], reason: 'Move.' },
+      now: { index: 0, startedAt: iso(EPOCH_START + 60), until: iso(EPOCH_START + 660) },
+    }
+    const base = input()
+    const focused = startPlayback({ ...base, goals }, (EPOCH_START + 120) * 1000)
+    expect(focused.state.focus).toMatchObject({ action: 'dash', until: EPOCH_START + 660 })
+    expect(startPlayback(base, (EPOCH_START + 120) * 1000).state.focus).toBeNull()
+  })
+})

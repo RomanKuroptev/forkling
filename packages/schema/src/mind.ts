@@ -12,6 +12,10 @@ export const MindState = z.object({
   seenEventTypes: z.array(z.string()).default([]),
   /** Local date of the last morning plan. */
   lastPlanDate: z.iso.date().optional(),
+  /** When the LLM was last asked, so strong needs don't wake it every tick. */
+  lastThinkAt: Timestamp.optional(),
+  /** Why the mind chose to stay up late, in its own words. */
+  lateNightReason: z.string().max(200).optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */
   recent: z.array(z.object({ verb: z.string(), targetId: z.string().optional(), at: Timestamp })).max(20).default([]),
   /** Why the validator last turned a plan down, newest last. */

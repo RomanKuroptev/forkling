@@ -99,9 +99,13 @@ describe('scoreSurprise', () => {
   })
 
   it('uses the forkling local date, not UTC, for a new day', () => {
-    // 23:30Z on the 3rd is 00:30 on the 4th in Stockholm: a new local day.
-    const late = Date.parse('2026-11-03T23:30:00Z')
-    expect(kinds({ ...calm, nowMs: late, goals: {} })).toEqual(['newDay'])
+    // 08:00Z on the 4th is 09:00 in Stockholm: awake, and a new local day.
+    expect(kinds({ ...calm, nowMs: Date.parse('2026-11-04T08:00:00Z'), goals: {} })).toEqual(['newDay'])
+  })
+
+  it('waits for the morning: still up after midnight is not a new day yet', () => {
+    // 23:30Z on the 3rd is 00:30 on the 4th in Stockholm, after a late night.
+    expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T23:30:00Z'), goals: {} })).toEqual([])
   })
 
   it('asks for a weekly review of the long goal', () => {

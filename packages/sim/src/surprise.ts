@@ -1,5 +1,5 @@
 import type { Forkling, Goals, MindState, NeedId, VisitorEvent, WorldObject } from '@forkling/schema'
-import { localDate } from './sleep.ts'
+import { localDate, sleepWindow } from './sleep.ts'
 
 export type TriggerKind = 'novelty' | 'blocked' | 'need' | 'stepDone' | 'newDay' | 'weekly'
 
@@ -68,7 +68,9 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
   }
 
   const today = localDate(forkling.timezone, nowMs)
-  if (mindState.lastPlanDate !== today) {
+  // A new day starts when the forkling wakes, not at midnight, so a late night doesn't get a morning plan at 00:00.
+  const awakeToday = sleepWindow(today, forkling.seed, forkling.timezone).wakeMs <= nowMs
+  if (mindState.lastPlanDate !== today && awakeToday) {
     found.push({ kind: 'newDay', score: 1, detail: `it is ${today} and no plan has been made for it` })
   }
 
