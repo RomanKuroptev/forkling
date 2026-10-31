@@ -23,9 +23,9 @@ const morning: Decision = {
   longGoal: { text: 'Make the sunny rock mine.', reason: 'It is the warmest place I have found.' },
   dropLongGoal: false,
   plan: [
-    { verb: 'perch', target: 'sunny-rock', x: null, z: null, reason: 'I want the best seat on the beach.', minutes: 30 },
+    { verb: 'watch', target: 'sunny-rock', x: null, z: null, reason: 'I want the best seat on the beach.', minutes: 30 },
     { verb: 'explore', target: null, x: -10, z: 5, reason: 'There is shoreline I have not seen.', minutes: 25 },
-    { verb: 'eat', target: 'food', x: null, z: null, reason: 'Breakfast is overdue.', minutes: 10 },
+    { verb: 'sit', target: null, x: null, z: null, reason: 'Breakfast can wait while I think.', minutes: 10 },
   ],
   planReason: 'A day for claiming things.',
   stayUpLate: null,
@@ -82,18 +82,18 @@ describe('a morning tick', () => {
     const goals = Goals.parse(readJson('mind/goals.json'))
     expect(goals.long?.text).toBe('Make the sunny rock mine.')
     expect(goals.today?.date).toBe('2026-11-03')
-    expect(goals.today?.steps.map((s) => s.verb)).toEqual(['perch', 'explore', 'eat'])
+    expect(goals.today?.steps.map((s) => s.verb)).toEqual(['watch', 'explore', 'sit'])
     expect(goals.now).toMatchObject({ index: 0, startedAt: '2026-11-03T09:00:00.000Z', until: '2026-11-03T09:30:00.000Z' })
 
     const forkling = Forkling.parse(readJson('forkling.json'))
-    expect(forkling.intention).toMatchObject({ type: 'perch', targetId: 'sunny-rock', goalRef: 'today:0', reason: 'The rock catches the sun first, so I start there.' })
+    expect(forkling.intention).toMatchObject({ type: 'watch', targetId: 'sunny-rock', goalRef: 'today:0', reason: 'The rock catches the sun first, so I start there.' })
     expect(forkling.mood).toBe('curious')
     expect(forkling.lastTickAt).toBe('2026-11-03T09:00:00.000Z')
 
     const state = MindState.parse(readJson('mind/state.json'))
     expect(state.lastPlanDate).toBe('2026-11-03')
     expect(state.knownObjects.sort()).toEqual(['sunny-rock', 'tall-rock'])
-    expect(state.recent.map((s) => s.verb)).toEqual(['perch'])
+    expect(state.recent.map((s) => s.verb)).toEqual(['watch'])
 
     const ledger = BudgetLedger.parse(readJson('brain/budget.json'))
     expect(ledger.month).toBe('2026-11')
@@ -176,7 +176,7 @@ describe('the validator', () => {
     expect(llm.calls[1]!.user).toMatch(/turned down/)
     expect(llm.calls[1]!.user).toMatch(/"fish"/)
     expect(llm.calls[1]!.system).toBe(llm.calls[0]!.system)
-    expect(Goals.parse(readJson('mind/goals.json')).today?.steps.map((s) => s.verb)).toEqual(['perch', 'explore', 'eat'])
+    expect(Goals.parse(readJson('mind/goals.json')).today?.steps.map((s) => s.verb)).toEqual(['watch', 'explore', 'sit'])
     expect(MindState.parse(readJson('mind/state.json')).rejections).toEqual([])
     expect(BudgetLedger.parse(readJson('brain/budget.json')).calls).toHaveLength(2)
   })
@@ -300,7 +300,7 @@ describe('what the model is shown', () => {
     expect(second.calls[0]!.user).not.toBe(llm.calls[0]!.user)
     expect(llm.calls[0]!.system).not.toMatch(/\d{4}-\d{2}-\d{2}/)
     expect(llm.calls[0]!.system).toContain('You are a cat')
-    expect(llm.calls[0]!.system).toContain('- perch: target: "perch"')
+    expect(llm.calls[0]!.system).toContain('- watch: target: "perch"')
     expect(llm.calls[0]!.system).toMatch(/dusk is 18:00 to 21:00/)
   })
 

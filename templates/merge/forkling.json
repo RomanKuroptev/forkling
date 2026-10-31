@@ -15,7 +15,7 @@
   ],
   "mood": "sleepy",
   "intention": {
-    "type": "lounge",
+    "type": "sit",
     "startedAt": "2026-10-30T21:00:00Z",
     "seed": 20260101,
     "reason": "New island. I will allow it."

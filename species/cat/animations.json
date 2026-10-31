@@ -9,5 +9,11 @@
   "eat": "Eat",
   "groom": "Groom",
   "stretch": "Stretch",
-  "knead": "Knead"
+  "knead": "Knead",
+  "stand": "Stand",
+  "walkUpright": "WalkUpright",
+  "work": "Work",
+  "useTool": "UseTool",
+  "holdUp": "HoldUp",
+  "carry": "Carry"
 }

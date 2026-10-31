@@ -109,7 +109,9 @@ export function eventsFromStep(events: readonly StepEvent[], objects: readonly W
     if (obj) {
       tags.add(obj.kind)
       if (obj.properties.material) tags.add(obj.properties.material)
-      for (const flag of ['soft', 'high', 'edible', 'canHide', 'diggable'] as const) if (obj.properties[flag]) tags.add(flag)
+      for (const [flag, tag] of [['soft', 'soft'], ['high', 'high'], ['edible', 'edible'], ['canHide', 'hideaway'], ['diggable', 'diggable']] as const) {
+        if (obj.properties[flag]) tags.add(tag)
+      }
     }
     return { kind: event.kind, tags: [...tags] }
   })

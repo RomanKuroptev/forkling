@@ -12,7 +12,7 @@ const forkling = {
   needs: { hunger: 70, energy: 80 },
   position: [2, 0, 20],
   mood: 'curious',
-  intention: { type: 'lounge', startedAt: '2026-10-30T21:00:00Z', seed: 1, reason: 'New island.' },
+  intention: { type: 'sit', startedAt: '2026-10-30T21:00:00Z', seed: 1, reason: 'New island.' },
   lastTickAt: '2026-10-30T21:00:00Z',
   timezone: 'Europe/Stockholm',
 }

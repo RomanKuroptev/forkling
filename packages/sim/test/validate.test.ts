@@ -35,7 +35,7 @@ const reasons = (steps: PlanStep[], c: PlanContext = ctx) => {
 
 describe('validatePlan', () => {
   it('accepts a plan that uses the pack verbs and real targets', () => {
-    const plan = [step({ verb: 'perch', targetId: 'sunny-rock' }), step({ verb: 'eat', targetId: 'food', minutes: 10 }), step({ verb: 'nap', targetId: 'sunbeam', minutes: 40 })]
+    const plan = [step({ verb: 'watch', targetId: 'sunny-rock' }), step({ verb: 'go_to', targetId: 'sunny-rock', minutes: 10 }), step({ verb: 'nap', targetId: 'sunbeam', minutes: 40 })]
     expect(validatePlan(plan, ctx)).toEqual({ ok: true })
   })
 
@@ -44,11 +44,11 @@ describe('validatePlan', () => {
   })
 
   it('rejects a target that is not in the world', () => {
-    expect(reasons([step({ verb: 'perch', targetId: 'moon' })])).toEqual([expect.stringContaining('"moon"')])
+    expect(reasons([step({ verb: 'watch', targetId: 'moon' })])).toEqual([expect.stringContaining('"moon"')])
   })
 
   it('rejects a target on a verb that goes nowhere in particular', () => {
-    expect(reasons([step({ verb: 'lounge', targetId: 'sunny-rock' })])).toEqual([expect.stringContaining('lounge')])
+    expect(reasons([step({ verb: 'sit', targetId: 'sunny-rock' })])).toEqual([expect.stringContaining('sit')])
   })
 
   it('rejects a position on a verb that does not wander', () => {
@@ -61,7 +61,7 @@ describe('validatePlan', () => {
   })
 
   it('rejects a visitor target when the verb is not about visitors', () => {
-    expect(reasons([step({ verb: 'perch', targetId: 'visitor' })])).toEqual([expect.stringContaining('visitor')])
+    expect(reasons([step({ verb: 'watch', targetId: 'visitor' })])).toEqual([expect.stringContaining('visitor')])
   })
 
   it('rejects a step that cannot happen at the time it would run', () => {
@@ -71,13 +71,13 @@ describe('validatePlan', () => {
   })
 
   it('rejects a verb only possible with a visitor around', () => {
-    expect(reasons([step({ verb: 'approach_visitor', targetId: 'visitor' })])).toEqual([expect.stringContaining('approach_visitor')])
+    expect(reasons([step({ verb: 'follow', targetId: 'visitor' })])).toEqual([expect.stringContaining('follow')])
   })
 
   it('rejects repeating the same verb too often in a row', () => {
     const same = [step(), step(), step()]
     expect(reasons(same)).toEqual([expect.stringContaining('explore')])
-    expect(reasons([step(), step(), step({ verb: 'play' })])).toEqual([])
+    expect(reasons([step(), step(), step({ verb: 'pounce' })])).toEqual([])
   })
 
   it('counts earlier steps from before the plan', () => {
@@ -87,17 +87,17 @@ describe('validatePlan', () => {
 
   it('rejects the same target too often in a row', () => {
     const p = (verb: string) => step({ verb, targetId: 'sunny-rock' })
-    expect(reasons([p('perch'), p('perch'), p('perch'), p('perch')])).not.toEqual([])
+    expect(reasons([p('watch'), p('watch'), p('watch'), p('watch')])).not.toEqual([])
   })
 
   it('rejects an empty plan, too many steps, and a plan that runs past the day', () => {
     expect(reasons([])).not.toEqual([])
-    expect(reasons(Array.from({ length: 13 }, (_, i) => step({ verb: i % 2 ? 'play' : 'explore' })))).not.toEqual([])
-    const long = ['explore', 'play', 'explore', 'play', 'explore'].map((verb) => step({ verb, minutes: 240 }))
+    expect(reasons(Array.from({ length: 13 }, (_, i) => step({ verb: i % 2 ? 'pounce' : 'explore' })))).not.toEqual([])
+    const long = ['explore', 'pounce', 'explore', 'pounce', 'explore'].map((verb) => step({ verb, minutes: 240 }))
     expect(reasons(long)).toContainEqual(expect.stringContaining('day'))
   })
 
   it('reports every problem, not only the first', () => {
-    expect(reasons([step({ verb: 'fish' }), step({ verb: 'perch', targetId: 'moon' })])).toHaveLength(2)
+    expect(reasons([step({ verb: 'fish' }), step({ verb: 'watch', targetId: 'moon' })])).toHaveLength(2)
   })
 })

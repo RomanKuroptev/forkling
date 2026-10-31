@@ -14,6 +14,20 @@ export interface PoseContext {
   progress: number
 }
 
+export interface MoodPoseContext {
+  bones: Record<string, PoseBone | undefined>
+  /** Seconds, for anything that sways. */
+  t: number
+  /** How it feels: valence from bad (-1) to good (1), arousal from calm (0) to wound up (1). */
+  feelings: { valence: number; arousal: number }
+}
+
+/**
+ * A pack's body language for how its forkling feels: a tail held high when pleased, ears back when uneasy. Runs
+ * after the animation mixer every frame and *adds* to the pose. Pure, and must tolerate missing bones.
+ */
+export type MoodPose = (ctx: MoodPoseContext) => void
+
 export type BehaviorMoment = 'idle' | 'beforeSleep' | 'afterWake' | 'dusk'
 
 /**

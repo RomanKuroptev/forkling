@@ -77,6 +77,19 @@ function cycle(name: string, duration: number, samples: number, frame: (phase: n
   return clipFrom(name, keys)
 }
 
+/** A keyframe track, collapsed to its first and last key when the value never changes, which keeps the model file small. */
+function trackOf(
+  name: string,
+  times: number[],
+  values: number[],
+  size: number,
+  Track: new (name: string, times: number[], values: number[]) => THREE.KeyframeTrack,
+): THREE.KeyframeTrack {
+  const first = values.slice(0, size)
+  const constant = values.every((v, i) => Math.abs(v - first[i % size]!) < 1e-6)
+  return constant ? new Track(name, [times[0]!, times[times.length - 1]!], [...first, ...first]) : new Track(name, times, values)
+}
+
 function clipFrom(name: string, keys: { t: number; frame: Frame }[]): THREE.AnimationClip {
   const times = keys.map((k) => k.t)
   const bones = new Set<BoneName>()
@@ -91,7 +104,7 @@ function clipFrom(name: string, keys: { t: number; frame: Frame }[]): THREE.Anim
       q.setFromEuler(new THREE.Euler(e[0], e[1], e[2]))
       values.push(q.x, q.y, q.z, q.w)
     }
-    tracks.push(new THREE.QuaternionKeyframeTrack(`${bone}.quaternion`, times, values))
+    tracks.push(trackOf(`${bone}.quaternion`, times, values, 4, THREE.QuaternionKeyframeTrack))
   }
   for (const bone of ['root', 'hips'] as const) {
     if (!keys.some((k) => k.frame[bone])) continue
@@ -100,7 +113,7 @@ function clipFrom(name: string, keys: { t: number; frame: Frame }[]): THREE.Anim
       const o = k.frame[bone] ?? [0, 0, 0]
       values.push(REST[bone][0] + o[0], REST[bone][1] + o[1], REST[bone][2] + o[2])
     }
-    tracks.push(new THREE.VectorKeyframeTrack(`${bone}.position`, times, values))
+    tracks.push(trackOf(`${bone}.position`, times, values, 3, THREE.VectorKeyframeTrack))
   }
   return new THREE.AnimationClip(name, keys[keys.length - 1]!.t, tracks)
 }
@@ -284,7 +297,132 @@ export function buildClips(): THREE.AnimationClip[] {
     }
   })
 
-  return [idle, walk, run, sit, sleep, jump, happy, eat, groom, stretch, knead]
+  const stand = cycle('Stand', 3, 12, (p) => {
+    const a = p * TAU
+    return {
+      hips: UPRIGHT_HIPS,
+      pose: {
+        ...UPRIGHT_POSE,
+        chest: [0.85 + 0.015 * sin(a), 0, 0],
+        head: [0.22, 0.3 * sin(a), 0],
+        earL: [0, 0, 0.05 * sin(a * 2)],
+        ...uprightTail(a, 0.7),
+      },
+    }
+  })
+
+  const walkUpright = cycle('WalkUpright', 0.9, 12, (p) => {
+    const a = p * TAU
+    return {
+      hips: [0, UPRIGHT_HIPS[1] + 0.008 * sin(2 * a), UPRIGHT_HIPS[2]],
+      pose: add(
+        UPRIGHT_POSE,
+        { chest: [0.08, 0, 0], head: [0, -0.08 * sin(a), 0], legFL1: [0.4 * sin(a + Math.PI), 0, 0], legFR1: [0.4 * sin(a), 0, 0] },
+        leg('legBL1', a, 0.5, 0.6),
+        leg('legBR1', a + Math.PI, 0.5, 0.6),
+        { tail2: [0, 0.2 * sin(a - 0.6), 0], tail3: [0, 0.25 * sin(a - 1.2), 0], tail4: [0, 0.3 * sin(a - 1.8), 0] },
+      ),
+    }
+  })
+
+  // Both paws out in front, working at a surface.
+  const work = cycle('Work', 1.6, 12, (p) => {
+    const a = p * TAU
+    return {
+      hips: UPRIGHT_HIPS,
+      pose: {
+        ...UPRIGHT_POSE,
+        chest: [0.97, 0, 0],
+        neck: [0.48, 0, 0],
+        legFL1: [-0.8 + 0.15 * sin(a), 0, 0],
+        legFL2: [0.6, 0, 0],
+        legFR1: [-0.8 - 0.15 * sin(a), 0, 0],
+        legFR2: [0.6, 0, 0],
+        ...uprightTail(a, 0.5),
+      },
+    }
+  })
+
+  // Right arm raised and swinging, left paw steadying.
+  const useTool = cycle('UseTool', 1, 10, (p) => {
+    const a = p * TAU
+    return {
+      hips: UPRIGHT_HIPS,
+      pose: {
+        ...UPRIGHT_POSE,
+        chest: [0.95 + 0.06 * sin(a), 0, 0],
+        neck: [0.45, 0, 0],
+        legFR1: [-1.4 + 0.5 * sin(a), 0, 0],
+        legFR2: [0.6 + 0.4 * sin(a + 0.8), 0, 0],
+        legFL1: [-0.9, 0, 0],
+        legFL2: [0.7, 0, 0],
+        ...uprightTail(a, 0.4),
+      },
+    }
+  })
+
+  // Both arms up, an item held in front of the face to look at.
+  const holdUp = cycle('HoldUp', 2.4, 8, (p) => {
+    const a = p * TAU
+    return {
+      hips: UPRIGHT_HIPS,
+      pose: {
+        ...UPRIGHT_POSE,
+        neck: [0.28, 0, 0],
+        head: [-0.03, 0.15 * sin(a), 0],
+        legFL1: [-1.5, 0, 0],
+        legFL2: [1.3, 0, 0],
+        legFR1: [-1.5, 0, 0],
+        legFR2: [1.3, 0, 0],
+        ...uprightTail(a, 0.5),
+      },
+    }
+  })
+
+  // Walking with an armful held against the chest.
+  const carry = cycle('Carry', 0.9, 12, (p) => {
+    const a = p * TAU
+    return {
+      hips: [0, UPRIGHT_HIPS[1] + 0.008 * sin(2 * a), UPRIGHT_HIPS[2]],
+      pose: add(
+        { ...UPRIGHT_POSE, chest: [0.93, 0, 0], legFL1: [-0.7, 0, 0], legFR1: [-0.7, 0, 0], legFL2: [1.5, 0, 0], legFR2: [1.5, 0, 0] },
+        { head: [0, -0.06 * sin(a), 0] },
+        leg('legBL1', a, 0.5, 0.6),
+        leg('legBR1', a + Math.PI, 0.5, 0.6),
+        { tail2: [0, 0.2 * sin(a - 0.6), 0], tail3: [0, 0.25 * sin(a - 1.2), 0], tail4: [0, 0.3 * sin(a - 1.8), 0] },
+      ),
+    }
+  })
+
+  return [idle, walk, run, sit, sleep, jump, happy, eat, groom, stretch, knead, stand, walkUpright, work, useTool, holdUp, carry]
+}
+
+/**
+ * Standing on its hind legs, torso upright. The hips pitch back almost a quarter turn, the hind legs swing back down
+ * to stand, and the spine bends forward again so the head looks ahead. The front legs become arms, hanging a little forward.
+ */
+const UPRIGHT_HIPS: Vec = [0, 0.013, -0.065]
+const UPRIGHT_POSE: Pose = {
+  hips: [-1.45, 0, 0],
+  chest: [0.85, 0, 0],
+  neck: [0.38, 0, 0],
+  head: [0.22, 0, 0],
+  legBL1: [1.45, 0, 0],
+  legBR1: [1.45, 0, 0],
+  legFL1: [0.35, 0, 0],
+  legFR1: [0.35, 0, 0],
+  tail1: [1.2, 0, 0],
+  tail2: [0.1, 0, 0],
+}
+
+/** The tail held out behind and swaying, for an upright body. */
+function uprightTail(phase: number, amount = 1): Pose {
+  return {
+    tail1: [1.2, 0.15 * amount * sin(phase), 0],
+    tail2: [0.15, 0.2 * amount * sin(phase - 0.6), 0],
+    tail3: [0.1, 0.25 * amount * sin(phase - 1.2), 0],
+    tail4: [0, 0.3 * amount * sin(phase - 1.8), 0],
+  }
 }
 
 /** The play-bow stretch: chest low, front legs reaching, rear up. */
