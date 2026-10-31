@@ -6,6 +6,10 @@ name: pages
 # "GitHub Actions" as the source.
 on:
   workflow_dispatch:
+  # A project merged by a person (their push, unlike the workflow token's, starts workflows) goes up on its own.
+  push:
+    branches: [main]
+    paths: ['site/**', 'art/**']
 
 # A burst of changes collapses into one waiting deploy.
 concurrency:
@@ -20,7 +24,7 @@ permissions:
 env:
   # The engine release this world runs on. Keep it the same as in mind.yml.
   FORKLING_REPO: RomanKuroptev/forkling
-  FORKLING_REF: v0.7.2
+  FORKLING_REF: v0.7.3
 
 jobs:
   deploy:

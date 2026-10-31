@@ -99,6 +99,18 @@ describe('artifactFrom for a contraption', () => {
   })
 })
 
+describe('artifactFrom for a coded project', () => {
+  it('records the project it lives in, under the project\'s own id', () => {
+    const a = artifactFrom('code', { title: 'Gate toy', idea: 'A toy of logic gates.', howItPlays: 'Click the switches.' }, { ...meta, code: { project: 'gate-toy' } })!
+    expect(Artifact.safeParse(a).success).toBe(true)
+    expect(a).toMatchObject({ id: 'gate-toy', kind: 'code', content: { project: 'gate-toy', idea: 'A toy of logic gates.', howItPlays: 'Click the switches.' } })
+  })
+
+  it('makes nothing without a project to belong to', () => {
+    expect(artifactFrom('code', { title: 'Gate toy', idea: 'x', howItPlays: 'y' }, meta)).toBeNull()
+  })
+})
+
 describe('buildArtUser', () => {
   const temperament: TemperamentRoll = { likes: [{ category: 'material', value: 'clay' }], dislikes: [], quirks: [{ id: 'perfectionist', text: 'Redoes things.' }] }
   const input = {

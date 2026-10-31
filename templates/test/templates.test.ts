@@ -169,6 +169,33 @@ describe('templates/forkling-world builder', () => {
     expect(text).toMatch(/pull-requests: write/)
   })
 
+  it('has Claude Code on Haiku write a coded project, allowed to write only in its own folder, and never merges it', () => {
+    const text = read('build.yml')
+    expect(text).toMatch(/needs\.plan\.outputs\.kind == 'code'/)
+    expect(text).toMatch(/anthropics\/claude-code-action@v1/)
+    expect(text).toMatch(/anthropic_federation_rule_id: \$\{\{ vars\.ANTHROPIC_FEDERATION_RULE_ID \}\}/)
+    expect(text).not.toMatch(/anthropic_api_key/)
+    expect(text).toMatch(/--model claude-haiku-5-5/)
+    expect(text).toMatch(/--max-turns \d+/)
+    expect(text).toMatch(/--allowedTools "Read,Glob,Write\(world\/site\/projects\/\$\{\{ inputs\.id \}\}\/\*\*\),Edit\(world\/site\/projects\/\$\{\{ inputs\.id \}\}\/\*\*\)"/)
+    expect(text).toMatch(/@forkling\/mind project --world "\$GITHUB_WORKSPACE\/world" --id "\$ID" --usd/)
+    expect(text).toMatch(/--label needs-review/)
+    expect(text).not.toMatch(/gh pr merge/)
+    expect(text).not.toMatch(/--auto/)
+  })
+
+  it('checks the id it is given before using it for anything', () => {
+    const text = read('build.yml')
+    expect(text).toMatch(/case "\$ID" in ''\|\*\[!a-z0-9-\]\*\|-\*\)/)
+    expect(text.indexOf('not a build id')).toBeLessThan(text.indexOf('needs.plan.outputs.kind'))
+  })
+
+  it('rebuilds the website when a person merges a project', () => {
+    const text = read('pages.yml')
+    expect(text).toMatch(/push:\s+branches: \[main\]\s+paths: \['site\/\*\*', 'art\/\*\*'\]/)
+    expect(text).toMatch(/on:\s+workflow_dispatch:/)
+  })
+
   it('pins the same engine release as the mind, in every workflow that uses the engine', () => {
     const ref = (text: string) => /FORKLING_REF: (v\d+\.\d+\.\d+)/.exec(text)?.[1]
     for (const name of ['pages.yml', 'build.yml', 'validate.yml']) expect(ref(read(name)), name).toBe(ref(read('mind.yml')))

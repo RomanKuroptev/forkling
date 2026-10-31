@@ -1,5 +1,5 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { dirname, join, sep } from 'node:path'
 import type { z } from 'zod'
 import { Artifact, Beliefs, Forkling, Goals, Interests, TimelineEntry, type Belief, type InterestSource } from '@forkling/schema'
 import { sanitizeSvg } from '@forkling/sim'
@@ -105,7 +105,7 @@ function renderBelief(b: Belief, root: string): string {
   return `<li id="${esc(b.id)}"><strong>${esc(b.statement)}</strong> <span class="quiet">${esc(b.id)}, ${b.confidence} sure, ${esc(b.status)}${b.revisedAt ? `, changed ${esc(b.revisedAt.slice(0, 10))}` : ''}</span>${history ? `<ul class="history">${history}</ul>` : ''}</li>`
 }
 
-function renderArtifact(a: Artifact, root: string): string {
+function renderArtifact(a: Artifact, root: string, projects: ReadonlySet<string>): string {
   let content: string
   switch (a.kind) {
     case 'writing':
@@ -128,6 +128,9 @@ function renderArtifact(a: Artifact, root: string): string {
     case 'labnote':
       content = `<dl><dt>Question</dt><dd>${esc(a.content.question)}</dd><dt>What I did</dt><dd>${esc(a.content.method)}</dd><dt>What happened</dt><dd>${esc(a.content.result)}</dd></dl>`
       break
+    case 'code':
+      content = `<p>${esc(a.content.idea)}</p><p class="quiet">${esc(a.content.howItPlays)}</p>${projects.has(a.content.project) ? `<p><a href="${esc(root)}projects/${esc(a.content.project)}/">Open it</a></p>` : ''}`
+      break
     case 'contraption':
       content = `<p>${esc(a.content.notes)}</p><p class="quiet">${a.content.moved ? `Something moved ${a.content.maxTravel} m` : 'Nothing moved'}, and it ${a.content.settled ? 'came to rest' : 'was still moving at the end'}. It is the ${esc(a.content.objectId)}.</p><p><em>${esc(a.content.opinion)}</em></p>`
       break
@@ -139,6 +142,21 @@ function renderArtifact(a: Artifact, root: string): string {
   return `<article class="card" id="${esc(a.id)}"><h3>${esc(a.title)}</h3><p class="quiet">${esc(a.kind)}, skill ${a.skillLevel}, ${esc(a.createdAt.slice(0, 10))}${served ? `, ${served}` : ''}</p>${content}</article>`
 }
 
+/** What a coded project may contain, and how big a file may be: the same limits the builder is held to. */
+const PROJECT_EXTENSIONS = new Set(['.html', '.js', '.css', '.svg', '.json'])
+const MAX_PROJECT_FILE_BYTES = 200_000
+
+/** The files of one project to publish, relative to its folder with forward slashes. Other types, big files and links are left out. */
+function projectFiles(root: string, dir = root, depth = 0): string[] {
+  if (depth > 4) return []
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const full = join(dir, e.name)
+    if (e.isDirectory()) return projectFiles(root, full, depth + 1)
+    const ext = e.name.slice(e.name.lastIndexOf('.')).toLowerCase()
+    return e.isFile() && PROJECT_EXTENSIONS.has(ext) && statSync(full).size <= MAX_PROJECT_FILE_BYTES ? [full.slice(root.length + 1).split(sep).join('/')] : []
+  })
+}
+
 /** Renders the forkling's website from the files of its world repo. A file that doesn't fit its schema is left out. */
 export function renderSite(world: string, out: string): { pages: string[] } {
   const forkling = readJson(world, 'forkling.json', Forkling)
@@ -148,6 +166,13 @@ export function renderSite(world: string, out: string): { pages: string[] } {
   const goals = readJson(world, 'mind/goals.json', Goals) ?? {}
   const interests = readJson(world, 'brain/interests.json', Interests) ?? Interests.parse({})
   const beliefs = readJson(world, 'memory/beliefs.json', Beliefs) ?? []
+  // A coded project is shown only when it has an artifact, which arrives in the same pull request as its files.
+  const projectsDir = join(world, 'site/projects')
+  const projects = new Set(
+    existsSync(projectsDir)
+      ? readdirSync(projectsDir).filter((d) => statSync(join(projectsDir, d)).isDirectory() && readJson(world, `art/${d}.json`, Artifact)?.kind === 'code')
+      : [],
+  )
   const art = files(world, 'art', '.json')
     .flatMap((f) => {
       const a = readJson(world, `art/${f}`, Artifact)
@@ -242,7 +267,7 @@ export function renderSite(world: string, out: string): { pages: string[] } {
   add('gallery/index.html', {
     title: 'Gallery',
     active: 'gallery/',
-    body: `<h1>Gallery</h1>\n${art.length > 0 ? `<p class="quiet">${art.length} ${art.length === 1 ? 'piece' : 'pieces'}, ${kinds.size} ${kinds.size === 1 ? 'kind' : 'kinds'}.</p>\n${art.map((a) => renderArtifact(a, '../')).join('\n')}` : empty('Everything it makes is kept here.')}`,
+    body: `<h1>Gallery</h1>\n${art.length > 0 ? `<p class="quiet">${art.length} ${art.length === 1 ? 'piece' : 'pieces'}, ${kinds.size} ${kinds.size === 1 ? 'kind' : 'kinds'}.</p>\n${art.map((a) => renderArtifact(a, '../', projects)).join('\n')}` : empty('Everything it makes is kept here.')}`,
     ...(hasMelody
       ? {
           scripts: `<script src="${TONE}"></script>
@@ -319,6 +344,13 @@ document.querySelectorAll('[data-melody]').forEach(function (button) {
   }
   for (const [rel, html] of pages) write(rel, html)
   write('style.css', STYLE)
+  for (const id of projects) {
+    for (const rel of projectFiles(join(projectsDir, id))) {
+      mkdirSync(dirname(join(out, 'projects', id, rel)), { recursive: true })
+      copyFileSync(join(projectsDir, id, rel), join(out, 'projects', id, rel))
+      written.push(`projects/${id}/${rel}`)
+    }
+  }
   for (const a of art) {
     if (a.kind !== 'photo') continue
     const from = join(world, 'art', a.content.image)

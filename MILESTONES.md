@@ -185,7 +185,7 @@ Built in three slices, each released and run live before the next: **A** memory 
 
 ---
 
-## M7: Seeing, building and coding (in progress: slice A built on `m7-eyecam`)
+## M7: Seeing, building and coding (built as v0.7.0 to v0.7.3; A live, B to D need their live run)
 
 **Goal:** Merge perceives its world directly and grows it and its website with things it designs.
 
