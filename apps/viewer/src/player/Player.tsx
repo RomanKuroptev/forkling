@@ -62,8 +62,8 @@ export function Player() {
     const c = camera.current
     if (!b || !c) return
     // The touch controls add to the keyboard; with nothing touched this is the keyboard's state unchanged.
-    const stick = useJoystickStore.getState().joysticks.default
-    b.setMovement(mergeMovement(getKeys(), stick ?? { x: 0, y: 0, active: false }, { jump: useButtonStore.getState().buttons.jump }))
+    const stick = touchUi ? (useJoystickStore.getState().joysticks.default ?? { x: 0, y: 0, active: false }) : undefined
+    b.setMovement(mergeMovement(getKeys(), stick, { jump: useButtonStore.getState().buttons.jump }))
     const p = b.currPos
     visitor.position = { x: p.x, z: p.z }
     if (!clipMode) c.moveTo(p.x, p.y + EYE_OFFSET, p.z, true)
