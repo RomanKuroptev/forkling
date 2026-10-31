@@ -32,11 +32,11 @@ describe('mergeMovement', () => {
 
   it('leaves the keyboard exactly as it was when nothing is touched', () => {
     const keys = { forward: true, backward: false, leftward: false, rightward: false, jump: false, run: true }
-    expect(mergeMovement(keys, idle, {})).toEqual(keys)
+    expect(mergeMovement(keys, undefined, {})).toEqual(keys)
   })
 
   it('does not invent keys the keyboard did not have', () => {
-    expect(mergeMovement({}, idle, {})).toEqual({})
+    expect(mergeMovement({}, undefined, {})).toEqual({})
   })
 
   it('walks the way the stick points, with the stick passed through', () => {
@@ -53,11 +53,24 @@ describe('mergeMovement', () => {
 
   it('treats a tiny touch as no touch, so a resting thumb does not creep', () => {
     const out = mergeMovement({ forward: true }, { x: DEAD_ZONE / 2, y: DEAD_ZONE / 2, active: true }, {})
-    expect(out).toEqual({ forward: true })
+    expect(out).toEqual({ forward: true, joystick: { x: 0, y: 0 } })
+  })
+
+  it('says outright that the stick is at rest, because the character remembers the last push it was given', () => {
+    // ecctrl only applies the fields it is sent. Leave the stick out after a release and it keeps walking the same way.
+    expect(mergeMovement({}, idle, {})).toEqual({ joystick: { x: 0, y: 0 } })
+    expect(mergeMovement({ forward: false }, { x: 0.4, y: 0.9, active: false }, {}).joystick).toEqual({ x: 0, y: 0 })
+  })
+
+  it('forgets the stick as soon as it is let go, then listens to the keyboard again', () => {
+    const pushed = mergeMovement({}, { x: 0, y: 1, active: true }, {})
+    expect(pushed.joystick).toEqual({ x: 0, y: 1 })
+    const released = mergeMovement({ forward: true }, idle, {})
+    expect(released).toEqual({ forward: true, joystick: { x: 0, y: 0 } })
   })
 
   it('jumps from the button as well as from the key', () => {
-    expect(mergeMovement({}, idle, { jump: true }).jump).toBe(true)
+    expect(mergeMovement({}, undefined, { jump: true }).jump).toBe(true)
     expect(mergeMovement({ jump: true }, idle, { jump: false }).jump).toBe(true)
     expect(mergeMovement({ jump: false }, idle, {}).jump).toBe(false)
   })
