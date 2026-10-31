@@ -1,6 +1,7 @@
 import { Html } from '@react-three/drei'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useWorld } from '../world/WorldContext.tsx'
+import { bubbleHidden } from './bubbleHidden.ts'
 import { live } from './live.ts'
 import { bubbleLines, type BubbleLine } from './thoughts.ts'
 
@@ -13,6 +14,16 @@ const LABEL: Record<BubbleLine['kind'], string> = { goal: 'wants', step: 'now', 
 export function ThoughtBubble() {
   const { world, clock } = useWorld()
   const [lines, setLines] = useState<BubbleLine[] | null>(null)
+  const hidden = useSyncExternalStore(bubbleHidden.subscribe, bubbleHidden.get)
+
+  // B hides and shows it, for those with a keyboard. The touch button is in TouchControls.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'KeyB' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) bubbleHidden.toggle()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   useEffect(() => {
     const update = () => {
@@ -25,7 +36,7 @@ export function ThoughtBubble() {
     return () => clearInterval(id)
   }, [world, clock])
 
-  if (!lines) return null
+  if (!lines || hidden) return null
   return (
     <Html position={[0, 0.6, 0]} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
       <div className="thought" role="status">

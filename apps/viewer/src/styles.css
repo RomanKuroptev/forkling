@@ -236,6 +236,7 @@ html[data-input='touch'] body {
   background: rgb(217 119 6 / 85%);
 }
 
+.touch-controls .touch-text[aria-pressed='true'],
 .touch-controls .touch-mind[aria-pressed='true'] {
   background: rgb(255 255 255 / 80%);
   color: #1f2d38;

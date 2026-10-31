@@ -61,7 +61,7 @@ export function App() {
         <div className="hud hud-touch">Left stick to walk · push to the edge to run · drag to look · pinch to zoom</div>
       ) : (
         <div className="hud">
-          WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · E near a contraption sets it off · F3 for Merge’s mind
+          WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · E near a contraption sets it off · B hides the thought bubble · F3 for Merge’s mind
         </div>
       )}
     </>
