@@ -89,6 +89,11 @@ const COLOR: Record<Material, string> = {
   dish: '#e0a458',
 }
 
+/** The colour a material shows in a composed model. */
+export function materialColor(material: Material): string {
+  return COLOR[material]
+}
+
 /** The commonest material, the first one named winning a tie. */
 function dominant(materials: readonly Material[]): Material {
   const counts = new Map<Material, number>()
@@ -167,8 +172,9 @@ export function composeMade(input: MadeInput): { parts: ModelPart[]; size: numbe
 /** Whether `obj` is a target for a verb: it matches the verb's property filter and, if asked, unlocks the verb. */
 export function matchesTarget(target: Extract<ActionTarget, { type: 'object' }>, verbId: string, obj: WorldObject): boolean {
   if (target.unlocked && !obj.unlocks.includes(verbId)) return false
-  const { yields, material, ...flags } = target.where
+  const { yields, grows, material, ...flags } = target.where
   if (yields !== undefined && (obj.yields !== undefined) !== yields) return false
+  if (grows !== undefined && (obj.grows !== undefined) !== grows) return false
   if (material !== undefined && obj.properties.material !== material) return false
   for (const [key, want] of Object.entries(flags)) {
     if (want !== undefined && obj.properties[key as keyof ObjectProperties] !== want) return false

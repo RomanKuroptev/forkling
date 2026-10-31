@@ -1,0 +1,29 @@
+{
+  "id": "maker",
+  "displayName": "Maker",
+  "needs": {
+    "energy": { "initial": 90, "decayPerHour": 1 },
+    "curiosity": { "initial": 80, "decayPerHour": 1 }
+  },
+  "perception": { "noticeRadius": 4, "eyeHeight": 0.4 },
+  "locomotion": { "walkSpeed": 1.4, "runSpeed": 3.5 },
+  "bodyPlans": { "upright": ["body", "hands", "making", "growing"] },
+  "actions": [
+    { "id": "rest", "satisfies": { "energy": 20 }, "durationSec": [4, 8], "target": { "type": "none" }, "slot": "sit", "reason": "Resting." },
+    { "id": "go_to", "satisfies": { "curiosity": 5 }, "durationSec": [3, 6], "target": { "type": "object" }, "slot": "stand", "reason": "Going over." },
+    { "id": "pick_up", "group": "hands", "effect": "pickUp", "hands": "empty", "satisfies": {}, "durationSec": [3, 6], "target": { "type": "object" }, "slot": "work", "reason": "Mine." },
+    { "id": "cut", "group": "making", "effect": "cut", "hands": "empty", "satisfies": {}, "durationSec": [3, 6], "target": { "type": "object", "where": { "yields": true } }, "slot": "useTool", "reason": "Cutting." },
+    { "id": "carry", "group": "hands", "hands": "full", "satisfies": {}, "durationSec": [2, 4], "target": { "type": "object" }, "slot": "carry", "reason": "Carrying." },
+    { "id": "drop", "group": "hands", "effect": "drop", "hands": "full", "satisfies": {}, "durationSec": [2, 4], "target": { "type": "none" }, "slot": "stand", "reason": "Putting it down." },
+    { "id": "put_on", "group": "hands", "effect": "putOn", "hands": "full", "satisfies": {}, "durationSec": [2, 4], "target": { "type": "object" }, "slot": "stand", "reason": "Putting it there." },
+    { "id": "open", "group": "hands", "effect": "open", "satisfies": {}, "durationSec": [2, 4], "target": { "type": "object", "unlocked": true }, "slot": "work", "reason": "Opening." },
+    { "id": "close", "group": "hands", "effect": "close", "satisfies": {}, "durationSec": [2, 4], "target": { "type": "object", "unlocked": true }, "slot": "work", "reason": "Closing." },
+    { "id": "build", "group": "making", "effect": "make", "accepts": ["wood", "stone", "clay", "fibre", "shells"], "satisfies": {}, "durationSec": [4, 8], "target": { "type": "object", "unlocked": true }, "slot": "work", "reason": "Building." },
+    { "id": "paint", "group": "making", "effect": "paint", "satisfies": {}, "durationSec": [4, 8], "target": { "type": "object" }, "slot": "useTool", "reason": "Painting." },
+    { "id": "plant", "group": "growing", "effect": "plant", "accepts": ["produce", "flowers"], "satisfies": {}, "durationSec": [4, 8], "target": { "type": "object", "unlocked": true }, "slot": "work", "reason": "Planting." },
+    { "id": "water", "group": "growing", "effect": "water", "satisfies": {}, "durationSec": [3, 6], "target": { "type": "object", "where": { "grows": true } }, "slot": "work", "reason": "Watering." },
+    { "id": "harvest", "group": "growing", "effect": "harvest", "hands": "empty", "satisfies": {}, "durationSec": [3, 6], "target": { "type": "object", "where": { "grows": true } }, "slot": "work", "reason": "Harvesting." },
+    { "id": "cook", "group": "growing", "effect": "cook", "accepts": ["produce", "flowers"], "satisfies": {}, "durationSec": [4, 8], "target": { "type": "object", "unlocked": true }, "slot": "work", "reason": "Cooking." },
+    { "id": "eat", "group": "growing", "effect": "eat", "satisfies": { "energy": 10 }, "durationSec": [3, 6], "target": { "type": "object", "where": { "edible": true } }, "slot": "stand", "reason": "Eating." }
+  ]
+}

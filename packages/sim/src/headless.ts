@@ -1,9 +1,11 @@
-import { Intention, type MicroBehavior, type SpeciesPack } from '@forkling/schema'
-import { createForkling, stepForkling, STEP, toRepoIntention, type Focus, type StepContext } from './forkling.ts'
+import { Intention, type Holding, type MicroBehavior, type PlanStep, type Skills, type SpeciesPack, type WorldObject } from '@forkling/schema'
+import { applyStep, type StepEvent, type Stored } from './effects.ts'
+import { createForkling, setFocus, stepForkling, STEP, toRepoIntention, type Focus, type StepContext } from './forkling.ts'
 import { isWalkable, nearestWalkable, type Point2 } from './nav.ts'
 import type { Needs } from './needs.ts'
+import { addXp, skillLevel } from './skills.ts'
 import { sunDirection } from './sky.ts'
-import { starterWorld, type StarterWorld } from './starter.ts'
+import { starterWorld, worldWithObjects, type StarterWorld } from './starter.ts'
 import { collectSpots } from './world.ts'
 
 export interface HeadlessOptions {
@@ -20,6 +22,8 @@ export interface HeadlessOptions {
   needs?: Needs
   /** Favour this action and target until `until` seconds into the run. */
   focus?: Focus
+  /** Start with full paws. */
+  holding?: boolean
 }
 
 export interface HeadlessRun {
@@ -53,7 +57,11 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
   const { pack, behaviors = [] } = opts
   const world = opts.world ?? starterWorld()
   const start = nearestWalkable(world.nav.grid, { x: 0, z: 0 })!
-  const state = createForkling(pack, behaviors, opts.seed, start, { ...(opts.needs ? { needs: opts.needs } : {}), ...(opts.focus ? { focus: opts.focus } : {}) })
+  const state = createForkling(pack, behaviors, opts.seed, start, {
+    ...(opts.needs ? { needs: opts.needs } : {}),
+    ...(opts.focus ? { focus: opts.focus } : {}),
+    ...(opts.holding ? { holding: true } : {}),
+  })
   const run: HeadlessRun = {
     trace: [],
     intentionTypes: new Set(),
@@ -141,4 +149,99 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
     if (i % 10 === 0) run.trace.push(`${state.pos.x.toFixed(2)},${state.pos.z.toFixed(2)}`)
   }
   return run
+}
+
+export interface PlanRunOptions {
+  pack: SpeciesPack
+  behaviors?: MicroBehavior[]
+  seed: number
+  /** Unix ms when the first step starts. */
+  startMs: number
+  steps: readonly PlanStep[]
+  objects: readonly WorldObject[]
+  holding?: Holding
+  stored?: Stored
+  skills?: Skills
+  needs?: Needs
+}
+
+export interface PlanStepRun {
+  n: number
+  verb: string
+  ok: boolean
+  reason?: string
+  /** Where the body stood when the step ended. */
+  position: Point2
+  events: StepEvent[]
+}
+
+export interface PlanRun {
+  steps: PlanStepRun[]
+  objects: WorldObject[]
+  holding: Holding | undefined
+  stored: Stored
+  skills: Skills
+}
+
+/**
+ * Play a plan out with no renderer: the body does each step for its minutes, then the step's effect lands on the
+ * world, as the mind will do it for real. Stops at the first step that cannot happen. The world gets rebuilt for every
+ * step, so what one step makes (or picks up) is there, or gone, for the next.
+ */
+export function runPlan(opts: PlanRunOptions): PlanRun {
+  const { pack, behaviors = [] } = opts
+  let objects: WorldObject[] = [...opts.objects]
+  let holding = opts.holding
+  let stored: Stored = opts.stored ?? {}
+  let skills: Skills = opts.skills ?? {}
+
+  const first = worldWithObjects(objects)
+  const start = nearestWalkable(first.nav.grid, { x: first.spawn.x, z: first.spawn.z }, 25) ?? { x: first.spawn.x, z: first.spawn.z }
+  const body = createForkling(pack, behaviors, opts.seed, start, opts.needs ? { needs: opts.needs } : {})
+  const steps: PlanStepRun[] = []
+
+  let elapsed = 0
+  for (const [i, step] of opts.steps.entries()) {
+    const n = i + 1
+    const verb = pack.actions.find((a) => a.id === step.verb)
+    if (!verb) {
+      steps.push({ n, verb: step.verb, ok: false, reason: `"${step.verb}" is not something a ${pack.id} can do`, position: { ...body.pos }, events: [] })
+      break
+    }
+
+    const world = worldWithObjects(objects)
+    const hour = (((opts.startMs + elapsed * 1000) / 3_600_000) % 24 + 24) % 24
+    const spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(hour), world.objects)
+    const ctx: StepContext = { grid: world.nav.grid, visitor: null, timeOfDay: hour, spots }
+    const seconds = step.minutes * 60
+    body.holding = holding !== undefined
+    setFocus(
+      body,
+      {
+        action: step.verb,
+        ...(step.targetId !== undefined ? { targetId: step.targetId } : {}),
+        ...(step.position !== undefined ? { position: { x: step.position[0], z: step.position[1] } } : {}),
+        until: body.time + seconds,
+      },
+      ctx,
+    )
+    for (let k = 0, total = Math.round(seconds / STEP); k < total; k++) stepForkling(body, STEP, ctx)
+    elapsed += seconds
+
+    const result = applyStep({ holding, stored, position: { ...body.pos }, objects }, step, verb, {
+      nowMs: opts.startMs + elapsed * 1000,
+      skill: skillLevel(skills, verb.group),
+      seed: (opts.seed + i * 104729) >>> 0,
+    })
+    if (!result.ok) {
+      steps.push({ n, verb: step.verb, ok: false, reason: result.reason, position: { ...body.pos }, events: [] })
+      break
+    }
+    holding = result.world.holding
+    stored = result.world.stored
+    objects = [...result.world.objects]
+    skills = addXp(skills, result.group, result.xp)
+    steps.push({ n, verb: step.verb, ok: true, position: { ...body.pos }, events: result.events })
+  }
+  return { steps, objects, holding, stored, skills }
 }

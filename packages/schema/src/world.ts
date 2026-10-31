@@ -80,6 +80,8 @@ export const ObjectState = z.object({
   paintedAt: Timestamp.optional(),
   cookedAt: Timestamp.optional(),
   open: z.boolean().optional(),
+  /** In the forkling's paws. A held object stays in `objects/` but is not on the ground. */
+  held: z.boolean().optional(),
   /** Id of the object this one is tucked behind or inside. */
   hiddenBy: Slug.optional(),
 })
@@ -96,6 +98,8 @@ export const MadeInfo = z.object({
   needed: z.number().int().min(1),
   done: z.boolean(),
   at: Timestamp,
+  /** Seed of its look, fixed when it was started, so later sessions grow the same thing. */
+  seed: z.number().int().nonnegative().optional(),
 })
 export type MadeInfo = z.infer<typeof MadeInfo>
 

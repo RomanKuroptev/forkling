@@ -79,6 +79,7 @@ export function collectSpots(
   spots.perch = perchSpots(cfg, nav.grid)
   spots.sunbeam = findSunbeams(cfg, nav.grid, sun, nav.casters)
   for (const o of objects) {
+    if (o.state.held) continue
     // Objects block walking, so the spot is the nearest ground beside them.
     const p = nearestWalkable(nav.grid, { x: o.position[0], z: o.position[2] }, 4)
     if (!p) continue

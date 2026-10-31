@@ -84,6 +84,13 @@ describe('verbs in a species pack', () => {
     expect(parsed.actions[0]!.target).toMatchObject({ type: 'object', where: { carryable: true }, unlocked: false })
   })
 
+  it('accepts a target filter for plants and rejects unknown filter keys', () => {
+    const verb = (where: Record<string, unknown>) => ({ ...pack, actions: [verb0({ target: { type: 'object', where } })] })
+    const verb0 = (extra: Record<string, unknown>) => ({ ...pack.actions[0]!, ...extra })
+    expect(SpeciesPack.safeParse(verb({ grows: true })).success).toBe(true)
+    expect(SpeciesPack.safeParse(verb({ shiny: true })).success).toBe(false)
+  })
+
   it('rejects a verb whose group no body plan allows', () => {
     expect(SpeciesPack.safeParse({ ...pack, actions: [verb({ group: 'making' })] }).success).toBe(false)
   })
@@ -144,6 +151,10 @@ describe('WorldObject in M5', () => {
     expect(source.yields?.material).toBe('wood')
   })
 
+  it('marks an object as held in the paws', () => {
+    expect(WorldObject.parse({ ...rock, state: { held: true } }).state.held).toBe(true)
+  })
+
   it('accepts a plant that grows and food that spoils', () => {
     const plant = WorldObject.parse({ ...rock, id: 'bean', grows: { hours: 48, gives: 'produce' }, state: { plantedAt: '2026-10-30T12:00:00Z' } })
     expect(plant.grows?.gives).toBe('produce')
@@ -167,6 +178,12 @@ describe('WorldObject in M5', () => {
       made: { verb: 'build', materials: ['stone'], skill: 0, sessions: 1, needed: 3, done: false, at: '2026-10-30T12:00:00Z' },
     })
     expect(made.made?.done).toBe(false)
+  })
+
+  it('keeps the seed of a made object', () => {
+    const made = { verb: 'build', materials: ['stone'], skill: 0, sessions: 1, needed: 1, done: true, at: '2026-10-30T12:00:00Z', seed: 42 }
+    expect(WorldObject.parse({ ...rock, made }).made?.seed).toBe(42)
+    expect(WorldObject.safeParse({ ...rock, made: { ...made, seed: -1 } }).success).toBe(false)
   })
 
   it('rejects a made object with no sessions needed', () => {

@@ -37,6 +37,8 @@ export const PropertyFilter = z
     storage: flag,
     /** True for objects that give a material (`yields`). */
     yields: flag,
+    /** True for plants (`grows`). */
+    grows: flag,
     material: Material.optional(),
   })
   .strict()

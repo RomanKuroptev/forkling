@@ -3,7 +3,8 @@ import { findPath, isWalkable, nearestWalkable, type NavGrid, type Point2 } from
 import { applyAction, decayNeeds, initialNeeds, type Needs } from './needs.ts'
 import { createPrng, type Prng } from './prng.ts'
 import { isDusk } from './time.ts'
-import { pickAction, scoreActions } from './utility.ts'
+import { STRONG_NEED } from './surprise.ts'
+import { pickAction, requirementsMet, scoreActions } from './utility.ts'
 
 /** Recommended fixed timestep in seconds. The sim is deterministic for a seed at any fixed step. */
 export const STEP = 0.1
@@ -41,7 +42,7 @@ export interface Focus {
   until: number
 }
 
-/** A focused action's score is at least this and doubled, so it beats idle drift but not a starving need. */
+/** A focused action's score is at least this and doubled when a need or a visitor keeps it from simply winning. */
 const FOCUS_SCORE = 1
 
 export type Phase = 'moving' | 'acting' | 'micro'
@@ -90,6 +91,8 @@ export interface ForklingState {
   /** An action to start with instead of choosing, e.g. the intention from `forkling.json`. Used once. */
   firstAction: string | null
   focus: Focus | null
+  /** Whether its paws are full, which changes how it walks. */
+  holding: boolean
 }
 
 export interface CreateOptions {
@@ -100,6 +103,7 @@ export interface CreateOptions {
   /** Start with this action id if the pack has it and its target can be reached. */
   firstAction?: string
   focus?: Focus
+  holding?: boolean
 }
 
 const IDLE_ACTION: SpeciesAction = {
@@ -160,10 +164,24 @@ export function createForkling(
     repaths: 0,
     firstAction: opts.firstAction ?? null,
     focus: opts.focus ?? null,
+    holding: opts.holding ?? false,
   }
 }
 
 const dist = (a: Point2, b: Point2) => Math.hypot(a.x - b.x, a.z - b.z)
+
+/** How it gets about on the way to an action: running is always on four legs, a full pair of paws carries, a task is done upright. */
+function movingSlot(s: ForklingState, action: SpeciesAction): AnimationSlot {
+  if (action.gait === 'run') return 'run'
+  if (s.holding) return 'carry'
+  return action.body === 'upright' ? 'walkUpright' : 'walk'
+}
+
+/** Point the body at what the mind wants now (or nothing), and let it start straight away. */
+export function setFocus(s: ForklingState, focus: Focus | null, ctx: StepContext): void {
+  s.focus = focus
+  replan(s, ctx)
+}
 
 const activeFocus = (s: ForklingState): Focus | null => (s.focus && s.time < s.focus.until ? s.focus : null)
 
@@ -192,7 +210,7 @@ export function stepForkling(s: ForklingState, dt: number, ctx: StepContext): vo
 function move(s: ForklingState, dt: number, ctx: StepContext): void {
   const { walkSpeed, runSpeed } = s.pack.locomotion
   const speed = s.action.gait === 'run' ? runSpeed : walkSpeed
-  s.slot = s.action.gait
+  s.slot = movingSlot(s, s.action)
 
   if (s.chasing) {
     const radius = s.pack.perception.noticeRadius
@@ -347,13 +365,27 @@ function replan(s: ForklingState, ctx: StepContext): void {
   }
 
   const spotKinds = new Set(Object.keys(ctx.spots).filter((k) => (ctx.spots[k]?.length ?? 0) > 0))
-  let candidates = scoreActions(s.needs, s.pack, {
-    visitorDistance: ctx.visitor ? dist(s.pos, ctx.visitor) : null,
+  const focus = activeFocus(s)
+  const visitorDistance = ctx.visitor ? dist(s.pos, ctx.visitor) : null
+  const scoring = {
+    visitorDistance,
     timeOfDay: ctx.timeOfDay,
     ...(ctx.asleep !== undefined ? { asleep: ctx.asleep } : {}),
-    spotKinds,
-  })
-  const focus = activeFocus(s)
+  }
+
+  // What the mind planned wins, unless a need has run critically low or someone has come up to say hello.
+  const critical = Object.values(s.needs).some((v) => v !== undefined && v < STRONG_NEED)
+  const visitorNear = visitorDistance !== null && visitorDistance <= s.pack.perception.noticeRadius
+  if (focus && !critical && !visitorNear) {
+    const planned = s.pack.actions.find((a) => a.id === focus.action)
+    const target = planned && requirementsMet(planned, s.pack, scoring) ? resolveTarget(s, planned, ctx) : null
+    if (planned && target) {
+      begin(s, planned, target)
+      return
+    }
+  }
+
+  let candidates = scoreActions(s.needs, s.pack, { ...scoring, spotKinds, ...(focus ? { focusAction: focus.action } : {}) })
   if (focus) {
     candidates = candidates.map((c) => (c.action.id === focus.action ? { ...c, score: Math.max(c.score * 2, FOCUS_SCORE) } : c))
   }
@@ -390,7 +422,7 @@ function begin(s: ForklingState, action: SpeciesAction, target: Resolved): void 
     startActing(s)
   } else {
     s.phase = 'moving'
-    s.slot = action.gait
+    s.slot = movingSlot(s, action)
   }
 }
 
@@ -425,9 +457,11 @@ function resolveTarget(s: ForklingState, action: SpeciesAction, ctx: StepContext
       return goal && path ? { path, goal, chasing: true, targetId: 'visitor' } : null
     }
 
-    case 'spot': {
-      // A focus on a particular object goes there; otherwise any spot of the action's kind will do.
-      const label = focus?.targetId && (ctx.spots[focus.targetId]?.length ?? 0) > 0 ? focus.targetId : target.kind
+    // A focus on a particular object goes there; otherwise any spot of the action's kind, or object the verb works on, will do.
+    case 'spot':
+    case 'object': {
+      const fallback = target.type === 'spot' ? target.kind : `for:${action.id}`
+      const label = focus?.targetId && (ctx.spots[focus.targetId]?.length ?? 0) > 0 ? focus.targetId : fallback
       const spots = [...(ctx.spots[label] ?? [])].sort((a, b) => dist(s.pos, a) - dist(s.pos, b) || a.x - b.x || a.z - b.z)
       const n = Math.min(spots.length, 4)
       if (n === 0) return null
@@ -440,8 +474,5 @@ function resolveTarget(s: ForklingState, action: SpeciesAction, ctx: StepContext
       }
       return null
     }
-
-    case 'object':
-      return null
   }
 }

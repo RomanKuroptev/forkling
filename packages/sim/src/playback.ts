@@ -167,6 +167,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     time: anchor.time,
     needs: forkling.needs,
     firstAction: forkling.intention.type,
+    holding: forkling.holding !== undefined,
     ...focusFor(input.goals),
   })
   const pb: Playback = {

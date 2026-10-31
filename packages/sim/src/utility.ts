@@ -10,8 +10,10 @@ export interface ScoreContext {
   timeOfDay: number
   /** Whether it is bedtime by the sleep schedule. When absent, night hours stand in for it. */
   asleep?: boolean
-  /** Kinds of spots the world can currently offer, e.g. `food`, `sunbeam`, `perch`. */
+  /** Kinds of spots the world can currently offer, e.g. `food`, `sunbeam`, `perch`, and `for:<verb>` for object verbs. */
   spotKinds: ReadonlySet<string>
+  /** The verb the mind has asked for. Verbs that change the world are only ever chosen when they are this one. */
+  focusAction?: string
 }
 
 export interface ScoredAction {
@@ -28,7 +30,8 @@ const URGENCY = 4
 //** How sharply the draw favours high scores. Scores 10x apart are picked about 100x apart, with no floor for hopeless actions. */
 const SHARPNESS = 2
 
-function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: ScoreContext): boolean {
+/** Whether the time of day and the visitor allow an action. */
+export function requirementsMet(action: SpeciesAction, pack: SpeciesPack, ctx: Pick<ScoreContext, 'visitorDistance' | 'timeOfDay' | 'asleep'>): boolean {
   const nearby = ctx.visitorDistance !== null && ctx.visitorDistance <= pack.perception.noticeRadius
   for (const req of action.requires) {
     if (req === 'visitorNearby' && !nearby) return false
@@ -37,8 +40,17 @@ function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: ScoreContext): 
     if (req === 'day' && asleep) return false
     if (req === 'dusk' && !isDusk(ctx.timeOfDay)) return false
   }
+  return true
+}
+
+function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: ScoreContext): boolean {
+  if (!requirementsMet(action, pack, ctx)) return false
+  const nearby = ctx.visitorDistance !== null && ctx.visitorDistance <= pack.perception.noticeRadius
+  // Drift never builds, plants or gathers: a visitor would see work that left nothing behind. The mind plans those.
+  if (action.effect !== 'none' && action.id !== ctx.focusAction) return false
   if (action.target.type === 'visitor' && !nearby) return false
   if (action.target.type === 'spot' && !ctx.spotKinds.has(action.target.kind)) return false
+  if (action.target.type === 'object' && !ctx.spotKinds.has(`for:${action.id}`)) return false
   return true
 }
 
