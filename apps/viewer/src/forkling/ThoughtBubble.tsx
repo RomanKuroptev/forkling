@@ -27,7 +27,7 @@ export function ThoughtBubble() {
 
   if (!lines) return null
   return (
-    <Html position={[0, 1.1, 0]} center distanceFactor={9} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+    <Html position={[0, 0.6, 0]} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
       <div className="thought" role="status">
         {lines.map((line) => (
           <p key={line.kind} className={`thought-${line.kind}`}>
