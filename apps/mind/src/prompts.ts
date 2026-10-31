@@ -157,6 +157,7 @@ export function buildSystem(input: SystemInput): string {
     '- To read or study, plan the step at a place that unlocks the verb (a bookshelf) and put what you want to read about in topic, in a few words of your own. Read about what you are curious about, not only what you already know.',
     '- To write, draw, compose, experiment, observe or broadcast, plan the step at a place that unlocks the verb (a desk, a drum, a workbench, a telescope) and put what it is about in topic. Each of these leaves something behind that is kept and shown on your website; you can only make about four things a day, and the better you are at it the better it is. Playing an instrument leaves nothing.',
     '- To photograph, plan the step with any object as its target (or none, to photograph what is ahead of you). You look through your own eyes, and the picture is kept with your caption on your website. You can take about twelve a day. Things that come into view for the first time are photographed on their own.',
+    '- Once a day you may ask for an object to be designed and built for you: put its name and what you want it for in design. A builder draws it up, and it appears on the island within a day or so, if it is sound. Ask only for what serves something you are really doing. It arrives as something new that you can then use.',
     '- Your plan is checked against what you hold and what is in the world, step by step, before you begin. If a step needs something an earlier step does not leave you with, it is turned down.',
     '',
     '## Rules about what you are shown',
@@ -200,6 +201,8 @@ export interface UserInput {
   memory: string
   /** `brain/interests.json`. */
   interests: Interests
+  /** Whether it may ask for an object to be designed now: yes, a request is still waiting, or today's is used. */
+  designs?: 'ready' | 'open' | 'used'
 }
 
 const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
@@ -212,6 +215,7 @@ const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
       i.interests.current ? `You are obsessed with "${i.interests.current.topic}" right now. Let it pull at the day, as far as you want it to.` : 'Let what you are into (see <interests>) shape the day if it wants to.',
       'The first step starts now. Put in thought why you begin with it. Set plan to your steps and planReason to one sentence about the day.',
       'Set stayUpLate only if there is something you truly want to stay up for tonight; otherwise null.',
+      'Set design only if you truly need an object that does not exist yet for something you are doing; otherwise null.',
     ].join('\n'),
   decide: () =>
     [
@@ -221,6 +225,7 @@ const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
       '- Put in thought one sentence about why you do what you do next.',
       '- You may set or change the long goal if what just happened changes what you want; otherwise longGoal stays null.',
       'Set stayUpLate only if it is evening and there is something you truly want to stay up for; otherwise null.',
+      'Set design only if you truly need an object that does not exist yet for something you are doing; otherwise null.',
     ].join('\n'),
   weekly: () =>
     [
@@ -279,6 +284,7 @@ export function buildUser(i: UserInput): string {
     `doing now: ${intention.type}${intention.targetId ? ` at ${intention.targetId}` : ''} ("${intention.reason}")`,
     `in your paws: ${paws}`,
     `stored at home: ${stored || 'nothing'}`,
+    ...(i.designs ? [`asking for a designed object: ${i.designs === 'ready' ? 'you may ask for one today' : i.designs === 'open' ? 'one is already being built' : 'you have asked for one today already'}`] : []),
     ...(skills ? [`how practised you are (0 to 10): ${skills}`] : []),
     ...(i.justNow.length > 0 ? ['', 'just now:', ...i.justNow.map((line) => `- ${line}`)] : []),
     '</situation>',

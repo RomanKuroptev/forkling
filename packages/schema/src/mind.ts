@@ -5,6 +5,25 @@ import { VerbGroup } from './species.ts'
 /** Hard monthly ceiling per forkling, in US dollars. */
 export const MONTHLY_CAP_USD = 10
 
+/** One designed object (or coded project) a day, and a request that is never answered is given up on after this long. */
+export const MAX_BUILDS_PER_DAY = 1
+export const BUILD_EXPIRES_HOURS = 72
+
+export const BuildKind = z.enum(['object', 'code'])
+export type BuildKind = z.infer<typeof BuildKind>
+
+/** `mind/builds/<id>.json`: what the mind asked the builder for. Its words are the forkling's own and are length-limited. */
+export const BuildRequest = z.object({
+  id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,60}$/, 'lowercase words with dashes'),
+  kind: BuildKind,
+  name: z.string().min(1).max(60),
+  /** What it wants it for, in its voice. */
+  purpose: z.string().min(1).max(300),
+  goalRef: z.string().max(40).optional(),
+  requestedAt: Timestamp,
+})
+export type BuildRequest = z.infer<typeof BuildRequest>
+
 /** At most this many eye-cam frames a day: each costs a render and a vision call. */
 export const MAX_PHOTOS_PER_DAY = 12
 
@@ -51,6 +70,10 @@ export const MindState = z.object({
   arts: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   /** Eye-cam frames taken so far on a local date, for the daily limit, and the shots waiting to be rendered. */
   photos: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), queue: z.array(PhotoShot).max(MAX_PHOTOS_PER_DAY) }).optional(),
+  /** Builds asked for so far on a local date, for the daily limit. */
+  builds: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
+  /** The build waiting on the builder: it ends when the object turns up in `objects/`, or after `BUILD_EXPIRES_HOURS`. */
+  openBuild: z.object({ id: z.string().min(1), kind: BuildKind, requestedAt: Timestamp }).nullable().default(null),
   /** Why the validator last turned a plan down, newest last.*/
   rejections: z.array(z.object({ at: Timestamp, reasons: z.array(z.string()) })).max(10).default([]),
 })

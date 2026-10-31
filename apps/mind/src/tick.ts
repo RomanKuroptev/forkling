@@ -10,6 +10,7 @@ import {
   type Artifact,
   type ArtifactKind,
   type BudgetCall,
+  type BuildRequest,
   type Goals,
   type Intention,
   type MicroBehavior,
@@ -58,6 +59,7 @@ import {
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger, type ModelId } from './budget.ts'
 import { clampText, Decision, planStepFrom, type LlmStep } from './decision.ts'
 import { artifactFrom, buildArtUser, MAX_ARTIFACTS_PER_DAY } from './art.ts'
+import { buildIdFor, checkBuildRequest, settleOpenBuild } from './builds.ts'
 import { enqueueShot, noticedSubject, photosLeft, shotIdFor } from './photos.ts'
 import { readFeeds, type FeedItem, type GetJson } from './feeds/index.ts'
 import type { CallKind, LlmClient, LlmResult } from './llm.ts'
@@ -95,6 +97,8 @@ export interface TickResult {
   calls: BudgetCall[]
   /** Eye-cam shots waiting to be rendered and captioned (the `photos` step). */
   photos: number
+  /** The id of the build this tick asked for (`mind/builds/<id>.json`), for the workflow that runs the builder. */
+  build: string | null
   /** The prompt of the call this tick would make or made, for dry runs and logs. */
   prompt?: { model: ModelId; kind: CallKind; system: string; user: string; tokens: number; maxUsd: number }
 }
@@ -108,6 +112,8 @@ const MEMORY_OUTPUT_TOKENS = 3000
 const MAX_READING_TOKENS = 1500
 const MAX_ART_TOKENS = 3000
 const MAX_RECENT = 20
+/** What a design call may cost, held back before a request is accepted. */
+const DESIGN_ESTIMATE_USD = 0.02
 /** A late night is only a choice for the evening. */
 const LATE_NIGHT_FROM_HOUR = 18
 
@@ -185,6 +191,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   /** What happened this tick, for the day's memory stream. Written by code from sim events, no model. */
   const remember: NewEntry[] = []
   const steps: TimelineEntry[] = []
+  const buildRequests: BuildRequest[] = []
 
   const sleepOpts = { seed: forkling.seed, timezone: tz, lateNight: forkling.lateNight }
   const asleep = isAsleepAt(nowMs, sleepOpts)
@@ -239,6 +246,16 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   let mood = forkling.mood
   let lateNight = forkling.lateNight
   let started: Intention | null = null
+
+  // A build it asked for earlier: closed when its object is in the world (that is the answer; nobody asks GitHub), or given up on.
+  const settled = settleOpenBuild(mind, new Set(w.objects.map((o) => o.id)), nowMs)
+  if (settled.outcome === 'arrived' || settled.outcome === 'expired') {
+    const id = mind.openBuild!.id
+    mind.openBuild = null
+    const text = settled.outcome === 'arrived' ? `The object I asked for has arrived: ${w.objects.find((o) => o.id === id)?.name ?? id}.` : `The object I asked for (${id}) never came.`
+    remember.push({ at: nowIso, kind: settled.outcome === 'arrived' ? 'made' : 'event', text, objectId: id })
+    justNow.push(text)
+  }
 
   let triggers = scoreSurprise({ forkling: { ...forkling, needs: body.needs }, goals, mindState: mind, objects, events, nowMs, asleep, spotKinds: spotKeys })
   if (mind.lastThinkAt && nowMs - Date.parse(mind.lastThinkAt) < NEED_COOLDOWN_MS) triggers = triggers.filter((t) => t.kind !== 'need')
@@ -590,6 +607,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
       beliefs,
       memory: w.summary,
       interests,
+      designs: mind.openBuild ? 'open' : mind.builds?.date === today && mind.builds.count > 0 ? 'used' : 'ready',
     })
     let asking = user
     // A plan the body cannot carry out gets one more chance, with the reasons, before the body falls back on itself.
@@ -740,6 +758,28 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
       goals.long = { ...goals.long, reviewedAt: nowIso }
     }
 
+    if (decision.design?.name.trim() && decision.design.purpose.trim() && !deps.dryRun) {
+      const verdict = checkBuildRequest({ state: mind, today, asleep, canAfford: canSpend(budget, DESIGN_ESTIMATE_USD) })
+      if (verdict.ok) {
+        const name = clampText(decision.design.name.trim(), 60)
+        const request: BuildRequest = {
+          id: buildIdFor(name, new Set(objects.map((o) => o.id))),
+          kind: 'object',
+          name,
+          purpose: clampText(decision.design.purpose.trim(), 300),
+          ...(goals.now ? { goalRef: `today:${goals.now.index}` } : {}),
+          requestedAt: nowIso,
+        }
+        buildRequests.push(request)
+        mind.openBuild = { id: request.id, kind: request.kind, requestedAt: nowIso }
+        mind.builds = { date: today, count: (mind.builds?.date === today ? mind.builds.count : 0) + 1 }
+        remember.push({ at: nowIso, kind: 'event', text: `Asked for ${request.name} to be built: ${request.purpose}`, ...(request.goalRef ? { goalRef: request.goalRef } : {}) })
+        parts.push(`asked for ${request.name}`)
+      } else {
+        notes.push(`design not asked for: ${verdict.reason}`)
+      }
+    }
+
     if (decision.stayUpLate?.trim() && !asleep && hourInZone(tz, nowMs) >= LATE_NIGHT_FROM_HOUR) {
       lateNight = today
       mind.lateNightReason = clampText(decision.stayUpLate.trim(), 200)
@@ -863,6 +903,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
     if (beliefsChanged && writeJson(dir, 'memory/beliefs.json', beliefs)) written.push('memory/beliefs.json')
     if (interestsChanged && writeJson(dir, 'brain/interests.json', interests)) written.push('brain/interests.json')
     if (planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)
+    for (const request of buildRequests) if (writeJson(dir, `mind/builds/${request.id}.json`, request)) written.push(`mind/builds/${request.id}.json`)
     for (const art of madeArt) if (writeJson(dir, `art/${art.id}.json`, art)) written.push(`art/${art.id}.json`)
     for (const page of notebook) if (writeText(dir, page.path, page.text)) written.push(page.path)
     if (journal && writeText(dir, `journal/${journal.date}.md`, journal.text)) written.push(`journal/${journal.date}.md`)
@@ -886,5 +927,5 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   }
 
   const summary = parts.length > 0 ? parts.join(', ') : written.length > 0 ? 'sync' : ''
-  return { changed: written.length > 0, summary, written, notes, calls, photos: mind.photos?.queue.length ?? 0, ...(prompt ? { prompt } : {}) }
+  return { changed: written.length > 0, summary, written, notes, calls, photos: mind.photos?.queue.length ?? 0, build: buildRequests[0]?.id ?? null, ...(prompt ? { prompt } : {}) }
 }

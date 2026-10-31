@@ -112,7 +112,7 @@ const FORMATS: Record<ArtifactKind, string> = {
 }
 
 /** How good the work is follows how practised the hand is: early work is simple, and only practice changes that. */
-function skillGuide(level: number): string {
+export function skillGuide(level: number): string {
   if (level <= 2) return 'You are a beginner. Your work is simple, short and a little clumsy, with obvious mistakes. Do not be better than you are.'
   if (level <= 5) return 'You are getting the hang of it. Your work is competent, with ideas that come across, and some rough edges.'
   if (level <= 8) return 'You are skilled. Your work is careful and has a clear idea behind it.'

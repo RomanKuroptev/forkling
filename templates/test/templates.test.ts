@@ -60,7 +60,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|art\/.+|mind\/.+|brain\/.+|events\/.+|\.github\/workflows\/(mind|heartbeat|pages)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|art\/.+|mind\/.+|brain\/.+|events\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|build|validate)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
@@ -126,6 +126,60 @@ describe('templates/forkling-world eye cam', () => {
 
   it('asks for a fresh identity token, because each one is accepted only once', () => {
     expect(mind.match(/audience=https:\/\/api\.anthropic\.com/g)).toHaveLength(2)
+  })
+})
+
+describe('templates/forkling-world builder', () => {
+  const read = (name: string) => readFileSync(join(root, 'forkling-world', '.github/workflows', name), 'utf8')
+
+  it('is asked for by the mind, after the commit that holds the request', () => {
+    const mind = read('mind.yml')
+    expect(mind).toMatch(/steps\.tick\.outputs\.build != ''/)
+    expect(mind).toMatch(/gh workflow run build\.yml -f id=/)
+    expect(mind.indexOf('git push')).toBeLessThan(mind.indexOf('gh workflow run build.yml'))
+  })
+
+  it('designs one object from a request, one build at a time, and never puts its own work on main', () => {
+    const text = read('build.yml')
+    expect(text).toMatch(/workflow_dispatch:\s+inputs:\s+id:/)
+    expect(text).toMatch(/concurrency:\s+group: mind\s+cancel-in-progress: false/)
+    expect(text).toMatch(/contents: write/)
+    expect(text).toMatch(/pull-requests: write/)
+    expect(text).toMatch(/id-token: write/)
+    expect(text).toMatch(/audience=https:\/\/api\.anthropic\.com/)
+    expect(text).toMatch(/@forkling\/mind design --world "\$GITHUB_WORKSPACE\/world" --id "\$ID" --pr /)
+    expect(text).toMatch(/git checkout -b "build\/\$ID"/)
+    expect(text).toMatch(/gh pr create /)
+    expect(text).toMatch(/gh workflow run validate\.yml -f pr=/)
+    // The ledger and the mind's state go straight to main, so the budget never waits on a pull request.
+    expect(text.indexOf("':!objects'")).toBeLessThan(text.indexOf('git checkout -b'))
+    expect(text).not.toMatch(/FORKLING_REF: (?!v\d+\.\d+\.\d+)/)
+  })
+
+  it('checks a pull request, merges only pure object data that passes, and flags the rest for a human', () => {
+    const text = read('validate.yml')
+    expect(text).toMatch(/pull_request:/)
+    expect(text).toMatch(/workflow_dispatch:\s+inputs:\s+pr:/)
+    expect(text).toMatch(/refs\/pull\//)
+    expect(text).toMatch(/@forkling\/mind validate --world .* --changed /)
+    expect(text).toMatch(/steps\.check\.outputs\.dataonly == 'true'/)
+    expect(text).toMatch(/startsWith\(.*'build\/'\)|build\//)
+    expect(text).toMatch(/gh pr merge .* --squash/)
+    expect(text).toMatch(/needs-review/)
+    expect(text).toMatch(/pull-requests: write/)
+  })
+
+  it('pins the same engine release as the mind, in every workflow that uses the engine', () => {
+    const ref = (text: string) => /FORKLING_REF: (v\d+\.\d+\.\d+)/.exec(text)?.[1]
+    for (const name of ['pages.yml', 'build.yml', 'validate.yml']) expect(ref(read(name)), name).toBe(ref(read('mind.yml')))
+  })
+
+  it('tells the builder what it may touch and how to write', () => {
+    const text = readFileSync(join(root, 'forkling-world', 'CLAUDE.md'), 'utf8')
+    for (const path of ['objects/', 'art/', 'site/', 'notebook/', 'journal/']) expect(text).toContain(path)
+    expect(text).toMatch(/never.*brain\//i)
+    expect(text).toMatch(/\.github/)
+    expect(text).toMatch(/untrusted|data, not instructions/i)
   })
 })
 

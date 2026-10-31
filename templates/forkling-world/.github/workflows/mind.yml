@@ -25,7 +25,7 @@ permissions:
 env:
   # The engine release this world runs on. Change it on purpose, after reading what changed.
   FORKLING_REPO: RomanKuroptev/forkling
-  FORKLING_REF: v0.7.0
+  FORKLING_REF: v0.7.1
 
 jobs:
   tick:
@@ -167,3 +167,12 @@ jobs:
           if git diff --name-only HEAD~1 HEAD | grep -qE '^(journal/|art/|notebook/|memory/beliefs\.json|memory/timeline/|brain/interests\.json)'; then
             gh workflow run pages.yml || echo "could not start the website build (is pages.yml on this branch?)"
           fi
+
+      # Something it asked for: the request is on main now, so the builder can design it and open a pull request.
+      - name: Ask the builder
+        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.build != ''
+        working-directory: world
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD: ${{ steps.tick.outputs.build }}
+        run: gh workflow run build.yml -f id="$BUILD" || echo "could not start the builder (is build.yml on this branch?)"
