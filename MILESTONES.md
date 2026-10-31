@@ -142,7 +142,7 @@ Note: GitHub cron can be delayed by several minutes. Design for that; never assu
 
 ---
 
-## M5: A body that makes things
+## M5: A body that makes things (built; needs its live run)
 
 **Goal:** Merge has hands, a home and materials, and starts making things for its own reasons.
 
