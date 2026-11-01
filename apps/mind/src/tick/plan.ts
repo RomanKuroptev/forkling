@@ -4,6 +4,7 @@ import { MAX_ARTIFACTS_PER_DAY } from '../art.ts'
 import { codeSlotsLeft } from '../builds.ts'
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import { photosLeft } from '../photos.ts'
+import { MAX_READINGS_PER_DAY } from '../reading.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { intentionSeed } from './util.ts'
@@ -38,6 +39,7 @@ export function checkPlan(t: Tick, plan: LlmStep[]) {
           skills: t.skills,
           codeLeft: codeSlotsLeft(t.mind, t.today),
           creativeLeft: Math.max(0, MAX_ARTIFACTS_PER_DAY - (t.mind.arts?.date === t.today ? t.mind.arts.count : 0)),
+          readingsLeft: Math.max(0, MAX_READINGS_PER_DAY - t.readings.count),
           photosLeft: photosLeft(t.mind, t.today),
           seed: intentionSeed(t.forkling.seed, t.nowMs),
         })

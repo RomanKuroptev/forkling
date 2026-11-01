@@ -342,6 +342,49 @@ describe('the weekly review of the long goal', () => {
   })
 })
 
+describe('what it did before comes back to it', () => {
+  it('shows the morning prompt what it read, decided and made lately, and what has ended', async () => {
+    mkdirSync(file('notebook/reading'), { recursive: true })
+    mkdirSync(file('notebook/plans'), { recursive: true })
+    writeFileSync(file('notebook/reading/2026-11-02-1.md'), '# A CPU in Minecraft\n\n*2026-11-02*\n\nSomeone built logic gates out of redstone. It is slow.\n')
+    writeFileSync(file('notebook/plans/2026-11-02.md'), '# Plan for 2026-11-02\n\nA day for finding out how things work.\n\n1. **read**, 20 min: A page.\n')
+    writeJson('art/the-sea.json', { id: 'the-sea', kind: 'writing', title: 'The Sea', content: { text: 'Big.' }, skillLevel: 0, createdAt: '2026-11-02T10:00:00Z' })
+    writeJson('brain/interests.json', { topics: {}, current: null, past: [{ topic: 'octopuses', startedAt: '2026-10-20T08:00:00Z', endedAt: '2026-10-25T08:00:00Z', origin: { id: 'hn:1', title: 'Octopus', url: 'https://example.com', at: '2026-10-20T08:00:00Z' } }] })
+    const llm = fakeLlm()
+    await runTick(dir, at(NOW, { llm }))
+    const user = llm.calls[0]!.user
+    expect(user).toContain('<past>')
+    expect(user).toMatch(/2026-11-02, "A CPU in Minecraft": Someone built logic gates out of redstone\./)
+    expect(user).toMatch(/2026-11-02: A day for finding out how things work\./)
+    expect(user).toMatch(/2026-11-02 writing "The Sea"/)
+    expect(user).toMatch(/octopuses \(2026-10-20 to 2026-10-25\)/)
+  })
+
+  it('shows a decision what it read lately but not the whole of its past', async () => {
+    mkdirSync(file('notebook/reading'), { recursive: true })
+    writeFileSync(file('notebook/reading/2026-11-02-1.md'), '# A CPU in Minecraft\n\n*2026-11-02*\n\nSomeone built logic gates out of redstone.\n')
+    writeJson('art/the-sea.json', { id: 'the-sea', kind: 'writing', title: 'The Sea', content: { text: 'Big.' }, skillLevel: 0, createdAt: '2026-11-02T10:00:00Z' })
+    await runTick(dir, at(NOW))
+    newObject('pebble')
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm }))
+    expect(llm.calls[0]!.user).toMatch(/"A CPU in Minecraft"/)
+    expect(llm.calls[0]!.user).not.toMatch(/"The Sea"/)
+  })
+
+  it('tells it how much of each daily limit is left, so it does not plan what would be refused', async () => {
+    const llm = fakeLlm()
+    await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls[0]!.user.split('\n').find((l) => l.startsWith('left to do'))).toMatch(/left to do today: .*writing, drawing and the like 4 of 4.*photographs 1[12] of 12.*reading sessions 5 of 5.*coded projects this week 2 of 2/)
+  })
+
+  it('does not ask for a late night in the morning, when it cannot be one', async () => {
+    const llm = fakeLlm()
+    await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls[0]!.user).not.toMatch(/stayUpLate/)
+  })
+})
+
 describe('what broke the plan off', () => {
   const note = (verb: string, need: string, step = 'watch') => ({ step, verb, need, at: '2026-11-03T09:05:00.000Z' })
 

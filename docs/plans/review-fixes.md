@@ -298,6 +298,13 @@ Roman's decisions (review section 9, plus the answers given during planning):
 - `templates/forkling-world/objects/bowl.json`.
 - `apps/mind/src/tick/art.ts`, `code.ts`, `tick/write.ts`.
 
+**As built (slice 5).**
+- The planned generic `target.prefer` hook for the bed became a plain verb, `curl_up`, on objects with `soft: true`: no new engine mechanism, and the bed finally has a job (it also fixes the evening energy gap the sim report found).
+- The recent past is read by `apps/mind/src/past.ts` from `notebook/reading`, `notebook/plans` and `art/`. The decide prompt gets the reading notes only.
+- Mood weighting plugs into `scoreActions` through `ScoreContext.feelings`; `feelings` reach the body from the repo state in `startPlayback`.
+- Topic matching uses `foldTopic` only to compare; a topic keeps the spelling it first had.
+- **Deferred to after the 9.4 decision: the bowl** (portion count, prompt line, the empty-bowl test) and the 9.4 rate changes themselves.
+
 ---
 
 ## Slice 6: docs (branch `docs/review-fixes`)

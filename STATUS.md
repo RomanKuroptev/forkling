@@ -15,8 +15,8 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 | 1 Stop the loop | `fix/stop-the-loop` | done, PR #19 open |
 | 2 Observability | `obs/ticks-health` | done, PR #20 open |
 | 3 Plan owns the body, honesty | `fix/plan-owns-body` | done, PR #21 open |
-| 4 Builder | `fix/builder` | done, PR open |
-| 5 Memory and feelings | `feat/memory-feelings` | not started |
+| 4 Builder | `fix/builder` | done, PR #22 open |
+| 5 Memory and feelings | `feat/memory-feelings` | done except the bowl, PR open |
 | 6 Docs | `docs/review-fixes` | not started |
 
 ### Slice 1 as built (affects review findings 1.1-1.6, 3.1-3.7, 9.1)
@@ -57,6 +57,15 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 - Rule text fixed in the root `CLAUDE.md`, `apps/mind/CLAUDE.md` and the world's `CLAUDE.md` (6.6). `build.yml` opens its PRs with `secrets.BUILDER_TOKEN` when it exists.
 - Not done by me: 6.4 (API key for the code builder), 6.5 (no token ceiling for the code action).
 
+### Slice 5 as built (section 5, 9.5, 9.6, 4.1-4.3, 4.8, rule 8, dead parts)
+- **What it did before comes back to it.** New `apps/mind/src/past.ts` reads the notebook: the morning and weekly prompts get a `<past>` block (last 3 reading notes, the reasons for the last 2 days' plans, the last 10 things it made, the last 5 ended obsessions); a decision gets the reading notes. Every prompt says how much of each daily or weekly limit is left. The morning no longer asks for `stayUpLate` (4.8).
+- **Obsessions burn out (4.1-4.3).** Reading about the current obsession counts for less each day it has lasted and for nothing after 3, so it ends within about a week even if read about 4 times a day. Topics are matched by case, punctuation and simple plural and duplicates merge (a topic keeps its first spelling). An ended obsession cannot restart on the same topic for 14 days.
+- **Mood bends the draw (9.5):** a verb's score is weighted by the repo's `feelings` using only its own fields (runs or costs energy, versus restores energy or sits or sleeps), at most 40% either way, the same for every replay. `created`, `read` and a build arriving now move the mood.
+- **Rule 8:** artifact quality reads the skill of the verb's own group, not always `mind`.
+- **Dead parts:** `give` removed (comes back with the visit gateway); `hide` has no world effect so the body may choose it; drift checks the paws; the sim's `for:<verb>` label is no longer written to `forkling.json`; the reading limit is checked when a plan is made. **The bed now has a job:** a new verb `curl_up` on soft objects (+40 energy, by day) gives energy a source after the last sunbeam. Measured over 14 days: the longest stretch with energy under 15 fell from 220 minutes to 2, and in the day test from 60 to 10 minutes.
+- **Cost of that:** with energy decaying 80 an hour the cat visits the bed about every half hour, and the plan share fell from 76.3% to 68.4%. That is the 9.4 time scale again; the proposal's slower rates are what fix it.
+- **Not done: the bowl's portions.** It needs a portion count, which you said to set with the 9.4 proposal, and which depends on the decay rates you have not approved yet. Nothing about the bowl changed. The prompt does not show portions, and the "an empty bowl never leaves hunger critical for an hour" test is not written.
+
 ## Open questions
 - **6.7, steps for you in GitHub** (branch protection and a scoped token):
   1. Create a fine-grained personal access token with **Repository access: only `RomanKuroptev/merge`** and permissions Contents (read and write), Pull requests (read and write), Actions (read and write), Metadata (read). Add it as the repository secret `BUILDER_TOKEN`. `build.yml` then opens builder PRs with it, so their `pull_request` checks also run. Without the secret it falls back to the workflow token, as today.
@@ -66,7 +75,7 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 - 6.7 (branch protection, scoped PAT) are steps for Roman in GitHub; they come with slice 4.
 
 ## Last verified
-- 2026-11-01: slice 4, `pnpm typecheck` clean, `pnpm test` all passed. The workflow files parse as YAML (checked with the `yaml` package). The workflows themselves have not run on GitHub.
+- 2026-11-01: slice 5 (typecheck clean, 1237 tests passed); slice 4, `pnpm typecheck` clean, `pnpm test` all passed. The workflow files parse as YAML (checked with the `yaml` package). The workflows themselves have not run on GitHub.
 
 ## Tooling note
 - `pnpm` is not on the Git Bash PATH here; run pnpm commands from PowerShell.

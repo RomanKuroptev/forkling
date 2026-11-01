@@ -33,6 +33,8 @@ export interface PlanContext {
   skills?: Skills
   /** How many more things it may make today (a creative step leaves something in `art/`). Missing means no limit. */
   creativeLeft?: number
+  /** How many more reading sessions (read or study steps) it may have today. Missing means no limit. */
+  readingsLeft?: number
   /** How many more eye-cam frames it may take today. Photographing has its own limit and does not use `creativeLeft`. Missing means no limit. */
   photosLeft?: number
   /** How many more coded projects it may ask for this week. Missing means no limit. */
@@ -136,6 +138,13 @@ export function validatePlan(steps: readonly PlanStep[], ctx: PlanContext): Plan
       return artifact !== undefined && artifact !== 'photo' && artifact !== 'code'
     }).length
     if (making > ctx.creativeLeft) reasons.push(`the plan would make ${making} ${making === 1 ? 'thing' : 'things'}, but there is room for ${ctx.creativeLeft} more today`)
+  }
+  if (ctx.readingsLeft !== undefined) {
+    const reading = steps.filter((s) => {
+      const effect = ctx.pack.actions.find((a) => a.id === s.verb)?.effect
+      return effect === 'read' || effect === 'study'
+    }).length
+    if (reading > ctx.readingsLeft) reasons.push(`the plan would have ${reading} reading ${reading === 1 ? 'session' : 'sessions'}, but there is room for ${ctx.readingsLeft} more today`)
   }
   if (ctx.photosLeft !== undefined) {
     const photographs = steps.filter((s) => ctx.pack.actions.find((a) => a.id === s.verb)?.artifact === 'photo').length

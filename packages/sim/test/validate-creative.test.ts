@@ -36,16 +36,18 @@ const coder = {
   satisfies: {},
   reason: 'I want to make something that runs.',
 }
+const reader = { id: 'read', group: 'mind', effect: 'read', target: { type: 'object', unlocked: true }, slot: 'idle', durationSec: [5, 9], satisfies: {}, reason: 'A page I want to see.' }
+const studier = { id: 'study', group: 'mind', effect: 'study', target: { type: 'object', unlocked: true }, slot: 'idle', durationSec: [5, 9], satisfies: {}, reason: 'I want to understand this.' }
 const sitter = { id: 'muse', group: 'body', target: { type: 'none' }, slot: 'sit', durationSec: [5, 9], satisfies: {}, reason: 'Thinking.' }
 
 const base = makerJson as unknown as { bodyPlans: Record<string, string[]>; actions: unknown[] }
 const pack = SpeciesPack.parse({
   ...makerJson,
   bodyPlans: Object.fromEntries(Object.entries(base.bodyPlans).map(([plan, groups]) => [plan, [...groups, 'mind']])),
-  actions: [...base.actions, writer, snapper, coder, sitter],
+  actions: [...base.actions, writer, snapper, coder, reader, studier, sitter],
 })
 
-const desk = WorldObject.parse({ id: 'desk', kind: 'desk', name: 'A desk', position: [10, 0, 10], model: { asset: 'nature/rock_largeA' }, unlocks: ['write', 'code'], reason: 'For ideas.' })
+const desk = WorldObject.parse({ id: 'desk', kind: 'desk', name: 'A desk', position: [10, 0, 10], model: { asset: 'nature/rock_largeA' }, unlocks: ['write', 'code', 'read', 'study'], reason: 'For ideas.' })
 
 const ctx = (extra: Partial<PlanContext> = {}): PlanContext => ({
   pack,
@@ -61,6 +63,7 @@ const ctx = (extra: Partial<PlanContext> = {}): PlanContext => ({
 const step = (verb: string, extra: Record<string, unknown> = {}) => PlanStep.parse({ verb, reason: 'I want to.', minutes: 10, ...extra })
 const writeStep = () => step('write', { targetId: 'desk', topic: 'the sea' })
 const codeStep = () => step('code', { targetId: 'desk', topic: 'a toy' })
+const readStep = (verb = 'read') => step(verb, { targetId: 'desk', topic: 'gates' })
 const snapStep = () => step('snap', { targetId: 'desk' })
 const reasons = (steps: PlanStep[], c = ctx()) => {
   const r = validatePlan(steps, c)
@@ -111,6 +114,23 @@ describe('validatePlan: the photo limit', () => {
 
   it('has no limit when none is given', () => {
     expect(reasons([snapStep(), step('muse'), snapStep()], ctx())).toEqual([])
+  })
+})
+
+describe('validatePlan: the reading limit', () => {
+  it('accepts as many reading sessions as the day has room for, reading and studying alike', () => {
+    expect(reasons([readStep(), step('muse'), readStep('study')], ctx({ readingsLeft: 2 }))).toEqual([])
+  })
+
+  it('turns down a plan with more reading than the day has room for, and says how many', () => {
+    const r = reasons([readStep(), step('muse'), readStep('study'), step('muse'), readStep()], ctx({ readingsLeft: 2 }))
+    expect(r).toHaveLength(1)
+    expect(r[0]).toMatch(/3 reading sessions/)
+    expect(r[0]).toMatch(/room for 2 more today/)
+  })
+
+  it('has no limit when none is given', () => {
+    expect(reasons([readStep(), step('muse'), readStep()], ctx())).toEqual([])
   })
 })
 

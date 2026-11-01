@@ -163,6 +163,21 @@ describe('tallyWindow', () => {
   })
 })
 
+describe('feelings in playback', () => {
+  it('reach the body from the repo state, so every viewer and the mind choose with the same mood', () => {
+    const base = input({ feelings: { valence: -0.7, arousal: 0.1 } })
+    const pb = startPlayback(base, (EPOCH_START + 120) * 1000)
+    expect(pb.state.feelings).toEqual({ valence: -0.7, arousal: 0.1 })
+  })
+
+  it('make a difference to what it does', () => {
+    const at = (EPOCH_START + 1500) * 1000
+    const sad = startPlayback(input({ feelings: { valence: -1, arousal: 0 } }), at)
+    const glad = startPlayback(input({ feelings: { valence: 1, arousal: 1 } }), at)
+    expect(snapshot(sad)).not.toEqual(snapshot(glad))
+  })
+})
+
 describe('hourInZone', () => {
   it('converts to the world time zone, including daylight saving', () => {
     expect(hourInZone('UTC', Date.UTC(2026, 6, 1, 10, 30))).toBeCloseTo(10.5)

@@ -1,5 +1,6 @@
 import type { Belief, Forkling, Goals, Interests, MindState, Skills, TemperamentRoll, VisitorEvent, WorldObject } from '@forkling/schema'
 import { liveBeliefs, objectStatusAt, type Trigger } from '@forkling/sim'
+import type { RecentPast } from '../past.ts'
 import { decideTask } from './decide.ts'
 import { morningTask } from './morning.ts'
 import { describeBelief, describeInterests, json, type ThinkKind } from './shared.ts'
@@ -42,6 +43,10 @@ export interface UserInput {
   interests: Interests
   /** Whether it may ask for an object to be designed now: yes, a request is still waiting, or today's is used. */
   designs?: 'ready' | 'open' | 'used'
+  /** What it did and wrote before, so it can build on its own work. Missing means none is shown. */
+  past?: RecentPast
+  /** What is left of each daily or weekly limit, so it does not plan what would be refused. */
+  limits?: Record<'creative' | 'photos' | 'readings' | 'code', { left: number; max: number }>
 }
 
 /**
@@ -65,6 +70,33 @@ function describeBrokenOff(notes: readonly { step: string; verb: string; need: s
       return `- you broke off ${step} ${times} ${times === 1 ? 'time' : 'times'}: ${[...what].map(([key, n]) => `${key} ${n}`).join(', ')}`
     }),
   ]
+}
+
+/** How much of each limit is left, in one line. */
+function describeLimits(limits: UserInput['limits']): string[] {
+  if (!limits) return []
+  const part = (label: string, l: { left: number; max: number }) => `${label} ${l.left} of ${l.max}`
+  return [
+    `left to do today: ${[part('writing, drawing and the like', limits.creative), part('photographs', limits.photos), part('reading sessions', limits.readings), part('coded projects this week', limits.code)].join('; ')}`,
+  ]
+}
+
+/**
+ * What it read lately, and for a morning or a weekly review also what it decided on the last days, what it made and the
+ * obsessions that have ended, so it can carry on its own work and does not fall back into an old fixation unknowingly.
+ */
+function describePast(i: UserInput): string[] {
+  const past = i.past
+  if (!past) return []
+  const full = i.kind !== 'decide'
+  const ended = full ? i.interests.past.slice(-5).reverse() : []
+  const lines = [
+    ...(past.readings.length > 0 ? ['what you read lately:', ...past.readings.map((r) => `- ${r.date}, "${r.title}": ${r.summary}`)] : []),
+    ...(full && past.plans.length > 0 ? ['what you decided on the last days:', ...past.plans.map((p) => `- ${p.date}: ${p.reason}`)] : []),
+    ...(full && past.art.length > 0 ? ['what you made lately:', ...past.art.map((a) => `- ${a.date} ${a.kind} "${a.title}"`)] : []),
+    ...(ended.length > 0 ? ['obsessions that have ended (you do not have to go back to one just because it is familiar):', ...ended.map((o) => `- ${o.topic} (${o.startedAt.slice(0, 10)} to ${o.endedAt.slice(0, 10)})`)] : []),
+  ]
+  return lines.length > 0 ? ['', '<past>', ...lines, '</past>'] : []
 }
 
 const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
@@ -126,6 +158,7 @@ export function buildUser(i: UserInput): string {
     ...(skills ? [`how practised you are (0 to 10): ${skills}`] : []),
     ...(i.justNow.length > 0 ? ['', 'just now:', ...i.justNow.map((line) => `- ${line}`)] : []),
     ...describeBrokenOff(i.mindState.brokenOff),
+    ...describeLimits(i.limits),
     '</situation>',
     ...(i.temperament
       ? [
@@ -143,6 +176,7 @@ export function buildUser(i: UserInput): string {
     '</interests>',
     ...(i.memory.trim() ? ['', '<memory>', i.memory.trim(), '</memory>'] : []),
     ...(liveBeliefs(i.beliefs).length > 0 ? ['', '<beliefs>', ...liveBeliefs(i.beliefs).map(describeBelief), '</beliefs>'] : []),
+    ...describePast(i),
     '',
     '<goals>',
     json({

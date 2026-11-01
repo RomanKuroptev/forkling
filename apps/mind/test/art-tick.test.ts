@@ -82,6 +82,28 @@ beforeEach(() => {
   for (const f of readdirSync(join(merge, 'objects'))) copyFileSync(join(merge, 'objects', f), file(`objects/${f}`))
 })
 
+describe('the skill an artifact is made at', () => {
+  const seedSkills = (skills: Record<string, { xp: number; level: number }>) => {
+    mkdirSync(file('brain'), { recursive: true })
+    writeFileSync(file('brain/skills.json'), JSON.stringify(skills))
+  }
+
+  it('is the skill of the verb group that made it, not always the mind group', async () => {
+    // Here writing is a craft of the making group, and that is where the practice is.
+    const craft: SpeciesPack = { ...pack, actions: pack.actions.map((a) => (a.id === 'write' ? { ...a, group: 'making' as const } : a)) }
+    seedSkills({ making: { xp: 720, level: 6 }, mind: { xp: 0, level: 0 } })
+    const { llm } = await makeADay([step('write', 'desk', 'the sea'), step('sit', null)], { pack: craft })
+    expect(llm.calls[0]!.user).toMatch(/skill level is 6 of 10/i)
+    expect(Artifact.parse(readJson('art/the-sea.json')).skillLevel).toBe(6)
+  })
+
+  it('does not borrow practice from another group', async () => {
+    seedSkills({ hands: { xp: 2000, level: 10 }, mind: { xp: 0, level: 0 } })
+    const { llm } = await makeADay([step('write', 'desk', 'the sea'), step('sit', null)])
+    expect(llm.calls[0]!.user).toMatch(/skill level is [01] of 10/i)
+  })
+})
+
 describe('making art', () => {
   it('a finished write step leaves a piece of writing in art/, made at the skill it has', async () => {
     const { llm, result } = await makeADay([step('write', 'desk', 'the sea'), step('sit', null)])

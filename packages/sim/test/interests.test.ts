@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Interests, type InterestSource } from '@forkling/schema'
-import { fadeInterests, feedInterest, OBSESSION_START, OBSESSION_END, updatePhases } from '../src/interests.ts'
+import { fadeInterests, feedInterest, foldTopic, OBSESSION_START, OBSESSION_END, updatePhases } from '../src/interests.ts'
 
 const T0 = '2026-11-03T07:30:00Z'
 const T1 = '2026-11-04T07:30:00Z'
@@ -140,3 +140,107 @@ describe('updatePhases', () => {
     expect(next.past.at(-1)!.topic).toBe('x')
   })
 })
+
+const day = (n: number) => new Date(Date.parse(T0) + n * 86_400_000).toISOString()
+
+/** Fed to the point of obsession on day 0. */
+function obsessed(): Interests {
+  let i = empty
+  for (let n = 0; n < 4; n++) i = feedInterest(i, { topic: 'logic gates', delta: 1, source: hn, nowIso: day(0) })
+  return updatePhases(i, day(0))
+}
+
+describe('an obsession cannot feed itself', () => {
+  const weightAfterFeeding = (i: Interests, d: number) => feedInterest(i, { topic: 'logic gates', delta: 1, source: wiki, nowIso: day(d) }).topics['logic gates']!.weight
+  const settled = (): Interests => ({ ...obsessed(), topics: { 'logic gates': { ...obsessed().topics['logic gates']!, weight: 0.5 } } })
+
+  it('gains less from reading the longer it has lasted, and nothing after three days', () => {
+    const i = settled()
+    expect(i.current?.topic).toBe('logic gates')
+    const gain = (d: number) => weightAfterFeeding(i, d) - 0.5
+    expect(gain(0)).toBeGreaterThan(gain(1))
+    expect(gain(1)).toBeGreaterThan(gain(2))
+    expect(gain(3)).toBe(0)
+    expect(gain(10)).toBe(0)
+  })
+
+  it('still loses fully from something that bored it', () => {
+    const lowered = feedInterest(settled(), { topic: 'logic gates', delta: -1, source: null, nowIso: day(5) })
+    expect(lowered.topics['logic gates']!.weight).toBeLessThan(0.5)
+  })
+
+  it('does not slow the start of an interest that is not an obsession yet', () => {
+    const fresh = feedInterest(empty, { topic: 'moss', delta: 1, source: null, nowIso: day(9) })
+    expect(fresh.topics.moss!.weight).toBeCloseTo(0.4, 3)
+  })
+
+  it('burns out within a week even if it is read about four times every day', () => {
+    let i = obsessed()
+    let endedOn = -1
+    for (let d = 1; d <= 12 && endedOn < 0; d++) {
+      for (let n = 0; n < 4; n++) i = feedInterest(i, { topic: 'logic gates', delta: 1, source: wiki, nowIso: day(d) })
+      i = updatePhases(fadeInterests(i), day(d))
+      if (!i.current) endedOn = d
+    }
+    expect(endedOn).toBeGreaterThan(0)
+    expect(endedOn).toBeLessThanOrEqual(8)
+    expect(i.past.at(-1)?.topic).toBe('logic gates')
+  })
+})
+
+describe('the same topic under another spelling', () => {
+  it('folds case, punctuation and simple plurals when comparing', () => {
+    expect(foldTopic('Octopuses')).toBe(foldTopic('octopus'))
+    expect(foldTopic('Logic gates!')).toBe(foldTopic('logic gate'))
+    expect(foldTopic('Libraries')).toBe(foldTopic('library'))
+    expect(foldTopic('Boxes')).toBe(foldTopic('box'))
+    expect(foldTopic('moss')).not.toBe(foldTopic('mos'))
+    expect(foldTopic('glass')).toBe('glass')
+    expect(foldTopic('news')).toBe('news')
+  })
+
+  it('feeds the topic it already has, and keeps the spelling it first used', () => {
+    let i = feedInterest(empty, { topic: 'Logic Gates', delta: 0.5, source: hn, nowIso: T0 })
+    i = feedInterest(i, { topic: 'logic gate', delta: 0.5, source: wiki, nowIso: T1 })
+    expect(Object.keys(i.topics)).toEqual(['logic gates'])
+    expect(i.topics['logic gates']!.weight).toBeGreaterThan(0.3)
+  })
+
+  it('merges duplicates that are already there, when a day passes', () => {
+    const dup = Interests.parse({
+      topics: {
+        octopus: { weight: 0.5, firstSeen: T1, lastFed: T1, sources: [hn] },
+        octopuses: { weight: 0.4, firstSeen: T0, lastFed: T0, sources: [wiki] },
+      },
+    })
+    const merged = fadeInterests(dup)
+    expect(Object.keys(merged.topics)).toEqual(['octopus'])
+    expect(merged.topics.octopus!.firstSeen).toBe(T0)
+    expect(merged.topics.octopus!.lastFed).toBe(T1)
+    expect(merged.topics.octopus!.sources.map((x) => x.id)).toEqual(['hn:1', 'wiki:Logic_gate'])
+    // 0.9 together, less a day's fade.
+    expect(merged.topics.octopus!.weight).toBeCloseTo(0.9 * 0.92, 2)
+  })
+})
+
+describe('relapse', () => {
+  it('does not start an obsession on a topic that ended in the last two weeks', () => {
+    let i = obsessed()
+    i = { ...i, topics: { 'logic gates': { ...i.topics['logic gates']!, weight: 0.1 } } }
+    i = updatePhases(i, day(5)) // it burns out
+    expect(i.current).toBeNull()
+    // Fed to a spike again soon after.
+    for (let n = 0; n < 6; n++) i = feedInterest(i, { topic: 'logic gates', delta: 1, source: wiki, nowIso: day(8) })
+    expect(i.topics['logic gates']!.weight).toBeGreaterThanOrEqual(OBSESSION_START)
+    expect(updatePhases(i, day(8)).current).toBeNull()
+    expect(updatePhases(i, day(5 + 14)).current?.topic).toBe('logic gates')
+  })
+
+  it('lets another topic become the obsession in the meantime', () => {
+    let i = obsessed()
+    i = updatePhases({ ...i, topics: { 'logic gates': { ...i.topics['logic gates']!, weight: 0.1 } } }, day(5))
+    for (let n = 0; n < 4; n++) i = feedInterest(i, { topic: 'moss', delta: 1, source: hn, nowIso: day(6) })
+    expect(updatePhases(i, day(6)).current?.topic).toBe('moss')
+  })
+})
+

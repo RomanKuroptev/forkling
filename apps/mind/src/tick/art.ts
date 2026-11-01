@@ -16,6 +16,8 @@ export async function artStep(t: Tick): Promise<void> {
       notes.push(`art limit reached (${MAX_ARTIFACTS_PER_DAY} a day): ${pending.verb} left nothing behind`)
     } else {
       const { kind, step: made, index } = pending
+      // Practice counts in the group of the verb that made it: a craft is not always a matter of the mind.
+      const madeGroup = t.pack.actions.find((a) => a.id === pending.verb)?.group ?? 'mind'
       // A contraption is run here, headless, so what is recorded is what the physics did: the model only says what it thought.
       let run: { objectId: string; name: string; moved: boolean; maxTravel: number; settled: boolean } | null = null
       if (kind === 'contraption') {
@@ -35,7 +37,7 @@ export async function artStep(t: Tick): Promise<void> {
           kind,
           topic: made.topic ?? t.interests.current?.topic ?? null,
           reason: made.reason,
-          skillLevel: skillLevel(t.skills, 'mind'),
+          skillLevel: skillLevel(t.skills, madeGroup),
           obsession: t.interests.current?.topic ?? null,
           recentTitles: [...w.art].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5).map((a) => a.title),
           interests: t.interests,
@@ -48,7 +50,7 @@ export async function artStep(t: Tick): Promise<void> {
           notes.push(`no usable ${kind} (stopped: ${result.stopReason ?? 'unknown'})`)
         } else if (result) {
           const art = artifactFrom(kind, result.parsed as never, {
-            skillLevel: skillLevel(t.skills, 'mind'),
+            skillLevel: skillLevel(t.skills, madeGroup),
             goalRef: `today:${index}`,
             obsessionRef: t.interests.current?.topic,
             nowIso,

@@ -105,6 +105,15 @@ describe('waiting for a build', () => {
     expect(readFileSync(file(`memory/stream/${DAY}.jsonl`), 'utf8')).toMatch(/arrived/)
   })
 
+  it('is glad when what it asked for arrives', async () => {
+    await tick(MORNING, fake(decision(shelf)))
+    const before = readJson('forkling.json').feelings.valence
+    const bowl = readJson('objects/bowl.json')
+    writeFileSync(file('objects/a-clay-shelf.json'), JSON.stringify({ ...bowl, id: 'a-clay-shelf', name: 'A clay shelf' }))
+    await tick(at(10), null)
+    expect(readJson('forkling.json').feelings.valence).toBeGreaterThan(before + 0.15)
+  })
+
   it('gives up on one that never comes', async () => {
     await tick(MORNING, fake(decision(shelf)))
     await tick(new Date(Date.parse(MORNING) + 80 * 3_600_000), fake(decision(null)))

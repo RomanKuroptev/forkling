@@ -39,8 +39,8 @@ describe('cat species pack', () => {
   it('has every verb of the groups M5 ships, the mind verbs so far, and none of the later ones', () => {
     const ids = new Set(pack.actions.map((a) => a.id))
     const wanted = {
-      body: ['go_to', 'inspect', 'sniff', 'sit', 'watch', 'follow', 'hide', 'vocalize', 'sleep', 'nap', 'stretch'],
-      hands: ['pick_up', 'carry', 'drop', 'put_on', 'give', 'open', 'close'],
+      body: ['go_to', 'inspect', 'sniff', 'sit', 'watch', 'follow', 'hide', 'vocalize', 'sleep', 'nap', 'curl_up', 'stretch'],
+      hands: ['pick_up', 'carry', 'drop', 'put_on', 'open', 'close'],
       making: ['cut', 'join', 'shape', 'build', 'paint', 'sew', 'tinker'],
       growing: ['plant', 'water', 'harvest', 'cook', 'eat'],
       mind: ['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph', 'code'],
@@ -317,6 +317,45 @@ describe('cat in the headless sim', () => {
     const runs = [1, 2, 3, 4].map((seed) => runHeadless({ pack, behaviors, world, seed, startHour: 12, seconds: 900 }))
     const worldChanging = new Set(pack.actions.filter((a) => a.effect !== 'none' && a.effect !== 'hide').map((a) => a.id))
     for (const r of runs) for (const type of r.intentionTypes) expect(worldChanging.has(type), type).toBe(false)
+  })
+
+  it('has no verb that waits for a visit that cannot come: give returns with the visit gateway', () => {
+    expect(pack.actions.some((a) => a.id === 'give')).toBe(false)
+    expect(pack.actions.filter((a) => a.target.type === 'visitor').map((a) => a.id)).toEqual(['follow'])
+  })
+
+  it('hides for its own reasons: hide changes nothing in the world, so the body may choose it', () => {
+    expect(byId('hide').effect).toBe('none')
+    const den = WorldObject.parse({
+      id: 'den',
+      kind: 'den',
+      name: 'A den',
+      position: [starterWorld().spawn.x + 4, 0, starterWorld().spawn.z + 2],
+      model: { parts: [{ shape: 'box', size: [1.4, 1, 1.4], at: [0, 0.5, 0], color: '#8a6a4a' }] },
+      properties: { canHide: true, size: 1.4 },
+      reason: 'A place to disappear.',
+    })
+    const world = worldWithObjects([den])
+    // Hiding restores a little energy, so a tired cat in the evening, with no sun to nap in and nothing soft, may well go there.
+    const r = runHeadless({ pack, behaviors, world, seed: 9, startHour: 20, seconds: 1800, needs: { hunger: 90, energy: 5, curiosity: 90 } })
+    expect(r.targets.some((t) => t.startsWith('hide:'))).toBe(true)
+  })
+
+  it('curls up on something soft in the evening, when there is no sun to nap in', () => {
+    expect(byId('curl_up')).toMatchObject({ requires: ['day'], target: { type: 'object', where: { soft: true } } })
+    expect(byId('curl_up').satisfies.energy).toBeGreaterThan(0)
+    const bed = WorldObject.parse({
+      id: 'bed',
+      kind: 'bed',
+      name: 'The bed',
+      position: [starterWorld().spawn.x - 5, 0, starterWorld().spawn.z + 3],
+      model: { parts: [{ shape: 'box', size: [1.2, 0.3, 0.8], at: [0, 0.15, 0], color: '#b08968' }] },
+      properties: { soft: true, size: 1.2, weightKg: 40 },
+      reason: 'A place to sleep.',
+    })
+    const world = worldWithObjects([bed])
+    const r = runHeadless({ pack, behaviors, world, seed: 4, startHour: 20, seconds: 900, needs: { hunger: 90, energy: 5, curiosity: 90 } })
+    expect(r.targets.some((t) => t.startsWith('curl_up:'))).toBe(true)
   })
 
   it('eats from a bowl when hungry, which uses nothing up', () => {
