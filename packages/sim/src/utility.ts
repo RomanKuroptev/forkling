@@ -56,6 +56,21 @@ function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: ScoreContext): 
   return true
 }
 
+/**
+ * The needs the body can raise by itself right now: some action that drift may choose (no focus, so none with an
+ * effect) is eligible and would add to them. A need outside this set can only be met by something the mind arranges.
+ */
+export function fixableNeeds(pack: SpeciesPack, ctx: Pick<ScoreContext, 'visitorDistance' | 'timeOfDay' | 'asleep' | 'spotKinds'>): Set<NeedId> {
+  const fixable = new Set<NeedId>()
+  for (const action of pack.actions) {
+    if (!eligible(action, pack, ctx)) continue
+    for (const [id, amount] of Object.entries(action.satisfies)) {
+      if (amount !== undefined && amount > 0 && id in pack.needs) fixable.add(id as NeedId)
+    }
+  }
+  return fixable
+}
+
 /** Utility of each eligible action: how much it helps the needs that are most empty, times the pack's weight. */
 export function scoreActions(needs: Needs, pack: SpeciesPack, ctx: ScoreContext): ScoredAction[] {
   const scored: ScoredAction[] = []
