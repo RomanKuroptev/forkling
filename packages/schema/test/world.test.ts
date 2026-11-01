@@ -116,14 +116,16 @@ describe('forklingPackIssues', () => {
     expect(forklingPackIssues(parsed, pack)).toEqual([])
   })
 
-  it('reports a species mismatch, needs the pack lacks and an unknown intention', () => {
-    const issues = forklingPackIssues(
-      { ...parsed, species: 'dog', needs: { hunger: 70, curiosity: 50 }, intention: { ...parsed.intention, type: 'fly' } },
-      pack,
-    )
-    expect(issues).toHaveLength(3)
+  it('reports a species mismatch and an unknown intention', () => {
+    const issues = forklingPackIssues({ ...parsed, species: 'dog', intention: { ...parsed.intention, type: 'fly' } }, pack)
+    expect(issues).toHaveLength(2)
     expect(issues.join(' ')).toMatch(/dog/)
-    expect(issues.join(' ')).toMatch(/curiosity/)
     expect(issues.join(' ')).toMatch(/fly/)
+  })
+
+  it('does not mind a need the pack no longer has: a world written by an older version still opens', () => {
+    // The cat lost its affection need, and Merge's forkling.json still says 0. The sim ignores it and the next write drops it.
+    expect(forklingPackIssues({ ...parsed, needs: { hunger: 70, energy: 80, affection: 0 } }, pack)).toEqual([])
+    expect(forklingPackIssues({ ...parsed, needs: { hunger: 70, curiosity: 50 } }, pack)).toEqual([])
   })
 })
