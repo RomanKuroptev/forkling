@@ -4,8 +4,7 @@
   "needs": {
     "hunger": { "initial": 65, "decayPerHour": 120 },
     "energy": { "initial": 75, "decayPerHour": 80 },
-    "curiosity": { "initial": 55, "decayPerHour": 120 },
-    "affection": { "initial": 35, "decayPerHour": 30 }
+    "curiosity": { "initial": 55, "decayPerHour": 120 }
   },
   "perception": { "noticeRadius": 5, "eyeHeight": 0.55, "fovDeg": 70 },
   "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
@@ -73,7 +72,7 @@
     {
       "id": "follow",
       "group": "body",
-      "satisfies": { "affection": 35 },
+      "satisfies": {},
       "durationSec": [8, 16],
       "target": { "type": "visitor" },
       "slot": "happy",

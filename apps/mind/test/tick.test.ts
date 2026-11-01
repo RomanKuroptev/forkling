@@ -154,16 +154,16 @@ describe('following its own plan', () => {
 describe('strong needs', () => {
   it('wake the model, but not on every tick', async () => {
     await runTick(dir, at(NOW))
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 3 } })
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
     const llm = fakeLlm(keep)
     await runTick(dir, at(minutesAfter(35), { llm }))
     expect(llm.calls).toHaveLength(1)
-    expect(llm.calls[0]!.user).toMatch(/need: affection is at/)
+    expect(llm.calls[0]!.user).toMatch(/need: hunger is at/)
     const felt = Forkling.parse(readJson('forkling.json'))
     expect(felt.feelings.valence).toBeLessThan(0)
     expect(felt.mood).toBe(moodLabel(felt.feelings))
 
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 3 } })
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
     await runTick(dir, at(minutesAfter(45), { llm }))
     expect(llm.calls).toHaveLength(1)
   })
@@ -233,7 +233,7 @@ describe('sleep', () => {
   it('stays up past bedtime only when the mind chose a late night, and keeps its reason', async () => {
     await runTick(dir, at(NOW))
     const llm = fakeLlm({ ...keep, stayUpLate: 'The moon is on the water and I want to watch it.' })
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 3 } })
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
     await runTick(dir, at('2026-11-03T19:00:00Z', { llm }))
     expect(Forkling.parse(readJson('forkling.json')).lateNight).toBe('2026-11-03')
     expect(MindState.parse(readJson('mind/state.json')).lateNightReason).toMatch(/moon/)
@@ -295,10 +295,10 @@ describe('what the model is shown', () => {
   it('keeps the cacheable prefix identical across calls and free of times', async () => {
     const llm = fakeLlm()
     await runTick(dir, at(NOW, { llm }))
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 3 } })
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
     await runTick(dir, at(minutesAfter(35), { llm: fakeLlm(keep) }))
     const second = fakeLlm(keep)
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 2 } })
+    patchForkling({ needs: { hunger: 2, energy: 80, curiosity: 60 } })
     await runTick(dir, at(minutesAfter(90), { llm: second }))
     expect(second.calls).toHaveLength(1)
     expect(second.calls[0]!.system).toBe(llm.calls[0]!.system)

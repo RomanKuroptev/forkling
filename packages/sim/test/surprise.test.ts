@@ -9,7 +9,7 @@ const forkling = Forkling.parse({
   name: 'Merge',
   species: 'cat',
   seed: 5,
-  needs: { hunger: 70, energy: 80, curiosity: 60, affection: 30 },
+  needs: { hunger: 70, energy: 80, curiosity: 60 },
   position: [0, 0, 0],
   mood: 'content',
   intention: { type: 'lounge', startedAt: '2026-11-03T09:50:00Z', seed: 1, reason: 'Resting.' },

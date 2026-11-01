@@ -24,7 +24,7 @@ Merge likes the sunny rock.
 - sniff: target: the id of any object; +12 curiosity; only day
 - sit: no target; only day
 - watch: target: "perch", or the id of an object that offers "perch"; +25 curiosity; only day
-- follow: only when a visitor is near, so it cannot be planned; +35 affection; only visitorNearby
+- follow: only when a visitor is near, so it cannot be planned; only visitorNearby
 - ignore_visitor: no target; only visitorNearby
 - hide: target: the id of an object that is big enough to hide in; +10 energy; only day
 - vocalize: no target; only day

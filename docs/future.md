@@ -33,6 +33,7 @@ Cost labels: **Free** means sim or data only, no LLM. **Pennies** means well und
 | Idea | Cost | Was in |
 |---|---|---|
 | Visitor gifts and notes through a Cloudflare Worker gateway (v1 stretch, or first after v1) | Pennies | Old M7 |
+| With the visit gateway: bring back the cat's `affection` need (decay about 30 an hour, raised by `follow`) and the `give` verb. Both were removed in the review fixes because nothing in the mind's world could raise them, so affection sat at 0 and kept Merge upset | Free | Review 2026-11, 9.1 |
 | Crystals: offerings Merge has to find; standing grows only from offerings it keeps | Pennies | Pino |
 | Visitor prediction game, no crypto | Free | Pino |
 | Behavior scripts for objects in a QuickJS sandbox | Small | Old M6 |
