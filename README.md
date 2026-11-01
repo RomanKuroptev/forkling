@@ -20,16 +20,7 @@ Controls: WASD or arrow keys to walk, hold Shift to run, Space to jump, drag to 
 
 Press **F3** to see Merge's needs, current intention and the reason for it.
 
-URL flags, mostly for testing:
-
-| Flag | Effect |
-|---|---|
-| `?debug` | FPS meter and Merge's overlay open from the start |
-| `?debug=physics` | Also draws the Rapier colliders |
-| `?time=18:30` | Jump to that time of day in the world's time zone. By default the world follows real time, so it is dark at night and Merge sleeps |
-| `?timescale=10` | Run the whole world, sun and forkling, that many times faster |
-| `?ref=my-branch` | View a branch of the world repo instead of its default branch |
-| `?clip=Sit` | Pin Merge in front of you looping one animation, to check it by eye |
+URL flags for testing (`?debug`, `?time=18:30`, `?timescale=10`, `?ref=my-branch`, `?clip=Sit`) are listed in [`apps/viewer/CLAUDE.md`](apps/viewer/CLAUDE.md).
 
 ## Layout
 
