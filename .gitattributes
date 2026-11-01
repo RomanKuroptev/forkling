@@ -1,0 +1,2 @@
+# The repo uses LF everywhere. Prompts are built from files and compared byte for byte with golden files.
+* text=auto eol=lf
