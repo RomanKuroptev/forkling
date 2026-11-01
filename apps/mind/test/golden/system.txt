@@ -29,6 +29,7 @@ Merge likes the sunny rock.
 - hide: target: the id of an object that is big enough to hide in; +10 energy; only day
 - vocalize: no target; only day
 - nap: target: "sunbeam", or the id of an object that offers "sunbeam"; +50 energy; only day
+- curl_up: target: the id of an object that is soft; +40 energy; only day
 - sleep: no target; +80 energy; only night
 - stretch: no target; only day
 - explore: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 25 m); +40 curiosity, -6 energy; only day
@@ -40,7 +41,6 @@ Merge likes the sunny rock.
 - carry: target: the id of any object; needs something in your paws
 - drop: no target; needs something in your paws; puts down the object you hold (loose material cannot be dropped: put it on a storage place)
 - put_on: target: the id of any object; needs something in your paws; puts what you hold on the target: a storage place keeps material, anything else takes an object
-- give: only when a visitor is near, so it cannot be planned; needs something in your paws; only visitorNearby
 - open: target: the id of an object that unlocks "open"; opens it
 - close: target: the id of an object that unlocks "close"; closes it
 

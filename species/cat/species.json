@@ -92,7 +92,6 @@
     {
       "id": "hide",
       "group": "body",
-      "effect": "hide",
       "satisfies": { "energy": 10 },
       "durationSec": [20, 50],
       "target": { "type": "object", "where": { "canHide": true } },
@@ -122,6 +121,17 @@
       "requires": ["day"],
       "spontaneous": 0.15,
       "reason": "There was a warm patch of sun and it was calling me."
+    },
+    {
+      "id": "curl_up",
+      "group": "body",
+      "satisfies": { "energy": 40 },
+      "durationSec": [45, 90],
+      "target": { "type": "object", "where": { "soft": true } },
+      "slot": "sleep",
+      "requires": ["day"],
+      "spontaneous": 0.15,
+      "reason": "Something soft was right there, and I was tired."
     },
     {
       "id": "sleep",
@@ -235,19 +245,6 @@
       "target": { "type": "object" },
       "slot": "work",
       "reason": "That is where it goes."
-    },
-    {
-      "id": "give",
-      "group": "hands",
-      "body": "upright",
-      "effect": "give",
-      "hands": "full",
-      "satisfies": {},
-      "durationSec": [3, 6],
-      "target": { "type": "visitor" },
-      "slot": "happy",
-      "requires": ["visitorNearby"],
-      "reason": "This is for you. Do not make it strange."
     },
     {
       "id": "open",

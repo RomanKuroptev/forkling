@@ -53,7 +53,9 @@ export type BodyIntention = Omit<Intention, 'startedAt'> & { startedAt: number }
 
 /** The repo form of a body intention. The sim clock is in seconds since the Unix epoch once playback anchors it. */
 export function toRepoIntention(intention: BodyIntention): Intention {
-  return { ...intention, startedAt: new Date(intention.startedAt * 1000).toISOString() }
+  const { targetId, ...rest } = intention
+  // `for:<verb>` is how the sim names "any object this verb fits": a label of its own, not something that is in the world.
+  return { ...rest, ...(targetId && !targetId.startsWith('for:') ? { targetId } : {}), startedAt: new Date(intention.startedAt * 1000).toISOString() }
 }
 
 /**
@@ -368,6 +370,7 @@ function replan(s: ForklingState, ctx: StepContext): void {
   const visitorDistance = ctx.visitor ? dist(s.pos, ctx.visitor) : null
   const scoring = {
     visitorDistance,
+    holding: s.holding,
     timeOfDay: ctx.timeOfDay,
     ...(ctx.asleep !== undefined ? { asleep: ctx.asleep } : {}),
   }

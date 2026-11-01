@@ -5,6 +5,7 @@ import { createPrng } from '../src/prng.ts'
 import { fixableNeeds, pickAction, scoreActions, type ScoreContext } from '../src/utility.ts'
 
 const blob = SpeciesPack.parse(blobJson)
+const withHands = (id: string, hands: 'empty' | 'full') => SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === id ? { ...a, hands, effect: 'none' } : a)) })
 const noon: ScoreContext = { visitorDistance: null, timeOfDay: 12, spotKinds: new Set(['food']) }
 const ids = (scored: { action: { id: string } }[]) => scored.map((s) => s.action.id)
 const scoreOf = (scored: { action: { id: string }; score: number }[], id: string) =>
@@ -141,6 +142,24 @@ describe('mood', () => {
         expect(r).toBeLessThanOrEqual(1.4 + 1e-9)
       }
     }
+  })
+})
+
+describe('paws', () => {
+  const needs = { hunger: 60, energy: 60, fun: 60 }
+  // The blob's `stash` needs something in its paws, and `grab` needs them empty.
+  it('keeps a verb that needs empty paws out of the draw while it holds something', () => {
+    expect(ids(scoreActions(needs, withHands('grab', 'empty'), { ...noon, holding: true, spotKinds: new Set(['food', 'for:grab']) }))).not.toContain('grab')
+    expect(ids(scoreActions(needs, withHands('grab', 'empty'), { ...noon, holding: false, spotKinds: new Set(['food', 'for:grab']) }))).toContain('grab')
+  })
+
+  it('keeps a verb that needs something in its paws out of the draw while they are empty', () => {
+    expect(ids(scoreActions(needs, withHands('stash', 'full'), { ...noon, holding: false, spotKinds: new Set(['food', 'for:stash']) }))).not.toContain('stash')
+    expect(ids(scoreActions(needs, withHands('stash', 'full'), { ...noon, holding: true, spotKinds: new Set(['food', 'for:stash']) }))).toContain('stash')
+  })
+
+  it('does not decide when it is not told what the paws hold', () => {
+    expect(ids(scoreActions(needs, withHands('stash', 'full'), { ...noon, spotKinds: new Set(['food', 'for:stash']) }))).toContain('stash')
   })
 })
 
