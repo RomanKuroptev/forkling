@@ -5,11 +5,11 @@ import { BuildRequest, Material, MAX_IMPULSE, MAX_RUN_SEC, WorldObject, type Bud
 import { createPrng, heightAt, localDate, MAX_CARRY_KG, skillLevel, starterIsland } from '@forkling/sim'
 import { skillGuide } from './art.ts'
 import { runContraption } from './physics.ts'
-import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger } from './budget.ts'
+import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, rollLedger } from './budget.ts'
+import { writeBuildResult } from './build-result.ts'
 import { clampText } from './decision.ts'
 import type { LlmClient } from './llm.ts'
 import { buildSystem } from './prompts.ts'
-import { appendStream } from './stream.ts'
 import { readWorld, writeJson } from './world.ts'
 
 /** The most parts a designed object has, and the largest it may be in any direction, in meters. */
@@ -270,23 +270,32 @@ export async function runDesign(dir: string, deps: DesignDeps): Promise<DesignRe
   const tokens = estimateTokens(system) + estimateTokens(user)
   const maxUsd = estimateCallUsd('claude-haiku-5-5', tokens, MAX_DESIGN_TOKENS)
 
-  if (tokens > MAX_PROMPT_TOKENS) result.notes.push(`prompt too long (about ${tokens} tokens): no call`)
-  else if (deps.dryRun) result.notes.push(`dry run: design call for ${request.id}, about ${tokens} tokens, at most $${maxUsd.toFixed(4)}`)
-  else if (!deps.llm) result.notes.push('no credentials: no design')
-  else if (!canSpend(budget, maxUsd)) result.notes.push(`monthly budget reached ($${budget.spentUsd.toFixed(2)} of $${budget.capUsd}): no design`)
-  else {
+  // The builder's only report to the mind: what became of the build and what it cost. The mind books the cost, closes a
+  // failed build and gives back its slot; the builder never writes the ledger, the stream or the mind's state.
+  const report = (status: 'designed' | 'failed', reason?: string) => {
+    if (deps.dryRun) return
+    result.written.push(writeBuildResult(dir, { id: request.id, kind: 'object', status, ...(reason ? { reason: clampText(reason, 300) } : {}), calls: result.calls, at: nowIso }))
+  }
+  if (tokens > MAX_PROMPT_TOKENS) {
+    result.notes.push(`prompt too long (about ${tokens} tokens): no call`)
+    report('failed', 'the prompt was too long')
+  } else if (deps.dryRun) {
+    result.notes.push(`dry run: design call for ${request.id}, about ${tokens} tokens, at most $${maxUsd.toFixed(4)}`)
+  } else if (!deps.llm) {
+    result.notes.push('no credentials: no design')
+    report('failed', 'the builder has no credentials')
+  } else if (!canSpend(budget, maxUsd)) {
+    result.notes.push(`monthly budget reached ($${budget.spentUsd.toFixed(2)} of $${budget.capUsd}): no design`)
+    report('failed', 'the monthly budget is spent')
+  } else {
     const close = (why: string) => {
-      appendStream(dir, today, [{ at: nowIso, kind: 'rejected', text: `${request.name} could not be drawn up: ${why}`, objectId: request.id }])
-      result.written.push(`memory/stream/${today}.jsonl`)
-      if (writeJson(dir, 'mind/state.json', { ...w.mindState, openBuild: null })) result.written.push('mind/state.json')
+      report('failed', why)
       result.notes.push(`${request.id}: ${why}`)
     }
     try {
       const answer = await deps.llm.complete({ kind: 'design', model: 'claude-haiku-5-5', system, user, maxTokens: MAX_DESIGN_TOKENS, effort: 'low', schema: DesignOutput })
       const call: BudgetCall = { at: nowIso, kind: 'design', model: 'claude-haiku-5-5', ...answer.usage, usd: costUsd('claude-haiku-5-5', answer.usage) }
       result.calls.push(call)
-      budget = recordCall(budget, call)
-      if (writeJson(dir, 'brain/budget.json', budget)) result.written.push('brain/budget.json')
 
       const house = w.objects.find((o) => o.id === 'house')?.position ?? w.forkling.position
       const object = answer.parsed ? objectFromDesign(answer.parsed, request, { pack: deps.pack, objects: w.objects, home: [house[0], house[2]], nowIso, skill: skillLevel(w.skills, 'making') }) : null
@@ -304,9 +313,11 @@ export async function runDesign(dir: string, deps: DesignDeps): Promise<DesignRe
           body: clampText(noMentions(answer.parsed.prBody).trim() || request.purpose, MAX_PR_BODY),
         }
         result.ok = true
+        report('designed')
       }
     } catch (e) {
       result.notes.push(`call failed: ${(e as Error).message}`)
+      report('failed', `the design call failed: ${(e as Error).message}`)
     }
   }
   return result
