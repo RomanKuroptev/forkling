@@ -182,7 +182,7 @@ describe('the bedtime reflection', () => {
   it('waits until the half hour before bed', async () => {
     const llm = fake()
     await tick(beforeBed(90), llm)
-    expect(llm.calls).toHaveLength(0)
+    expect(llm.calls.filter((c) => c.kind === 'bedtime')).toHaveLength(0)
   })
 
   it('throws out journal claims that point at nothing, and beliefs with no evidence', async () => {

@@ -52,4 +52,8 @@ describe('prompt golden files', () => {
       await expect(buildUser(input(kind))).toMatchFileSnapshot(`golden/user-${kind}.txt`)
     })
   }
+  it('replan user prompt', async () => {
+    const replan = { ...input('decide'), triggers: [{ kind: 'replan' as const, score: 0.45, detail: 'there is no step in progress and nothing planned next' }] }
+    await expect(buildUser(replan)).toMatchFileSnapshot('golden/user-replan.txt')
+  })
 })

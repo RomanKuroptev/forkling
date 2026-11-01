@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -12,6 +12,7 @@ import { loadSpecies } from '../src/species.ts'
 import { runTick, type TickDeps } from '../src/tick.ts'
 
 const templates = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
+const worldTemplate = fileURLToPath(new URL('../../../templates/forkling-world', import.meta.url))
 const cat = loadSpecies('cat')
 
 /** The cat, with needs that never decay, so a test decides when a need becomes strong. */
@@ -166,6 +167,199 @@ describe('strong needs', () => {
     patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
     await runTick(dir, at(minutesAfter(45), { llm }))
     expect(llm.calls).toHaveLength(1)
+  })
+})
+
+const fishPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null, because: null, topic: null }]
+const stateOf = () => MindState.parse(readJson('mind/state.json'))
+const goalsOf = () => Goals.parse(readJson('mind/goals.json'))
+/** A new object turns up on the beach, which is news. */
+const newObject = (id: string) => writeJson(`objects/${id}.json`, { ...readJson('objects/sunny-rock.json'), id, name: `A ${id}`, position: [12, 0, 24] })
+const streamText = () => readFileSync(file('memory/stream/2026-11-03.jsonl'), 'utf8')
+
+describe('when the plan runs out', () => {
+  async function lastStepDone() {
+    await runTick(dir, at(NOW))
+    writeJson('mind/goals.json', { ...readJson('mind/goals.json'), now: { index: 2, startedAt: NOW, until: '2026-11-03T09:10:00Z' } })
+  }
+
+  it('asks for the next plan, and says the plan is done and how much of the day is left', async () => {
+    await lastStepDone()
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(12), { llm }))
+    expect(llm.calls).toHaveLength(1)
+    expect(llm.calls[0]!.user).toMatch(/- replan: /)
+    expect(llm.calls[0]!.user).toMatch(/Your plan for today has run out/)
+    expect(llm.calls[0]!.user).toMatch(/the remaining \d+ hours? \(until bedtime \d\d:\d\d\)/)
+  })
+
+  it('starts the plan that comes back', async () => {
+    await lastStepDone()
+    await runTick(dir, at(minutesAfter(12), { llm: fakeLlm(morning) }))
+    expect(goalsOf().now).toMatchObject({ index: 0, startedAt: minutesAfter(12) })
+  })
+
+  it('waits an hour before asking again when the answer has no plan', async () => {
+    await lastStepDone()
+    await runTick(dir, at(minutesAfter(12), { llm: fakeLlm(keep) }))
+    expect(stateOf().replanAfter).toBe(minutesAfter(72))
+    const early = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(40), { llm: early }))
+    expect(early.calls).toHaveLength(0)
+    const later = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(75), { llm: later }))
+    expect(later.calls).toHaveLength(1)
+  })
+
+  it('does not ask for a plan in the last 45 minutes before bed', async () => {
+    await lastStepDone()
+    const llm = fakeLlm(keep)
+    await runTick(dir, at('2026-11-03T21:50:00Z', { llm }) /* Merge goes to bed at 22:29Z that night */)
+    expect(llm.calls.filter((c) => c.kind === 'decide')).toHaveLength(0)
+  })
+})
+
+describe('a morning plan that was turned down', () => {
+  it('is asked for again after an hour, as a decision, and the day goes on from there', async () => {
+    await runTick(dir, at(NOW, { llm: fakeLlm({ ...morning, plan: fishPlan }) }))
+    expect(stateOf().lastPlanDate).toBe('2026-11-03')
+    expect(stateOf().replanAfter).toBe(minutesAfter(60))
+    const early = fakeLlm(morning)
+    await runTick(dir, at(minutesAfter(30), { llm: early }))
+    expect(early.calls).toHaveLength(0)
+    const later = fakeLlm(morning)
+    await runTick(dir, at(minutesAfter(61), { llm: later }))
+    expect(later.calls).toHaveLength(1)
+    expect(later.calls[0]!.user).toMatch(/- replan: /)
+    expect(goalsOf().now).toMatchObject({ index: 0 })
+  })
+})
+
+describe('a replacement plan that was turned down', () => {
+  it("leaves today's plan and its current step as they were", async () => {
+    await runTick(dir, at(NOW))
+    const before = goalsOf()
+    newObject('pebble')
+    const llm = fakeLlm({ ...keep, plan: fishPlan })
+    await runTick(dir, at(minutesAfter(10), { llm }))
+    expect(llm.calls).toHaveLength(2)
+    expect(stateOf().rejections).toHaveLength(1)
+    expect(goalsOf().today).toEqual(before.today)
+    expect(goalsOf().now).toEqual(before.now)
+  })
+})
+
+describe('when the model cannot answer', () => {
+  /** The first step has just run out, and something new is on the beach, so the mind would normally be asked. */
+  async function stepOverWithNews() {
+    await runTick(dir, at(NOW))
+    newObject('pebble')
+  }
+
+  it('still moves on to the next step without credentials', async () => {
+    await stepOverWithNews()
+    await runTick(dir, at(minutesAfter(31), { llm: null }))
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+  })
+
+  it('still moves on to the next step at the budget cap', async () => {
+    await stepOverWithNews()
+    writeJson('brain/budget.json', { month: '2026-11', spentUsd: 10 })
+    const llm = fakeLlm()
+    await runTick(dir, at(minutesAfter(31), { llm }))
+    expect(llm.calls).toHaveLength(0)
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+  })
+
+  it('moves on when a call fails, then leaves the model alone for half an hour', async () => {
+    await stepOverWithNews()
+    const failing: LlmClient = {
+      ...noBatch,
+      async complete() {
+        throw new Error('overloaded')
+      },
+    }
+    await runTick(dir, at(minutesAfter(31), { llm: failing }))
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+    expect(stateOf().thinkFailedAt).toBe(minutesAfter(31))
+
+    // The news is still news, but it can wait.
+    const quiet = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(45), { llm: quiet }))
+    expect(quiet.calls).toHaveLength(0)
+    const later = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(65), { llm: later }))
+    expect(later.calls).toHaveLength(1)
+  })
+
+  it('treats an answer with nothing usable like a failure', async () => {
+    await stepOverWithNews()
+    await runTick(dir, at(minutesAfter(31), { llm: fakeLlm(() => null) }))
+    expect(stateOf().thinkFailedAt).toBe(minutesAfter(31))
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+  })
+})
+
+describe('a step whose target is gone', () => {
+  it('asks once, and moves past the step when the answer is to carry on', async () => {
+    await runTick(dir, at(NOW)) // step 0 watches the sunny rock
+    rmSync(file('objects/sunny-rock.json'))
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm }))
+    expect(llm.calls).toHaveLength(1)
+    expect(llm.calls[0]!.user).toMatch(/- blocked: /)
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+    expect(streamText()).toMatch(/Skipped watch/)
+    await runTick(dir, at(minutesAfter(20), { llm }))
+    expect(llm.calls).toHaveLength(1)
+  })
+
+  it('keeps the plan that the answer brings instead of skipping', async () => {
+    await runTick(dir, at(NOW))
+    rmSync(file('objects/sunny-rock.json'))
+    await runTick(dir, at(minutesAfter(10), { llm: fakeLlm({ ...keep, plan: [{ ...morning.plan![2]!, minutes: 40 }] }) }))
+    expect(goalsOf().today?.steps.map((x) => x.verb)).toEqual(['sit'])
+    expect(goalsOf().now).toMatchObject({ index: 0 })
+  })
+})
+
+describe('what counts as news', () => {
+  it('is not used up by a weekly review that never looked at it', async () => {
+    await runTick(dir, at(NOW))
+    const goals = goalsOf()
+    writeJson('mind/goals.json', { ...goals, long: { ...goals.long, reviewedAt: '2026-10-26T06:00:00Z' } })
+    newObject('pebble')
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(5), { llm }))
+    expect(llm.calls[0]!.model).toBe('claude-sonnet-5-5')
+    expect(stateOf().knownObjects).not.toContain('pebble')
+    const next = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm: next }))
+    expect(next.calls[0]!.user).toMatch(/new objects: pebble/)
+    expect(stateOf().knownObjects).toContain('pebble')
+  })
+})
+
+describe('needs the body can fix itself', () => {
+  it("do not wake the model: hunger with a bowl in reach is the cat's own business", async () => {
+    // Hunger is empty and the bowl is a long walk away, so at the next tick it has not eaten yet. It can eat, though.
+    const bowl = JSON.parse(readFileSync(join(worldTemplate, 'objects', 'bowl.json'), 'utf8'))
+    writeJson('objects/bowl.json', { ...bowl, position: [-11, 0, 12] })
+    await runTick(dir, at(NOW))
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 }, position: [30, 0, -25] })
+    writeJson('mind/state.json', { ...stateOf(), lastThinkAt: '2026-11-03T06:00:00Z' })
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(new Date(Date.parse(NOW) + 20_000).toISOString(), { llm }))
+    expect(llm.calls.filter((c) => c.kind === 'decide')).toHaveLength(0)
+  })
+
+  it('wake it when nothing in reach would fix them', async () => {
+    await runTick(dir, at(NOW))
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 }, position: [30, 0, -25] })
+    writeJson('mind/state.json', { ...stateOf(), lastThinkAt: '2026-11-03T06:00:00Z' })
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(new Date(Date.parse(NOW) + 20_000).toISOString(), { llm }))
+    expect(llm.calls.filter((c) => c.kind === 'decide')).toHaveLength(1)
   })
 })
 
