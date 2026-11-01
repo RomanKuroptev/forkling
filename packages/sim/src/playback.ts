@@ -4,6 +4,7 @@ import { nearestWalkable, type Point2 } from './nav.ts'
 import { isAsleepAt } from './sleep.ts'
 import { sunDirection } from './sky.ts'
 import type { StarterWorld } from './starter.ts'
+import { STRONG_NEED } from './surprise.ts'
 import { collectSpots } from './world.ts'
 
 /**
@@ -216,4 +217,46 @@ export function advancePlayback(pb: Playback, nowMs: number, visitor: Point2 | n
     if (gone && pb.state.intention.targetId !== 'visitor') return startPlayback(pb.input, nowMs)
   }
   return pb
+}
+
+/** What the canonical body did over a stretch of time. */
+export interface Tally {
+  /** Seconds spent on each verb. */
+  seconds: Record<string, number>
+  /** Times it began something other than the planned verb while a step was running: what, and which need it was for. */
+  interruptions: { verb: string; need: string; at: number }[]
+}
+
+/**
+ * What the canonical body did between two moments: seconds per verb, and what broke the plan step off. It rebuilds the
+ * walk the way every viewer does, so a window that crosses into a new epoch is counted in pieces, each from its own
+ * anchor, and the whole always equals its parts. Pure and deterministic. This is how the mind learns whether the body
+ * really did what a step said, without anyone having to watch.
+ */
+export function tallyWindow(input: PlaybackInput, fromMs: number, toMs: number): Tally {
+  const seconds: Record<string, number> = {}
+  const interruptions: Tally['interruptions'] = []
+  const focus = focusFor(input.goals).focus
+  let from = fromMs
+  while (from < toMs) {
+    const to = Math.min(toMs, (epochOf(from / 1000) + 1) * EPOCH_SECONDS * 1000)
+    const pb = startPlayback(input, from)
+    let last = pb.state.intention.startedAt
+    const target = Math.floor((to / 1000 - pb.anchor.time) / STEP + 1e-9)
+    while (pb.steps < target) {
+      stepOnce(pb, null)
+      const state = pb.state
+      const verb = state.intention.type
+      seconds[verb] = (seconds[verb] ?? 0) + STEP
+      if (state.intention.startedAt !== last) {
+        last = state.intention.startedAt
+        if (focus && state.time < focus.until && verb !== focus.action) {
+          const weakest = (Object.entries(state.needs) as [string, number | undefined][]).filter(([, v]) => v !== undefined && v < STRONG_NEED).sort((a, b) => a[1]! - b[1]!)[0]
+          interruptions.push({ verb, need: weakest ? weakest[0] : 'other', at: state.time })
+        }
+      }
+    }
+    from = to
+  }
+  return { seconds: Object.fromEntries(Object.entries(seconds).map(([v, n]) => [v, Math.round(n * 10) / 10])), interruptions }
 }
