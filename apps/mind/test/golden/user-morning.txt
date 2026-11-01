@@ -1,0 +1,40 @@
+<situation>
+time: Tuesday 2026-11-03 10:00 (Europe/Stockholm); woke at 07:10; bedtime 23:05
+needs (0 empty, 100 full): hunger 70, energy 55
+mood: sleepy (feeling neutral, calm)
+position: x 1, z -2
+doing now: sit ("New island. I will allow it.")
+in your paws: nothing
+stored at home: nothing
+asking for a designed object: you may ask for one today
+</situation>
+
+<interests>
+You are not especially into anything yet.
+</interests>
+
+<goals>
+{"long":null,"today":null,"currentStep":null}
+</goals>
+
+<world>
+places you can go (spot kinds): perch, sunbeam
+{"id":"sunny-rock","name":"The sunny rock","kind":"rock","at":[5,22],"why":"It catches the morning sun before anything else on the beach.","is":["high","stone"]}
+{"id":"tall-rock","name":"The lookout rock","kind":"rock","at":[-2.5,23.5],"why":"From the top you can see who is coming up the beach.","is":["high","stone"]}
+</world>
+
+<recent>
+{"steps":[],"rejectedPlans":[]}
+</recent>
+
+<triggers>
+- newDay: a new day
+</triggers>
+
+## Your task
+It is a new day. Write today's plan: 4 to 8 steps whose minutes roughly fill the time until bedtime at 23:05. Leave slack: nobody schedules every minute.
+You have no long goal yet. Set one in longGoal: a want of your own that could take several days, the kind of thing a person might care about.
+Let what you are into (see <interests>) shape the day if it wants to.
+The first step starts now. Put in thought why you begin with it. Set plan to your steps and planReason to one sentence about the day.
+Set stayUpLate only if there is something you truly want to stay up for tonight; otherwise null.
+Set design only if you truly need an object that does not exist yet for something you are doing; otherwise null.

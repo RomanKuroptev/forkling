@@ -1,6 +1,6 @@
 # Possible future features
 
-Ideas that are not part of v1. Don't build them until v1 (see [`MILESTONES.md`](MILESTONES.md)) is done. Anything picked from here later should keep the v1 design rules: verbs not activities, goals written by the mind, and visitor input as data, never instructions.
+Ideas that are not part of v1. Don't build them until v1 (see [`MILESTONES.md`](../MILESTONES.md)) is done. Anything picked from here later should keep the v1 design rules: verbs not activities, goals written by the mind, and visitor input as data, never instructions.
 
 Cost labels: **Free** means sim or data only, no LLM. **Pennies** means well under $0.10 a month. **Small** means a daily call or a builder run.
 

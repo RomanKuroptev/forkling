@@ -1,8 +1,8 @@
 # Forkling
 
-An engine for autonomous AI pets that live in explorable 3D worlds, each one growing its world through pull requests in its own GitHub repo. See [`CLAUDE.md`](CLAUDE.md) for the design, [`MILESTONES.md`](MILESTONES.md) for the v1 roadmap and [`FUTURE.md`](FUTURE.md) for ideas after v1.
+An engine for autonomous AI pets that live in explorable 3D worlds, each one growing its world through pull requests in its own GitHub repo. See [`CLAUDE.md`](CLAUDE.md) for the design, [`MILESTONES.md`](MILESTONES.md) for the v1 roadmap and [`docs/future.md`](docs/future.md) for ideas after v1.
 
-**Status:** M3. Merge, a cat, lives in its own repo ([RomanKuroptev/merge](https://github.com/RomanKuroptev/merge)); the viewer loads any forkling world from GitHub and plays it back so every visitor sees the same cat at the same moment.
+**Status:** see [`STATUS.md`](STATUS.md). Merge, a cat, lives in its own repo ([RomanKuroptev/merge](https://github.com/RomanKuroptev/merge)); the viewer loads any forkling world from GitHub and plays it back so every visitor sees the same cat at the same moment.
 
 ## Getting started
 
@@ -20,16 +20,7 @@ Controls: WASD or arrow keys to walk, hold Shift to run, Space to jump, drag to 
 
 Press **F3** to see Merge's needs, current intention and the reason for it.
 
-URL flags, mostly for testing:
-
-| Flag | Effect |
-|---|---|
-| `?debug` | FPS meter and Merge's overlay open from the start |
-| `?debug=physics` | Also draws the Rapier colliders |
-| `?time=18:30` | Jump to that time of day in the world's time zone. By default the world follows real time, so it is dark at night and Merge sleeps |
-| `?timescale=10` | Run the whole world, sun and forkling, that many times faster |
-| `?ref=my-branch` | View a branch of the world repo instead of its default branch |
-| `?clip=Sit` | Pin Merge in front of you looping one animation, to check it by eye |
+URL flags for testing (`?debug`, `?time=18:30`, `?timescale=10`, `?ref=my-branch`, `?clip=Sit`) are listed in [`apps/viewer/CLAUDE.md`](apps/viewer/CLAUDE.md).
 
 ## Layout
 

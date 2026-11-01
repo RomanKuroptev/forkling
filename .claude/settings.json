@@ -1,0 +1,58 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test*)",
+      "Bash(rtk pnpm test*)",
+      "Bash(pnpm typecheck*)",
+      "Bash(rtk pnpm typecheck*)",
+      "Bash(pnpm build)",
+      "Bash(rtk pnpm build)",
+      "Bash(pnpm vitest run *)",
+      "Bash(rtk pnpm vitest run *)",
+      "Bash(pnpm --filter * *)",
+      "Bash(rtk pnpm --filter * *)",
+      "Bash(pnpm mind:local --dry-run*)",
+      "Bash(rtk pnpm mind:local --dry-run*)",
+      "Bash(git status*)",
+      "Bash(rtk git status*)",
+      "Bash(git diff*)",
+      "Bash(rtk git diff*)",
+      "Bash(git log*)",
+      "Bash(rtk git log*)",
+      "Bash(git branch*)",
+      "Bash(rtk git branch*)",
+      "Bash(git show*)",
+      "Bash(rtk git show*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(rtk git push --force*)",
+      "Read(**/.env*)",
+      "Edit(**/.env*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/sim-purity.mjs\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/typecheck-touched.mjs\""
+          }
+        ]
+      }
+    ]
+  }
+}
