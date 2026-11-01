@@ -1,7 +1,7 @@
 import type { AnimationSlot, Intention, MicroBehavior, NeedId, SpeciesAction, SpeciesPack } from '@forkling/schema'
 import { findPath, isWalkable, nearestWalkable, type NavGrid, type Point2 } from './nav.ts'
 import type { Feelings } from './appraisal.ts'
-import { applyAction, decayNeeds, initialNeeds, type Needs } from './needs.ts'
+import { applyAction, ASLEEP_DECAY, decayNeeds, initialNeeds, type Needs } from './needs.ts'
 import { createPrng, type Prng } from './prng.ts'
 import { isDusk } from './time.ts'
 import { STRONG_NEED } from './surprise.ts'
@@ -198,7 +198,7 @@ const activeFocus = (s: ForklingState): Focus | null => (s.focus && s.time < s.f
 
 export function stepForkling(s: ForklingState, dt: number, ctx: StepContext): void {
   s.time += dt
-  s.needs = decayNeeds(s.needs, s.pack, dt)
+  s.needs = decayNeeds(s.needs, s.pack, dt, ctx.asleep === true ? ASLEEP_DECAY : 1)
 
   const radius = s.pack.perception.noticeRadius
   const visitorDistance = ctx.visitor ? dist(s.pos, ctx.visitor) : null

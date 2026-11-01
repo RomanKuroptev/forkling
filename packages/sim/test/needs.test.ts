@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SpeciesPack } from '@forkling/schema'
 import blobJson from './fixtures/blob.species.json'
-import { applyAction, decayNeeds, initialNeeds } from '../src/needs.ts'
+import { applyAction, ASLEEP_DECAY, decayNeeds, initialNeeds } from '../src/needs.ts'
 
 const blob = SpeciesPack.parse(blobJson)
 const action = (id: string) => blob.actions.find((a) => a.id === id)!
@@ -17,6 +17,14 @@ describe('decayNeeds', () => {
     const next = decayNeeds({ hunger: 60, energy: 70, fun: 50 }, blob, 30)
     expect(next.hunger).toBeCloseTo(60 - 240 / 120)
     expect(next.energy).toBeCloseTo(70 - 180 / 120)
+  })
+
+  it('falls at a quarter of the speed in bed, so a night does not empty it', () => {
+    expect(ASLEEP_DECAY).toBe(0.25)
+    const awake = decayNeeds({ hunger: 60, energy: 70, fun: 50 }, blob, 300)
+    const asleep = decayNeeds({ hunger: 60, energy: 70, fun: 50 }, blob, 300, ASLEEP_DECAY)
+    expect(60 - asleep.hunger!).toBeCloseTo((60 - awake.hunger!) * 0.25)
+    expect(70 - asleep.energy!).toBeCloseTo((70 - awake.energy!) * 0.25)
   })
 
   it('never goes below zero and never raises a need', () => {
