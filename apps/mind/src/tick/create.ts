@@ -81,6 +81,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     notes: [],
     parts,
     calls: [],
+    attempts: [],
     remember,
     steps: [],
     buildRequests: [],

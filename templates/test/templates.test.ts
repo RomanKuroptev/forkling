@@ -107,6 +107,27 @@ describe('templates/forkling-world', () => {
   })
 })
 
+describe('templates/forkling-world tick log', () => {
+  const mind = readFileSync(join(root, 'forkling-world', '.github/workflows/mind.yml'), 'utf8')
+  const commit = mind.slice(mind.indexOf('- name: Commit what changed'), mind.indexOf('- name: Update the website'))
+  const website = mind.slice(mind.indexOf('- name: Update the website'), mind.indexOf('- name: Ask the builder'))
+
+  it('commits every tick, so a quiet tick leaves its line in the log', () => {
+    expect(commit).toMatch(/steps\.tick\.outputs\.logged == 'true'/)
+  })
+
+  it('tells the log commits from the world commits by their message', () => {
+    expect(commit).toMatch(/git commit -m "chore\(mind\): \$\{SUMMARY:-tick\}"/)
+    expect(commit).toMatch(/git commit -m "tick: \$\{SUMMARY:-quiet\}"/)
+    expect(commit).toMatch(/WORLD: \$\{\{ steps\.tick\.outputs\.changed \}\}/)
+  })
+
+  it('rebuilds the site only for a world commit, not for a log line', () => {
+    expect(website).toMatch(/steps\.tick\.outputs\.changed == 'true' \|\| steps\.tick\.outputs\.photos == 'true'/)
+    expect(website).not.toMatch(/logged/)
+  })
+})
+
 describe('templates/forkling-world eye cam', () => {
   const mind = readFileSync(join(root, 'forkling-world', '.github/workflows/mind.yml'), 'utf8')
   const after = (needle: string) => mind.indexOf(needle)
