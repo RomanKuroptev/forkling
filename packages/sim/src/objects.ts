@@ -174,6 +174,12 @@ export function offersSpot(obj: WorldObject, kind: string): boolean {
   return obj.affordances.includes(kind as never) || (kind === 'perch' && obj.properties.high)
 }
 
+/** Meals left in something that has portions (full if nobody has eaten from it), or null for something that never runs out. */
+export function portionsLeft(obj: WorldObject): number | null {
+  const total = obj.properties.portions
+  return total === undefined ? null : Math.min(total, obj.state.portionsLeft ?? total)
+}
+
 /** Whether `obj` is a target for a verb: it matches the verb's property filter and, if asked, unlocks the verb. */
 export function matchesTarget(target: Extract<ActionTarget, { type: 'object' }>, verbId: string, obj: WorldObject): boolean {
   if (target.unlocked && !obj.unlocks.includes(verbId)) return false

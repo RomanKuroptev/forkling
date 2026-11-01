@@ -224,6 +224,8 @@ export function advancePlayback(pb: Playback, nowMs: number, visitor: Point2 | n
 export interface Tally {
   /** Seconds spent on each verb. */
   seconds: Record<string, number>
+  /** How many times each verb began, so a meal is a count of `eat`s. */
+  started: Record<string, number>
   /** Times it began something other than the planned verb while a step was running: what, and which need it was for. */
   interruptions: { verb: string; need: string; at: number }[]
 }
@@ -236,6 +238,7 @@ export interface Tally {
  */
 export function tallyWindow(input: PlaybackInput, fromMs: number, toMs: number): Tally {
   const seconds: Record<string, number> = {}
+  const started: Record<string, number> = {}
   const interruptions: Tally['interruptions'] = []
   const focus = focusFor(input.goals).focus
   let from = fromMs
@@ -251,6 +254,7 @@ export function tallyWindow(input: PlaybackInput, fromMs: number, toMs: number):
       seconds[verb] = (seconds[verb] ?? 0) + STEP
       if (state.intention.startedAt !== last) {
         last = state.intention.startedAt
+        started[verb] = (started[verb] ?? 0) + 1
         if (focus && state.time < focus.until && verb !== focus.action) {
           const weakest = (Object.entries(state.needs) as [string, number | undefined][]).filter(([, v]) => v !== undefined && v < STRONG_NEED).sort((a, b) => a[1]! - b[1]!)[0]
           interruptions.push({ verb, need: weakest ? weakest[0] : 'other', at: state.time })
@@ -259,5 +263,5 @@ export function tallyWindow(input: PlaybackInput, fromMs: number, toMs: number):
     }
     from = to
   }
-  return { seconds: Object.fromEntries(Object.entries(seconds).map(([v, n]) => [v, Math.round(n * 10) / 10])), interruptions }
+  return { seconds: Object.fromEntries(Object.entries(seconds).map(([v, n]) => [v, Math.round(n * 10) / 10])), started, interruptions }
 }

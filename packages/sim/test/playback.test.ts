@@ -133,7 +133,7 @@ describe('tallyWindow', () => {
   })
 
   it('has nothing to count in an empty window', () => {
-    expect(tallyWindow(focused(), from, from)).toEqual({ seconds: {}, interruptions: [] })
+    expect(tallyWindow(focused(), from, from)).toEqual({ seconds: {}, started: {}, interruptions: [] })
   })
 
   it('counts the same whole as its parts, including across the edge of an epoch', () => {

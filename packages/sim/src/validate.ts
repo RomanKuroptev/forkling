@@ -1,7 +1,7 @@
 import type { Holding, PlanStep, Skills, SpeciesAction, SpeciesPack, WorldObject } from '@forkling/schema'
 import { applyStep, type StepWorld, type Stored } from './effects.ts'
 import type { Point2 } from './nav.ts'
-import { offersSpot } from './objects.ts'
+import { offersSpot, portionsLeft } from './objects.ts'
 import { skillLevel } from './skills.ts'
 import { isDusk } from './time.ts'
 
@@ -131,6 +131,13 @@ export function validatePlan(steps: readonly PlanStep[], ctx: PlanContext): Plan
     minutes += step.minutes
   })
   if (minutes > MAX_PLAN_MINUTES) reasons.push(`the plan takes ${Math.round(minutes / 60)} hours, more than a day's waking`)
+
+  // Food that has run out cannot be eaten: the plan would walk there and find nothing.
+  steps.forEach((step, n) => {
+    const verb = ctx.pack.actions.find((a) => a.id === step.verb)
+    const target = step.targetId ? ctx.objects.find((o) => o.id === step.targetId) : undefined
+    if (verb && target && Object.values(verb.satisfies).some((v) => (v ?? 0) > 0) && portionsLeft(target) === 0) reasons.push(`step ${n + 1}: ${target.name} is empty`)
+  })
 
   if (ctx.creativeLeft !== undefined) {
     const making = steps.filter((s) => {

@@ -65,7 +65,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   const running = w.goals.now
   const from = playbackStateTime(forkling) * 1000
   const to = running ? Math.min(nowMs, Date.parse(running.until)) : 0
-  const tally = running && !asleep && to > from ? tallyWindow(playbackInput, from, to) : { seconds: {}, interruptions: [] }
+  const tally = running && !asleep && to > from ? tallyWindow(playbackInput, from, to) : { seconds: {}, started: {}, interruptions: [] }
   const stepVerb = running ? w.goals.today?.steps[running.index]?.verb : undefined
   const body = playback.state
   const objects: WorldObject[] = [...w.objects]
