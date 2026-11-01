@@ -14,8 +14,8 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 |---|---|---|
 | 1 Stop the loop | `fix/stop-the-loop` | done, PR #19 open |
 | 2 Observability | `obs/ticks-health` | done, PR #20 open |
-| 3 Plan owns the body, honesty | `fix/plan-owns-body` | done, PR open |
-| 4 Builder | `fix/builder` | not started |
+| 3 Plan owns the body, honesty | `fix/plan-owns-body` | done, PR #21 open |
+| 4 Builder | `fix/builder` | done, PR open |
 | 5 Memory and feelings | `feat/memory-feelings` | not started |
 | 6 Docs | `docs/review-fixes` | not started |
 
@@ -47,12 +47,26 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 - **Honesty (4.4, 4.6):** `checkReflection` takes the stream entries. A thought, a trigger or a turned down plan is not evidence for a belief; strengthening needs an entry newer than the belief's last change; a journal paragraph may not cite only thoughts. A decision that repeats the same long goal no longer resets `reviewedAt`.
 - **Needs still decay in bed.** Now that nothing eats at night, hunger and curiosity sit at 0 through the night in the sim report (about 6,400 to 6,800 minutes of bed hours under 15 over 14 days). This is the 9.4 time scale again: either the slower decay in the proposal, or needs decaying at a fraction while asleep. Not changed.
 
+### Slice 4 as built (findings 6.1, 6.2, 6.3, 6.6, 6.8, 6.10, 6.13; 6.7 is yours)
+- **Builds have their own concurrency group** (`build-<id>`), not the mind's, so a queued tick can no longer cancel a pending build (6.1).
+- **The builder and the mind no longer write the same files.** `design` and `project` write only `mind/builds/<id>.result.json` (status `designed`, `pr-open`, `failed`, `closed` or `merged`; a reason; what was spent). A small `books` job in `build.yml` (its own group `build-books`, retry loop) commits that one file to `main`, and writes a `failed` report if the run produced none. The tick (`tick/settle-build.ts`) reads it: books the cost once, closes a failed or closed build with a stream line, and gives back the day's or week's slot (6.3).
+- **Two slots:** `mind.openBuild` is the object build, new `mind.openCode` the coded project. A code PR waiting for a person never expires (so a merge on day 5 is noticed) and no longer blocks object builds (6.2). A project left in the old slot moves on the first tick.
+- `validate.yml`: the group includes the event name (6.8), and a `settle` job writes `merged` or `closed` into the result file when a person closes a builder PR. (A PR the workflow token merged itself starts no workflow, which is fine: the object is in the world.)
+- `mind.yml`: the site is also rebuilt for `forkling.json` and `mind/goals.json` changes, at most once an hour (6.10).
+- The template ships no `brain/budget.json` (its hardcoded month was wrong for any other month), and `rollLedger` never goes back a month (6.13).
+- Rule text fixed in the root `CLAUDE.md`, `apps/mind/CLAUDE.md` and the world's `CLAUDE.md` (6.6). `build.yml` opens its PRs with `secrets.BUILDER_TOKEN` when it exists.
+- Not done by me: 6.4 (API key for the code builder), 6.5 (no token ceiling for the code action).
+
 ## Open questions
+- **6.7, steps for you in GitHub** (branch protection and a scoped token):
+  1. Create a fine-grained personal access token with **Repository access: only `RomanKuroptev/merge`** and permissions Contents (read and write), Pull requests (read and write), Actions (read and write), Metadata (read). Add it as the repository secret `BUILDER_TOKEN`. `build.yml` then opens builder PRs with it, so their `pull_request` checks also run. Without the secret it falls back to the workflow token, as today.
+  2. Settings, Rules, Rulesets, New branch ruleset, target `main`: turn on **Restrict deletions** and **Block force pushes**. Both are safe: nothing here force-pushes or deletes `main`.
+  3. **Require a pull request** needs care: the mind commits to `main` on every tick with the workflow token, so the rule would stop it unless that identity can bypass. GitHub's documentation for the bypass list names roles, teams and GitHub Apps and does not mention the Actions token, so I could not confirm it can be added. In the ruleset's bypass list, search for "GitHub Actions". If it is there, add it (Always allow) and then turn on Require a pull request. If it is not, leave that rule off and tell me: the root `CLAUDE.md` wording "main is branch-protected" then becomes "protected against force pushes and deletion".
 - **9.4 proposal, for Roman to approve before slice 5 uses it:** hunger and curiosity decay 24 an hour (about 4 h to empty, 5x slower than now); energy decay 20 an hour; `explore` -2, `pounce` -3, `zoomies` -2 energy per action; and a second place to nap (a soft object like the bed, in slice 5) so energy has a source in the evening. Measured effect in review section 11. The bowl's portion count is still to set: at hunger 24 an hour the sim has the cat eat about 8 times a day, so with 4 portions a day roughly half its meals have to come from harvesting or cooking. That is your call (your decision was to set it with this proposal).
 - 6.7 (branch protection, scoped PAT) are steps for Roman in GitHub; they come with slice 4.
 
 ## Last verified
-- 2026-11-01: slice 3, `pnpm typecheck` clean, `pnpm test` 1171 passed, `pnpm build` passes.
+- 2026-11-01: slice 4, `pnpm typecheck` clean, `pnpm test` all passed. The workflow files parse as YAML (checked with the `yaml` package). The workflows themselves have not run on GitHub.
 
 ## Tooling note
 - `pnpm` is not on the Git Bash PATH here; run pnpm commands from PowerShell.

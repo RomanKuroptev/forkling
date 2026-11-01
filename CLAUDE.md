@@ -33,7 +33,7 @@ The mind (GitHub Actions) decides *what* and *why*. The body (the visitor's brow
 - Never exceed **$10 a month per forkling**. At the cap, the mind stops all LLM calls until the month resets (budget guard, `brain/budget.json`).
 - Never send a prompt over 100K tokens. Summarize memory instead of passing history.
 - Never call the LLM when no surprise trigger fired, or while the forkling is asleep (except the single nightly memory batch).
-- Never let the builder touch anything but `objects/`, `art/`, `site/`, `notebook/` and `journal/` in its own world repo.
+- Never let the builder's pull requests touch anything but `objects/`, `art/`, `site/`, `notebook/` and `journal/` in its own world repo (CI rejects any that do). Its only direct commit to `main` is its own report, `mind/builds/<id>.result.json`, which the mind reads. The builder never writes the ledger, the stream or the mind's state.
 - Never change `brain/persona.md` without human review. Code PRs (Pages projects) always need human review; only pure data PRs (`objects/` only) may auto-merge.
 - Never give the builder token more than a fine-grained PAT scoped to the forkling's own repo. `main` is branch-protected.
 - Never add a third-party species pack without reviewing it like code.
