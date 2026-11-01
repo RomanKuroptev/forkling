@@ -62,6 +62,8 @@ export interface SimReport {
     interruptionsByCause: { critical: number; other: number }
     interruptedByVerb: Record<string, number>
   }
+  /** The bed hours by the sleep schedule: how long, how much of it spent on the pack's sleeping verb, and the rest by verb. */
+  asleep: { seconds: number; onSleepSeconds: number; otherByVerb: Record<string, number> }
   needs: Record<string, NeedReport>
   intentions: number
 }
@@ -105,6 +107,7 @@ export function simReport(opts: ReportOptions): SimReport {
 
   const timePerVerb: Record<string, number> = {}
   const interruptedByVerb: Record<string, number> = {}
+  const asleepStats = { seconds: 0, onSleepSeconds: 0, otherByVerb: {} as Record<string, number> }
   const focusStats = { seconds: 0, onPlanSeconds: 0, interruptions: 0, critical: 0, other: 0 }
   let intentions = 0
   let awakeSeconds = 0
@@ -154,6 +157,12 @@ export function simReport(opts: ReportOptions): SimReport {
       if (body.intention.type === focus!.action) focusStats.onPlanSeconds += STEP
     }
     if (!asleep) awakeSeconds += STEP
+    else {
+      asleepStats.seconds += STEP
+      // The verb whose animation slot is sleep is the pack's sleeping verb; the engine does not name it.
+      if (body.action.slot === 'sleep') asleepStats.onSleepSeconds += STEP
+      else asleepStats.otherByVerb[body.intention.type] = (asleepStats.otherByVerb[body.intention.type] ?? 0) + STEP
+    }
 
     for (const id of needIds) {
       const value = (body.needs as Record<string, number | undefined>)[id] ?? 0
@@ -198,6 +207,11 @@ export function simReport(opts: ReportOptions): SimReport {
       interruptions: focusStats.interruptions,
       interruptionsByCause: { critical: focusStats.critical, other: focusStats.other },
       interruptedByVerb,
+    },
+    asleep: {
+      seconds: round(asleepStats.seconds, 1),
+      onSleepSeconds: round(asleepStats.onSleepSeconds, 1),
+      otherByVerb: Object.fromEntries(Object.entries(asleepStats.otherByVerb).map(([v, s]) => [v, round(s, 1)])),
     },
     needs,
     intentions,

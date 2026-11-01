@@ -149,6 +149,13 @@ Roman's decisions (review section 9, plus the answers given during planning):
   - **1.7:** match the `gh run list -R RomanKuroptev/merge` runs and the commits for 2026-11-01 07:53–09:13 against the four possible causes (no tick ran, a decide call with no decision, the model re-sending step 0, a rejected replacement plan). Report which it was, and add a test if it's a code path not already fixed in slice 1.
   - **9.4 proposal:** measured hours to empty for each need and how often drift interrupts a step. Proposed rates (for example 5× slower), plus the bowl portion count, for Roman to approve before slice 5 uses them.
 
+**As built (slice 2).**
+- Replay and sim-report CLIs use pure cores (`apps/mind/src/replay.ts`, `packages/sim/src/report.ts`), tested without git or a clock. The sim report counts interruptions from outside the body (it watches each new intention against the scripted focus), so `forkling.ts` got no counters yet; slice 3 changes `replan` and can add them if needed.
+- `simReport` also measures the night (time in bed hours spent on something other than the sleeping verb), added for finding 2.6.
+- `drift[]` in the tick line is in the schema and always empty until slice 3 fills it.
+- The tick log needed `attempts` on the `Tick` (every try at a call, including refused ones), because `calls` only holds successes.
+- Anchor change shipped as `playbackStateTime` in `packages/sim/src/playback.ts`, shared by the mind and the viewer.
+
 ---
 
 ## Slice 3: plan owns the body, and honesty (branch `fix/plan-owns-body`)

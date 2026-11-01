@@ -39,6 +39,9 @@ export function formatReport(r: SimReport): string {
     .map(([verb, n]) => `${verb} ${n}`)
     .join(', ')
   lines.push(`      ${r.focus.interruptions} interruptions, ${r.focus.interruptionsByCause.critical} by a need running low, ${r.focus.interruptionsByCause.other} otherwise${by ? ` (${by})` : ''}`)
+  const other = Object.entries(r.asleep.otherByVerb).sort((a, b) => b[1] - a[1])
+  const otherSeconds = other.reduce((sum, [, n]) => sum + n, 0)
+  lines.push(`night: ${hours(r.asleep.seconds)} in bed hours, ${hours(r.asleep.onSleepSeconds)} asleep, ${hours(otherSeconds)} spent on something else${other.length > 0 ? ` (${other.slice(0, 5).map(([v, n]) => `${v} ${hours(n)}`).join(', ')})` : ''}`)
   lines.push('')
   lines.push('needs (critical means under 15):')
   for (const [id, n] of Object.entries(r.needs)) {

@@ -12,6 +12,7 @@ const report: SimReport = {
   awakeHours: 224,
   timePerVerb: { explore: 40_000, sit: 20_000, eat: 5_000 },
   focus: { seconds: 700_000, onPlanSeconds: 490_000, share: 0.7, interruptions: 120, interruptionsByCause: { critical: 90, other: 30 }, interruptedByVerb: { eat: 80, nap: 10 } },
+  asleep: { seconds: 28_800, onSleepSeconds: 21_600, otherByVerb: { eat: 3600, play: 3600 } },
   needs: {
     hunger: { min: 0, mean: 41.2, awakeCriticalMinutes: 300, longestAwakeCriticalMinutes: 40, asleepCriticalMinutes: 5000, hoursToEmpty: 0.83 },
     curiosity: { min: 3, mean: 38, awakeCriticalMinutes: 120, longestAwakeCriticalMinutes: 20, asleepCriticalMinutes: 0, hoursToEmpty: 0.83 },
@@ -26,6 +27,10 @@ describe('formatReport', () => {
     expect(text).toMatch(/plan: the body spent 70\.0% of the plan window on the planned verb/)
     expect(text).toMatch(/120 interruptions, 90 by a need running low/)
     expect(text).toMatch(/eat 80/)
+  })
+
+  it('says how much of the night was not spent asleep, and on what', () => {
+    expect(text).toMatch(/night: 8\.0 h in bed hours, 6\.0 h asleep, 2\.0 h spent on something else \(eat 1\.0 h, play 1\.0 h\)/)
   })
 
   it('lists each need with its lowest, average and critical time, awake and asleep', () => {

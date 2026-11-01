@@ -47,6 +47,14 @@ describe('simReport', () => {
     expect(day.needs.hunger!.hoursToEmpty).toBeCloseTo(100 / 240, 5)
   })
 
+  it('says how the night was spent: how much of it asleep, and what else the body did in bed hours', () => {
+    expect(day.asleep.seconds).toBeGreaterThan(6 * 3600)
+    expect(day.asleep.seconds).toBeLessThan(10 * 3600)
+    expect(day.asleep.onSleepSeconds).toBeLessThanOrEqual(day.asleep.seconds)
+    const other = Object.values(day.asleep.otherByVerb).reduce((a, b) => a + b, 0)
+    expect(other).toBeCloseTo(day.asleep.seconds - day.asleep.onSleepSeconds, 0)
+  })
+
   it('has no plan window with no steps', () => {
     const free = simReport({ ...base, steps: [] })
     expect(free.focus.seconds).toBe(0)

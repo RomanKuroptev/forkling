@@ -10,6 +10,7 @@
     "validate": "node src/validate-cli.ts",
     "project": "node src/project-cli.ts",
     "sim-report": "node src/sim-report-cli.ts",
+    "replay": "node src/replay-cli.ts",
     "typecheck": "tsc -p .",
     "feeds:check": "node src/feeds/check.ts"
   },
