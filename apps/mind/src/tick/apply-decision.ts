@@ -26,11 +26,13 @@ export function applyDecision(t: Tick): void {
   const newGoal = decision.longGoal && decision.longGoal.text.trim() ? decision.longGoal : null
   if (newGoal) {
     const text = clampText(newGoal.text.trim(), 300)
+    const same = goals.long?.text === text
     goals.long = {
       text,
       reason: clampText(newGoal.reason.trim() || 'It is what I want now.', 200),
-      setAt: goals.long?.text === text ? goals.long.setAt : nowIso,
-      reviewedAt: nowIso,
+      setAt: same ? goals.long!.setAt : nowIso,
+      // Saying the same goal again is not a review: only the weekly review, or a goal that changed, moves the date.
+      reviewedAt: same && thinkKind !== 'weekly' ? goals.long!.reviewedAt : nowIso,
     }
     if (w.goals.long?.text !== text) parts.push('new long goal')
   } else if (thinkKind === 'weekly' && goals.long) {

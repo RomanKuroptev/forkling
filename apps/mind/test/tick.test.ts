@@ -323,6 +323,25 @@ describe('a step whose target is gone', () => {
   })
 })
 
+describe('the weekly review of the long goal', () => {
+  it('is not postponed by a decision that merely says the same goal again', async () => {
+    await runTick(dir, at(NOW))
+    expect(goalsOf().long?.reviewedAt).toBe(NOW.replace('Z', '.000Z'))
+    newObject('pebble')
+    const same = fakeLlm({ ...keep, longGoal: { text: 'Make the sunny rock mine.', reason: 'Still true.' } })
+    await runTick(dir, at(minutesAfter(10), { llm: same }))
+    expect(goalsOf().long?.reviewedAt).toBe(NOW.replace('Z', '.000Z'))
+  })
+
+  it('counts a changed goal as reviewed, since the mind just reconsidered it', async () => {
+    await runTick(dir, at(NOW))
+    newObject('pebble')
+    const changed = fakeLlm({ ...keep, longGoal: { text: 'Learn the shape of the whole beach.', reason: 'The pebble made me curious.' } })
+    await runTick(dir, at(minutesAfter(10), { llm: changed }))
+    expect(goalsOf().long).toMatchObject({ text: 'Learn the shape of the whole beach.', reviewedAt: minutesAfter(10), setAt: minutesAfter(10) })
+  })
+})
+
 describe('what counts as news', () => {
   it('is not used up by a weekly review that never looked at it', async () => {
     await runTick(dir, at(NOW))
