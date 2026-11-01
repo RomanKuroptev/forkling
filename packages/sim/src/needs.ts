@@ -23,7 +23,7 @@ export function decayNeeds(needs: Needs, pack: SpeciesPack, dtSec: number): Need
 
 /**
  * Apply `fraction` (0 to 1) of an action's `satisfies`. This is the only way a need rises, which is
- * what makes rules like "a cat's affection only rises when it chooses to approach you" hold.
+ * what makes rules like "a need rises only through an action that satisfies it" hold.
  */
 export function applyAction(needs: Needs, action: SpeciesAction, fraction: number): Needs {
   const next: Needs = { ...needs }

@@ -83,6 +83,13 @@ Roman's decisions (review section 9, plus the answers given during planning):
   - When `replan` fires, the task says "your plan is done (or there is none since HH:MM); write the next one for the remaining N hours".
   - `system.ts:112` "do not plan around needs" becomes "the body tops needs up by itself between steps".
 
+**As built (slice 1).** As planned, with these differences:
+- `mind.blockedStep` is set in `applyDecision` once the question was answered, not in `route`, so a failed call does not use up the one ask.
+- `thinkFailedAt` is set in `tick/ask.ts` (call threw) and `tick/think.ts` (answer with nothing usable). A refusal by the guards (no key, budget, dry run) is not a failure: `route` checks those itself and takes the free path.
+- A step that ends with no more steps and no `replan` reason (the last 45 minutes before bed, or the replan cooldown) makes no call; `advance` clears `goals.now`.
+- The day test measures needs by replaying the body from the repo files, as a viewer would, because quiet ticks do not rewrite `forkling.json`. Results: 29 decide calls and affection critical 14 h before; 6 calls and a longest critical stretch of 60 min (energy) after.
+- `fixableNeeds` takes the pack and a context (no needs argument): it returns every need some eligible drift action raises. `surprise.ts` does the comparison with the threshold.
+
 ---
 
 ## Slice 2: observability (branch `obs/ticks-health`)
