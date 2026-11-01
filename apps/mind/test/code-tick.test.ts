@@ -70,7 +70,8 @@ describe('coding', () => {
     expect(art.user).toContain('a toy of gates')
     const request = BuildRequest.parse(readJson('mind/builds/gate-toy.json'))
     expect(request).toMatchObject({ kind: 'code', name: 'Gate Toy', purpose: 'A toy of logic gates.', howItPlays: 'Click the switches and watch the lamp.', goalRef: 'today:0' })
-    expect(state().openBuild).toMatchObject({ id: 'gate-toy', kind: 'code' })
+    expect(state().openCode).toMatchObject({ id: 'gate-toy', kind: 'code' })
+    expect(state().openBuild).toBeNull()
     expect(state().codeWeek).toEqual({ week: '2026-W45', count: 1 })
     expect(result.build).toBe('gate-toy')
   })
@@ -93,7 +94,7 @@ describe('coding', () => {
     await codeADay()
     mkdirSync(file('mind'), { recursive: true })
     const s = state()
-    writeFileSync(file('mind/state.json'), JSON.stringify({ ...s, openBuild: null, codeWeek: { week: '2026-W45', count: 2 } }))
+    writeFileSync(file('mind/state.json'), JSON.stringify({ ...s, openCode: null, codeWeek: { week: '2026-W45', count: 2 } }))
     const goals = readJson('mind/goals.json')
     goals.now = { ...goals.now, index: 0, startedAt: '2026-11-03T09:30:00Z', until: '2026-11-03T09:50:00Z' }
     writeFileSync(file('mind/goals.json'), JSON.stringify(goals))
@@ -114,6 +115,67 @@ describe('coding', () => {
     mkdirSync(file('art'), { recursive: true })
     writeFileSync(file('art/gate-toy.json'), JSON.stringify({ id: 'gate-toy', kind: 'code', title: 'Gate Toy', content: { project: 'gate-toy', idea: 'A toy.', howItPlays: 'Click.' }, skillLevel: 0, createdAt: '2026-11-03T12:00:00Z' }))
     await tick(at(60), fake(plan([step('sit', null)])).llm)
+    expect(state().openCode).toBeNull()
+  })
+})
+
+const codeResult = (over: Record<string, unknown> = {}) =>
+  writeFileSync(file('mind/builds/gate-toy.result.json'), JSON.stringify({ id: 'gate-toy', kind: 'code', status: 'pr-open', calls: [{ at: '2026-11-03T09:40:00.000Z', kind: 'code', model: 'claude-haiku-5-5', input: 0, cacheRead: 0, cacheWrite: 0, output: 0, usd: 0.0731 }], at: '2026-11-03T09:40:00.000Z', ...over }))
+const hoursLater = (h: number) => new Date(Date.parse(MORNING) + h * 3_600_000)
+const sitPlan = () => fake(plan([step('sit', null)])).llm
+
+describe('a coded project that waits for a person', () => {
+  it('has its cost booked by the mind, once', async () => {
+    await codeADay()
+    codeResult()
+    await tick(at(60), sitPlan())
+    await tick(at(70), sitPlan())
+    const calls = JSON.parse(readFileSync(file('brain/budget.json'), 'utf8')).calls.filter((c: { kind: string }) => c.kind === 'code')
+    expect(calls).toHaveLength(1)
+    expect(calls[0].usd).toBe(0.0731)
+  })
+
+  it('does not give up while its pull request waits to be read, and notices the merge days later', async () => {
+    await codeADay()
+    codeResult()
+    await tick(hoursLater(100), sitPlan())
+    expect(state().openCode).toMatchObject({ id: 'gate-toy' })
+    mkdirSync(file('art'), { recursive: true })
+    writeFileSync(file('art/gate-toy.json'), JSON.stringify({ id: 'gate-toy', kind: 'code', title: 'Gate Toy', content: { project: 'gate-toy', idea: 'A toy.', howItPlays: 'Click.' }, skillLevel: 0, createdAt: '2026-11-07T12:00:00Z' }))
+    await tick(hoursLater(101), sitPlan())
+    expect(state().openCode).toBeNull()
+    expect(readFileSync(file('memory/stream/2026-11-07.jsonl'), 'utf8')).toMatch(/has arrived: Gate Toy/)
+  })
+
+  it('still gives up on a request the builder never answered', async () => {
+    await codeADay()
+    await tick(hoursLater(80), sitPlan())
+    expect(state().openCode).toBeNull()
+  })
+
+  it('does not stop an object from being asked for in the meantime', async () => {
+    await codeADay()
+    codeResult()
+    expect(state().openCode).not.toBeNull()
+    expect(state().openBuild).toBeNull()
+  })
+
+  it('gives back the slot for the week when the project could not be built or was turned down', async () => {
+    await codeADay()
+    expect(state().codeWeek).toEqual({ week: '2026-W45', count: 1 })
+    codeResult({ status: 'failed', reason: 'it uses a network request' })
+    await tick(at(60), sitPlan())
+    expect(state().openCode).toBeNull()
+    expect(state().codeWeek!.count).toBe(0)
+    expect(readFileSync(file('memory/stream/2026-11-03.jsonl'), 'utf8')).toMatch(/project I asked for could not be built: it uses a network request/)
+  })
+
+  it('moves a project left in the old single slot to its own', async () => {
+    await codeADay()
+    const s = state()
+    writeFileSync(file('mind/state.json'), JSON.stringify({ ...s, openBuild: s.openCode, openCode: null }))
+    await tick(at(60), sitPlan())
+    expect(state().openCode).toMatchObject({ id: 'gate-toy', kind: 'code' })
     expect(state().openBuild).toBeNull()
   })
 })

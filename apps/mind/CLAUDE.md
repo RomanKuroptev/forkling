@@ -15,7 +15,7 @@ The Node script each world repo's workflows run. One tick = load state and speci
 - At the $10 monthly cap (`brain/budget.json`), stop all LLM calls until the month resets.
 - No LLM calls while asleep except the single nightly memory batch.
 - Ticks: every 10 minutes while awake, hourly while asleep, plus an immediate tick on a visitor event (debounced to 2 minutes). Commit only when state changed.
-- Reading: max 5 sessions a day (the morning one skims the trend feeds), up to 3 linked pages each. Artifacts: about 4 a day, short outputs. Vision: max 12 eye-cam frames a day, 512 px, only when something new is in view. Builds: 1 object a day, 2 coded Pages projects a week, 1 open builder PR at a time.
+- Reading: max 5 sessions a day (the morning one skims the trend feeds), up to 3 linked pages each. Artifacts: about 4 a day, short outputs. Vision: max 12 eye-cam frames a day, 512 px, only when something new is in view. Builds: 1 object a day, 2 coded Pages projects a week, and at most one open object build and one open coded project at a time. The builder reports in `mind/builds/<id>.result.json`; the mind books its cost, closes a failed build and gives back the slot. A coded project whose PR waits for a person never expires.
 - Log token usage and cost per run to the Actions summary.
 
 ## Untrusted input

@@ -248,6 +248,15 @@ Roman's decisions (review section 9, plus the answers given during planning):
   2. Add a ruleset on `main` that blocks force pushes and deletion.
   3. Because the mind commits to `main` on every tick, "require a PR" needs a bypass for the Actions identity. I'll check whether a ruleset can allow it. If it can't, the CLAUDE.md wording becomes "protected against force push and deletion", for Roman to approve.
 
+**As built (slice 4).**
+- `openBuild` stays the object slot and `openCode` is new (the plan said "split into openObject and openCode"). A project in the old slot moves on the first tick.
+- The result file is read by the mind (`apps/mind/src/build-result.ts`, `tick/settle-build.ts`); cost booking is idempotent by (time, kind) in the ledger's calls, so no extra state.
+- `design` and `project` report `failed` for no key, a spent budget or a prompt that is too long, instead of leaving the build open for 72 hours.
+- The `settle` job sits in `validate.yml` (a new workflow file would have needed a change to the template's allowed-files test). It only fires for PRs closed by a person, since events caused by the workflow token start no workflows.
+- The template's `brain/budget.json` was removed instead of blanked: the schema needs a month, and the first tick already makes a ledger for the current one.
+- `build.yml` opens PRs with `secrets.BUILDER_TOKEN || github.token`.
+- Not changed: 6.4 and 6.5 stay deferred.
+
 ---
 
 ## Slice 5: memory and feelings (branch `feat/memory-feelings`)

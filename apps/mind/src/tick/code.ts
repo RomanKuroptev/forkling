@@ -51,7 +51,7 @@ export async function codeStep(t: Tick): Promise<void> {
       requestedAt: nowIso,
     }
     t.buildRequests.push(request)
-    mind.openBuild = { id: request.id, kind: 'code', requestedAt: nowIso }
+    mind.openCode = { id: request.id, kind: 'code', requestedAt: nowIso }
     mind.codeWeek = { week: weekOf(today), count: (mind.codeWeek?.week === weekOf(today) ? mind.codeWeek.count : 0) + 1 }
     t.remember.push({ at: nowIso, kind: 'made', text: `Started a coded project: "${request.name}": ${request.purpose}`, verb: 'code', goalRef: request.goalRef! })
     t.justNow.push(`started a coded project: "${request.name}"`)

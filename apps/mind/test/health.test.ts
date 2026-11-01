@@ -162,6 +162,13 @@ describe('buildHealth', () => {
       expect(h.warnings.join(' ')).toMatch(/a-lamp has been open for 50 hours/)
     })
 
+    it('also watches a coded project waiting for a person, which is the one that can sit longest', () => {
+      const open = { openCode: { id: 'gate-toy', kind: 'code' as const, requestedAt: new Date(T0 - 60 * 3_600_000).toISOString() } }
+      const h = run([{ min: 0, ctx: { mind: MindState.parse(open) } }])
+      expect(h.openBuild).toMatchObject({ id: 'gate-toy', kind: 'code' })
+      expect(h.warnings.join(' ')).toMatch(/gate-toy has been open for 60 hours/)
+    })
+
     it('warns about a long wait between awake ticks, for the rest of the day', () => {
       const h = run([{ min: 0 }, { min: 50 }, { min: 60 }])
       expect(h.today.longestGapMinutes).toBe(50)

@@ -73,6 +73,12 @@ describe('ledger', () => {
     expect(rollLedger(ledger, '2026-12').history).toEqual([])
   })
 
+  it('never rolls back to an earlier month, so a clock or a time zone running behind cannot rewrite the ledger', () => {
+    const used = recordCall(ledger, call)
+    expect(rollLedger(used, '2026-10')).toBe(used)
+    expect(rollLedger(used, '2025-12')).toBe(used)
+  })
+
   it('starts a fresh month and keeps a total of the old one', () => {
     const used = recordCall(ledger, call)
     const rolled = rollLedger(used, '2026-12')

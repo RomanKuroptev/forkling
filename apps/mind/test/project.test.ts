@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Artifact, BudgetLedger, MindState, type BuildRequest } from '@forkling/schema'
+import { Artifact, BuildResult, type BuildRequest } from '@forkling/schema'
 import { checkProject, finishProject, MAX_PROJECT_BYTES } from '../src/project.ts'
 
 const merge = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
@@ -35,6 +35,8 @@ beforeEach(() => {
   copyFileSync(join(merge, 'forkling.json'), join(dir, 'forkling.json'))
   put('mind/builds/gate-toy.json', JSON.stringify(request))
 })
+
+const resultOf = () => BuildResult.parse(JSON.parse(readFileSync(join(dir, 'mind/builds/gate-toy.result.json'), 'utf8')))
 
 describe('checkProject', () => {
   it('accepts a small page of plain files', () => {
@@ -114,34 +116,39 @@ describe('finishProject', () => {
     expect(existsSync(join(dir, 'art/gate-toy.json'))).toBe(false)
   })
 
-  it('closes the build when the project does not pass, so the mind may ask again, and remembers why', () => {
+  it('reports a project that does not pass as failed, with why, so the mind can close the build and ask again', () => {
     put('site/projects/gate-toy/index.html', '<iframe src="x"></iframe>')
-    put('mind/state.json', JSON.stringify({ ...MindState.parse({}), openBuild: { id: 'gate-toy', kind: 'code', requestedAt: request.requestedAt } }))
     const r = finish()
-    expect(r.written).toEqual(expect.arrayContaining(['mind/state.json', 'memory/stream/2026-11-03.jsonl']))
-    expect(MindState.parse(JSON.parse(readFileSync(join(dir, 'mind/state.json'), 'utf8'))).openBuild).toBeNull()
-    expect(readFileSync(join(dir, 'memory/stream/2026-11-03.jsonl'), 'utf8')).toMatch(/Gate toy could not be built/)
+    expect(r.written).toEqual(['mind/builds/gate-toy.result.json'])
+    expect(resultOf()).toMatchObject({ id: 'gate-toy', kind: 'code', status: 'failed', reason: expect.stringMatching(/iframe/) })
+    // The mind's state and the stream are the mind's to write.
+    expect(existsSync(join(dir, 'mind/state.json'))).toBe(false)
+    expect(existsSync(join(dir, 'memory/stream'))).toBe(false)
   })
 
-  it('leaves another build alone when it closes this one', () => {
-    put('site/projects/gate-toy/index.html', '<iframe src="x"></iframe>')
-    put('mind/state.json', JSON.stringify({ ...MindState.parse({}), openBuild: { id: 'other', kind: 'object', requestedAt: request.requestedAt } }))
+  it('reports a project that passes as waiting for a person, which is what the pull request will do', () => {
+    good()
     finish()
-    expect(MindState.parse(JSON.parse(readFileSync(join(dir, 'mind/state.json'), 'utf8'))).openBuild?.id).toBe('other')
+    expect(resultOf()).toMatchObject({ id: 'gate-toy', kind: 'code', status: 'pr-open' })
   })
 
-  it('puts what the builder spent in the ledger', () => {
+  it('reports what the builder spent in the result file, for the mind to book, and never writes the ledger', () => {
     good()
     finish(0.0731)
-    const ledger = BudgetLedger.parse(JSON.parse(readFileSync(join(dir, 'brain/budget.json'), 'utf8')))
-    expect(ledger.calls).toMatchObject([{ kind: 'code', model: 'claude-haiku-5-5', usd: 0.0731 }])
-    expect(ledger.spentUsd).toBeCloseTo(0.0731, 6)
+    expect(resultOf().calls).toMatchObject([{ kind: 'code', model: 'claude-haiku-5-5', usd: 0.0731 }])
+    expect(existsSync(join(dir, 'brain/budget.json'))).toBe(false)
   })
 
-  it('does not touch the ledger when nothing was spent', () => {
+  it('counts what was spent even when the project does not pass', () => {
+    put('site/projects/gate-toy/index.html', '<iframe src="x"></iframe>')
+    finish(0.05)
+    expect(resultOf()).toMatchObject({ status: 'failed', calls: [{ usd: 0.05 }] })
+  })
+
+  it('reports no call when nothing was spent', () => {
     good()
     finish(0)
-    expect(existsSync(join(dir, 'brain/budget.json'))).toBe(false)
+    expect(resultOf().calls).toEqual([])
   })
 
   it('is no use without a request, or with an object request', () => {
