@@ -4,6 +4,7 @@ import { canSpend } from '../budget.ts'
 import { buildIdFor, checkBuildRequest } from '../builds.ts'
 import { clampText } from '../decision.ts'
 import type { Tick } from './context.ts'
+import { leaveStep } from './apply-step.ts'
 import { checkPlan, startStep } from './plan.ts'
 
 /** What a design call may cost, held back before a request is accepted. */
@@ -97,6 +98,8 @@ export function applyDecision(t: Tick): void {
     const { usable, check } = planned
     if (check.ok) {
       t.planPage = true
+      // A plan that takes over in the middle of a step settles the old step first.
+      leaveStep(t)
       goals.today = { date: today, steps: usable, reason: clampText((decision.planReason ?? decision.thought).trim() || 'This is what I feel like doing.', 200) }
       delete mind.replanAfter
       startStep(t, 0, decision.thought)

@@ -12,6 +12,7 @@ import {
   sleepWindow,
   startPlayback,
   sunDirection,
+  tallyWindow,
   worldWithObjects,
   type Stored,
 } from '@forkling/sim'
@@ -58,10 +59,14 @@ export function createTick(dir: string, deps: TickDeps): Tick {
 
   // Where the body is now: exactly what a viewer would have seen since the last commit.
   const world = worldWithObjects(w.objects)
-  const playback = startPlayback(
-    { forkling, pack, behaviors, world, goals: w.goals, stateTime: playbackStateTime(forkling), quirkWeights: weights },
-    nowMs,
-  )
+  const playbackInput = { forkling, pack, behaviors, world, goals: w.goals, stateTime: playbackStateTime(forkling), quirkWeights: weights }
+  const playback = startPlayback(playbackInput, nowMs)
+  // What the body really did on the plan step since the last write: the step's effect waits on it.
+  const running = w.goals.now
+  const from = playbackStateTime(forkling) * 1000
+  const to = running ? Math.min(nowMs, Date.parse(running.until)) : 0
+  const tally = running && !asleep && to > from ? tallyWindow(playbackInput, from, to) : { seconds: {}, interruptions: [] }
+  const stepVerb = running ? w.goals.today?.steps[running.index]?.verb : undefined
   const body = playback.state
   const objects: WorldObject[] = [...w.objects]
   const mind = structuredClone(w.mindState)
@@ -122,6 +127,8 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     started: null,
 
     triggers: [],
+    worked: stepVerb ? (tally.seconds[stepVerb] ?? 0) : 0,
+    drift: tally.interruptions.map((i) => ({ verb: i.verb, need: i.need, at: new Date(i.at * 1000).toISOString() })),
     failed: false,
     nextIndex: 0,
     moreSteps: false,

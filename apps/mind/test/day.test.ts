@@ -99,6 +99,9 @@ interface Day {
   /** Needs seen under 15 while awake, in ticks, for the report. */
   criticalTicks: Record<string, number>
   ticks: number
+  /** Plan steps that began, and how many of them ended unfinished because the body did not do enough of them. */
+  stepsStarted: number
+  stepsUnfinished: number
 }
 
 let dir: string
@@ -114,7 +117,7 @@ function needsAt(nowMs: number) {
 
 async function liveADay(): Promise<Day> {
   const model = fakeModel()
-  const out: Day = { decideCalls: 0, callsWhileAsleep: 0, spentUsd: 0, awakeTicks: 0, awakeTicksWithStep: 0, longestCritical: { need: '', minutes: 0 }, criticalTicks: {}, ticks: 0 }
+  const out: Day = { decideCalls: 0, callsWhileAsleep: 0, spentUsd: 0, awakeTicks: 0, awakeTicksWithStep: 0, longestCritical: { need: '', minutes: 0 }, criticalTicks: {}, ticks: 0, stepsStarted: 0, stepsUnfinished: 0 }
   const run: Record<string, number> = {}
   for (let i = 0; i < 144; i++) {
     const nowMs = START + i * TICK_MS
@@ -145,6 +148,9 @@ async function liveADay(): Promise<Day> {
       }
     }
   }
+  const stream = readFileSync(join(dir, 'memory/stream/2026-11-03.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { kind: string; text: string })
+  out.stepsStarted = stream.filter((e) => e.kind === 'step' && e.text.startsWith('Started ')).length
+  out.stepsUnfinished = stream.filter((e) => e.text.startsWith('Left ') && e.text.includes('unfinished')).length
   out.decideCalls = model.calls.filter((c) => c.req.kind === 'morning' || c.req.kind === 'decide').length
   out.spentUsd = BudgetLedger.parse(JSON.parse(readFileSync(join(dir, 'brain/budget.json'), 'utf8'))).spentUsd
   return out
@@ -172,6 +178,11 @@ describe('a whole day with no visitors', () => {
   it(`asks for a decision at most ${MAX_DECIDE_CALLS} times, not every half hour`, () => {
     expect(day.decideCalls, JSON.stringify(day)).toBeGreaterThanOrEqual(2)
     expect(day.decideCalls, JSON.stringify(day)).toBeLessThanOrEqual(MAX_DECIDE_CALLS)
+  })
+
+  it('does what it plans: the body carries out nearly every step it is given', () => {
+    expect(day.stepsStarted, JSON.stringify(day)).toBeGreaterThanOrEqual(20)
+    expect(day.stepsUnfinished / day.stepsStarted, JSON.stringify(day)).toBeLessThanOrEqual(0.2)
   })
 
   it('makes no call while asleep, and stays under the pace of the monthly cap', () => {

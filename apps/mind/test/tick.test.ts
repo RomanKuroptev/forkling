@@ -245,7 +245,7 @@ describe('a replacement plan that was turned down', () => {
     expect(llm.calls).toHaveLength(2)
     expect(stateOf().rejections).toHaveLength(1)
     expect(goalsOf().today).toEqual(before.today)
-    expect(goalsOf().now).toEqual(before.now)
+    expect({ ...goalsOf().now, workedSec: undefined }).toEqual({ ...before.now, workedSec: undefined })
   })
 })
 

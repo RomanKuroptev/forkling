@@ -88,6 +88,8 @@ export const MindState = z.object({
   codeWeek: z.object({ week: z.string().regex(/^\d{4}-W\d{2}$/), count: z.number().int().nonnegative() }).optional(),
   /** The build waiting on the builder: it ends when the object turns up in `objects/`, or after `BUILD_EXPIRES_HOURS`. */
   openBuild: z.object({ id: z.string().min(1), kind: BuildKind, requestedAt: Timestamp }).nullable().default(null),
+  /** Times the body broke off a plan step to look after a need since the mind last decided, for its next prompt. Newest last. */
+  brokenOff: z.array(z.object({ step: z.string().max(40), verb: z.string().max(40), need: z.string().max(20), at: Timestamp })).max(30).default([]),
   /** Why the validator last turned a plan down, newest last.*/
   rejections: z.array(z.object({ at: Timestamp, reasons: z.array(z.string()) })).max(10).default([]),
 })
