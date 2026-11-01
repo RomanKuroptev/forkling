@@ -98,7 +98,9 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   }
   const dayOfMonth = Number(ctx.today.slice(8, 10))
   const spend = { monthUsd: budget.spentUsd, capUsd: budget.capUsd, paceUsd: (budget.capUsd * dayOfMonth) / daysInMonth(ctx.today) }
-  const openBuild = mind.openBuild ? { id: mind.openBuild.id, kind: mind.openBuild.kind, ageHours: Math.max(0, Math.round((ctx.nowMs - Date.parse(mind.openBuild.requestedAt)) / 3_600_000)) } : null
+  // The one that has waited longest: an object, or a coded project waiting for a person to read it.
+  const waiting = [mind.openBuild, mind.openCode].filter((b) => b !== null).sort((a, b) => Date.parse(a.requestedAt) - Date.parse(b.requestedAt))[0]
+  const openBuild = waiting ? { id: waiting.id, kind: waiting.kind, ageHours: Math.max(0, Math.round((ctx.nowMs - Date.parse(waiting.requestedAt)) / 3_600_000)) } : null
 
   const warnings: string[] = []
   for (const [need, minutes] of Object.entries(needsCritical)) {

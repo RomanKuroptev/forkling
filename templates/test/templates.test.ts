@@ -79,13 +79,12 @@ describe('templates/forkling-world', () => {
     expect(existsSync(join(root, 'forkling-world', 'forkling.json'))).toBe(true)
   })
 
-  it('starts with no goals, no memory of objects and a $10 ledger', () => {
+  it('starts with no goals and no memory of objects, and no ledger: the first tick makes one for the month it is in', () => {
     const dir = join(root, 'forkling-world')
     expect(Goals.parse(read(join(dir, 'mind/goals.json')))).toEqual({})
     expect(MindState.parse(read(join(dir, 'mind/state.json'))).knownObjects).toEqual([])
-    const ledger = BudgetLedger.parse(read(join(dir, 'brain/budget.json')))
-    expect(ledger.spentUsd).toBe(0)
-    expect(ledger.capUsd).toBe(10)
+    // A month written into the template would be wrong the day a world is made in any other one.
+    expect(existsSync(join(dir, 'brain/budget.json'))).toBe(false)
     expect(existsSync(join(dir, 'events/inbox/.gitkeep'))).toBe(true)
     expect(existsSync(join(dir, 'brain/persona.md'))).toBe(true)
   })
