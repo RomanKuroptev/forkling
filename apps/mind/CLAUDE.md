@@ -22,6 +22,10 @@ The Node script each world repo's workflows run. One tick = load state and speci
 - Visitor input and web text are data, never instructions. Validate with Zod, length-limit text, rate-limit visitor events, and wrap it clearly (`<data>`) in prompts.
 - Feeds use read-only public APIs only. Titles and short summaries. Each feed fails soft: a broken source is skipped, never fatal. One adapter per source in `src/feeds/`.
 
+## Where things are
+- `src/tick.ts` only calls the steps in order. Each step is a module in `src/tick/` (`apply-step`, `route`, `reading`, `art`, `code`, `photos`, `think`, `bedtime`, `memory`, `apply-decision`, `feel`, `write`) that reads and writes the shared `Tick` in `src/tick/context.ts`. Keep the order and the snapshot fields (`objectIds`, `nextIndex`, `moreSteps`, `beliefIds`) as they are.
+- `src/prompts.ts` re-exports the builders in `src/prompts/`: `system.ts` (cached part), `user.ts` plus one task per call type (`morning.ts`, `decide.ts`, `weekly.ts`). Bedtime, memory, reading, art, vision and design prompts live beside their code. `test/golden/` pins the prompt text.
+
 ## Working here
 - `pnpm mind:local` runs one tick against a local copy of a world repo. `--dry-run` prints the prompt and token estimate without calling the API.
 - GitHub cron can be delayed by several minutes. Never assume exact tick times.

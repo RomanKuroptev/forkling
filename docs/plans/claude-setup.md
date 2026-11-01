@@ -2,7 +2,7 @@
 
 Source: review doc https://claude.ai/artifact/3oS7WRPMBir1D4ZtoY2zzB (2026-11-01).
 Scope: part 1 only (docs and config). No changes to runtime code. One branch `claude-setup`, one commit per step, Roman reviews before merge.
-Part 2 (later, separate slice via `/slice`): split `apps/mind/src/tick.ts` and `prompts.ts`, prune merged branches.
+Part 2 (separate slice via `/slice`): the `tick.ts` and `prompts.ts` split is in [`split-tick.md`](split-tick.md). Pruning merged branches is still open.
 
 ## Ground rules
 - Do not change behaviour: no edits under `apps/*/src`, `packages/*/src`, `species/*/src`, `templates/`.

@@ -70,3 +70,9 @@ Merged into main, local (21): fix-stick-glide, hide-bubble, m1-island, m2-merge,
 Merged into origin/main, remote (19): the same list without m1-island, m2-merge and m3-repo-world (those have no remote).
 Not merged: claude-setup (kept), and split-tick once created.
 After the refactor, ask Roman with AskUserQuestion: delete local only, local and remote, or none. Then `git branch -d …` (safe delete) and, if approved, `git push origin --delete …`.
+
+## As built
+- Helpers (`clock`, `weekday`, `round`, `epochOf`, `same`, `intentionSeed`) are in `tick/util.ts`, and each constant sits in the step that uses it (`MAX_ART_TOKENS` is exported from `tick/art.ts` for `tick/code.ts`).
+- `tick/context.ts` holds only the types; `tick/create.ts` builds the `Tick` (and `spotsFor`).
+- Readings and art counters are initialised in `createTick`: nothing writes them before their steps, so the values are the same.
+- `tick.ts` is 39 lines. The dry-run output on a template world is identical before and after, and the golden prompt files pass.
