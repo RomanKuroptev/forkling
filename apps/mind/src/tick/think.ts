@@ -44,6 +44,7 @@ export async function think(t: Tick): Promise<void> {
     if (!result) break
     if (!result.parsed) {
       notes.push(`no usable answer (stopped: ${result.stopReason ?? 'unknown'})`)
+      t.mind.thinkFailedAt = t.nowIso
       break
     }
     t.decision = result.parsed

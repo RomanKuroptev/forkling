@@ -30,6 +30,7 @@ export function makeAsk(t: Tick): Ask {
         return result
       } catch (e) {
         notes.push(`call failed: ${(e as Error).message}`)
+        t.mind.thinkFailedAt = t.nowIso
       }
     }
     return null

@@ -60,6 +60,12 @@ export const MindState = z.object({
   appliedStepAt: Timestamp.optional(),
   /** When the LLM was last asked, so strong needs don't wake it every tick. */
   lastThinkAt: Timestamp.optional(),
+  /** After a plan came back empty or was turned down, no new plan is asked for before this time. */
+  replanAfter: Timestamp.optional(),
+  /** `startedAt` of the step the mind was last asked about because its target was gone, so each step asks once. */
+  blockedStep: Timestamp.optional(),
+  /** When a call last failed or gave nothing usable, so the mind is not asked again at every tick. */
+  thinkFailedAt: Timestamp.optional(),
   /** Why the mind chose to stay up late, in its own words. */
   lateNightReason: z.string().max(200).optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */

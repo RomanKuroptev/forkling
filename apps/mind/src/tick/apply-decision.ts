@@ -10,6 +10,8 @@ import { checkPlan, startStep } from './plan.ts'
 const DESIGN_ESTIMATE_USD = 0.02
 /** A late night is only a choice for the evening. */
 const LATE_NIGHT_FROM_HOUR = 18
+/** After a plan came back empty or was turned down, a new one is not asked for before this long. */
+export const REPLAN_COOLDOWN_MS = 60 * 60_000
 
 /** What the mind decided becomes true: goals, a design request, a late night, and the plan if the body can carry it out. */
 export function applyDecision(t: Tick): void {
@@ -34,6 +36,9 @@ export function applyDecision(t: Tick): void {
   } else if (thinkKind === 'weekly' && goals.long) {
     goals.long = { ...goals.long, reviewedAt: nowIso }
   }
+
+  // The plan is checked first, against what was left before a design takes the build slot: both may be in one answer.
+  const planned = decision.plan && decision.plan.length > 0 ? checkPlan(t, decision.plan) : null
 
   if (decision.design?.name.trim() && decision.design.purpose.trim() && !t.deps.dryRun) {
     const verdict = checkBuildRequest({ state: mind, today, asleep, canAfford: canSpend(t.budget, DESIGN_ESTIMATE_USD) })
@@ -77,14 +82,21 @@ export function applyDecision(t: Tick): void {
   }
 
   if (thinkKind === 'morning') mind.lastPlanDate = today
-  mind.knownObjects = [...new Set([...mind.knownObjects, ...t.objects.map((o) => o.id)])]
-  mind.seenEventTypes = [...new Set([...mind.seenEventTypes, ...events.map((e) => e.type)])]
+  // A weekly review looks at the long goal, not at the beach, so what is new stays new until it is looked at.
+  if (thinkKind === 'morning' || thinkKind === 'decide') {
+    mind.knownObjects = [...new Set([...mind.knownObjects, ...t.objects.map((o) => o.id)])]
+    mind.seenEventTypes = [...new Set([...mind.seenEventTypes, ...events.map((e) => e.type)])]
+  }
+  // A step whose target was gone has been asked about, so it is not asked about again.
+  if (goals.now && triggers.some((x) => x.kind === 'blocked')) mind.blockedStep = goals.now.startedAt
+  const replanAfter = new Date(nowMs + REPLAN_COOLDOWN_MS).toISOString()
 
-  if (decision.plan && decision.plan.length > 0) {
-    const { usable, check } = checkPlan(t, decision.plan)
+  if (planned) {
+    const { usable, check } = planned
     if (check.ok) {
       t.planPage = true
       goals.today = { date: today, steps: usable, reason: clampText((decision.planReason ?? decision.thought).trim() || 'This is what I feel like doing.', 200) }
+      delete mind.replanAfter
       startStep(t, 0, decision.thought)
       if (thinkKind !== 'morning') parts.push('new plan')
     } else {
@@ -92,13 +104,15 @@ export function applyDecision(t: Tick): void {
       notes.push(`plan rejected: ${check.reasons.join('; ')}`)
       remember.push({ at: nowIso, kind: 'rejected', text: `A plan was turned down: ${check.reasons[0] ?? 'it could not be carried out'}` })
       parts.push('plan rejected')
-      // The body falls back to its own judgement: no focus, and no stale plan from another day.
-      delete goals.now
-      if (goals.today && goals.today.date !== today) delete goals.today
+      mind.replanAfter = replanAfter
+      // The body goes on with the plan it has, unless that is from another day: then it falls back on its own judgement.
+      if (!goals.today || goals.today.date !== today) {
+        delete goals.today
+        delete goals.now
+      }
     }
-  } else if (goals.now && nowMs >= Date.parse(goals.now.until)) {
-    // Nothing new was planned and the step has run out: carry on with the plan, or leave the body free.
-    if (t.moreSteps) startStep(t, t.nextIndex)
-    else delete goals.now
+  } else if (triggers.some((x) => x.kind === 'replan')) {
+    // It was asked for a plan and wants none: it is left to itself for a while before it is asked again.
+    mind.replanAfter = replanAfter
   }
 }

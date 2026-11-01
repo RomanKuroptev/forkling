@@ -26,7 +26,8 @@ const byId = (id: string) => pack.actions.find((a) => a.id === id)!
 describe('cat species pack', () => {
   it('parses, with the milestone needs and a 5 m notice radius', () => {
     expect(pack.id).toBe('cat')
-    expect(Object.keys(pack.needs).sort()).toEqual(['affection', 'curiosity', 'energy', 'hunger'])
+    // Affection is out until a visit can reach the mind (docs/future.md); nothing in the mind's world could ever raise it.
+    expect(Object.keys(pack.needs).sort()).toEqual(['curiosity', 'energy', 'hunger'])
     expect(pack.perception.noticeRadius).toBe(5)
   })
 
@@ -254,11 +255,11 @@ describe('cat in the headless sim', () => {
     expect(day.noticeStep!.startedAt).toBeCloseTo(day.noticeStep!.time, 5)
   })
 
-  it('only gains affection by choosing to follow a visitor', () => {
-    // The harness flags any need that rises outside an action that satisfies it. Only follow does that for affection.
+  it('follows a visitor without a need to satisfy, and no need rises outside an action that satisfies it', () => {
+    // The harness flags any need that rises outside an action that satisfies it.
     expect(day.illegalRises).toEqual([])
-    const affectionActions = pack.actions.filter((a) => (a.satisfies.affection ?? 0) > 0).map((a) => a.id)
-    expect(affectionActions).toEqual(['follow'])
+    expect(byId('follow').satisfies).toEqual({})
+    expect(pack.actions.some((a) => (a.satisfies as Record<string, number>).affection !== undefined)).toBe(false)
   })
 
   it('is deterministic for a seed', () => {
@@ -329,7 +330,7 @@ describe('cat in the headless sim', () => {
       reason: 'Dinner.',
     })
     const world = worldWithObjects([bowl])
-    const r = runHeadless({ pack, behaviors, world, seed: 5, startHour: 12, seconds: 600, needs: { hunger: 10, energy: 90, curiosity: 90, affection: 90 } })
+    const r = runHeadless({ pack, behaviors, world, seed: 5, startHour: 12, seconds: 600, needs: { hunger: 10, energy: 90, curiosity: 90 } })
     expect(r.intentionTypes.has('eat')).toBe(true)
     expect(r.targets.some((t) => t.startsWith('eat:'))).toBe(true)
   })

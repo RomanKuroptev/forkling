@@ -75,6 +75,15 @@ describe('coding', () => {
     expect(result.build).toBe('gate-toy')
   })
 
+  it('accepts a plan with a code step when the same decision also asks for a designed object', async () => {
+    // The plan is checked against what was left before the design took the build slot, not after.
+    const both: Decision = { ...plan([step('code', 'desk', 'a toy of gates'), step('sit', null)]), design: { name: 'A tiny lamp', purpose: 'To read by.', contraption: false } }
+    await tick(MORNING, fake(both).llm)
+    expect(readJson('mind/goals.json').today.steps.map((s: { verb: string }) => s.verb)).toEqual(['code', 'sit'])
+    expect(state().rejections).toEqual([])
+    expect(existsSync(file('mind/builds/a-tiny-lamp.json'))).toBe(true)
+  })
+
   it('leaves no artifact yet: the project is on the site only when its pull request is merged', async () => {
     await codeADay()
     expect(existsSync(file('art'))).toBe(false)

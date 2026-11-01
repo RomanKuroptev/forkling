@@ -1,4 +1,4 @@
-import { addXp, applyStep, eventsFromStep, scoreSurprise, skillLevel } from '@forkling/sim'
+import { addXp, applyStep, eventsFromStep, fixableNeeds, hourInZone, scoreSurprise, skillLevel } from '@forkling/sim'
 import type { Tick } from './context.ts'
 import { describeEvent, PAST } from './describe.ts'
 import { spotsFor } from './create.ts'
@@ -10,7 +10,9 @@ const NEED_COOLDOWN_MS = 30 * 60_000
 /** Scores what is surprising, then lands the effect of a step whose time is up: what it gathered, made or ate becomes true here. */
 export function finishStep(t: Tick): void {
   const { forkling, goals, mind, pack, nowMs, nowIso, asleep, body } = t
-  t.triggers = scoreSurprise({ forkling: { ...forkling, needs: body.needs }, goals, mindState: mind, objects: t.objects, events: t.events, nowMs, asleep, spotKinds: t.spotKeys })
+  // What the body can do for itself, between steps, is routine and never a reason to think.
+  const fixable = fixableNeeds(pack, { visitorDistance: null, timeOfDay: hourInZone(t.tz, nowMs), asleep, spotKinds: t.spotKeys })
+  t.triggers = scoreSurprise({ forkling: { ...forkling, needs: body.needs }, goals, mindState: mind, objects: t.objects, events: t.events, nowMs, asleep, spotKinds: t.spotKeys, fixableNeeds: fixable })
   if (mind.lastThinkAt && nowMs - Date.parse(mind.lastThinkAt) < NEED_COOLDOWN_MS) t.triggers = t.triggers.filter((x) => x.kind !== 'need')
 
   const finishing = goals.now ? goals.today?.steps[goals.now.index] : undefined

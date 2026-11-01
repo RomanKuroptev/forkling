@@ -9,7 +9,7 @@ const forkling = Forkling.parse({
   name: 'Merge',
   species: 'cat',
   seed: 5,
-  needs: { hunger: 70, energy: 80, curiosity: 60, affection: 30 },
+  needs: { hunger: 70, energy: 80, curiosity: 60 },
   position: [0, 0, 0],
   mood: 'content',
   intention: { type: 'lounge', startedAt: '2026-11-03T09:50:00Z', seed: 1, reason: 'Resting.' },
@@ -86,8 +86,21 @@ describe('scoreSurprise', () => {
     expect(t[0]!.detail).toContain('hunger')
   })
 
+  it('does not wake the mind for a need the body can fix by itself', () => {
+    const hungry = { ...calm, forkling: { ...forkling, needs: { ...forkling.needs, hunger: 8 } } }
+    expect(kinds({ ...hungry, fixableNeeds: new Set(['hunger']) })).toEqual([])
+    expect(kinds({ ...hungry, fixableNeeds: new Set(['energy']) })).toEqual(['need'])
+    expect(kinds({ ...hungry, fixableNeeds: new Set() })).toEqual(['need'])
+  })
+
+  it('names the weakest need that the body cannot fix, not one it can', () => {
+    const t = scoreSurprise({ ...calm, forkling: { ...forkling, needs: { ...forkling.needs, hunger: 3, energy: 10 } }, fixableNeeds: new Set(['hunger']) })
+    expect(t.map((x) => x.kind)).toEqual(['need'])
+    expect(t[0]!.detail).toContain('energy')
+  })
+
   it('notices the end of a step', () => {
-    expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T10:11:00Z') })).toEqual(['stepDone'])
+    expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T10:11:00Z') })).toContain('stepDone')
   })
 
   it('asks for a morning plan once awake on a day with no plan', () => {
@@ -95,8 +108,8 @@ describe('scoreSurprise', () => {
     expect(t).toEqual(['newDay'])
   })
 
-  it('does not ask again after the plan is made, even if the plan was rejected into nothing', () => {
-    expect(kinds({ ...calm, goals: {} })).toEqual([])
+  it('does not ask for a morning plan again after the plan is made, even if it was rejected into nothing', () => {
+    expect(kinds({ ...calm, goals: {} })).not.toContain('newDay')
   })
 
   it('uses the forkling local date, not UTC, for a new day', () => {
@@ -107,6 +120,61 @@ describe('scoreSurprise', () => {
   it('waits for the morning: still up after midnight is not a new day yet', () => {
     // 23:30Z on the 3rd is 00:30 on the 4th in Stockholm, after a late night.
     expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T23:30:00Z'), goals: {} })).toEqual([])
+  })
+
+  describe('replan', () => {
+    const noStep = { ...calm, goals: { long: planned.long } }
+
+    it('asks for a new plan when the day is planned and there is nothing to do', () => {
+      const t = scoreSurprise(noStep)
+      expect(t.map((x) => x.kind)).toEqual(['replan'])
+      expect(t[0]!.detail).toMatch(/no step/)
+    })
+
+    it('asks when the last step has run its time, alongside the step ending', () => {
+      expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T10:11:00Z') })).toEqual(['replan', 'stepDone'])
+    })
+
+    it('does not ask when another step is waiting', () => {
+      const two = Goals.parse({
+        ...planned,
+        today: { ...planned.today, steps: [...planned.today!.steps, { verb: 'sit', reason: 'Rest.', minutes: 10 }] },
+      })
+      expect(kinds({ ...calm, goals: two, nowMs: Date.parse('2026-11-03T10:11:00Z') })).toEqual(['stepDone'])
+    })
+
+    it('does not ask while a step is running', () => {
+      expect(kinds(calm)).toEqual([])
+    })
+
+    it('waits until replanAfter, then asks again', () => {
+      const later = (iso: string) => MindState.parse({ ...calm.mindState, replanAfter: iso })
+      expect(kinds({ ...noStep, mindState: later('2026-11-03T10:30:00Z') })).toEqual([])
+      expect(kinds({ ...noStep, mindState: later('2026-11-03T09:59:00Z') })).toEqual(['replan'])
+    })
+
+    it('leaves the first plan of a day to newDay', () => {
+      expect(kinds({ ...noStep, mindState: MindState.parse({ ...calm.mindState, lastPlanDate: '2026-11-02' }) })).toEqual(['newDay'])
+    })
+
+    it('does not ask in the 45 minutes before bed, which are for winding down', () => {
+      const bedMs = sleepWindow('2026-11-03', 5, 'Europe/Stockholm').bedMs
+      expect(kinds({ ...noStep, nowMs: bedMs - 50 * 60_000 })).toEqual(['replan'])
+      expect(kinds({ ...noStep, nowMs: bedMs - 40 * 60_000 })).toEqual([])
+    })
+
+    it('is not asked in bed', () => {
+      expect(kinds({ ...noStep, asleep: true })).toEqual([])
+    })
+  })
+
+  it('asks about a blocked step once, not on every tick', () => {
+    const gone = { ...calm, spotKinds: new Set(['perch']) }
+    expect(kinds(gone)).toEqual(['blocked'])
+    expect(kinds({ ...gone, mindState: MindState.parse({ ...calm.mindState, blockedStep: planned.now!.startedAt }) })).toEqual([])
+    // A later step is a new question.
+    const next = Goals.parse({ ...planned, now: { ...planned.now, startedAt: '2026-11-03T09:50:00Z' } })
+    expect(kinds({ ...gone, goals: next, mindState: MindState.parse({ ...calm.mindState, blockedStep: planned.now!.startedAt }) })).toEqual(['blocked'])
   })
 
   it('asks for a weekly review of the long goal', () => {
@@ -136,7 +204,7 @@ describe('scoreSurprise', () => {
     })
 
     it('waits until that half hour', () => {
-      expect(kinds({ ...evening, nowMs: bedMs - 60 * 60_000 })).toEqual([])
+      expect(kinds({ ...evening, nowMs: bedMs - 60 * 60_000 })).not.toContain('bedtime')
     })
 
     it('happens once a day', () => {
@@ -145,7 +213,7 @@ describe('scoreSurprise', () => {
 
     it('follows a late night: the reflection moves with bedtime', () => {
       const late = { ...evening, forkling: { ...forkling, lateNight: '2026-11-03' } }
-      expect(kinds(late)).toEqual([])
+      expect(kinds(late)).not.toContain('bedtime')
       const lateBed = sleepWindow('2026-11-03', 5, 'Europe/Stockholm', true).bedMs
       expect(kinds({ ...late, nowMs: lateBed - 10 * 60_000 })).toEqual(['bedtime'])
     })

@@ -1,3 +1,4 @@
+import { advance } from './tick/advance.ts'
 import { applyDecision } from './tick/apply-decision.ts'
 import { finishStep } from './tick/apply-step.ts'
 import { artStep } from './tick/art.ts'
@@ -34,6 +35,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   await bedtime(t)
   await memoryStep(t)
   applyDecision(t)
+  advance(t)
   feel(t)
   return writeWorld(t)
 }

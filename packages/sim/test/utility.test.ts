@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SpeciesPack } from '@forkling/schema'
 import blobJson from './fixtures/blob.species.json'
 import { createPrng } from '../src/prng.ts'
-import { pickAction, scoreActions, type ScoreContext } from '../src/utility.ts'
+import { fixableNeeds, pickAction, scoreActions, type ScoreContext } from '../src/utility.ts'
 
 const blob = SpeciesPack.parse(blobJson)
 const noon: ScoreContext = { visitorDistance: null, timeOfDay: 12, spotKinds: new Set(['food']) }
@@ -111,5 +111,37 @@ describe('pickAction', () => {
     expect(eatShare).toBeGreaterThan(0.5)
     expect(eatShare).toBeLessThan(0.95)
     expect(all.filter((p) => p === 'rest').length).toBeGreaterThan(0)
+  })
+})
+
+describe('fixableNeeds', () => {
+  const without = (...ids: string[]) => SpeciesPack.parse({ ...blobJson, actions: blob.actions.filter((a) => !ids.includes(a.id)) })
+
+  it('names every need that some action eligible right now would raise', () => {
+    expect([...fixableNeeds(blob, noon)].sort()).toEqual(['energy', 'fun', 'hunger'])
+  })
+
+  it('leaves out a need whose only source is not on offer', () => {
+    // Eating needs a food spot, and there is none here.
+    expect(fixableNeeds(blob, { ...noon, spotKinds: new Set() }).has('hunger')).toBe(false)
+    expect(fixableNeeds(blob, noon).has('hunger')).toBe(true)
+  })
+
+  it('does not count an action that needs a visitor when no visitor is near', () => {
+    const lonely = without('roam', 'dash')
+    expect(fixableNeeds(lonely, noon).has('fun')).toBe(false)
+    expect(fixableNeeds(lonely, { ...noon, visitorDistance: 2 }).has('fun')).toBe(true)
+  })
+
+  it('does not count an action that costs the need or raises nothing', () => {
+    const fixable = fixableNeeds(without('rest'), noon)
+    // dash costs energy, so with no rest nothing raises it.
+    expect(fixable.has('energy')).toBe(false)
+  })
+
+  it('respects the time of day', () => {
+    const night = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === 'rest' ? { ...a, requires: ['night'] } : a)) })
+    expect(fixableNeeds(night, { ...noon, timeOfDay: 12, asleep: false }).has('energy')).toBe(false)
+    expect(fixableNeeds(night, { ...noon, timeOfDay: 1, asleep: true }).has('energy')).toBe(true)
   })
 })
