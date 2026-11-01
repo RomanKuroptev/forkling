@@ -8,6 +8,7 @@ import { GalleryWall } from './art/GalleryWall.tsx'
 import { Melody } from './art/Melody.tsx'
 import { Player } from './player/Player.tsx'
 import { touchUi } from './touch.ts'
+import { useWorld } from './world/WorldContext.tsx'
 import { TouchControls } from './ui/TouchControls.tsx'
 import { Environment } from './world/Environment.tsx'
 import { Objects } from './world/Objects.tsx'
@@ -60,10 +61,18 @@ export function App() {
       {touchUi ? (
         <div className="hud hud-touch">Left stick to walk · push to the edge to run · drag to look · pinch to zoom</div>
       ) : (
-        <div className="hud">
-          WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · E near a contraption sets it off · B hides the thought bubble · F3 for Merge’s mind
-        </div>
+        <DesktopHud />
       )}
     </>
+  )
+}
+
+/** The key hints. F3 opens the mind of whichever forkling is being watched. */
+function DesktopHud() {
+  const { world } = useWorld()
+  return (
+    <div className="hud">
+      WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · E near a contraption sets it off · B hides the thought bubble · F3 for {world.forkling.name}’s mind
+    </div>
   )
 }

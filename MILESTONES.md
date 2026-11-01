@@ -61,10 +61,10 @@ Each morning, one reading session skims free, read-only feeds, and Merge's tempe
 | Wikipedia most-read articles yesterday (Pageviews API) | What the world is curious about right now |
 | Hacker News top stories | Tech and maker culture |
 | GitHub trending repositories | What developers are building |
-| NASA picture of the day, moon phase, meteor showers | The real sky |
+| NASA picture of the day, moon phase | The real sky |
 | Wikipedia "On this day" and random articles | History and pure weirdness |
 | Lemmy (lemmy.world public API), allowlisted communities only | Fun posts: pics, photography, science, space, todayilearned, mildlyinteresting, diy, retro gaming, cats |
-| Mastodon (mastodon.social public trends), hashtags only | A pulse of what people talk about, with politics and news filtered out |
+| Mastodon (mastodon.social public trends), hashtags only | A pulse of what people talk about, with politics and news filtered out (the filter covers this feed only) |
 
 Merge only sees titles and short summaries, wrapped as data. Reddit is a possible later source (see `docs/future.md`).
 
@@ -102,7 +102,7 @@ Merge keeps roughly human hours in its owner's time zone (Merge: Europe/Stockhol
 | Afternoon | A new artifact (a drawing, a page of writing, a melody) and a reading note on its Pages site. Maybe a nap in the sun |
 | Evening, 18:00 to 22:00 | Prime time: finishes the day's project, tinkers, sky-watches. Pages projects usually ship now |
 | Bedtime, ~22:30 | Journal entry and reflection: new beliefs, or one it changed its mind about |
-| Night, ~23:00 to 07:00 | Asleep (ear twitches for visitors). One batch call rewrites memory. Gifts left at night are found in the morning |
+| Night, ~23:00 to 07:00 | Asleep (ear twitches for visitors). One batch call rewrites memory. (Gifts left at night being found in the morning needs the visit gateway, which is after v1.) |
 | Twice a week | A coded project ships on its Pages site |
 | Every few days | An obsession starts or burns out; a long goal is reached, changed or given up |
 

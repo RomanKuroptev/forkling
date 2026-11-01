@@ -36,8 +36,8 @@ Times are Merge's (Europe/Stockholm). The step names are modules in `apps/mind/s
 | Every 10 min | A tick starts. In practice the optional heartbeat workflow is the clock; the GitHub cron fires rarely. While asleep the gate lets only the tick in minute `:03` through | `templates/forkling-world/.github/workflows/mind.yml` (gate at lines 40-56), `heartbeat.yml` |
 | Tick start | Load the world, roll temperament if new, replay the body up to now, roll the budget month | `tick/create.ts` |
 | First awake tick of the day (up to about an hour after 07:00) | `newDay` trigger. Morning skim of 7 feeds, then one Haiku call writes today's plan (up to 12 steps) and may set or keep the long goal | `tick/reading.ts`, `tick/think.ts`, `prompts/morning.ts` |
-| Through the day | A plan step has a `minutes` value. When its time is up, `stepDone` fires. If steps remain and nothing else fired, the next step starts with no LLM call. Otherwise Haiku is asked | `tick/route.ts` |
-| When a step ends | Its effect lands on the world (gathered, made, ate), skill XP is added, and side calls queue: art, reading, photo, code | `tick/apply-step.ts` |
+| Through the day | A plan step has a `minutes` value. When its time is up, `stepDone` fires. If steps remain and nothing else fired (or the model cannot be asked), the next step starts with no LLM call. When the last step ends, or the day is planned and nothing is running, a `replan` trigger asks Haiku for the next plan (not in the last 45 minutes before bed, and not again for an hour after an empty or rejected answer) | `tick/route.ts`, `tick/advance.ts` |
+| When a step ends | Its effect lands on the world (gathered, made, ate) and skill XP is added (the minutes really spent), but only if the replayed body spent at least 60% of the step's minutes on its verb. A step that fell short is given its time again once, then ends unfinished with nothing gathered, made or learned. Side calls queue: art, reading, photo, code | `tick/apply-step.ts` |
 | Any time | Something new, a blocked step or a need under 15 fires a trigger and Haiku decides | `packages/sim/src/surprise.ts` |
 | Around 22:30 | `bedtime` trigger. Sonnet writes the journal and updates beliefs. Code drops paragraphs that cite nothing real | `tick/bedtime.ts`, `reflect.ts`, `packages/sim/src/claims.ts` |
 | Asleep | No triggers. Once the evening is reflected, one Batch job rewrites the 12 memory slots | `tick/memory.ts` |
@@ -61,9 +61,11 @@ Times are Merge's (Europe/Stockholm). The step names are modules in `apps/mind/s
 | 8 | `think` | The main Haiku or Sonnet call. One retry if the plan fails validation | think kind is morning, decide or weekly |
 | 9 | `bedtime` | Sonnet reflection, journal, belief changes | think kind is bedtime |
 | 10 | `memoryStep` | Submits or polls the nightly Batch job | asleep and reflected, or a batch is pending |
-| 11 | `applyDecision` | Turns the decision into goals, a build request, a late night, or a rejected plan | a decision exists |
+| 11 | `applyDecision` | Turns the decision into goals, a build request, a late night, or a rejected plan (a rejected replacement leaves today's plan alone) | a decision exists |
+| 11b | `advance` | A step that ran out hands over to the next, or leaves the body free, whether or not the model answered; a blocked step that was answered with "carry on" is skipped | always |
 | 12 | `feel` | Updates mood from the events of this tick | always |
-| 13 | `write` | Writes files, stream and timeline entries, prunes old stream | always (commits only if something changed) |
+| 13 | `write` | Writes files, stream and timeline entries, prunes old stream. The time the body spent on the step and what broke it off are written only when something else is | always (a quiet tick writes no world file) |
+| 14 | `logTick` | One line in `mind/ticks/` and a fresh `mind/health.json`, even for a tick that changed nothing | always (not on a dry run) |
 
 ## 4. Every LLM call
 
@@ -88,20 +90,19 @@ Everything in the tick goes through one gate, `makeAsk` (`tick/ask.ts`), which c
 ## 5. The body: how Merge moves and chooses
 
 ### Needs
-Four needs from 0 to 100. Values for the cat (`species/cat/species.json`):
+Three needs from 0 to 100. Values for the cat (`species/cat/species.json`):
 
 | Need | Start | Decay per hour | What raises it |
 |---|---|---|---|
 | hunger | 65 | 120 | `eat` and similar |
 | energy | 75 | 80 | `sleep`, `nap` |
 | curiosity | 55 | 120 | `explore`, `play`, `inspect` and others |
-| affection | 35 | 30 | `follow` only, which needs a visitor nearby |
 
-Needs fall with real time (`packages/sim/src/needs.ts`). A need at 120 per hour goes from full to empty in under an hour. Only an action's `satisfies` raises a need.
+Needs fall with real seconds (`packages/sim/src/needs.ts`), asleep as well as awake, so they run about 10 to 50 times faster than a person's day: a need at 120 per hour goes from full to empty in under an hour. Only an action's `satisfies` raises a need, and some actions cost energy (`explore` -6, `pounce` -10, `zoomies` -5), which matters more than the decay. Affection was removed from the cat until visits can reach the mind; it returns with the visit gateway. The measured effect of different rates is in `review-2026-11.md` section 11.
 
 ### How the body picks an action (`packages/sim/src/utility.ts`, `forkling.ts:380-395`)
-1. **Is there a plan step (the "focus")?** If yes, and no need is below 15, and no visitor is near, the plan step wins outright.
-2. **Otherwise it drifts.** Each eligible action is scored: a small baseline, plus how much it would raise each need weighted by how empty that need is (squared), times pack and quirk weights. One action is drawn at random (seeded) in proportion to the score squared.
+1. **Is there a plan step (the "focus")?** If yes and no visitor is near, the plan owns the visible action. If a need is below 15 and the body can raise it right now (and the planned verb would not), it does one action that raises it, then the plan goes on. Otherwise the plan step wins outright.
+2. **Otherwise it drifts.** Each eligible action is scored: a small baseline, plus how much it would raise each need weighted by how empty that need is (squared), times pack and quirk weights and a mood weight (energetic verbs up when it is wound up and glad, restful ones when it is low and calm, at most 40% either way). One action is drawn at random (seeded) in proportion to the score squared. In bed hours only verbs for the night are on offer, and verbs that need empty or full paws are left out when the paws do not fit.
 3. **The focus verb still competes** in drift, with its score doubled or set to at least 1.
 4. Actions with a real effect (build, cook, write, etc.) are only eligible as drift when they are the mind's focus verb.
 
@@ -117,7 +118,7 @@ Both then fast-forward to "now". If the anchors differ, the same `forkling.json`
 
 ### Sleep and mood
 - Sleep: wake about 07:00 and bed about 23:00 in the forkling's time zone, shifted by up to 30 minutes from the seed, plus a weekend lie-in and an optional late night the mind chooses (`packages/sim/src/sleep.ts`). The hours are in the engine, not the species pack.
-- Mood: events (found something new, a step that failed, a need running low) are scored against likes, dislikes and quirks. Valence fades with a 3 h half-life, arousal with 2 h (`packages/sim/src/appraisal.ts`). The result is a word (`upset`, `content`, ...) shown as body language and in the debug overlay. **Mood does not change which action is chosen.**
+- Mood: events (found something new, a step that failed, a need running low, something made or read, a build arriving) are scored against likes, dislikes and quirks. Valence fades with a 3 h half-life, arousal with 2 h (`packages/sim/src/appraisal.ts`). The result is a word (`upset`, `content`, ...) shown as body language and in the debug overlay, and the feelings underneath weight the drift draw (see above).
 
 ## 6. The subsystems
 
@@ -125,12 +126,13 @@ Both then fast-forward to "now". If the anchors differ, the same `forkling.json`
 | Trigger | Fires when | Cooldown |
 |---|---|---|
 | novelty | an object id not in `knownObjects`, or a new visitor event type | none |
-| blocked | the current step's target is not available | none |
-| need | any need below 15 | 30 min since the last LLM call |
+| blocked | the current step's target is not available | asked once per step |
+| need | a need below 15 that the body cannot raise by itself right now | 30 min since the last LLM call |
+| replan | the day is planned and no step is running, or the last step ran out | not in the last 45 min before bed; 60 min after an empty or rejected answer |
 | stepDone | the current step's time is up | none |
 | newDay | first awake tick of a day not yet planned | once a day |
 | bedtime | within 30 min of bed, evening not reflected | once a day |
-| weekly | 7+ days since the long goal was reviewed | once a week |
+| weekly | 7+ days since the long goal was reviewed (saying the same goal again in a decision does not count as a review) | once a week |
 
 Asleep, no trigger fires.
 
@@ -138,7 +140,7 @@ Asleep, no trigger fires.
 - `mind/goals.json` holds `long` (days to weeks), `today` (the steps) and `now` (the current step with `startedAt`, `until`, `index`).
 - A step is a verb, a target, a reason, optionally materials, a topic, what it makes, and `minutes`.
 - `validatePlan` (`packages/sim/src/validate.ts`) plays the plan out on a copy of the world. It rejects unknown verbs, wrong time of day, visitor verbs, more than 12 steps or 16 hours, art/photo/code over quota, and fixations (the same verb more than 2 times in a row, the same target more than 3 times, counting recent steps).
-- On rejection, the mind retries once with the reasons. If that fails, it stores the rejection and the body is left without a plan (see the review for a side effect).
+- On rejection, the mind retries once with the reasons. If that fails, it stores the rejection, today's plan stays as it was (or, if there is none, the body is left without one and a `replan` is asked for after an hour).
 
 ### Beliefs and memory
 - Raw observations go to `memory/stream/<date>.jsonl` and are kept 7 days. One line per started step goes to `memory/timeline/` for the "Why?" page and is kept for good.
@@ -160,7 +162,7 @@ Asleep, no trigger fires.
 ### Builder and auto-merge
 - **Object build:** a morning or decide decision can include `design`. Code checks it (awake, no other build open, one a day, budget) and writes `mind/builds/<id>.json`. The workflow then runs `build.yml`, where one Haiku call designs the object, a physics run checks it, and a PR from `build/<id>` opens. `validate.yml` auto-merges it only if it touches `objects/` alone.
 - **Coded project:** a plan step with the `code` verb leads to a brief, then `build.yml` runs the Claude Code Action. The PR is labelled `needs-review` and waits for a person.
-- Only one build may be open at once, for up to 72 hours.
+- One object build and one coded project may be open at a time, each in its own slot. The builder never writes the mind's files: it reports in `mind/builds/<id>.result.json` (a small job commits just that file), and the mind books the cost, closes a failed build and gives back the slot. An object with no word from the builder expires after 72 hours; a coded project whose PR waits for a person never expires.
 
 ### Viewer and site
 - The viewer reads the world at one commit through the GitHub API, validates it, and runs the sim. It never sends anything. The F3 overlay shows needs, mood and the intention.
@@ -192,13 +194,15 @@ Asleep, no trigger fires.
 
 **Feeds back:** beliefs and the memory summary (into prompts), the current obsession (into morning plans, reading and art topics), `recent` steps (into fixation checks), skills (into step success and artifact quality), needs (into drift and into the `need` trigger), and the open build (into the prompt).
 
-**Written but not fed back into any prompt:** reading notes (only the title goes to the stream), `notebook/plans`, the timeline, past obsessions, the titles of art older than the last five, and `lateNightReason`.
+**Written but not fed back into any prompt:** `lateNightReason`, and the timeline (it feeds the site's "Why?" page only). Reading notes, plans, art titles and past obsessions now come back: the morning and weekly prompts show the last reading notes, the last two days' plan reasons, the last ten things made and the last five ended obsessions, and every prompt shows what is left of each limit and what broke the plan off.
 
-## 9. How to follow what happened (observability today)
+## 9. How to follow what happened (observability)
 
 | Record | Holds | Kept |
 |---|---|---|
-| Git history of the world repo | every change; commit message is `chore(mind): <what happened>` | forever |
+| Git history of the world repo | every change; commit message is `chore(mind): <what happened>` for the world and `tick: <what happened>` for the tick log alone, so the history reads without the second | forever |
+| `mind/ticks/<date>.jsonl` | one line per tick, quiet ones too: triggers, every try at a call with cost or error, the step before and after, plan id, needs, mood, what broke the step off | 14 days |
+| `mind/health.json` | a rolling summary with a `warnings` list: plan state, the day's calls and triggers, limits, minutes each need has been under 15, spend against pace, the open build | rebuilt every tick |
 | `memory/stream/<date>.jsonl` | observations, thoughts, rejected plans, triggers (only novelty, blocked and need, and only when a decision came back) | 7 days |
 | `memory/timeline/<date>.jsonl` | one line per started step with reason, goal and beliefs | forever |
 | `journal/`, `notebook/plans/` | the bedtime entry, the morning plan | forever |
@@ -210,7 +214,7 @@ Asleep, no trigger fires.
 
 **Where failures go.** Persisted: a final plan rejection and a build that never arrived. Printed to the Actions log only: budget refusals, LLM or parse failures, dropped journal paragraphs, feed failures, eye-cam failures, memory batch failures, and the first attempt of a retried plan. Never stored: the `stepDone`, `newDay`, `bedtime` and `weekly` triggers, gate skips, and ticks that changed nothing.
 
-**What is not recorded at all:** what the body actually did between commits, the gap between the plan and what was played, and which engine version made a commit.
+**What is recorded now, and what is not:** the tick log and `health.json` hold the gap between the plan and what was played (with `pnpm --filter @forkling/mind replay` and `sim-report` to measure it) and the engine ref for every tick. Still not recorded: anything the body did that did not break a plan step off while no tick was looking.
 
 **A recipe for "what did Merge do in the last N hours" today** (run from PowerShell or Git Bash, read-only):
 

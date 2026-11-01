@@ -50,6 +50,21 @@ beforeEach(() => {
   ].map((l) => JSON.stringify(l)).join('\n'))
 })
 
+describe('renderSite: the home page', () => {
+  it('says when it was last seen in the forkling own time zone, and which one', () => {
+    put('forkling.json', { ...JSON.parse(readFileSync(join(world, 'forkling.json'), 'utf8')), lastTickAt: '2026-11-03T09:05:30Z' })
+    renderSite(world, out)
+    expect(page('index.html')).toContain('Last seen 2026-11-03 10:05 (Europe/Stockholm)')
+    expect(page('index.html')).not.toMatch(/UTC\./)
+  })
+
+  it('follows the clock changes of that zone', () => {
+    put('forkling.json', { ...JSON.parse(readFileSync(join(world, 'forkling.json'), 'utf8')), lastTickAt: '2026-07-03T09:05:30Z' })
+    renderSite(world, out)
+    expect(page('index.html')).toContain('Last seen 2026-07-03 11:05 (Europe/Stockholm)')
+  })
+})
+
 describe('renderSite', () => {
   it('writes a page for each part of the site and a stylesheet', () => {
     const { pages } = renderSite(world, out)

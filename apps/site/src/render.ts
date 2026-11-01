@@ -6,6 +6,12 @@ import { sanitizeSvg } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { esc, markdown } from './md.ts'
 
+/** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
+function localStamp(iso: string, timeZone: string): string {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso)).map((p) => [p.type, p.value]))
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute} (${timeZone})`
+}
+
 /** Rendered from files only: no network, no model. Everything in them was written by the forkling, so all of it is escaped. */
 
 const TONE = 'https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js'
@@ -210,7 +216,7 @@ export function renderSite(world: string, out: string): { pages: string[] } {
     active: 'index.html',
     body: [
       `<h1>${esc(name)}</h1>`,
-      `<p class="quiet">${esc(forkling.species)}, feeling ${esc(forkling.mood)}${forkling.asleep ? ', asleep' : ''}. Last seen ${esc(forkling.lastTickAt.slice(0, 16).replace('T', ' '))} UTC.</p>`,
+      `<p class="quiet">${esc(forkling.species)}, feeling ${esc(forkling.mood)}${forkling.asleep ? ', asleep' : ''}. Last seen ${esc(localStamp(forkling.lastTickAt, forkling.timezone))}.</p>`,
       '<h2>Right now</h2>',
       `<p><strong>${esc(i.type.replaceAll('_', ' '))}</strong>${i.targetId ? ` at ${esc(i.targetId)}` : ''}: <em>${esc(i.reason)}</em></p>`,
       ...(step?.topic ? [`<p class="quiet">About ${esc(step.topic)}.</p>`] : []),

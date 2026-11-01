@@ -59,6 +59,8 @@ pnpm typecheck
 pnpm build                     # builds the viewer
 pnpm mind:local                # one mind tick against a local copy of a world repo (--dry-run prints the prompt and token estimate)
 pnpm --filter @forkling/mind <tick|photos|design|validate|project|feeds:check>
+pnpm --filter @forkling/mind sim-report --days 14 --seed 1   # time per verb, plan share, critical needs, from the sim
+pnpm --filter @forkling/mind replay --world <clone>          # the canonical body from a world repo's history beside its plan
 pnpm --filter @forkling/site build                    # render a forkling's Pages site
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 pnpm --filter @forkling/viewer eyecam                 # eye-cam frames
