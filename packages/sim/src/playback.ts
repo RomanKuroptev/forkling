@@ -180,6 +180,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     needs: forkling.needs,
     firstAction: forkling.intention.type,
     holding: forkling.holding !== undefined,
+    feelings: forkling.feelings,
     ...(input.quirkWeights ? { quirkWeights: input.quirkWeights } : {}),
     ...focusFor(input.goals),
   })

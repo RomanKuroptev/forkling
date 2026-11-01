@@ -114,6 +114,36 @@ describe('pickAction', () => {
   })
 })
 
+describe('mood', () => {
+  const needs = { hunger: 60, energy: 60, fun: 60 }
+  // The blob's `dash` runs and costs energy; its `rest` restores it.
+  const ratio = (feelings: { valence: number; arousal: number } | undefined) => {
+    const scored = scoreActions(needs, blob, { ...noon, ...(feelings ? { feelings } : {}) })
+    return scoreOf(scored, 'dash') / scoreOf(scored, 'rest')
+  }
+  const calm = { valence: 0, arousal: 0.3 }
+
+  it('changes nothing when it is not given, or when it is calm and neither glad nor sad', () => {
+    expect(ratio(calm)).toBeCloseTo(ratio(undefined), 6)
+  })
+
+  it('favours energetic verbs when it is wound up and glad, and restful ones when it is low and calm', () => {
+    expect(ratio({ valence: 0.6, arousal: 0.9 })).toBeGreaterThan(ratio(calm) * 1.3)
+    expect(ratio({ valence: -0.8, arousal: 0.05 })).toBeLessThan(ratio(calm) * 0.7)
+  })
+
+  it('never changes a score by more than 40% either way, so mood bends choices and does not take them over', () => {
+    const base = scoreActions(needs, blob, noon)
+    for (const feelings of [{ valence: 1, arousal: 1 }, { valence: -1, arousal: 0 }]) {
+      for (const s of scoreActions(needs, blob, { ...noon, feelings })) {
+        const r = s.score / scoreOf(base, s.action.id)
+        expect(r).toBeGreaterThanOrEqual(0.7 - 1e-9)
+        expect(r).toBeLessThanOrEqual(1.4 + 1e-9)
+      }
+    }
+  })
+})
+
 describe('the night', () => {
   const nightRest = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === 'rest' ? { ...a, requires: ['night'] } : a)) })
 

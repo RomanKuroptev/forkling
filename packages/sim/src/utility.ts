@@ -1,4 +1,5 @@
 import type { NeedId, SpeciesAction, SpeciesPack } from '@forkling/schema'
+import type { Feelings } from './appraisal.ts'
 import type { Needs } from './needs.ts'
 import type { Prng } from './prng.ts'
 import { isDusk, isNight } from './time.ts'
@@ -16,6 +17,8 @@ export interface ScoreContext {
   focusAction?: string
   /** What the forkling's quirks do to each verb's appeal, by verb id. Missing means 1. */
   quirkWeights?: Record<string, number>
+  /** How it feels. Missing means calm and neither glad nor sad, which changes nothing. */
+  feelings?: Feelings
 }
 
 export interface ScoredAction {
@@ -31,6 +34,26 @@ const CONTENT = 20
 const URGENCY = 4
 //** How sharply the draw favours high scores. Scores 10x apart are picked about 100x apart, with no floor for hopeless actions. */
 const SHARPNESS = 2
+
+/** Calm, for arousal: a body at this is neither wound up nor drowsy. */
+const CALM = 0.3
+const MOOD_MIN = 0.7
+const MOOD_MAX = 1.4
+
+/**
+ * How the mood bends the appeal of a verb, from its own fields and no names: a body that is wound up and glad leans to
+ * the energetic (it runs, or spends energy), and one that is low and calm to the restful (it restores energy, or sits or
+ * sleeps). It never changes a score by more than 40% either way, so mood tilts a choice and does not make it.
+ */
+function moodWeight(action: SpeciesAction, feelings: Feelings | undefined): number {
+  if (!feelings) return 1
+  const energy = action.satisfies.energy ?? 0
+  const energetic = action.gait === 'run' || energy < 0
+  const restful = energy > 0 || action.slot === 'sit' || action.slot === 'sleep'
+  const lift = 0.8 * (feelings.arousal - CALM) + 0.3 * feelings.valence
+  const weight = energetic && !restful ? 1 + lift : restful && !energetic ? 1 - lift : 1
+  return Math.min(MOOD_MAX, Math.max(MOOD_MIN, weight))
+}
 
 /** Whether the time of day and the visitor allow an action. */
 export function requirementsMet(action: SpeciesAction, pack: SpeciesPack, ctx: Pick<ScoreContext, 'visitorDistance' | 'timeOfDay' | 'asleep'>): boolean {
@@ -96,7 +119,7 @@ export function scoreActions(needs: Needs, pack: SpeciesPack, ctx: ScoreContext)
     // An action that only raises needs which are already met keeps just its `spontaneous` share of the baseline: a full
     // cat doesn't eat, but still wanders for fun. Actions that raise nothing (idling) keep all of it.
     const usefulness = wanted > 0 ? Math.max(action.spontaneous, Math.min(1, (room / wanted) * 3)) : 1
-    const weight = (pack.weights[action.id] ?? 1) * (ctx.quirkWeights?.[action.id] ?? 1)
+    const weight = (pack.weights[action.id] ?? 1) * (ctx.quirkWeights?.[action.id] ?? 1) * moodWeight(action, ctx.feelings)
     scored.push({ action, score: Math.max(0.001, BASELINE * usefulness + benefit) * weight })
   }
   return scored
