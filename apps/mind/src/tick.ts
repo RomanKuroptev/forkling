@@ -12,6 +12,7 @@ import { photoStep } from './tick/photos.ts'
 import { readStep } from './tick/reading.ts'
 import { route } from './tick/route.ts'
 import { settleBuild } from './tick/settle-build.ts'
+import { logTick } from './ticklog.ts'
 import { think } from './tick/think.ts'
 import { writeWorld } from './tick/write.ts'
 
@@ -37,5 +38,5 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   applyDecision(t)
   advance(t)
   feel(t)
-  return writeWorld(t)
+  return logTick(t, writeWorld(t))
 }

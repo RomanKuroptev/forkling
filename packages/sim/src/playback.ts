@@ -8,7 +8,7 @@ import { collectSpots } from './world.ts'
 
 /**
  * Playback length in seconds. When the repo's intention is older than the current epoch, the body restarts from the
- * repo state at the epoch start. 30 minutes matches the mind's cron (M4), which will write fresh state each tick.
+ * repo state at the epoch start. The mind ticks every 10 minutes and rewrites the body at least once per epoch.
  */
 export const EPOCH_SECONDS = 30 * 60
 
@@ -54,6 +54,15 @@ export interface Playback {
 }
 
 const epochOf = (sec: number) => Math.floor(sec / EPOCH_SECONDS)
+
+/**
+ * The moment the repo state describes: when the mind last wrote `forkling.json`. The mind and every viewer anchor
+ * playback here, not on the time of the commit that carried the file, because commits that leave the body alone (art,
+ * builder merges, the tick log) would move that and make each of them replay a different walk.
+ */
+export function playbackStateTime(forkling: Pick<Forkling, 'lastTickAt'>): number {
+  return Date.parse(forkling.lastTickAt) / 1000
+}
 
 /** A distinct, stable seed per epoch, so a stale forkling still does something different every half hour. */
 function mixSeed(seed: number, epoch: number): number {

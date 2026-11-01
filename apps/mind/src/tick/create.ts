@@ -6,6 +6,7 @@ import {
   isAsleepAt,
   liveBeliefs,
   localDate,
+  playbackStateTime,
   quirkWeights,
   rollTemperament,
   sleepWindow,
@@ -58,7 +59,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   // Where the body is now: exactly what a viewer would have seen since the last commit.
   const world = worldWithObjects(w.objects)
   const playback = startPlayback(
-    { forkling, pack, behaviors, world, goals: w.goals, stateTime: Date.parse(forkling.lastTickAt) / 1000, quirkWeights: weights },
+    { forkling, pack, behaviors, world, goals: w.goals, stateTime: playbackStateTime(forkling), quirkWeights: weights },
     nowMs,
   )
   const body = playback.state
@@ -80,6 +81,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     notes: [],
     parts,
     calls: [],
+    attempts: [],
     remember,
     steps: [],
     buildRequests: [],

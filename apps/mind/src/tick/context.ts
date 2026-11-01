@@ -11,6 +11,7 @@ import type {
   PlanStep,
   SpeciesPack,
   TemperamentPools,
+  TickCall,
   TimelineEntry,
   VisitorEvent,
   WorldObject,
@@ -38,11 +39,15 @@ export interface TickDeps {
   get?: GetJson
   /** Work out the prompt and what it would cost, but call nothing and write nothing. */
   dryRun?: boolean
+  /** The engine ref that runs this tick, written into the tick log so a replay can use the same sim. */
+  engine?: string
 }
 
 export interface TickResult {
   /** Whether any file in the world changed. */
   changed: boolean
+  /** Whether the tick log was written, which is every tick except a dry run. */
+  logged: boolean
   /** A few words for the commit message and the job summary. */
   summary: string
   /** Files written or deleted, relative to the world root. */
@@ -82,6 +87,8 @@ export interface Tick {
   notes: string[]
   parts: string[]
   calls: BudgetCall[]
+  /** Every try at calling a model, including the ones that did not happen, for the tick log. */
+  attempts: TickCall[]
   /** What happened this tick, for the day's memory stream. Written by code from sim events, no model. */
   remember: NewEntry[]
   steps: TimelineEntry[]

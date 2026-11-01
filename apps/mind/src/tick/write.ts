@@ -103,5 +103,5 @@ export function writeWorld(t: Tick): TickResult {
   }
 
   const summary = parts.length > 0 ? parts.join(', ') : written.length > 0 ? 'sync' : ''
-  return { changed: written.length > 0, summary, written, notes: t.notes, calls: t.calls, photos: mind.photos?.queue.length ?? 0, build: t.buildRequests[0]?.id ?? null, ...(t.prompt ? { prompt: t.prompt } : {}) }
+  return { changed: written.length > 0, logged: false, summary, written, notes: t.notes, calls: t.calls, photos: mind.photos?.queue.length ?? 0, build: t.buildRequests[0]?.id ?? null, ...(t.prompt ? { prompt: t.prompt } : {}) }
 }

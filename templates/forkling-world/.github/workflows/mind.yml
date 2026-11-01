@@ -142,16 +142,24 @@ jobs:
           pnpm --filter @forkling/viewer eyecam --world "$GITHUB_WORKSPACE/world" --out "$RUNNER_TEMP/frames" || echo "the eye cam failed; no frames this time"
           pnpm --filter @forkling/mind photos --world "$GITHUB_WORKSPACE/world" --frames "$RUNNER_TEMP/frames"
 
+      # Every tick commits: a tick that changed nothing in the world still leaves its line in mind/ticks/ and refreshes
+      # mind/health.json. Those commits start with "tick:", so the history can be read without them.
       - name: Commit what changed
-        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.photos == 'true')
+        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.photos == 'true' || steps.tick.outputs.logged == 'true')
         working-directory: world
         env:
           SUMMARY: ${{ steps.tick.outputs.summary }}
+          WORLD: ${{ steps.tick.outputs.changed }}
+          PHOTOS: ${{ steps.tick.outputs.photos }}
         run: |
           git config user.name "forkling-mind"
           git config user.email "forkling-mind@users.noreply.github.com"
           git add -A
-          git commit -m "chore(mind): ${SUMMARY:-tick}"
+          if [ "$WORLD" = "true" ] || [ "$PHOTOS" = "true" ]; then
+            git commit -m "chore(mind): ${SUMMARY:-tick}"
+          else
+            git commit -m "tick: ${SUMMARY:-quiet}"
+          fi
           # Another run or a merged PR may have landed since checkout.
           git pull --rebase
           git push

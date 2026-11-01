@@ -1,4 +1,4 @@
-import { advancePlayback, heightAt, materialColor, quirkWeights, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
+import { advancePlayback, heightAt, materialColor, playbackStateTime, quirkWeights, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
@@ -60,7 +60,7 @@ export function Forkling() {
       behaviors: species.behaviors,
       world: simWorld,
       goals: world.goals,
-      stateTime: world.committedAt ? Date.parse(world.committedAt) / 1000 : undefined,
+      stateTime: playbackStateTime(world.forkling),
       ...(world.temperament ? { quirkWeights: quirkWeights(world.temperament, species.pools) } : {}),
     }),
     [world, species, simWorld],

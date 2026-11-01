@@ -7,6 +7,7 @@ import {
   anchorFor,
   EPOCH_SECONDS,
   hourInZone,
+  playbackStateTime,
   startPlayback,
   type PlaybackInput,
 } from '../src/playback.ts'
@@ -84,6 +85,27 @@ describe('anchorFor', () => {
     const a = anchorFor(input({}, EPOCH_START + 900).forkling, EPOCH_START + 300)
     expect(a.time).toBe(EPOCH_START)
     expect(a.source).toBe('epoch')
+  })
+})
+
+describe('playbackStateTime', () => {
+  it('is the forkling own last tick, so only a rewrite of forkling.json moves it', () => {
+    const f = input({ lastTickAt: iso(EPOCH_START + 300) }).forkling
+    expect(playbackStateTime(f)).toBe(EPOCH_START + 300)
+  })
+
+  it('gives the mind and a viewer the same walk, whatever other commits came after', () => {
+    // The mind and the viewer both anchor on the forkling's own last tick, never on the time of the commit that carried
+    // it: an art commit, a builder merge or a tick log line that comes later must not change what anyone sees.
+    const base = input({ lastTickAt: iso(EPOCH_START + 300) }, EPOCH_START + 100)
+    const now = (EPOCH_START + 1200) * 1000
+    const mind = startPlayback({ ...base, stateTime: playbackStateTime(base.forkling) }, now)
+    const viewer = startPlayback({ ...base, stateTime: playbackStateTime(base.forkling) }, now)
+    expect(snapshot(viewer)).toEqual(snapshot(mind))
+    expect(mind.anchor).toMatchObject({ time: EPOCH_START + 300, source: 'commit' })
+    // A commit at a later time would have moved the anchor, and the walk with it.
+    const lateCommit = startPlayback({ ...base, stateTime: EPOCH_START + 900 }, now)
+    expect(snapshot(lateCommit)).not.toEqual(snapshot(mind))
   })
 })
 

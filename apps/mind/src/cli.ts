@@ -46,6 +46,7 @@ async function main(): Promise<void> {
     pools: species.pools,
     get: httpGetJson,
     dryRun: values['dry-run'],
+    engine: process.env.FORKLING_REF ?? 'dev',
   })
 
   if (values['dry-run'] && result.prompt) {
@@ -57,7 +58,7 @@ async function main(): Promise<void> {
 
   const spent = result.calls.reduce((sum, c) => sum + c.usd, 0)
   if (process.env.GITHUB_OUTPUT) {
-    appendFileSync(process.env.GITHUB_OUTPUT, `changed=${result.changed}\nsummary=${result.summary.replace(/[\r\n]+/g, ' ')}\nphotos=${result.photos > 0}\nbuild=${result.build ?? ''}\n`)
+    appendFileSync(process.env.GITHUB_OUTPUT, `changed=${result.changed}\nlogged=${result.logged}\nsummary=${result.summary.replace(/[\r\n]+/g, ' ')}\nphotos=${result.photos > 0}\nbuild=${result.build ?? ''}\n`)
   }
   if (process.env.GITHUB_STEP_SUMMARY) {
     const rows = result.calls.map((c) => `| ${c.kind} | ${c.model} | ${c.input} | ${c.cacheRead} | ${c.cacheWrite} | ${c.output} | $${c.usd.toFixed(5)} |`)
