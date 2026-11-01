@@ -85,6 +85,8 @@ export function applyDecision(t: Tick): void {
   }
 
   if (thinkKind === 'morning') mind.lastPlanDate = today
+  // The mind has been told what broke its steps off; the count starts again.
+  mind.brokenOff = []
   // A weekly review looks at the long goal, not at the beach, so what is new stays new until it is looked at.
   if (thinkKind === 'morning' || thinkKind === 'decide') {
     mind.knownObjects = [...new Set([...mind.knownObjects, ...t.objects.map((o) => o.id)])]

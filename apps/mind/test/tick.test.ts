@@ -342,6 +342,27 @@ describe('the weekly review of the long goal', () => {
   })
 })
 
+describe('what broke the plan off', () => {
+  const note = (verb: string, need: string, step = 'watch') => ({ step, verb, need, at: '2026-11-03T09:05:00.000Z' })
+
+  it('is told to the mind at its next decision, so it can plan around it, and then forgotten', async () => {
+    await runTick(dir, at(NOW))
+    writeJson('mind/state.json', { ...stateOf(), brokenOff: [note('eat', 'hunger'), note('eat', 'hunger'), note('nap', 'energy')] })
+    newObject('pebble')
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm }))
+    expect(llm.calls[0]!.user).toMatch(/you broke off watch 3 times: eat \(hunger\) 2, nap \(energy\) 1/)
+    expect(stateOf().brokenOff).toEqual([])
+  })
+
+  it('is kept while nobody has been asked', async () => {
+    await runTick(dir, at(NOW))
+    writeJson('mind/state.json', { ...stateOf(), brokenOff: [note('eat', 'hunger')] })
+    await runTick(dir, at(minutesAfter(5), { llm: fakeLlm(keep) }))
+    expect(stateOf().brokenOff).toHaveLength(1)
+  })
+})
+
 describe('what counts as news', () => {
   it('is not used up by a weekly review that never looked at it', async () => {
     await runTick(dir, at(NOW))
