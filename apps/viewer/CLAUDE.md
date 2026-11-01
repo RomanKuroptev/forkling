@@ -22,3 +22,4 @@ Press **F3** for the overlay: needs, current intention and the reason for it.
 | `?clip=Sit` | Pin the forkling in front of you looping one animation, to check it by eye |
 
 GitHub can take up to a minute to serve a new commit. The repo state counts from its commit time.
+- Stack: React Three Fiber, drei, `@react-three/rapier` for physics, `ecctrl` for the third-person character controller. Assets are CC0 low-poly packs (Kenney, KayKit, Quaternius); keep the art style coherent across species.

@@ -2,6 +2,16 @@
 
 The engine is species-agnostic. Everything specific to an animal lives in a pack under `species/<id>/`, so a forkling can be a cat, dog, fox, owl, dragon or anything else. The format is `SpeciesPack` in `packages/schema`.
 
+```
+species/<id>/
+  species.json      # id, display name, body plan (quadruped/upright), needs and decay rates, verbs (group, preconditions, duration, animation slot, effects), eye height and field of view
+  model.glb         # rigged low-poly model (CC0 or self-made)
+  animations.json   # maps engine animation slots (idle, walk, run, sit, sleep, jump, dig, carry...) to clips
+  behaviors.ts      # signature micro-behaviors (e.g. cat: groom, knead, tail flicks)
+  persona.md        # base personality, merged with the forkling's own brain/persona.md
+  temperament.json  # pools that seeded likes, dislikes and quirks are rolled from
+```
+
 ## Rules
 - The mind, builder and site never hardcode a species. They read the pack.
 - A pack declares its needs from a shared vocabulary (`hunger`, `energy`, `curiosity`, `affection`, `fun`, `social`...) plus decay rates, so the utility AI works for any animal.

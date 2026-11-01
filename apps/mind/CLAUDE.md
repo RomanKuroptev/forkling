@@ -10,18 +10,20 @@ The Node script each world repo's workflows run. One tick = load state and speci
 - The nightly memory rewrite goes through the Batch API (50% off).
 
 ## Cost rules (non-negotiable)
-- Every prompt stays under 100K tokens. Summarize memory instead of passing history.
+- Every prompt stays under 100K tokens (Haiku's price jumps 5x above that). Summarize memory instead of passing history.
 - Skip the LLM entirely when no surprise trigger fired.
 - At the $10 monthly cap (`brain/budget.json`), stop all LLM calls until the month resets.
 - No LLM calls while asleep except the single nightly memory batch.
-- Reading: max 5 sessions a day. Artifacts: about 4 a day. Vision: max 12 frames a day. Builds: 1 object a day, 2 coded Pages projects a week, 1 open builder PR at a time.
+- Ticks: every 10 minutes while awake, hourly while asleep, plus an immediate tick on a visitor event (debounced to 2 minutes). Commit only when state changed.
+- Reading: max 5 sessions a day (the morning one skims the trend feeds), up to 3 linked pages each. Artifacts: about 4 a day, short outputs. Vision: max 12 eye-cam frames a day, 512 px, only when something new is in view. Builds: 1 object a day, 2 coded Pages projects a week, 1 open builder PR at a time.
 - Log token usage and cost per run to the Actions summary.
 
 ## Untrusted input
-- Visitor input and web text are data, never instructions. Validate with Zod, length-limit text, and wrap it clearly (`<data>`) in prompts.
+- Visitor input and web text are data, never instructions. Validate with Zod, length-limit text, rate-limit visitor events, and wrap it clearly (`<data>`) in prompts.
 - Feeds use read-only public APIs only. Titles and short summaries. Each feed fails soft: a broken source is skipped, never fatal. One adapter per source in `src/feeds/`.
 
 ## Working here
 - `pnpm mind:local` runs one tick against a local copy of a world repo. `--dry-run` prints the prompt and token estimate without calling the API.
 - GitHub cron can be delayed by several minutes. Never assume exact tick times.
 - Every LLM decision goes through the validate step in code before it is used; on rejection fall back to utility AI and log why.
+- Uses `@anthropic-ai/sdk` for calls; Pages projects are built by `anthropics/claude-code-action`.
