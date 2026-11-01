@@ -32,9 +32,9 @@ Merge likes the sunny rock.
 - curl_up: target: the id of an object that is soft; +40 energy; only day
 - sleep: no target; +80 energy; only night
 - stretch: no target; only day
-- explore: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 25 m); +40 curiosity, -6 energy; only day
-- pounce: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 10 m); +20 curiosity, -10 energy; only day
-- zoomies: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 22 m); +20 curiosity, -5 energy; only dusk
+- explore: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 25 m); +40 curiosity, -2 energy; only day
+- pounce: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 10 m); +20 curiosity, -3 energy; only day
+- zoomies: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 22 m); +20 curiosity, -2 energy; only dusk
 
 ### Hands
 - pick_up: target: the id of any object; needs empty paws; picks up an object, or takes one piece of material from a source

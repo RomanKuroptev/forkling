@@ -2,9 +2,9 @@
   "id": "cat",
   "displayName": "Cat",
   "needs": {
-    "hunger": { "initial": 65, "decayPerHour": 120 },
-    "energy": { "initial": 75, "decayPerHour": 80 },
-    "curiosity": { "initial": 55, "decayPerHour": 120 }
+    "hunger": { "initial": 65, "decayPerHour": 24 },
+    "energy": { "initial": 75, "decayPerHour": 20 },
+    "curiosity": { "initial": 55, "decayPerHour": 24 }
   },
   "perception": { "noticeRadius": 5, "eyeHeight": 0.55, "fovDeg": 70 },
   "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
@@ -158,7 +158,7 @@
     {
       "id": "explore",
       "group": "body",
-      "satisfies": { "curiosity": 40, "energy": -6 },
+      "satisfies": { "curiosity": 40, "energy": -2 },
       "durationSec": [15, 35],
       "target": { "type": "wander", "radius": 25 },
       "slot": "idle",
@@ -170,7 +170,7 @@
       "id": "pounce",
       "group": "body",
       "gait": "run",
-      "satisfies": { "curiosity": 20, "energy": -10 },
+      "satisfies": { "curiosity": 20, "energy": -3 },
       "durationSec": [6, 12],
       "target": { "type": "wander", "radius": 10 },
       "slot": "jump",
@@ -182,7 +182,7 @@
       "id": "zoomies",
       "group": "body",
       "gait": "run",
-      "satisfies": { "curiosity": 20, "energy": -5 },
+      "satisfies": { "curiosity": 20, "energy": -2 },
       "durationSec": [4, 9],
       "target": { "type": "wander", "radius": 22 },
       "slot": "jump",
