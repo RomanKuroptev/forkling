@@ -28,7 +28,7 @@ export async function codeStep(t: Tick): Promise<void> {
     kind: 'code',
     topic: step.topic ?? t.interests.current?.topic ?? null,
     reason: step.reason,
-    skillLevel: skillLevel(t.skills, 'mind'),
+    skillLevel: skillLevel(t.skills, t.pack.actions.find((a) => a.id === step.verb)?.group ?? 'mind'),
     obsession: t.interests.current?.topic ?? null,
     recentTitles: [...w.art].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5).map((a) => a.title),
     interests: t.interests,
