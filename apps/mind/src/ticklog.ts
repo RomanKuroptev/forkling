@@ -89,7 +89,9 @@ function planIdOf(goals: Goals): string | null {
 }
 
 /** What this tick did, as one line. */
-function lineFor(t: Tick, result: TickResult): TickLine {
+function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine {
+  // A window that was not written is counted again by the next tick, so its notes are shown only once.
+  const since = previous ? Date.parse(previous.lastTick.at) : -Infinity
   return TickLine.parse({
     at: t.nowIso,
     engine: t.deps.engine ?? 'dev',
@@ -103,7 +105,7 @@ function lineFor(t: Tick, result: TickResult): TickLine {
     planId: planIdOf(t.goals),
     needs: Object.fromEntries(Object.entries(t.body.needs).map(([id, v]) => [id, round(v ?? 0, 1)])),
     mood: t.mood,
-    drift: [],
+    drift: t.drift.filter((d) => Date.parse(d.at) > since).slice(0, 20),
     wrote: result.written.slice(0, 60),
     summary: clampText(result.summary, 300),
   })
@@ -115,9 +117,10 @@ function lineFor(t: Tick, result: TickResult): TickLine {
  */
 export function logTick(t: Tick, result: TickResult): TickResult {
   if (t.deps.dryRun) return result
-  const line = lineFor(t, result)
+  const previous = readHealth(t.dir)
+  const line = lineFor(t, result, previous)
   appendTick(t.dir, t.today, line)
   pruneTicks(t.dir, t.today)
-  writeJson(t.dir, HEALTH_PATH, buildHealth(readHealth(t.dir), line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget }))
+  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget }))
   return { ...result, logged: true }
 }

@@ -1,4 +1,4 @@
-import { Forkling, type Intention } from '@forkling/schema'
+import { Forkling, type Goals, type Intention, type MindState } from '@forkling/schema'
 import { toRepoIntention } from '@forkling/sim'
 import { renderPlan } from '../reading.ts'
 import { appendStream, appendTimeline, prune } from '../stream.ts'
@@ -6,13 +6,30 @@ import { deleteFile, writeJson, writeText } from '../world.ts'
 import type { Tick, TickResult } from './context.ts'
 import { epochOf, round, same } from './util.ts'
 
+/**
+ * Running totals the tick adds to from the replayed body (the time on a step, the times it was broken off) are written
+ * only when something else is. The next tick's tally starts at the last write, so the stretch in between is counted
+ * once, and a quiet tick leaves the world's files alone.
+ */
+const withoutWorked = (g: Goals): Goals => {
+  if (!g.now) return g
+  const { workedSec: _worked, ...now } = g.now
+  return { ...g, now }
+}
+const withoutBrokenOff = (m: MindState): Omit<MindState, 'brokenOff'> => {
+  const { brokenOff: _broken, ...rest } = m
+  return rest
+}
+
 /** Wake, bedtime and the body: written when something happened, or once per half hour so the repo stays fresh. */
 export function writeWorld(t: Tick): TickResult {
   const { dir, deps, w, forkling, goals, mind, budget, skills, beliefs, interests, holding, stored, temperament, asleep, nowMs, nowIso, today, parts } = t
   if (asleep !== forkling.asleep) parts.push(asleep ? 'went to bed' : 'woke up')
   const inboxConsumed = t.thought && w.inbox.length > 0
-  const goalsChanged = !same(goals, w.goals)
-  const mindChanged = !same(mind, w.mindState)
+  const goalsChanged = !same(withoutWorked(goals), withoutWorked(w.goals))
+  const mindChanged = !same(withoutBrokenOff(mind), withoutBrokenOff(w.mindState))
+  const workedChanged = goals.now?.workedSec !== w.goals.now?.workedSec
+  const brokenOffChanged = !same(mind.brokenOff, w.mindState.brokenOff)
   const budgetChanged = !same(budget, w.budget)
   const skillsChanged = !same(skills, w.skills)
   const beliefsChanged = !same(beliefs, w.beliefs)
@@ -71,8 +88,8 @@ export function writeWorld(t: Tick): TickResult {
       deleteFile(dir, `objects/${id}.json`)
       written.push(`objects/${id}.json`)
     }
-    if (goalsChanged && writeJson(dir, 'mind/goals.json', goals)) written.push('mind/goals.json')
-    if (mindChanged && writeJson(dir, 'mind/state.json', mind)) written.push('mind/state.json')
+    if ((goalsChanged || (writeBody && workedChanged)) && writeJson(dir, 'mind/goals.json', goals)) written.push('mind/goals.json')
+    if ((mindChanged || (writeBody && brokenOffChanged)) && writeJson(dir, 'mind/state.json', mind)) written.push('mind/state.json')
     if (budgetChanged && writeJson(dir, 'brain/budget.json', budget)) written.push('brain/budget.json')
     if (skillsChanged && writeJson(dir, 'brain/skills.json', skills)) written.push('brain/skills.json')
     if (t.rolled && temperament && writeJson(dir, 'brain/temperament.json', temperament)) written.push('brain/temperament.json')

@@ -44,6 +44,29 @@ export interface UserInput {
   designs?: 'ready' | 'open' | 'used'
 }
 
+/**
+ * What broke the plan off since the mind last decided, so it can plan around it: for each step, how often, and what the
+ * body did instead for which need. Nothing when nothing did.
+ */
+function describeBrokenOff(notes: readonly { step: string; verb: string; need: string }[]): string[] {
+  if (notes.length === 0) return []
+  const bySteps = new Map<string, Map<string, number>>()
+  for (const n of notes) {
+    const what = bySteps.get(n.step) ?? new Map<string, number>()
+    const key = `${n.verb} (${n.need})`
+    what.set(key, (what.get(key) ?? 0) + 1)
+    bySteps.set(n.step, what)
+  }
+  return [
+    '',
+    'since you last decided, the body broke a step off to look after itself:',
+    ...[...bySteps].map(([step, what]) => {
+      const times = [...what.values()].reduce((a, b) => a + b, 0)
+      return `- you broke off ${step} ${times} ${times === 1 ? 'time' : 'times'}: ${[...what].map(([key, n]) => `${key} ${n}`).join(', ')}`
+    }),
+  ]
+}
+
 const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
   morning: morningTask,
   decide: decideTask,
@@ -102,6 +125,7 @@ export function buildUser(i: UserInput): string {
     ...(i.designs ? [`asking for a designed object: ${i.designs === 'ready' ? 'you may ask for one today' : i.designs === 'open' ? 'one is already being built' : 'you have asked for one today already'}`] : []),
     ...(skills ? [`how practised you are (0 to 10): ${skills}`] : []),
     ...(i.justNow.length > 0 ? ['', 'just now:', ...i.justNow.map((line) => `- ${line}`)] : []),
+    ...describeBrokenOff(i.mindState.brokenOff),
     '</situation>',
     ...(i.temperament
       ? [

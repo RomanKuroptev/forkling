@@ -4,6 +4,7 @@ import type {
   ArtifactKind,
   BudgetCall,
   BuildRequest,
+  DriftNote,
   Goals,
   Intention,
   MicroBehavior,
@@ -136,6 +137,10 @@ export interface Tick {
   started: Intention | null
 
   triggers: Trigger[]
+  /** Seconds the replayed body spent on the plan step's verb since the last write, for the step's effect to wait on. */
+  worked: number
+  /** What broke the plan step off since the last write, for the tick log and the next prompt. */
+  drift: DriftNote[]
   /** Whether the step that just finished could not happen. */
   failed: boolean
   /** Taken before any step is started, and not refreshed: the decision step reuses them. */

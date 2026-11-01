@@ -62,6 +62,22 @@ describe('focus', () => {
     expect(r.intentionTypes.has('eat')).toBe(true)
   })
 
+  it('looks after a critical need it can fix with one action, then goes back to the plan', () => {
+    const r = run({ seconds: 580, needs: { hunger: 2 }, focus: { action: 'perch', targetId: 'lookout-rock', until: 600 } })
+    expect(r.intentionTypes.has('eat')).toBe(true)
+    // Nothing else breaks the plan off: no roaming or dashing about on the way.
+    expect([...r.intentionTypes].filter((t) => !['perch', 'eat', 'idle', 'pause'].includes(t))).toEqual([])
+    expect(perches(r).length).toBeGreaterThanOrEqual(3)
+    expect(r.targets.filter((t) => t.startsWith('eat:')).length).toBeLessThanOrEqual(2)
+  })
+
+  it('keeps to the plan when the critical need is one it cannot fix by itself', () => {
+    const noFood = SpeciesPack.parse({ ...pack, actions: pack.actions.filter((a) => a.id !== 'eat') })
+    const r = runHeadless({ pack: noFood, world, startHour: 12, seed: 3, seconds: 580, needs: { hunger: 2 }, focus: { action: 'perch', targetId: 'lookout-rock', until: 600 } })
+    expect([...r.intentionTypes].filter((t) => !['perch', 'idle', 'pause'].includes(t))).toEqual([])
+    expect(perches(r).length).toBeGreaterThanOrEqual(5)
+  })
+
   it('lets go once it has expired', () => {
     const r = run({ seconds: 1800, focus: { action: 'perch', targetId: 'lookout-rock', until: 300 } })
     const later = r.targets.slice(r.targets.length >> 1)

@@ -18,7 +18,6 @@ export async function bedtime(t: Tick): Promise<void> {
     notes.push('nothing to reflect on today: no call')
     return
   }
-  const ids = new Set(stream.map((e) => e.id))
   let turnedDown: string[] | undefined
   for (let attempt = 0; attempt < 2; attempt++) {
     const user = buildReflectionUser({
@@ -38,7 +37,7 @@ export async function bedtime(t: Tick): Promise<void> {
       notes.push(`no usable reflection (stopped: ${result.stopReason ?? 'unknown'})`)
       break
     }
-    const checked = checkReflection(result.parsed, ids, t.beliefs)
+    const checked = checkReflection(result.parsed, stream, t.beliefs)
     if (checked.retry && attempt === 0) {
       notes.push(`reflection turned down (${checked.dropped.length} unsupported claims): asking again`)
       turnedDown = checked.dropped

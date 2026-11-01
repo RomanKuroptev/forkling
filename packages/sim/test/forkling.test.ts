@@ -105,6 +105,22 @@ describe('a visitor never raises needs by themselves', () => {
 })
 
 describe('acting after a micro-behavior', () => {
+  it('does not resume an action from the repo that is not allowed at this time of day', () => {
+    // The repo says it was resting, but resting is for the day and it is bed time now.
+    const dayRest = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === 'rest' ? { ...a, requires: ['day'] } : a)) })
+    const state = createForkling(dayRest, [], 1, { x: 2, z: 20 }, { firstAction: 'rest' })
+    const ctx: StepContext = { grid: world.grid, visitor: null, timeOfDay: 12, asleep: true, spots: {} }
+    for (let i = 0; i < 5; i++) stepForkling(state, STEP, ctx)
+    expect(state.intention.type).not.toBe('rest')
+  })
+
+  it('still resumes an action that is allowed', () => {
+    const state = createForkling(blob, [], 1, { x: 2, z: 20 }, { firstAction: 'rest' })
+    const ctx: StepContext = { grid: world.grid, visitor: null, timeOfDay: 12, spots: {} }
+    for (let i = 0; i < 5; i++) stepForkling(state, STEP, ctx)
+    expect(state.intention.type).toBe('rest')
+  })
+
   it('keeps the full action duration when a before-sleep behavior runs first', () => {
     const tuck: MicroBehavior = { id: 'tuck', when: 'beforeSleep', chance: 1, durationSec: 1.2 }
     const start = { x: 2, z: 20 }

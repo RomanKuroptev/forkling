@@ -245,7 +245,7 @@ describe('a replacement plan that was turned down', () => {
     expect(llm.calls).toHaveLength(2)
     expect(stateOf().rejections).toHaveLength(1)
     expect(goalsOf().today).toEqual(before.today)
-    expect(goalsOf().now).toEqual(before.now)
+    expect({ ...goalsOf().now, workedSec: undefined }).toEqual({ ...before.now, workedSec: undefined })
   })
 })
 
@@ -320,6 +320,46 @@ describe('a step whose target is gone', () => {
     await runTick(dir, at(minutesAfter(10), { llm: fakeLlm({ ...keep, plan: [{ ...morning.plan![2]!, minutes: 40 }] }) }))
     expect(goalsOf().today?.steps.map((x) => x.verb)).toEqual(['sit'])
     expect(goalsOf().now).toMatchObject({ index: 0 })
+  })
+})
+
+describe('the weekly review of the long goal', () => {
+  it('is not postponed by a decision that merely says the same goal again', async () => {
+    await runTick(dir, at(NOW))
+    expect(goalsOf().long?.reviewedAt).toBe(NOW.replace('Z', '.000Z'))
+    newObject('pebble')
+    const same = fakeLlm({ ...keep, longGoal: { text: 'Make the sunny rock mine.', reason: 'Still true.' } })
+    await runTick(dir, at(minutesAfter(10), { llm: same }))
+    expect(goalsOf().long?.reviewedAt).toBe(NOW.replace('Z', '.000Z'))
+  })
+
+  it('counts a changed goal as reviewed, since the mind just reconsidered it', async () => {
+    await runTick(dir, at(NOW))
+    newObject('pebble')
+    const changed = fakeLlm({ ...keep, longGoal: { text: 'Learn the shape of the whole beach.', reason: 'The pebble made me curious.' } })
+    await runTick(dir, at(minutesAfter(10), { llm: changed }))
+    expect(goalsOf().long).toMatchObject({ text: 'Learn the shape of the whole beach.', reviewedAt: minutesAfter(10), setAt: minutesAfter(10) })
+  })
+})
+
+describe('what broke the plan off', () => {
+  const note = (verb: string, need: string, step = 'watch') => ({ step, verb, need, at: '2026-11-03T09:05:00.000Z' })
+
+  it('is told to the mind at its next decision, so it can plan around it, and then forgotten', async () => {
+    await runTick(dir, at(NOW))
+    writeJson('mind/state.json', { ...stateOf(), brokenOff: [note('eat', 'hunger'), note('eat', 'hunger'), note('nap', 'energy')] })
+    newObject('pebble')
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm }))
+    expect(llm.calls[0]!.user).toMatch(/you broke off watch 3 times: eat \(hunger\) 2, nap \(energy\) 1/)
+    expect(stateOf().brokenOff).toEqual([])
+  })
+
+  it('is kept while nobody has been asked', async () => {
+    await runTick(dir, at(NOW))
+    writeJson('mind/state.json', { ...stateOf(), brokenOff: [note('eat', 'hunger')] })
+    await runTick(dir, at(minutesAfter(5), { llm: fakeLlm(keep) }))
+    expect(stateOf().brokenOff).toHaveLength(1)
   })
 })
 

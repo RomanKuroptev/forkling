@@ -4,6 +4,7 @@ import { canSpend } from '../budget.ts'
 import { buildIdFor, checkBuildRequest } from '../builds.ts'
 import { clampText } from '../decision.ts'
 import type { Tick } from './context.ts'
+import { leaveStep } from './apply-step.ts'
 import { checkPlan, startStep } from './plan.ts'
 
 /** What a design call may cost, held back before a request is accepted. */
@@ -26,11 +27,13 @@ export function applyDecision(t: Tick): void {
   const newGoal = decision.longGoal && decision.longGoal.text.trim() ? decision.longGoal : null
   if (newGoal) {
     const text = clampText(newGoal.text.trim(), 300)
+    const same = goals.long?.text === text
     goals.long = {
       text,
       reason: clampText(newGoal.reason.trim() || 'It is what I want now.', 200),
-      setAt: goals.long?.text === text ? goals.long.setAt : nowIso,
-      reviewedAt: nowIso,
+      setAt: same ? goals.long!.setAt : nowIso,
+      // Saying the same goal again is not a review: only the weekly review, or a goal that changed, moves the date.
+      reviewedAt: same && thinkKind !== 'weekly' ? goals.long!.reviewedAt : nowIso,
     }
     if (w.goals.long?.text !== text) parts.push('new long goal')
   } else if (thinkKind === 'weekly' && goals.long) {
@@ -82,6 +85,8 @@ export function applyDecision(t: Tick): void {
   }
 
   if (thinkKind === 'morning') mind.lastPlanDate = today
+  // The mind has been told what broke its steps off; the count starts again.
+  mind.brokenOff = []
   // A weekly review looks at the long goal, not at the beach, so what is new stays new until it is looked at.
   if (thinkKind === 'morning' || thinkKind === 'decide') {
     mind.knownObjects = [...new Set([...mind.knownObjects, ...t.objects.map((o) => o.id)])]
@@ -95,6 +100,8 @@ export function applyDecision(t: Tick): void {
     const { usable, check } = planned
     if (check.ok) {
       t.planPage = true
+      // A plan that takes over in the middle of a step settles the old step first.
+      leaveStep(t)
       goals.today = { date: today, steps: usable, reason: clampText((decision.planReason ?? decision.thought).trim() || 'This is what I feel like doing.', 200) }
       delete mind.replanAfter
       startStep(t, 0, decision.thought)

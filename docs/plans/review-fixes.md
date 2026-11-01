@@ -200,6 +200,15 @@ Roman's decisions (review section 9, plus the answers given during planning):
 - `packages/sim/src/claims.ts` (:13, :36) and `apps/mind/src/tick/bedtime.ts` (`streamIds` comes with kinds and times).
 - `apps/mind/src/tick/apply-decision.ts`, for 4.6.
 
+**As built (slice 3).**
+- `fixableNeeds` (slice 1) is reused by `replan`. When the planned verb itself raises the critical need, the plan simply wins.
+- The body's time on a step comes from `tallyWindow` (not counters inside `forkling.ts`), computed in `createTick` from the last write to now, capped at the step's `until`. `workedSec` and `brokenOff` are persisted only with other writes (see `write.ts`), so a quiet tick still leaves the world alone.
+- Practice (XP) is the minutes worked, not the minutes planned.
+- 2.7: a replaced step that was mostly done lands its effect but not its artifact; an artifact verb that is replaced counts as unfinished. This avoids a second art pass after the decision.
+- 4.4 evidence: thought, trigger and rejected entries are excluded; `strengthen` and `revise` need an entry after `revisedAt ?? formedAt`; `new` needs any real entry of the day. A weaken or drop still needs only that the belief exists.
+- Drift notes: stored in `mind.brokenOff` (max 30), shown in decide and morning prompts, cleared by the next decision; each tick line shows only the notes newer than the previous tick.
+- The viewer's local visitor-reaction path (`advancePlayback`) is unchanged.
+
 ---
 
 ## Slice 4: builder (branch `fix/builder`)
