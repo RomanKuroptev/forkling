@@ -16,8 +16,10 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 | 2 Observability | `obs/ticks-health` | done, PR #20 open |
 | 3 Plan owns the body, honesty | `fix/plan-owns-body` | done, PR #21 open |
 | 4 Builder | `fix/builder` | done, PR #22 open |
-| 5 Memory and feelings | `feat/memory-feelings` | done except the bowl, PR open |
-| 6 Docs | `docs/review-fixes` | not started |
+| 5 Memory and feelings | `feat/memory-feelings` | done except the bowl, PR #23 open |
+| 6 Docs | `docs/review-fixes` | done, PR open |
+
+**Next:** Roman reviews and merges #19 to #24 in order (each is based on the one before). Then the two decisions below (9.4 and 6.7), a release tag, and bumping `FORKLING_REF` in Merge's workflows (they pin v0.7.3, which has none of this). M8 starts after the first day on the new version looks clean in `mind/health.json`.
 
 ### Slice 1 as built (affects review findings 1.1-1.6, 3.1-3.7, 9.1)
 - The cat has no `affection` need and `follow` raises nothing. Merge's stored `affection` drops out on the first tick (`createForkling` ignores needs the pack lacks). It returns with the visit gateway (`docs/future.md`).
@@ -66,6 +68,11 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 - **Cost of that:** with energy decaying 80 an hour the cat visits the bed about every half hour, and the plan share fell from 76.3% to 68.4%. That is the 9.4 time scale again; the proposal's slower rates are what fix it.
 - **Not done: the bowl's portions.** It needs a portion count, which you said to set with the 9.4 proposal, and which depends on the decay rates you have not approved yet. Nothing about the bowl changed. The prompt does not show portions, and the "an empty bowl never leaves hunger critical for an hour" test is not written.
 
+### Slice 6 as built (review section 8, then section 12)
+- Docs now match the code: visitor events are marked as future, the layout lists the tick log, health, build reports, timeline and heartbeat, the trigger lists have all eight, `docs/how-it-works.md` describes the new behaviour, MILESTONES has no meteor showers, the commit rule and the vision rule are fixed. The HUD names the forkling being watched and the site says when it was last seen in the forkling's own time zone.
+- `docs/review-2026-11.md` section 12 lists every finding as fixed, deferred or won't-fix with its PR.
+- `/docs-sync` was run; it found the script list in the root `CLAUDE.md`, the module list in `apps/mind/CLAUDE.md` and two lines of `apps/viewer/CLAUDE.md` (the anchor) stale, and they are fixed. The skill's own globs are fixed too.
+
 ## Open questions
 - **6.7, steps for you in GitHub** (branch protection and a scoped token):
   1. Create a fine-grained personal access token with **Repository access: only `RomanKuroptev/merge`** and permissions Contents (read and write), Pull requests (read and write), Actions (read and write), Metadata (read). Add it as the repository secret `BUILDER_TOKEN`. `build.yml` then opens builder PRs with it, so their `pull_request` checks also run. Without the secret it falls back to the workflow token, as today.
@@ -75,7 +82,7 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 - 6.7 (branch protection, scoped PAT) are steps for Roman in GitHub; they come with slice 4.
 
 ## Last verified
-- 2026-11-01: slice 5 (typecheck clean, 1237 tests passed); slice 4, `pnpm typecheck` clean, `pnpm test` all passed. The workflow files parse as YAML (checked with the `yaml` package). The workflows themselves have not run on GitHub.
+- 2026-11-01: slice 6, `pnpm typecheck` clean, `pnpm test` 1240 passed, `pnpm build` passes. Slice 5 (1237 passed); slice 4, `pnpm typecheck` clean, `pnpm test` all passed. The workflow files parse as YAML (checked with the `yaml` package). The workflows themselves have not run on GitHub.
 
 ## Tooling note
 - `pnpm` is not on the Git Bash PATH here; run pnpm commands from PowerShell.
