@@ -13,8 +13,8 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 | Slice | Branch | State |
 |---|---|---|
 | 1 Stop the loop | `fix/stop-the-loop` | done, PR #19 open |
-| 2 Observability | `obs/ticks-health` | done, PR open |
-| 3 Plan owns the body, honesty | `fix/plan-owns-body` | not started |
+| 2 Observability | `obs/ticks-health` | done, PR #20 open |
+| 3 Plan owns the body, honesty | `fix/plan-owns-body` | done, PR open |
 | 4 Builder | `fix/builder` | not started |
 | 5 Memory and feelings | `feat/memory-feelings` | not started |
 | 6 Docs | `docs/review-fixes` | not started |
@@ -39,12 +39,20 @@ Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, ea
 - **Measured (review section 11):** see there. Headlines: the plan window share is 72.9% with affection, 75.7% without, 89.3% with slower decay and cheaper energy costs. Energy is driven by action costs, not time, and has no source between sunset and bed (a structural 3.5 h stretch). 1.7 was a stopped clock (no tick for 70 min), not a plan bug.
 - `ENGINE_REF` is passed to the tick as `FORKLING_REF` and written into each line.
 
+### Slice 3 as built (findings 9.2, 2.1, 2.5, 2.6, 2.7, 2.9, 4.4, 4.6)
+- **The plan owns the visible action (9.2, 2.5):** in `packages/sim/src/forkling.ts` a critical need breaks the plan off for one action only when the body can raise it right now (`fixableNeeds`) and the planned verb would not; otherwise the plan wins outright. Before, any need under 15 handed the whole choice to a random draw. A resumed action from the repo must still be allowed at this time of day (2.9). In bed hours only verbs for the night are on offer (2.6): measured night time on something else went from 6.8 h to 0.0 h over 14 days.
+- **A step lands only after the body did it (2.1, 2.7):** `tallyWindow` (`packages/sim/src/playback.ts`) counts what the canonical body did per verb, epoch by epoch. The mind adds the seconds on the step's verb to `goals.now.workedSec`. At the end of a step the effect and practice land only if at least 60% of the minutes were spent; otherwise the step gets its time again once, then ends unfinished (stream: "Left X unfinished", nothing gathered or learned). Practice is the minutes really spent. A plan that replaces a step in progress settles it the same way, except that an artifact verb is not made. In the day test 1 of 29 steps ended unfinished.
+- The totals (`workedSec`, `mind.brokenOff`) are written only when something else is written; the next tick's tally starts at the last write, so nothing is lost or counted twice, and a quiet tick still leaves the world's files alone.
+- **What broke a step off reaches the mind:** the tick log's `drift[]` and `mind.brokenOff` feed one line in the next decide or morning prompt ("you broke off shape 3 times: eat (hunger) 2, nap (energy) 1"), then restart. New golden `user-broken-off.txt`.
+- **Honesty (4.4, 4.6):** `checkReflection` takes the stream entries. A thought, a trigger or a turned down plan is not evidence for a belief; strengthening needs an entry newer than the belief's last change; a journal paragraph may not cite only thoughts. A decision that repeats the same long goal no longer resets `reviewedAt`.
+- **Needs still decay in bed.** Now that nothing eats at night, hunger and curiosity sit at 0 through the night in the sim report (about 6,400 to 6,800 minutes of bed hours under 15 over 14 days). This is the 9.4 time scale again: either the slower decay in the proposal, or needs decaying at a fraction while asleep. Not changed.
+
 ## Open questions
 - **9.4 proposal, for Roman to approve before slice 5 uses it:** hunger and curiosity decay 24 an hour (about 4 h to empty, 5x slower than now); energy decay 20 an hour; `explore` -2, `pounce` -3, `zoomies` -2 energy per action; and a second place to nap (a soft object like the bed, in slice 5) so energy has a source in the evening. Measured effect in review section 11. The bowl's portion count is still to set: at hunger 24 an hour the sim has the cat eat about 8 times a day, so with 4 portions a day roughly half its meals have to come from harvesting or cooking. That is your call (your decision was to set it with this proposal).
 - 6.7 (branch protection, scoped PAT) are steps for Roman in GitHub; they come with slice 4.
 
 ## Last verified
-- 2026-11-01: slice 2, `pnpm typecheck` clean and `pnpm test` 1139 passed. `pnpm build` passes.
+- 2026-11-01: slice 3, `pnpm typecheck` clean, `pnpm test` 1171 passed, `pnpm build` passes.
 
 ## Tooling note
 - `pnpm` is not on the Git Bash PATH here; run pnpm commands from PowerShell.
