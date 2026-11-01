@@ -1,5 +1,6 @@
 import type { Forkling, Goals, MicroBehavior, SpeciesPack } from '@forkling/schema'
 import { createForkling, STEP, stepForkling, type Focus, type ForklingState, type StepContext } from './forkling.ts'
+import type { Needs } from './needs.ts'
 import { nearestWalkable, type Point2 } from './nav.ts'
 import { isAsleepAt } from './sleep.ts'
 import { sunDirection } from './sky.ts'
@@ -55,6 +56,32 @@ export interface Playback {
 }
 
 const epochOf = (sec: number) => Math.floor(sec / EPOCH_SECONDS)
+
+/** A write older than this is not carried forward: the body was not being watched, and what it did is not worked out. */
+const MAX_CARRY_SECONDS = 2 * 3600
+
+/**
+ * Where the body is at `toSec`, when the repo state was written earlier than the epoch that starts there. The epoch's
+ * playback starts at the epoch's beginning, so without this everything between the write and the epoch start would be
+ * lost: needs would stop falling and the body would jump back to where it was written. It runs the stretch epoch by
+ * epoch, each from its own anchor, exactly as anyone replaying that time would. Null when there is nothing to carry.
+ */
+function carryForward(input: PlaybackInput, toSec: number): { needs: Needs; position: [number, number, number]; action: string } | null {
+  const fromSec = input.stateTime ?? Date.parse(input.forkling.lastTickAt) / 1000
+  if (!(toSec > fromSec) || toSec - fromSec > MAX_CARRY_SECONDS) return null
+  let forkling = input.forkling
+  let t = fromSec
+  let action = forkling.intention.type
+  while (t < toSec) {
+    const end = Math.min(toSec, (epochOf(t) + 1) * EPOCH_SECONDS)
+    // A moment just short of the edge, so the stretch is still the epoch it started in.
+    const seg = startPlayback({ ...input, forkling, stateTime: t }, end * 1000 - 1)
+    forkling = { ...forkling, needs: seg.state.needs as Forkling['needs'], position: [seg.state.pos.x, 0, seg.state.pos.z] }
+    action = seg.state.intention.type
+    t = end
+  }
+  return { needs: forkling.needs as Needs, position: forkling.position, action }
+}
 
 /**
  * The moment the repo state describes: when the mind last wrote `forkling.json`. The mind and every viewer anchor
@@ -173,12 +200,14 @@ function focusFor(goals: Goals | undefined): { focus?: Focus } {
 export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
   const { forkling, pack, behaviors, world } = input
   const anchor = anchorFor(forkling, nowMs / 1000, input.stateTime)
-  const [x, , z] = forkling.position
+  // When the write is older than this epoch, the body is carried to the epoch's start before it is played on from there.
+  const carried = anchor.source === 'epoch' ? carryForward(input, anchor.time) : null
+  const [x, , z] = carried?.position ?? forkling.position
   const start = nearestWalkable(world.nav.grid, { x, z }, 25) ?? { x: world.spawn.x, z: world.spawn.z }
   const state = createForkling(pack, behaviors, anchor.seed, start, {
     time: anchor.time,
-    needs: forkling.needs,
-    firstAction: forkling.intention.type,
+    needs: carried?.needs ?? forkling.needs,
+    firstAction: carried?.action ?? forkling.intention.type,
     holding: forkling.holding !== undefined,
     feelings: forkling.feelings,
     ...(input.quirkWeights ? { quirkWeights: input.quirkWeights } : {}),
@@ -224,6 +253,8 @@ export function advancePlayback(pb: Playback, nowMs: number, visitor: Point2 | n
 export interface Tally {
   /** Seconds spent on each verb. */
   seconds: Record<string, number>
+  /** How many times each verb began, so a meal is a count of `eat`s. */
+  started: Record<string, number>
   /** Times it began something other than the planned verb while a step was running: what, and which need it was for. */
   interruptions: { verb: string; need: string; at: number }[]
 }
@@ -236,6 +267,7 @@ export interface Tally {
  */
 export function tallyWindow(input: PlaybackInput, fromMs: number, toMs: number): Tally {
   const seconds: Record<string, number> = {}
+  const started: Record<string, number> = {}
   const interruptions: Tally['interruptions'] = []
   const focus = focusFor(input.goals).focus
   let from = fromMs
@@ -251,6 +283,7 @@ export function tallyWindow(input: PlaybackInput, fromMs: number, toMs: number):
       seconds[verb] = (seconds[verb] ?? 0) + STEP
       if (state.intention.startedAt !== last) {
         last = state.intention.startedAt
+        started[verb] = (started[verb] ?? 0) + 1
         if (focus && state.time < focus.until && verb !== focus.action) {
           const weakest = (Object.entries(state.needs) as [string, number | undefined][]).filter(([, v]) => v !== undefined && v < STRONG_NEED).sort((a, b) => a[1]! - b[1]!)[0]
           interruptions.push({ verb, need: weakest ? weakest[0] : 'other', at: state.time })
@@ -259,5 +292,5 @@ export function tallyWindow(input: PlaybackInput, fromMs: number, toMs: number):
     }
     from = to
   }
-  return { seconds: Object.fromEntries(Object.entries(seconds).map(([v, n]) => [v, Math.round(n * 10) / 10])), interruptions }
+  return { seconds: Object.fromEntries(Object.entries(seconds).map(([v, n]) => [v, Math.round(n * 10) / 10])), started, interruptions }
 }

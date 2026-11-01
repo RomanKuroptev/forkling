@@ -7,6 +7,7 @@ import { MAX_ARTIFACTS_PER_DAY } from '../art.ts'
 import { codeSlotsLeft } from '../builds.ts'
 import { readRecentPast } from '../past.ts'
 import { photosLeft } from '../photos.ts'
+import { portionsLeft } from '@forkling/sim'
 import { MAX_READINGS_PER_DAY } from '../reading.ts'
 import { MAX_CODE_PER_WEEK, MAX_PHOTOS_PER_DAY } from '@forkling/schema'
 import { checkPlan } from './plan.ts'
@@ -41,6 +42,7 @@ export async function think(t: Tick): Promise<void> {
     beliefs: t.beliefs,
     memory: t.w.summary,
     interests: t.interests,
+    food: t.objects.flatMap((o) => (portionsLeft(o) === null ? [] : [{ name: o.name, left: portionsLeft(o)!, max: o.properties.portions! }])),
     past: readRecentPast(t.dir, t.today, t.w.art),
     limits: {
       creative: { left: Math.max(0, MAX_ARTIFACTS_PER_DAY - t.arts.count), max: MAX_ARTIFACTS_PER_DAY },

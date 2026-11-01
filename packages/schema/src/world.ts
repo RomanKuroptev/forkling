@@ -80,6 +80,8 @@ export const ObjectState = z.object({
   paintedAt: Timestamp.optional(),
   cookedAt: Timestamp.optional(),
   open: z.boolean().optional(),
+  /** Meals left in something with `portions`. Missing means full. */
+  portionsLeft: z.number().int().nonnegative().optional(),
   /** In the forkling's paws. A held object stays in `objects/` but is not on the ground. */
   held: z.boolean().optional(),
   /** Id of the object this one is tucked behind or inside. */

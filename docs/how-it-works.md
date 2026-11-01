@@ -94,11 +94,11 @@ Three needs from 0 to 100. Values for the cat (`species/cat/species.json`):
 
 | Need | Start | Decay per hour | What raises it |
 |---|---|---|---|
-| hunger | 65 | 120 | `eat` and similar |
-| energy | 75 | 80 | `sleep`, `nap` |
-| curiosity | 55 | 120 | `explore`, `play`, `inspect` and others |
+| hunger | 65 | 24 | `eat` at a bowl (3 portions, filled again on waking), or a dish it cooked (`dine`) |
+| energy | 75 | 20 | `sleep`, `nap` in a sunbeam, `curl_up` on something soft |
+| curiosity | 55 | 24 | `explore`, `play`, `inspect` and others |
 
-Needs fall with real seconds (`packages/sim/src/needs.ts`), asleep as well as awake, so they run about 10 to 50 times faster than a person's day: a need at 120 per hour goes from full to empty in under an hour. Only an action's `satisfies` raises a need, and some actions cost energy (`explore` -6, `pounce` -10, `zoomies` -5), which matters more than the decay. Affection was removed from the cat until visits can reach the mind; it returns with the visit gateway. The measured effect of different rates is in `review-2026-11.md` section 11.
+Needs fall with real seconds, at the rates above (hours to empty, not minutes: 24 an hour is about 4 hours), and at a quarter of that speed in bed (`ASLEEP_DECAY`), so a night does not empty them. Only an action's `satisfies` raises a need, and some actions cost a little energy (`explore` -2, `pounce` -3, `zoomies` -2). Affection was removed from the cat until visits can reach the mind; it returns with the visit gateway. A bowl gives 3 meals and is filled again when it wakes; once it is empty the body cannot fix hunger by itself, so the `need` trigger wakes the mind, which has to plan food: `cut` berries, `cook` them, `dine`. The measured effect of different rates is in `review-2026-11.md` section 11.
 
 ### How the body picks an action (`packages/sim/src/utility.ts`, `forkling.ts:380-395`)
 1. **Is there a plan step (the "focus")?** If yes and no visitor is near, the plan owns the visible action. If a need is below 15 and the body can raise it right now (and the planned verb would not), it does one action that raises it, then the plan goes on. Otherwise the plan step wins outright.
@@ -111,10 +111,9 @@ Needs fall with real seconds (`packages/sim/src/needs.ts`), asleep as well as aw
 
 | Who | Anchor |
 |---|---|
-| Mind | The intention's `startedAt` and `seed`, or the last tick time (`lastTickAt`) |
-| Viewer | The commit time of the loaded commit, with a mixed seed |
+| Mind and viewer | `playbackStateTime(forkling)`: the forkling's own `lastTickAt`. The same for both, and not moved by commits that leave `forkling.json` alone |
 
-Both then fast-forward to "now". If the anchors differ, the same `forkling.json` produces two different walks. The viewer also loads the world once and never refreshes, so an open tab replays old state.
+Both then fast-forward to "now". If the write is older than the current 30-minute epoch, the body is first carried across the gap epoch by epoch (`carryForward`, at most 2 hours; older writes are not carried because nobody was watching), so needs keep falling and the body does not jump back to where it was written. The viewer also loads the world once and never refreshes, so an open tab replays old state.
 
 ### Sleep and mood
 - Sleep: wake about 07:00 and bed about 23:00 in the forkling's time zone, shifted by up to 30 minutes from the seed, plus a weekend lie-in and an optional late night the mind chooses (`packages/sim/src/sleep.ts`). The hours are in the engine, not the species pack.

@@ -46,6 +46,8 @@ export interface UserInput {
   /** What it did and wrote before, so it can build on its own work. Missing means none is shown. */
   past?: RecentPast
   /** What is left of each daily or weekly limit, so it does not plan what would be refused. */
+  /** Food that comes in portions: what is left of each. */
+  food?: readonly { name: string; left: number; max: number }[]
   limits?: Record<'creative' | 'photos' | 'readings' | 'code', { left: number; max: number }>
 }
 
@@ -159,6 +161,7 @@ export function buildUser(i: UserInput): string {
     ...(i.justNow.length > 0 ? ['', 'just now:', ...i.justNow.map((line) => `- ${line}`)] : []),
     ...describeBrokenOff(i.mindState.brokenOff),
     ...describeLimits(i.limits),
+    ...(i.food && i.food.length > 0 ? [`food to share out: ${i.food.map((f) => `${f.name} ${f.left} of ${f.max} portions left`).join('; ')}, filled again when you wake`] : []),
     '</situation>',
     ...(i.temperament
       ? [

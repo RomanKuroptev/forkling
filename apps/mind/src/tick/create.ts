@@ -23,6 +23,9 @@ import { readWorld } from '../world.ts'
 import { makeAsk } from './ask.ts'
 import type { Tick, TickDeps } from './context.ts'
 
+/** The longest stretch of the body's time that one tick counts. */
+const MAX_TALLY_MS = 2 * 3_600_000
+
 /** The spot kinds that have at least one place in the world made of `objects`. */
 export function spotsFor(t: Pick<Tick, 'pack' | 'tz' | 'nowMs'>, objects: readonly WorldObject[]): Set<string> {
   const w2 = worldWithObjects(objects)
@@ -63,9 +66,14 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   const playback = startPlayback(playbackInput, nowMs)
   // What the body really did on the plan step since the last write: the step's effect waits on it.
   const running = w.goals.now
-  const from = playbackStateTime(forkling) * 1000
+  // How long a stretch is ever counted. After a longer pause (or in a world's first tick) nothing is, since the body was not being watched.
+  const writtenMs = playbackStateTime(forkling) * 1000
+  const from = nowMs - writtenMs > MAX_TALLY_MS ? nowMs : writtenMs
   const to = running ? Math.min(nowMs, Date.parse(running.until)) : 0
-  const tally = running && !asleep && to > from ? tallyWindow(playbackInput, from, to) : { seconds: {}, interruptions: [] }
+  const tally = running && !asleep && to > from ? tallyWindow(playbackInput, from, to) : { seconds: {}, started: {}, interruptions: [] }
+  // Food in portions is counted from every meal since the last write, step or no step.
+  const hasPortions = w.objects.some((o) => o.properties.portions !== undefined)
+  const meals = hasPortions && !asleep && nowMs > from ? tallyWindow(playbackInput, from, nowMs).started : {}
   const stepVerb = running ? w.goals.today?.steps[running.index]?.verb : undefined
   const body = playback.state
   const objects: WorldObject[] = [...w.objects]
@@ -127,6 +135,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     started: null,
 
     triggers: [],
+    begun: meals,
     worked: stepVerb ? (tally.seconds[stepVerb] ?? 0) : 0,
     drift: tally.interruptions.map((i) => ({ verb: i.verb, need: i.need, at: new Date(i.at * 1000).toISOString() })),
     failed: false,

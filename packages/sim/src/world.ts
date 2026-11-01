@@ -1,6 +1,6 @@
 import type { IslandConfig, SpeciesPack, WorldObject } from '@forkling/schema'
 import { heightAt, type PropPlacement } from './island.ts'
-import { matchesTarget } from './objects.ts'
+import { eatsFrom, matchesTarget, portionsLeft } from './objects.ts'
 import { buildNavGrid, isWalkable, nearestWalkable, type NavGrid, type Obstacle, type Point2 } from './nav.ts'
 import { findSunbeams, type Caster, type Vec3Tuple } from './sky.ts'
 
@@ -86,7 +86,10 @@ export function collectSpots(
     spots[o.id] = [p]
     for (const kind of o.affordances) (spots[kind] ??= []).push(p)
     if (o.properties.high && !o.affordances.includes('perch')) (spots.perch ??= []).push(p)
+    // Something with no portions left feeds nobody: it is still there to look at, but not to eat from.
+    const empty = portionsLeft(o) === 0
     for (const verb of pack.actions) {
+      if (empty && eatsFrom(verb)) continue
       if (verb.target.type === 'object' && matchesTarget(verb.target, verb.id, o)) (spots[`for:${verb.id}`] ??= []).push(p)
     }
   }

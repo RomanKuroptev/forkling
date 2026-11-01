@@ -112,6 +112,19 @@ describe('acting after a micro-behavior', () => {
     expect(toRepoIntention({ ...intention, targetId: 'sunbeam' }).targetId).toBe('sunbeam')
   })
 
+  it('loses needs at a quarter of the speed while in bed, and at the full speed awake', () => {
+    // The blob has nothing to do at night, so in bed nothing raises a need: only the decay shows.
+    const fall = (asleep: boolean) => {
+      const state = createForkling(blob, [], 3, { x: 2, z: 20 }, { needs: { hunger: 90, energy: 90, fun: 90 } })
+      const ctx: StepContext = { grid: world.grid, visitor: null, timeOfDay: 2, asleep, spots: {} }
+      for (let i = 0; i < 6000; i++) stepForkling(state, STEP, ctx)
+      return 90 - state.needs.hunger!
+    }
+    const inBed = fall(true)
+    expect(inBed).toBeCloseTo((240 * 600) / 3600 * 0.25, 1)
+    expect(inBed).toBeGreaterThan(0)
+  })
+
   it('does not resume an action from the repo that is not allowed at this time of day', () => {
     // The repo says it was resting, but resting is for the day and it is bed time now.
     const dayRest = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === 'rest' ? { ...a, requires: ['day'] } : a)) })

@@ -31,6 +31,15 @@ describe('cat species pack', () => {
     expect(pack.perception.noticeRadius).toBe(5)
   })
 
+  it('has needs that fall at a human pace: hours, not minutes, to empty, and cheap moves', () => {
+    expect(pack.needs.hunger!.decayPerHour).toBe(24)
+    expect(pack.needs.curiosity!.decayPerHour).toBe(24)
+    expect(pack.needs.energy!.decayPerHour).toBe(20)
+    expect(byId('explore').satisfies.energy).toBe(-2)
+    expect(byId('pounce').satisfies.energy).toBe(-3)
+    expect(byId('zoomies').satisfies.energy).toBe(-2)
+  })
+
   it('drops to four legs for the body, and stands up to work with its hands', () => {
     expect(pack.bodyPlans.quadruped).toEqual(['body'])
     expect(pack.bodyPlans.upright).toEqual(['body', 'hands', 'making', 'growing', 'mind'])
