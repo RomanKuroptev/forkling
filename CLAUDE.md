@@ -6,7 +6,7 @@ Anyone can fork the world template and hatch their own forkling, choosing what k
 
 **The emphasis is on AI, not on being a pet game.** Forkling explores what an autonomous AI can do when it has a body, a world and time: it sets its own goals, follows its curiosity and the internet's, makes things, remembers, changes its mind and can explain why. It must never feel like a game on rails. It should also be fun to visit several times a day, and cost at most **$10 a month per forkling**.
 
-Roadmap: [`MILESTONES.md`](MILESTONES.md) (v1, M1 to M8). Ideas for later: [`FUTURE.md`](FUTURE.md).
+Roadmap: [`MILESTONES.md`](MILESTONES.md) (v1, M1 to M8). Ideas for later: [`docs/future.md`](docs/future.md).
 
 ## Core idea: mind, body, builder
 
@@ -71,7 +71,7 @@ forkling/
   templates/       # forkling-world template and Merge's files, validated in CI
   CLAUDE.md
   MILESTONES.md
-  FUTURE.md
+  docs/future.md
 ```
 
 ### `forkling-world` (template repo) and each forkling's own repo
@@ -167,7 +167,7 @@ The body must be deterministic from `(intention, startedAt, seed, now)` so every
 ## Working conventions
 
 - **TDD:** write the Vitest test first for sim logic, schemas, species pack loading, validation and the budget guard.
-- Work one milestone at a time from `MILESTONES.md`. Use plan mode before starting each one. Don't build anything from `FUTURE.md` during v1.
+- Work one milestone at a time from `MILESTONES.md`. Use plan mode before starting each one. Don't build anything from `docs/future.md` during v1.
 - Small commits, one working slice at a time. Keep `main` deployable.
 - Keep `packages/sim` pure (no DOM, no three.js, no network) so it runs in the browser, the mind and CI.
 - Never write species-specific logic outside `species/`. If a feature needs it, add a hook to the pack format instead.

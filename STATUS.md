@@ -9,14 +9,14 @@ Read this first. Update it before every commit and before you stop.
 
 ## Current work
 - Branch: `claude-setup`, implementing [`docs/plans/claude-setup.md`](docs/plans/claude-setup.md) part 1 (docs and config only, no runtime code changes). One commit per step.
-- Done: step 1 (this file, README status line, MILESTONES heading notes).
-- Next: step 2 (docs/ split).
+- Done: step 1 (STATUS.md, README status line, MILESTONES heading notes); step 2 (docs/ split: architecture, milestones-done, future, decisions).
+- Next: step 3 (nested CLAUDE.md files). Root CLAUDE.md still holds the architecture sections until step 4 slims it.
 
 ## Open questions
 - None.
 
 ## Last verified
-- 2026-11-01: after step 1, `pnpm typecheck` clean and `pnpm test` 1026 passed (77 files).
+- 2026-11-01: after step 2, `pnpm typecheck` clean and `pnpm test` 1026 passed (77 files).
 
 ## Tooling note
 - `pnpm` is not on the Git Bash PATH here; run pnpm commands from PowerShell.
