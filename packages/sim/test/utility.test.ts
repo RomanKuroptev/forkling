@@ -114,6 +114,22 @@ describe('pickAction', () => {
   })
 })
 
+describe('the night', () => {
+  const nightRest = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === 'rest' ? { ...a, requires: ['night'] } : a)) })
+
+  it('offers only what is for the night while it is bed time, whatever else is allowed', () => {
+    const needs = { hunger: 5, energy: 50, fun: 50 }
+    const asleep = ids(scoreActions(needs, nightRest, { ...noon, timeOfDay: 2, asleep: true }))
+    expect(asleep).toEqual(['rest'])
+    // Awake, the same pack offers the rest of its verbs, such as eating.
+    expect(ids(scoreActions(needs, nightRest, { ...noon, timeOfDay: 12, asleep: false }))).toContain('eat')
+  })
+
+  it('leaves a run that does not say whether it is bed time as it was', () => {
+    expect(ids(scoreActions({ hunger: 50, energy: 50, fun: 50 }, blob, noon))).toContain('eat')
+  })
+})
+
 describe('fixableNeeds', () => {
   const without = (...ids: string[]) => SpeciesPack.parse({ ...blobJson, actions: blob.actions.filter((a) => !ids.includes(a.id)) })
 

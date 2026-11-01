@@ -45,8 +45,10 @@ export function requirementsMet(action: SpeciesAction, pack: SpeciesPack, ctx: P
   return true
 }
 
-function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: ScoreContext): boolean {
+function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: Pick<ScoreContext, 'visitorDistance' | 'timeOfDay' | 'asleep' | 'spotKinds' | 'focusAction'>): boolean {
   if (!requirementsMet(action, pack, ctx)) return false
+  // In bed hours only what is for the night is on offer: it does not get up to eat or play while the bubble says zzz.
+  if (ctx.asleep === true && !action.requires.includes('night')) return false
   const nearby = ctx.visitorDistance !== null && ctx.visitorDistance <= pack.perception.noticeRadius
   // Drift never builds, plants or gathers: a visitor would see work that left nothing behind. The mind plans those.
   if (action.effect !== 'none' && action.id !== ctx.focusAction) return false
