@@ -2,7 +2,7 @@
 
 An engine for autonomous AI pets that live in explorable 3D worlds, each one growing its world through pull requests in its own GitHub repo. See [`CLAUDE.md`](CLAUDE.md) for the design, [`MILESTONES.md`](MILESTONES.md) for the v1 roadmap and [`FUTURE.md`](FUTURE.md) for ideas after v1.
 
-**Status:** M3. Merge, a cat, lives in its own repo ([RomanKuroptev/merge](https://github.com/RomanKuroptev/merge)); the viewer loads any forkling world from GitHub and plays it back so every visitor sees the same cat at the same moment.
+**Status:** see [`STATUS.md`](STATUS.md). Merge, a cat, lives in its own repo ([RomanKuroptev/merge](https://github.com/RomanKuroptev/merge)); the viewer loads any forkling world from GitHub and plays it back so every visitor sees the same cat at the same moment.
 
 ## Getting started
 

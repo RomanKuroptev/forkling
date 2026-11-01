@@ -122,7 +122,7 @@ Species pack format, `species/cat`, needs, seeded PRNG, utility AI, A* pathfindi
 
 ---
 
-## M4: The mind wakes up (built; finishing the one-day run)
+## M4: The mind wakes up
 
 **Goal:** Merge sets and pursues its own goals on a schedule, sleeps like a person, and you can see why it does what it does.
 
@@ -142,7 +142,7 @@ Note: GitHub cron can be delayed by several minutes. Design for that; never assu
 
 ---
 
-## M5: A body that makes things (built; needs its live run)
+## M5: A body that makes things
 
 **Goal:** Merge has hands, a home and materials, and starts making things for its own reasons.
 
@@ -164,7 +164,7 @@ Note: GitHub cron can be delayed by several minutes. Design for that; never assu
 
 ---
 
-## M6: Memory, reflection, curiosity and creative work (built on branches m6-memory, m6-curiosity, m6-art; needs release and its live run)
+## M6: Memory, reflection, curiosity and creative work
 
 **Goal:** Merge learns from its days, follows what it finds online, and its creative work shows up on its own website.
 
@@ -185,7 +185,7 @@ Built in three slices, each released and run live before the next: **A** memory 
 
 ---
 
-## M7: Seeing, building and coding (built as v0.7.0 to v0.7.3; A live, B to D need their live run)
+## M7: Seeing, building and coding
 
 **Goal:** Merge perceives its world directly and grows it and its website with things it designs.
 
