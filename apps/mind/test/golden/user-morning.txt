@@ -36,5 +36,4 @@ It is a new day. Write today's plan: 4 to 8 steps whose minutes roughly fill the
 You have no long goal yet. Set one in longGoal: a want of your own that could take several days, the kind of thing a person might care about.
 Let what you are into (see <interests>) shape the day if it wants to.
 The first step starts now. Put in thought why you begin with it. Set plan to your steps and planReason to one sentence about the day.
-Set stayUpLate only if there is something you truly want to stay up for tonight; otherwise null.
 Set design only if you truly need an object that does not exist yet for something you are doing; otherwise null.
