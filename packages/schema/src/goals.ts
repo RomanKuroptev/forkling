@@ -51,6 +51,10 @@ export const Goals = z.object({
       index: z.number().int().nonnegative(),
       startedAt: Timestamp,
       until: Timestamp,
+      /** Seconds the body has really spent on the step's verb so far, from the replayed body. Its effect lands only once this is enough. */
+      workedSec: z.number().nonnegative().optional(),
+      /** The step was given its time again once because the body had not done enough of it. */
+      extended: z.boolean().optional(),
     })
     .optional(),
 })

@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { SpeciesPack } from '@forkling/schema'
 import blobJson from './fixtures/blob.species.json'
 import { createPrng } from '../src/prng.ts'
-import { pickAction, scoreActions, type ScoreContext } from '../src/utility.ts'
+import { fixableNeeds, pickAction, scoreActions, type ScoreContext } from '../src/utility.ts'
 
 const blob = SpeciesPack.parse(blobJson)
+const withHands = (id: string, hands: 'empty' | 'full') => SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === id ? { ...a, hands, effect: 'none' } : a)) })
 const noon: ScoreContext = { visitorDistance: null, timeOfDay: 12, spotKinds: new Set(['food']) }
 const ids = (scored: { action: { id: string } }[]) => scored.map((s) => s.action.id)
 const scoreOf = (scored: { action: { id: string }; score: number }[], id: string) =>
@@ -111,5 +112,101 @@ describe('pickAction', () => {
     expect(eatShare).toBeGreaterThan(0.5)
     expect(eatShare).toBeLessThan(0.95)
     expect(all.filter((p) => p === 'rest').length).toBeGreaterThan(0)
+  })
+})
+
+describe('mood', () => {
+  const needs = { hunger: 60, energy: 60, fun: 60 }
+  // The blob's `dash` runs and costs energy; its `rest` restores it.
+  const ratio = (feelings: { valence: number; arousal: number } | undefined) => {
+    const scored = scoreActions(needs, blob, { ...noon, ...(feelings ? { feelings } : {}) })
+    return scoreOf(scored, 'dash') / scoreOf(scored, 'rest')
+  }
+  const calm = { valence: 0, arousal: 0.3 }
+
+  it('changes nothing when it is not given, or when it is calm and neither glad nor sad', () => {
+    expect(ratio(calm)).toBeCloseTo(ratio(undefined), 6)
+  })
+
+  it('favours energetic verbs when it is wound up and glad, and restful ones when it is low and calm', () => {
+    expect(ratio({ valence: 0.6, arousal: 0.9 })).toBeGreaterThan(ratio(calm) * 1.3)
+    expect(ratio({ valence: -0.8, arousal: 0.05 })).toBeLessThan(ratio(calm) * 0.7)
+  })
+
+  it('never changes a score by more than 40% either way, so mood bends choices and does not take them over', () => {
+    const base = scoreActions(needs, blob, noon)
+    for (const feelings of [{ valence: 1, arousal: 1 }, { valence: -1, arousal: 0 }]) {
+      for (const s of scoreActions(needs, blob, { ...noon, feelings })) {
+        const r = s.score / scoreOf(base, s.action.id)
+        expect(r).toBeGreaterThanOrEqual(0.7 - 1e-9)
+        expect(r).toBeLessThanOrEqual(1.4 + 1e-9)
+      }
+    }
+  })
+})
+
+describe('paws', () => {
+  const needs = { hunger: 60, energy: 60, fun: 60 }
+  // The blob's `stash` needs something in its paws, and `grab` needs them empty.
+  it('keeps a verb that needs empty paws out of the draw while it holds something', () => {
+    expect(ids(scoreActions(needs, withHands('grab', 'empty'), { ...noon, holding: true, spotKinds: new Set(['food', 'for:grab']) }))).not.toContain('grab')
+    expect(ids(scoreActions(needs, withHands('grab', 'empty'), { ...noon, holding: false, spotKinds: new Set(['food', 'for:grab']) }))).toContain('grab')
+  })
+
+  it('keeps a verb that needs something in its paws out of the draw while they are empty', () => {
+    expect(ids(scoreActions(needs, withHands('stash', 'full'), { ...noon, holding: false, spotKinds: new Set(['food', 'for:stash']) }))).not.toContain('stash')
+    expect(ids(scoreActions(needs, withHands('stash', 'full'), { ...noon, holding: true, spotKinds: new Set(['food', 'for:stash']) }))).toContain('stash')
+  })
+
+  it('does not decide when it is not told what the paws hold', () => {
+    expect(ids(scoreActions(needs, withHands('stash', 'full'), { ...noon, spotKinds: new Set(['food', 'for:stash']) }))).toContain('stash')
+  })
+})
+
+describe('the night', () => {
+  const nightRest = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === 'rest' ? { ...a, requires: ['night'] } : a)) })
+
+  it('offers only what is for the night while it is bed time, whatever else is allowed', () => {
+    const needs = { hunger: 5, energy: 50, fun: 50 }
+    const asleep = ids(scoreActions(needs, nightRest, { ...noon, timeOfDay: 2, asleep: true }))
+    expect(asleep).toEqual(['rest'])
+    // Awake, the same pack offers the rest of its verbs, such as eating.
+    expect(ids(scoreActions(needs, nightRest, { ...noon, timeOfDay: 12, asleep: false }))).toContain('eat')
+  })
+
+  it('leaves a run that does not say whether it is bed time as it was', () => {
+    expect(ids(scoreActions({ hunger: 50, energy: 50, fun: 50 }, blob, noon))).toContain('eat')
+  })
+})
+
+describe('fixableNeeds', () => {
+  const without = (...ids: string[]) => SpeciesPack.parse({ ...blobJson, actions: blob.actions.filter((a) => !ids.includes(a.id)) })
+
+  it('names every need that some action eligible right now would raise', () => {
+    expect([...fixableNeeds(blob, noon)].sort()).toEqual(['energy', 'fun', 'hunger'])
+  })
+
+  it('leaves out a need whose only source is not on offer', () => {
+    // Eating needs a food spot, and there is none here.
+    expect(fixableNeeds(blob, { ...noon, spotKinds: new Set() }).has('hunger')).toBe(false)
+    expect(fixableNeeds(blob, noon).has('hunger')).toBe(true)
+  })
+
+  it('does not count an action that needs a visitor when no visitor is near', () => {
+    const lonely = without('roam', 'dash')
+    expect(fixableNeeds(lonely, noon).has('fun')).toBe(false)
+    expect(fixableNeeds(lonely, { ...noon, visitorDistance: 2 }).has('fun')).toBe(true)
+  })
+
+  it('does not count an action that costs the need or raises nothing', () => {
+    const fixable = fixableNeeds(without('rest'), noon)
+    // dash costs energy, so with no rest nothing raises it.
+    expect(fixable.has('energy')).toBe(false)
+  })
+
+  it('respects the time of day', () => {
+    const night = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === 'rest' ? { ...a, requires: ['night'] } : a)) })
+    expect(fixableNeeds(night, { ...noon, timeOfDay: 12, asleep: false }).has('energy')).toBe(false)
+    expect(fixableNeeds(night, { ...noon, timeOfDay: 1, asleep: true }).has('energy')).toBe(true)
   })
 })

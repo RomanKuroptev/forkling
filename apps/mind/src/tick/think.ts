@@ -3,6 +3,13 @@ import { Decision } from '../decision.ts'
 import { buildUser } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { describeFeelings } from './describe.ts'
+import { MAX_ARTIFACTS_PER_DAY } from '../art.ts'
+import { codeSlotsLeft } from '../builds.ts'
+import { readRecentPast } from '../past.ts'
+import { photosLeft } from '../photos.ts'
+import { portionsLeft } from '@forkling/sim'
+import { MAX_READINGS_PER_DAY } from '../reading.ts'
+import { MAX_CODE_PER_WEEK, MAX_PHOTOS_PER_DAY } from '@forkling/schema'
 import { checkPlan } from './plan.ts'
 import { clock, weekday } from './util.ts'
 
@@ -35,6 +42,14 @@ export async function think(t: Tick): Promise<void> {
     beliefs: t.beliefs,
     memory: t.w.summary,
     interests: t.interests,
+    food: t.objects.flatMap((o) => (portionsLeft(o) === null ? [] : [{ name: o.name, left: portionsLeft(o)!, max: o.properties.portions! }])),
+    past: readRecentPast(t.dir, t.today, t.w.art),
+    limits: {
+      creative: { left: Math.max(0, MAX_ARTIFACTS_PER_DAY - t.arts.count), max: MAX_ARTIFACTS_PER_DAY },
+      photos: { left: photosLeft(t.mind, t.today), max: MAX_PHOTOS_PER_DAY },
+      readings: { left: Math.max(0, MAX_READINGS_PER_DAY - t.readings.count), max: MAX_READINGS_PER_DAY },
+      code: { left: codeSlotsLeft(t.mind, t.today), max: MAX_CODE_PER_WEEK },
+    },
     designs: t.mind.openBuild ? 'open' : t.mind.builds?.date === t.today && t.mind.builds.count > 0 ? 'used' : 'ready',
   })
   let asking = user
@@ -44,6 +59,7 @@ export async function think(t: Tick): Promise<void> {
     if (!result) break
     if (!result.parsed) {
       notes.push(`no usable answer (stopped: ${result.stopReason ?? 'unknown'})`)
+      t.mind.thinkFailedAt = t.nowIso
       break
     }
     t.decision = result.parsed

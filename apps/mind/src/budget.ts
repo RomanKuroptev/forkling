@@ -58,9 +58,12 @@ export function recordCall(ledger: BudgetLedger, call: BudgetCall): BudgetLedger
   }
 }
 
-/** A new month starts from zero. The old month is kept as a one-line total. */
+/**
+ * A new month starts from zero. The old month is kept as a one-line total. It never goes back: a ledger already in a
+ * later month than the clock says (a time zone or a clock running behind) stays as it is.
+ */
 export function rollLedger(ledger: BudgetLedger, month: string): BudgetLedger {
-  if (ledger.month === month) return ledger
+  if (month <= ledger.month) return ledger
   const unused = ledger.spentUsd === 0 && ledger.calls.length === 0
   return {
     month,

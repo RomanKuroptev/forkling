@@ -20,6 +20,8 @@ export const ObjectProperties = z.object({
   material: Material.optional(),
   /** Things can be put away in it. */
   storage: z.boolean().default(false),
+  /** Meals it gives between refills, such as a bowl that is filled again each morning. Missing means it never runs out. */
+  portions: z.number().int().min(1).max(20).optional(),
 })
 export type ObjectProperties = z.infer<typeof ObjectProperties>
 

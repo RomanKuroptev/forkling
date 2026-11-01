@@ -142,16 +142,24 @@ jobs:
           pnpm --filter @forkling/viewer eyecam --world "$GITHUB_WORKSPACE/world" --out "$RUNNER_TEMP/frames" || echo "the eye cam failed; no frames this time"
           pnpm --filter @forkling/mind photos --world "$GITHUB_WORKSPACE/world" --frames "$RUNNER_TEMP/frames"
 
+      # Every tick commits: a tick that changed nothing in the world still leaves its line in mind/ticks/ and refreshes
+      # mind/health.json. Those commits start with "tick:", so the history can be read without them.
       - name: Commit what changed
-        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.photos == 'true')
+        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.photos == 'true' || steps.tick.outputs.logged == 'true')
         working-directory: world
         env:
           SUMMARY: ${{ steps.tick.outputs.summary }}
+          WORLD: ${{ steps.tick.outputs.changed }}
+          PHOTOS: ${{ steps.tick.outputs.photos }}
         run: |
           git config user.name "forkling-mind"
           git config user.email "forkling-mind@users.noreply.github.com"
           git add -A
-          git commit -m "chore(mind): ${SUMMARY:-tick}"
+          if [ "$WORLD" = "true" ] || [ "$PHOTOS" = "true" ]; then
+            git commit -m "chore(mind): ${SUMMARY:-tick}"
+          else
+            git commit -m "tick: ${SUMMARY:-quiet}"
+          fi
           # Another run or a merged PR may have landed since checkout.
           git pull --rebase
           git push
@@ -164,8 +172,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --name-only HEAD~1 HEAD | grep -qE '^(journal/|art/|notebook/|memory/beliefs\.json|memory/timeline/|brain/interests\.json)'; then
+          changed=$(git diff --name-only HEAD~1 HEAD)
+          if echo "$changed" | grep -qE '^(journal/|art/|notebook/|memory/beliefs\.json|memory/timeline/|brain/interests\.json)'; then
             gh workflow run pages.yml || echo "could not start the website build (is pages.yml on this branch?)"
+          elif echo "$changed" | grep -qE '^(forkling\.json|mind/goals\.json)$'; then
+            # The home page shows where it is and what it is doing, so it follows those too, but at most once an hour:
+            # they change on most ticks.
+            last=$(gh run list --workflow pages.yml --limit 1 --json createdAt --jq '.[0].createdAt // empty')
+            if [ -z "$last" ] || [ $(( $(date +%s) - $(date -u -d "$last" +%s) )) -ge 3600 ]; then
+              gh workflow run pages.yml || echo "could not start the website build (is pages.yml on this branch?)"
+            fi
           fi
 
       # Something it asked for: the request is on main now, so the builder can design it and open a pull request.

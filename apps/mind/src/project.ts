@@ -3,9 +3,9 @@ import { extname, join, sep } from 'node:path'
 import { BuildRequest, type BudgetCall } from '@forkling/schema'
 import { skillLevel } from '@forkling/sim'
 import { artifactFrom } from './art.ts'
-import { localDate } from '@forkling/sim'
-import { appendStream } from './stream.ts'
-import { monthOf, recordCall, rollLedger } from './budget.ts'
+import { monthOf } from './budget.ts'
+import { writeBuildResult } from './build-result.ts'
+import { clampText } from './decision.ts'
 import { readWorld, writeJson } from './world.ts'
 
 /** What a coded project may contain, in total and file by file. */
@@ -99,20 +99,18 @@ export function finishProject(dir: string, input: { now: Date; id: string; usd: 
   const nowMs = input.now.getTime()
   const w = readWorld(dir, (f) => monthOf(f.timezone, nowMs))
 
-  // What the builder spent counts whatever came of it.
-  if (input.usd > 0) {
-    const call: BudgetCall = { at: input.now.toISOString(), kind: 'code', model: 'claude-haiku-5-5', input: 0, cacheRead: 0, cacheWrite: 0, output: 0, usd: input.usd }
-    const budget = recordCall(rollLedger(w.budget, monthOf(w.forkling.timezone, nowMs)), call)
-    if (writeJson(dir, 'brain/budget.json', budget)) result.written.push('brain/budget.json')
-  }
+  // The builder's only report to the mind. What it spent counts whatever came of it; the mind books it, and closes a
+  // failed build so it may ask again. The builder never writes the ledger, the stream or the mind's state.
+  const calls: BudgetCall[] =
+    input.usd > 0 ? [{ at: input.now.toISOString(), kind: 'code', model: 'claude-haiku-5-5', input: 0, cacheRead: 0, cacheWrite: 0, output: 0, usd: input.usd }] : []
+  const report = (status: 'pr-open' | 'failed', reason?: string) =>
+    result.written.push(writeBuildResult(dir, { id: request.id, kind: 'code', status, ...(reason ? { reason: clampText(reason, 300) } : {}), calls, at: input.now.toISOString() }))
 
   const check = checkProject(dir, input.id)
   result.problems.push(...check.problems)
   if (!check.ok) {
-    // It will not be published: close the build so the mind may ask again, and say why in the day's stream.
-    appendStream(dir, localDate(w.forkling.timezone, nowMs), [{ at: input.now.toISOString(), kind: 'rejected', text: `${request.name} could not be built: ${check.problems[0] ?? 'it did not pass'}`, objectId: request.id }])
-    result.written.push(`memory/stream/${localDate(w.forkling.timezone, nowMs)}.jsonl`)
-    if (w.mindState.openBuild?.id === request.id && writeJson(dir, 'mind/state.json', { ...w.mindState, openBuild: null })) result.written.push('mind/state.json')
+    // It will not be published.
+    report('failed', check.problems[0] ?? 'it did not pass the checks')
     return result
   }
 
@@ -123,9 +121,12 @@ export function finishProject(dir: string, input: { now: Date; id: string; usd: 
   )
   if (!art) {
     result.problems.push('the artifact for the project could not be made')
+    report('failed', 'the artifact for the project could not be made')
     return result
   }
   if (writeJson(dir, `art/${art.id}.json`, art)) result.written.push(`art/${art.id}.json`)
   result.ok = true
+  // It passed its checks and goes to a person by pull request: waiting for them is what `pr-open` means.
+  report('pr-open')
   return result
 }

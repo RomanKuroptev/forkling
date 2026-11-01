@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { BudgetLedger, MindState, WorldObject, type BuildRequest } from '@forkling/schema'
+import { BuildResult, MindState, WorldObject, type BuildRequest } from '@forkling/schema'
 import { heightAt, starterIsland } from '@forkling/sim'
 import { objectFromDesign, placeDesigned, runDesign, type DesignOutput } from '../src/design.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
@@ -152,6 +152,9 @@ function fake(answer: unknown = output()): Fake {
   }
 }
 
+/** What the builder reported for a build: its result file, the only thing it writes for the mind. */
+const resultIn = (folder: string, id = 'clay-shelf') => BuildResult.parse(JSON.parse(readFileSync(join(folder, `mind/builds/${id}.result.json`), 'utf8')))
+
 describe('runDesign', () => {
   const run = (llm: LlmClient | null, over: { dryRun?: boolean; id?: string } = {}) =>
     runDesign(dir, { now: NOW, llm, pack: cat.pack, speciesPersona: cat.persona, id: over.id ?? 'clay-shelf', ...(over.dryRun ? { dryRun: true } : {}) })
@@ -178,10 +181,16 @@ describe('runDesign', () => {
     expect(result.pr).toEqual({ title: 'A shelf for my cups', body: expect.stringContaining('three boards of clay') })
   })
 
-  it('records the call in the ledger', async () => {
-    await run(fake())
-    const ledger = BudgetLedger.parse(JSON.parse(readFileSync(file('brain/budget.json'), 'utf8')))
-    expect(ledger.calls.map((c) => c.kind)).toEqual(['design'])
+  it('reports what it spent in its result file, and leaves the ledger, the stream and the state of the mind to the mind', async () => {
+    const result = await run(fake())
+    const report = resultIn(dir)
+    expect(report).toMatchObject({ id: 'clay-shelf', kind: 'object', status: 'designed' })
+    expect(report.calls.map((c) => c.kind)).toEqual(['design'])
+    expect(report.calls[0]!.usd).toBeGreaterThan(0)
+    expect(result.written).toContain('mind/builds/clay-shelf.result.json')
+    expect(existsSync(file('brain/budget.json'))).toBe(false)
+    expect(existsSync(file('memory/stream'))).toBe(false)
+    expect(MindState.parse(JSON.parse(readFileSync(file('mind/state.json'), 'utf8'))).openBuild).not.toBeNull()
   })
 
   it('writes the words of the pull request without anything that could notify a stranger', async () => {
@@ -198,18 +207,19 @@ describe('runDesign', () => {
     expect(llm.calls[0]!.user).toMatch(/skill/i)
   })
 
-  it('closes the build when the design is not usable, so it can ask again', async () => {
+  it('reports a design that is not usable as failed, with the reason, so the mind can close the build and ask again', async () => {
     const result = await run(fake(output({ parts: [] })))
     expect(result.ok).toBe(false)
     expect(existsSync(file('objects/clay-shelf.json'))).toBe(false)
-    expect(MindState.parse(JSON.parse(readFileSync(file('mind/state.json'), 'utf8'))).openBuild).toBeNull()
-    expect(readFileSync(file('memory/stream/2026-11-03.jsonl'), 'utf8')).toMatch(/could not be drawn up/)
+    expect(resultIn(dir)).toMatchObject({ status: 'failed', reason: expect.stringMatching(/nothing in the design could be built/) })
+    expect(resultIn(dir).calls).toHaveLength(1)
+    expect(existsSync(file('memory/stream'))).toBe(false)
   })
 
-  it('closes the build when the model gives nothing', async () => {
+  it('reports a model that gives nothing as failed', async () => {
     const result = await run(fake(null))
     expect(result.ok).toBe(false)
-    expect(MindState.parse(JSON.parse(readFileSync(file('mind/state.json'), 'utf8'))).openBuild).toBeNull()
+    expect(resultIn(dir)).toMatchObject({ status: 'failed', reason: expect.stringMatching(/no usable design/) })
   })
 
   it('fails on a request that is not there, without writing anything', async () => {
@@ -218,11 +228,11 @@ describe('runDesign', () => {
     expect(result.notes.join(' ')).toMatch(/no request/)
   })
 
-  it('does nothing without credentials, and leaves the build open to be retried', async () => {
+  it('reports no credentials as failed rather than leaving the build open for days, and calls nothing', async () => {
     const result = await run(null)
     expect(result.ok).toBe(false)
     expect(result.notes.join(' ')).toMatch(/no credentials/)
-    expect(MindState.parse(JSON.parse(readFileSync(file('mind/state.json'), 'utf8'))).openBuild).not.toBeNull()
+    expect(resultIn(dir)).toMatchObject({ status: 'failed', reason: expect.stringMatching(/no credentials/), calls: [] })
   })
 
   it('stops when the budget is spent', async () => {
@@ -233,6 +243,7 @@ describe('runDesign', () => {
     expect(llm.calls).toHaveLength(0)
     expect(result.ok).toBe(false)
     expect(result.notes.join(' ')).toMatch(/budget/)
+    expect(resultIn(dir)).toMatchObject({ status: 'failed', reason: expect.stringMatching(/budget/) })
   })
 
   it('writes nothing in a dry run', async () => {
@@ -241,6 +252,7 @@ describe('runDesign', () => {
     expect(llm.calls).toHaveLength(0)
     expect(result.written).toEqual([])
     expect(existsSync(file('objects/clay-shelf.json'))).toBe(false)
+    expect(existsSync(file('mind/builds/clay-shelf.result.json'))).toBe(false)
   })
 })
 
@@ -315,7 +327,7 @@ describe('a designed contraption', () => {
       const r = await result
       expect(r.ok).toBe(false)
       expect(existsSync(join(dir2, 'objects/marble-run.json'))).toBe(false)
-      expect(readFileSync(join(dir2, 'memory/stream/2026-11-03.jsonl'), 'utf8')).toMatch(/nothing moved/)
+      expect(resultIn(dir2, 'marble-run')).toMatchObject({ status: 'failed', reason: expect.stringMatching(/nothing moved/) })
     })
 
     it('turns down one that flings its parts off the island', async () => {

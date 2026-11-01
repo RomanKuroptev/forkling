@@ -60,6 +60,12 @@ export const MindState = z.object({
   appliedStepAt: Timestamp.optional(),
   /** When the LLM was last asked, so strong needs don't wake it every tick. */
   lastThinkAt: Timestamp.optional(),
+  /** After a plan came back empty or was turned down, no new plan is asked for before this time. */
+  replanAfter: Timestamp.optional(),
+  /** `startedAt` of the step the mind was last asked about because its target was gone, so each step asks once. */
+  blockedStep: Timestamp.optional(),
+  /** When a call last failed or gave nothing usable, so the mind is not asked again at every tick. */
+  thinkFailedAt: Timestamp.optional(),
   /** Why the mind chose to stay up late, in its own words. */
   lateNightReason: z.string().max(200).optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */
@@ -80,8 +86,15 @@ export const MindState = z.object({
   builds: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   /** Coded projects asked for so far in an ISO week like `2026-W45`, for the weekly limit. */
   codeWeek: z.object({ week: z.string().regex(/^\d{4}-W\d{2}$/), count: z.number().int().nonnegative() }).optional(),
-  /** The build waiting on the builder: it ends when the object turns up in `objects/`, or after `BUILD_EXPIRES_HOURS`. */
+  /** The object build waiting on the builder: it ends when the object turns up in `objects/`, or when the builder says it failed, or after `BUILD_EXPIRES_HOURS`. */
   openBuild: z.object({ id: z.string().min(1), kind: BuildKind, requestedAt: Timestamp }).nullable().default(null),
+  /**
+   * The coded project waiting on the builder and then on a person. It is separate so that a pull request waiting to be
+   * read does not block object builds, and it does not expire while that pull request is open.
+   */
+  openCode: z.object({ id: z.string().min(1), kind: BuildKind, requestedAt: Timestamp }).nullable().default(null),
+  /** Times the body broke off a plan step to look after a need since the mind last decided, for its next prompt. Newest last. */
+  brokenOff: z.array(z.object({ step: z.string().max(40), verb: z.string().max(40), need: z.string().max(20), at: Timestamp })).max(30).default([]),
   /** Why the validator last turned a plan down, newest last.*/
   rejections: z.array(z.object({ at: Timestamp, reasons: z.array(z.string()) })).max(10).default([]),
 })
@@ -124,3 +137,24 @@ export const TemperamentRoll = z.object({
   quirks: z.array(z.object({ id: z.string().min(1), text: z.string().min(1).max(200) })),
 })
 export type TemperamentRoll = z.infer<typeof TemperamentRoll>
+
+/**
+ * `mind/builds/<id>.result.json`: what the builder reports back. The builder writes only this (and the object or project
+ * itself, by pull request); the mind reads it and does its own bookkeeping, so the two never write the same files.
+ */
+export const BuildResult = z.object({
+  id: z.string().min(1),
+  kind: BuildKind,
+  /**
+   * `designed`: an object was drawn up and its pull request is on its way. `pr-open`: a project passed its checks and its
+   * pull request waits for a person. `failed`: nothing could be built. `closed`: the pull request was closed without
+   * merging. `merged`: it was merged.
+   */
+  status: z.enum(['designed', 'pr-open', 'failed', 'closed', 'merged']),
+  /** Why it failed or was closed. */
+  reason: z.string().max(300).optional(),
+  /** What the builder spent, for the mind to book once. */
+  calls: z.array(BudgetCall).default([]),
+  at: Timestamp,
+})
+export type BuildResult = z.infer<typeof BuildResult>

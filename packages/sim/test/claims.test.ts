@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { Belief, Reflection } from '@forkling/schema'
-import { checkReflection } from '../src/claims.ts'
+import type { Belief, Reflection, StreamKind } from '@forkling/schema'
+import { checkReflection, type EvidenceEntry } from '../src/claims.ts'
 
-const ids = new Set(['2026-11-03#1', '2026-11-03#2', '2026-11-03#3'])
+/** What happened today, as the stream has it: what was done, when, and what kind of entry it is. */
+const entry = (n: number, kind: StreamKind = 'step', at = `2026-11-03T1${n}:00:00Z`): EvidenceEntry => ({ id: `2026-11-03#${n}`, kind, at })
+const ids = [entry(1), entry(2), entry(3)]
 
 const belief: Belief = {
   id: 'b1',
@@ -105,5 +107,70 @@ describe('checkReflection', () => {
       [belief],
     )
     expect(r.reflection.beliefOps).toHaveLength(1)
+  })
+
+  describe("what counts as evidence: the day's facts, not the mind's own words", () => {
+    const strengthen = (evidence: string[]): Reflection => reflection({ beliefOps: [{ op: 'strengthen', beliefId: 'b1', statement: null, confidence: 0.7, evidence, why: 'again' }] })
+
+    it('does not let a thought stand as evidence for a new belief', () => {
+      const stream = [entry(1), entry(2, 'thought')]
+      const r = checkReflection(reflection({ beliefOps: [{ op: 'new', beliefId: null, statement: 'I am clever.', confidence: 0.6, evidence: ['2026-11-03#2'], why: 'I said so' }] }), stream, [])
+      expect(r.reflection.beliefOps).toEqual([])
+      expect(r.dropped.join(' ')).toMatch(/no evidence/)
+    })
+
+    it('does not count a trigger or a turned down plan either: those are about the mind, not the world', () => {
+      const stream = [entry(1), entry(2, 'trigger'), entry(3, 'rejected')]
+      const r = checkReflection(reflection({ beliefOps: [{ op: 'new', beliefId: null, statement: 'x', confidence: 0.6, evidence: ['2026-11-03#2', '2026-11-03#3'], why: 'x' }] }), stream, [])
+      expect(r.reflection.beliefOps).toEqual([])
+    })
+
+    it('keeps a belief that has one real entry among thoughts', () => {
+      const stream = [entry(1), entry(2, 'thought')]
+      const r = checkReflection(reflection({ beliefOps: [{ op: 'new', beliefId: null, statement: 'The rock is warm.', confidence: 0.6, evidence: ['2026-11-03#1', '2026-11-03#2'], why: 'x' }] }), stream, [])
+      expect(r.reflection.beliefOps[0]!.evidence).toEqual(['2026-11-03#1'])
+    })
+
+    it('strengthens a belief only on something that happened after it last changed', () => {
+      const fresh = [entry(1, 'step', '2026-11-03T10:00:00Z')]
+      expect(checkReflection(strengthen(['2026-11-03#1']), fresh, [belief]).reflection.beliefOps).toHaveLength(1)
+      // The belief was formed the evening before; an entry from before that is not new.
+      const old = [entry(1, 'step', '2026-11-02T18:00:00Z')]
+      const r = checkReflection(strengthen(['2026-11-03#1']), old, [belief])
+      expect(r.reflection.beliefOps).toEqual([])
+      expect(r.dropped.join(' ')).toMatch(/strengthen .* no new evidence/)
+    })
+
+    it('measures "new" from the last revision when there was one', () => {
+      const revised = { ...belief, revisedAt: '2026-11-03T12:00:00Z' }
+      const stream = [entry(1, 'step', '2026-11-03T10:00:00Z'), entry(2, 'step', '2026-11-03T13:00:00Z')]
+      expect(checkReflection(strengthen(['2026-11-03#1']), stream, [revised]).reflection.beliefOps).toEqual([])
+      expect(checkReflection(strengthen(['2026-11-03#2']), stream, [revised]).reflection.beliefOps).toHaveLength(1)
+    })
+
+    it('does not let a belief be strengthened by the mind talking about it', () => {
+      const stream = [entry(1, 'thought', '2026-11-03T10:00:00Z')]
+      expect(checkReflection(strengthen(['2026-11-03#1']), stream, [belief]).reflection.beliefOps).toEqual([])
+    })
+
+    it('still lets a belief be weakened or dropped with no evidence at all', () => {
+      const r = checkReflection(
+        reflection({ beliefOps: [{ op: 'weaken', beliefId: 'b1', statement: null, confidence: 0.3, evidence: [], why: 'x' }, { op: 'drop', beliefId: 'b1', statement: null, confidence: 0, evidence: [], why: 'x' }] }),
+        ids,
+        [belief],
+      )
+      expect(r.reflection.beliefOps).toHaveLength(2)
+    })
+
+    it('drops a journal paragraph that cites only what the mind said to itself', () => {
+      const stream = [entry(1), entry(2, 'thought')]
+      const r = checkReflection(
+        reflection({ journal: { title: 'A day', paragraphs: [{ text: 'I thought a lot.', refs: ['2026-11-03#2'] }, { text: 'I cut clay and thought about it.', refs: ['2026-11-03#1', '2026-11-03#2'] }] } }),
+        stream,
+        [],
+      )
+      expect(r.reflection.journal.paragraphs.map((p) => p.text)).toEqual(['I cut clay and thought about it.'])
+      expect(r.dropped.join(' ')).toMatch(/only its own thoughts/)
+    })
   })
 })

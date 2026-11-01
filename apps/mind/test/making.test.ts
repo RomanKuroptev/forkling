@@ -251,3 +251,90 @@ describe('what the model is shown about making', () => {
     expect(llm.calls[0]!.system).not.toMatch(/a cat does not/)
   })
 })
+
+/** A step whose time has run out, with the body credited with `workedSec` of it and no replay time left to add to it. */
+async function stepOver(workedSec: number, over: { minutes?: number } = {}) {
+  const minutesOfStep = over.minutes ?? 10
+  await tick(0, fakeLlm(decision([step('pick_up', 'driftwood', minutesOfStep), step('sit', null, 10)])))
+  const goals = readJson('mind/goals.json')
+  const until = minutes(minutesOfStep)
+  goals.now = { ...goals.now, until: until.toISOString(), workedSec }
+  writeJson('mind/goals.json', goals)
+  // Nothing is left of the step to replay: the last tick was at its end.
+  const forkling = readJson('forkling.json')
+  writeJson('forkling.json', { ...forkling, lastTickAt: until.toISOString(), intention: { ...forkling.intention, startedAt: until.toISOString() } })
+}
+const stream = () => readFileSync(file('memory/stream/2026-11-03.jsonl'), 'utf8')
+
+describe('a step is done when the body has really done it', () => {
+  it('lands its effect and its practice once the body spent enough of the time on it', async () => {
+    await stepOver(400) // 6 min 40 s of 10: more than 60%
+    await tick(11, fakeLlm(null))
+    expect(Forkling.parse(readJson('forkling.json')).holding).toEqual({ material: 'wood' })
+    expect(readJson('objects/driftwood.json').state.stock).toBe(4)
+    // Practice is the time really spent, in minutes, not the time the plan said.
+    expect(Skills.parse(readJson('brain/skills.json')).hands?.xp).toBe(7)
+    expect(readJson('mind/goals.json').now).toMatchObject({ index: 1 })
+  })
+
+  it('gives a step its time again, once, when the body did too little of it, and lands nothing yet', async () => {
+    await stepOver(300) // 5 of 10 minutes: not enough
+    const result = await tick(11, fakeLlm(null))
+    const goals = readJson('mind/goals.json')
+    expect(goals.now).toMatchObject({ index: 0, extended: true, until: minutes(20).toISOString() })
+    expect(Forkling.parse(readJson('forkling.json')).holding).toBeUndefined()
+    expect(readJson('objects/driftwood.json').state?.stock ?? 5).toBe(5)
+    expect(existsSync(file('brain/skills.json'))).toBe(false)
+    expect(result.notes.join(' ')).toMatch(/pick_up\) has had 5 of 10 minutes/)
+  })
+
+  it('ends a step that is still short after the extra time as unfinished: no effect, no practice, and says so', async () => {
+    await stepOver(300)
+    await tick(11, fakeLlm(null))
+    const goals = readJson('mind/goals.json')
+    goals.now.until = minutes(20).toISOString()
+    writeJson('mind/goals.json', goals)
+    const forkling = readJson('forkling.json')
+    writeJson('forkling.json', { ...forkling, lastTickAt: minutes(20).toISOString(), intention: { ...forkling.intention, startedAt: minutes(20).toISOString() } })
+    await tick(21, fakeLlm(null))
+    expect(Forkling.parse(readJson('forkling.json')).holding).toBeUndefined()
+    expect(existsSync(file('brain/skills.json'))).toBe(false)
+    expect(stream()).toMatch(/Left pick_up unfinished/)
+    expect(readJson('mind/goals.json').now).toMatchObject({ index: 1 })
+  })
+
+  it('counts the time the replayed body really spends on the step, and writes the total when something else is written', async () => {
+    await tick(0, fakeLlm(decision([step('sit', null, 60)])))
+    // A quiet tick adds nothing to the files: the next one counts the whole stretch since the last write.
+    const quiet = await tick(5, fakeLlm(null))
+    expect(quiet.written).toEqual([])
+    expect(readJson('mind/goals.json').now.workedSec).toBeUndefined()
+    // Crossing into a new half hour writes the body, and the total goes in with it.
+    await tick(31, fakeLlm(null))
+    const worked = readJson('mind/goals.json').now.workedSec
+    expect(worked).toBeGreaterThan(900)
+    expect(worked).toBeLessThanOrEqual(31 * 60)
+  })
+})
+
+describe('a plan replaced in the middle of a step', () => {
+  const news = () => placed('pebble', 12, 24, {})
+  const replacement = decision([step('sit', null, 10)])
+
+  it('still lands what the old step did if the body had done most of it', async () => {
+    await tick(0, fakeLlm(decision([step('pick_up', 'driftwood', 10), step('sit', null, 10)])))
+    news()
+    await tick(8, fakeLlm(replacement)) // 8 of 10 minutes in
+    expect(Forkling.parse(readJson('forkling.json')).holding).toEqual({ material: 'wood' })
+    expect(readJson('mind/goals.json').today.steps.map((s: { verb: string }) => s.verb)).toEqual(['sit'])
+  })
+
+  it('says it left the old step unfinished when the body had not got far, and lands nothing', async () => {
+    await tick(0, fakeLlm(decision([step('pick_up', 'driftwood', 10), step('sit', null, 10)])))
+    news()
+    await tick(3, fakeLlm(replacement)) // 3 of 10 minutes in
+    expect(Forkling.parse(readJson('forkling.json')).holding).toBeUndefined()
+    expect(stream()).toMatch(/Left pick_up unfinished/)
+  })
+})
+

@@ -20,6 +20,12 @@ describe('appraise', () => {
     expect(appraise(calm, [{ kind: 'blocked' }], roll(), pools).valence).toBeLessThan(-0.2)
   })
 
+  it('is glad to have made something or read something, so finishing a creative work changes how it feels', () => {
+    expect(appraise(calm, [{ kind: 'created' }], roll(), pools).valence).toBeGreaterThan(0.2)
+    expect(appraise(calm, [{ kind: 'read' }], roll(), pools).valence).toBeGreaterThan(0.05)
+    expect(appraise(calm, [{ kind: 'created' }], roll(), pools).valence).toBeGreaterThan(appraise(calm, [{ kind: 'read' }], roll(), pools).valence)
+  })
+
   it('is stirred up by surprises and blocks, and not by quiet progress', () => {
     expect(appraise(calm, [{ kind: 'novelty' }], roll(), pools).arousal).toBeGreaterThan(calm.arousal + 0.2)
     expect(appraise(calm, [{ kind: 'blocked' }], roll(), pools).arousal).toBeGreaterThan(calm.arousal + 0.15)

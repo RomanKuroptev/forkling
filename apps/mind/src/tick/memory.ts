@@ -22,6 +22,7 @@ export async function memoryStep(t: Tick): Promise<void> {
           } else {
             const call: BudgetCall = { at: nowIso, kind: 'memory', model: 'claude-haiku-5-5', ...outcome.usage, usd: costUsd('claude-haiku-5-5', outcome.usage, { batch: true }) }
             t.calls.push(call)
+            t.attempts.push({ kind: 'memory', model: call.model, usd: call.usd, ok: true })
             t.budget = recordCall(t.budget, call)
             const slots = MemorySlots.safeParse(outcome.parsed)
             t.summaryNext = slots.success ? renderSummary(slots.data) : null

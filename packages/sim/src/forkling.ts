@@ -1,10 +1,11 @@
-import type { AnimationSlot, Intention, MicroBehavior, SpeciesAction, SpeciesPack } from '@forkling/schema'
+import type { AnimationSlot, Intention, MicroBehavior, NeedId, SpeciesAction, SpeciesPack } from '@forkling/schema'
 import { findPath, isWalkable, nearestWalkable, type NavGrid, type Point2 } from './nav.ts'
-import { applyAction, decayNeeds, initialNeeds, type Needs } from './needs.ts'
+import type { Feelings } from './appraisal.ts'
+import { applyAction, ASLEEP_DECAY, decayNeeds, initialNeeds, type Needs } from './needs.ts'
 import { createPrng, type Prng } from './prng.ts'
 import { isDusk } from './time.ts'
 import { STRONG_NEED } from './surprise.ts'
-import { pickAction, requirementsMet, scoreActions } from './utility.ts'
+import { fixableNeeds, pickAction, requirementsMet, scoreActions } from './utility.ts'
 
 /** Recommended fixed timestep in seconds. The sim is deterministic for a seed at any fixed step. */
 export const STEP = 0.1
@@ -52,7 +53,9 @@ export type BodyIntention = Omit<Intention, 'startedAt'> & { startedAt: number }
 
 /** The repo form of a body intention. The sim clock is in seconds since the Unix epoch once playback anchors it. */
 export function toRepoIntention(intention: BodyIntention): Intention {
-  return { ...intention, startedAt: new Date(intention.startedAt * 1000).toISOString() }
+  const { targetId, ...rest } = intention
+  // `for:<verb>` is how the sim names "any object this verb fits": a label of its own, not something that is in the world.
+  return { ...rest, ...(targetId && !targetId.startsWith('for:') ? { targetId } : {}), startedAt: new Date(intention.startedAt * 1000).toISOString() }
 }
 
 /**
@@ -95,6 +98,8 @@ export interface ForklingState {
   holding: boolean
   /** What its quirks do to each verb's appeal. Fixed for life, from its temperament. */
   quirkWeights: Record<string, number>
+  /** How it feels, from the repo state. Fixed for a replay, so everyone who replays it chooses the same way. */
+  feelings?: Feelings
 }
 
 export interface CreateOptions {
@@ -107,6 +112,7 @@ export interface CreateOptions {
   focus?: Focus
   holding?: boolean
   quirkWeights?: Record<string, number>
+  feelings?: Feelings
 }
 
 const IDLE_ACTION: SpeciesAction = {
@@ -169,6 +175,7 @@ export function createForkling(
     focus: opts.focus ?? null,
     holding: opts.holding ?? false,
     quirkWeights: opts.quirkWeights ?? {},
+    ...(opts.feelings ? { feelings: opts.feelings } : {}),
   }
 }
 
@@ -191,7 +198,7 @@ const activeFocus = (s: ForklingState): Focus | null => (s.focus && s.time < s.f
 
 export function stepForkling(s: ForklingState, dt: number, ctx: StepContext): void {
   s.time += dt
-  s.needs = decayNeeds(s.needs, s.pack, dt)
+  s.needs = decayNeeds(s.needs, s.pack, dt, ctx.asleep === true ? ASLEEP_DECAY : 1)
 
   const radius = s.pack.perception.noticeRadius
   const visitorDistance = ctx.visitor ? dist(s.pos, ctx.visitor) : null
@@ -358,38 +365,55 @@ function replan(s: ForklingState, ctx: StepContext): void {
     if (snapped) s.pos = { ...snapped }
   }
 
+  const spotKinds = new Set(Object.keys(ctx.spots).filter((k) => (ctx.spots[k]?.length ?? 0) > 0))
+  const focus = activeFocus(s)
+  const visitorDistance = ctx.visitor ? dist(s.pos, ctx.visitor) : null
+  const scoring = {
+    visitorDistance,
+    holding: s.holding,
+    timeOfDay: ctx.timeOfDay,
+    ...(ctx.asleep !== undefined ? { asleep: ctx.asleep } : {}),
+  }
+
   if (s.firstAction) {
     const first = s.pack.actions.find((a) => a.id === s.firstAction)
     s.firstAction = null
-    const target = first ? resolveTarget(s, first, ctx) : null
+    // What the repo says it was doing is resumed only if it is still allowed now.
+    const target = first && requirementsMet(first, s.pack, scoring) ? resolveTarget(s, first, ctx) : null
     if (first && target) {
       begin(s, first, target)
       return
     }
   }
 
-  const spotKinds = new Set(Object.keys(ctx.spots).filter((k) => (ctx.spots[k]?.length ?? 0) > 0))
-  const focus = activeFocus(s)
-  const visitorDistance = ctx.visitor ? dist(s.pos, ctx.visitor) : null
-  const scoring = {
-    visitorDistance,
-    timeOfDay: ctx.timeOfDay,
-    ...(ctx.asleep !== undefined ? { asleep: ctx.asleep } : {}),
-  }
-
-  // What the mind planned wins, unless a need has run critically low or someone has come up to say hello.
-  const critical = Object.values(s.needs).some((v) => v !== undefined && v < STRONG_NEED)
+  // What the mind planned owns the visible action. It gives way for one action when a need is critically low and the
+  // body can raise it right now (and the planned verb would not), or when someone has come up to say hello.
   const visitorNear = visitorDistance !== null && visitorDistance <= s.pack.perception.noticeRadius
-  if (focus && !critical && !visitorNear) {
+  if (focus && !visitorNear) {
     const planned = s.pack.actions.find((a) => a.id === focus.action)
-    const target = planned && requirementsMet(planned, s.pack, scoring) ? resolveTarget(s, planned, ctx) : null
-    if (planned && target) {
-      begin(s, planned, target)
+    const plannedTarget = planned && requirementsMet(planned, s.pack, scoring) ? resolveTarget(s, planned, ctx) : null
+    const fixable = fixableNeeds(s.pack, { ...scoring, spotKinds })
+    const fixing = (Object.entries(s.needs) as [NeedId, number | undefined][]).filter(([id, v]) => v !== undefined && v < STRONG_NEED && fixable.has(id)).map(([id]) => id)
+    const planFixes = !!planned && fixing.some((id) => (planned.satisfies[id] ?? 0) > 0)
+    if (fixing.length > 0 && !planFixes) {
+      let helpers = scoreActions(s.needs, s.pack, { ...scoring, spotKinds, quirkWeights: s.quirkWeights, ...(s.feelings ? { feelings: s.feelings } : {}) }).filter((c) => fixing.some((id) => (c.action.satisfies[id] ?? 0) > 0))
+      for (let attempt = 0; attempt < 5 && helpers.length > 0; attempt++) {
+        const action = pickAction(helpers, s.rng)
+        const target = resolveTarget(s, action, ctx)
+        if (target) {
+          begin(s, action, target)
+          return
+        }
+        helpers = helpers.filter((c) => c.action !== action)
+      }
+    }
+    if (planned && plannedTarget) {
+      begin(s, planned, plannedTarget)
       return
     }
   }
 
-  let candidates = scoreActions(s.needs, s.pack, { ...scoring, spotKinds, quirkWeights: s.quirkWeights, ...(focus ? { focusAction: focus.action } : {}) })
+  let candidates = scoreActions(s.needs, s.pack, { ...scoring, spotKinds, quirkWeights: s.quirkWeights, ...(s.feelings ? { feelings: s.feelings } : {}), ...(focus ? { focusAction: focus.action } : {}) })
   if (focus) {
     candidates = candidates.map((c) => (c.action.id === focus.action ? { ...c, score: Math.max(c.score * 2, FOCUS_SCORE) } : c))
   }

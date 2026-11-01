@@ -12,9 +12,10 @@ on:
         description: The build to make, from mind/builds/<id>.json
         required: true
 
-# Shares the mind's group: both write the budget and the mind's state, and two writers would collide.
+# Its own group, one per build. Not the mind's: GitHub keeps one pending run per group, so a queued tick could cancel a
+# pending build. The builder and the mind no longer write the same files (see the books job at the end).
 concurrency:
-  group: mind
+  group: build-${{ inputs.id }}
   cancel-in-progress: false
 
 permissions:
@@ -103,28 +104,22 @@ jobs:
           if [ -z "$ANTHROPIC_API_KEY" ]; then unset ANTHROPIC_API_KEY; fi
           pnpm --filter @forkling/mind design --world "$GITHUB_WORKSPACE/world" --id "$ID" --pr "$RUNNER_TEMP/pr.json"
 
-      # The ledger, the mind's state and the stream go straight to main: the budget must never wait on a pull request.
-      # Only the object itself travels by pull request.
-      - name: Commit the books to main
-        working-directory: world
-        env:
-          ID: ${{ inputs.id }}
-        run: |
-          git config user.name "forkling-builder"
-          git config user.email "forkling-builder@users.noreply.github.com"
-          git add -A -- . ':!objects'
-          if ! git diff --cached --quiet; then
-            git commit -m "chore(builder): designed $ID"
-            git pull --rebase
-            git push
-          fi
+      # What the designer reports (mind/builds/<id>.result.json) goes to main by the books job below. The mind does the
+      # bookkeeping from it. Only the object itself travels by pull request.
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-result-${{ inputs.id }}
+          path: world/mind/builds/${{ inputs.id }}.result.json
+          if-no-files-found: ignore
 
       - name: Open the pull request
         if: steps.design.outputs.designed == 'true'
         working-directory: world
         env:
           ID: ${{ inputs.id }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.BUILDER_TOKEN || github.token }}
         run: |
           git checkout -b "build/$ID"
           git add "objects/$ID.json"
@@ -202,19 +197,14 @@ jobs:
           fi
           pnpm --filter @forkling/mind project --world "$GITHUB_WORKSPACE/world" --id "$ID" --usd "$usd"
 
-      - name: Commit the books to main
-        working-directory: world
-        env:
-          ID: ${{ inputs.id }}
-        run: |
-          git config user.name "forkling-builder"
-          git config user.email "forkling-builder@users.noreply.github.com"
-          git add -A -- . ':!site' ':!art'
-          if ! git diff --cached --quiet; then
-            git commit -m "chore(builder): coded $ID"
-            git pull --rebase
-            git push
-          fi
+      # What the check reports (mind/builds/<id>.result.json) goes to main by the books job below.
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-result-${{ inputs.id }}
+          path: world/mind/builds/${{ inputs.id }}.result.json
+          if-no-files-found: ignore
 
       # The project and its artifact travel together by pull request, and it always waits for a person: no auto-merge.
       - name: Open the pull request
@@ -222,7 +212,7 @@ jobs:
         working-directory: world
         env:
           ID: ${{ inputs.id }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.BUILDER_TOKEN || github.token }}
         run: |
           title=$(jq -r .name "mind/builds/$ID.json")
           git checkout -b "build/$ID"
@@ -233,3 +223,51 @@ jobs:
           gh pr create --base main --head "build/$ID" --label needs-review --title "$title" --body "$(jq -r '"I made a small program for my website: " + .purpose + "\n\nHow it plays: " + (.howItPlays // "open it and see")' "mind/builds/$ID.json" | tr -d '@')"
           number=$(gh pr view "build/$ID" --json number --jq .number)
           gh workflow run validate.yml -f pr="$number"
+
+  # The builder's report goes to main from here, in its own small job: the one file mind/builds/<id>.result.json, which no
+  # one else writes. The mind reads it, books what was spent, and closes a build that failed. The builder never writes the
+  # mind's ledger, stream or state, so the two cannot collide, and nothing waits on a pull request.
+  books:
+    needs: [object, code]
+    # Runs even when a job failed: a run that died still has to tell the mind, or the build holds its slot for days.
+    if: always() && (needs.object.result != 'skipped' || needs.code.result != 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: build-books
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: build-result-${{ inputs.id }}
+          path: ${{ runner.temp }}/report
+
+      - name: Commit the report
+        env:
+          ID: ${{ inputs.id }}
+        run: |
+          case "$ID" in ''|*[!a-z0-9-]*|-*) echo "not a build id: $ID"; exit 1 ;; esac
+          report="$RUNNER_TEMP/report/$ID.result.json"
+          if [ ! -f "$report" ]; then
+            # The run produced no report: say so, so the mind can close the build and ask again.
+            kind=$(jq -r .kind "mind/builds/$ID.json")
+            mkdir -p "$RUNNER_TEMP/report"
+            jq -n --arg id "$ID" --arg kind "$kind" --arg at "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" '{id: $id, kind: $kind, status: "failed", reason: "the builder run failed", calls: [], at: $at}' > "$report"
+          fi
+          mkdir -p mind/builds
+          cp "$report" "mind/builds/$ID.result.json"
+          git config user.name "forkling-builder"
+          git config user.email "forkling-builder@users.noreply.github.com"
+          git add "mind/builds/$ID.result.json"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore(builder): result of $ID"
+          # Another writer may have pushed in the meantime: try again rather than lose the report.
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase && git push; then exit 0; fi
+            sleep $(( attempt * 3 ))
+          done
+          exit 1

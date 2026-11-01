@@ -28,7 +28,7 @@ export async function codeStep(t: Tick): Promise<void> {
     kind: 'code',
     topic: step.topic ?? t.interests.current?.topic ?? null,
     reason: step.reason,
-    skillLevel: skillLevel(t.skills, 'mind'),
+    skillLevel: skillLevel(t.skills, t.pack.actions.find((a) => a.id === step.verb)?.group ?? 'mind'),
     obsession: t.interests.current?.topic ?? null,
     recentTitles: [...w.art].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5).map((a) => a.title),
     interests: t.interests,
@@ -51,7 +51,7 @@ export async function codeStep(t: Tick): Promise<void> {
       requestedAt: nowIso,
     }
     t.buildRequests.push(request)
-    mind.openBuild = { id: request.id, kind: 'code', requestedAt: nowIso }
+    mind.openCode = { id: request.id, kind: 'code', requestedAt: nowIso }
     mind.codeWeek = { week: weekOf(today), count: (mind.codeWeek?.week === weekOf(today) ? mind.codeWeek.count : 0) + 1 }
     t.remember.push({ at: nowIso, kind: 'made', text: `Started a coded project: "${request.name}": ${request.purpose}`, verb: 'code', goalRef: request.goalRef! })
     t.justNow.push(`started a coded project: "${request.name}"`)

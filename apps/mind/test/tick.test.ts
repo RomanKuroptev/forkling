@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -12,6 +12,7 @@ import { loadSpecies } from '../src/species.ts'
 import { runTick, type TickDeps } from '../src/tick.ts'
 
 const templates = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
+const worldTemplate = fileURLToPath(new URL('../../../templates/forkling-world', import.meta.url))
 const cat = loadSpecies('cat')
 
 /** The cat, with needs that never decay, so a test decides when a need becomes strong. */
@@ -154,18 +155,294 @@ describe('following its own plan', () => {
 describe('strong needs', () => {
   it('wake the model, but not on every tick', async () => {
     await runTick(dir, at(NOW))
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 3 } })
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
     const llm = fakeLlm(keep)
     await runTick(dir, at(minutesAfter(35), { llm }))
     expect(llm.calls).toHaveLength(1)
-    expect(llm.calls[0]!.user).toMatch(/need: affection is at/)
+    expect(llm.calls[0]!.user).toMatch(/need: hunger is at/)
     const felt = Forkling.parse(readJson('forkling.json'))
     expect(felt.feelings.valence).toBeLessThan(0)
     expect(felt.mood).toBe(moodLabel(felt.feelings))
 
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 3 } })
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
     await runTick(dir, at(minutesAfter(45), { llm }))
     expect(llm.calls).toHaveLength(1)
+  })
+})
+
+const fishPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null, because: null, topic: null }]
+const stateOf = () => MindState.parse(readJson('mind/state.json'))
+const goalsOf = () => Goals.parse(readJson('mind/goals.json'))
+/** A new object turns up on the beach, which is news. */
+const newObject = (id: string) => writeJson(`objects/${id}.json`, { ...readJson('objects/sunny-rock.json'), id, name: `A ${id}`, position: [12, 0, 24] })
+const streamText = () => readFileSync(file('memory/stream/2026-11-03.jsonl'), 'utf8')
+
+describe('when the plan runs out', () => {
+  async function lastStepDone() {
+    await runTick(dir, at(NOW))
+    writeJson('mind/goals.json', { ...readJson('mind/goals.json'), now: { index: 2, startedAt: NOW, until: '2026-11-03T09:10:00Z' } })
+  }
+
+  it('asks for the next plan, and says the plan is done and how much of the day is left', async () => {
+    await lastStepDone()
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(12), { llm }))
+    expect(llm.calls).toHaveLength(1)
+    expect(llm.calls[0]!.user).toMatch(/- replan: /)
+    expect(llm.calls[0]!.user).toMatch(/Your plan for today has run out/)
+    expect(llm.calls[0]!.user).toMatch(/the remaining \d+ hours? \(until bedtime \d\d:\d\d\)/)
+  })
+
+  it('starts the plan that comes back', async () => {
+    await lastStepDone()
+    await runTick(dir, at(minutesAfter(12), { llm: fakeLlm(morning) }))
+    expect(goalsOf().now).toMatchObject({ index: 0, startedAt: minutesAfter(12) })
+  })
+
+  it('waits an hour before asking again when the answer has no plan', async () => {
+    await lastStepDone()
+    await runTick(dir, at(minutesAfter(12), { llm: fakeLlm(keep) }))
+    expect(stateOf().replanAfter).toBe(minutesAfter(72))
+    const early = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(40), { llm: early }))
+    expect(early.calls).toHaveLength(0)
+    const later = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(75), { llm: later }))
+    expect(later.calls).toHaveLength(1)
+  })
+
+  it('does not ask for a plan in the last 45 minutes before bed', async () => {
+    await lastStepDone()
+    const llm = fakeLlm(keep)
+    await runTick(dir, at('2026-11-03T21:50:00Z', { llm }) /* Merge goes to bed at 22:29Z that night */)
+    expect(llm.calls.filter((c) => c.kind === 'decide')).toHaveLength(0)
+  })
+})
+
+describe('a morning plan that was turned down', () => {
+  it('is asked for again after an hour, as a decision, and the day goes on from there', async () => {
+    await runTick(dir, at(NOW, { llm: fakeLlm({ ...morning, plan: fishPlan }) }))
+    expect(stateOf().lastPlanDate).toBe('2026-11-03')
+    expect(stateOf().replanAfter).toBe(minutesAfter(60))
+    const early = fakeLlm(morning)
+    await runTick(dir, at(minutesAfter(30), { llm: early }))
+    expect(early.calls).toHaveLength(0)
+    const later = fakeLlm(morning)
+    await runTick(dir, at(minutesAfter(61), { llm: later }))
+    expect(later.calls).toHaveLength(1)
+    expect(later.calls[0]!.user).toMatch(/- replan: /)
+    expect(goalsOf().now).toMatchObject({ index: 0 })
+  })
+})
+
+describe('a replacement plan that was turned down', () => {
+  it("leaves today's plan and its current step as they were", async () => {
+    await runTick(dir, at(NOW))
+    const before = goalsOf()
+    newObject('pebble')
+    const llm = fakeLlm({ ...keep, plan: fishPlan })
+    await runTick(dir, at(minutesAfter(10), { llm }))
+    expect(llm.calls).toHaveLength(2)
+    expect(stateOf().rejections).toHaveLength(1)
+    expect(goalsOf().today).toEqual(before.today)
+    expect({ ...goalsOf().now, workedSec: undefined }).toEqual({ ...before.now, workedSec: undefined })
+  })
+})
+
+describe('when the model cannot answer', () => {
+  /** The first step has just run out, and something new is on the beach, so the mind would normally be asked. */
+  async function stepOverWithNews() {
+    await runTick(dir, at(NOW))
+    newObject('pebble')
+  }
+
+  it('still moves on to the next step without credentials', async () => {
+    await stepOverWithNews()
+    await runTick(dir, at(minutesAfter(31), { llm: null }))
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+  })
+
+  it('still moves on to the next step at the budget cap', async () => {
+    await stepOverWithNews()
+    writeJson('brain/budget.json', { month: '2026-11', spentUsd: 10 })
+    const llm = fakeLlm()
+    await runTick(dir, at(minutesAfter(31), { llm }))
+    expect(llm.calls).toHaveLength(0)
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+  })
+
+  it('moves on when a call fails, then leaves the model alone for half an hour', async () => {
+    await stepOverWithNews()
+    const failing: LlmClient = {
+      ...noBatch,
+      async complete() {
+        throw new Error('overloaded')
+      },
+    }
+    await runTick(dir, at(minutesAfter(31), { llm: failing }))
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+    expect(stateOf().thinkFailedAt).toBe(minutesAfter(31))
+
+    // The news is still news, but it can wait.
+    const quiet = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(45), { llm: quiet }))
+    expect(quiet.calls).toHaveLength(0)
+    const later = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(65), { llm: later }))
+    expect(later.calls).toHaveLength(1)
+  })
+
+  it('treats an answer with nothing usable like a failure', async () => {
+    await stepOverWithNews()
+    await runTick(dir, at(minutesAfter(31), { llm: fakeLlm(() => null) }))
+    expect(stateOf().thinkFailedAt).toBe(minutesAfter(31))
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+  })
+})
+
+describe('a step whose target is gone', () => {
+  it('asks once, and moves past the step when the answer is to carry on', async () => {
+    await runTick(dir, at(NOW)) // step 0 watches the sunny rock
+    rmSync(file('objects/sunny-rock.json'))
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm }))
+    expect(llm.calls).toHaveLength(1)
+    expect(llm.calls[0]!.user).toMatch(/- blocked: /)
+    expect(goalsOf().now).toMatchObject({ index: 1 })
+    expect(streamText()).toMatch(/Skipped watch/)
+    await runTick(dir, at(minutesAfter(20), { llm }))
+    expect(llm.calls).toHaveLength(1)
+  })
+
+  it('keeps the plan that the answer brings instead of skipping', async () => {
+    await runTick(dir, at(NOW))
+    rmSync(file('objects/sunny-rock.json'))
+    await runTick(dir, at(minutesAfter(10), { llm: fakeLlm({ ...keep, plan: [{ ...morning.plan![2]!, minutes: 40 }] }) }))
+    expect(goalsOf().today?.steps.map((x) => x.verb)).toEqual(['sit'])
+    expect(goalsOf().now).toMatchObject({ index: 0 })
+  })
+})
+
+describe('the weekly review of the long goal', () => {
+  it('is not postponed by a decision that merely says the same goal again', async () => {
+    await runTick(dir, at(NOW))
+    expect(goalsOf().long?.reviewedAt).toBe(NOW.replace('Z', '.000Z'))
+    newObject('pebble')
+    const same = fakeLlm({ ...keep, longGoal: { text: 'Make the sunny rock mine.', reason: 'Still true.' } })
+    await runTick(dir, at(minutesAfter(10), { llm: same }))
+    expect(goalsOf().long?.reviewedAt).toBe(NOW.replace('Z', '.000Z'))
+  })
+
+  it('counts a changed goal as reviewed, since the mind just reconsidered it', async () => {
+    await runTick(dir, at(NOW))
+    newObject('pebble')
+    const changed = fakeLlm({ ...keep, longGoal: { text: 'Learn the shape of the whole beach.', reason: 'The pebble made me curious.' } })
+    await runTick(dir, at(minutesAfter(10), { llm: changed }))
+    expect(goalsOf().long).toMatchObject({ text: 'Learn the shape of the whole beach.', reviewedAt: minutesAfter(10), setAt: minutesAfter(10) })
+  })
+})
+
+describe('what it did before comes back to it', () => {
+  it('shows the morning prompt what it read, decided and made lately, and what has ended', async () => {
+    mkdirSync(file('notebook/reading'), { recursive: true })
+    mkdirSync(file('notebook/plans'), { recursive: true })
+    writeFileSync(file('notebook/reading/2026-11-02-1.md'), '# A CPU in Minecraft\n\n*2026-11-02*\n\nSomeone built logic gates out of redstone. It is slow.\n')
+    writeFileSync(file('notebook/plans/2026-11-02.md'), '# Plan for 2026-11-02\n\nA day for finding out how things work.\n\n1. **read**, 20 min: A page.\n')
+    writeJson('art/the-sea.json', { id: 'the-sea', kind: 'writing', title: 'The Sea', content: { text: 'Big.' }, skillLevel: 0, createdAt: '2026-11-02T10:00:00Z' })
+    writeJson('brain/interests.json', { topics: {}, current: null, past: [{ topic: 'octopuses', startedAt: '2026-10-20T08:00:00Z', endedAt: '2026-10-25T08:00:00Z', origin: { id: 'hn:1', title: 'Octopus', url: 'https://example.com', at: '2026-10-20T08:00:00Z' } }] })
+    const llm = fakeLlm()
+    await runTick(dir, at(NOW, { llm }))
+    const user = llm.calls[0]!.user
+    expect(user).toContain('<past>')
+    expect(user).toMatch(/2026-11-02, "A CPU in Minecraft": Someone built logic gates out of redstone\./)
+    expect(user).toMatch(/2026-11-02: A day for finding out how things work\./)
+    expect(user).toMatch(/2026-11-02 writing "The Sea"/)
+    expect(user).toMatch(/octopuses \(2026-10-20 to 2026-10-25\)/)
+  })
+
+  it('shows a decision what it read lately but not the whole of its past', async () => {
+    mkdirSync(file('notebook/reading'), { recursive: true })
+    writeFileSync(file('notebook/reading/2026-11-02-1.md'), '# A CPU in Minecraft\n\n*2026-11-02*\n\nSomeone built logic gates out of redstone.\n')
+    writeJson('art/the-sea.json', { id: 'the-sea', kind: 'writing', title: 'The Sea', content: { text: 'Big.' }, skillLevel: 0, createdAt: '2026-11-02T10:00:00Z' })
+    await runTick(dir, at(NOW))
+    newObject('pebble')
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm }))
+    expect(llm.calls[0]!.user).toMatch(/"A CPU in Minecraft"/)
+    expect(llm.calls[0]!.user).not.toMatch(/"The Sea"/)
+  })
+
+  it('tells it how much of each daily limit is left, so it does not plan what would be refused', async () => {
+    const llm = fakeLlm()
+    await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls[0]!.user.split('\n').find((l) => l.startsWith('left to do'))).toMatch(/left to do today: .*writing, drawing and the like 4 of 4.*photographs 1[12] of 12.*reading sessions 5 of 5.*coded projects this week 2 of 2/)
+  })
+
+  it('does not ask for a late night in the morning, when it cannot be one', async () => {
+    const llm = fakeLlm()
+    await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls[0]!.user).not.toMatch(/stayUpLate/)
+  })
+})
+
+describe('what broke the plan off', () => {
+  const note = (verb: string, need: string, step = 'watch') => ({ step, verb, need, at: '2026-11-03T09:05:00.000Z' })
+
+  it('is told to the mind at its next decision, so it can plan around it, and then forgotten', async () => {
+    await runTick(dir, at(NOW))
+    writeJson('mind/state.json', { ...stateOf(), brokenOff: [note('eat', 'hunger'), note('eat', 'hunger'), note('nap', 'energy')] })
+    newObject('pebble')
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm }))
+    expect(llm.calls[0]!.user).toMatch(/you broke off watch 3 times: eat \(hunger\) 2, nap \(energy\) 1/)
+    expect(stateOf().brokenOff).toEqual([])
+  })
+
+  it('is kept while nobody has been asked', async () => {
+    await runTick(dir, at(NOW))
+    writeJson('mind/state.json', { ...stateOf(), brokenOff: [note('eat', 'hunger')] })
+    await runTick(dir, at(minutesAfter(5), { llm: fakeLlm(keep) }))
+    expect(stateOf().brokenOff).toHaveLength(1)
+  })
+})
+
+describe('what counts as news', () => {
+  it('is not used up by a weekly review that never looked at it', async () => {
+    await runTick(dir, at(NOW))
+    const goals = goalsOf()
+    writeJson('mind/goals.json', { ...goals, long: { ...goals.long, reviewedAt: '2026-10-26T06:00:00Z' } })
+    newObject('pebble')
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(5), { llm }))
+    expect(llm.calls[0]!.model).toBe('claude-sonnet-5-5')
+    expect(stateOf().knownObjects).not.toContain('pebble')
+    const next = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm: next }))
+    expect(next.calls[0]!.user).toMatch(/new objects: pebble/)
+    expect(stateOf().knownObjects).toContain('pebble')
+  })
+})
+
+describe('needs the body can fix itself', () => {
+  it("do not wake the model: hunger with a bowl in reach is the cat's own business", async () => {
+    // Hunger is empty and the bowl is a long walk away, so at the next tick it has not eaten yet. It can eat, though.
+    const bowl = JSON.parse(readFileSync(join(worldTemplate, 'objects', 'bowl.json'), 'utf8'))
+    writeJson('objects/bowl.json', { ...bowl, position: [-11, 0, 12] })
+    await runTick(dir, at(NOW))
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 }, position: [30, 0, -25] })
+    writeJson('mind/state.json', { ...stateOf(), lastThinkAt: '2026-11-03T06:00:00Z' })
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(new Date(Date.parse(NOW) + 20_000).toISOString(), { llm }))
+    expect(llm.calls.filter((c) => c.kind === 'decide')).toHaveLength(0)
+  })
+
+  it('wake it when nothing in reach would fix them', async () => {
+    await runTick(dir, at(NOW))
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 }, position: [30, 0, -25] })
+    writeJson('mind/state.json', { ...stateOf(), lastThinkAt: '2026-11-03T06:00:00Z' })
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(new Date(Date.parse(NOW) + 20_000).toISOString(), { llm }))
+    expect(llm.calls.filter((c) => c.kind === 'decide')).toHaveLength(1)
   })
 })
 
@@ -233,7 +510,7 @@ describe('sleep', () => {
   it('stays up past bedtime only when the mind chose a late night, and keeps its reason', async () => {
     await runTick(dir, at(NOW))
     const llm = fakeLlm({ ...keep, stayUpLate: 'The moon is on the water and I want to watch it.' })
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 3 } })
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
     await runTick(dir, at('2026-11-03T19:00:00Z', { llm }))
     expect(Forkling.parse(readJson('forkling.json')).lateNight).toBe('2026-11-03')
     expect(MindState.parse(readJson('mind/state.json')).lateNightReason).toMatch(/moon/)
@@ -295,10 +572,10 @@ describe('what the model is shown', () => {
   it('keeps the cacheable prefix identical across calls and free of times', async () => {
     const llm = fakeLlm()
     await runTick(dir, at(NOW, { llm }))
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 3 } })
+    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
     await runTick(dir, at(minutesAfter(35), { llm: fakeLlm(keep) }))
     const second = fakeLlm(keep)
-    patchForkling({ needs: { hunger: 70, energy: 80, curiosity: 60, affection: 2 } })
+    patchForkling({ needs: { hunger: 2, energy: 80, curiosity: 60 } })
     await runTick(dir, at(minutesAfter(90), { llm: second }))
     expect(second.calls).toHaveLength(1)
     expect(second.calls[0]!.system).toBe(llm.calls[0]!.system)

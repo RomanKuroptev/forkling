@@ -1,7 +1,7 @@
 import type { Holding, PlanStep, Skills, SpeciesAction, SpeciesPack, WorldObject } from '@forkling/schema'
 import { applyStep, type StepWorld, type Stored } from './effects.ts'
 import type { Point2 } from './nav.ts'
-import { offersSpot } from './objects.ts'
+import { eatsFrom, offersSpot, portionsLeft } from './objects.ts'
 import { skillLevel } from './skills.ts'
 import { isDusk } from './time.ts'
 
@@ -33,6 +33,8 @@ export interface PlanContext {
   skills?: Skills
   /** How many more things it may make today (a creative step leaves something in `art/`). Missing means no limit. */
   creativeLeft?: number
+  /** How many more reading sessions (read or study steps) it may have today. Missing means no limit. */
+  readingsLeft?: number
   /** How many more eye-cam frames it may take today. Photographing has its own limit and does not use `creativeLeft`. Missing means no limit. */
   photosLeft?: number
   /** How many more coded projects it may ask for this week. Missing means no limit. */
@@ -130,12 +132,26 @@ export function validatePlan(steps: readonly PlanStep[], ctx: PlanContext): Plan
   })
   if (minutes > MAX_PLAN_MINUTES) reasons.push(`the plan takes ${Math.round(minutes / 60)} hours, more than a day's waking`)
 
+  // Food that has run out cannot be eaten: the plan would walk there and find nothing.
+  steps.forEach((step, n) => {
+    const verb = ctx.pack.actions.find((a) => a.id === step.verb)
+    const target = step.targetId ? ctx.objects.find((o) => o.id === step.targetId) : undefined
+    if (verb && target && eatsFrom(verb) && portionsLeft(target) === 0) reasons.push(`step ${n + 1}: ${target.name} is empty`)
+  })
+
   if (ctx.creativeLeft !== undefined) {
     const making = steps.filter((s) => {
       const artifact = ctx.pack.actions.find((a) => a.id === s.verb)?.artifact
       return artifact !== undefined && artifact !== 'photo' && artifact !== 'code'
     }).length
     if (making > ctx.creativeLeft) reasons.push(`the plan would make ${making} ${making === 1 ? 'thing' : 'things'}, but there is room for ${ctx.creativeLeft} more today`)
+  }
+  if (ctx.readingsLeft !== undefined) {
+    const reading = steps.filter((s) => {
+      const effect = ctx.pack.actions.find((a) => a.id === s.verb)?.effect
+      return effect === 'read' || effect === 'study'
+    }).length
+    if (reading > ctx.readingsLeft) reasons.push(`the plan would have ${reading} reading ${reading === 1 ? 'session' : 'sessions'}, but there is room for ${ctx.readingsLeft} more today`)
   }
   if (ctx.photosLeft !== undefined) {
     const photographs = steps.filter((s) => ctx.pack.actions.find((a) => a.id === s.verb)?.artifact === 'photo').length

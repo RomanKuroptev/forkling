@@ -5,8 +5,7 @@
   "needs": {
     "hunger": 70,
     "energy": 80,
-    "curiosity": 60,
-    "affection": 30
+    "curiosity": 60
   },
   "position": [
     -6,

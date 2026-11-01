@@ -105,9 +105,79 @@ describe('waiting for a build', () => {
     expect(readFileSync(file(`memory/stream/${DAY}.jsonl`), 'utf8')).toMatch(/arrived/)
   })
 
+  it('is glad when what it asked for arrives', async () => {
+    await tick(MORNING, fake(decision(shelf)))
+    const before = readJson('forkling.json').feelings.valence
+    const bowl = readJson('objects/bowl.json')
+    writeFileSync(file('objects/a-clay-shelf.json'), JSON.stringify({ ...bowl, id: 'a-clay-shelf', name: 'A clay shelf' }))
+    await tick(at(10), null)
+    expect(readJson('forkling.json').feelings.valence).toBeGreaterThan(before + 0.15)
+  })
+
   it('gives up on one that never comes', async () => {
     await tick(MORNING, fake(decision(shelf)))
     await tick(new Date(Date.parse(MORNING) + 80 * 3_600_000), fake(decision(null)))
     expect(state().openBuild).toBeNull()
+  })
+})
+
+const designCall = { at: '2026-11-03T09:03:00.000Z', kind: 'design', model: 'claude-haiku-5-5', input: 1200, cacheRead: 0, cacheWrite: 2500, output: 400, usd: 0.0021 }
+const putResult = (over: Record<string, unknown> = {}) =>
+  writeFileSync(file('mind/builds/a-clay-shelf.result.json'), JSON.stringify({ id: 'a-clay-shelf', kind: 'object', status: 'designed', calls: [designCall], at: '2026-11-03T09:03:00.000Z', ...over }))
+const stream = () => readFileSync(file(`memory/stream/${DAY}.jsonl`), 'utf8')
+
+describe("what the builder reports back in its result file", () => {
+  it('has its cost booked in the ledger by the mind, once, however many ticks follow', async () => {
+    await tick(MORNING, fake(decision(shelf)))
+    putResult()
+    await tick(at(20), null)
+    await tick(at(30), null)
+    const calls = readJson('brain/budget.json').calls.filter((c: { kind: string }) => c.kind === 'design')
+    expect(calls).toHaveLength(1)
+    expect(calls[0].usd).toBe(0.0021)
+    expect(readJson('brain/budget.json').spentUsd).toBeGreaterThanOrEqual(0.0021)
+  })
+
+  it('keeps waiting for an object whose pull request is on its way', async () => {
+    await tick(MORNING, fake(decision(shelf)))
+    putResult({ status: 'designed' })
+    await tick(at(20), null)
+    expect(state().openBuild).toMatchObject({ id: 'a-clay-shelf' })
+  })
+
+  it('closes a build that could not be made, says why, and gives back the slot for the day', async () => {
+    await tick(MORNING, fake(decision(shelf)))
+    expect(state().builds).toEqual({ date: DAY, count: 1 })
+    putResult({ status: 'failed', reason: 'nothing in the design could be built' })
+    await tick(at(20), null)
+    expect(state().openBuild).toBeNull()
+    expect(state().builds).toEqual({ date: DAY, count: 0 })
+    expect(stream()).toMatch(/could not be built: nothing in the design could be built/)
+  })
+
+  it('closes a build whose pull request was closed without merging, and gives back the slot', async () => {
+    await tick(MORNING, fake(decision(shelf)))
+    putResult({ status: 'closed', reason: 'the pull request was closed without merging' })
+    await tick(at(20), null)
+    expect(state().openBuild).toBeNull()
+    expect(state().builds?.count).toBe(0)
+    expect(stream()).toMatch(/did not make it into the world/)
+  })
+
+  it('still counts a build that arrived as asked for, and keeps its slot', async () => {
+    await tick(MORNING, fake(decision(shelf)))
+    putResult({ status: 'merged' })
+    const bowl = readJson('objects/bowl.json')
+    writeFileSync(file('objects/a-clay-shelf.json'), JSON.stringify({ ...bowl, id: 'a-clay-shelf', name: 'A clay shelf' }))
+    await tick(at(30), null)
+    expect(state().openBuild).toBeNull()
+    expect(state().builds?.count).toBe(1)
+  })
+
+  it('ignores a result file that does not fit, instead of failing the tick', async () => {
+    await tick(MORNING, fake(decision(shelf)))
+    writeFileSync(file('mind/builds/a-clay-shelf.result.json'), '{not json')
+    await tick(at(20), null)
+    expect(state().openBuild).toMatchObject({ id: 'a-clay-shelf' })
   })
 })

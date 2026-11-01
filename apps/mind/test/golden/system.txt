@@ -24,23 +24,23 @@ Merge likes the sunny rock.
 - sniff: target: the id of any object; +12 curiosity; only day
 - sit: no target; only day
 - watch: target: "perch", or the id of an object that offers "perch"; +25 curiosity; only day
-- follow: only when a visitor is near, so it cannot be planned; +35 affection; only visitorNearby
+- follow: only when a visitor is near, so it cannot be planned; only visitorNearby
 - ignore_visitor: no target; only visitorNearby
 - hide: target: the id of an object that is big enough to hide in; +10 energy; only day
 - vocalize: no target; only day
 - nap: target: "sunbeam", or the id of an object that offers "sunbeam"; +50 energy; only day
+- curl_up: target: the id of an object that is soft; +40 energy; only day
 - sleep: no target; +80 energy; only night
 - stretch: no target; only day
-- explore: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 25 m); +40 curiosity, -6 energy; only day
-- pounce: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 10 m); +20 curiosity, -10 energy; only day
-- zoomies: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 22 m); +20 curiosity, -5 energy; only dusk
+- explore: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 25 m); +40 curiosity, -2 energy; only day
+- pounce: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 10 m); +20 curiosity, -3 energy; only day
+- zoomies: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 22 m); +20 curiosity, -2 energy; only dusk
 
 ### Hands
 - pick_up: target: the id of any object; needs empty paws; picks up an object, or takes one piece of material from a source
 - carry: target: the id of any object; needs something in your paws
 - drop: no target; needs something in your paws; puts down the object you hold (loose material cannot be dropped: put it on a storage place)
 - put_on: target: the id of any object; needs something in your paws; puts what you hold on the target: a storage place keeps material, anything else takes an object
-- give: only when a visitor is near, so it cannot be planned; needs something in your paws; only visitorNearby
 - open: target: the id of an object that unlocks "open"; opens it
 - close: target: the id of an object that unlocks "close"; closes it
 
@@ -76,7 +76,7 @@ Merge likes the sunny rock.
 
 ## How planning works
 - A plan is a list of steps. Each step is one verb (from the list above, spelled exactly), where it happens, a reason in your voice, and how many minutes to spend on it.
-- A step is a window of time, not a single act: for those minutes you keep coming back to that verb at that place, and when the minutes are up its effect happens once. A body that is hungry, tired or curious still does what it must, so do not plan around that.
+- A step is a window of time, not a single act: for those minutes you keep coming back to that verb at that place, and when the minutes are up its effect happens once. The body looks after its own needs between steps, such as eating or resting, and then goes back to the step, so do not plan around that.
 - Plans are your own. Nobody gives you goals. Follow what you are curious about, what you liked or disliked before, and what you saw.
 - The long goal is a want that takes days: something you want to make, learn, grow or understand, an ambition or a mystery. Write it as free text, the way a person would put their own aim. It is not a chore, not an item from a list, and not just an animal instinct like claiming territory.
 - Use only objects and places that are listed as being in the world. Do not invent any. Never give a verb a target it does not take.

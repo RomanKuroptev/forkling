@@ -52,4 +52,26 @@ describe('prompt golden files', () => {
       await expect(buildUser(input(kind))).toMatchFileSnapshot(`golden/user-${kind}.txt`)
     })
   }
+  it('decide user prompt after the body broke a step off', async () => {
+    const at = '2026-11-03T08:30:00.000Z'
+    const broken = { ...input('decide'), mindState: MindState.parse({ brokenOff: [{ step: 'shape', verb: 'eat', need: 'hunger', at }, { step: 'shape', verb: 'eat', need: 'hunger', at }, { step: 'shape', verb: 'nap', need: 'energy', at }, { step: 'read', verb: 'sit', need: 'other', at }] }) }
+    await expect(buildUser(broken)).toMatchFileSnapshot('golden/user-broken-off.txt')
+  })
+  it('morning user prompt with its past and what is left to do', async () => {
+    const withPast = {
+      ...input('morning'),
+      interests: Interests.parse({ past: [{ topic: 'octopuses', startedAt: '2026-10-20T08:00:00Z', endedAt: '2026-10-25T08:00:00Z', origin: { id: 'hn:1', title: 'Octopus', url: 'https://example.com', at: '2026-10-20T08:00:00Z' } }] }),
+      past: {
+        readings: [{ date: '2026-11-02', title: 'A CPU in Minecraft', summary: 'Someone built logic gates out of redstone.' }],
+        plans: [{ date: '2026-11-02', reason: 'A day for finding out how things work.' }],
+        art: [{ date: '2026-11-02', kind: 'writing', title: 'The Sea' }],
+      },
+      limits: { creative: { left: 3, max: 4 }, photos: { left: 12, max: 12 }, readings: { left: 4, max: 5 }, code: { left: 2, max: 2 } },
+    }
+    await expect(buildUser(withPast)).toMatchFileSnapshot('golden/user-morning-past.txt')
+  })
+  it('replan user prompt', async () => {
+    const replan = { ...input('decide'), triggers: [{ kind: 'replan' as const, score: 0.45, detail: 'there is no step in progress and nothing planned next' }] }
+    await expect(buildUser(replan)).toMatchFileSnapshot('golden/user-replan.txt')
+  })
 })

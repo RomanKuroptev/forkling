@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SpeciesPack, type MicroBehavior } from '@forkling/schema'
 import blobJson from './fixtures/blob.species.json'
 import { resolveSlot } from '../src/animation.ts'
-import { createForkling, stepForkling, STEP, type StepContext } from '../src/forkling.ts'
+import { createForkling, stepForkling, STEP, toRepoIntention, type StepContext } from '../src/forkling.ts'
 import { world } from './helpers/world.ts'
 import { runHeadless, type HeadlessOptions } from '../src/headless.ts'
 
@@ -105,6 +105,42 @@ describe('a visitor never raises needs by themselves', () => {
 })
 
 describe('acting after a micro-behavior', () => {
+  it('does not write the engine label for any object a verb fits into the repo, where it is not a thing in the world', () => {
+    const intention = { type: 'carry', targetId: 'for:carry', startedAt: 1_000, seed: 1, reason: 'Taking it over there.' }
+    expect(toRepoIntention(intention).targetId).toBeUndefined()
+    expect(toRepoIntention({ ...intention, targetId: 'sunny-rock' }).targetId).toBe('sunny-rock')
+    expect(toRepoIntention({ ...intention, targetId: 'sunbeam' }).targetId).toBe('sunbeam')
+  })
+
+  it('loses needs at a quarter of the speed while in bed, and at the full speed awake', () => {
+    // The blob has nothing to do at night, so in bed nothing raises a need: only the decay shows.
+    const fall = (asleep: boolean) => {
+      const state = createForkling(blob, [], 3, { x: 2, z: 20 }, { needs: { hunger: 90, energy: 90, fun: 90 } })
+      const ctx: StepContext = { grid: world.grid, visitor: null, timeOfDay: 2, asleep, spots: {} }
+      for (let i = 0; i < 6000; i++) stepForkling(state, STEP, ctx)
+      return 90 - state.needs.hunger!
+    }
+    const inBed = fall(true)
+    expect(inBed).toBeCloseTo((240 * 600) / 3600 * 0.25, 1)
+    expect(inBed).toBeGreaterThan(0)
+  })
+
+  it('does not resume an action from the repo that is not allowed at this time of day', () => {
+    // The repo says it was resting, but resting is for the day and it is bed time now.
+    const dayRest = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === 'rest' ? { ...a, requires: ['day'] } : a)) })
+    const state = createForkling(dayRest, [], 1, { x: 2, z: 20 }, { firstAction: 'rest' })
+    const ctx: StepContext = { grid: world.grid, visitor: null, timeOfDay: 12, asleep: true, spots: {} }
+    for (let i = 0; i < 5; i++) stepForkling(state, STEP, ctx)
+    expect(state.intention.type).not.toBe('rest')
+  })
+
+  it('still resumes an action that is allowed', () => {
+    const state = createForkling(blob, [], 1, { x: 2, z: 20 }, { firstAction: 'rest' })
+    const ctx: StepContext = { grid: world.grid, visitor: null, timeOfDay: 12, spots: {} }
+    for (let i = 0; i < 5; i++) stepForkling(state, STEP, ctx)
+    expect(state.intention.type).toBe('rest')
+  })
+
   it('keeps the full action duration when a before-sleep behavior runs first', () => {
     const tuck: MicroBehavior = { id: 'tuck', when: 'beforeSleep', chance: 1, durationSec: 1.2 }
     const start = { x: 2, z: 20 }

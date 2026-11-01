@@ -79,13 +79,12 @@ describe('templates/forkling-world', () => {
     expect(existsSync(join(root, 'forkling-world', 'forkling.json'))).toBe(true)
   })
 
-  it('starts with no goals, no memory of objects and a $10 ledger', () => {
+  it('starts with no goals and no memory of objects, and no ledger: the first tick makes one for the month it is in', () => {
     const dir = join(root, 'forkling-world')
     expect(Goals.parse(read(join(dir, 'mind/goals.json')))).toEqual({})
     expect(MindState.parse(read(join(dir, 'mind/state.json'))).knownObjects).toEqual([])
-    const ledger = BudgetLedger.parse(read(join(dir, 'brain/budget.json')))
-    expect(ledger.spentUsd).toBe(0)
-    expect(ledger.capUsd).toBe(10)
+    // A month written into the template would be wrong the day a world is made in any other one.
+    expect(existsSync(join(dir, 'brain/budget.json'))).toBe(false)
     expect(existsSync(join(dir, 'events/inbox/.gitkeep'))).toBe(true)
     expect(existsSync(join(dir, 'brain/persona.md'))).toBe(true)
   })
@@ -104,6 +103,42 @@ describe('templates/forkling-world', () => {
     expect(workflow).toMatch(/if \[ -z "\$ANTHROPIC_API_KEY" \]; then unset ANTHROPIC_API_KEY; fi/)
     expect(workflow).toMatch(/ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/)
     expect(workflow).toMatch(/git commit -m "chore\(mind\): /)
+  })
+})
+
+describe('templates/forkling-world tick log', () => {
+  const mind = readFileSync(join(root, 'forkling-world', '.github/workflows/mind.yml'), 'utf8')
+  const commit = mind.slice(mind.indexOf('- name: Commit what changed'), mind.indexOf('- name: Update the website'))
+  const website = mind.slice(mind.indexOf('- name: Update the website'), mind.indexOf('- name: Ask the builder'))
+
+  it('commits every tick, so a quiet tick leaves its line in the log', () => {
+    expect(commit).toMatch(/steps\.tick\.outputs\.logged == 'true'/)
+  })
+
+  it('tells the log commits from the world commits by their message', () => {
+    expect(commit).toMatch(/git commit -m "chore\(mind\): \$\{SUMMARY:-tick\}"/)
+    expect(commit).toMatch(/git commit -m "tick: \$\{SUMMARY:-quiet\}"/)
+    expect(commit).toMatch(/WORLD: \$\{\{ steps\.tick\.outputs\.changed \}\}/)
+  })
+
+  it('rebuilds the site only for a world commit, not for a log line', () => {
+    expect(website).toMatch(/steps\.tick\.outputs\.changed == 'true' \|\| steps\.tick\.outputs\.photos == 'true'/)
+    expect(website).not.toMatch(/logged/)
+  })
+})
+
+describe('templates/forkling-world website updates', () => {
+  const mind = readFileSync(join(root, 'forkling-world', '.github/workflows/mind.yml'), 'utf8')
+  const website = mind.slice(mind.indexOf('- name: Update the website'), mind.indexOf('- name: Ask the builder'))
+
+  it('follows where it is and what it is doing too, but at most once an hour, so the home page is never hours stale', () => {
+    expect(website).toMatch(/\^\(forkling\\.json\|mind\/goals\\.json\)\$/)
+    expect(website).toMatch(/gh run list --workflow pages\.yml/)
+    expect(website).toMatch(/-ge 3600/)
+  })
+
+  it('still rebuilds at once for what it wrote or made', () => {
+    expect(website).toMatch(/\^\(journal\/\|art\/\|notebook\/\|memory\/beliefs\\.json\|memory\/timeline\/\|brain\/interests\\.json\)/)
   })
 })
 
@@ -139,10 +174,12 @@ describe('templates/forkling-world builder', () => {
     expect(mind.indexOf('git push')).toBeLessThan(mind.indexOf('gh workflow run build.yml'))
   })
 
-  it('designs one object from a request, one build at a time, and never puts its own work on main', () => {
+  it('designs one object from a request, in a group of its own so a tick never cancels it, and never puts its own work on main', () => {
     const text = read('build.yml')
     expect(text).toMatch(/workflow_dispatch:\s+inputs:\s+id:/)
-    expect(text).toMatch(/concurrency:\s+group: mind\s+cancel-in-progress: false/)
+    // Not the mind's group: GitHub keeps one pending run per group, so a queued tick could cancel a pending build.
+    expect(text).toMatch(/concurrency:\s+group: build-\$\{\{ inputs\.id \}\}\s+cancel-in-progress: false/)
+    expect(text).not.toMatch(/group: mind/)
     expect(text).toMatch(/contents: write/)
     expect(text).toMatch(/pull-requests: write/)
     expect(text).toMatch(/id-token: write/)
@@ -151,9 +188,28 @@ describe('templates/forkling-world builder', () => {
     expect(text).toMatch(/git checkout -b "build\/\$ID"/)
     expect(text).toMatch(/gh pr create /)
     expect(text).toMatch(/gh workflow run validate\.yml -f pr=/)
-    // The ledger and the mind's state go straight to main, so the budget never waits on a pull request.
-    expect(text.indexOf("':!objects'")).toBeLessThan(text.indexOf('git checkout -b'))
+    // Neither job commits to main: the books job below does, and only with the builder's result file.
+    expect(text).not.toMatch(/git add -A/)
+    expect(text).not.toMatch(/chore\(builder\): (designed|coded)/)
     expect(text).not.toMatch(/FORKLING_REF: (?!v\d+\.\d+\.\d+)/)
+  })
+
+  it('reports back in a result file, and a small job of its own commits that file and nothing else', () => {
+    const text = read('build.yml')
+    expect(text.match(/actions\/upload-artifact@v4/g)).toHaveLength(2)
+    expect(text).toMatch(/mind\/builds\/\$\{\{ inputs\.id \}\}\.result\.json/)
+    const books = text.slice(text.indexOf('\n  books:'))
+    expect(books).toMatch(/needs: \[object, code\]/)
+    expect(books).toMatch(/if: always\(\)/)
+    expect(books).toMatch(/concurrency:\s+group: build-books\s+cancel-in-progress: false/)
+    expect(books).toMatch(/git add "mind\/builds\/\$ID\.result\.json"/)
+    expect(books).not.toMatch(/git add -A|git add \./)
+    // Another writer may have pushed in the meantime: try again rather than lose the report.
+    expect(books).toMatch(/for attempt in/)
+    expect(books).toMatch(/git pull --rebase/)
+    // A run that died without a report still tells the mind, so the build does not hold a slot for three days.
+    expect(books).toMatch(/"failed"/)
+    expect(books).toMatch(/the builder run failed/)
   })
 
   it('checks a pull request, merges only pure object data that passes, and flags the rest for a human', () => {
@@ -167,6 +223,26 @@ describe('templates/forkling-world builder', () => {
     expect(text).toMatch(/gh pr merge .* --squash/)
     expect(text).toMatch(/needs-review/)
     expect(text).toMatch(/pull-requests: write/)
+  })
+
+  it('does not let the check on a pull request and the check on the dispatch for a builder pull request cancel each other', () => {
+    const text = read('validate.yml')
+    expect(text).toMatch(/group: validate-\$\{\{ github\.event_name \}\}-\$\{\{ github\.event\.pull_request\.number \|\| inputs\.pr \}\}/)
+    expect(text).toMatch(/cancel-in-progress: true/)
+  })
+
+  it('notes when a builder pull request is closed or merged, in the same result file, so a late decision is noticed', () => {
+    const text = read('validate.yml')
+    expect(text).toMatch(/types: \[opened, synchronize, reopened, closed\]/)
+    const settle = text.slice(text.indexOf('\n  settle:'))
+    expect(settle).toMatch(/github\.event\.action == 'closed'/)
+    expect(settle).toMatch(/startsWith\(github\.event\.pull_request\.head\.ref, 'build\/'\)/)
+    expect(settle).toMatch(/concurrency:\s+group: build-books/)
+    expect(settle).toMatch(/merged/)
+    expect(settle).toMatch(/the pull request was closed without merging/)
+    expect(settle).toMatch(/git add "mind\/builds\/\$ID\.result\.json"/)
+    // The check itself does not run for a closed pull request.
+    expect(text).toMatch(/validate:\s+if: github\.event\.action != 'closed'/)
   })
 
   it('tells gh which repository to talk to, because the world is checked out in a subfolder, not the workspace root', () => {
@@ -190,6 +266,12 @@ describe('templates/forkling-world builder', () => {
     expect(text).toMatch(/--label needs-review/)
     expect(text).not.toMatch(/gh pr merge/)
     expect(text).not.toMatch(/--auto/)
+  })
+
+  it('opens its pull requests with a token scoped to this repo when one is set, and falls back to the workflow token', () => {
+    const text = read('build.yml')
+    // Both jobs open a pull request and ask for its check with the same token.
+    expect(text.match(/GH_TOKEN: \$\{\{ secrets\.BUILDER_TOKEN \|\| github\.token \}\}/g)).toHaveLength(2)
   })
 
   it('checks the id it is given before using it for anything', () => {

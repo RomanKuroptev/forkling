@@ -33,7 +33,7 @@ The mind (GitHub Actions) decides *what* and *why*. The body (the visitor's brow
 - Never exceed **$10 a month per forkling**. At the cap, the mind stops all LLM calls until the month resets (budget guard, `brain/budget.json`).
 - Never send a prompt over 100K tokens. Summarize memory instead of passing history.
 - Never call the LLM when no surprise trigger fired, or while the forkling is asleep (except the single nightly memory batch).
-- Never let the builder touch anything but `objects/`, `art/`, `site/`, `notebook/` and `journal/` in its own world repo.
+- Never let the builder's pull requests touch anything but `objects/`, `art/`, `site/`, `notebook/` and `journal/` in its own world repo (CI rejects any that do). Its only direct commit to `main` is its own report, `mind/builds/<id>.result.json`, which the mind reads. The builder never writes the ledger, the stream or the mind's state.
 - Never change `brain/persona.md` without human review. Code PRs (Pages projects) always need human review; only pure data PRs (`objects/` only) may auto-merge.
 - Never give the builder token more than a fine-grained PAT scoped to the forkling's own repo. `main` is branch-protected.
 - Never add a third-party species pack without reviewing it like code.
@@ -59,6 +59,8 @@ pnpm typecheck
 pnpm build                     # builds the viewer
 pnpm mind:local                # one mind tick against a local copy of a world repo (--dry-run prints the prompt and token estimate)
 pnpm --filter @forkling/mind <tick|photos|design|validate|project|feeds:check>
+pnpm --filter @forkling/mind sim-report --days 14 --seed 1   # time per verb, plan share, critical needs, from the sim
+pnpm --filter @forkling/mind replay --world <clone>          # the canonical body from a world repo's history beside its plan
 pnpm --filter @forkling/site build                    # render a forkling's Pages site
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 pnpm --filter @forkling/viewer eyecam                 # eye-cam frames
@@ -68,5 +70,6 @@ pnpm --filter @forkling/viewer eyecam                 # eye-cam frames
 
 - [`STATUS.md`](STATUS.md): where the project is and what is next.
 - [`MILESTONES.md`](MILESTONES.md): the v1 goal, criteria, verbs and M8. Finished milestones are in `docs/milestones-done.md`.
+- `docs/how-it-works.md`: how the parts connect, traced through the code. `docs/review-2026-11.md`: what looks misaligned, with purpose questions to decide.
 - `docs/architecture.md`: mind, body, builder, site, and the repo layouts. `docs/decisions.md`: why things are the way they are. `docs/future.md`: ideas after v1. `docs/plans/`: saved plans.
 - Area rules: `packages/sim/CLAUDE.md`, `species/CLAUDE.md`, `apps/mind/CLAUDE.md`, `apps/viewer/CLAUDE.md`, and `templates/forkling-world/CLAUDE.md` (for the builder).

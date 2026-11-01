@@ -23,6 +23,8 @@ const IMPACT: Record<string, Feelings> = {
   started: { valence: 0.15, arousal: 0.1 },
   worked: { valence: 0.1, arousal: 0.05 },
   finished: { valence: 0.35, arousal: 0.15 },
+  created: { valence: 0.3, arousal: 0.1 },
+  read: { valence: 0.1, arousal: 0.05 },
   painted: { valence: 0.2, arousal: 0.1 },
   planted: { valence: 0.2, arousal: 0.1 },
   watered: { valence: 0.1, arousal: 0.05 },

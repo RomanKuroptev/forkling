@@ -15,7 +15,7 @@ export function weekOf(date: string): string {
 
 /** How many more coded projects it may ask for in the week of `date`: two a week, and none while a build is waiting. */
 export function codeSlotsLeft(state: MindState, date: string): number {
-  if (state.openBuild) return 0
+  if (state.openCode) return 0
   return Math.max(0, MAX_CODE_PER_WEEK - (state.codeWeek?.week === weekOf(date) ? state.codeWeek.count : 0))
 }
 
@@ -26,7 +26,9 @@ export function codeSlotsLeft(state: MindState, date: string): number {
 export function checkBuildRequest(input: { state: MindState; today: string; asleep: boolean; canAfford: boolean; kind?: BuildKind }): BuildCheck {
   const { state, today, asleep, canAfford, kind = 'object' } = input
   if (asleep) return { ok: false, reason: 'it is asleep' }
-  if (state.openBuild) return { ok: false, reason: `"${state.openBuild.id}" is still waiting to be built` }
+  // An object and a coded project are separate: a project waiting for a person to read it does not stop an object.
+  const waiting = kind === 'code' ? state.openCode : state.openBuild
+  if (waiting) return { ok: false, reason: `"${waiting.id}" is still waiting to be built` }
   if (kind === 'code') {
     if (codeSlotsLeft(state, today) === 0) return { ok: false, reason: `only two a week of coded projects (${MAX_CODE_PER_WEEK} a week)` }
   } else if ((state.builds?.date === today ? state.builds.count : 0) >= MAX_BUILDS_PER_DAY) {
@@ -51,6 +53,24 @@ export function settleOpenBuild(
   if (presentIds.has(open.id)) return { outcome: 'arrived', openBuild: null }
   if (nowMs - Date.parse(open.requestedAt) > BUILD_EXPIRES_HOURS * 3_600_000) return { outcome: 'expired', openBuild: null }
   return { outcome: 'waiting', openBuild: open }
+}
+
+/**
+ * What became of the coded project it is waiting on. Like an object build, it ends when what it asked for is in the world
+ * (its artifact in `art/`, which comes with the merged pull request). Unlike one, it does not expire while its pull request
+ * waits for a person (`prOpen`): reading it can take days, and the merge is noticed whenever it happens.
+ */
+export function settleOpenCode(
+  state: MindState,
+  presentIds: ReadonlySet<string>,
+  nowMs: number,
+  prOpen: boolean,
+): { outcome: 'arrived' | 'expired' | 'waiting' | null; openCode: MindState['openCode'] } {
+  const open = state.openCode
+  if (!open) return { outcome: null, openCode: null }
+  if (presentIds.has(open.id)) return { outcome: 'arrived', openCode: null }
+  if (!prOpen && nowMs - Date.parse(open.requestedAt) > BUILD_EXPIRES_HOURS * 3_600_000) return { outcome: 'expired', openCode: null }
+  return { outcome: 'waiting', openCode: open }
 }
 
 /** A file-name id for something to be built, different from every object and request already there. */

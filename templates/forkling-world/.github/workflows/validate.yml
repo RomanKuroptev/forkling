@@ -5,14 +5,18 @@ name: validate
 # is merged here; anything else waits for a person.
 on:
   pull_request:
+    # `closed` is only for noting a builder pull request's end, in the settle job below; no check runs for it.
+    types: [opened, synchronize, reopened, closed]
   workflow_dispatch:
     inputs:
       pr:
         description: The pull request number to check (the builder starts this for the PRs it opens)
         required: true
 
+# One check per pull request and per kind of trigger: the builder's dispatch (the one that may merge) and the pull_request
+# event for the same pull request must not cancel each other.
 concurrency:
-  group: validate-${{ github.event.pull_request.number || inputs.pr }}
+  group: validate-${{ github.event_name }}-${{ github.event.pull_request.number || inputs.pr }}
   cancel-in-progress: true
 
 permissions:
@@ -26,6 +30,7 @@ env:
 
 jobs:
   validate:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -86,3 +91,47 @@ jobs:
           gh label create needs-review --color d93f0b --description "A person has to look at this before it merges" 2>/dev/null || true
           gh pr edit "$PR" --add-label needs-review
           gh pr comment "$PR" --body "$(printf 'This waits for a person.\n\n```\n%s\n```\n' "$(cat "$RUNNER_TEMP/validate.txt" 2>/dev/null | head -40)")"
+
+  # A person merged or closed a builder pull request. Say so in the build's result file, so the mind learns of a late merge
+  # or a rejection however long it took. (A pull request that the workflow token merged itself starts no workflow; that case
+  # needs no note, because the object is in the world and the mind sees it.)
+  settle:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && startsWith(github.event.pull_request.head.ref, 'build/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: build-books
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Note how it ended
+        env:
+          HEAD: ${{ github.event.pull_request.head.ref }}
+          MERGED: ${{ github.event.pull_request.merged }}
+        run: |
+          ID="${HEAD#build/}"
+          case "$ID" in ''|*[!a-z0-9-]*|-*) echo "not a build id: $ID"; exit 1 ;; esac
+          if [ "$MERGED" = "true" ]; then status=merged; reason=""; else status=closed; reason="the pull request was closed without merging"; fi
+          now="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
+          result="mind/builds/$ID.result.json"
+          if [ -f "$result" ]; then
+            jq --arg status "$status" --arg reason "$reason" '.status = $status | if $reason == "" then del(.reason) else .reason = $reason end' "$result" > "$RUNNER_TEMP/result.json"
+          elif [ -f "mind/builds/$ID.json" ]; then
+            jq -n --arg id "$ID" --arg kind "$(jq -r .kind "mind/builds/$ID.json")" --arg status "$status" --arg reason "$reason" --arg at "$now" '{id: $id, kind: $kind, status: $status, calls: [], at: $at} + (if $reason == "" then {} else {reason: $reason} end)' > "$RUNNER_TEMP/result.json"
+          else
+            echo "no build request for $ID"; exit 0
+          fi
+          cp "$RUNNER_TEMP/result.json" "$result"
+          git config user.name "forkling-builder"
+          git config user.email "forkling-builder@users.noreply.github.com"
+          git add "mind/builds/$ID.result.json"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore(builder): $ID was $status"
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase && git push; then exit 0; fi
+            sleep $(( attempt * 3 ))
+          done
+          exit 1
