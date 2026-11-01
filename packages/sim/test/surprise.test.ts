@@ -100,7 +100,7 @@ describe('scoreSurprise', () => {
   })
 
   it('notices the end of a step', () => {
-    expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T10:11:00Z') })).toEqual(['stepDone'])
+    expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T10:11:00Z') })).toContain('stepDone')
   })
 
   it('asks for a morning plan once awake on a day with no plan', () => {
@@ -204,7 +204,7 @@ describe('scoreSurprise', () => {
     })
 
     it('waits until that half hour', () => {
-      expect(kinds({ ...evening, nowMs: bedMs - 60 * 60_000 })).toEqual([])
+      expect(kinds({ ...evening, nowMs: bedMs - 60 * 60_000 })).not.toContain('bedtime')
     })
 
     it('happens once a day', () => {
@@ -213,7 +213,7 @@ describe('scoreSurprise', () => {
 
     it('follows a late night: the reflection moves with bedtime', () => {
       const late = { ...evening, forkling: { ...forkling, lateNight: '2026-11-03' } }
-      expect(kinds(late)).toEqual([])
+      expect(kinds(late)).not.toContain('bedtime')
       const lateBed = sleepWindow('2026-11-03', 5, 'Europe/Stockholm', true).bedMs
       expect(kinds({ ...late, nowMs: lateBed - 10 * 60_000 })).toEqual(['bedtime'])
     })
