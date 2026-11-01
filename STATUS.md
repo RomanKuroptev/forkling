@@ -9,14 +9,15 @@ Read this first. Update it before every commit and before you stop.
 
 ## Current work
 - Branch: `claude-setup`, implementing [`docs/plans/claude-setup.md`](docs/plans/claude-setup.md) part 1 (docs and config only, no runtime code changes). One commit per step.
-- Done: steps 1 (STATUS.md), 2 (docs/ split), 3 (nested CLAUDE.md files), 4 (root CLAUDE.md slimmed to 72 lines; "Key data shapes" dropped, packages/schema is the source of truth), 5 (.claude/settings.json: allow and rtk twins, deny force push and .env), 6 (hooks sim-purity and typecheck-touched; both seen firing on throwaway edits to packages/sim/src/prng.ts, then reverted), 7 (subagents test-runner and explorer, both haiku), 8 (skills slice, release, live-check, docs-sync, review), 9 (test/docs.test.ts: paths named in CLAUDE.md files and docs/architecture.md must exist; seen failing on a fake path, then reverted).
-- Next: step 10 (final checks, root CLAUDE.md size, push and open PR).
+- Done: all 10 steps of part 1 (docs/ split, nested CLAUDE.md files, root CLAUDE.md at 72 lines, settings.json, two hooks, two subagents, five skills, docs path test). Hooks and the docs test were each seen firing on a throwaway edit, then reverted.
+- Root CLAUDE.md is 6,209 characters, about 1,550 tokens (chars / 4). Confirm with `/context` in a fresh session.
+- Next: review the `claude-setup` PR. Part 2 (separate slice via `/slice`): split `apps/mind/src/tick.ts` and `prompts.ts`, prune merged branches.
 
 ## Open questions
 - None.
 
 ## Last verified
-- 2026-11-01: after step 9, `pnpm typecheck` clean and `pnpm test` 1026 passed (77 files).
+- 2026-11-01: after step 10, `pnpm build` ok, `pnpm typecheck` clean and `pnpm test` 1026 passed (77 files).
 
 ## Tooling note
 - `pnpm` is not on the Git Bash PATH here; run pnpm commands from PowerShell.
