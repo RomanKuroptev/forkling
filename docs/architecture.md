@@ -1,6 +1,6 @@
 # Architecture
 
-How forkling fits together. Intent lives here; the schemas in `packages/schema` and the code are the source of truth for details.
+How forkling fits together. Intent lives here; the schemas in `packages/schema` and the code are the source of truth for details. For how the parts actually behave, traced through the code, see `docs/how-it-works.md`.
 
 ## Core idea: mind, body, builder
 

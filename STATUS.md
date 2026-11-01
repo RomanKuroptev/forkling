@@ -14,8 +14,13 @@ Read this first. Update it before every commit and before you stop.
 - Part 2 on branch `split-tick` ([`docs/plans/split-tick.md`](docs/plans/split-tick.md)): done. `tick.ts` is 39 lines and calls one module per step in `src/tick/`; `prompts.ts` re-exports `src/prompts/`. No behaviour change: existing tests untouched, new golden prompt files pass, `--dry-run` output on a template world is identical before and after.
 - Next: review the `claude-setup` and `split-tick` PRs (`split-tick` is branched from `claude-setup`). Prune the branches already merged into main, once Roman says which.
 
+## System review (branch `docs/system-review`, docs only)
+- Written: [`docs/how-it-works.md`](docs/how-it-works.md) (how the parts connect) and [`docs/review-2026-11.md`](docs/review-2026-11.md) (findings, observability gaps, purpose questions). No runtime code changed.
+- Main finding: affection can never rise in the mind's world (no visitor path), so it is 0 and `critical` forever, the `need` trigger wakes Haiku every 30 minutes, mood stays `upset`, and the day's plan (about 2 hours long) is never replaced.
+- Not yet done: the review's runtime claims marked "estimate" need a measured run, and `shape` ran 80 minutes on a 20-minute step, cause unknown.
+
 ## Open questions
-- None.
+- The purpose questions in section 9 of `docs/review-2026-11.md` (affection and visitors, plan versus drift, plan length, needs time scale, mood, builder lock). M8 waits on them.
 
 ## Last verified
 - 2026-11-01: after the `split-tick` slice, `pnpm typecheck` clean and `pnpm test` 1038 passed (79 files). `pnpm build` not rerun (viewer untouched; last ok after step 10 of claude-setup).

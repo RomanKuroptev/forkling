@@ -68,5 +68,6 @@ pnpm --filter @forkling/viewer eyecam                 # eye-cam frames
 
 - [`STATUS.md`](STATUS.md): where the project is and what is next.
 - [`MILESTONES.md`](MILESTONES.md): the v1 goal, criteria, verbs and M8. Finished milestones are in `docs/milestones-done.md`.
+- `docs/how-it-works.md`: how the parts connect, traced through the code. `docs/review-2026-11.md`: what looks misaligned, with purpose questions to decide.
 - `docs/architecture.md`: mind, body, builder, site, and the repo layouts. `docs/decisions.md`: why things are the way they are. `docs/future.md`: ideas after v1. `docs/plans/`: saved plans.
 - Area rules: `packages/sim/CLAUDE.md`, `species/CLAUDE.md`, `apps/mind/CLAUDE.md`, `apps/viewer/CLAUDE.md`, and `templates/forkling-world/CLAUDE.md` (for the builder).
