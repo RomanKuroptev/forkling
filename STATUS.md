@@ -17,7 +17,7 @@ Read this first. Update it before every commit and before you stop.
 - None.
 
 ## Last verified
-- 2026-11-01: after step 10, `pnpm build` ok, `pnpm typecheck` clean and `pnpm test` 1026 passed (77 files).
+- 2026-11-01: after step 10, `pnpm build` ok, `pnpm typecheck` clean and `pnpm test` 1034 passed (78 files).
 
 ## Tooling note
 - `pnpm` is not on the Git Bash PATH here; run pnpm commands from PowerShell.
