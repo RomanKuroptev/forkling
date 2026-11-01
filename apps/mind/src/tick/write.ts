@@ -37,6 +37,8 @@ export function writeWorld(t: Tick): TickResult {
   const carryingChanged = !same(holding, forkling.holding) || !same(stored, forkling.stored)
   const writeBody =
     t.started !== null ||
+    t.touched.size > 0 ||
+    t.gone.size > 0 ||
     goalsChanged ||
     mindChanged ||
     inboxConsumed ||

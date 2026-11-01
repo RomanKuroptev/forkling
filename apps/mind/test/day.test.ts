@@ -59,10 +59,20 @@ function fakeModel() {
     const left = now && bed ? minutesOf(bed[1]!, bed[2]!) - minutesOf(now[1]!, now[2]!) : 120
     // Two to three hours, and never past bedtime.
     const count = Math.max(0, Math.min(6, Math.floor((left - 20) / STEP_MINUTES)))
-    const plan = Array.from({ length: count }, () => {
+    // A hunger the body could not deal with on its own (the bowl is empty): pick berries, cook them, and eat.
+    const hungry = /- need: hunger is at/.test(req.user)
+    const food = hungry
+      ? [
+          { verb: 'cut', target: 'berry-bush', x: null, z: null, reason: 'I am hungry and the bowl is empty, so I will pick berries.', minutes: 5, materials: null, makes: null, because: null, topic: null },
+          { verb: 'cook', target: 'kitchen', x: null, z: null, reason: 'Berries on their own are a poor dinner.', minutes: 6, materials: ['produce'], makes: 'berry mash', because: null, topic: null },
+          { verb: 'dine', target: 'berry-mash', x: null, z: null, reason: 'I made this, so I am allowed to eat it.', minutes: 5, materials: null, makes: null, because: null, topic: null },
+        ]
+      : []
+    const plan = Array.from({ length: Math.max(0, count - food.length) }, () => {
       const s = STEPS[next++ % STEPS.length]!
       return { ...s, reason: `I felt like ${s.verb} for a while.`, minutes: STEP_MINUTES, materials: null, makes: null, because: null, topic: null }
     })
+    plan.unshift(...(food as typeof plan))
     return {
       thought: 'The beach is mine, so I start with the part I know.',
       longGoal: req.kind === 'morning' ? { text: 'Learn every corner of the island.', reason: 'It is where I live.' } : null,
@@ -102,6 +112,9 @@ interface Day {
   /** Plan steps that began, and how many of them ended unfinished because the body did not do enough of them. */
   stepsStarted: number
   stepsUnfinished: number
+  /** Portions left in the bowl at the end of the day, and how many meals it made and ate from what it gathered. */
+  bowlLeft: number | null
+  dined: number
 }
 
 let dir: string
@@ -117,7 +130,7 @@ function needsAt(nowMs: number) {
 
 async function liveADay(): Promise<Day> {
   const model = fakeModel()
-  const out: Day = { decideCalls: 0, callsWhileAsleep: 0, spentUsd: 0, awakeTicks: 0, awakeTicksWithStep: 0, longestCritical: { need: '', minutes: 0 }, criticalTicks: {}, ticks: 0, stepsStarted: 0, stepsUnfinished: 0 }
+  const out: Day = { decideCalls: 0, callsWhileAsleep: 0, spentUsd: 0, awakeTicks: 0, awakeTicksWithStep: 0, longestCritical: { need: '', minutes: 0 }, criticalTicks: {}, ticks: 0, stepsStarted: 0, stepsUnfinished: 0, bowlLeft: null, dined: 0 }
   const run: Record<string, number> = {}
   for (let i = 0; i < 144; i++) {
     const nowMs = START + i * TICK_MS
@@ -151,6 +164,8 @@ async function liveADay(): Promise<Day> {
   const stream = readFileSync(join(dir, 'memory/stream/2026-11-03.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { kind: string; text: string })
   out.stepsStarted = stream.filter((e) => e.kind === 'step' && e.text.startsWith('Started ')).length
   out.stepsUnfinished = stream.filter((e) => e.text.startsWith('Left ') && e.text.includes('unfinished')).length
+  out.dined = stream.filter((e) => e.text.startsWith('dine:')).length
+  out.bowlLeft = (JSON.parse(readFileSync(join(dir, 'objects/bowl.json'), 'utf8')) as { state?: { portionsLeft?: number } }).state?.portionsLeft ?? null
   out.decideCalls = model.calls.filter((c) => c.req.kind === 'morning' || c.req.kind === 'decide').length
   out.spentUsd = BudgetLedger.parse(JSON.parse(readFileSync(join(dir, 'brain/budget.json'), 'utf8'))).spentUsd
   return out
@@ -178,6 +193,13 @@ describe('a whole day with no visitors', () => {
   it(`asks for a decision at most ${MAX_DECIDE_CALLS} times, not every half hour`, () => {
     expect(day.decideCalls, JSON.stringify(day)).toBeGreaterThanOrEqual(2)
     expect(day.decideCalls, JSON.stringify(day)).toBeLessThanOrEqual(MAX_DECIDE_CALLS)
+  })
+
+  it('runs out of bowl and feeds itself: it gathers, cooks and eats, and hunger is never empty for an hour', () => {
+    // Three portions are breakfast and a snack or two; the rest of the day's meals have to be made.
+    expect(day.bowlLeft, JSON.stringify(day)).toBe(0)
+    expect(day.dined, JSON.stringify(day)).toBeGreaterThanOrEqual(1)
+    expect(day.longestCritical.minutes, JSON.stringify(day)).toBeLessThanOrEqual(MAX_CRITICAL_MINUTES)
   })
 
   it('does what it plans: the body carries out nearly every step it is given', () => {

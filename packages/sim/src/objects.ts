@@ -1,4 +1,4 @@
-import { ObjectProperties, type ActionTarget, type Material, type ModelPart, type WorldObject } from '@forkling/schema'
+import { ObjectProperties, type ActionTarget, type Material, type ModelPart, type SpeciesAction, type WorldObject } from '@forkling/schema'
 import { createPrng } from './prng.ts'
 
 /** The heaviest thing a forkling can carry, in kilograms. */
@@ -172,6 +172,11 @@ export function composeMade(input: MadeInput): { parts: ModelPart[]; size: numbe
 /** Whether an object is somewhere the world offers as a spot of this kind: by its old affordances, or because it is high up (a perch). */
 export function offersSpot(obj: WorldObject, kind: string): boolean {
   return obj.affordances.includes(kind as never) || (kind === 'perch' && obj.properties.high)
+}
+
+/** Whether a verb eats: its target is food. Only these draw on a portion, and only these find an empty bowl empty. */
+export function eatsFrom(verb: SpeciesAction): boolean {
+  return verb.target.type === 'object' && verb.target.where.edible === true
 }
 
 /** Meals left in something that has portions (full if nobody has eaten from it), or null for something that never runs out. */

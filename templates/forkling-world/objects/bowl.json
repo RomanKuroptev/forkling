@@ -47,8 +47,9 @@
   "properties": {
     "size": 0.35,
     "weightKg": 1,
-    "edible": true
+    "edible": true,
+    "portions": 3
   },
   "unlocks": [],
-  "reason": "Dinner is served here, whether or not it is asked for."
+  "reason": "A little dinner is put here each morning, and it is gone when it is gone."
 }

@@ -137,6 +137,8 @@ export interface Tick {
   started: Intention | null
 
   triggers: Trigger[]
+  /** How many times each verb began since the last write, so meals can be counted. */
+  begun: Record<string, number>
   /** Seconds the replayed body spent on the plan step's verb since the last write, for the step's effect to wait on. */
   worked: number
   /** What broke the plan step off since the last write, for the tick log and the next prompt. */

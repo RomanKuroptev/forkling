@@ -1,7 +1,7 @@
 import type { Holding, PlanStep, Skills, SpeciesAction, SpeciesPack, WorldObject } from '@forkling/schema'
 import { applyStep, type StepWorld, type Stored } from './effects.ts'
 import type { Point2 } from './nav.ts'
-import { offersSpot, portionsLeft } from './objects.ts'
+import { eatsFrom, offersSpot, portionsLeft } from './objects.ts'
 import { skillLevel } from './skills.ts'
 import { isDusk } from './time.ts'
 
@@ -136,7 +136,7 @@ export function validatePlan(steps: readonly PlanStep[], ctx: PlanContext): Plan
   steps.forEach((step, n) => {
     const verb = ctx.pack.actions.find((a) => a.id === step.verb)
     const target = step.targetId ? ctx.objects.find((o) => o.id === step.targetId) : undefined
-    if (verb && target && Object.values(verb.satisfies).some((v) => (v ?? 0) > 0) && portionsLeft(target) === 0) reasons.push(`step ${n + 1}: ${target.name} is empty`)
+    if (verb && target && eatsFrom(verb) && portionsLeft(target) === 0) reasons.push(`step ${n + 1}: ${target.name} is empty`)
   })
 
   if (ctx.creativeLeft !== undefined) {
