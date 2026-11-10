@@ -39,7 +39,7 @@ That is too much for one PR to review, so W1 is five slices. Each is its own bra
 - `write` in W1 makes a plaque into the pile (a file in a new `souvenirs`-style folder is W2; W1 writes it to `notebook/` so it leaves an artifact). One Haiku step call, up to 300 words, checked for claims to be human.
 - `packages/sim/src/novelty.ts` (already built in W0) gains the plan-level nudges from 12.3 (stuck in one place, repeated work, weekend revisit), which are measured and logged only.
 
-### 3. The mind: triggers, tick and removals
+### 3. The mind: triggers, tick and removals (removals done; the new triggers come with W2 and later)
 - Triggers: `newDay` and `replan` stay. `sparked`, `note`, `buildResult` and `reflected` are added but can only fire from W2 and later, so in W1 they exist as types with tests and no source. Removed: `need`, `blocked`, `bedtime` and the surprise triggers tied to needs and objects. Surprise now feeds importance (9.3), which waits for W7, so W1 just logs it.
 - Limits (2.3): at most 12 decide calls a day, 4 thought-tick replans a day, 60 minutes after an empty or rejected plan, 30 minutes after a failed call.
 - Removed from `apps/mind`: `tick/portions.ts`, `art.ts` and the art tick step, `photos.ts` and the vision step, `design.ts` and `project.ts` with `code.ts`, the Claude Code Action job, the `need`-driven `apply-step` paths and the draw. The `read` and `study` reading step goes too, since wandering replaces it in W2. The morning feed skim stays and keeps feeding interests.

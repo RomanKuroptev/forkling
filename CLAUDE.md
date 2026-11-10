@@ -68,7 +68,7 @@ pnpm --filter @forkling/site build                    # render a forkling's Page
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 ```
 
-Pet-era commands still in the code until W1 removes them: `photos`, `design`, `project`, and the viewer's `eyecam`.
+Pet-era command still in the code until slice 4 removes it: the viewer's `eyecam`.
 
 ## Where things are
 

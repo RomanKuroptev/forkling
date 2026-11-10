@@ -1,7 +1,5 @@
-import { MAX_BUILDS_PER_DAY, MAX_CODE_PER_WEEK, MAX_PHOTOS_PER_DAY, type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
-import { STRONG_NEED } from '@forkling/sim'
-import { MAX_ARTIFACTS_PER_DAY } from './art.ts'
-import { weekOf } from './builds.ts'
+import { type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
+import { MAX_POINTS_IN_HAND } from '@forkling/sim'
 import { MAX_READINGS_PER_DAY } from './reading.ts'
 
 /** What the health summary needs besides the tick line: the world as the tick left it. */
@@ -84,13 +82,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
 
   const { mind, budget } = ctx
   const used = (state: { date: string; count: number } | undefined) => (state?.date === ctx.today ? state.count : 0)
-  const quotas: Health['quotas'] = {
-    readings: { used: used(mind.readings), max: MAX_READINGS_PER_DAY },
-    creative: { used: used(mind.arts), max: MAX_ARTIFACTS_PER_DAY },
-    photos: { used: used(mind.photos), max: MAX_PHOTOS_PER_DAY },
-    builds: { used: used(mind.builds), max: MAX_BUILDS_PER_DAY },
-    codeThisWeek: { used: mind.codeWeek?.week === weekOf(ctx.today) ? mind.codeWeek.count : 0, max: MAX_CODE_PER_WEEK },
-  }
+  const quotas: Health['quotas'] = { readings: { used: used(mind.readings), max: MAX_READINGS_PER_DAY } }
   const dayOfMonth = Number(ctx.today.slice(8, 10))
   const spend = { monthUsd: budget.spentUsd, capUsd: budget.capUsd, paceUsd: (budget.capUsd * dayOfMonth) / daysInMonth(ctx.today) }
   // The one that has waited longest: an object, or a coded project waiting for a person to read it.
@@ -117,6 +109,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     plan,
     today: { ticks: (before?.ticks ?? 0) + 1, decideCalls, callsByKind, triggersByKind, failures, rejections, stepsStarted, longestGapMinutes },
     quotas,
+    allowance: { points: Math.round(mind.allowance?.points ?? 0), max: MAX_POINTS_IN_HAND },
     mood,
     needsCritical: {},
     spend,

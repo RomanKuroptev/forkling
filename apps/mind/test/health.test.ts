@@ -163,13 +163,12 @@ describe('buildHealth', () => {
     })
   })
 
-  it('counts the day against each quota', () => {
-    const mind = MindState.parse({ readings: { date: '2026-11-03', count: 2, skimmed: true }, arts: { date: '2026-11-03', count: 3 }, builds: { date: '2026-11-02', count: 1 }, codeWeek: { week: '2026-W45', count: 1 } })
+  it('counts the day against the limits that remain, and shows the points in hand', () => {
+    const mind = MindState.parse({ readings: { date: '2026-11-03', count: 2, skimmed: true }, allowance: { points: 120.4, day: '2026-11-03' } })
     const h = run([{ min: 0, ctx: { mind } }])
     expect(h.quotas.readings).toEqual({ used: 2, max: 5 })
-    expect(h.quotas.creative).toEqual({ used: 3, max: 4 })
-    expect(h.quotas.builds).toEqual({ used: 0, max: 1 })
-    expect(h.quotas.codeThisWeek).toEqual({ used: 1, max: 2 })
+    expect(h.quotas.creative).toBeUndefined()
+    expect(h.allowance).toEqual({ points: 120, max: 450 })
   })
 
   it('keeps count of how long the mood has lasted', () => {

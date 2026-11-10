@@ -23,7 +23,7 @@ const withoutBrokenOff = (m: MindState): Omit<MindState, 'brokenOff'> => {
 
 /** Wake, bedtime and the body: written when something happened, or once per half hour so the repo stays fresh. */
 export function writeWorld(t: Tick): TickResult {
-  const { dir, deps, w, forkling, goals, mind, budget, skills, beliefs, interests, holding, stored, asleep, nowMs, nowIso, today, parts } = t
+  const { dir, deps, w, forkling, goals, mind, budget, beliefs, interests, asleep, nowMs, nowIso, today, parts } = t
   if (asleep !== forkling.asleep) parts.push(asleep ? 'went to bed' : 'woke up')
   const inboxConsumed = t.thought && w.inbox.length > 0
   const goalsChanged = !same(withoutWorked(goals), withoutWorked(w.goals))
@@ -31,10 +31,8 @@ export function writeWorld(t: Tick): TickResult {
   const workedChanged = goals.now?.workedSec !== w.goals.now?.workedSec
   const brokenOffChanged = !same(mind.brokenOff, w.mindState.brokenOff)
   const budgetChanged = !same(budget, w.budget)
-  const skillsChanged = !same(skills, w.skills)
   const beliefsChanged = !same(beliefs, w.beliefs)
   const interestsChanged = !same(interests, w.interests)
-  const carryingChanged = !same(holding, forkling.holding) || !same(stored, forkling.stored)
   const writeBody =
     t.started !== null ||
     t.touched.size > 0 ||
@@ -42,8 +40,6 @@ export function writeWorld(t: Tick): TickResult {
     goalsChanged ||
     mindChanged ||
     inboxConsumed ||
-    skillsChanged ||
-    carryingChanged ||
     asleep !== forkling.asleep ||
     t.mood !== forkling.mood ||
     t.energy !== forkling.energy ||
@@ -66,15 +62,14 @@ export function writeWorld(t: Tick): TickResult {
           : inPack
             ? bodyIntention
             : forkling.intention)
-      const { holding: _held, ...rest } = forkling
+      // What the pet carried and stored is not kept: the forkling has paws for nothing now.
+      const { holding: _held, stored: _stored, ...rest } = forkling
       const next = Forkling.parse({
         ...rest,
         position: [round(body.pos.x, 2), 0, round(body.pos.z, 2)],
         mood: round(mood, 3),
         energy: round(energy, 3),
         intention,
-        ...(holding ? { holding } : {}),
-        stored,
         asleep,
         ...(lateNight ? { lateNight } : {}),
         lastTickAt: nowIso,
@@ -92,12 +87,9 @@ export function writeWorld(t: Tick): TickResult {
     if ((goalsChanged || (writeBody && workedChanged)) && writeJson(dir, 'mind/goals.json', goals)) written.push('mind/goals.json')
     if ((mindChanged || (writeBody && brokenOffChanged)) && writeJson(dir, 'mind/state.json', mind)) written.push('mind/state.json')
     if (budgetChanged && writeJson(dir, 'brain/budget.json', budget)) written.push('brain/budget.json')
-    if (skillsChanged && writeJson(dir, 'brain/skills.json', skills)) written.push('brain/skills.json')
     if (beliefsChanged && writeJson(dir, 'memory/beliefs.json', beliefs)) written.push('memory/beliefs.json')
     if (interestsChanged && writeJson(dir, 'brain/interests.json', interests)) written.push('brain/interests.json')
     if (t.planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)
-    for (const request of t.buildRequests) if (writeJson(dir, `mind/builds/${request.id}.json`, request)) written.push(`mind/builds/${request.id}.json`)
-    for (const art of t.madeArt) if (writeJson(dir, `art/${art.id}.json`, art)) written.push(`art/${art.id}.json`)
     for (const page of t.notebook) if (writeText(dir, page.path, page.text)) written.push(page.path)
     if (t.journal && writeText(dir, `journal/${t.journal.date}.md`, t.journal.text)) written.push(`journal/${t.journal.date}.md`)
     if (t.summaryNext && writeText(dir, 'memory/summary.md', t.summaryNext)) written.push('memory/summary.md')
@@ -120,5 +112,5 @@ export function writeWorld(t: Tick): TickResult {
   }
 
   const summary = parts.length > 0 ? parts.join(', ') : written.length > 0 ? 'sync' : ''
-  return { changed: written.length > 0, logged: false, summary, written, notes: t.notes, calls: t.calls, photos: mind.photos?.queue.length ?? 0, build: t.buildRequests[0]?.id ?? null, ...(t.prompt ? { prompt: t.prompt } : {}) }
+  return { changed: written.length > 0, logged: false, summary, written, notes: t.notes, calls: t.calls, ...(t.prompt ? { prompt: t.prompt } : {}) }
 }

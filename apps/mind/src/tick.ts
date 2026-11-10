@@ -9,7 +9,6 @@ import { memoryStep } from './tick/memory.ts'
 import { noteStep } from './tick/mind-step.ts'
 import { readStep } from './tick/reading.ts'
 import { route } from './tick/route.ts'
-import { settleBuild } from './tick/settle-build.ts'
 import { logTick } from './ticklog.ts'
 import { think } from './tick/think.ts'
 import { writeWorld } from './tick/write.ts'
@@ -23,7 +22,6 @@ export type { TickDeps, TickResult }
  */
 export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> {
   const t = createTick(dir, deps)
-  settleBuild(t)
   finishStep(t)
   route(t)
   await readStep(t)

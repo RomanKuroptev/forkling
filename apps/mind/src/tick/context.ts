@@ -4,7 +4,6 @@ import type {
   ArtifactKind,
   BudgetCall,
   BuildRequest,
-  DriftNote,
   Goals,
   Intention,
   MicroBehavior,
@@ -16,7 +15,7 @@ import type {
   VisitorEvent,
   WorldObject,
 } from '@forkling/schema'
-import type { MoodEvent, Stored, Trigger, sleepWindow, startPlayback, worldWithObjects } from '@forkling/sim'
+import type { MoodEvent, Trigger, sleepWindow, startPlayback, worldWithObjects } from '@forkling/sim'
 import type { ModelId, rollLedger } from '../budget.ts'
 import type { Decision } from '../decision.ts'
 import type { GetJson } from '../feeds/index.ts'
@@ -53,10 +52,6 @@ export interface TickResult {
   /** Why things did or didn't happen: skipped calls, rejected plans. */
   notes: string[]
   calls: BudgetCall[]
-  /** Eye-cam shots waiting to be rendered and captioned (the `photos` step). */
-  photos: number
-  /** The id of the build this tick asked for (`mind/builds/<id>.json`), for the workflow that runs the builder. */
-  build: string | null
   /** The prompt of the call this tick would make or made, for dry runs and logs. */
   prompt?: { model: ModelId; kind: CallKind; system: string; user: string; tokens: number; maxUsd: number }
 }
@@ -90,7 +85,6 @@ export interface Tick {
   /** What happened this tick, for the day's memory stream. Written by code from sim events, no model. */
   remember: NewEntry[]
   steps: TimelineEntry[]
-  buildRequests: BuildRequest[]
 
   sleepOpts: { seed: number; timezone: string; lateNight: World['forkling']['lateNight'] }
   asleep: boolean
@@ -104,20 +98,9 @@ export interface Tick {
   objects: WorldObject[]
   /** The ids of `objects` once the finishing step is applied. Not refreshed after that. */
   objectIds: Set<string>
-  holding: World['forkling']['holding']
-  stored: Stored
-  skills: World['skills']
   interests: World['interests']
-  /** Set when a read or study step finishes: the visit to the shelf comes after the step is applied. */
-  pendingReading: { depth: number; topic: string | null } | null
   /** Set when a write step finishes: the words are written after the step is applied. */
   pendingNote: { step: PlanStep; index: number } | null
-  /** Set when a creative step finishes: what it made is written after the step is applied. */
-  pendingArt: { kind: ArtifactKind; verb: string; step: PlanStep; index: number } | null
-  /** Set when a photograph step finishes: the shot is queued after the step is applied. */
-  pendingPhoto: { step: PlanStep; index: number } | null
-  /** Set when a code step finishes: the brief for the builder is written after the step is applied. */
-  pendingCode: { step: PlanStep; index: number } | null
   touched: Set<string>
   gone: Set<string>
   /** What happened this tick that moves mood and energy (spec 3.2), applied by `feel`. */
@@ -134,10 +117,6 @@ export interface Tick {
   started: Intention | null
 
   triggers: Trigger[]
-  /** Seconds the replayed body spent on the plan step's verb since the last write, for the step's effect to wait on. */
-  worked: number
-  /** What broke the plan step off since the last write, for the tick log and the next prompt. */
-  drift: DriftNote[]
   /** Whether the step that just finished could not happen. */
   failed: boolean
   /** Taken before any step is started, and not refreshed: the decision step reuses them. */
@@ -156,7 +135,6 @@ export interface Tick {
 
   notebook: { path: string; text: string }[]
   readings: NonNullable<MindState['readings']>
-  madeArt: Artifact[]
   arts: NonNullable<MindState['arts']>
 
   decision: Decision | null

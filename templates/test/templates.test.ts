@@ -3,7 +3,7 @@ import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { Artifact, Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, objectIdFromPath, PlanStep, Skills, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
-import { collectSpots, isWalkable, matchesTarget, runPlan, starterWorld, sunDirection, worldWithObjects } from '@forkling/sim'
+import { collectSpots, isWalkable, matchesTarget, starterWorld, sunDirection, worldWithObjects } from '@forkling/sim'
 import catSpecies from '@forkling/species-cat/species.json'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -422,25 +422,5 @@ describe('templates/forkling-world starter objects', () => {
       expect(spots[o.id]?.length, `${o.id} is somewhere unreachable`).toBe(1)
       expect(isWalkable(world.nav.grid, spots[o.id]![0]!.x, spots[o.id]![0]!.z), o.id).toBe(true)
     }
-  })
-
-  it('lets a cat gather, put away and build, all the way through, with nothing but these files', () => {
-    const step = (verb: string, extra: Record<string, unknown> = {}) => PlanStep.parse({ verb, reason: 'Because I can.', minutes: 5, ...extra })
-    const run = runPlan({
-      pack,
-      seed: 12,
-      startMs: Date.parse('2026-11-03T09:00:00Z'),
-      objects: starter,
-      steps: [
-        step('pick_up', { targetId: 'driftwood' }),
-        step('put_on', { targetId: 'house' }),
-        step('pick_up', { targetId: 'pebbles' }),
-        step('put_on', { targetId: 'house' }),
-        step('build', { targetId: 'workbench', materials: ['wood', 'stone'], makes: 'a driftwood marker' }),
-      ],
-    })
-    expect(run.steps.map((s) => s.reason ?? 'ok')).toEqual(Array(5).fill('ok'))
-    expect(run.objects.find((o) => o.id === 'a-driftwood-marker')?.made?.done).toBe(true)
-    expect(run.stored).toEqual({})
   })
 })
