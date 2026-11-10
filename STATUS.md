@@ -27,6 +27,12 @@ Branch `claude/project-thread-403rmi`.
 - **Step 4 done (care actions and need fields gone from the pack):** the cat no longer has `sniff`, `vocalize`, `nap`, `curl_up`, `pounce`, `zoomies`, `eat`, `dine`, `cook`, `plant`, `water` or `harvest`, and `SpeciesPack` has no `needs`, `satisfies` or `spontaneous` (packs that still carry them parse, and the fields are ignored). The cat keeps its body verbs (`go_to`, `inspect`, `sit`, `watch`, `follow`, `hide`, `sleep`, `stretch`, `explore`), hands, making and mind verbs, which go in slice 3.
 - **Slice 1 is done.** What remains of the pet is the object machinery (effects, objects, contraptions, the art, photo and code pipelines, the eye cam, the island), which slice 3 removes together with the old triggers. The pack-format hook that maps a mind verb to a place and clip (spec 2.7) comes with the nine verbs in slice 2.
 
+## W1 slice 2 (in progress)
+
+- **Done, pure and tested, not yet wired into the tick:** `packages/sim/src/allowance.ts` (150 points a wake, saving up to 450, the starting price list, deep steps at 30, `planCost`) and `packages/sim/src/mind-plan.ts` (the nine verbs, their minute ranges and clamping, and `validateMindPlan` for spec 2.6: 3 to 8 steps, the same verb 3 in a row, the 140-character reason, serving a want with the cold start, no step in the last 45 minutes before bed, the tired limits, each verb's target and quota rails, and the allowance). 32 tests.
+- **Assumptions to check against the spec:** expand's step time is 20 to 40 minutes (the spec gives none); reply costs 0 points and keeps its own rail of 5 a day; a tinker with no size is priced as a full work.
+- **Next:** wire the new plan into the mind. The decision schema and prompts speak the nine verbs, `write` and `rest` run (the rest are stubbed to `rest`), the day test runs on the new plan, and the pack-format hook maps a verb to a body pose (spec 2.7).
+
 ## Next
 
 1. Roman runs the voice test (or gives the go to run it from an Actions workflow), reads the report and says whether the voice is worth building a world around (or what to change in the seed or the models).
