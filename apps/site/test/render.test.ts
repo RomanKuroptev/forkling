@@ -131,6 +131,19 @@ describe('renderSite', () => {
     expect(page('index.html')).not.toContain('gallery/')
   })
 
+  it('shows the diary it wrote before, read-only, once there is an archive', () => {
+    expect(existsSync(join(out, 'archive/index.html'))).toBe(false)
+    renderSite(world, out)
+    expect(page('index.html')).not.toContain('archive/')
+    const archivedOut = mkdtempSync(join(tmpdir(), 'site-archive-'))
+    put('archive/journal/2026-10-31.md', '# The first morning' + String.fromCharCode(10) + String.fromCharCode(10) + 'I looked at the sea.')
+    renderSite(world, archivedOut)
+    const read = (rel: string) => readFileSync(join(archivedOut, rel), 'utf8')
+    expect(read('archive/index.html')).toContain('The first morning')
+    expect(read('archive/journal/2026-10-31.html')).toContain('I looked at the sea.')
+    expect(read('index.html')).toContain('archive/')
+  })
+
   it('traces an obsession back to the feed item that started it', () => {
     renderSite(world, out)
     const html = page('obsessions/index.html')

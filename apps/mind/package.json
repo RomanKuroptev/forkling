@@ -6,6 +6,7 @@
   "scripts": {
     "tick": "node src/cli.ts",
     "replay": "node src/replay-cli.ts",
+    "migrate-w1": "node src/migrate-cli.ts",
     "typecheck": "tsc -p .",
     "feeds:check": "node src/feeds/check.ts",
     "voice-test": "node --env-file-if-exists=../../.env scripts/voice-test.ts"

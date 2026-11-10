@@ -57,7 +57,7 @@ async function main(): Promise<void> {
 
   const spent = result.calls.reduce((sum, c) => sum + c.usd, 0)
   if (process.env.GITHUB_OUTPUT) {
-    appendFileSync(process.env.GITHUB_OUTPUT, `changed=${result.changed}\nlogged=${result.logged}\nsummary=${result.summary.replace(/[\r\n]+/g, ' ')}\nphotos=false\nbuild=\n`)
+    appendFileSync(process.env.GITHUB_OUTPUT, `changed=${result.changed}\nlogged=${result.logged}\nsummary=${result.summary.replace(/[\r\n]+/g, ' ')}\n`)
   }
   if (process.env.GITHUB_STEP_SUMMARY) {
     const rows = result.calls.map((c) => `| ${c.kind} | ${c.model} | ${c.input} | ${c.cacheRead} | ${c.cacheWrite} | ${c.output} | $${c.usd.toFixed(5)} |`)

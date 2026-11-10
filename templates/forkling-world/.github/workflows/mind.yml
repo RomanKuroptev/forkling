@@ -30,8 +30,8 @@ env:
 jobs:
   tick:
     runs-on: ubuntu-latest
-    # Most ticks take under a minute; one that takes photos also installs a browser and builds the viewer.
-    timeout-minutes: 20
+    # Most ticks take under a minute.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -110,52 +110,19 @@ jobs:
           if [ -z "$ANTHROPIC_API_KEY" ]; then unset ANTHROPIC_API_KEY; fi
           pnpm --filter @forkling/mind tick --world "$GITHUB_WORKSPACE/world"
 
-      # Seeing: when the tick queued eye-cam shots, render each one through the forkling's eyes in a headless browser,
-      # then have it say what it saw. A frame that fails to render is skipped; the rest still land in this commit.
-      - name: Install the eye cam
-        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.photos == 'true'
-        working-directory: engine
-        run: |
-          pnpm install --frozen-lockfile --filter "@forkling/viewer..."
-          pnpm --filter @forkling/viewer exec playwright install --with-deps chromium
-          VITE_BASE=/ pnpm --filter @forkling/viewer build
-
-      - name: Fetch a fresh identity token for the photos
-        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.photos == 'true' && vars.ANTHROPIC_FEDERATION_RULE_ID != ''
-        env:
-          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
-          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
-          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
-          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
-        run: |
-          token_file="$RUNNER_TEMP/anthropic-identity-token-photos"
-          curl -sS --fail -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" | jq -r .value > "$token_file"
-          echo "ANTHROPIC_IDENTITY_TOKEN_FILE=$token_file" >> "$GITHUB_ENV"
-
-      - name: Take the photos
-        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.photos == 'true'
-        working-directory: engine
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then unset ANTHROPIC_API_KEY; fi
-          pnpm --filter @forkling/viewer eyecam --world "$GITHUB_WORKSPACE/world" --out "$RUNNER_TEMP/frames" || echo "the eye cam failed; no frames this time"
-          pnpm --filter @forkling/mind photos --world "$GITHUB_WORKSPACE/world" --frames "$RUNNER_TEMP/frames"
-
       # Every tick commits: a tick that changed nothing in the world still leaves its line in mind/ticks/ and refreshes
       # mind/health.json. Those commits start with "tick:", so the history can be read without them.
       - name: Commit what changed
-        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.photos == 'true' || steps.tick.outputs.logged == 'true')
+        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.logged == 'true')
         working-directory: world
         env:
           SUMMARY: ${{ steps.tick.outputs.summary }}
           WORLD: ${{ steps.tick.outputs.changed }}
-          PHOTOS: ${{ steps.tick.outputs.photos }}
         run: |
           git config user.name "forkling-mind"
           git config user.email "forkling-mind@users.noreply.github.com"
           git add -A
-          if [ "$WORLD" = "true" ] || [ "$PHOTOS" = "true" ]; then
+          if [ "$WORLD" = "true" ]; then
             git commit -m "chore(mind): ${SUMMARY:-tick}"
           else
             git commit -m "tick: ${SUMMARY:-quiet}"
@@ -167,7 +134,7 @@ jobs:
       # The website is built from the files of this repo, so rebuild it when one of them changed. Dispatches that arrive
       # while a build runs collapse into one waiting build (see pages.yml).
       - name: Update the website
-        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.photos == 'true')
+        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.changed == 'true'
         working-directory: world
         env:
           GH_TOKEN: ${{ github.token }}
@@ -183,12 +150,3 @@ jobs:
               gh workflow run pages.yml || echo "could not start the website build (is pages.yml on this branch?)"
             fi
           fi
-
-      # Something it asked for: the request is on main now, so the builder can design it and open a pull request.
-      - name: Ask the builder
-        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.build != ''
-        working-directory: world
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BUILD: ${{ steps.tick.outputs.build }}
-        run: gh workflow run build.yml -f id="$BUILD" || echo "could not start the builder (is build.yml on this branch?)"
