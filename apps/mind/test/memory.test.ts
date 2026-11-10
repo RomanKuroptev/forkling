@@ -17,24 +17,13 @@ const pack: SpeciesPack = cat.pack
 const DAY = '2026-11-03'
 const MORNING = '2026-11-03T09:00:00Z' // 10:00 in Stockholm
 
-const step = (verb: string, target: string | null, because: string[] | null = null) => ({
-  verb,
-  target,
-  x: null,
-  z: null,
-  reason: `I want to ${verb}.`,
-  minutes: 30,
-  materials: null,
-  makes: null,
-  because,
-  topic: null,
-})
+const step = (verb: string, target: string | null) => ({ verb, target, reason: `I want to ${verb}.`, minutes: 30, wantId: null, deep: null, size: null })
 
-const plan = (because: string[] | null = null): Decision => ({
+const plan = (): Decision => ({
   thought: 'The pond is calm, so I go there.',
   longGoal: { text: 'Learn the island.', reason: 'It is mine.' },
   dropLongGoal: false,
-  plan: [step('watch', 'sunny-rock', because), step('sit', null)],
+  plan: [step('wander', 'lighthouses'), step('write', 'home'), step('rest', null)],
   planReason: 'A calm day.',
   stayUpLate: null,
 })
@@ -116,8 +105,8 @@ describe('the memory stream', () => {
     expect(result.written).toContain(`memory/stream/${DAY}.jsonl`)
     const stream = lines(`memory/stream/${DAY}.jsonl`)
     expect(stream.map((e) => e.kind)).toEqual(expect.arrayContaining(['thought', 'step']))
-    expect(stream.find((e) => e.kind === 'step')).toMatchObject({ id: expect.stringMatching(new RegExp(`^${DAY}#\\d+$`)), verb: 'watch', objectId: 'sunny-rock', goalRef: 'today:0' })
-    expect(lines(`memory/timeline/${DAY}.jsonl`)[0]).toMatchObject({ verb: 'watch', targetId: 'sunny-rock', goalRef: 'today:0', reason: 'The pond is calm, so I go there.' })
+    expect(stream.find((e) => e.kind === 'step')).toMatchObject({ id: expect.stringMatching(new RegExp(`^${DAY}#\\d+$`)), verb: 'wander', goalRef: 'today:0' })
+    expect(lines(`memory/timeline/${DAY}.jsonl`)[0]).toMatchObject({ verb: 'wander', targetId: 'lighthouses', goalRef: 'today:0', reason: 'The pond is calm, so I go there.' })
   })
 
   it('costs no model call: a quiet tick that only follows its plan still remembers the step it moves to', async () => {
@@ -341,14 +330,5 @@ describe('memory changes behaviour', () => {
     expect(user).toContain('b1 (0.7): The sunny rock is warm in the morning.')
     expect(user).not.toContain('Fish are friends')
     expect(user).toContain('The tall rock is my enemy.')
-  })
-
-  it('records which beliefs a step follows from, dropping ids it does not hold', async () => {
-    await tick(MORNING, fake({ decision: plan(['b1', 'b2', 'b9']) }))
-    const goals = Goals.parse(readJson('mind/goals.json'))
-    expect(goals.today!.steps[0]!.because).toEqual(['b1'])
-    expect(goals.today!.steps[1]!.because).toBeUndefined()
-    expect(lines(`memory/timeline/${DAY}.jsonl`)[0].beliefRefs).toEqual(['b1'])
-    expect(lines(`memory/stream/${DAY}.jsonl`).find((e) => e.kind === 'step').beliefRefs).toEqual(['b1'])
   })
 })

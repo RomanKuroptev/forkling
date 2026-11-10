@@ -87,8 +87,6 @@ export function applyDecision(t: Tick): void {
     mind.knownObjects = [...new Set([...mind.knownObjects, ...t.objects.map((o) => o.id)])]
     mind.seenEventTypes = [...new Set([...mind.seenEventTypes, ...events.map((e) => e.type)])]
   }
-  // A step whose target was gone has been asked about, so it is not asked about again.
-  if (goals.now && triggers.some((x) => x.kind === 'blocked')) mind.blockedStep = goals.now.startedAt
   const replanAfter = new Date(nowMs + REPLAN_COOLDOWN_MS).toISOString()
 
   if (planned) {

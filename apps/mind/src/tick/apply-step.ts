@@ -3,6 +3,7 @@ import { addXp, applyStep, hourInZone, scoreSurprise, skillLevel } from '@forkli
 import type { Tick } from './context.ts'
 import { describeEvent, PAST } from './describe.ts'
 import { spotsFor } from './create.ts'
+import { landMindStep, leaveMindStep, isMindVerb } from './mind-step.ts'
 import { intentionSeed } from './util.ts'
 
 /** Strong needs wake the model at most this often. */
@@ -94,7 +95,11 @@ export function finishStep(t: Tick): void {
 
   if (finishing && goals.now && t.triggers.some((x) => x.kind === 'stepDone') && mind.appliedStepAt !== goals.now.startedAt && !asleep) {
     const worked = goals.now.workedSec ?? 0
-    if (!enough(finishing, worked) && !goals.now.extended) {
+    if (isMindVerb(finishing.verb)) {
+      // A mind verb is not the body's work, so there is no share of its minutes to count: it lands when its time is up.
+      mind.appliedStepAt = goals.now.startedAt
+      landMindStep(t, finishing, goals.now.index)
+    } else if (!enough(finishing, worked) && !goals.now.extended) {
       goals.now.extended = true
       goals.now.until = new Date(Date.parse(goals.now.until) + finishing.minutes * 60_000).toISOString()
       t.notes.push(`step ${goals.now.index + 1} (${finishing.verb}) has had ${minutesOf(worked)} of ${finishing.minutes} minutes of the body's time: given the same again`)
@@ -120,6 +125,10 @@ export function leaveStep(t: Tick): void {
   // A step that ran out was dealt with when it did.
   if (nowMs >= Date.parse(goals.now.until)) return
   mind.appliedStepAt = goals.now.startedAt
+  if (isMindVerb(step.verb)) {
+    leaveMindStep(t, step)
+    return
+  }
   const worked = goals.now.workedSec ?? 0
   const verb = pack.actions.find((a) => a.id === step.verb)
   if (enough(step, worked) && verb && !verb.artifact) landStep(t, step, goals.now.index, verb, worked, false)

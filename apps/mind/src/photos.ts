@@ -104,7 +104,7 @@ export async function runPhotos(dir: string, deps: PhotosDeps): Promise<PhotosRe
   const shots = w.mindState.photos?.queue ?? []
   if (shots.length === 0) return result
 
-  const system = buildSystem({ pack: deps.pack, name: forkling.name, speciesPersona: deps.speciesPersona, persona: w.persona })
+  const system = buildSystem({ seed: w.seed })
   let budget = rollLedger(w.budget, monthOf(tz, nowMs))
   const taken = new Set(w.art.map((a) => a.id))
   const hour = hourInZone(tz, nowMs)

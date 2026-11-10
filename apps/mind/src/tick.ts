@@ -1,14 +1,12 @@
 import { advance } from './tick/advance.ts'
 import { applyDecision } from './tick/apply-decision.ts'
 import { finishStep } from './tick/apply-step.ts'
-import { artStep } from './tick/art.ts'
 import { bedtime } from './tick/bedtime.ts'
-import { codeStep } from './tick/code.ts'
 import type { TickDeps, TickResult } from './tick/context.ts'
 import { createTick } from './tick/create.ts'
 import { feel } from './tick/feel.ts'
 import { memoryStep } from './tick/memory.ts'
-import { photoStep } from './tick/photos.ts'
+import { noteStep } from './tick/mind-step.ts'
 import { readStep } from './tick/reading.ts'
 import { route } from './tick/route.ts'
 import { settleBuild } from './tick/settle-build.ts'
@@ -29,9 +27,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickResult> 
   finishStep(t)
   route(t)
   await readStep(t)
-  await artStep(t)
-  await codeStep(t)
-  photoStep(t)
+  await noteStep(t)
   await think(t)
   await bedtime(t)
   await memoryStep(t)

@@ -206,6 +206,24 @@ describe('mood and energy in playback', () => {
   })
 })
 
+describe('how the body shows a mind verb (spec 2.7)', () => {
+  const goals = Goals.parse({
+    today: { date: '2026-10-30', steps: [{ verb: 'write', reason: 'A plaque.', minutes: 10 }], reason: 'A day.' },
+    now: { index: 0, startedAt: iso(EPOCH_START + 60), until: iso(EPOCH_START + 660) },
+  })
+
+  it("takes the pack's own action for the verb, so the sim names no species and no mind verb", () => {
+    const shown = SpeciesPack.parse({ ...blobJson, mindPoses: { write: 'rest' } })
+    const pb = startPlayback({ ...input(), pack: shown, goals }, (EPOCH_START + 120) * 1000)
+    expect(pb.state.focus).toMatchObject({ action: 'rest', until: EPOCH_START + 660 })
+  })
+
+  it('leaves a verb with no pose to the verb itself, which the body then cannot do and drifts instead', () => {
+    const pb = startPlayback({ ...input(), goals }, (EPOCH_START + 120) * 1000)
+    expect(pb.state.focus).toMatchObject({ action: 'write' })
+  })
+})
+
 describe('hourInZone', () => {
   it('converts to the world time zone, including daylight saving', () => {
     expect(hourInZone('UTC', Date.UTC(2026, 6, 1, 10, 30))).toBeCloseTo(10.5)

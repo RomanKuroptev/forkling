@@ -20,9 +20,7 @@ const DAY = '2026-11-03'
 const MORNING = '2026-11-03T09:00:00Z' // 10:00 in Stockholm
 const at = (min: number) => new Date(Date.parse(MORNING) + min * 60_000)
 
-const step = (verb: string, target: string | null, topic: string | null = null) => ({
-  verb, target, x: null, z: null, reason: `I want to ${verb}.`, minutes: 20, materials: null, makes: null, because: null, topic,
-})
+const step = (verb: string, target: string | null) => ({ verb, target, reason: `I want to ${verb}.`, minutes: 30, wantId: null, deep: null, size: null })
 const plan = (steps: ReturnType<typeof step>[]): Decision => ({
   thought: 'Books first.',
   longGoal: { text: 'Understand how computers think.', reason: 'They fascinate me.' },
@@ -95,7 +93,7 @@ beforeEach(() => {
 
 describe('the morning skim', () => {
   it('reads the feeds before it plans, keeps a note, and is moved by what grabbed it', async () => {
-    const llm = fake(plan([step('sit', null)]))
+    const llm = fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')]))
     const result = await tick(MORNING, llm)
     expect(llm.kinds()).toEqual(['read', 'morning'])
     expect(llm.calls[0]!.user).toContain('masto:caturday')
@@ -118,14 +116,14 @@ describe('the morning skim', () => {
   })
 
   it('does not read without a way to reach the internet', async () => {
-    const llm = fake(plan([step('sit', null)]))
+    const llm = fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')]))
     await tick(MORNING, llm, { get: undefined })
     expect(llm.kinds()).toEqual(['morning'])
     expect(existsSync(file('brain/interests.json'))).toBe(false)
   })
 
   it('skims what it can when the feeds are down: the moon is worked out here, so there is always something', async () => {
-    const llm = fake(plan([step('sit', null)]))
+    const llm = fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')]))
     const result = await tick(MORNING, llm, { get: async () => { throw new Error('offline') } })
     expect(llm.kinds()).toEqual(['read', 'morning'])
     expect(llm.calls[0]!.user).toContain('sky:moon:2026-11-03')
@@ -135,14 +133,14 @@ describe('the morning skim', () => {
   })
 
   it('touches nothing in a dry run, not even the network', async () => {
-    const result = await tick(MORNING, fake(plan([step('sit', null)])), { dryRun: true })
+    const result = await tick(MORNING, fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')])), { dryRun: true })
     expect(internet.asked).toEqual([])
     expect(result.notes.join('\n')).toMatch(/would skim/)
     expect(existsSync(file('notebook'))).toBe(false)
   })
 
   it('does not take instructions from the feeds', async () => {
-    const llm = fake(plan([step('sit', null)]))
+    const llm = fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')]))
     const hostile: GetJson = async (url) =>
       url.startsWith('https://mastodon.social/api/v1/trends/tags') ? [{ name: 'hello', url: 'https://x.test/', history: [{ uses: '1' }] }] : internet(url)
     await tick(MORNING, llm, { get: hostile })
@@ -154,7 +152,7 @@ describe('the morning skim', () => {
 describe('interests across days', () => {
   it('fades what it was into each morning, and starts an obsession from a topic that is still strong, remembering its origin', async () => {
     writeJson('brain/interests.json', Interests.parse({ topics: { 'logic gates': { weight: 0.95, firstSeen: src.at, lastFed: src.at, sources: [src] } } }))
-    const llm = fake(plan([step('sit', null)]))
+    const llm = fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')]))
     await tick(MORNING, llm, { get: undefined })
     const interests = Interests.parse(readJson('brain/interests.json'))
     expect(interests.topics['logic gates']!.weight).toBeCloseTo(0.874, 2)
@@ -167,7 +165,7 @@ describe('interests across days', () => {
       'brain/interests.json',
       Interests.parse({ topics: { 'logic gates': { weight: 0.35, firstSeen: src.at, lastFed: src.at, sources: [src] } }, current: { topic: 'logic gates', startedAt: src.at, origin: src } }),
     )
-    const llm = fake(plan([step('sit', null)]))
+    const llm = fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')]))
     await tick(MORNING, llm, { get: undefined })
     const interests = Interests.parse(readJson('brain/interests.json'))
     expect(interests.current).toBeNull()
@@ -178,91 +176,9 @@ describe('interests across days', () => {
 
   it('fades only once a day', async () => {
     writeJson('brain/interests.json', Interests.parse({ topics: { moon: { weight: 0.6, firstSeen: src.at, lastFed: src.at, sources: [src] } } }))
-    await tick(MORNING, fake(plan([step('sit', null)])), { get: undefined })
+    await tick(MORNING, fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')])), { get: undefined })
     const once = Interests.parse(readJson('brain/interests.json')).topics.moon!.weight
-    await tick(at(30), fake(plan([step('sit', null)])), { get: undefined })
+    await tick(at(30), fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')])), { get: undefined })
     expect(Interests.parse(readJson('brain/interests.json')).topics.moon!.weight).toBe(once)
-  })
-})
-
-describe('reading at the shelf', () => {
-  const read = (topic: string | null) => plan([step('read', 'bookshelf', topic), step('sit', null)])
-
-  /** Morning plan made with the feeds down, then the read step runs out. */
-  async function readADay(topic: string | null, over: Partial<TickDeps> = {}) {
-    const offline: GetJson = async (url) => (url.includes('wikipedia.org') ? internet(url) : Promise.reject(new Error('offline')))
-    await tick(MORNING, fake(read(topic)), { get: undefined })
-    const llm = fake(read(topic))
-    const result = await tick(at(25), llm, { get: offline, ...over })
-    return { llm, result }
-  }
-
-  it('when a read step runs out it looks the topic up, reads it, and writes a note', async () => {
-    const { llm, result } = await readADay('logic gates')
-    expect(llm.kinds()).toEqual(['read'])
-    expect(llm.calls[0]!.user).toContain('wiki:Logic_gate')
-    expect(llm.calls[0]!.user).toContain('<data source="wikipedia">')
-    expect(readFileSync(file(`notebook/reading/${DAY}-1.md`), 'utf8')).toContain('# How gates work')
-    const interests = Interests.parse(readJson('brain/interests.json'))
-    expect(interests.topics['logic gates']!.sources[0]).toMatchObject({ id: 'wiki:Logic_gate', url: 'https://en.wikipedia.org/wiki/Logic_gate' })
-    expect(MindState.parse(readJson('mind/state.json')).readings).toEqual({ date: DAY, count: 1, skimmed: false })
-    expect(result.summary).toMatch(/read about logic gates/)
-    expect(readFileSync(file(`memory/stream/${DAY}.jsonl`), 'utf8')).toContain('about logic gates')
-  })
-
-  it('stops at five readings a day', async () => {
-    const offline: GetJson = async (url) => (url.includes('wikipedia.org') ? internet(url) : Promise.reject(new Error('offline')))
-    await tick(MORNING, fake(read('logic gates')), { get: undefined })
-    writeJson('mind/state.json', { ...readJson('mind/state.json'), readings: { date: DAY, count: 5, skimmed: true } })
-    const llm = fake(read('logic gates'))
-    const result = await tick(at(25), llm, { get: offline })
-    expect(llm.kinds()).toEqual([])
-    expect(result.notes.join('\n')).toMatch(/reading limit/)
-  })
-
-  it('has nothing to read when it opened a book with no topic and no obsession', async () => {
-    const { llm, result } = await readADay(null)
-    expect(llm.kinds()).toEqual([])
-    expect(result.notes.join('\n')).toMatch(/no topic/)
-  })
-
-  it('falls back on its obsession when it names no topic', async () => {
-    writeJson('brain/interests.json', Interests.parse({ topics: { 'logic gates': { weight: 0.9, firstSeen: src.at, lastFed: src.at, sources: [src] } } }))
-    const { llm } = await readADay(null)
-    expect(llm.kinds()).toEqual(['read'])
-    expect(llm.calls[0]!.user).toContain('logic gates')
-  })
-
-  it('moves on when the topic matches no article', async () => {
-    const empty: GetJson = async (url) => (url.includes('/search/title') ? { pages: [] } : Promise.reject(new Error('offline')))
-    await tick(MORNING, fake(read('zzzzqx')), { get: undefined })
-    const llm = fake(read('zzzzqx'))
-    const result = await tick(at(25), llm, { get: empty })
-    expect(llm.kinds()).toEqual([])
-    expect(result.notes.join('\n')).toMatch(/found nothing to read about "zzzzqx"/)
-  })
-
-  it('a read stays on one page, a study follows links to related ones', async () => {
-    const asked: string[] = []
-    const spy: GetJson = async (url) => {
-      asked.push(url)
-      if (url.includes('prop=links')) return { query: { pages: { '1': { links: [{ title: 'Boolean algebra' }] } } } }
-      return url.includes('wikipedia.org') ? internet(url) : Promise.reject(new Error('offline'))
-    }
-    await tick(MORNING, fake(read('logic gates')), { get: undefined })
-    await tick(at(25), fake(read('logic gates')), { get: spy })
-    expect(asked.some((u) => u.includes('prop=links'))).toBe(false)
-
-    dir = mkdtempSync(join(tmpdir(), 'curiosity-'))
-    copyFileSync(join(merge, 'forkling.json'), file('forkling.json'))
-    mkdirSync(file('objects'))
-    for (const f of readdirSync(join(world, 'objects'))) copyFileSync(join(world, 'objects', f), file(`objects/${f}`))
-    for (const f of readdirSync(join(merge, 'objects'))) copyFileSync(join(merge, 'objects', f), file(`objects/${f}`))
-    const study = plan([step('study', 'bookshelf', 'logic gates'), step('sit', null)])
-    await tick(MORNING, fake(study), { get: undefined })
-    const llm = fake(study)
-    await tick(at(25), llm, { get: spy })
-    expect(asked.some((u) => u.includes('prop=links'))).toBe(true)
-    expect(llm.calls[0]!.user).toContain('wiki:Boolean_algebra')
   })
 })

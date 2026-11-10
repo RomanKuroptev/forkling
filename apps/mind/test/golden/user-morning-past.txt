@@ -1,12 +1,9 @@
 <situation>
 time: Tuesday 2026-11-03 10:00 (Europe/Stockholm); woke at 07:10; bedtime 23:05
 mood: steady, rested
-position: x 1, z -2
 doing now: sit ("New island. I will allow it.")
-in your paws: nothing
-stored at home: nothing
-asking for a designed object: you may ask for one today
-left to do today: writing, drawing and the like 3 of 4; photographs 12 of 12; reading sessions 4 of 5; coded projects this week 2 of 2
+points in hand: 150
+prices today: wander 3, tend 2, revisit 1, expand 50, found 2, tinker (full work) 240, tinker (sketch) 2, write 1, reply 0, rest 0; a deep step costs 30
 </situation>
 
 <interests>
@@ -28,11 +25,9 @@ obsessions that have ended (you do not have to go back to one just because it is
 {"long":null,"today":null,"currentStep":null}
 </goals>
 
-<world>
-places you can go (spot kinds): perch, sunbeam
-{"id":"sunny-rock","name":"The sunny rock","kind":"rock","at":[5,22],"why":"It catches the morning sun before anything else on the beach.","is":["high","stone"]}
-{"id":"tall-rock","name":"The lookout rock","kind":"rock","at":[-2.5,23.5],"why":"From the top you can see who is coming up the beach.","is":["high","stone"]}
-</world>
+<places>
+home, workshop
+</places>
 
 <recent>
 {"steps":[],"rejectedPlans":[]}
@@ -43,8 +38,7 @@ places you can go (spot kinds): perch, sunbeam
 </triggers>
 
 ## Your task
-It is a new day. Write today's plan: 4 to 8 steps whose minutes roughly fill the time until bedtime at 23:05. Leave slack: nobody schedules every minute.
+It is a new day. Write today's plan: 3 to 8 steps whose minutes roughly fill the time until bedtime at 23:05. Leave slack: nobody schedules every minute. Stay within the points you have.
 You have no long goal yet. Set one in longGoal: a want of your own that could take several days, the kind of thing a person might care about.
 Let what you are into (see <interests>) shape the day if it wants to.
 The first step starts now. Put in thought why you begin with it. Set plan to your steps and planReason to one sentence about the day.
-Set design only if you truly need an object that does not exist yet for something you are doing; otherwise null.

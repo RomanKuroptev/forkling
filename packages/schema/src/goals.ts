@@ -3,7 +3,7 @@ import { Timestamp } from './intention.ts'
 import { Material } from './properties.ts'
 
 /**
- * One step of a plan. `verb` is a verb id from the species pack. The target is an object id, a spot kind
+ * One step of a plan. `verb` is one of the nine mind verbs (a pet-era file may hold a pack verb, which runs as rest). The target is an object id, a spot kind
  * (`sunbeam`), `visitor`, or a position, never several. A step that makes something names it and the materials.
  */
 export const PlanStep = z
@@ -20,6 +20,12 @@ export const PlanStep = z
     reason: z.string().min(1).max(200),
     /** What a read, study or creative step is about, in the forkling's words. Untrusted text. */
     topic: z.string().min(1).max(80).optional(),
+    /** The want (`mind/wants.json` id) this step serves. Care steps serve their place instead, and the first days need none. */
+    wantId: z.string().min(1).max(40).optional(),
+    /** Marks a tend, write, sketch or found request as one to think harder about: a Sonnet call, 30 points. */
+    deep: z.boolean().optional(),
+    /** A tinker makes a whole work or a sketch. */
+    size: z.enum(['full', 'sketch']).optional(),
     /** Beliefs (`memory/beliefs.json` ids) this step follows from, so a change of mind can be traced to a changed choice. */
     because: z.array(z.string().regex(/^b\d+$/)).max(3).optional(),
     minutes: z.number().int().min(1).max(240),

@@ -254,7 +254,7 @@ export async function runDesign(dir: string, deps: DesignDeps): Promise<DesignRe
   const tz = w.forkling.timezone
   const today = localDate(tz, nowMs)
   let budget = rollLedger(w.budget, monthOf(tz, nowMs))
-  const system = buildSystem({ pack: deps.pack, name: w.forkling.name, speciesPersona: deps.speciesPersona, persona: w.persona })
+  const system = buildSystem({ seed: w.seed })
   const user = buildDesignUser({
     request,
     existing: w.objects.map((o) => o.name),

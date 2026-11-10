@@ -68,6 +68,8 @@ export const MindState = z.object({
   thinkFailedAt: Timestamp.optional(),
   /** Why the mind chose to stay up late, in its own words. */
   lateNightReason: z.string().max(200).optional(),
+  /** Points of the daily allowance (spec 9.8) in hand, and the local date they were last topped up for. */
+  allowance: z.object({ points: z.number().min(0), day: z.iso.date() }).optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */
   recent: z.array(z.object({ verb: z.string(), targetId: z.string().optional(), at: Timestamp })).max(20).default([]),
   /** Local date of the last bedtime reflection, so it happens once a day. */

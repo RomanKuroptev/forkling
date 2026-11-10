@@ -69,17 +69,6 @@ describe('scoreSurprise', () => {
     expect(kinds({ ...calm, events: [bell], mindState: MindState.parse({ ...calm.mindState, seenEventTypes: ['bell'] }) })).toEqual([])
   })
 
-  it('notices a step whose target is gone', () => {
-    expect(kinds({ ...calm, spotKinds: new Set(['perch']) })).toEqual(['blocked'])
-  })
-
-  it('does not call a visitor target or a position blocked', () => {
-    const visitorStep = Goals.parse({ ...planned, today: { ...planned.today, steps: [{ verb: 'approach_visitor', targetId: 'visitor', reason: 'Hello.', minutes: 10 }] } })
-    expect(kinds({ ...calm, goals: visitorStep, spotKinds: new Set() })).toEqual([])
-    const placeStep = Goals.parse({ ...planned, today: { ...planned.today, steps: [{ verb: 'explore', position: [3, 4], reason: 'Over there.', minutes: 10 }] } })
-    expect(kinds({ ...calm, goals: placeStep, spotKinds: new Set() })).toEqual([])
-  })
-
   it('notices the end of a step', () => {
     expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T10:11:00Z') })).toContain('stepDone')
   })
@@ -149,15 +138,6 @@ describe('scoreSurprise', () => {
     })
   })
 
-  it('asks about a blocked step once, not on every tick', () => {
-    const gone = { ...calm, spotKinds: new Set(['perch']) }
-    expect(kinds(gone)).toEqual(['blocked'])
-    expect(kinds({ ...gone, mindState: MindState.parse({ ...calm.mindState, blockedStep: planned.now!.startedAt }) })).toEqual([])
-    // A later step is a new question.
-    const next = Goals.parse({ ...planned, now: { ...planned.now, startedAt: '2026-11-03T09:50:00Z' } })
-    expect(kinds({ ...gone, goals: next, mindState: MindState.parse({ ...calm.mindState, blockedStep: planned.now!.startedAt }) })).toEqual(['blocked'])
-  })
-
   it('asks for a weekly review of the long goal', () => {
     const old = Goals.parse({ ...planned, long: { ...planned.long, reviewedAt: '2026-10-26T06:00:00Z' } })
     expect(kinds({ ...calm, goals: old })).toEqual(['weekly'])
@@ -166,10 +146,10 @@ describe('scoreSurprise', () => {
   it('ranks the most pressing first', () => {
     const t = scoreSurprise({
       ...calm,
-      spotKinds: new Set(),
+      objects: [rock, { ...rock, id: 'red-ball', name: 'A red ball' }],
       nowMs: Date.parse('2026-11-03T10:11:00Z'),
     })
-    expect(t.map((x) => x.kind)).toEqual(expect.arrayContaining(['blocked', 'stepDone']))
+    expect(t.map((x) => x.kind)).toEqual(expect.arrayContaining(['novelty', 'stepDone']))
     const scores = t.map((x) => x.score)
     expect(scores).toEqual([...scores].sort((a, b) => b - a))
   })
