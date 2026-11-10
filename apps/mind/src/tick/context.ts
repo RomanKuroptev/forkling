@@ -17,7 +17,7 @@ import type {
   VisitorEvent,
   WorldObject,
 } from '@forkling/schema'
-import type { AppraisalEvent, Feelings, Stored, Trigger, sleepWindow, startPlayback, worldWithObjects } from '@forkling/sim'
+import type { MoodEvent, Stored, Trigger, sleepWindow, startPlayback, worldWithObjects } from '@forkling/sim'
 import type { ModelId, rollLedger } from '../budget.ts'
 import type { Decision } from '../decision.ts'
 import type { GetJson } from '../feeds/index.ts'
@@ -125,14 +125,16 @@ export interface Tick {
   pendingCode: { step: PlanStep; index: number } | null
   touched: Set<string>
   gone: Set<string>
-  appraisals: AppraisalEvent[]
+  /** What happened this tick that moves mood and energy (spec 3.2), applied by `feel`. */
+  moodEvents: MoodEvent[]
   justNow: string[]
-  feelings: Feelings
   spotKeys: Set<string>
 
   goals: Goals
   mind: MindState
-  mood: World['forkling']['mood']
+  /** Mood and energy, from -1 to 1. */
+  mood: number
+  energy: number
   lateNight: World['forkling']['lateNight']
   started: Intention | null
 

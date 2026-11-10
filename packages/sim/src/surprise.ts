@@ -1,4 +1,4 @@
-import type { Forkling, Goals, MindState, NeedId, VisitorEvent, WorldObject } from '@forkling/schema'
+import type { Forkling, Goals, MindState, VisitorEvent, WorldObject } from '@forkling/schema'
 import { localDate, sleepWindow } from './sleep.ts'
 
 export type TriggerKind = 'novelty' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'weekly' | 'bedtime'
@@ -23,8 +23,6 @@ export interface SurpriseInput {
   asleep: boolean
   /** Ids and kinds the world can currently offer as a target (see `collectSpots`). */
   spotKinds: ReadonlySet<string>
-  /** The needs the body can raise by itself right now (see `fixableNeeds`). Those are routine and never wake the mind. Missing means none. */
-  fixableNeeds?: ReadonlySet<NeedId>
 }
 
 function previousDate(date: string): string {
@@ -47,12 +45,11 @@ export const REPLAN_BEFORE_BED_MS = 45 * 60_000
 export const REFLECT_BEFORE_BED_MS = 30 * 60_000
 
 /**
- * What, if anything, is surprising right now: new things, a blocked step, a strong need, a step that ran out, a new
+ * What, if anything, is surprising right now: new things, a blocked step, a step that ran out, a new
  * day, bedtime, a long goal due for review. Pure and deterministic. Empty means no LLM call. Never wakes the mind in bed.
  */
 export function scoreSurprise(input: SurpriseInput): Trigger[] {
   const { forkling, goals, mindState, objects, events, nowMs, asleep, spotKinds } = input
-  const fixable = input.fixableNeeds ?? new Set<NeedId>()
   if (asleep) return []
   const found: Trigger[] = []
 
@@ -72,14 +69,6 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
   // Asked once per step: a plan that carries on is still the mind's answer, and asking again would only repeat it.
   if (step?.targetId && step.targetId !== 'visitor' && !spotKinds.has(step.targetId) && mindState.blockedStep !== goals.now?.startedAt) {
     found.push({ kind: 'blocked', score: 0.9, detail: `step "${step.verb}" targets "${step.targetId}", which is not in the world` })
-  }
-
-  let weakest: { id: string; value: number } | null = null
-  for (const [id, value] of Object.entries(forkling.needs) as [NeedId, number][]) {
-    if (value < STRONG_NEED && !fixable.has(id) && (!weakest || value < weakest.value)) weakest = { id, value }
-  }
-  if (weakest) {
-    found.push({ kind: 'need', score: 0.5 + (STRONG_NEED - weakest.value) / (2 * STRONG_NEED), detail: `${weakest.id} is at ${Math.round(weakest.value)} of 100` })
   }
 
   if (goals.now && nowMs >= Date.parse(goals.now.until)) {

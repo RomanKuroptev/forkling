@@ -55,7 +55,7 @@ export function settleBuild(t: Tick): void {
       text = `The ${what} I asked for has arrived: ${name}.`
       made = true
       // What it asked for is finished and in the world: that is something to be glad of.
-      t.appraisals.push({ kind: 'finished' })
+      t.moodEvents.push('buildAccepted')
     } else if (report && (report.status === 'failed' || report.status === 'closed')) {
       giveBackSlot(t, open.kind, open.requestedAt)
       text =

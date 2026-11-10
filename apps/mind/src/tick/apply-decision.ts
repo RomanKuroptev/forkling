@@ -79,11 +79,6 @@ export function applyDecision(t: Tick): void {
   for (const e of events) remember.push({ at: nowIso, kind: 'visitor', text: `A visitor left a ${e.type}.` })
   if (decision.thought.trim()) remember.push({ at: nowIso, kind: 'thought', text: decision.thought.trim() })
 
-  // What the mind took in counts for how it feels: something new, a need running low, a plan that did not work out.
-  for (const x of triggers) {
-    if (x.kind === 'novelty' || x.kind === 'need' || (x.kind === 'blocked' && !t.failed)) t.appraisals.push({ kind: x.kind })
-  }
-
   if (thinkKind === 'morning') mind.lastPlanDate = today
   // The mind has been told what broke its steps off; the count starts again.
   mind.brokenOff = []

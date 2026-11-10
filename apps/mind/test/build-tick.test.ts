@@ -107,11 +107,11 @@ describe('waiting for a build', () => {
 
   it('is glad when what it asked for arrives', async () => {
     await tick(MORNING, fake(decision(shelf)))
-    const before = readJson('forkling.json').feelings.valence
+    const before = readJson('forkling.json').mood
     const bowl = readJson('objects/bowl.json')
     writeFileSync(file('objects/a-clay-shelf.json'), JSON.stringify({ ...bowl, id: 'a-clay-shelf', name: 'A clay shelf' }))
     await tick(at(10), null)
-    expect(readJson('forkling.json').feelings.valence).toBeGreaterThan(before + 0.15)
+    expect(readJson('forkling.json').mood).toBeCloseTo(before + 0.2)
   })
 
   it('gives up on one that never comes', async () => {

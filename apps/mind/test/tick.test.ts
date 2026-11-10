@@ -90,7 +90,8 @@ describe('a morning tick', () => {
 
     const forkling = Forkling.parse(readJson('forkling.json'))
     expect(forkling.intention).toMatchObject({ type: 'watch', targetId: 'sunny-rock', goalRef: 'today:0', reason: 'The rock catches the sun first, so I start there.' })
-    expect(forkling.mood).toBe(moodLabel(forkling.feelings))
+    expect(forkling.mood).toBe(0)
+    expect(forkling.energy).toBe(0.5)
     expect(forkling.lastTickAt).toBe('2026-11-03T09:00:00.000Z')
 
     const state = MindState.parse(readJson('mind/state.json'))
@@ -158,6 +159,36 @@ const goalsOf = () => Goals.parse(readJson('mind/goals.json'))
 /** A new object turns up on the beach, which is news. */
 const newObject = (id: string) => writeJson(`objects/${id}.json`, { ...readJson('objects/sunny-rock.json'), id, name: `A ${id}`, position: [12, 0, 24] })
 const streamText = () => readFileSync(file('memory/stream/2026-11-03.jsonl'), 'utf8')
+
+describe('mood and energy (spec 3.2)', () => {
+  it('costs a little energy for each step that lands, and the new numbers are written', async () => {
+    await runTick(dir, at(NOW))
+    patchForkling({ mood: 0.2, energy: 0.5 })
+    // The first step has run its time; the next tick lands it.
+    writeJson('mind/goals.json', { ...readJson('mind/goals.json'), now: { index: 0, startedAt: NOW, until: '2026-11-03T09:10:00Z', workedSec: 600 } })
+    await runTick(dir, at(minutesAfter(12), { llm: fakeLlm(keep) }))
+    const felt = Forkling.parse(readJson('forkling.json'))
+    expect(felt.energy).toBeCloseTo(0.45)
+    expect(felt.mood).toBeCloseTo(0.2)
+  })
+
+  it('sets energy to +0.5 and moves mood 20% toward 0 when it wakes', async () => {
+    patchForkling({ asleep: true, mood: -0.5, energy: -0.9, lastTickAt: '2026-11-03T04:00:00Z' })
+    await runTick(dir, at(NOW))
+    const felt = Forkling.parse(readJson('forkling.json'))
+    expect(felt.asleep).toBe(false)
+    expect(felt.energy).toBe(0.5)
+    expect(felt.mood).toBeCloseTo(-0.4)
+  })
+
+  it('shows the model mood and energy as words, never numbers', async () => {
+    patchForkling({ mood: -0.3, energy: -0.3 })
+    const llm = fakeLlm()
+    await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls[0]!.user).toMatch(/mood: low, tired/)
+    expect(llm.calls[0]!.user).not.toMatch(/-0\.3/)
+  })
+})
 
 describe('when the plan runs out', () => {
   async function lastStepDone() {

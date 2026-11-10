@@ -168,7 +168,7 @@ export function Forkling() {
     if (micro?.animate && !FORCED_CLIP) {
       micro.animate({ bones: rig.bones, t: sim.elapsed, progress: Math.min(1, sim.elapsed / micro.durationSec) })
     }
-    if (!FORCED_CLIP) species.moodPose?.({ bones: rig.bones, t: sim.time, feelings: world.forkling.feelings })
+    if (!FORCED_CLIP) species.moodPose?.({ bones: rig.bones, t: sim.time, feelings: { valence: world.forkling.mood, arousal: (world.forkling.energy + 1) / 2 } })
   })
 
   return (

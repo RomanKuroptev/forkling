@@ -80,25 +80,6 @@ describe('scoreSurprise', () => {
     expect(kinds({ ...calm, goals: placeStep, spotKinds: new Set() })).toEqual([])
   })
 
-  it('notices a strong need, naming it', () => {
-    const t = scoreSurprise({ ...calm, forkling: { ...forkling, needs: { ...forkling.needs, hunger: 8 } } })
-    expect(t.map((x) => x.kind)).toEqual(['need'])
-    expect(t[0]!.detail).toContain('hunger')
-  })
-
-  it('does not wake the mind for a need the body can fix by itself', () => {
-    const hungry = { ...calm, forkling: { ...forkling, needs: { ...forkling.needs, hunger: 8 } } }
-    expect(kinds({ ...hungry, fixableNeeds: new Set(['hunger']) })).toEqual([])
-    expect(kinds({ ...hungry, fixableNeeds: new Set(['energy']) })).toEqual(['need'])
-    expect(kinds({ ...hungry, fixableNeeds: new Set() })).toEqual(['need'])
-  })
-
-  it('names the weakest need that the body cannot fix, not one it can', () => {
-    const t = scoreSurprise({ ...calm, forkling: { ...forkling, needs: { ...forkling.needs, hunger: 3, energy: 10 } }, fixableNeeds: new Set(['hunger']) })
-    expect(t.map((x) => x.kind)).toEqual(['need'])
-    expect(t[0]!.detail).toContain('energy')
-  })
-
   it('notices the end of a step', () => {
     expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T10:11:00Z') })).toContain('stepDone')
   })
@@ -185,11 +166,10 @@ describe('scoreSurprise', () => {
   it('ranks the most pressing first', () => {
     const t = scoreSurprise({
       ...calm,
-      forkling: { ...forkling, needs: { ...forkling.needs, hunger: 2 } },
       spotKinds: new Set(),
       nowMs: Date.parse('2026-11-03T10:11:00Z'),
     })
-    expect(t.map((x) => x.kind)).toEqual(expect.arrayContaining(['blocked', 'need', 'stepDone']))
+    expect(t.map((x) => x.kind)).toEqual(expect.arrayContaining(['blocked', 'stepDone']))
     const scores = t.map((x) => x.score)
     expect(scores).toEqual([...scores].sort((a, b) => b - a))
   })

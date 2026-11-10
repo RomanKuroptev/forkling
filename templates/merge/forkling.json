@@ -2,18 +2,13 @@
   "name": "Merge",
   "species": "cat",
   "seed": 20260101,
-  "needs": {
-    "hunger": 70,
-    "energy": 80,
-    "curiosity": 60
-  },
   "position": [
     -6,
     0,
     12
   ],
-  "mood": "sleepy",
-  "feelings": { "valence": 0, "arousal": 0.3 },
+  "mood": 0,
+  "energy": 0.5,
   "stored": {},
   "intention": {
     "type": "sit",

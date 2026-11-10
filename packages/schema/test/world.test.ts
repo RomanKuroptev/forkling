@@ -4,9 +4,9 @@ import { Forkling, SpeciesPack, VisitorEvent, WorldObject, forklingPackIssues, o
 const forkling = {
   name: 'Merge',
   species: 'cat',
-  needs: { hunger: 70, energy: 80, curiosity: 55, affection: 30 },
   position: [0, 0, 22],
-  mood: 'curious',
+  mood: 0.2,
+  energy: 0.5,
   intention: { type: 'lounge', startedAt: '2026-10-30T12:00:00Z', seed: 7, reason: 'The beach is warm.' },
   lastTickAt: '2026-10-30T12:00:00Z',
   timezone: 'Europe/Stockholm',
@@ -26,9 +26,29 @@ describe('Forkling', () => {
     expect(Forkling.safeParse({ ...forkling, timezone: 'Mars/Olympus_Mons' }).success).toBe(false)
   })
 
-  it('rejects needs outside 0 to 100 and needs outside the shared vocabulary', () => {
-    expect(Forkling.safeParse({ ...forkling, needs: { hunger: 140 } }).success).toBe(false)
-    expect(Forkling.safeParse({ ...forkling, needs: { mana: 50 } }).success).toBe(false)
+  it('has mood and energy from -1 to 1, steady and rested by default (spec 3.2)', () => {
+    const { mood: _m, energy: _e, ...bare } = forkling
+    expect(Forkling.parse(bare)).toMatchObject({ mood: 0, energy: 0.5 })
+    expect(Forkling.safeParse({ ...forkling, mood: 1.2 }).success).toBe(false)
+    expect(Forkling.safeParse({ ...forkling, energy: -1.5 }).success).toBe(false)
+  })
+
+  it('still reads a pet-era file: needs and feelings are dropped, a mood word becomes a number', () => {
+    const old = {
+      ...forkling,
+      mood: 'upset',
+      energy: undefined,
+      needs: { hunger: 70, energy: 80, curiosity: 55, affection: 30 },
+      feelings: { valence: -0.5, arousal: 0.6 },
+    }
+    const parsed = Forkling.parse(old)
+    expect(parsed).toMatchObject({ mood: -0.5, energy: 0.5 })
+    expect(parsed).not.toHaveProperty('needs')
+    expect(parsed).not.toHaveProperty('feelings')
+  })
+
+  it('reads a pet-era mood word with no feelings as steady', () => {
+    expect(Forkling.parse({ ...forkling, mood: 'curious', energy: undefined })).toMatchObject({ mood: 0, energy: 0.5 })
   })
 
   it('requires a name of sensible length and a species id', () => {
@@ -103,14 +123,13 @@ describe('forklingPackIssues', () => {
   const pack = SpeciesPack.parse({
     id: 'cat',
     displayName: 'Cat',
-    needs: { hunger: { initial: 50, decayPerHour: 10 }, energy: { initial: 50, decayPerHour: 10 } },
     perception: { noticeRadius: 5, eyeHeight: 0.2 },
     locomotion: { walkSpeed: 1, runSpeed: 3 },
     actions: [
       { id: 'lounge', satisfies: {}, durationSec: [1, 2], target: { type: 'none' }, slot: 'sit', reason: 'Resting.' },
     ],
   })
-  const parsed = Forkling.parse({ ...forkling, needs: { hunger: 70, energy: 80 } })
+  const parsed = Forkling.parse(forkling)
 
   it('finds nothing wrong with a matching forkling and pack', () => {
     expect(forklingPackIssues(parsed, pack)).toEqual([])
@@ -121,11 +140,5 @@ describe('forklingPackIssues', () => {
     expect(issues).toHaveLength(2)
     expect(issues.join(' ')).toMatch(/dog/)
     expect(issues.join(' ')).toMatch(/fly/)
-  })
-
-  it('does not mind a need the pack no longer has: a world written by an older version still opens', () => {
-    // The cat lost its affection need, and Merge's forkling.json still says 0. The sim ignores it and the next write drops it.
-    expect(forklingPackIssues({ ...parsed, needs: { hunger: 70, energy: 80, affection: 0 } }, pack)).toEqual([])
-    expect(forklingPackIssues({ ...parsed, needs: { hunger: 70, curiosity: 50 } }, pack)).toEqual([])
   })
 })

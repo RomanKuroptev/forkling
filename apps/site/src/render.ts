@@ -2,7 +2,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSyn
 import { dirname, join, sep } from 'node:path'
 import type { z } from 'zod'
 import { Artifact, Beliefs, Forkling, Goals, Interests, TimelineEntry, type Belief, type InterestSource } from '@forkling/schema'
-import { sanitizeSvg } from '@forkling/sim'
+import { moodWords, sanitizeSvg } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { esc, markdown } from './md.ts'
 
@@ -216,7 +216,7 @@ export function renderSite(world: string, out: string): { pages: string[] } {
     active: 'index.html',
     body: [
       `<h1>${esc(name)}</h1>`,
-      `<p class="quiet">${esc(forkling.species)}, feeling ${esc(forkling.mood)}${forkling.asleep ? ', asleep' : ''}. Last seen ${esc(localStamp(forkling.lastTickAt, forkling.timezone))}.</p>`,
+      `<p class="quiet">${esc(forkling.species)}, feeling ${esc(moodWords({ mood: forkling.mood, energy: forkling.energy }))}${forkling.asleep ? ', asleep' : ''}. Last seen ${esc(localStamp(forkling.lastTickAt, forkling.timezone))}.</p>`,
       '<h2>Right now</h2>',
       `<p><strong>${esc(i.type.replaceAll('_', ' '))}</strong>${i.targetId ? ` at ${esc(i.targetId)}` : ''}: <em>${esc(i.reason)}</em></p>`,
       ...(step?.topic ? [`<p class="quiet">About ${esc(step.topic)}.</p>`] : []),

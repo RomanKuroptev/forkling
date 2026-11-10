@@ -2,10 +2,9 @@
   "name": "Unnamed",
   "species": "cat",
   "seed": 1,
-  "needs": { "hunger": 70, "energy": 80, "curiosity": 60 },
   "position": [2, 0, 20],
-  "mood": "curious",
-  "feelings": { "valence": 0, "arousal": 0.3 },
+  "mood": 0,
+  "energy": 0.5,
   "stored": {},
   "intention": {
     "type": "sit",

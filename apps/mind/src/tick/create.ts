@@ -1,6 +1,5 @@
 import {
   collectSpots,
-  decayFeelings,
   eveningOf,
   hourInZone,
   isAsleepAt,
@@ -120,14 +119,14 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     pendingCode: null,
     touched: new Set(),
     gone: new Set(),
-    appraisals: [],
+    moodEvents: [],
     justNow: [],
-    feelings: decayFeelings(forkling.feelings, Math.max(0, (nowMs - Date.parse(forkling.lastTickAt)) / 3_600_000)),
     spotKeys: new Set(),
 
     goals: structuredClone(w.goals),
     mind,
     mood: forkling.mood,
+    energy: forkling.energy,
     lateNight: forkling.lateNight,
     started: null,
 
