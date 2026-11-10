@@ -20,4 +20,4 @@ Branch `claude/project-thread-403rmi`.
 
 1. Roman runs the voice test (or gives the go to run it from an Actions workflow), reads the report and says whether the voice is worth building a world around (or what to change in the seed or the models).
 2. Correct the section 12 thresholds in the spec doc from the calibration numbers.
-3. W1 (strip pet care, new verbs), in plan mode, from `docs/spec/w1-*.md`.
+3. W1 (strip pet care, new verbs): the plan is [`docs/spec/w1-strip-pet-care.md`](docs/spec/w1-strip-pet-care.md), five slices. It waits on the W0 verdict and three small decisions at the end of that file.
