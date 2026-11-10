@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { ArtOutput, MAX_PHOTOS_PER_DAY, type Artifact, type BudgetCall, type MindState, type PhotoShot, type SpeciesPack, type TemperamentRoll, type WorldObject } from '@forkling/schema'
+import { ArtOutput, MAX_PHOTOS_PER_DAY, type Artifact, type BudgetCall, type MindState, type PhotoShot, type SpeciesPack, type WorldObject } from '@forkling/schema'
 import { hourInZone, localDate, skillLevel } from '@forkling/sim'
 import { artifactFrom, uniqueId } from './art.ts'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, monthOf, recordCall, rollLedger } from './budget.ts'
@@ -51,13 +51,9 @@ export const MAX_FRAME_BYTES = 400_000
 const MAX_PHOTO_TOKENS = 600
 
 /** The user part of a vision call: the pictured moment as facts, then the task. The frame itself is attached. */
-export function buildPhotoUser(input: { shot: PhotoShot; subject: WorldObject | null; temperament: TemperamentRoll | null; localTime: string; date: string }): string {
-  const { shot, subject, temperament } = input
-  const taste = (list: readonly { category: string; value: string }[]) => list.map((t) => `${t.value} (${t.category})`).join(', ') || 'nothing in particular'
+export function buildPhotoUser(input: { shot: PhotoShot; subject: WorldObject | null; localTime: string; date: string }): string {
+  const { shot, subject } = input
   return [
-    ...(temperament
-      ? ['<you>', `likes: ${taste(temperament.likes)}`, `dislikes: ${taste(temperament.dislikes)}`, ...temperament.quirks.map((q) => `quirk (${q.id}): ${q.text}`), '</you>', '']
-      : []),
     '<shot>',
     `taken: ${input.date} at ${input.localTime}`,
     `pointed at: ${subject ? clampText(subject.name, 60) : 'whatever was straight ahead'}`,
@@ -128,7 +124,7 @@ export async function runPhotos(dir: string, deps: PhotosDeps): Promise<PhotosRe
       continue
     }
     const subject = shot.subjectId ? (w.objects.find((o) => o.id === shot.subjectId) ?? null) : null
-    const user = buildPhotoUser({ shot, subject, temperament: w.temperament, localTime, date: today })
+    const user = buildPhotoUser({ shot, subject, localTime, date: today })
     const tokens = estimateTokens(system) + estimateTokens(user) + IMAGE_TOKENS
     const maxUsd = estimateCallUsd('claude-haiku-5-5', tokens, MAX_PHOTO_TOKENS)
     if (deps.dryRun) {

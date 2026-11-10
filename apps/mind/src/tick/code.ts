@@ -32,7 +32,6 @@ export async function codeStep(t: Tick): Promise<void> {
     obsession: t.interests.current?.topic ?? null,
     recentTitles: [...w.art].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5).map((a) => a.title),
     interests: t.interests,
-    temperament: t.temperament,
     date: today,
   })
   const result = await t.ask('art', 'claude-haiku-5-5', user, ArtOutput.code, MAX_ART_TOKENS)

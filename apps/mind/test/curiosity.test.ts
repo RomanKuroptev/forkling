@@ -80,7 +80,7 @@ const writeJson = (rel: string, value: unknown) => {
   writeFileSync(file(rel), JSON.stringify(value, null, 2))
 }
 const tick = (now: Date | string, llm: LlmClient | null, over: Partial<TickDeps> = {}) =>
-  runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools, get: internet, ...over })
+  runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, get: internet, ...over })
 
 const src = { id: 'hn:1', title: 'A CPU built in Minecraft', url: 'https://example.com/cpu', at: '2026-11-01T07:00:00Z' }
 

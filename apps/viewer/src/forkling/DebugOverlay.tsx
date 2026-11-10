@@ -55,14 +55,6 @@ export function DebugOverlay() {
         paws: {holding}
         {stored ? ` · stored: ${stored}` : ''}
       </div>
-      {world.temperament && (
-        <div className="debug-line dim">
-          likes {world.temperament.likes.map((t) => t.value).join(', ') || 'nothing'} · dislikes{' '}
-          {world.temperament.dislikes.map((t) => t.value).join(', ') || 'nothing'}
-          <br />
-          quirks: {world.temperament.quirks.map((q) => q.id).join(', ') || 'none'}
-        </div>
-      )}
       <div className="debug-line">
         <b>{sim.intention.type}</b>
         {sim.intention.targetId ? ` → ${sim.intention.targetId}` : ''}

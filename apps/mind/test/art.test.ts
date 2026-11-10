@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Artifact, Interests, type TemperamentRoll } from '@forkling/schema'
+import { Artifact, Interests } from '@forkling/schema'
 import { artifactFrom, buildArtUser, MAX_ARTIFACTS_PER_DAY } from '../src/art.ts'
 
 const meta = { skillLevel: 2, goalRef: 'today:1', obsessionRef: 'logic gates', nowIso: '2026-11-03T15:00:00Z', takenIds: new Set<string>() }
@@ -112,7 +112,6 @@ describe('artifactFrom for a coded project', () => {
 })
 
 describe('buildArtUser', () => {
-  const temperament: TemperamentRoll = { likes: [{ category: 'material', value: 'clay' }], dislikes: [], quirks: [{ id: 'perfectionist', text: 'Redoes things.' }] }
   const input = {
     kind: 'drawing' as const,
     topic: 'the pond',
@@ -121,7 +120,6 @@ describe('buildArtUser', () => {
     obsession: null,
     recentTitles: ['The Sunny Rock'],
     interests: Interests.parse({}),
-    temperament,
     date: '2026-11-03',
   }
 

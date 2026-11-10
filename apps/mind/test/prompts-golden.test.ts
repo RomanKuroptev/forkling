@@ -31,7 +31,6 @@ function input(kind: ThinkKind): UserInput {
     holding: undefined,
     stored: {},
     skills: Skills.parse({}),
-    temperament: null,
     mood: 'steady, rested',
     justNow: [],
     beliefs: [],

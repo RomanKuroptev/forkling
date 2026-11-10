@@ -6,8 +6,6 @@ import {
   liveBeliefs,
   localDate,
   playbackStateTime,
-  quirkWeights,
-  rollTemperament,
   sleepWindow,
   startPlayback,
   sunDirection,
@@ -50,18 +48,9 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   const budget = rollLedger(w.budget, monthOf(tz, nowMs))
   if (asleep !== forkling.asleep) remember.push({ at: nowIso, kind: asleep ? 'sleep' : 'wake', text: asleep ? 'Went to bed.' : 'Woke up.' })
 
-  // Who it is: rolled once from its seed, then fixed for life.
-  let temperament = w.temperament
-  const rolled = !temperament && !!deps.pools
-  if (!temperament && deps.pools) {
-    temperament = rollTemperament(forkling.seed, deps.pools)
-    parts.push('rolled its temperament')
-  }
-  const weights = temperament && deps.pools ? quirkWeights(temperament, deps.pools) : {}
-
   // Where the body is now: exactly what a viewer would have seen since the last commit.
   const world = worldWithObjects(w.objects)
-  const playbackInput = { forkling, pack, behaviors, world, goals: w.goals, stateTime: playbackStateTime(forkling), quirkWeights: weights }
+  const playbackInput = { forkling, pack, behaviors, world, goals: w.goals, stateTime: playbackStateTime(forkling) }
   const playback = startPlayback(playbackInput, nowMs)
   // What the body really did on the plan step since the last write: the step's effect waits on it.
   const running = w.goals.now
@@ -100,8 +89,6 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     window,
     budget,
 
-    temperament,
-    rolled,
 
     world,
     body,

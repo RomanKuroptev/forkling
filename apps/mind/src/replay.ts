@@ -8,7 +8,6 @@ export interface ReplayState {
   forkling: Forkling
   goals: Goals
   objects: WorldObject[]
-  quirkWeights?: Record<string, number>
 }
 
 export interface ReplayOptions {
@@ -61,7 +60,7 @@ export function replay(states: readonly ReplayState[], opts: ReplayOptions): Rep
     }
     const { forkling, goals } = state
     const pb = startPlayback(
-      { forkling, pack: opts.pack, behaviors: opts.behaviors, world, goals, stateTime: playbackStateTime(forkling), ...(state.quirkWeights ? { quirkWeights: state.quirkWeights } : {}) },
+      { forkling, pack: opts.pack, behaviors: opts.behaviors, world, goals, stateTime: playbackStateTime(forkling) },
       t,
     )
     const asleep = isAsleepAt(t, { seed: forkling.seed, timezone: forkling.timezone, lateNight: forkling.lateNight })

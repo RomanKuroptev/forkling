@@ -111,7 +111,7 @@ async function liveADay(): Promise<Day> {
     if (before.asleep && new Date(nowMs).getUTCMinutes() >= 10) continue
     model.setNow(nowMs)
     const callsBefore = model.calls.length
-    await runTick(dir, { now: new Date(nowMs), llm: model.llm, pack: cat.pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools })
+    await runTick(dir, { now: new Date(nowMs), llm: model.llm, pack: cat.pack, behaviors: cat.behaviors, speciesPersona: cat.persona })
     out.ticks++
 
     const w = readWorld(dir, () => '2026-11')

@@ -2,17 +2,15 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { AnimationMap, AnimationSlot, SpeciesPack, TemperamentPools, WorldObject, type PoseBone } from '@forkling/schema'
-import { quirkWeights, rollTemperament, runHeadless, worldWithObjects, starterWorld } from '@forkling/sim'
+import { AnimationMap, AnimationSlot, SpeciesPack, WorldObject, type PoseBone } from '@forkling/schema'
+import { runHeadless, worldWithObjects, starterWorld } from '@forkling/sim'
 import animationsJson from '../animations.json'
 import speciesJson from '../species.json'
-import temperamentJson from '../temperament.json'
 import { behaviors, moodPose } from '../src/behaviors.ts'
 import { BONES } from '../src/skeleton.ts'
 
 const pack = SpeciesPack.parse(speciesJson)
 const animations = AnimationMap.parse(animationsJson)
-const pools = TemperamentPools.parse(temperamentJson)
 const modelPath = new URL('../model.glb', import.meta.url)
 
 function loadModel(): Promise<GLTF> {
@@ -96,23 +94,6 @@ describe('cat species pack', () => {
   it('only works with materials that make sense for each making verb', () => {
     expect(byId('sew').accepts).toEqual(['fibre', 'flowers'])
     expect(byId('plant').accepts).toEqual(expect.arrayContaining(['flowers', 'produce']))
-  })
-})
-
-describe('cat temperament', () => {
-  it('parses, with plenty to roll from', () => {
-    expect(pools.quirks.length).toBeGreaterThanOrEqual(8)
-    expect(Object.keys(pools.traits)).toEqual(expect.arrayContaining(['material', 'feel', 'weather', 'sound']))
-  })
-
-  it('only gives quirks weights for verbs the cat has', () => {
-    const ids = new Set(pack.actions.map((a) => a.id))
-    for (const q of pools.quirks) for (const verb of Object.keys(q.weights)) expect(ids.has(verb), `${q.id}: ${verb}`).toBe(true)
-  })
-
-  it('makes cats from different seeds into different individuals', () => {
-    const rolls = Array.from({ length: 20 }, (_, seed) => JSON.stringify(rollTemperament(seed, pools)))
-    expect(new Set(rolls).size).toBeGreaterThanOrEqual(18)
   })
 })
 
@@ -339,12 +320,5 @@ describe('cat in the headless sim', () => {
     const world = worldWithObjects([den])
     const hid = [9, 10, 11, 12, 13].some((seed) => runHeadless({ pack, behaviors, world, seed, startHour: 12, seconds: 3600 }).targets.some((t) => t.startsWith('hide:')))
     expect(hid).toBe(true)
-  })
-  it('bends its choices with quirks: a napper naps more than a shy cat', () => {
-    const napper = quirkWeights({ likes: [], dislikes: [], quirks: [{ id: 'napper', text: '' }] }, pools)
-    const shy = quirkWeights({ likes: [], dislikes: [], quirks: [{ id: 'shy', text: '' }] }, pools)
-    const naps = (weights: Record<string, number>) =>
-      [31, 32, 33, 34].reduce((n, seed) => n + runHeadless({ pack, behaviors, seed, startHour: 11, seconds: 900, quirkWeights: weights }).targets.filter((t) => t.startsWith('nap:')).length, 0)
-    expect(naps(napper)).toBeGreaterThan(naps(shy))
   })
 })

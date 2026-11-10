@@ -8,8 +8,6 @@ import {
   PlanStep,
   Skills,
   SpeciesPack,
-  TemperamentPools,
-  TemperamentRoll,
   VerbGroup,
   WorldObject,
 } from '../src/index.ts'
@@ -247,49 +245,5 @@ describe('Skills (brain/skills.json)', () => {
     expect(Skills.parse({})).toEqual({})
     expect(Skills.safeParse({ making: { xp: 0, level: 11 } }).success).toBe(false)
     expect(Skills.safeParse({ juggling: { xp: 0, level: 1 } }).success).toBe(false)
-  })
-})
-
-describe('temperament', () => {
-  const pools = {
-    traits: {
-      colour: ['red', 'green', 'blue'],
-      texture: ['soft', 'rough'],
-    },
-    likes: 2,
-    dislikes: 1,
-    quirks: [
-      { id: 'hoarder', text: 'Cannot leave a good stone behind.', weights: { pick_up: 2 } },
-      { id: 'perfectionist', text: 'Redoes anything that wobbles.' },
-    ],
-    quirkCount: [1, 2],
-  }
-
-  it('parses the pools of a species pack and fills defaults', () => {
-    const parsed = TemperamentPools.parse({ traits: pools.traits, quirks: pools.quirks })
-    expect(parsed.likes).toBe(3)
-    expect(parsed.dislikes).toBe(2)
-    expect(parsed.quirkCount).toEqual([2, 3])
-    expect(parsed.quirks[1]!.weights).toEqual({})
-    expect(parsed.quirks[1]!.appraisal).toEqual({})
-  })
-
-  it('rejects pools too small to roll from', () => {
-    expect(TemperamentPools.safeParse({ ...pools, traits: { colour: ['red'] } }).success).toBe(false)
-    expect(TemperamentPools.safeParse({ ...pools, quirks: [pools.quirks[0]] }).success).toBe(false)
-    expect(TemperamentPools.safeParse({ ...pools, quirkCount: [3, 1] }).success).toBe(false)
-  })
-
-  it('rejects duplicate quirk ids', () => {
-    expect(TemperamentPools.safeParse({ ...pools, quirks: [pools.quirks[0], pools.quirks[0]] }).success).toBe(false)
-  })
-
-  it('parses a rolled temperament', () => {
-    const roll = TemperamentRoll.parse({
-      likes: [{ category: 'colour', value: 'green' }],
-      dislikes: [{ category: 'texture', value: 'rough' }],
-      quirks: [{ id: 'hoarder', text: 'Cannot leave a good stone behind.' }],
-    })
-    expect(roll.quirks[0]!.id).toBe('hoarder')
   })
 })

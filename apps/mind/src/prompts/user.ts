@@ -1,4 +1,4 @@
-import type { Belief, Forkling, Goals, Interests, MindState, Skills, TemperamentRoll, VisitorEvent, WorldObject } from '@forkling/schema'
+import type { Belief, Forkling, Goals, Interests, MindState, Skills, VisitorEvent, WorldObject } from '@forkling/schema'
 import { liveBeliefs, objectStatusAt, type Trigger } from '@forkling/sim'
 import type { RecentPast } from '../past.ts'
 import { decideTask } from './decide.ts'
@@ -30,7 +30,6 @@ export interface UserInput {
   holding: Forkling['holding']
   stored: Forkling['stored']
   skills: Skills
-  temperament: TemperamentRoll | null
   /** How it feels, in words: `low, tired`. Never numbers. */
   mood: string
   /** What its last step did, one line each. */
@@ -141,7 +140,6 @@ export function buildUser(i: UserInput): string {
   const skills = Object.entries(i.skills)
     .map(([g, s]) => `${g} ${s!.level}`)
     .join(', ')
-  const taste = (list: readonly { category: string; value: string }[]) => list.map((t) => `${t.value} (${t.category})`).join(', ') || 'nothing in particular'
   return [
     '<situation>',
     `time: ${i.localTime} (${i.forkling.timezone}); woke at ${i.wakeTime}; bedtime ${i.bedTime}`,
@@ -156,16 +154,6 @@ export function buildUser(i: UserInput): string {
     ...describeBrokenOff(i.mindState.brokenOff),
     ...describeLimits(i.limits),
     '</situation>',
-    ...(i.temperament
-      ? [
-          '',
-          '<you>',
-          `likes: ${taste(i.temperament.likes)}`,
-          `dislikes: ${taste(i.temperament.dislikes)}`,
-          ...i.temperament.quirks.map((q) => `quirk (${q.id}): ${q.text}`),
-          '</you>',
-        ]
-      : []),
     '',
     '<interests>',
     ...describeInterests(i.interests),

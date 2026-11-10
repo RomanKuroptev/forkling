@@ -62,7 +62,7 @@ const writeJson = (rel: string, value: unknown) => {
 const patchForkling = (patch: Record<string, unknown>) => writeJson('forkling.json', { ...readJson('forkling.json'), ...patch })
 
 function deps(over: Partial<TickDeps> = {}): TickDeps {
-  return { now: new Date(NOW), llm: fakeLlm(), pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools, ...over }
+  return { now: new Date(NOW), llm: fakeLlm(), pack, behaviors: cat.behaviors, speciesPersona: cat.persona, ...over }
 }
 const at = (iso: string, over: Partial<TickDeps> = {}) => deps({ now: new Date(iso), ...over })
 const minutesAfter = (min: number) => new Date(Date.parse(NOW) + min * 60_000).toISOString()

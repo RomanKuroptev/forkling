@@ -91,7 +91,7 @@ const beforeBed = (min: number) => new Date(bedMs() - min * 60_000)
 const afterBed = (min: number) => new Date(bedMs() + min * 60_000)
 
 const tick = (now: Date | string, llm: LlmClient | null, over: Partial<TickDeps> = {}) =>
-  runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools, ...over })
+  runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, ...over })
 
 /** A day that has a stream to reflect on, and a plan already made, so nothing else wants the model. */
 function seedDay() {

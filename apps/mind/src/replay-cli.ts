@@ -1,8 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
-import { Forkling, Goals, TemperamentRoll, WorldObject } from '@forkling/schema'
-import { quirkWeights } from '@forkling/sim'
+import { Forkling, Goals, WorldObject } from '@forkling/schema'
 import { formatReplay, replay, type ReplayState } from './replay.ts'
 import { loadSpecies } from './species.ts'
 
@@ -84,14 +83,11 @@ function main(): void {
         : []
       objectCache.set(treeId, objects)
     }
-    const tempRaw = show(dir, c.sha, 'brain/temperament.json')
-    const temperament = tempRaw ? TemperamentRoll.safeParse(JSON.parse(tempRaw)) : null
     states.push({
       atMs: c.atMs,
       forkling: parsed.data,
       goals: Goals.parse(goalsRaw ? JSON.parse(goalsRaw) : {}),
       objects,
-      ...(temperament?.success ? { quirkWeights: quirkWeights(temperament.data, species.pools) } : {}),
     })
   }
   if (!species) throw new Error('no commit could be read')

@@ -41,7 +41,6 @@ export async function artStep(t: Tick): Promise<void> {
           obsession: t.interests.current?.topic ?? null,
           recentTitles: [...w.art].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5).map((a) => a.title),
           interests: t.interests,
-          temperament: t.temperament,
           date: today,
           run: run ?? undefined,
         })

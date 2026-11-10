@@ -128,16 +128,6 @@ export type BudgetLedger = z.infer<typeof BudgetLedger>
 export const Skills = z.partialRecord(VerbGroup, z.object({ xp: z.number().nonnegative(), level: z.number().int().min(0).max(10) }))
 export type Skills = z.infer<typeof Skills>
 
-const Trait = z.object({ category: z.string().min(1), value: z.string().min(1) })
-
-/** `brain/temperament.json`: likes, dislikes and quirks rolled once from the seed. Quirk weights come from the species pack. */
-export const TemperamentRoll = z.object({
-  likes: z.array(Trait),
-  dislikes: z.array(Trait),
-  quirks: z.array(z.object({ id: z.string().min(1), text: z.string().min(1).max(200) })),
-})
-export type TemperamentRoll = z.infer<typeof TemperamentRoll>
-
 /**
  * `mind/builds/<id>.result.json`: what the builder reports back. The builder writes only this (and the object or project
  * itself, by pull request); the mind reads it and does its own bookkeeping, so the two never write the same files.

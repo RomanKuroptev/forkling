@@ -17,13 +17,6 @@ describe('scoreActions', () => {
     expect(scoreOf(weighted, 'greet')).toBeCloseTo(scoreOf(plain, 'greet') * 1.5)
   })
 
-  it('applies quirk weights as multipliers', () => {
-    const base = scoreActions(blob, noon)
-    const quirky = scoreActions(blob, { ...noon, quirkWeights: { roam: 3 } })
-    expect(scoreOf(quirky, 'roam')).toBeCloseTo(scoreOf(base, 'roam') * 3)
-    expect(scoreOf(quirky, 'rest')).toBeCloseTo(scoreOf(base, 'rest'))
-  })
-
   it('offers visitor actions only while a visitor is within the notice radius', () => {
     expect(ids(scoreActions(blob, noon))).not.toContain('greet')
     expect(ids(scoreActions(blob, { ...noon, visitorDistance: 10 }))).not.toContain('greet')

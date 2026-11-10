@@ -48,7 +48,7 @@ const file = (rel: string) => join(dir, rel)
 const readJson = (rel: string) => JSON.parse(readFileSync(file(rel), 'utf8'))
 const state = () => MindState.parse(readJson('mind/state.json'))
 const tick = (now: Date | string, llm: LlmClient | null, over: Partial<TickDeps> = {}) =>
-  runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools, ...over })
+  runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, ...over })
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'build-'))

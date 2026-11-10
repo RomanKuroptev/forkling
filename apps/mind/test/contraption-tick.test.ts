@@ -54,7 +54,7 @@ const marbleRun = (impulse: [number, number, number]) =>
 let dir: string
 const file = (rel: string) => join(dir, rel)
 const readJson = (rel: string) => JSON.parse(readFileSync(file(rel), 'utf8'))
-const tick = (now: Date | string, llm: LlmClient) => runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools })
+const tick = (now: Date | string, llm: LlmClient) => runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona })
 
 async function tinkerADay(impulse: [number, number, number] = [0.1, 0, 0]) {
   writeFileSync(file('objects/marble-run.json'), JSON.stringify(marbleRun(impulse)))

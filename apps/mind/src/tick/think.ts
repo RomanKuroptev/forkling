@@ -35,7 +35,6 @@ export async function think(t: Tick): Promise<void> {
     holding: t.holding,
     stored: t.stored,
     skills: t.skills,
-    temperament: t.temperament,
     mood: moodWords({ mood: t.mood, energy: t.energy }),
     justNow: t.justNow,
     beliefs: t.beliefs,

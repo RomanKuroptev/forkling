@@ -23,7 +23,7 @@ const withoutBrokenOff = (m: MindState): Omit<MindState, 'brokenOff'> => {
 
 /** Wake, bedtime and the body: written when something happened, or once per half hour so the repo stays fresh. */
 export function writeWorld(t: Tick): TickResult {
-  const { dir, deps, w, forkling, goals, mind, budget, skills, beliefs, interests, holding, stored, temperament, asleep, nowMs, nowIso, today, parts } = t
+  const { dir, deps, w, forkling, goals, mind, budget, skills, beliefs, interests, holding, stored, asleep, nowMs, nowIso, today, parts } = t
   if (asleep !== forkling.asleep) parts.push(asleep ? 'went to bed' : 'woke up')
   const inboxConsumed = t.thought && w.inbox.length > 0
   const goalsChanged = !same(withoutWorked(goals), withoutWorked(w.goals))
@@ -44,7 +44,6 @@ export function writeWorld(t: Tick): TickResult {
     inboxConsumed ||
     skillsChanged ||
     carryingChanged ||
-    t.rolled ||
     asleep !== forkling.asleep ||
     t.mood !== forkling.mood ||
     t.energy !== forkling.energy ||
@@ -94,7 +93,6 @@ export function writeWorld(t: Tick): TickResult {
     if ((mindChanged || (writeBody && brokenOffChanged)) && writeJson(dir, 'mind/state.json', mind)) written.push('mind/state.json')
     if (budgetChanged && writeJson(dir, 'brain/budget.json', budget)) written.push('brain/budget.json')
     if (skillsChanged && writeJson(dir, 'brain/skills.json', skills)) written.push('brain/skills.json')
-    if (t.rolled && temperament && writeJson(dir, 'brain/temperament.json', temperament)) written.push('brain/temperament.json')
     if (beliefsChanged && writeJson(dir, 'memory/beliefs.json', beliefs)) written.push('memory/beliefs.json')
     if (interestsChanged && writeJson(dir, 'brain/interests.json', interests)) written.push('brain/interests.json')
     if (t.planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)

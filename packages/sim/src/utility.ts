@@ -14,8 +14,6 @@ export interface ScoreContext {
   spotKinds: ReadonlySet<string>
   /** The verb the mind has asked for. Verbs that change the world are only ever chosen when they are this one. */
   focusAction?: string
-  /** What the forkling's quirks do to each verb's appeal, by verb id. Missing means 1. */
-  quirkWeights?: Record<string, number>
   /** How it feels. Missing means calm and neither glad nor sad, which changes nothing. */
   feelings?: Feelings
   /** Whether its paws hold something. Missing means unknown, and verbs that need empty or full paws are not ruled out. */
@@ -79,12 +77,12 @@ function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: Pick<ScoreConte
   return true
 }
 
-/** Utility of each eligible action: a small baseline, times the pack's weight, the quirk weight and how the mood bends it. */
+/** Utility of each eligible action: a small baseline, times the pack's weight and how the mood bends it. */
 export function scoreActions(pack: SpeciesPack, ctx: ScoreContext): ScoredAction[] {
   const scored: ScoredAction[] = []
   for (const action of pack.actions) {
     if (!eligible(action, pack, ctx)) continue
-    const weight = (pack.weights[action.id] ?? 1) * (ctx.quirkWeights?.[action.id] ?? 1) * moodWeight(action, ctx.feelings)
+    const weight = (pack.weights[action.id] ?? 1) * moodWeight(action, ctx.feelings)
     scored.push({ action, score: Math.max(0.001, BASELINE) * weight })
   }
   return scored

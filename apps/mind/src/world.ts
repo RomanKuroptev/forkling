@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, Skills, TemperamentRoll, VisitorEvent, WorldObject } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, Skills, VisitorEvent, WorldObject } from '@forkling/schema'
 
 /** Most inbox events one tick will look at. Newer ones win; the rest are dropped with the rest of the inbox. */
 export const MAX_INBOX_EVENTS = 20
@@ -23,8 +23,6 @@ export interface WorldFiles {
   mindState: MindState
   budget: BudgetLedger
   skills: Skills
-  /** `brain/temperament.json`, or null until it has been rolled. */
-  temperament: TemperamentRoll | null
   /** The forkling's own `brain/persona.md`, or empty. */
   persona: string
   /** `memory/beliefs.json`: everything it has believed, dropped ones included. */
@@ -104,7 +102,6 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
     mindState: readJson(dir, 'mind/state.json', MindState, {}),
     budget: readJson(dir, 'brain/budget.json', BudgetLedger, { month: monthFor(forkling) }),
     skills: readJson(dir, 'brain/skills.json', Skills, {}),
-    temperament: existsSync(join(dir, 'brain/temperament.json')) ? readJson(dir, 'brain/temperament.json', TemperamentRoll) : null,
     persona: existsSync(personaPath) ? readFileSync(personaPath, 'utf8') : '',
     beliefs: readJson(dir, 'memory/beliefs.json', Beliefs, []),
     summary: existsSync(summaryPath) ? readFileSync(summaryPath, 'utf8') : '',

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
-import { BuildRequest, Material, MAX_IMPULSE, MAX_RUN_SEC, WorldObject, type BudgetCall, type SpeciesPack, type TemperamentRoll } from '@forkling/schema'
+import { BuildRequest, Material, MAX_IMPULSE, MAX_RUN_SEC, WorldObject, type BudgetCall, type SpeciesPack } from '@forkling/schema'
 import { createPrng, heightAt, localDate, MAX_CARRY_KG, skillLevel, starterIsland } from '@forkling/sim'
 import { skillGuide } from './art.ts'
 import { runContraption } from './physics.ts'
@@ -177,13 +177,9 @@ export function objectFromDesign(design: DesignOutput, request: BuildRequest, ct
 }
 
 /** The user part of a design call: the request as the forkling's own words, then the rules of the format. */
-export function buildDesignUser(input: { request: BuildRequest; temperament: TemperamentRoll | null; existing: readonly string[]; verbs: readonly string[]; skill: number; date: string }): string {
-  const { request, temperament } = input
-  const taste = (list: readonly { category: string; value: string }[]) => list.map((t) => `${t.value} (${t.category})`).join(', ') || 'nothing in particular'
+export function buildDesignUser(input: { request: BuildRequest; existing: readonly string[]; verbs: readonly string[]; skill: number; date: string }): string {
+  const { request } = input
   return [
-    ...(temperament
-      ? ['<you>', `likes: ${taste(temperament.likes)}`, `dislikes: ${taste(temperament.dislikes)}`, ...temperament.quirks.map((q) => `quirk (${q.id}): ${q.text}`), '</you>', '']
-      : []),
     '<request>',
     `name: ${clampText(request.name, 60)}`,
     `what it is for: ${clampText(request.purpose, 300)}`,
@@ -261,7 +257,6 @@ export async function runDesign(dir: string, deps: DesignDeps): Promise<DesignRe
   const system = buildSystem({ pack: deps.pack, name: w.forkling.name, speciesPersona: deps.speciesPersona, persona: w.persona })
   const user = buildDesignUser({
     request,
-    temperament: w.temperament,
     existing: w.objects.map((o) => o.name),
     verbs: unlockableVerbs(deps.pack),
     skill: skillLevel(w.skills, 'making'),
