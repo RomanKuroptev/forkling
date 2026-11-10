@@ -27,12 +27,13 @@ Branch `claude/project-thread-403rmi`.
 - **Step 4 done (care actions and need fields gone from the pack):** the cat no longer has `sniff`, `vocalize`, `nap`, `curl_up`, `pounce`, `zoomies`, `eat`, `dine`, `cook`, `plant`, `water` or `harvest`, and `SpeciesPack` has no `needs`, `satisfies` or `spontaneous` (packs that still carry them parse, and the fields are ignored). The cat keeps its body verbs (`go_to`, `inspect`, `sit`, `watch`, `follow`, `hide`, `sleep`, `stretch`, `explore`), hands, making and mind verbs, which go in slice 3.
 - **Slice 1 is done.** What remains of the pet is the object machinery (effects, objects, contraptions, the art, photo and code pipelines, the eye cam, the island), which slice 3 removes together with the old triggers. The pack-format hook that maps a mind verb to a place and clip (spec 2.7) comes with the nine verbs in slice 2.
 
-## W1 slice 3 (done): the dormant pet machinery is deleted
+## W1 slice 4 (done): the viewer and the site lose the pet's things
 
-- **Deleted from `apps/mind`:** the art, photo, design, project and builds modules and their CLIs (`photos`, `design`, `project`), the builder result reader, the physics check (and the `@dimforge/rapier3d-compat` dependency), the builder PR validation (`validate` and its CLI), the object-effects step and the 60% share of body time (`tallyWindow`), skills, holding and stored items. A pet-era plan step runs as rest. The health summary shows readings and the points in hand instead of the pet quotas.
-- **Deleted from `packages/sim`:** `effects.ts` (applying a step to objects), the old `validatePlan`, `skills.ts`, `runPlan` and `tallyWindow`. 916 tests pass.
-- **Still in the code:** the sim's world of objects and the nav grid (the body walks on it until W5), `eyecam.ts` and `svg.ts` (the viewer and site use them), the art, photo and build schemas, the viewer's objects, eye cam and gallery, the site's art pages, the novelty trigger, the reading module (the morning feed skim), the bedtime reflection and nightly rewrite, and the **template world's workflows** (`mind.yml`'s photo and builder steps, `build.yml`, `validate.yml`), which refer to the commands deleted here. They are fixed in slice 5 with the seed and the archive, before any world runs this engine.
-- **Next:** slice 4 (viewer and site: drop objects, eye cam, the gallery and the art pages), then slice 5 (seed file, archive, workflows, release).
+- **Viewer:** the eye cam (`eyecam/`, its script and the `playwright` dev dependency), the gallery wall and melody player (and `tone`), contraptions, and art loading are gone. It still draws the island, its objects as scenery and the body, which sits for every mind verb until W5.
+- **Site:** no gallery, projects or photos, and no sound library. The notebook has a new "What it wrote" section from `notebook/writing/`. Home, journal, notebook, obsessions and why remain.
+- **Sim:** `eyecam.ts` and `svg.ts` are deleted. 855 tests pass.
+- **Still in the code:** the sim's world of objects and nav grid, the schema's art, photo and build types (read by nothing now), the novelty trigger, the reading module (the morning feed skim), the bedtime reflection and nightly rewrite, and the template world (its workflows still call deleted commands).
+- **Next:** slice 5: `self/seed.md` in the template and Merge's repo (for Roman's review), the archive move, the workflow fixes (`mind.yml` loses its photo and builder steps, `build.yml` and `validate.yml` are replaced), the release tag, and 3 live days.
 
 ## Next
 
