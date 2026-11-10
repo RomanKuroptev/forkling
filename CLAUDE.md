@@ -68,8 +68,6 @@ pnpm --filter @forkling/site build                    # render a forkling's Page
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 ```
 
-Pet-era command still in the code until slice 4 removes it: the viewer's `eyecam`.
-
 ## Where things are
 
 - [`STATUS.md`](STATUS.md): where the project is and what is next.

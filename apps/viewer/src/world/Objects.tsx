@@ -5,7 +5,6 @@ import { CylinderCollider, RigidBody } from '@react-three/rapier'
 import { useEffect, useMemo } from 'react'
 import { island } from '../island.ts'
 import { assetHeight, assetUrl } from './assets.ts'
-import { Contraption } from './Contraption.tsx'
 import { bakePropModel } from './propModels.ts'
 import { disposeParts, partsGroup } from './primitives.ts'
 import { useWorld } from './WorldContext.tsx'
@@ -23,7 +22,6 @@ export function Objects() {
     <>
       {world.objects.map((o) => {
         if (o.state.held) return null
-        if (o.contraption && 'parts' in o.model) return <Contraption key={o.id} object={o} />
         return 'asset' in o.model ? <RepoObject key={o.id} object={o} asset={o.model.asset} /> : <PartsObject key={o.id} object={o} parts={o.model.parts} />
       })}
     </>

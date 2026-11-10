@@ -1,8 +1,8 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, join, sep } from 'node:path'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import type { z } from 'zod'
-import { Artifact, Beliefs, Forkling, Goals, Interests, TimelineEntry, type Belief, type InterestSource } from '@forkling/schema'
-import { moodWords, sanitizeSvg } from '@forkling/sim'
+import { Beliefs, Forkling, Goals, Interests, TimelineEntry, type Belief, type InterestSource } from '@forkling/schema'
+import { moodWords } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { esc, markdown } from './md.ts'
 
@@ -14,10 +14,10 @@ function localStamp(iso: string, timeZone: string): string {
 
 /** Rendered from files only: no network, no model. Everything in them was written by the forkling, so all of it is escaped. */
 
-const TONE = 'https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js'
 const MAX_WHY_ENTRIES = 400
 const MAX_NOTES_SHOWN = 20
 const MAX_PLANS_SHOWN = 7
+const MAX_WRITINGS_SHOWN = 10
 
 function readJson<T>(world: string, rel: string, schema: z.ZodType<T>): T | null {
   try {
@@ -62,7 +62,6 @@ const NAV: [string, string][] = [
   ['Home', 'index.html'],
   ['Journal', 'journal/'],
   ['Notebook', 'notebook/'],
-  ['Gallery', 'gallery/'],
   ['Obsessions', 'obsessions/'],
   ['Why?', 'why/'],
 ]
@@ -74,7 +73,6 @@ interface PageInput {
   root: string
   active: string
   body: string
-  scripts?: string
 }
 
 function layout(p: PageInput): string {
@@ -94,7 +92,7 @@ function layout(p: PageInput): string {
 <main>
 ${p.body}
 </main>
-${p.scripts ?? ''}</body>
+</body>
 </html>
 `
 }
@@ -111,58 +109,6 @@ function renderBelief(b: Belief, root: string): string {
   return `<li id="${esc(b.id)}"><strong>${esc(b.statement)}</strong> <span class="quiet">${esc(b.id)}, ${b.confidence} sure, ${esc(b.status)}${b.revisedAt ? `, changed ${esc(b.revisedAt.slice(0, 10))}` : ''}</span>${history ? `<ul class="history">${history}</ul>` : ''}</li>`
 }
 
-function renderArtifact(a: Artifact, root: string, projects: ReadonlySet<string>): string {
-  let content: string
-  switch (a.kind) {
-    case 'writing':
-      content = a.content.text.split(/\n{2,}/).map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('')
-      break
-    case 'drawing': {
-      const svg = sanitizeSvg(a.content.svg)
-      content = svg ? `<figure class="drawing">${svg}</figure>` : '<p class="quiet">This drawing could not be shown.</p>'
-      break
-    }
-    case 'melody':
-      content = `<button type="button" class="play" data-melody="${esc(JSON.stringify({ bpm: a.content.bpm, notes: a.content.notes }))}">▶ Play</button> <span class="quiet">${a.content.notes.length} notes at ${a.content.bpm} bpm</span>`
-      break
-    case 'recipe':
-      content = `<table><tbody>${a.content.ingredients.map((i) => `<tr><td>${esc(i.name)}</td><td>${i.grams} g</td></tr>`).join('')}</tbody></table><ol>${a.content.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`
-      break
-    case 'broadcast':
-      content = `<p class="script">${esc(a.content.script)}</p>`
-      break
-    case 'labnote':
-      content = `<dl><dt>Question</dt><dd>${esc(a.content.question)}</dd><dt>What I did</dt><dd>${esc(a.content.method)}</dd><dt>What happened</dt><dd>${esc(a.content.result)}</dd></dl>`
-      break
-    case 'code':
-      content = `<p>${esc(a.content.idea)}</p><p class="quiet">${esc(a.content.howItPlays)}</p>${projects.has(a.content.project) ? `<p><a href="${esc(root)}projects/${esc(a.content.project)}/">Open it</a></p>` : ''}`
-      break
-    case 'contraption':
-      content = `<p>${esc(a.content.notes)}</p><p class="quiet">${a.content.moved ? `Something moved ${a.content.maxTravel} m` : 'Nothing moved'}, and it ${a.content.settled ? 'came to rest' : 'was still moving at the end'}. It is the ${esc(a.content.objectId)}.</p><p><em>${esc(a.content.opinion)}</em></p>`
-      break
-    case 'photo':
-      content = `<figure class="photo"><img src="${esc(root)}${esc(a.content.image)}" alt="${esc(a.content.caption)}" width="512" height="512" loading="lazy"><figcaption>${esc(a.content.caption)}</figcaption></figure><p><em>${esc(a.content.opinion)}</em>${a.content.noticed ? ' <span class="quiet">(I noticed this on my own.)</span>' : ''}</p>`
-      break
-  }
-  const served = [a.goalRef ? `for ${esc(a.goalRef)}` : '', a.obsessionRef ? `while obsessed with ${esc(a.obsessionRef)}` : ''].filter(Boolean).join(', ')
-  return `<article class="card" id="${esc(a.id)}"><h3>${esc(a.title)}</h3><p class="quiet">${esc(a.kind)}, skill ${a.skillLevel}, ${esc(a.createdAt.slice(0, 10))}${served ? `, ${served}` : ''}</p>${content}</article>`
-}
-
-/** What a coded project may contain, and how big a file may be: the same limits the builder is held to. */
-const PROJECT_EXTENSIONS = new Set(['.html', '.js', '.css', '.svg', '.json'])
-const MAX_PROJECT_FILE_BYTES = 200_000
-
-/** The files of one project to publish, relative to its folder with forward slashes. Other types, big files and links are left out. */
-function projectFiles(root: string, dir = root, depth = 0): string[] {
-  if (depth > 4) return []
-  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
-    const full = join(dir, e.name)
-    if (e.isDirectory()) return projectFiles(root, full, depth + 1)
-    const ext = e.name.slice(e.name.lastIndexOf('.')).toLowerCase()
-    return e.isFile() && PROJECT_EXTENSIONS.has(ext) && statSync(full).size <= MAX_PROJECT_FILE_BYTES ? [full.slice(root.length + 1).split(sep).join('/')] : []
-  })
-}
-
 /** Renders the forkling's website from the files of its world repo. A file that doesn't fit its schema is left out. */
 export function renderSite(world: string, out: string): { pages: string[] } {
   const forkling = readJson(world, 'forkling.json', Forkling)
@@ -172,24 +118,12 @@ export function renderSite(world: string, out: string): { pages: string[] } {
   const goals = readJson(world, 'mind/goals.json', Goals) ?? {}
   const interests = readJson(world, 'brain/interests.json', Interests) ?? Interests.parse({})
   const beliefs = readJson(world, 'memory/beliefs.json', Beliefs) ?? []
-  // A coded project is shown only when it has an artifact, which arrives in the same pull request as its files.
-  const projectsDir = join(world, 'site/projects')
-  const projects = new Set(
-    existsSync(projectsDir)
-      ? readdirSync(projectsDir).filter((d) => statSync(join(projectsDir, d)).isDirectory() && readJson(world, `art/${d}.json`, Artifact)?.kind === 'code')
-      : [],
-  )
-  const art = files(world, 'art', '.json')
-    .flatMap((f) => {
-      const a = readJson(world, `art/${f}`, Artifact)
-      return a ? [a] : []
-    })
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const journal = files(world, 'journal', '.md')
     .map((f) => ({ date: f.slice(0, -3), text: readText(world, `journal/${f}`) ?? '' }))
     .filter((j) => /^\d{4}-\d{2}-\d{2}$/.test(j.date))
     .sort((a, b) => b.date.localeCompare(a.date))
   const notes = files(world, 'notebook/reading', '.md').sort().reverse().slice(0, MAX_NOTES_SHOWN).map((f) => readText(world, `notebook/reading/${f}`) ?? '')
+  const writings = files(world, 'notebook/writing', '.md').sort().reverse().slice(0, MAX_WRITINGS_SHOWN).map((f) => readText(world, `notebook/writing/${f}`) ?? '')
   const plans = files(world, 'notebook/plans', '.md').sort().reverse().slice(0, MAX_PLANS_SHOWN).map((f) => readText(world, `notebook/plans/${f}`) ?? '')
   const timeline = files(world, 'memory/timeline', '.jsonl')
     .flatMap((f) => (readText(world, `memory/timeline/${f}`) ?? '').split('\n').filter(Boolean))
@@ -210,7 +144,6 @@ export function renderSite(world: string, out: string): { pages: string[] } {
   // Home: who it is, what it wants, what it is doing and why.
   const step = goals.now ? goals.today?.steps[goals.now.index] : undefined
   const i = forkling.intention
-  const latest = art[0]
   add('index.html', {
     title: 'Home',
     active: 'index.html',
@@ -228,7 +161,6 @@ export function renderSite(world: string, out: string): { pages: string[] } {
         ? `<h2>Obsessed with</h2><p><strong>${esc(interests.current.topic)}</strong>, since ${esc(interests.current.startedAt.slice(0, 10))}. It started with ${sourceLink(interests.current.origin)}.</p>`
         : '',
       journal[0] ? `<h2>Latest diary entry</h2><p><a href="journal/${esc(journal[0].date)}.html">${esc(journal[0].date)}</a></p>` : '',
-      latest ? `<h2>Latest work</h2><p><a href="gallery/#${esc(latest.id)}">${esc(latest.title)}</a> <span class="quiet">(${esc(latest.kind)})</span></p>` : '',
     ].join('\n'),
   })
 
@@ -260,41 +192,13 @@ export function renderSite(world: string, out: string): { pages: string[] } {
       '<h2>What it believes</h2>',
       live.length > 0 ? `<ul class="beliefs">${live.map((b) => renderBelief(b, '../')).join('')}</ul>` : empty('Beliefs come from what a day teaches it.'),
       ...(dropped.length > 0 ? [`<details><summary>Beliefs it gave up (${dropped.length})</summary><ul class="beliefs">${dropped.map((b) => renderBelief(b, '../')).join('')}</ul></details>`] : []),
+      '<h2>What it wrote</h2>',
+      writings.length > 0 ? writings.map((w) => `<article class="card">${markdown(w)}</article>`).join('\n') : empty('It writes plaques and short pages.'),
       '<h2>What it read</h2>',
       notes.length > 0 ? notes.map((n) => `<article class="card">${markdown(n)}</article>`).join('\n') : empty('It skims the world every morning.'),
       '<h2>Plans</h2>',
       plans.length > 0 ? plans.map((p) => `<article class="card">${markdown(p)}</article>`).join('\n') : empty('It plans each morning.'),
     ].join('\n'),
-  })
-
-  // Gallery.
-  const hasMelody = art.some((a) => a.kind === 'melody')
-  const kinds = new Set(art.map((a) => a.kind))
-  add('gallery/index.html', {
-    title: 'Gallery',
-    active: 'gallery/',
-    body: `<h1>Gallery</h1>\n${art.length > 0 ? `<p class="quiet">${art.length} ${art.length === 1 ? 'piece' : 'pieces'}, ${kinds.size} ${kinds.size === 1 ? 'kind' : 'kinds'}.</p>\n${art.map((a) => renderArtifact(a, '../', projects)).join('\n')}` : empty('Everything it makes is kept here.')}`,
-    ...(hasMelody
-      ? {
-          scripts: `<script src="${TONE}"></script>
-<script>
-document.querySelectorAll('[data-melody]').forEach(function (button) {
-  button.addEventListener('click', async function () {
-    var m = JSON.parse(button.getAttribute('data-melody'));
-    await Tone.start();
-    var synth = new Tone.Synth().toDestination();
-    var beat = 60 / m.bpm;
-    var t = Tone.now();
-    m.notes.forEach(function (n) {
-      if (n.pitch !== 'R') synth.triggerAttackRelease(n.pitch, n.beats * beat * 0.9, t);
-      t += n.beats * beat;
-    });
-  });
-});
-</script>
-`,
-        }
-      : {}),
   })
 
   // Obsessions, each traced to where it started.
@@ -350,20 +254,5 @@ document.querySelectorAll('[data-melody]').forEach(function (button) {
   }
   for (const [rel, html] of pages) write(rel, html)
   write('style.css', STYLE)
-  for (const id of projects) {
-    for (const rel of projectFiles(join(projectsDir, id))) {
-      mkdirSync(dirname(join(out, 'projects', id, rel)), { recursive: true })
-      copyFileSync(join(projectsDir, id, rel), join(out, 'projects', id, rel))
-      written.push(`projects/${id}/${rel}`)
-    }
-  }
-  for (const a of art) {
-    if (a.kind !== 'photo') continue
-    const from = join(world, 'art', a.content.image)
-    if (!existsSync(from)) continue
-    mkdirSync(dirname(join(out, a.content.image)), { recursive: true })
-    copyFileSync(from, join(out, a.content.image))
-    written.push(a.content.image)
-  }
   return { pages: written }
 }

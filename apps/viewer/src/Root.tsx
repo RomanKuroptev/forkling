@@ -1,7 +1,5 @@
 import { Component, useEffect, useState, type ReactNode } from 'react'
 import { App } from './App.tsx'
-import { EyeCam } from './eyecam/EyeCam.tsx'
-import { parseEyeCam } from './eyecam/params.ts'
 import { speciesPacks } from './species/registry.ts'
 import { ASSETS } from './world/assets.ts'
 import { loadWorld, type LoadedWorld, type LoadResult, type WorldError } from './world/loadWorld.ts'
@@ -70,12 +68,11 @@ export function Root() {
     }
   }, [])
 
-  const eyeCam = parseEyeCam(location.search)
   if (state.status === 'loading') return <div className="loading">Finding the world…</div>
   if (state.status === 'error') return <WorldErrorPanel error={state.error} worldRef={state.ref} />
   return (
     <WorldProvider world={state.world}>
-      <RenderGuard worldRef={state.world.ref}>{eyeCam ? <EyeCam shot={eyeCam} /> : <App />}</RenderGuard>
+      <RenderGuard worldRef={state.world.ref}><App /></RenderGuard>
     </WorldProvider>
   )
 }

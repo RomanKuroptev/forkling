@@ -48,7 +48,7 @@ That is too much for one PR to review, so W1 is five slices. Each is its own bra
 - The day test (`apps/mind/test/day.test.ts`) is rewritten for the new rules: a simulated day with no needs, a step running most of the awake day, at most 12 decide calls, none while asleep, and every rejected plan carrying its reason.
 - Health: `buildHealth` drops the need warnings and gains the warnings that still apply (no step for an hour, same verb 3 times, over 12 decide calls, failures, rejections, spend ahead of pace).
 
-### 4. Viewer and site: only what the new files need
+### 4. Viewer and site: only what the new files need (done)
 - The viewer keeps showing the island (the land and places arrive in W5). It stops drawing objects, contraptions, eye-cam, the gallery wall and need bars in the F3 overlay. Merge plays `write` at the desk and `rest` at home, as spec 2.7 says. Its thought line comes from the step's reason.
 - The site drops the pages that read removed folders (gallery, projects, obsessions). It keeps the journal, the why timeline and the home page.
 - No new viewer features. W5 rewrites this area.

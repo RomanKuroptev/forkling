@@ -1,4 +1,4 @@
-import { Artifact, Forkling, forklingPackIssues, Goals, objectIdFromPath, WorldObject, type SpeciesPack } from '@forkling/schema'
+import { Forkling, forklingPackIssues, Goals, objectIdFromPath, WorldObject, type SpeciesPack } from '@forkling/schema'
 import type { WorldRef } from './route.ts'
 
 export interface LoadedWorld {
@@ -13,7 +13,6 @@ export interface LoadedWorld {
   /** `mind/goals.json`, or empty for a world whose forkling has no mind yet. */
   goals: Goals
   /** What it has made, newest first. Only the latest few are read, and one that doesn't fit is left out, never an error. */
-  art: Artifact[]
 }
 
 /** A file that didn't fit, and what is wrong with it, one line per problem. */
@@ -40,8 +39,6 @@ export interface LoadDeps {
 }
 
 const MAX_OBJECTS = 300
-/** Each artifact is a request, and only a few ever hang in the world. */
-const MAX_ART = 30
 
 class LoadFailure extends Error {
   constructor(readonly error: WorldError) {
@@ -137,25 +134,6 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         })
       : {}
 
-    // Its work is for looking at, so a file that doesn't fit is skipped rather than keeping the island from loading.
-    const art = (
-      await Promise.all(
-        paths
-          .filter((p) => /^art\/[^/]+\.json$/.test(p))
-          .slice(-MAX_ART)
-          .map(async (path) => {
-            try {
-              const parsed = Artifact.safeParse(await raw(deps, ref, commit.sha, path))
-              return parsed.success ? [parsed.data] : []
-            } catch {
-              return []
-            }
-          }),
-      )
-    )
-      .flat()
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-
     const objectPaths = paths.filter((p) => objectIdFromPath(p) !== null).slice(0, MAX_OBJECTS)
     const objects = await Promise.all(
       objectPaths.map((path) =>
@@ -193,7 +171,6 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         pack: forkling.pack,
         objects: objects.filter((o): o is WorldObject => o !== null),
         goals: goals ?? {},
-        art,
       },
     }
   } catch (e) {
