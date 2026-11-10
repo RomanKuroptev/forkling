@@ -69,7 +69,6 @@ describe('the tick log', () => {
     expect(line!.stepBefore).toBeNull()
     expect(line!.stepAfter).toMatchObject({ index: 0, verb: 'watch', targetId: 'sunny-rock' })
     expect(line!.planId).toMatch(/^2026-11-03:[0-9a-f]{6,}$/)
-    expect(line!.needs).toHaveProperty('hunger')
     expect(line!.wrote).toContain('mind/goals.json')
     expect(result.logged).toBe(true)
   })
@@ -166,14 +165,5 @@ describe('the health summary', () => {
     expect(h.today.decideCalls).toBe(1)
     expect(h.plan.current).toMatchObject({ verb: 'watch' })
     expect(h.warnings).toEqual([])
-  })
-
-  it('warns when a need has been under 15 for over an hour', async () => {
-    await runTick(dir, deps(NOW))
-    const f = JSON.parse(readFileSync(file('forkling.json'), 'utf8'))
-    // Nothing in the template's reach would fix hunger, and nothing decays in this pack, so it stays empty.
-    writeFileSync(file('forkling.json'), JSON.stringify({ ...f, needs: { hunger: 2, energy: 80, curiosity: 60 } }))
-    for (let m = 10; m <= 90; m += 10) await runTick(dir, deps(minutesAfter(m), { llm: fakeLlm({ ...morning, plan: null }) }))
-    expect(health().warnings.join(' ')).toMatch(/hunger has been under 15 for/)
   })
 })

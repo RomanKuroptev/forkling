@@ -152,24 +152,6 @@ describe('following its own plan', () => {
   })
 })
 
-describe('strong needs', () => {
-  it('wake the model, but not on every tick', async () => {
-    await runTick(dir, at(NOW))
-    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
-    const llm = fakeLlm(keep)
-    await runTick(dir, at(minutesAfter(35), { llm }))
-    expect(llm.calls).toHaveLength(1)
-    expect(llm.calls[0]!.user).toMatch(/need: hunger is at/)
-    const felt = Forkling.parse(readJson('forkling.json'))
-    expect(felt.feelings.valence).toBeLessThan(0)
-    expect(felt.mood).toBe(moodLabel(felt.feelings))
-
-    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
-    await runTick(dir, at(minutesAfter(45), { llm }))
-    expect(llm.calls).toHaveLength(1)
-  })
-})
-
 const fishPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null, because: null, topic: null }]
 const stateOf = () => MindState.parse(readJson('mind/state.json'))
 const goalsOf = () => Goals.parse(readJson('mind/goals.json'))
@@ -423,29 +405,6 @@ describe('what counts as news', () => {
   })
 })
 
-describe('needs the body can fix itself', () => {
-  it("do not wake the model: hunger with a bowl in reach is the cat's own business", async () => {
-    // Hunger is empty and the bowl is a long walk away, so at the next tick it has not eaten yet. It can eat, though.
-    const bowl = JSON.parse(readFileSync(join(worldTemplate, 'objects', 'bowl.json'), 'utf8'))
-    writeJson('objects/bowl.json', { ...bowl, position: [-11, 0, 12] })
-    await runTick(dir, at(NOW))
-    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 }, position: [30, 0, -25] })
-    writeJson('mind/state.json', { ...stateOf(), lastThinkAt: '2026-11-03T06:00:00Z' })
-    const llm = fakeLlm(keep)
-    await runTick(dir, at(new Date(Date.parse(NOW) + 20_000).toISOString(), { llm }))
-    expect(llm.calls.filter((c) => c.kind === 'decide')).toHaveLength(0)
-  })
-
-  it('wake it when nothing in reach would fix them', async () => {
-    await runTick(dir, at(NOW))
-    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 }, position: [30, 0, -25] })
-    writeJson('mind/state.json', { ...stateOf(), lastThinkAt: '2026-11-03T06:00:00Z' })
-    const llm = fakeLlm(keep)
-    await runTick(dir, at(new Date(Date.parse(NOW) + 20_000).toISOString(), { llm }))
-    expect(llm.calls.filter((c) => c.kind === 'decide')).toHaveLength(1)
-  })
-})
-
 describe('the validator', () => {
   const badPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null, because: null, topic: null }]
 
@@ -510,7 +469,7 @@ describe('sleep', () => {
   it('stays up past bedtime only when the mind chose a late night, and keeps its reason', async () => {
     await runTick(dir, at(NOW))
     const llm = fakeLlm({ ...keep, stayUpLate: 'The moon is on the water and I want to watch it.' })
-    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
+    newObject('pebble')
     await runTick(dir, at('2026-11-03T19:00:00Z', { llm }))
     expect(Forkling.parse(readJson('forkling.json')).lateNight).toBe('2026-11-03')
     expect(MindState.parse(readJson('mind/state.json')).lateNightReason).toMatch(/moon/)
@@ -572,10 +531,10 @@ describe('what the model is shown', () => {
   it('keeps the cacheable prefix identical across calls and free of times', async () => {
     const llm = fakeLlm()
     await runTick(dir, at(NOW, { llm }))
-    patchForkling({ needs: { hunger: 3, energy: 80, curiosity: 60 } })
+    newObject('pebble')
     await runTick(dir, at(minutesAfter(35), { llm: fakeLlm(keep) }))
     const second = fakeLlm(keep)
-    patchForkling({ needs: { hunger: 2, energy: 80, curiosity: 60 } })
+    newObject('shell')
     await runTick(dir, at(minutesAfter(90), { llm: second }))
     expect(second.calls).toHaveLength(1)
     expect(second.calls[0]!.system).toBe(llm.calls[0]!.system)

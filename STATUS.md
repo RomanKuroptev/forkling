@@ -20,12 +20,12 @@ Branch `claude/project-thread-403rmi`.
 
 - **Decisions (Roman, 10 November, "go ahead" on my recommendations):** the bedtime reflection and nightly rewrite keep running until W7; `write` works in W1 as a plaque-style note in `notebook/`; PR #29 gets merged or closed by Roman before the W1 release. The W0 voice test ran live (see `docs/spec/w0-voice-test.md`).
 - **Done:** `packages/sim/src/mood.ts` (spec 3.2: the event table, clamp, wake rule, tired limits, words, spiral check), tests first, 17 tests. Nothing uses it yet.
-- **Next in slice 1, in this order, each commit green:**
-  1. The body stops reading needs: the cat pack declares no needs, `scoreActions` and the drift draw run on baseline and mood only, and the need trigger inputs go. The unused care actions leave the pack.
-  2. `forkling.json` gets numeric `mood` and `energy` from `mood.ts` and drops `needs` and `feelings`, with the old file shape still parsing.
-  3. The mind's tick feeds `mood.ts` instead of appraisal, and the prompts say mood in words.
-  4. `needs.ts`, `appraisal.ts`, `temperament.ts` and their tests are deleted.
-  The body's choice of pose for each of the nine mind verbs (spec 2.7) needs a small pack-format hook (a verb to place-and-clip table), which I'll add in step 1 rather than hardcode anything cat-specific in the sim.
+- **Step 1 done (the body stops reading needs):** the cat pack declares no needs and no action raises or costs one, and `SpeciesPack` accepts a pack with none (`needs` defaults to `{}`). The bowl is gone from the mind: `tick/portions.ts`, its test, the meal count in `tick/create.ts` and the "food to share out" prompt line. Pet-care tests that asserted need behaviour were removed or rewritten to wake the model on a new object instead: the need trigger, critical-need warnings, the replay's need rows, and the day test's bowl-and-cooking test. The system prompt golden file lost its "+8 curiosity" style figures (the only diff, for Roman's review). 1309 tests pass and every package typechecks.
+- **Still to do in slice 1, in this order, each commit green:**
+  1. `forkling.json` gets numeric `mood` and `energy` from `mood.ts` and drops `needs`, `feelings` and the mood label, with the old file shape still parsing.
+  2. The mind's tick feeds `mood.ts` instead of appraisal, the prompts say mood in words, and the need trigger, `fixableNeeds` and the need warnings in `health.ts` go.
+  3. `needs.ts`, `appraisal.ts`, `temperament.ts` and their tests are deleted, with the care actions (`eat`, `nap`, `curl_up`, `pounce`, `zoomies`, `cook`, `plant`, `water`, `harvest`) out of the pack.
+  The body's choice of pose for each of the nine mind verbs (spec 2.7) needs a small pack-format hook (a verb to place-and-clip table), added in step 3 rather than hardcoded in the sim.
 
 ## Next
 

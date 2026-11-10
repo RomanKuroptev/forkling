@@ -121,7 +121,7 @@ export const SpeciesPack = z
           decayPerHour: z.number().min(0),
         }),
       )
-      .refine((n) => Object.keys(n).length > 0, { message: 'a pack needs at least one need' }),
+      .default({}),
     actions: z.array(SpeciesAction).min(1),
     /** Body plans the species has, and the verb groups each allows. A cat stands up to work and drops to four legs to run. */
     bodyPlans: z.partialRecord(BodyPlan, z.array(VerbGroup).min(1)).default({ quadruped: ['body'] }),

@@ -37,7 +37,6 @@ describe('replay', () => {
     expect(run.rows.map((r) => r.atMs)).toEqual([0, 10, 20, 30, 40, 50].map((m) => T0 + m * 60_000))
     for (const row of run.rows) {
       expect(row.verb).toBeTruthy()
-      expect(row.needs).toHaveProperty('hunger')
       expect(row.asleep).toBe(false)
     }
   })
@@ -74,11 +73,6 @@ describe('replay', () => {
   it('has nothing to say before the first state', () => {
     const none = replay([state(30)], opts)
     expect(none.rows.map((r) => r.atMs)).toEqual([30, 40, 50].map((m) => T0 + m * 60_000))
-  })
-
-  it('counts the rows each need was critical, awake', () => {
-    const hungry = replay([state(0, { needs: { hunger: 1, energy: 80, curiosity: 60 } }, planned)], { ...opts, toMs: T0 + 5 * 60_000 })
-    expect(hungry.criticalRows.hunger).toBeGreaterThanOrEqual(1)
   })
 })
 

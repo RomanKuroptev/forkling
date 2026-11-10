@@ -71,9 +71,6 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   const from = nowMs - writtenMs > MAX_TALLY_MS ? nowMs : writtenMs
   const to = running ? Math.min(nowMs, Date.parse(running.until)) : 0
   const tally = running && !asleep && to > from ? tallyWindow(playbackInput, from, to) : { seconds: {}, started: {}, interruptions: [] }
-  // Food in portions is counted from every meal since the last write, step or no step.
-  const hasPortions = w.objects.some((o) => o.properties.portions !== undefined)
-  const meals = hasPortions && !asleep && nowMs > from ? tallyWindow(playbackInput, from, nowMs).started : {}
   const stepVerb = running ? w.goals.today?.steps[running.index]?.verb : undefined
   const body = playback.state
   const objects: WorldObject[] = [...w.objects]
@@ -135,7 +132,6 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     started: null,
 
     triggers: [],
-    begun: meals,
     worked: stepVerb ? (tally.seconds[stepVerb] ?? 0) : 0,
     drift: tally.interruptions.map((i) => ({ verb: i.verb, need: i.need, at: new Date(i.at * 1000).toISOString() })),
     failed: false,
