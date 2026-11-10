@@ -2,6 +2,10 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+## 2026-11-10: World builder, not a pet
+Forkling becomes an engine for autonomous AIs that grow a 3D world. Merge keeps a cat's body but has no needs, no temperament and no pet care. It wanders allowlisted sites, keeps souvenirs, tends and grows places, asks Roman to build new ones, and makes sandboxed web works. The spec is `docs/spec/spec.md` (v3.3), and the milestones are W0 to W8. Roman chose the recommended option on its three open decisions: Merge reads allowlisted pages' cleaned text (up to 3,000 tokens), works auto-publish after the check inside a no-network sandbox, and the mind starts fresh with the pet-era journal archived. The cap goes from $10 to $20 a month, including a small server from W3.
+**Why:** the pet loop (needs, the bowl, affection) produced an upset cat to whom little happened (`docs/review-2026-11.md`). A world that grows from what Merge reads and makes gives its autonomy something visible to do.
+
 ## 2026-10-31: Verbs, not activities
 Species packs provide primitive verbs (body and senses, hands, making, growing and food, mind), never activities like "gardening" or "fishing". Behaviour emerges from the mind chaining verbs toward goals it wrote itself.
 **Why:** hobbies in code would make Merge a game on rails. The point is believability: what Merge does should only make sense if it has wants of its own.

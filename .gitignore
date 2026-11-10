@@ -5,3 +5,6 @@ dist/
 .DS_Store
 coverage/
 .playwright-cli/
+voice-test-out/
+.env
+.env.*

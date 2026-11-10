@@ -12,7 +12,8 @@
     "sim-report": "node src/sim-report-cli.ts",
     "replay": "node src/replay-cli.ts",
     "typecheck": "tsc -p .",
-    "feeds:check": "node src/feeds/check.ts"
+    "feeds:check": "node src/feeds/check.ts",
+    "voice-test": "node --env-file-if-exists=../../.env scripts/voice-test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",

@@ -1,5 +1,7 @@
 # Species packs
 
+> **Pet era.** This describes the code before the world-builder pivot (spec in [`docs/spec/spec.md`](../docs/spec/spec.md)). It stays as history until W1 rewrites this area (the pack keeps only the body).
+
 The engine is species-agnostic. Everything specific to an animal lives in a pack under `species/<id>/`, so a forkling can be a cat, dog, fox, owl, dragon or anything else. The format is `SpeciesPack` in `packages/schema`.
 
 ```

@@ -24,20 +24,15 @@ function loadModel(): Promise<GLTF> {
 const byId = (id: string) => pack.actions.find((a) => a.id === id)!
 
 describe('cat species pack', () => {
-  it('parses, with the milestone needs and a 5 m notice radius', () => {
+  it('parses, with no needs and a 5 m notice radius', () => {
     expect(pack.id).toBe('cat')
-    // Affection is out until a visit can reach the mind (docs/future.md); nothing in the mind's world could ever raise it.
-    expect(Object.keys(pack.needs).sort()).toEqual(['curiosity', 'energy', 'hunger'])
+    // The species pack is a body. How the forkling feels is mood and energy (spec 3.2), not needs.
+    expect(pack.needs).toEqual({})
     expect(pack.perception.noticeRadius).toBe(5)
   })
 
-  it('has needs that fall at a human pace: hours, not minutes, to empty, and cheap moves', () => {
-    expect(pack.needs.hunger!.decayPerHour).toBe(24)
-    expect(pack.needs.curiosity!.decayPerHour).toBe(24)
-    expect(pack.needs.energy!.decayPerHour).toBe(20)
-    expect(byId('explore').satisfies.energy).toBe(-2)
-    expect(byId('pounce').satisfies.energy).toBe(-3)
-    expect(byId('zoomies').satisfies.energy).toBe(-2)
+  it('has no action that raises or costs a need', () => {
+    expect(pack.actions.filter((a) => Object.keys(a.satisfies).length > 0).map((a) => a.id)).toEqual([])
   })
 
   it('drops to four legs for the body, and stands up to work with its hands', () => {
@@ -348,23 +343,6 @@ describe('cat in the headless sim', () => {
     // Hiding restores a little energy, so a tired cat in the evening, with no sun to nap in and nothing soft, may well go there.
     const r = runHeadless({ pack, behaviors, world, seed: 9, startHour: 20, seconds: 1800, needs: { hunger: 90, energy: 5, curiosity: 90 } })
     expect(r.targets.some((t) => t.startsWith('hide:'))).toBe(true)
-  })
-
-  it('curls up on something soft in the evening, when there is no sun to nap in', () => {
-    expect(byId('curl_up')).toMatchObject({ requires: ['day'], target: { type: 'object', where: { soft: true } } })
-    expect(byId('curl_up').satisfies.energy).toBeGreaterThan(0)
-    const bed = WorldObject.parse({
-      id: 'bed',
-      kind: 'bed',
-      name: 'The bed',
-      position: [starterWorld().spawn.x - 5, 0, starterWorld().spawn.z + 3],
-      model: { parts: [{ shape: 'box', size: [1.2, 0.3, 0.8], at: [0, 0.15, 0], color: '#b08968' }] },
-      properties: { soft: true, size: 1.2, weightKg: 40 },
-      reason: 'A place to sleep.',
-    })
-    const world = worldWithObjects([bed])
-    const r = runHeadless({ pack, behaviors, world, seed: 4, startHour: 20, seconds: 900, needs: { hunger: 90, energy: 5, curiosity: 90 } })
-    expect(r.targets.some((t) => t.startsWith('curl_up:'))).toBe(true)
   })
 
   it('eats from a bowl when hungry, which uses nothing up', () => {

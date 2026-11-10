@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 const root = process.cwd()
 
 // Directories that only exist inside a forkling's world repo, not in this one.
-const worldDirs = new Set(['brain', 'memory', 'mind', 'objects', 'art', 'notebook', 'journal', 'events', 'site'])
+const worldDirs = new Set(['brain', 'memory', 'mind', 'objects', 'art', 'notebook', 'journal', 'events', 'site', 'self', 'places', 'works', 'wishes', 'souvenirs', 'trails', 'notes', 'archive'])
 
 /** Repo paths named in inline code, e.g. `packages/sim/src/prng.ts` or `docs/plans/`. */
 export function pathsIn(markdown: string, knownTop: Set<string>): string[] {

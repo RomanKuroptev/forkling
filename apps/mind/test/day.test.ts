@@ -195,13 +195,6 @@ describe('a whole day with no visitors', () => {
     expect(day.decideCalls, JSON.stringify(day)).toBeLessThanOrEqual(MAX_DECIDE_CALLS)
   })
 
-  it('runs out of bowl and feeds itself: it gathers, cooks and eats, and hunger is never empty for an hour', () => {
-    // Three portions are breakfast and a snack or two; the rest of the day's meals have to be made.
-    expect(day.bowlLeft, JSON.stringify(day)).toBe(0)
-    expect(day.dined, JSON.stringify(day)).toBeGreaterThanOrEqual(1)
-    expect(day.longestCritical.minutes, JSON.stringify(day)).toBeLessThanOrEqual(MAX_CRITICAL_MINUTES)
-  })
-
   it('does what it plans: the body carries out nearly every step it is given', () => {
     expect(day.stepsStarted, JSON.stringify(day)).toBeGreaterThanOrEqual(20)
     expect(day.stepsUnfinished / day.stepsStarted, JSON.stringify(day)).toBeLessThanOrEqual(0.2)

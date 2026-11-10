@@ -87,9 +87,15 @@ describe('SpeciesPack', () => {
     expect(SpeciesPack.safeParse(with_(-0.1)).success).toBe(false)
   })
 
-  it('requires at least one action and one need', () => {
+  it('requires at least one action', () => {
     expect(SpeciesPack.safeParse({ ...base, actions: [] }).success).toBe(false)
-    expect(SpeciesPack.safeParse({ ...base, needs: {} }).success).toBe(false)
+  })
+
+  it('needs no needs: a pack is a body, and the forkling has mood and energy instead (spec 3.2)', () => {
+    const noNeeds = SpeciesPack.safeParse({ ...base, needs: {}, actions: base.actions.map((a) => ({ ...a, satisfies: {} })) })
+    expect(noNeeds.success).toBe(true)
+    const left = SpeciesPack.safeParse({ ...base, needs: undefined, actions: base.actions.map((a) => ({ ...a, satisfies: {} })) })
+    expect(left.success && left.data.needs).toEqual({})
   })
 })
 

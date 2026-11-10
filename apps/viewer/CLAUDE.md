@@ -1,5 +1,7 @@
 # apps/viewer
 
+> **Pet era.** This describes the code before the world-builder pivot (spec in [`docs/spec/spec.md`](../../docs/spec/spec.md)). It stays as history until W5 rewrites this area.
+
 The visitor's browser. Vite + React Three Fiber, loading any world from GitHub at `/<owner>/<repo>`.
 
 ## Rules
