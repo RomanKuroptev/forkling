@@ -53,7 +53,7 @@ That is too much for one PR to review, so W1 is five slices. Each is its own bra
 - The site drops the pages that read removed folders (gallery, projects, obsessions). It keeps the journal, the why timeline and the home page.
 - No new viewer features. W5 rewrites this area.
 
-### 5. Seed, archive and release
+### 5. Seed, archive and release (built; the release and the move of Merge's repo are waiting, see w1-release.md)
 - `self/seed.md` with the 9.1 text, reviewed by Roman, in the template and in Merge's repo. Merge's `brain/persona.md` and `temperament.json` are archived.
 - **Decision 3 (fresh mind):** Merge's `objects/`, `art/`, `notebook/` and old `journal/` move to `archive/` in a single commit. Its beliefs, `memory/summary.md` and stream are archived too, so the mind starts empty. The site's `/archive/` page shows the old journal and art read-only.
 - The template world, its `CLAUDE.md`, its workflows (`build.yml` loses the project job) and `validate.yml`'s allowed paths (`places/`, `works/`, `wishes/` and the archive moves) are updated.

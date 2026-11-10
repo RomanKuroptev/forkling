@@ -27,13 +27,12 @@ Branch `claude/project-thread-403rmi`.
 - **Step 4 done (care actions and need fields gone from the pack):** the cat no longer has `sniff`, `vocalize`, `nap`, `curl_up`, `pounce`, `zoomies`, `eat`, `dine`, `cook`, `plant`, `water` or `harvest`, and `SpeciesPack` has no `needs`, `satisfies` or `spontaneous` (packs that still carry them parse, and the fields are ignored). The cat keeps its body verbs (`go_to`, `inspect`, `sit`, `watch`, `follow`, `hide`, `sleep`, `stretch`, `explore`), hands, making and mind verbs, which go in slice 3.
 - **Slice 1 is done.** What remains of the pet is the object machinery (effects, objects, contraptions, the art, photo and code pipelines, the eye cam, the island), which slice 3 removes together with the old triggers. The pack-format hook that maps a mind verb to a place and clip (spec 2.7) comes with the nine verbs in slice 2.
 
-## W1 slice 4 (done): the viewer and the site lose the pet's things
+## W1 slice 5 (built, not released): the seed, the archive and the workflows
 
-- **Viewer:** the eye cam (`eyecam/`, its script and the `playwright` dev dependency), the gallery wall and melody player (and `tone`), contraptions, and art loading are gone. It still draws the island, its objects as scenery and the body, which sits for every mind verb until W5.
-- **Site:** no gallery, projects or photos, and no sound library. The notebook has a new "What it wrote" section from `notebook/writing/`. Home, journal, notebook, obsessions and why remain.
-- **Sim:** `eyecam.ts` and `svg.ts` are deleted. 855 tests pass.
-- **Still in the code:** the sim's world of objects and nav grid, the schema's art, photo and build types (read by nothing now), the novelty trigger, the reading module (the morning feed skim), the bedtime reflection and nightly rewrite, and the template world (its workflows still call deleted commands).
-- **Next:** slice 5: `self/seed.md` in the template and Merge's repo (for Roman's review), the archive move, the workflow fixes (`mind.yml` loses its photo and builder steps, `build.yml` and `validate.yml` are replaced), the release tag, and 3 live days.
+- **Template world:** it ships `self/seed.md` (the spec 9.1 text, the same as the engine copy) and a new `CLAUDE.md`. `brain/persona.md`, `brain/skills.json`, `art/`, `build.yml` and `validate.yml` are gone, and `mind.yml` has no photo or builder steps (the tick's CLI no longer prints `photos` or `build`). The starter objects stay as scenery until W5.
+- **`pnpm --filter @forkling/mind migrate-w1 --world <clone> [--apply]`** moves a pet-era world to this layout (`apps/mind/src/migrate.ts`): the pet goes under `archive/`, the mind starts fresh, who it is and what it has spent stay, and the seed, `CLAUDE.md` and workflows come from the template. Tested on temp worlds and dry-run, applied and ticked against a local clone of Merge: a morning prompt of about 1,200 tokens, and the site renders with an Archive page (the old diary, read-only).
+- **The site** shows the archived diary at `/archive/` when a world has one.
+- **Not done, and Roman's call:** the release PR and the `v0.9.0` tag, then the migration of `RomanKuroptev/merge`, then 3 live days. The steps are in [`docs/spec/w1-release.md`](docs/spec/w1-release.md). Nothing has touched Merge's repo.
 
 ## Next
 

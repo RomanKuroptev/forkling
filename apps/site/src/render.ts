@@ -73,6 +73,8 @@ interface PageInput {
   root: string
   active: string
   body: string
+  /** The links in the header. The archive link is there only when the world has an archive. */
+  nav: [string, string][]
 }
 
 function layout(p: PageInput): string {
@@ -87,7 +89,7 @@ function layout(p: PageInput): string {
 <body>
 <header>
 <a class="name" href="${p.root}index.html">${esc(p.name)}</a>
-<nav>${NAV.map(([label, path]) => `<a href="${p.root}${path}"${path === p.active ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
+<nav>${p.nav.map(([label, path]) => `<a href="${p.root}${path}"${path === p.active ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
 </header>
 <main>
 ${p.body}
@@ -139,7 +141,12 @@ export function renderSite(world: string, out: string): { pages: string[] } {
     .slice(0, MAX_WHY_ENTRIES)
 
   const pages = new Map<string, string>()
-  const add = (rel: string, input: Omit<PageInput, 'name' | 'root'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), ...input }))
+  const archived = files(world, 'archive/journal', '.md')
+    .map((f) => ({ date: f.slice(0, -3), text: readText(world, `archive/journal/${f}`) ?? '' }))
+    .filter((j) => /^\d{4}-\d{2}-\d{2}$/.test(j.date))
+    .sort((a, b) => b.date.localeCompare(a.date))
+  const nav: [string, string][] = archived.length > 0 ? [...NAV, ['Archive', 'archive/']] : NAV
+  const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, ...input }))
 
   // Home: who it is, what it wants, what it is doing and why.
   const step = goals.now ? goals.today?.steps[goals.now.index] : undefined
@@ -180,6 +187,18 @@ export function renderSite(world: string, out: string): { pages: string[] } {
       body: `${markdown(j.text)}\n<p class="pager">${older ? `<a href="${esc(older.date)}.html">← ${esc(older.date)}</a>` : ''} ${newer ? `<a href="${esc(newer.date)}.html">${esc(newer.date)} →</a>` : ''}</p>`,
     })
   })
+
+  // Archive: the diary it wrote before it was a world builder, kept as it was and not added to.
+  if (archived.length > 0) {
+    add('archive/index.html', {
+      title: 'Archive',
+      active: 'archive/',
+      body: `<h1>Archive</h1>
+<p class="quiet">What it wrote before it started building a world. Kept as it was.</p>
+<ul>${archived.map((j) => `<li><a href="journal/${esc(j.date)}.html">${esc(j.date)}</a> ${esc(titleOf(j.text))}</li>`).join('')}</ul>`,
+    })
+    for (const j of archived) add(`archive/journal/${j.date}.html`, { title: `${j.date} (archive)`, active: 'archive/', body: markdown(j.text) })
+  }
 
   // Notebook: what it believes, what it read, what it planned.
   const live = beliefs.filter((b) => b.status !== 'dropped').sort((a, b) => b.confidence - a.confidence)

@@ -1,13 +1,15 @@
 # A forkling world
 
-This repo is a [Forkling](https://github.com/RomanKuroptev/forkling) world: one autonomous pet's state, memories and everything it has built, stored as files.
+This repo is a [Forkling](https://github.com/RomanKuroptev/forkling) world: one autonomous AI's state, memories and everything it has made, stored as files.
 
 - `forkling.json`: who it is and what it is doing right now
-- `objects/`: every object in its world, one JSON file each
+- `self/seed.md`: the one short text that says who it is (changed only by its owner)
+- `objects/`: the scenery on its island, one JSON file each (replaced by places in a later milestone)
+- `notebook/`: what it read, planned and wrote
 - `memory/`: what it remembers
 - `journal/`: one diary entry per day
 - `mind/`: its goals (`goals.json`) and what it has already noticed (`state.json`)
-- `brain/`: its own personality (`persona.md`) and what its thinking has cost this month (`budget.json`)
+- `brain/`: its interests and what its thinking has cost this month (`budget.json`)
 - `events/inbox/`: visitor events waiting for its next tick
 
 ## Hatching your own
@@ -31,8 +33,8 @@ From then on it wakes every 10 minutes while awake and once an hour while asleep
 
 **If it never ticks.** Open the Actions tab and look at the `mind` runs. Runs labelled `workflow_dispatch` are manual ones; a working schedule shows `schedule`. GitHub's cron is best effort: it can start late, drop runs at busy minutes (so the schedule here uses `:03`, `:13`, ... instead of `:00`, `:30`), and on some accounts a new schedule may take hours to start, or not start at all. If you see no `schedule` runs after an hour, switch on the heartbeat: add a repository *variable* (not a secret) `MIND_HEARTBEAT` with the value `true`, then Actions, `heartbeat`, Run workflow. It dispatches `mind` itself every 10 minutes and restarts itself every 5 hours. It keeps one runner idle between ticks, which is free for public repositories.
 
-**Cost.** It cannot spend more than $10 a month: `brain/budget.json` is the ledger, and at the cap it stops calling a model until the month turns over and carries on with its instincts. Each tick's spend shows in the Actions job summary.
+**Cost.** It cannot spend more than $20 a month: `brain/budget.json` is the ledger, and at the cap it stops calling a model until the month turns over and carries on with its instincts. Each tick's spend shows in the Actions job summary.
 
-**Personality.** `brain/persona.md` is yours to write. The mind reads it on every call.
+**Personality.** `self/seed.md` is the only authored text, and the mind reads it on every call. Everything else about the forkling it writes itself.
 
 Edit any file and refresh the viewer to see the change. If a file doesn't fit the format, the viewer tells you which one and why.
