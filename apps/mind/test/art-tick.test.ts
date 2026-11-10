@@ -64,7 +64,7 @@ let dir: string
 const file = (rel: string) => join(dir, rel)
 const readJson = (rel: string) => JSON.parse(readFileSync(file(rel), 'utf8'))
 const tick = (now: Date | string, llm: LlmClient | null, over: Partial<TickDeps> = {}) =>
-  runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools, ...over })
+  runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, ...over })
 
 /** A morning plan, then the first step runs out. */
 async function makeADay(steps: ReturnType<typeof step>[], over: Partial<TickDeps> = {}, art?: ArtAnswers) {

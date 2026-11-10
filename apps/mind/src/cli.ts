@@ -43,7 +43,6 @@ async function main(): Promise<void> {
     pack: species.pack,
     behaviors: species.behaviors,
     speciesPersona: species.persona,
-    pools: species.pools,
     get: httpGetJson,
     dryRun: values['dry-run'],
     engine: process.env.FORKLING_REF ?? 'dev',

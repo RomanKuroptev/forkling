@@ -45,7 +45,7 @@ let dir: string
 const file = (rel: string) => join(dir, rel)
 const readJson = (rel: string) => JSON.parse(readFileSync(file(rel), 'utf8'))
 const state = () => MindState.parse(readJson('mind/state.json'))
-const tick = (now: Date | string, llm: LlmClient) => runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools })
+const tick = (now: Date | string, llm: LlmClient) => runTick(dir, { now: new Date(now), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona })
 
 async function codeADay(steps = [step('code', 'desk', 'a toy of gates'), step('sit', null)]) {
   await tick(MORNING, fake(plan(steps)).llm)

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { createPrng, feedInterest } from '@forkling/sim'
-import type { Goals, Interests, InterestSource, ReadingNote, TemperamentRoll } from '@forkling/schema'
+import type { Goals, Interests, InterestSource, ReadingNote } from '@forkling/schema'
 import { clampText } from './decision.ts'
 import { clip, item, type FeedItem, type GetJson } from './feeds/types.ts'
 import { describeInterests } from './prompts.ts'
@@ -22,19 +22,14 @@ export interface ReadingInput {
   date: string
   items: readonly FeedItem[]
   interests: Interests
-  temperament: TemperamentRoll | null
   /** What it chose to read about, for `topic`. */
   topic: string | null
 }
 
 /** The user part of a reading call (Haiku). */
 export function buildReadingUser(i: ReadingInput): string {
-  const taste = (list: readonly { category: string; value: string }[]) => list.map((t) => `${t.value} (${t.category})`).join(', ') || 'nothing in particular'
   const source = i.kind === 'skim' ? 'feeds' : 'wikipedia'
   return [
-    ...(i.temperament
-      ? ['<you>', `likes: ${taste(i.temperament.likes)}`, `dislikes: ${taste(i.temperament.dislikes)}`, ...i.temperament.quirks.map((q) => `quirk (${q.id}): ${q.text}`), '</you>', '']
-      : []),
     '<interests>',
     ...describeInterests(i.interests),
     '</interests>',

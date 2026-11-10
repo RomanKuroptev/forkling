@@ -1,4 +1,4 @@
-import { Artifact, Forkling, forklingPackIssues, Goals, objectIdFromPath, TemperamentRoll, WorldObject, type SpeciesPack } from '@forkling/schema'
+import { Artifact, Forkling, forklingPackIssues, Goals, objectIdFromPath, WorldObject, type SpeciesPack } from '@forkling/schema'
 import type { WorldRef } from './route.ts'
 
 export interface LoadedWorld {
@@ -12,8 +12,6 @@ export interface LoadedWorld {
   objects: WorldObject[]
   /** `mind/goals.json`, or empty for a world whose forkling has no mind yet. */
   goals: Goals
-  /** `brain/temperament.json`: likes, dislikes and quirks. Null until the mind has rolled it. */
-  temperament: TemperamentRoll | null
   /** What it has made, newest first. Only the latest few are read, and one that doesn't fit is left out, never an error. */
   art: Artifact[]
 }
@@ -139,13 +137,6 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         })
       : {}
 
-    const temperament: TemperamentRoll | null = paths.includes('brain/temperament.json')
-      ? await readFile<TemperamentRoll>(deps, ref, commit.sha, 'brain/temperament.json', problems, (data) => {
-          const parsed = TemperamentRoll.safeParse(data)
-          return parsed.success ? { value: parsed.data } : { lines: zodLines(parsed.error) }
-        })
-      : null
-
     // Its work is for looking at, so a file that doesn't fit is skipped rather than keeping the island from loading.
     const art = (
       await Promise.all(
@@ -202,7 +193,6 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         pack: forkling.pack,
         objects: objects.filter((o): o is WorldObject => o !== null),
         goals: goals ?? {},
-        temperament,
         art,
       },
     }

@@ -45,7 +45,7 @@ function fakeLlm(decision: Decision | null = morning): LlmClient & { calls: LlmR
 let dir: string
 const file = (rel: string) => join(dir, rel)
 const minutesAfter = (min: number) => new Date(Date.parse(NOW) + min * 60_000).toISOString()
-const deps = (iso: string, over: Partial<TickDeps> = {}): TickDeps => ({ now: new Date(iso), llm: fakeLlm(), pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools, engine: 'v0.7.3', ...over })
+const deps = (iso: string, over: Partial<TickDeps> = {}): TickDeps => ({ now: new Date(iso), llm: fakeLlm(), pack, behaviors: cat.behaviors, speciesPersona: cat.persona, engine: 'v0.7.3', ...over })
 const lines = (date = DAY) => readTicks(dir, date)
 const health = () => Health.parse(JSON.parse(readFileSync(file('mind/health.json'), 'utf8')))
 

@@ -15,7 +15,7 @@ async function readSession(t: Tick, kind: 'skim' | 'topic', items: readonly Feed
     notes.push(`reading limit reached (${MAX_READINGS_PER_DAY} a day): no reading`)
     return false
   }
-  const user = buildReadingUser({ kind, date: today, items, interests: t.interests, temperament: t.temperament, topic })
+  const user = buildReadingUser({ kind, date: today, items, interests: t.interests, topic })
   const result = await t.ask('read', 'claude-haiku-5-5', user, ReadingNote, MAX_READING_TOKENS)
   if (!result) return false
   if (!result.parsed) {

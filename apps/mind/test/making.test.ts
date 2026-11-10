@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Forkling, Skills, TemperamentRoll, WorldObject, type SpeciesPack } from '@forkling/schema'
+import { Forkling, Skills, WorldObject, type SpeciesPack } from '@forkling/schema'
 import type { Decision, LlmStep } from '../src/decision.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
 import { noBatch } from './noBatch.ts'
@@ -64,7 +64,7 @@ const writeJson = (rel: string, value: unknown) => {
   writeFileSync(file(rel), JSON.stringify(value, null, 2))
 }
 const tick = (n: number, llm: LlmClient | null, over: Partial<TickDeps> = {}) =>
-  runTick(dir, { now: minutes(n), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools, ...over })
+  runTick(dir, { now: minutes(n), llm, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, ...over })
 
 const part = { shape: 'box', size: [0.6, 0.4, 0.6], at: [0, 0.2, 0], color: '#a67c52' }
 const placed = (id: string, dx: number, dz: number, extra: Record<string, unknown>) =>
@@ -176,35 +176,6 @@ describe('when a step does not work out', () => {
     await tick(12, again)
     await tick(13, again)
     expect(again.calls.length).toBeLessThanOrEqual(1)
-  })
-})
-
-describe('temperament', () => {
-  it('is rolled once from the seed, written, and never rolled again', async () => {
-    expect(existsSync(file('brain/temperament.json'))).toBe(false)
-    await tick(0, fakeLlm(decision(null)))
-    const first = TemperamentRoll.parse(readJson('brain/temperament.json'))
-    expect(first.likes).toHaveLength(4)
-    expect(first.dislikes).toHaveLength(3)
-    expect(first.quirks.length).toBeGreaterThanOrEqual(2)
-    writeJson('forkling.json', { ...readJson('forkling.json'), seed: 999 })
-    await tick(40, fakeLlm(null))
-    expect(TemperamentRoll.parse(readJson('brain/temperament.json'))).toEqual(first)
-  })
-
-  it('makes forklings with different seeds different, and shows them their own taste', async () => {
-    const llm = fakeLlm(decision(null))
-    await tick(0, llm)
-    const a = TemperamentRoll.parse(readJson('brain/temperament.json'))
-    expect(llm.calls[0]!.user).toMatch(/likes: /)
-    for (const q of a.quirks) expect(llm.calls[0]!.user).toContain(`quirk (${q.id})`)
-
-    const other = mkdtempSync(join(tmpdir(), 'mind-other-'))
-    copyFileSync(file('forkling.json'), join(other, 'forkling.json'))
-    writeFileSync(join(other, 'forkling.json'), JSON.stringify({ ...readJson('forkling.json'), seed: 7 }))
-    await runTick(other, { now: minutes(0), llm: null, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools })
-    const b = TemperamentRoll.parse(JSON.parse(readFileSync(join(other, 'brain/temperament.json'), 'utf8')))
-    expect(b).not.toEqual(a)
   })
 })
 

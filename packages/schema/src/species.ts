@@ -169,36 +169,3 @@ export const SpeciesPack = z
   })
 export type SpeciesPack = z.infer<typeof SpeciesPack>
 
-/** A quirk a forkling may roll at birth. `weights` multiply verb utility, so a hoarder picks things up more. */
-export const Quirk = z.object({
-  id: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'lowercase letters, digits and dashes'),
-  /** How it shows, in a sentence. Shown to the mind and on the site. */
-  text: z.string().min(1).max(200),
-  weights: z.record(z.string(), z.number().min(0)).default({}),
-  /** Multipliers on how strongly an event kind (`finished`, `blocked`...) moves its feelings: a perfectionist minds a blocked step more. */
-  appraisal: z.record(z.string(), z.number().min(0)).default({}),
-})
-export type Quirk = z.infer<typeof Quirk>
-
-/** `species/<id>/temperament.json`: the pools a forkling's likes, dislikes and quirks are rolled from, once, from its seed. */
-export const TemperamentPools = z
-  .object({
-    /** Categories of taste (colours, textures, places, weather, sounds) and the values in each. */
-    traits: z
-      .record(z.string().min(1), z.array(z.string().min(1)).min(2))
-      .refine((t) => Object.keys(t).length > 0, { message: 'at least one trait category' }),
-    likes: z.number().int().min(0).max(6).default(3),
-    dislikes: z.number().int().min(0).max(6).default(2),
-    quirks: z.array(Quirk).min(2),
-    /** Fewest and most quirks to roll. */
-    quirkCount: z.tuple([z.number().int().min(0), z.number().int().min(0)]).default([2, 3]),
-  })
-  .superRefine((pools, ctx) => {
-    const ids = new Set<string>()
-    pools.quirks.forEach((q, i) => {
-      if (ids.has(q.id)) ctx.addIssue({ code: 'custom', path: ['quirks', i, 'id'], message: `duplicate quirk id ${q.id}` })
-      ids.add(q.id)
-    })
-    if (pools.quirkCount[0] > pools.quirkCount[1]) ctx.addIssue({ code: 'custom', path: ['quirkCount'], message: 'min is above max' })
-  })
-export type TemperamentPools = z.infer<typeof TemperamentPools>

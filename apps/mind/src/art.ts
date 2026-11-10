@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Artifact, ArtOutput, ARTIFACT_KINDS, MAX_ARTIFACT_TEXT, MAX_MELODY_NOTES, Pitch, type ArtifactKind, type Interests, type TemperamentRoll } from '@forkling/schema'
+import { Artifact, ArtOutput, ARTIFACT_KINDS, MAX_ARTIFACT_TEXT, MAX_MELODY_NOTES, Pitch, type ArtifactKind, type Interests } from '@forkling/schema'
 import { sanitizeSvg } from '@forkling/sim'
 import { clampText } from './decision.ts'
 
@@ -157,7 +157,6 @@ export interface ArtInput {
   /** Titles of its latest work, so it makes something different. */
   recentTitles: readonly string[]
   interests: Interests
-  temperament: TemperamentRoll | null
   date: string
   /** For a contraption: how the run went, as the physics measured it. It is handed over as fact. */
   run?: { name: string; moved: boolean; maxTravel: number; settled: boolean } | undefined
@@ -165,15 +164,11 @@ export interface ArtInput {
 
 /** The user part of an artifact call (Haiku). */
 export function buildArtUser(i: ArtInput): string {
-  const taste = (list: readonly { category: string; value: string }[]) => list.map((t) => `${t.value} (${t.category})`).join(', ') || 'nothing in particular'
   const top = Object.entries(i.interests.topics)
     .sort((a, b) => b[1].weight - a[1].weight)
     .slice(0, 5)
     .map(([topic]) => topic)
   return [
-    ...(i.temperament
-      ? ['<you>', `likes: ${taste(i.temperament.likes)}`, `dislikes: ${taste(i.temperament.dislikes)}`, ...i.temperament.quirks.map((q) => `quirk (${q.id}): ${q.text}`), '</you>', '']
-      : []),
     ...(top.length > 0 ? ['<interests>', top.join(', '), '</interests>', ''] : []),
     ...(i.run
       ? ['<run>', `contraption: ${clampText(i.run.name, 60)}`, `what happened: ${i.run.moved ? `something moved ${Math.round(i.run.maxTravel * 100) / 100} m` : 'nothing moved'}; ${i.run.settled ? 'everything came to rest' : 'it was still moving at the end'}`, '</run>', '']

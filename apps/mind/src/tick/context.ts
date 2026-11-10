@@ -11,7 +11,6 @@ import type {
   MindState,
   PlanStep,
   SpeciesPack,
-  TemperamentPools,
   TickCall,
   TimelineEntry,
   VisitorEvent,
@@ -34,8 +33,6 @@ export interface TickDeps {
   behaviors: MicroBehavior[]
   /** The species `persona.md`. */
   speciesPersona: string
-  /** Where likes, dislikes and quirks are rolled from. Without it a forkling has no temperament and keeps whatever mood the model gives it. */
-  pools?: TemperamentPools | null
   /** Reads a public URL as JSON, for the feeds and Wikipedia. Without it the forkling reads nothing. */
   get?: GetJson
   /** Work out the prompt and what it would cost, but call nothing and write nothing. */
@@ -99,10 +96,6 @@ export interface Tick {
   asleep: boolean
   window: ReturnType<typeof sleepWindow>
   budget: ReturnType<typeof rollLedger>
-
-  temperament: World['temperament']
-  /** Set when the temperament was rolled this tick and has to be written. */
-  rolled: boolean
 
   world: ReturnType<typeof worldWithObjects>
   body: ReturnType<typeof startPlayback>['state']

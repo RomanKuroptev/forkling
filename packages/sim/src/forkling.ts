@@ -93,8 +93,6 @@ export interface ForklingState {
   focus: Focus | null
   /** Whether its paws are full, which changes how it walks. */
   holding: boolean
-  /** What its quirks do to each verb's appeal. Fixed for life, from its temperament. */
-  quirkWeights: Record<string, number>
   /** How it feels, from the repo state. Fixed for a replay, so everyone who replays it chooses the same way. */
   feelings?: Feelings
 }
@@ -106,7 +104,6 @@ export interface CreateOptions {
   firstAction?: string
   focus?: Focus
   holding?: boolean
-  quirkWeights?: Record<string, number>
   feelings?: Feelings
 }
 
@@ -163,7 +160,6 @@ export function createForkling(
     firstAction: opts.firstAction ?? null,
     focus: opts.focus ?? null,
     holding: opts.holding ?? false,
-    quirkWeights: opts.quirkWeights ?? {},
     ...(opts.feelings ? { feelings: opts.feelings } : {}),
   }
 }
@@ -383,7 +379,7 @@ function replan(s: ForklingState, ctx: StepContext): void {
     }
   }
 
-  let candidates = scoreActions(s.pack, { ...scoring, spotKinds, quirkWeights: s.quirkWeights, ...(s.feelings ? { feelings: s.feelings } : {}), ...(focus ? { focusAction: focus.action } : {}) })
+  let candidates = scoreActions(s.pack, { ...scoring, spotKinds, ...(s.feelings ? { feelings: s.feelings } : {}), ...(focus ? { focusAction: focus.action } : {}) })
   if (focus) {
     candidates = candidates.map((c) => (c.action.id === focus.action ? { ...c, score: Math.max(c.score * 2, FOCUS_SCORE) } : c))
   }
