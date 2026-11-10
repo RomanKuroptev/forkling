@@ -6,3 +6,5 @@ dist/
 coverage/
 .playwright-cli/
 voice-test-out/
+.env
+.env.*
