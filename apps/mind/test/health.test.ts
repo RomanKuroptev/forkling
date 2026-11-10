@@ -109,28 +109,6 @@ describe('buildHealth', () => {
   })
 
   describe('warnings', () => {
-    it('names a need that has been under 15 for over an hour while awake', () => {
-      const low = { needs: { hunger: 5, energy: 80, curiosity: 60 } }
-      const h = run(Array.from({ length: 8 }, (_, i) => ({ min: i * 10, line: low })))
-      expect(h.needsCritical.hunger).toBe(70)
-      expect(h.warnings.join(' ')).toMatch(/hunger has been under 15 for 70 minutes/)
-    })
-
-    it('forgives a need that recovers, and does not count sleep', () => {
-      const h = run([
-        { min: 0, line: { needs: { hunger: 5 } } },
-        { min: 10, line: { needs: { hunger: 5 } } },
-        { min: 20, line: { needs: { hunger: 50 } } },
-      ])
-      expect(h.needsCritical.hunger).toBe(0)
-      const asleep = run([
-        { min: 0, line: { needs: { hunger: 5 }, asleep: true } },
-        { min: 60, line: { needs: { hunger: 5 }, asleep: true } },
-      ])
-      expect(asleep.needsCritical.hunger).toBe(0)
-      expect(asleep.warnings).toEqual([])
-    })
-
     it('warns when nothing has been planned for over an hour while awake', () => {
       const none = { goals: Goals.parse({}) }
       const h = run(Array.from({ length: 8 }, (_, i) => ({ min: i * 10, line: { stepAfter: null, planId: null }, ctx: none })))

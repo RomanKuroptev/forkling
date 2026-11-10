@@ -69,11 +69,6 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   }
   const longestGapMinutes = Math.max(before?.longestGapMinutes ?? 0, awakeBoth ? gap : 0)
 
-  // How long things have been wrong: only while awake, since the body cannot do anything about a need in bed.
-  const needsCritical: Record<string, number> = {}
-  for (const [need, value] of Object.entries(line.needs)) {
-    needsCritical[need] = awake && value < STRONG_NEED ? (prev?.needsCritical[need] ?? 0) + gap : 0
-  }
   const idleMinutes = awake && !ctx.goals.now ? (prev?.plan.idleMinutes ?? 0) + gap : 0
   const mood = prev && prev.mood.label === line.mood ? { label: line.mood, minutes: prev.mood.minutes + gap } : { label: line.mood, minutes: 0 }
 
@@ -103,9 +98,6 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   const openBuild = waiting ? { id: waiting.id, kind: waiting.kind, ageHours: Math.max(0, Math.round((ctx.nowMs - Date.parse(waiting.requestedAt)) / 3_600_000)) } : null
 
   const warnings: string[] = []
-  for (const [need, minutes] of Object.entries(needsCritical)) {
-    if (minutes > WARN_MINUTES) warnings.push(`${need} has been under ${STRONG_NEED} for ${minutes} minutes while awake`)
-  }
   if (idleMinutes > WARN_MINUTES) warnings.push(`no step in progress for ${idleMinutes} minutes while awake`)
   for (const [step, n] of Object.entries(stepsStarted)) {
     if (n >= WARN_SAME_STEP) warnings.push(`started "${step}" ${n} times today`)
@@ -125,8 +117,8 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     plan,
     today: { ticks: (before?.ticks ?? 0) + 1, decideCalls, callsByKind, triggersByKind, failures, rejections, stepsStarted, longestGapMinutes },
     quotas,
-    needsCritical,
     mood,
+    needsCritical: {},
     spend,
     openBuild,
     warnings,

@@ -1,6 +1,5 @@
-import type { NeedId, SpeciesAction, SpeciesPack } from '@forkling/schema'
-import type { Feelings } from './appraisal.ts'
-import type { Needs } from './needs.ts'
+import type { SpeciesAction, SpeciesPack } from '@forkling/schema'
+import type { Feelings } from './mood.ts'
 import type { Prng } from './prng.ts'
 import { isDusk, isNight } from './time.ts'
 
@@ -30,10 +29,6 @@ export interface ScoredAction {
 
 /** Keeps every eligible action possible, so a forkling is never locked into one behavior. */
 const BASELINE = 0.08
-/** A need this close to full (in points) is not worth acting on. A cat that is 85% fed does not go and eat. */
-const CONTENT = 20
-/** How strongly an empty need amplifies actions that address it. Grows with the square of the deficit, so a small one barely registers. */
-const URGENCY = 4
 //** How sharply the draw favours high scores. Scores 10x apart are picked about 100x apart, with no floor for hopeless actions. */
 const SHARPNESS = 2
 
@@ -44,14 +39,13 @@ const MOOD_MAX = 1.4
 
 /**
  * How the mood bends the appeal of a verb, from its own fields and no names: a body that is wound up and glad leans to
- * the energetic (it runs, or spends energy), and one that is low and calm to the restful (it restores energy, or sits or
+ * the energetic (it runs), and one that is low and calm to the restful (it restores energy, or sits or
  * sleeps). It never changes a score by more than 40% either way, so mood tilts a choice and does not make it.
  */
 function moodWeight(action: SpeciesAction, feelings: Feelings | undefined): number {
   if (!feelings) return 1
-  const energy = action.satisfies.energy ?? 0
-  const energetic = action.gait === 'run' || energy < 0
-  const restful = energy > 0 || action.slot === 'sit' || action.slot === 'sleep'
+  const energetic = action.gait === 'run'
+  const restful = action.slot === 'sit' || action.slot === 'sleep'
   const lift = 0.8 * (feelings.arousal - CALM) + 0.3 * feelings.valence
   const weight = energetic && !restful ? 1 + lift : restful && !energetic ? 1 - lift : 1
   return Math.min(MOOD_MAX, Math.max(MOOD_MIN, weight))
@@ -85,46 +79,13 @@ function eligible(action: SpeciesAction, pack: SpeciesPack, ctx: Pick<ScoreConte
   return true
 }
 
-/**
- * The needs the body can raise by itself right now: some action that drift may choose (no focus, so none with an
- * effect) is eligible and would add to them. A need outside this set can only be met by something the mind arranges.
- */
-export function fixableNeeds(pack: SpeciesPack, ctx: Pick<ScoreContext, 'visitorDistance' | 'timeOfDay' | 'asleep' | 'spotKinds'>): Set<NeedId> {
-  const fixable = new Set<NeedId>()
-  for (const action of pack.actions) {
-    if (!eligible(action, pack, ctx)) continue
-    for (const [id, amount] of Object.entries(action.satisfies)) {
-      if (amount !== undefined && amount > 0 && id in pack.needs) fixable.add(id as NeedId)
-    }
-  }
-  return fixable
-}
-
-/** Utility of each eligible action: how much it helps the needs that are most empty, times the pack's weight. */
-export function scoreActions(needs: Needs, pack: SpeciesPack, ctx: ScoreContext): ScoredAction[] {
+/** Utility of each eligible action: a small baseline, times the pack's weight, the quirk weight and how the mood bends it. */
+export function scoreActions(pack: SpeciesPack, ctx: ScoreContext): ScoredAction[] {
   const scored: ScoredAction[] = []
   for (const action of pack.actions) {
     if (!eligible(action, pack, ctx)) continue
-    let benefit = 0
-    let wanted = 0
-    let room = 0
-    for (const [id, amount] of Object.entries(action.satisfies)) {
-      const value = needs[id as NeedId]
-      if (value === undefined) continue
-      const deficit = (100 - value) / 100
-      // Gains can't exceed the room left below the contented zone. Costs hurt more as the need runs low.
-      const effective = amount > 0 ? Math.min(amount, Math.max(0, 100 - CONTENT - value)) : amount
-      if (amount > 0) {
-        wanted += amount
-        room += effective
-      }
-      benefit += (effective / 100) * (0.5 + URGENCY * deficit * deficit)
-    }
-    // An action that only raises needs which are already met keeps just its `spontaneous` share of the baseline: a full
-    // cat doesn't eat, but still wanders for fun. Actions that raise nothing (idling) keep all of it.
-    const usefulness = wanted > 0 ? Math.max(action.spontaneous, Math.min(1, (room / wanted) * 3)) : 1
     const weight = (pack.weights[action.id] ?? 1) * (ctx.quirkWeights?.[action.id] ?? 1) * moodWeight(action, ctx.feelings)
-    scored.push({ action, score: Math.max(0.001, BASELINE * usefulness + benefit) * weight })
+    scored.push({ action, score: Math.max(0.001, BASELINE) * weight })
   }
   return scored
 }

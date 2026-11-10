@@ -46,7 +46,8 @@ export const TickLine = z.object({
   stepAfter: TickStep.nullable(),
   /** `date:hash` of today's plan, which changes when the plan is replaced. Null with no plan. */
   planId: z.string().max(40).nullable(),
-  needs: z.record(z.string(), z.number()),
+  /** Pet-era lines have it; nothing writes it any more. */
+  needs: z.record(z.string(), z.number()).default({}),
   mood: z.string().max(30),
   drift: z.array(DriftNote).max(20).default([]),
   /** World files this tick wrote, not counting the log itself. */
@@ -97,7 +98,8 @@ export const Health = z.object({
   }),
   quotas: z.object({ readings: Quota, creative: Quota, photos: Quota, builds: Quota, codeThisWeek: Quota }),
   /** Minutes in a row each need has been under 15 while awake, as of the last tick. */
-  needsCritical: z.record(z.string(), z.number().int().nonnegative()),
+  /** Pet-era health files have it; nothing writes it any more. */
+  needsCritical: z.record(z.string(), z.number().int().nonnegative()).default({}),
   mood: z.object({ label: z.string(), minutes: z.number().int().nonnegative() }),
   spend: z.object({ monthUsd: z.number(), capUsd: z.number(), paceUsd: z.number() }),
   openBuild: z.object({ id: z.string(), kind: z.string(), ageHours: z.number().nonnegative() }).nullable(),

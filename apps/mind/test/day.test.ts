@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Goals, MindState, BudgetLedger } from '@forkling/schema'
-import { isAsleepAt, quirkWeights, startPlayback, worldWithObjects } from '@forkling/sim'
+import { isAsleepAt } from '@forkling/sim'
 import type { Decision } from '../src/decision.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
 import { loadSpecies } from '../src/species.ts'
@@ -23,8 +23,6 @@ const cat = loadSpecies('cat')
 const START = Date.parse('2026-11-03T00:03:00Z') // a Tuesday; the template's time zone is UTC
 const TICK_MS = 10 * 60_000
 
-/** More than this many minutes under 15 in a row, awake, is the permanent alarm the review found. */
-const MAX_CRITICAL_MINUTES = 60
 /** Of the awake ticks, this share must have a plan step in progress. */
 const MIN_STEP_SHARE = 0.8
 /**
@@ -59,20 +57,10 @@ function fakeModel() {
     const left = now && bed ? minutesOf(bed[1]!, bed[2]!) - minutesOf(now[1]!, now[2]!) : 120
     // Two to three hours, and never past bedtime.
     const count = Math.max(0, Math.min(6, Math.floor((left - 20) / STEP_MINUTES)))
-    // A hunger the body could not deal with on its own (the bowl is empty): pick berries, cook them, and eat.
-    const hungry = /- need: hunger is at/.test(req.user)
-    const food = hungry
-      ? [
-          { verb: 'cut', target: 'berry-bush', x: null, z: null, reason: 'I am hungry and the bowl is empty, so I will pick berries.', minutes: 5, materials: null, makes: null, because: null, topic: null },
-          { verb: 'cook', target: 'kitchen', x: null, z: null, reason: 'Berries on their own are a poor dinner.', minutes: 6, materials: ['produce'], makes: 'berry mash', because: null, topic: null },
-          { verb: 'dine', target: 'berry-mash', x: null, z: null, reason: 'I made this, so I am allowed to eat it.', minutes: 5, materials: null, makes: null, because: null, topic: null },
-        ]
-      : []
-    const plan = Array.from({ length: Math.max(0, count - food.length) }, () => {
+    const plan = Array.from({ length: Math.max(0, count) }, () => {
       const s = STEPS[next++ % STEPS.length]!
       return { ...s, reason: `I felt like ${s.verb} for a while.`, minutes: STEP_MINUTES, materials: null, makes: null, because: null, topic: null }
     })
-    plan.unshift(...(food as typeof plan))
     return {
       thought: 'The beach is mine, so I start with the part I know.',
       longGoal: req.kind === 'morning' ? { text: 'Learn every corner of the island.', reason: 'It is where I live.' } : null,
@@ -104,34 +92,18 @@ interface Day {
   spentUsd: number
   awakeTicks: number
   awakeTicksWithStep: number
-  /** Longest run of minutes awake with a need under 15, and which need. */
-  longestCritical: { need: string; minutes: number }
-  /** Needs seen under 15 while awake, in ticks, for the report. */
-  criticalTicks: Record<string, number>
   ticks: number
   /** Plan steps that began, and how many of them ended unfinished because the body did not do enough of them. */
   stepsStarted: number
   stepsUnfinished: number
-  /** Portions left in the bowl at the end of the day, and how many meals it made and ate from what it gathered. */
-  bowlLeft: number | null
-  dined: number
 }
 
 let dir: string
 let day: Day
 
-/** What the body would be doing and needing at `nowMs`, as a viewer replaying the repo would see it. */
-function needsAt(nowMs: number) {
-  const w = readWorld(dir, () => '2026-11')
-  const weights = w.temperament ? quirkWeights(w.temperament, cat.pools) : {}
-  const pb = startPlayback({ forkling: w.forkling, pack: cat.pack, behaviors: cat.behaviors, world: worldWithObjects(w.objects), goals: w.goals, stateTime: Date.parse(w.forkling.lastTickAt) / 1000, quirkWeights: weights }, nowMs)
-  return pb.state.needs as Record<string, number>
-}
-
 async function liveADay(): Promise<Day> {
   const model = fakeModel()
-  const out: Day = { decideCalls: 0, callsWhileAsleep: 0, spentUsd: 0, awakeTicks: 0, awakeTicksWithStep: 0, longestCritical: { need: '', minutes: 0 }, criticalTicks: {}, ticks: 0, stepsStarted: 0, stepsUnfinished: 0, bowlLeft: null, dined: 0 }
-  const run: Record<string, number> = {}
+  const out: Day = { decideCalls: 0, callsWhileAsleep: 0, spentUsd: 0, awakeTicks: 0, awakeTicksWithStep: 0, ticks: 0, stepsStarted: 0, stepsUnfinished: 0 }
   for (let i = 0; i < 144; i++) {
     const nowMs = START + i * TICK_MS
     const before = readWorld(dir, () => '2026-11').forkling
@@ -151,21 +123,10 @@ async function liveADay(): Promise<Day> {
     out.awakeTicks++
     const now = w.goals.now
     if (now && nowMs < Date.parse(now.until) + TICK_MS) out.awakeTicksWithStep++
-    for (const [need, value] of Object.entries(needsAt(nowMs))) {
-      if (value < 15) {
-        run[need] = (run[need] ?? 0) + 10
-        out.criticalTicks[need] = (out.criticalTicks[need] ?? 0) + 1
-        if (run[need]! > out.longestCritical.minutes) out.longestCritical = { need, minutes: run[need]! }
-      } else {
-        run[need] = 0
-      }
-    }
   }
   const stream = readFileSync(join(dir, 'memory/stream/2026-11-03.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { kind: string; text: string })
   out.stepsStarted = stream.filter((e) => e.kind === 'step' && e.text.startsWith('Started ')).length
   out.stepsUnfinished = stream.filter((e) => e.text.startsWith('Left ') && e.text.includes('unfinished')).length
-  out.dined = stream.filter((e) => e.text.startsWith('dine:')).length
-  out.bowlLeft = (JSON.parse(readFileSync(join(dir, 'objects/bowl.json'), 'utf8')) as { state?: { portionsLeft?: number } }).state?.portionsLeft ?? null
   out.decideCalls = model.calls.filter((c) => c.req.kind === 'morning' || c.req.kind === 'decide').length
   out.spentUsd = BudgetLedger.parse(JSON.parse(readFileSync(join(dir, 'brain/budget.json'), 'utf8'))).spentUsd
   return out
@@ -180,10 +141,6 @@ describe('a whole day with no visitors', () => {
     if (process.env.DAY_REPORT) console.log(`day report: ${JSON.stringify(day)}`)
   }, 120_000)
   afterAll(() => rmSync(dir, { recursive: true, force: true }))
-
-  it('keeps no need under 15 for more than an hour while awake', () => {
-    expect(day.longestCritical, JSON.stringify(day)).toSatisfy((c: Day['longestCritical']) => c.minutes <= MAX_CRITICAL_MINUTES)
-  })
 
   it('has a plan step in progress for most of the waking day', () => {
     expect(day.awakeTicks).toBeGreaterThan(80)

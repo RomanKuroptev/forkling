@@ -13,10 +13,6 @@ const simulate = (opts: Omit<HeadlessOptions, 'pack'> & { pack?: SpeciesPack }) 
 describe('stepForkling with the blob pack (no animations, no behaviors)', () => {
   const run = simulate({ seed: 1, startHour: 10, seconds: 600, visitor: { arrive: 120, leave: 300 } })
 
-  it('keeps every need within 0 and 100', () => {
-    expect(run.needsOutOfRange).toBe(0)
-  })
-
   it('never goes 3 seconds without progress while moving', () => {
     expect(run.maxStuckSteps).toBeLessThan(30)
   })
@@ -27,10 +23,6 @@ describe('stepForkling with the blob pack (no animations, no behaviors)', () => 
 
   it('does a variety of things in 10 minutes', () => {
     expect(run.intentionTypes.size).toBeGreaterThanOrEqual(4)
-  })
-
-  it('only ever raises a need by performing an action that satisfies it', () => {
-    expect(run.illegalRises).toEqual([])
   })
 
   it('produces valid intentions with a reason in the pack voice', () => {
@@ -83,24 +75,8 @@ describe('micro-behaviors', () => {
 
   it('keeps the invariants with behaviors running', () => {
     const run = simulate({ seed: 4, startHour: 18.8, seconds: 600, behaviors, visitor: { arrive: 60, leave: 200 } })
-    expect(run.needsOutOfRange).toBe(0)
     expect(run.offGrid).toBe(0)
-    expect(run.illegalRises).toEqual([])
     expect(run.maxStuckSteps).toBeLessThan(30)
-  })
-})
-
-describe('a visitor never raises needs by themselves', () => {
-  it('leaves needs alone while a visitor stands right next to a forkling that ignores them', () => {
-    const pack = SpeciesPack.parse({
-      ...blobJson,
-      // Only the ignore action is available near a visitor, and it satisfies nothing.
-      actions: blob.actions.filter((a) => a.id !== 'greet'),
-      weights: {},
-    })
-    const run = simulate({ seed: 5, startHour: 10, seconds: 300, pack, visitor: { arrive: 20, leave: 280 } })
-    expect(run.noticeStep).not.toBeNull()
-    expect(run.illegalRises).toEqual([])
   })
 })
 
@@ -110,19 +86,6 @@ describe('acting after a micro-behavior', () => {
     expect(toRepoIntention(intention).targetId).toBeUndefined()
     expect(toRepoIntention({ ...intention, targetId: 'sunny-rock' }).targetId).toBe('sunny-rock')
     expect(toRepoIntention({ ...intention, targetId: 'sunbeam' }).targetId).toBe('sunbeam')
-  })
-
-  it('loses needs at a quarter of the speed while in bed, and at the full speed awake', () => {
-    // The blob has nothing to do at night, so in bed nothing raises a need: only the decay shows.
-    const fall = (asleep: boolean) => {
-      const state = createForkling(blob, [], 3, { x: 2, z: 20 }, { needs: { hunger: 90, energy: 90, fun: 90 } })
-      const ctx: StepContext = { grid: world.grid, visitor: null, timeOfDay: 2, asleep, spots: {} }
-      for (let i = 0; i < 6000; i++) stepForkling(state, STEP, ctx)
-      return 90 - state.needs.hunger!
-    }
-    const inBed = fall(true)
-    expect(inBed).toBeCloseTo((240 * 600) / 3600 * 0.25, 1)
-    expect(inBed).toBeGreaterThan(0)
   })
 
   it('does not resume an action from the repo that is not allowed at this time of day', () => {

@@ -46,15 +46,6 @@ export function DebugOverlay() {
       <div className="debug-title">
         {forkling.name} <span>the {species.pack.displayName.toLowerCase()} · {forkling.mood}</span>
       </div>
-      {Object.entries(sim.needs).map(([id, value]) => (
-        <div className="need" key={id}>
-          <span>{id}</span>
-          <div className="bar">
-            <div style={{ width: `${value}%` }} />
-          </div>
-          <span>{Math.round(value)}</span>
-        </div>
-      ))}
       <div className="debug-line dim">
         mood {forkling.mood >= 0 ? '+' : ''}
         {forkling.mood.toFixed(2)} · energy {forkling.energy >= 0 ? '+' : ''}
