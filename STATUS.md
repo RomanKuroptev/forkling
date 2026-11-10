@@ -7,6 +7,9 @@ Read this first. Update it before every commit and before you stop.
 - M7 slices: A eye cam (v0.7.0), B object builds (v0.7.1), C contraptions (v0.7.2), D coded projects (v0.7.3). A has run live; B to D need their live run.
 - M8 (two-week run and launch) waits on the review fixes below.
 
+## Release
+- **v0.8.0 is tagged** (2026-11-01) and Merge's workflows pin it (`cc3d656` in `RomanKuroptev/merge`, which also took the template's new `build.yml`, `validate.yml` and `mind.yml`). Everything below is live from the first tick after that. The first live day on it needs watching in `mind/health.json`: warnings empty, decide calls at most 12, a step running most of the day, a first food chain (cut, cook, dine) once the bowl is empty, and the first `chore(builder): result of <id>` commit when a build happens. 6.7 (branch protection) is still open and goes last.
+
 ## Current work: review fixes before M8
 Plan: [`docs/plans/review-fixes.md`](docs/plans/review-fixes.md). Six slices, each on its own branch and PR, each started from the previous one's branch. Roman reviews and merges; nothing is merged by Claude.
 
