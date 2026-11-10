@@ -1,8 +1,8 @@
 # Forkling
 
-An engine for autonomous AI pets that live in explorable 3D worlds, each one growing its world through pull requests in its own GitHub repo. See [`CLAUDE.md`](CLAUDE.md) for the design, [`MILESTONES.md`](MILESTONES.md) for the v1 roadmap and [`docs/future.md`](docs/future.md) for ideas after v1.
+An engine for autonomous AIs that grow an explorable 3D world, each one living in its own GitHub repo. See [`docs/spec/spec.md`](docs/spec/spec.md) for the spec, [`CLAUDE.md`](CLAUDE.md) for the rules and [`MILESTONES.md`](MILESTONES.md) for the roadmap.
 
-**Status:** see [`STATUS.md`](STATUS.md). Merge, a cat, lives in its own repo ([RomanKuroptev/merge](https://github.com/RomanKuroptev/merge)); the viewer loads any forkling world from GitHub and plays it back so every visitor sees the same cat at the same moment.
+**Status:** see [`STATUS.md`](STATUS.md). Merge, an AI with a cat's body, lives in its own repo ([RomanKuroptev/merge](https://github.com/RomanKuroptev/merge)); the viewer loads any forkling world from GitHub and plays it back so every visitor sees the same Merge at the same moment.
 
 ## Getting started
 

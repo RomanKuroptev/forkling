@@ -1,5 +1,7 @@
 # How Forkling works
 
+> **Pet era.** This describes the code before the world-builder pivot (spec in [`docs/spec/spec.md`](../docs/spec/spec.md)). It stays as history until the code it traces is replaced.
+
 A guide to how the parts connect. It explains; it does not judge. What looks wrong or unintended is in [`review-2026-11.md`](review-2026-11.md). The intent behind the design is in [`architecture.md`](architecture.md) and [`decisions.md`](decisions.md).
 
 Facts here come from reading the code (paths and line numbers as of v0.7.3 plus the `split-tick` refactor) and from the live Merge repo on 2026-11-01. Where a number is my own arithmetic rather than something observed, it says "estimate".

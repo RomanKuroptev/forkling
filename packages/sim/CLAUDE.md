@@ -1,5 +1,7 @@
 # packages/sim
 
+> **Pet era.** This describes the code before the world-builder pivot (spec in [`docs/spec/spec.md`](../../docs/spec/spec.md)). It stays as history until W1 rewrites this area.
+
 The pure, deterministic sim. It runs in the browser, in the mind and in CI, so it must stay pure.
 
 ## Rules

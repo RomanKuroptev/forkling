@@ -1,5 +1,7 @@
 # Architecture
 
+> **Pet era.** This describes the code before the world-builder pivot (spec in [`docs/spec/spec.md`](../docs/spec/spec.md)). It stays as history until the code it traces is replaced.
+
 How forkling fits together. Intent lives here; the schemas in `packages/schema` and the code are the source of truth for details. For how the parts actually behave, traced through the code, see `docs/how-it-works.md`.
 
 ## Core idea: mind, body, builder

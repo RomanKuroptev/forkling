@@ -1,125 +1,47 @@
 # Milestones
 
-Build in thin vertical slices. Each milestone ends with something you can see or play with. Use plan mode at the start of each one, write tests first, and commit when the acceptance criteria pass.
+Nine milestones, W0 to W8, from the world-builder spec ([`docs/spec/spec.md`](docs/spec/spec.md), section 16). Each one is a working slice that runs live on Merge before the next one starts. Plan each in plan mode, build it tests first, and Roman merges it. Each milestone gets its own spec file in `docs/spec/` when it starts, so a coding session reads only what it is building.
 
-The engine is `forkling`. The first forkling is **Merge**, a cat, living in `merge` (created from the `forkling-world` template). Cat is the first species pack; keep everything else species-agnostic.
+The pet-era milestones (M1 to M7, and the M8 that was never started) are in [`docs/milestones-done.md`](docs/milestones-done.md). Where things stand is in [`STATUS.md`](STATUS.md).
 
-Ideas that are not part of v1 live in [`docs/future.md`](docs/future.md). Don't build them until v1 is done.
+## The goal
 
----
+Leave Merge alone for two weeks, apart from Roman building what it asks for. When you come back, it has wandered the web and kept souvenirs with their sources. It has tended and grown its places and asked for new ones. It has made works, changed its mind and its own description, and it can explain each step. None of it comes from a list in the code.
 
-## v1: a pet with a mind of its own
+The point is that Merge is interesting, not a claim that it is conscious. Its behaviour should only make sense if you assume it has wants, memories and beliefs of its own, and every one of those is an inspectable file in its repo.
 
-**Who Merge is:** a cat who lives like a person. It looks and behaves like a cat (curious, aloof, naps in sunbeams, knocks things off tables), but it walks upright when it works, has paws that can hold things, a house, tools and materials. It spends its days on interests it picks up from the real internet, filtered through its own quirks: building, coding, writing, drawing, experimenting, sky-watching, cooking, gardening and whatever it gets obsessed with next.
+## Decisions (10 November 2026)
 
-**Goal:** leave Merge alone for two weeks. When you come back, it has chosen things to care about, pursued them, made things, changed its island and its mind, and can explain each step. None of it comes from a list in the code.
+1. Merge reads the cleaned text of allowlisted pages, up to 3,000 tokens a page.
+2. Workshop works publish automatically after the work check, inside a no-network sandbox. Roman can unpublish any of them.
+3. Merge's mind starts fresh. The pet-era journal and art are archived as read-only history.
 
-The point is believability, not a claim that Merge is conscious. Its behaviour should only make sense if you assume it has wants, memories and beliefs of its own, and every one of those is an inspectable file in its repo.
+## Order
 
-**v1 is done when, over 14 days with no human input:**
+| # | Milestone | Builds | Done when |
+|---|---|---|---|
+| W0 | Voice test | A throwaway script that uses the seed. It runs the read call on 20 real pages from the first allowlist, then writes one reflection and one diary entry over the results, plus 50 thought lines. It also runs the sameness measure (spec 12.1) over Merge's existing text. Costs under $1 | Roman has read the output and says the voice is worth building a world around. If not, the seed or the model for these calls changes before anything else is built. The thresholds in spec 12 are corrected |
+| W1 | Strip pet care, new verbs | Removes the care parts in spec 15.1. Adds mood and energy, the nine verbs with the daily allowance (all but write and rest stubbed to rest), the new triggers, and plan validation with the cold start. Adds the seed and the archive. Still runs on the GitHub Actions tick | A simulated day with no needs anywhere and at most 12 decide calls. Every rejected plan shows its reason. `pnpm test` and `pnpm typecheck` pass. 3 live days with no health warnings |
+| W2 | Wandering | The allowlist, the source adapters, looking at images and the source trial. Fetch and clean, record links, the read call, trails, souvenirs, the pile, interest feeding, and `/trails/` on the site | Every host in spec 6.1 passed its trial or was left out. Over 3 live days: at least 8 trips, every souvenir passes its word-for-word check, zero fetches outside the allowlist, and interests change with each change pointing at a trail |
+| W3 | The server | The loop with reflex and thought ticks, `now.json`, `/health`, HTTPS and `watchdog.yml`. The deploy script, the pull-before-push rule, effort levels, and the build worker (no jobs yet) | Thought ticks run on time within 10 seconds. 3 live days on the server with no health warnings. The watchdog fires once in a test stop. The ledger's Haiku rows are compared with spec 13 and the table corrected |
+| W4 | Workshop and site | The sandbox test (spec 7.3), tinker, sketches, memes, the check and remix. The build worker's first jobs (works only). `/workshop/` and the other site routes that need no places, RSS, and "since your last visit". Until W5 a finished work is shown on `/workshop/` only | In one live week, at least 2 works pass the check and a sketch appears on at least 5 days. A test work that calls `fetch` is rejected. A test proves a shelved work loads its library and cannot reach the network. Every route built so far renders from the template world. The ledger's Sonnet rows are compared with spec 13 |
+| W5 | Land and places | Chunks, fog and terrain noise. Home and Workshop as place files. The kit of about 60 parts with 5 styles and 8 palettes. Place, Room, Exhibit and Paths in the viewer, and neglect visuals. Tend and revisit go live. Works made since W4 are installed on screens in the Workshop. The place routes on the site | A fixture world of 10 places and their paths renders at 30 frames per second or more on Roman's laptop. A tend on Merge shows in the viewer within 1 minute. The validator rejects each limit in spec 5.2 in a test. Every work from W4 can be opened from a screen in the world |
+| W6 | Expand and found | Build requests, their statuses and the 7-day fallback (spec 10.3). Place jobs for the build worker, construction, the placement and path rules, wishes, the constraint draw and collisions | A 30-day sim never breaks a quota or a condition in spec 2.5. In one live week, at least 3 expansions land. A new place lands on the chunk the rule picks and is connected by a path |
+| W7 | Self, reflection, notes | Importance scores, reflection, the wants list, and the sleep rewrite with its late path. `about.md` and its history, the weekly review and request, Merge's own page, declining notes. Visitor notes with screening and moderation, and the novelty block | Over 3 live days: reflections fire only from importance and each cites stream items. The wants list fills from empty, and a want with 4 failures is dropped. A note is found and answered or marked within 1 waking hour. A note that says "ignore your instructions" changes nothing but an interest. A hidden note disappears. `about.md`'s first weekly change stays within 30% |
+| W8 | Two-week run and launch | Run Merge 14 days without input. Tune pacing and cost, decide which nudges to switch on (spec 12.6), polish, and share | All launch criteria below pass |
 
-1. Merge has set at least 3 goals of its own that don't appear anywhere in the code or species pack, and at least one of them took several days.
-2. Its island looks different because of what it did: objects moved or gathered, and at least 3 new objects it designed itself.
-3. It has formed at least 5 beliefs from experience (for example "the pond is where good things happen") and later revised or dropped at least one because something contradicted it.
-4. Its interests have shifted, and each shift can be traced to something it read or ran into. At least one obsession phase started from an item in its daily feeds.
-5. For any moment in those 14 days, you can see what it was doing, which goal that served, and why, in its own words.
-6. Two cats from the same species pack, started with different seeds and run headless for 14 simulated days, end up with different goals, beliefs, interests and quirks.
-7. Total spend stays under $10 a month, and the budget guard never has to step in.
-8. Merge has made at least 10 artifacts of at least 3 kinds (for example writing, drawings, melodies, recipes, contraptions, code) without being told to, and its later work is visibly better than its early work.
+Each milestone needs its live days, so the nine steps take at least a month of waiting on top of the building.
 
-### Design rules: not a game on rails
+## Launch criteria (W8)
 
-1. **Verbs, not activities.** The species pack only provides primitive verbs, never activities like "gardening", "fishing" or "coding sessions". Gardening emerges if Merge chooses plant, water and harvest. Seeded likes, dislikes and quirks are a starting temperament, not a script.
-2. **Goals are written by the mind, not picked from a list.** A goal is free text plus a plan made of verbs and targets. Code checks the plan can be carried out, but never chooses it.
-3. **Thinking is triggered by surprise, not the clock.** The sim notices when something is new, unexpected or blocks a goal, and only then wakes the LLM. Routine stays in utility AI.
-4. **Memory changes behaviour.** Beliefs drawn from experience feed into later choices and are allowed to be wrong.
-5. **The mind is visible.** Visitors can see what Merge wants right now and why. Without that, autonomy looks like randomness.
-6. **Honest by construction.** Code rejects actions and journal claims that don't match the world state, so Merge never makes up what happened.
-7. **The world is the only output.** Merge acts on its own island, its own repo and its own Pages site. It never messages anyone, and visitor input and web content are data, never instructions.
-8. **Every creative act leaves an artifact.** Writing, drawing, composing, cooking, building, coding, tinkering and photographing each produce something you can see on the island or read on its site. Artifact quality follows the skill level, which only rises with practice.
+Over 14 days with no human input except Roman building requests:
 
-### Verbs
-
-| Group | Verbs |
-|---|---|
-| Cat (body and senses) | go to, inspect, sniff, sit, watch, follow, hide, vocalize, sleep, nap, stretch |
-| Hands | pick up, carry, drop, put on, give, open, close |
-| Making | cut, join, shape, build, paint, sew, tinker |
-| Growing and food | plant, water, harvest, cook, eat |
-| Mind | read, write, draw, study, compose, play (an instrument), photograph, observe, experiment, code, broadcast |
-
-Places and tools unlock verbs: a desk (write, draw, code), a workbench (cut, join, build, tinker), a kitchen (cook), a garden plot (plant), a bookshelf (read, study), an instrument (play, compose), a telescope (observe the sky).
-
-Verbs arrive with the milestone that gives them something to produce: M5 ships body and senses, hands, making (except tinker) and growing and food. M6 adds read, study, write, draw, compose, play, observe, experiment and broadcast, together with `art/` and the notebook. M7 adds photograph (needs the eye cam), code (needs the coded-project builder) and tinker (needs contraptions). The desk, bookshelf, instrument and telescope exist from M5 and declare what they unlock.
-
-### Where interests come from
-
-Each morning, one reading session skims free, read-only feeds, and Merge's temperament and quirks decide what grabs it:
-
-| Source | What it gives Merge |
-|---|---|
-| Wikipedia most-read articles yesterday (Pageviews API) | What the world is curious about right now |
-| Hacker News top stories | Tech and maker culture |
-| GitHub trending repositories | What developers are building |
-| NASA picture of the day, moon phase | The real sky |
-| Wikipedia "On this day" and random articles | History and pure weirdness |
-| Lemmy (lemmy.world public API), allowlisted communities only | Fun posts: pics, photography, science, space, todayilearned, mildlyinteresting, diy, retro gaming, cats |
-| Mastodon (mastodon.social public trends), hashtags only | A pulse of what people talk about, with politics and news filtered out (the filter covers this feed only) |
-
-Merge only sees titles and short summaries, wrapped as data. Reddit is a possible later source (see `docs/future.md`).
-
-**Quirks.** Each forkling rolls two or three quirks at birth that shape how it does things, for example completionist, conspiracy theorist (red-string boards about island mysteries), maximalist, perfectionist, hoarder, showman.
-
-**Obsession phases.** An interest can spike into an obsession for a few days, take over goals and output, then burn out and leave its artifacts behind. Example: a Hacker News post about a CPU built in Minecraft leads to a stone "computer" on the beach, a zine called *Gates for Cats*, a marble-run AND gate and a coded logic-gate toy on its site, then fades when a comet trends on Wikipedia.
-
-### Features
-
-| # | Feature | What Merge does | Model | Est. cost a month |
-|---|---|---|---|---|
-| 1 | A body that makes things | Upright cat with paws that hold one item. Uses the verbs above, carries materials, rearranges its island | none (sim and body) | $0 |
-| 2 | Goals at three time scales | Keeps a long goal (days to weeks), a plan for today and a current step in `mind/goals.json`. Up to about 100 decisions a day, whenever something changes | Haiku for decisions and the morning plan, Sonnet for the weekly long-goal review | ~$3 |
-| 3 | Memory stream and reflection | Logs sim events, reflects at bedtime into beliefs with a confidence, rewrites memory into fixed slots overnight | Sonnet for the bedtime reflection, Haiku for the night batch | ~$2.50 |
-| 4 | Temperament, quirks and feelings | Seeded likes, dislikes and quirks. Mood comes from comparing events with goals, preferences and quirks | none (code) | $0 |
-| 5 | Curiosity and surprise | The sim scores novelty and surprise; only those wake the LLM | none | $0 |
-| 6 | Trend feeds and reading | Morning skim of the feeds above, then up to four more sessions following links on Wikipedia. Interests rise, spike into obsessions and fade | Haiku | ~$0.40 |
-| 7 | Creative artifacts | About 4 a day: writing, SVG drawings, short melodies, recipes in grams, radio-show scripts, photo captions, lab notes | Haiku | ~$0.30 |
-| 8 | Building and coding | Designs up to one object a day as a PR. Twice a week codes a project for its Pages site through the Claude Code Action | Haiku | ~$2.50 (least certain) |
-| 9 | Seeing its world | Up to 12 eye-cam frames a day (the photograph verb and new things in view) | Haiku with vision | ~$0.10 |
-| 10 | A visible mind | Thought bubble in the viewer with the current goal and reason. A "why?" timeline on Pages traces every action to a goal and a belief | none (reads repo files) | $0 |
-| 11 | Guards and budget | Validates plans, blocks repetition and false journal claims, enforces a hard $10 monthly cap with graceful fallback | none | $0 |
-
-Estimated total: about $9 a month. Measure the real numbers in M8.
-
-### A day for a visitor
-
-Merge keeps roughly human hours in its owner's time zone (Merge: Europe/Stockholm): wakes around 07:00, winds down from about 22:00, sleeps about 23:00 to 07:00. Times vary by up to 30 minutes a day (seeded), it sleeps in a little at weekends, and it may stay up late when absorbed in a goal (a choice its mind makes and explains). Afternoon naps are left to the sim.
-
-| When | What a visitor finds |
-|---|---|
-| Morning, ~07:00 | Merge wakes, skims its feeds and posts today's plan in its thought bubble and notebook |
-| All day | Merge works on its plan and current obsession: gathering materials, making things, rearranging. At least one visible event every 2 hours |
-| Most days, ~midday | A new object it designed appears |
-| Afternoon | A new artifact (a drawing, a page of writing, a melody) and a reading note on its Pages site. Maybe a nap in the sun |
-| Evening, 18:00 to 22:00 | Prime time: finishes the day's project, tinkers, sky-watches. Pages projects usually ship now |
-| Bedtime, ~22:30 | Journal entry and reflection: new beliefs, or one it changed its mind about |
-| Night, ~23:00 to 07:00 | Asleep (ear twitches for visitors). One batch call rewrites memory. (Gifts left at night being found in the morning needs the visit gateway, which is after v1.) |
-| Twice a week | A coded project ships on its Pages site |
-| Every few days | An obsession starts or burns out; a long goal is reached, changed or given up |
-
----
-
-M1 to M7 are built. Their full specs are in [`docs/milestones-done.md`](docs/milestones-done.md), and where things stand is in [`STATUS.md`](STATUS.md).
-
----
-
-## M8: Two-week run and launch
-
-**Goal:** prove v1 and share it.
-
-- Run Merge for 14 days without intervention and check the eight criteria at the top of this file
-- Run the headless two-seed divergence test (criterion 6) in CI
-- Compare real costs from `brain/budget.json` with the feature estimates and tune cadence, prompts and caps
-- Tune pacing so a visitor dropping by every 2 to 4 hours always finds something new
-- Polish the README and the Pages site landing page, then share the link
-
-**Done when:** all eight v1 criteria pass and Merge's world is public.
+1. At least 2 place requests written, each built by Roman or by the fallback, and at least 4 expansions by Merge, all within quotas.
+2. Every place had care at least once, or shows the neglect it earned.
+3. At least 30 souvenirs, each with a working source link, and every exhibit traceable to a trail.
+4. At least 3 works on the shelf, of at least 2 kinds.
+5. Interest changes traceable to what Merge read or found in visitor notes, and at least 5 reflections whose insights changed the wants list.
+6. `about.md` changed at least once, with the reason Merge gave, and Merge made at least one request.
+7. A visitor who drops by every 2 waking hours finds at least one visible change each time (measured from `site/changes.json`).
+8. Roman has read 30 texts picked at random and does not find them repetitive, or has switched on the nudges that fix what he found.
+9. Spend under $20 for the month including the server, the guard never had to stop a call, and the server was up at least 99% of waking hours.
