@@ -40,3 +40,17 @@ These come from Merge's existing repo: 127 thought lines, 199 plan reasons and 1
 | Journal entries (window 14) | 0.06 | 0.11 | none over 0.3 (the diary nudge) |
 
 The top worn phrases are "so i will" (134 times) and "the bowl is empty until morning" (66 times). That is the pet loop repeating itself, which the 0.35 threshold catches. The journal is long enough that 3-grams rarely repeat, so 0.3 never fires on it. Thresholds are corrected after the live run, next to the new text's numbers.
+
+## Live run (10 November 2026)
+
+19 reads, 50 thought lines, one reflection and one diary entry. It cost $0.056 against the $0.15 estimate. The report is `voice-test-out/run1/report.md` (git-ignored).
+
+| Measure | Pet era | New text |
+|---|---|---|
+| Thought lines, highest overlap with the last 50 | median 0.16, 90th percentile 0.42, max 0.96 | median 0.04, 90th percentile 0.12, max 0.23 |
+| Read reactions (window 20) | n/a | max 0.04 |
+| Souvenirs passing the word-for-word check | n/a | 17 of 19 kept, 1 dropped, 1 none |
+
+What the overlap measure did not see: about 12 of 50 thought lines end on a "tail low" or "tail numb" gag, and "the next link" and "keeping the one line I trust" recur. The worn-phrase counter did catch them ("the next link" ×8, "tail is low" ×4). 25 of 50 thought lines went over 140 characters, so the limit needs a hard cut in code. The diary invented one detail (penguins "too light to set anything off") that the page does not say.
+
+For spec 12: keep 0.6 for the thought-line rail, make worn phrases the main repetition guard, enforce the 140-character limit in code, and keep the diary claim check in W7.
