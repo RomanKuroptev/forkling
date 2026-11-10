@@ -31,8 +31,8 @@ export interface UserInput {
   stored: Forkling['stored']
   skills: Skills
   temperament: TemperamentRoll | null
-  /** How its mood label is made up, in words. */
-  feelings: string
+  /** How it feels, in words: `low, tired`. Never numbers. */
+  mood: string
   /** What its last step did, one line each. */
   justNow: readonly string[]
   /** `memory/beliefs.json`; dropped ones are left out of the prompt. */
@@ -149,7 +149,7 @@ export function buildUser(i: UserInput): string {
     '<situation>',
     `time: ${i.localTime} (${i.forkling.timezone}); woke at ${i.wakeTime}; bedtime ${i.bedTime}`,
     `needs (0 empty, 100 full): ${needs}`,
-    `mood: ${i.forkling.mood} (${i.feelings})`,
+    `mood: ${i.mood}`,
     `position: x ${i.body.x.toFixed(0)}, z ${i.body.z.toFixed(0)}`,
     `doing now: ${intention.type}${intention.targetId ? ` at ${intention.targetId}` : ''} ("${intention.reason}")`,
     `in your paws: ${paws}`,

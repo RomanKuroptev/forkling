@@ -198,16 +198,16 @@ describe('Forkling in M5', () => {
     species: 'cat',
     needs: { hunger: 70 },
     position: [0, 0, 22],
-    mood: 'curious',
+    mood: 0.1,
     intention: { type: 'lounge', startedAt: '2026-10-30T12:00:00Z', seed: 7, reason: 'The beach is warm.' },
     lastTickAt: '2026-10-30T12:00:00Z',
   }
 
-  it('starts with empty paws, an empty store and neutral feelings', () => {
+  it('starts with empty paws, an empty store and a rested energy', () => {
     const parsed = Forkling.parse(forkling)
     expect(parsed.holding).toBeUndefined()
     expect(parsed.stored).toEqual({})
-    expect(parsed.feelings).toEqual({ valence: 0, arousal: 0.3 })
+    expect(parsed.energy).toBe(0.5)
   })
 
   it('holds a material or an object, never nonsense', () => {
@@ -220,11 +220,6 @@ describe('Forkling in M5', () => {
     expect(Forkling.safeParse({ ...forkling, stored: { wood: 3, stone: 1 } }).success).toBe(true)
     expect(Forkling.safeParse({ ...forkling, stored: { wood: 1.5 } }).success).toBe(false)
     expect(Forkling.safeParse({ ...forkling, stored: { jelly: 1 } }).success).toBe(false)
-  })
-
-  it('keeps feelings in range', () => {
-    expect(Forkling.safeParse({ ...forkling, feelings: { valence: 2, arousal: 0.5 } }).success).toBe(false)
-    expect(Forkling.safeParse({ ...forkling, feelings: { valence: -0.4, arousal: 0.9 } }).success).toBe(true)
   })
 })
 

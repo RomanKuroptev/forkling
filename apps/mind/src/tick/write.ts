@@ -46,13 +46,14 @@ export function writeWorld(t: Tick): TickResult {
     carryingChanged ||
     t.rolled ||
     asleep !== forkling.asleep ||
-    (t.appraisals.length > 0 && t.mood !== forkling.mood) ||
+    t.mood !== forkling.mood ||
+    t.energy !== forkling.energy ||
     t.lateNight !== forkling.lateNight ||
     epochOf(nowMs) !== epochOf(Date.parse(forkling.lastTickAt))
 
   const written: string[] = []
   if (!deps.dryRun) {
-    const { body, mood, feelings, lateNight } = t
+    const { body, mood, energy, lateNight } = t
     if (writeBody) {
       const active = goals.now && goals.today?.steps[goals.now.index]
       const bodyIntention = toRepoIntention(body.intention)
@@ -69,10 +70,9 @@ export function writeWorld(t: Tick): TickResult {
       const { holding: _held, ...rest } = forkling
       const next = Forkling.parse({
         ...rest,
-        needs: Object.fromEntries(Object.entries(body.needs).map(([id, v]) => [id, round(v, 1)])),
         position: [round(body.pos.x, 2), 0, round(body.pos.z, 2)],
-        mood,
-        feelings: { valence: round(feelings.valence, 2), arousal: round(feelings.arousal, 2) },
+        mood: round(mood, 3),
+        energy: round(energy, 3),
         intention,
         ...(holding ? { holding } : {}),
         stored,

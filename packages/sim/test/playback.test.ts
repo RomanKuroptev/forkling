@@ -25,9 +25,8 @@ function input(overrides: Partial<Forkling> = {}, startedAt = EPOCH_START + 60):
   const forkling = Forkling.parse({
     name: 'Blobby',
     species: 'blob',
-    needs: { hunger: 60, energy: 70, fun: 50 },
     position: [0, 0, 0],
-    mood: 'content',
+    mood: 0.2,
     intention: { type: 'roam', startedAt: iso(startedAt), seed: 99, reason: 'Blob felt like a stroll.' },
     lastTickAt: iso(startedAt),
     timezone: 'Europe/Stockholm',
@@ -169,20 +168,11 @@ describe('the body across the edge of an epoch', () => {
   const bare = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => ({ ...a, satisfies: {} })) })
   // Last written 10 minutes before the epoch ends; asked about 3 minutes into the next.
   const stale = (over: Partial<Forkling> = {}, stateTime = E1 - 600): PlaybackInput => ({
-    ...input({ needs: { hunger: 100, energy: 100, fun: 100 }, lastTickAt: iso(stateTime), ...over }, stateTime),
+    ...input({ lastTickAt: iso(stateTime), ...over }, stateTime),
     pack: bare,
     stateTime,
   })
   const at = (E1 + 180) * 1000
-
-  it('does not lose the time between the last write and the epoch start', () => {
-    const carried = startPlayback(stale(), at)
-    // The same state, written just after the epoch began: nothing in between to carry.
-    const fresh = startPlayback(stale({}, E1 + 1), at)
-    // Energy falls 180 an hour: ten more minutes is 30 points.
-    expect(fresh.state.needs.energy! - carried.state.needs.energy!).toBeGreaterThan(25)
-    expect(carried.state.needs.energy!).toBeCloseTo(100 - (180 * (600 + 180)) / 3600, 0)
-  })
 
   it('goes on from where the body was at the edge, not from where it was written', () => {
     const edge = startPlayback(stale(), E1 * 1000)
@@ -190,7 +180,6 @@ describe('the body across the edge of an epoch', () => {
     const before = startPlayback(stale(), E1 * 1000 - 1)
     expect(edge.state.pos.x).toBeCloseTo(before.state.pos.x, 1)
     expect(edge.state.pos.z).toBeCloseTo(before.state.pos.z, 1)
-    expect(edge.state.needs.energy!).toBeCloseTo(before.state.needs.energy!, 1)
     expect(Math.hypot(edge.state.pos.x, edge.state.pos.z)).toBeGreaterThan(0.5)
   })
 
@@ -203,21 +192,22 @@ describe('the body across the edge of an epoch', () => {
     const pb = startPlayback(stale({}, E1 - 5 * 86_400), at)
     expect(Date.now() - t0).toBeLessThan(2000)
     // Not carried: it starts from what was written.
-    expect(pb.state.needs.energy!).toBeGreaterThan(90)
+    expect(pb.steps).toBeGreaterThan(0)
   })
 })
 
-describe('feelings in playback', () => {
+describe('mood and energy in playback', () => {
   it('reach the body from the repo state, so every viewer and the mind choose with the same mood', () => {
-    const base = input({ feelings: { valence: -0.7, arousal: 0.1 } })
+    const base = input({ mood: -0.7, energy: -0.8 })
     const pb = startPlayback(base, (EPOCH_START + 120) * 1000)
-    expect(pb.state.feelings).toEqual({ valence: -0.7, arousal: 0.1 })
+    expect(pb.state.feelings?.valence).toBeCloseTo(-0.7)
+    expect(pb.state.feelings?.arousal).toBeCloseTo(0.1)
   })
 
   it('make a difference to what it does', () => {
     const at = (EPOCH_START + 1500) * 1000
-    const sad = startPlayback(input({ feelings: { valence: -1, arousal: 0 } }), at)
-    const glad = startPlayback(input({ feelings: { valence: 1, arousal: 1 } }), at)
+    const sad = startPlayback(input({ mood: -1, energy: -1 }), at)
+    const glad = startPlayback(input({ mood: 1, energy: 1 }), at)
     expect(snapshot(sad)).not.toEqual(snapshot(glad))
   })
 })
@@ -235,16 +225,10 @@ describe('hourInZone', () => {
 })
 
 describe('startPlayback', () => {
-  it('starts at the forkling position on walkable ground, with its needs', () => {
+  it('starts at the forkling position on walkable ground', () => {
     const pb = startPlayback(input({ position: [3, 0, -4] }), (EPOCH_START + 60) * 1000)
     expect(Math.hypot(pb.state.pos.x - 3, pb.state.pos.z + 4)).toBeLessThan(1.5)
     expect(isWalkable(world.nav.grid, pb.state.pos.x, pb.state.pos.z)).toBe(true)
-    expect(pb.state.needs).toEqual({ hunger: 60, energy: 70, fun: 50 })
-  })
-
-  it('fills needs the file leaves out from the species defaults', () => {
-    const pb = startPlayback(input({ needs: { hunger: 10 } }), (EPOCH_START + 60) * 1000)
-    expect(pb.state.needs).toEqual({ hunger: 10, energy: 70, fun: 50 })
   })
 
   it('starts at the edited position right after a commit', () => {

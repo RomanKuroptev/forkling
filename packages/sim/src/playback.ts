@@ -1,6 +1,5 @@
 import type { Forkling, Goals, MicroBehavior, SpeciesPack } from '@forkling/schema'
 import { createForkling, STEP, stepForkling, type Focus, type ForklingState, type StepContext } from './forkling.ts'
-import type { Needs } from './needs.ts'
 import { nearestWalkable, type Point2 } from './nav.ts'
 import { isAsleepAt } from './sleep.ts'
 import { sunDirection } from './sky.ts'
@@ -63,10 +62,10 @@ const MAX_CARRY_SECONDS = 2 * 3600
 /**
  * Where the body is at `toSec`, when the repo state was written earlier than the epoch that starts there. The epoch's
  * playback starts at the epoch's beginning, so without this everything between the write and the epoch start would be
- * lost: needs would stop falling and the body would jump back to where it was written. It runs the stretch epoch by
+ * lost: the body would jump back to where it was written. It runs the stretch epoch by
  * epoch, each from its own anchor, exactly as anyone replaying that time would. Null when there is nothing to carry.
  */
-function carryForward(input: PlaybackInput, toSec: number): { needs: Needs; position: [number, number, number]; action: string } | null {
+function carryForward(input: PlaybackInput, toSec: number): { position: [number, number, number]; action: string } | null {
   const fromSec = input.stateTime ?? Date.parse(input.forkling.lastTickAt) / 1000
   if (!(toSec > fromSec) || toSec - fromSec > MAX_CARRY_SECONDS) return null
   let forkling = input.forkling
@@ -76,11 +75,11 @@ function carryForward(input: PlaybackInput, toSec: number): { needs: Needs; posi
     const end = Math.min(toSec, (epochOf(t) + 1) * EPOCH_SECONDS)
     // A moment just short of the edge, so the stretch is still the epoch it started in.
     const seg = startPlayback({ ...input, forkling, stateTime: t }, end * 1000 - 1)
-    forkling = { ...forkling, needs: seg.state.needs as Forkling['needs'], position: [seg.state.pos.x, 0, seg.state.pos.z] }
+    forkling = { ...forkling, position: [seg.state.pos.x, 0, seg.state.pos.z] }
     action = seg.state.intention.type
     t = end
   }
-  return { needs: forkling.needs as Needs, position: forkling.position, action }
+  return { position: forkling.position, action }
 }
 
 /**
@@ -206,10 +205,10 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
   const start = nearestWalkable(world.nav.grid, { x, z }, 25) ?? { x: world.spawn.x, z: world.spawn.z }
   const state = createForkling(pack, behaviors, anchor.seed, start, {
     time: anchor.time,
-    needs: carried?.needs ?? forkling.needs,
     firstAction: carried?.action ?? forkling.intention.type,
     holding: forkling.holding !== undefined,
-    feelings: forkling.feelings,
+    // The body's drift is bent a little by how it feels: mood is valence, and energy is how wound up it is.
+    feelings: { valence: forkling.mood, arousal: (forkling.energy + 1) / 2 },
     ...(input.quirkWeights ? { quirkWeights: input.quirkWeights } : {}),
     ...focusFor(input.goals),
   })
@@ -285,8 +284,7 @@ export function tallyWindow(input: PlaybackInput, fromMs: number, toMs: number):
         last = state.intention.startedAt
         started[verb] = (started[verb] ?? 0) + 1
         if (focus && state.time < focus.until && verb !== focus.action) {
-          const weakest = (Object.entries(state.needs) as [string, number | undefined][]).filter(([, v]) => v !== undefined && v < STRONG_NEED).sort((a, b) => a[1]! - b[1]!)[0]
-          interruptions.push({ verb, need: weakest ? weakest[0] : 'other', at: state.time })
+          interruptions.push({ verb, need: 'other', at: state.time })
         }
       }
     }

@@ -32,7 +32,7 @@ function input(kind: ThinkKind): UserInput {
     stored: {},
     skills: Skills.parse({}),
     temperament: null,
-    feelings: 'feeling neutral, calm',
+    mood: 'steady, rested',
     justNow: [],
     beliefs: [],
     memory: '',

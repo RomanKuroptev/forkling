@@ -164,22 +164,18 @@ describe('a day of making', () => {
 })
 
 describe('when a step does not work out', () => {
-  it('wakes the model, says what went wrong, and lowers its spirits once', async () => {
+  it('wakes the model and says what went wrong', async () => {
     await tick(0, fakeLlm(decision([step('pick_up', 'driftwood', 10), step('sit', null, 10)])))
     writeJson('objects/driftwood.json', { ...readJson('objects/driftwood.json'), state: { stock: 0, stockAt: new Date(NOW + 5 * 60_000).toISOString() } })
-    const before = Forkling.parse(readJson('forkling.json'))
     const llm = fakeLlm(decision(null))
     await tick(11, llm)
     expect(llm.calls).toHaveLength(1)
     expect(llm.calls[0]!.user).toMatch(/pick_up did not work out: there is nothing left at "driftwood"/)
-    expect(Forkling.parse(readJson('forkling.json')).feelings.valence).toBeLessThan(before.feelings.valence)
 
     const again = fakeLlm(decision(null))
     await tick(12, again)
-    const valence = Forkling.parse(readJson('forkling.json')).feelings.valence
     await tick(13, again)
     expect(again.calls.length).toBeLessThanOrEqual(1)
-    expect(Forkling.parse(readJson('forkling.json')).feelings.valence).toBeGreaterThanOrEqual(valence - 0.001)
   })
 })
 
@@ -209,13 +205,6 @@ describe('temperament', () => {
     await runTick(other, { now: minutes(0), llm: null, pack, behaviors: cat.behaviors, speciesPersona: cat.persona, pools: cat.pools })
     const b = TemperamentRoll.parse(JSON.parse(readFileSync(join(other, 'brain/temperament.json'), 'utf8')))
     expect(b).not.toEqual(a)
-  })
-
-  it('moves how it feels: finishing something pleases, and what it likes pleases more', async () => {
-    await tick(0, fakeLlm(decision(plan)))
-    const quiet = fakeLlm(null)
-    for (const n of [11, 17, 23, 29, 50]) await tick(n, quiet)
-    expect(Forkling.parse(readJson('forkling.json')).feelings.valence).toBeGreaterThan(0)
   })
 })
 

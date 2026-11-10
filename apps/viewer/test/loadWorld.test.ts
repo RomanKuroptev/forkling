@@ -9,9 +9,8 @@ const ref = { owner: 'RomanKuroptev', repo: 'merge' }
 const forkling = {
   name: 'Merge',
   species: 'cat',
-  needs: { hunger: 70, energy: 80 },
   position: [2, 0, 20],
-  mood: 'curious',
+  mood: 0.1,
   intention: { type: 'sit', startedAt: '2026-10-30T21:00:00Z', seed: 1, reason: 'New island.' },
   lastTickAt: '2026-10-30T21:00:00Z',
   timezone: 'Europe/Stockholm',
@@ -133,12 +132,12 @@ describe('loadWorld', () => {
   })
 
   it('names the file and field when forkling.json is invalid', async () => {
-    const result = await loadWorld(ref, deps({ 'forkling.json': { ...forkling, needs: { hunger: 140 } } }))
+    const result = await loadWorld(ref, deps({ 'forkling.json': { ...forkling, mood: 2 } }))
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.error.kind).toBe('invalid')
     expect(result.error.problems[0]!.file).toBe('forkling.json')
-    expect(result.error.problems[0]!.lines.join('\n')).toMatch(/needs\.hunger/)
+    expect(result.error.problems[0]!.lines.join('\n')).toMatch(/mood/)
   })
 
   it('reports JSON that does not parse', async () => {

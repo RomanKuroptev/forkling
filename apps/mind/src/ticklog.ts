@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { Health, TICK_KEEP_DAYS, TickLine, type Goals, type TickStep } from '@forkling/schema'
+import { moodWords } from '@forkling/sim'
 import { clampText } from './decision.ts'
 import { buildHealth } from './health.ts'
 import type { Tick, TickResult } from './tick/context.ts'
@@ -104,7 +105,7 @@ function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine
     stepAfter: stepOf(t.goals),
     planId: planIdOf(t.goals),
     needs: Object.fromEntries(Object.entries(t.body.needs).map(([id, v]) => [id, round(v ?? 0, 1)])),
-    mood: t.mood,
+    mood: moodWords({ mood: t.mood, energy: t.energy }),
     drift: t.drift.filter((d) => Date.parse(d.at) > since).slice(0, 20),
     wrote: result.written.slice(0, 60),
     summary: clampText(result.summary, 300),

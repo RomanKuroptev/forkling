@@ -56,8 +56,9 @@ export function DebugOverlay() {
         </div>
       ))}
       <div className="debug-line dim">
-        feeling {forkling.feelings.valence >= 0 ? '+' : ''}
-        {forkling.feelings.valence.toFixed(2)} · arousal {forkling.feelings.arousal.toFixed(2)}
+        mood {forkling.mood >= 0 ? '+' : ''}
+        {forkling.mood.toFixed(2)} · energy {forkling.energy >= 0 ? '+' : ''}
+        {forkling.energy.toFixed(2)}
       </div>
       <div className="debug-line dim">
         paws: {holding}

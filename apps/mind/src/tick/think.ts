@@ -2,13 +2,13 @@ import type { ModelId } from '../budget.ts'
 import { Decision } from '../decision.ts'
 import { buildUser } from '../prompts.ts'
 import type { Tick } from './context.ts'
-import { describeFeelings } from './describe.ts'
 import { MAX_ARTIFACTS_PER_DAY } from '../art.ts'
 import { codeSlotsLeft } from '../builds.ts'
 import { readRecentPast } from '../past.ts'
 import { photosLeft } from '../photos.ts'
 import { MAX_READINGS_PER_DAY } from '../reading.ts'
 import { MAX_CODE_PER_WEEK, MAX_PHOTOS_PER_DAY } from '@forkling/schema'
+import { moodWords } from '@forkling/sim'
 import { checkPlan } from './plan.ts'
 import { clock, weekday } from './util.ts'
 
@@ -36,7 +36,7 @@ export async function think(t: Tick): Promise<void> {
     stored: t.stored,
     skills: t.skills,
     temperament: t.temperament,
-    feelings: describeFeelings(t.feelings),
+    mood: moodWords({ mood: t.mood, energy: t.energy }),
     justNow: t.justNow,
     beliefs: t.beliefs,
     memory: t.w.summary,

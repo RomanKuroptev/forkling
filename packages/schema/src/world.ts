@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { Vec3 } from './geometry.ts'
 import { Intention, Timestamp } from './intention.ts'
 import { Material, ObjectProperties } from './properties.ts'
-import { NeedId, type SpeciesPack } from './species.ts'
+import type { SpeciesPack } from './species.ts'
 
 const Slug = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'lowercase letters, digits and dashes')
 
@@ -20,20 +20,18 @@ function isTimezone(tz: string): boolean {
 }
 
 /** `forkling.json`: who the forkling is and what it is doing right now. */
-export const Forkling = z.object({
+const ForklingShape = z.object({
   name: z.string().min(1).max(40),
   /** Species pack id, e.g. `cat`. */
   species: Slug,
   /** Fixed at hatching. Makes this forkling's hours, temperament and tie-breaks its own. */
   seed: z.number().int().nonnegative().default(0),
-  /** Current need values, 0 to 100. Which needs exist is up to the species pack. */
-  needs: z.partialRecord(NeedId, z.number().min(0).max(100)),
   /** Where it is, in meters. y is ignored: the body snaps to the terrain. */
   position: Vec3,
-  /** A label for how it feels, derived from `feelings` by appraisal. */
-  mood: z.string().min(1).max(40),
-  /** How it feels underneath the label: valence from bad (-1) to good (1), arousal from calm (0) to wound up (1). */
-  feelings: z.object({ valence: z.number().min(-1).max(1), arousal: z.number().min(0).max(1) }).default({ valence: 0, arousal: 0.3 }),
+  /** How it feels, from low (-1) to good (1). Changed only by the events in spec 3.2 (`packages/sim/src/mood.ts`). */
+  mood: z.number().min(-1).max(1).default(0),
+  /** How much it has in it, from spent (-1) to full (1). Set to +0.5 at wake. */
+  energy: z.number().min(-1).max(1).default(0.5),
   intention: Intention,
   /** What it is carrying right now. Paws hold one thing. */
   holding: Holding.optional(),
@@ -47,6 +45,24 @@ export const Forkling = z.object({
   /** IANA time zone of the forkling's world, so every viewer agrees on the time of day. */
   timezone: z.string().refine(isTimezone, 'not a known IANA time zone').default('UTC'),
 })
+
+/**
+ * A `forkling.json` written before mood and energy were numbers has `needs`, `feelings` and a mood word. Those are
+ * dropped on read (the next write leaves them out): the mood becomes the old valence, or steady without one, and
+ * energy starts rested.
+ */
+function fromPetEra(raw: unknown): unknown {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return raw
+  const { needs: _needs, feelings, mood, energy, ...rest } = raw as Record<string, unknown>
+  const valence = (feelings as { valence?: unknown } | undefined)?.valence
+  return {
+    ...rest,
+    ...(typeof mood === 'number' ? { mood } : typeof valence === 'number' ? { mood: Math.max(-1, Math.min(1, valence)) } : {}),
+    ...(energy !== undefined && energy !== null ? { energy } : {}),
+  }
+}
+
+export const Forkling = z.preprocess(fromPetEra, ForklingShape) as unknown as z.ZodType<z.output<typeof ForklingShape>, z.input<typeof ForklingShape>>
 export type Forkling = z.infer<typeof Forkling>
 
 /** What a forkling can do with an object. Replaced by `properties` and `unlocks`; read until the sim no longer does. */

@@ -1,12 +1,11 @@
 import type { PlanStep, SpeciesAction } from '@forkling/schema'
-import { addXp, applyStep, eventsFromStep, fixableNeeds, hourInZone, scoreSurprise, skillLevel } from '@forkling/sim'
+import { addXp, applyStep, hourInZone, scoreSurprise, skillLevel } from '@forkling/sim'
 import type { Tick } from './context.ts'
 import { describeEvent, PAST } from './describe.ts'
 import { spotsFor } from './create.ts'
 import { intentionSeed } from './util.ts'
 
 /** Strong needs wake the model at most this often. */
-const NEED_COOLDOWN_MS = 30 * 60_000
 /** A step's effect and practice land only when the body spent this much of the step's minutes on its verb. */
 export const MIN_WORKED_SHARE = 0.6
 const MAX_BROKEN_OFF = 30
@@ -55,7 +54,7 @@ function landStep(t: Tick, finishing: PlanStep, index: number, verb: SpeciesActi
     }
     // Things it made itself are not news to it.
     t.mind.knownObjects = [...new Set([...t.mind.knownObjects, ...result.upserted])]
-    t.appraisals.push(...eventsFromStep(result.events, [...before, ...t.objects]))
+    t.moodEvents.push('stepCompleted')
     t.justNow.push(...result.events.map((e) => describeEvent(e, [...before, ...t.objects])))
     for (const e of result.events) {
       t.remember.push({
@@ -73,7 +72,6 @@ function landStep(t: Tick, finishing: PlanStep, index: number, verb: SpeciesActi
     t.notes.push(`step ${index + 1} (${finishing.verb}) could not happen: ${result.reason}`)
     t.justNow.push(`${finishing.verb} did not work out: ${result.reason}`)
     t.remember.push({ at: nowIso, kind: 'event', text: `${finishing.verb} did not work out: ${result.reason}`, verb: finishing.verb })
-    t.appraisals.push({ kind: 'blocked' })
     t.triggers = [...t.triggers, { kind: 'blocked', score: 0.9, detail: `${finishing.verb} did not work out: ${result.reason}` }]
   }
 }
@@ -85,10 +83,7 @@ function landStep(t: Tick, finishing: PlanStep, index: number, verb: SpeciesActi
  */
 export function finishStep(t: Tick): void {
   const { forkling, goals, mind, pack, nowMs, asleep, body } = t
-  // What the body can do for itself, between steps, is routine and never a reason to think.
-  const fixable = fixableNeeds(pack, { visitorDistance: null, timeOfDay: hourInZone(t.tz, nowMs), asleep, spotKinds: t.spotKeys })
-  t.triggers = scoreSurprise({ forkling: { ...forkling, needs: body.needs }, goals, mindState: mind, objects: t.objects, events: t.events, nowMs, asleep, spotKinds: t.spotKeys, fixableNeeds: fixable })
-  if (mind.lastThinkAt && nowMs - Date.parse(mind.lastThinkAt) < NEED_COOLDOWN_MS) t.triggers = t.triggers.filter((x) => x.kind !== 'need')
+  t.triggers = scoreSurprise({ forkling, goals, mindState: mind, objects: t.objects, events: t.events, nowMs, asleep, spotKinds: t.spotKeys })
 
   const finishing = goals.now ? goals.today?.steps[goals.now.index] : undefined
   if (goals.now && finishing && !asleep) {
