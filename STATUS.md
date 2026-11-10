@@ -13,10 +13,11 @@ Read this first. Update it before every commit and before you stop.
 Branch `claude/project-thread-403rmi`.
 
 - **Docs (done):** `CLAUDE.md` and `MILESTONES.md` rewritten from the spec, this file reset, and the spec exported to `docs/spec/`.
-- **W0 voice test:** in progress. See below.
+- **W0 voice test (built, waiting for its live run):** `pnpm --filter @forkling/mind voice-test --merge <clone>`. See [`docs/spec/w0-voice-test.md`](docs/spec/w0-voice-test.md). It needs `ANTHROPIC_API_KEY` in Roman's terminal, because this machine has no key and the federation rule only works from the merge repo's Actions. The offline run fetches 20 items and measures the pet-era text; the numbers are in the W0 file. Estimated cost $0.13 at most, assuming no cache and full outputs.
+- New code that W1 and W2 reuse: `packages/sim/src/novelty.ts` (3-gram similarity, worn phrases, calibration profile), `apps/mind/src/web/clean.ts` (HTML to text, cut to 3,000 tokens) and `apps/mind/src/web/souvenir.ts` (word-for-word check). The script itself lives in `apps/mind/scripts/` and is thrown away after W0.
 
 ## Next
 
-1. Roman reads the W0 report and says whether the voice is worth building a world around (or what to change in the seed or the models).
+1. Roman runs the voice test (or gives the go to run it from an Actions workflow), reads the report and says whether the voice is worth building a world around (or what to change in the seed or the models).
 2. Correct the section 12 thresholds in the spec doc from the calibration numbers.
 3. W1 (strip pet care, new verbs), in plan mode, from `docs/spec/w1-*.md`.
