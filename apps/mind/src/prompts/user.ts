@@ -1,5 +1,5 @@
-import type { Belief, Forkling, Goals, Interests, MindState, Skills, VisitorEvent, WorldObject } from '@forkling/schema'
-import { liveBeliefs, objectStatusAt, type Trigger } from '@forkling/sim'
+import type { Belief, Forkling, Goals, Interests, MindState, VisitorEvent } from '@forkling/schema'
+import { liveBeliefs, type Prices, type Trigger } from '@forkling/sim'
 import type { RecentPast } from '../past.ts'
 import { decideTask } from './decide.ts'
 import { morningTask } from './morning.ts'
@@ -11,9 +11,8 @@ export interface UserInput {
   forkling: Forkling
   goals: Goals
   mindState: MindState
-  objects: readonly WorldObject[]
-  /** Spot kinds the world offers right now (`perch`, `sunbeam`, ...), not object ids. */
-  spotKinds: readonly string[]
+  /** The ids of the places that exist. */
+  places: readonly string[]
   triggers: readonly Trigger[]
   events: readonly VisitorEvent[]
   /** Local time like `Tuesday 2026-11-03 10:00`. */
@@ -23,13 +22,8 @@ export interface UserInput {
   bedTime: string
   /** Hours of waking left today, rounded. */
   hoursLeft: number
-  body: { x: number; z: number }
-  /** Unix ms, for what grows, refills and goes off. */
-  nowMs: number
-  /** What it holds and has stored, after anything its last step did. */
-  holding: Forkling['holding']
-  stored: Forkling['stored']
-  skills: Skills
+  /** Points of the daily allowance in hand, and what each kind of step costs today (spec 9.8). */
+  allowance: { points: number; prices: Prices }
   /** How it feels, in words: `low, tired`. Never numbers. */
   mood: string
   /** What its last step did, one line each. */
@@ -40,43 +34,16 @@ export interface UserInput {
   memory: string
   /** `brain/interests.json`. */
   interests: Interests
-  /** Whether it may ask for an object to be designed now: yes, a request is still waiting, or today's is used. */
-  designs?: 'ready' | 'open' | 'used'
   /** What it did and wrote before, so it can build on its own work. Missing means none is shown. */
   past?: RecentPast
-  /** What is left of each daily or weekly limit, so it does not plan what would be refused. */
-  limits?: Record<'creative' | 'photos' | 'readings' | 'code', { left: number; max: number }>
 }
 
-/**
- * What broke the plan off since the mind last decided, so it can plan around it: for each step, how often, and what the
- * body did instead for which need. Nothing when nothing did.
- */
-function describeBrokenOff(notes: readonly { step: string; verb: string; need: string }[]): string[] {
-  if (notes.length === 0) return []
-  const bySteps = new Map<string, Map<string, number>>()
-  for (const n of notes) {
-    const what = bySteps.get(n.step) ?? new Map<string, number>()
-    const key = `${n.verb} (${n.need})`
-    what.set(key, (what.get(key) ?? 0) + 1)
-    bySteps.set(n.step, what)
-  }
+/** The points in hand and the prices that apply today, in one line each. */
+function describeAllowance({ points, prices }: UserInput['allowance']): string[] {
+  const cost = (label: string, n: number) => `${label} ${n}`
   return [
-    '',
-    'since you last decided, the body broke a step off to look after itself:',
-    ...[...bySteps].map(([step, what]) => {
-      const times = [...what.values()].reduce((a, b) => a + b, 0)
-      return `- you broke off ${step} ${times} ${times === 1 ? 'time' : 'times'}: ${[...what].map(([key, n]) => `${key} ${n}`).join(', ')}`
-    }),
-  ]
-}
-
-/** How much of each limit is left, in one line. */
-function describeLimits(limits: UserInput['limits']): string[] {
-  if (!limits) return []
-  const part = (label: string, l: { left: number; max: number }) => `${label} ${l.left} of ${l.max}`
-  return [
-    `left to do today: ${[part('writing, drawing and the like', limits.creative), part('photographs', limits.photos), part('reading sessions', limits.readings), part('coded projects this week', limits.code)].join('; ')}`,
+    `points in hand: ${points}`,
+    `prices today: ${[cost('wander', prices.trip), cost('tend', prices.tend), cost('revisit', prices.revisit), cost('expand', prices.expand), cost('found', prices.foundRequest), cost('tinker (full work)', prices.fullWork), cost('tinker (sketch)', prices.sketch), cost('write', prices.write), cost('reply', prices.reply), cost('rest', prices.rest)].join(', ')}; a deep step costs 30`,
   ]
 }
 
@@ -104,55 +71,17 @@ const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
   weekly: weeklyTask,
 }
 
-/** One object as the model sees it: where it is, what it unlocks, what it gives, how it is getting on. */
-function describeObject(o: WorldObject, nowMs: number): Record<string, unknown> {
-  const status = objectStatusAt(o, nowMs)
-  const p = o.properties
-  const flags = (['carryable', 'storage', 'edible', 'soft', 'high', 'canHide', 'diggable'] as const).filter((f) => p[f])
-  return {
-    id: o.id,
-    name: o.name,
-    kind: o.kind,
-    at: [o.position[0], o.position[2]],
-    why: o.reason,
-    ...(flags.length > 0 || p.material ? { is: [...flags, ...(p.material ? [p.material] : [])] } : {}),
-    ...(o.unlocks.length > 0 ? { unlocks: o.unlocks } : {}),
-    ...(o.yields ? { gives: o.yields.material, left: status.stock } : {}),
-    ...(o.grows ? { grows: status.stage } : {}),
-    ...(o.made && !o.made.done ? { unfinished: `${o.made.sessions} of ${o.made.needed} sessions` } : {}),
-    ...(o.state.open !== undefined ? { open: o.state.open } : {}),
-    ...(o.state.held ? { inYourPaws: true } : {}),
-    ...(o.contraption ? { mechanism: true, ...(o.contraption.lastRun ? { lastRun: o.contraption.lastRun.moved ? `moved ${o.contraption.lastRun.maxTravel} m` : 'nothing moved' } : {}) } : {}),
-    ...(status.spoiled ? { spoiled: true } : {}),
-    ...(status.wet ? { wetPaint: true } : {}),
-  }
-}
-
 /** The part of the prompt that changes every call. It goes after the cache breakpoint. */
 export function buildUser(i: UserInput): string {
   const intention = i.forkling.intention
   const step = i.goals.now ? i.goals.today?.steps[i.goals.now.index] : undefined
-  const paws = i.holding ? ('material' in i.holding ? `a piece of ${i.holding.material}` : `the object ${i.holding.objectId}`) : 'nothing'
-  const stored = Object.entries(i.stored)
-    .filter(([, n]) => (n ?? 0) > 0)
-    .map(([m, n]) => `${n} ${m}`)
-    .join(', ')
-  const skills = Object.entries(i.skills)
-    .map(([g, s]) => `${g} ${s!.level}`)
-    .join(', ')
   return [
     '<situation>',
     `time: ${i.localTime} (${i.forkling.timezone}); woke at ${i.wakeTime}; bedtime ${i.bedTime}`,
     `mood: ${i.mood}`,
-    `position: x ${i.body.x.toFixed(0)}, z ${i.body.z.toFixed(0)}`,
     `doing now: ${intention.type}${intention.targetId ? ` at ${intention.targetId}` : ''} ("${intention.reason}")`,
-    `in your paws: ${paws}`,
-    `stored at home: ${stored || 'nothing'}`,
-    ...(i.designs ? [`asking for a designed object: ${i.designs === 'ready' ? 'you may ask for one today' : i.designs === 'open' ? 'one is already being built' : 'you have asked for one today already'}`] : []),
-    ...(skills ? [`how practised you are (0 to 10): ${skills}`] : []),
+    ...describeAllowance(i.allowance),
     ...(i.justNow.length > 0 ? ['', 'just now:', ...i.justNow.map((line) => `- ${line}`)] : []),
-    ...describeBrokenOff(i.mindState.brokenOff),
-    ...describeLimits(i.limits),
     '</situation>',
     '',
     '<interests>',
@@ -170,10 +99,9 @@ export function buildUser(i: UserInput): string {
     }),
     '</goals>',
     '',
-    '<world>',
-    `places you can go (spot kinds): ${i.spotKinds.join(', ') || 'none'}`,
-    ...i.objects.slice(0, 100).map((o) => json(describeObject(o, i.nowMs))),
-    '</world>',
+    '<places>',
+    i.places.join(', ') || 'none',
+    '</places>',
     '',
     '<recent>',
     json({ steps: i.mindState.recent.slice(-8), rejectedPlans: i.mindState.rejections.slice(-3) }),

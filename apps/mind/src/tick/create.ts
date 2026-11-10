@@ -6,6 +6,7 @@ import {
   liveBeliefs,
   localDate,
   playbackStateTime,
+  pointsAtWake,
   sleepWindow,
   startPlayback,
   sunDirection,
@@ -63,6 +64,8 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   const body = playback.state
   const objects: WorldObject[] = [...w.objects]
   const mind = structuredClone(w.mindState)
+  // The daily allowance is topped up at the first awake tick of each day: what was saved, plus 150, up to 450 (spec 9.8).
+  if (!asleep && mind.allowance?.day !== today) mind.allowance = { points: pointsAtWake(mind.allowance?.points ?? 0), day: today }
   const stored: Stored = { ...forkling.stored }
 
   const t: Tick = {
@@ -101,6 +104,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     skills: w.skills,
     interests: w.interests,
     pendingReading: null,
+    pendingNote: null,
     pendingArt: null,
     pendingPhoto: null,
     pendingCode: null,
@@ -127,7 +131,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
 
     beliefs: w.beliefs,
     beliefIds: new Set(liveBeliefs(w.beliefs).map((b) => b.id)),
-    system: buildSystem({ pack, name: forkling.name, speciesPersona: deps.speciesPersona, persona: w.persona }),
+    system: buildSystem({ seed: w.seed }),
     prompt: undefined,
     ask: undefined as never,
 

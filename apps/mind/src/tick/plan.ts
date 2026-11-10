@@ -1,15 +1,14 @@
 import type { PlanStep } from '@forkling/schema'
-import { hourInZone, isAsleepAt, validatePlan, type Trigger } from '@forkling/sim'
-import { MAX_ARTIFACTS_PER_DAY } from '../art.ts'
-import { codeSlotsLeft } from '../builds.ts'
+import { MIND_VERBS, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
-import { photosLeft } from '../photos.ts'
-import { MAX_READINGS_PER_DAY } from '../reading.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { intentionSeed } from './util.ts'
 
 const MAX_RECENT = 20
+
+/** Home and the Workshop are the two places Merge starts with. They become place files in W5. */
+export const STARTING_PLACES = ['home', 'workshop'] as const
 
 export function thinkKindFor(triggers: readonly Trigger[]): ThinkKind | 'bedtime' {
   if (triggers.some((t) => t.kind === 'newDay')) return 'morning'
@@ -18,32 +17,44 @@ export function thinkKindFor(triggers: readonly Trigger[]): ThinkKind | 'bedtime
   return 'decide'
 }
 
-/** The plan as plan steps, and whether the body could really carry it out, played out from what it holds now. */
+const mindStepOf = (s: PlanStep): MindStep => ({
+  verb: s.verb as MindVerb,
+  target: s.targetId ?? null,
+  reason: s.reason,
+  minutes: s.minutes,
+  wantId: s.wantId ?? null,
+  ...(s.deep ? { deep: true } : {}),
+  ...(s.size ? { size: s.size } : {}),
+})
+
+/** What the plan check needs to know that is not in the plan: the day, the mood, the points in hand, what exists. */
+export function planContext(t: Tick): MindPlanContext {
+  return {
+    startMs: t.nowMs,
+    bedMs: t.window.bedMs,
+    mood: { mood: t.mood, energy: t.energy },
+    pointsInHand: t.mind.allowance?.points ?? 0,
+    places: new Set(STARTING_PLACES),
+    // Care of places, growth, founding and notes arrive with places (W5), requests (W6) and notes (W7).
+    revisitable: new Set(),
+    expandable: new Set(),
+    canFound: false,
+    notes: new Set(),
+    wants: [],
+    recent: t.mind.recent,
+    used: { repliesToday: 0, sketchesToday: 0, foundThisWeek: 0 },
+    lastExpandedPlace: null,
+  }
+}
+
+/** The plan as plan steps, checked by the rules of spec 2.6. The steps come back with their minutes clamped to the verb's range. */
 export function checkPlan(t: Tick, plan: LlmStep[]) {
-  const steps = plan.map((s) => planStepFrom(s, t.beliefIds))
+  const steps = plan.map((s) => planStepFrom(s))
   const usable = steps.filter((s): s is PlanStep => s !== null)
-  const check =
-    usable.length !== steps.length
-      ? ({ ok: false, reasons: ['a step was missing its verb or its reason'] } as const)
-      : validatePlan(usable, {
-          pack: t.pack,
-          spotKinds: new Set([...t.spotKeys].filter((k) => !t.objectIds.has(k))),
-          objects: t.objects,
-          startMs: t.nowMs,
-          asleepAt: (ms) => isAsleepAt(ms, t.sleepOpts),
-          hourAt: (ms) => hourInZone(t.tz, ms),
-          recent: t.mind.recent,
-          holding: t.holding,
-          stored: t.stored,
-          position: { x: t.body.pos.x, z: t.body.pos.z },
-          skills: t.skills,
-          codeLeft: codeSlotsLeft(t.mind, t.today),
-          creativeLeft: Math.max(0, MAX_ARTIFACTS_PER_DAY - (t.mind.arts?.date === t.today ? t.mind.arts.count : 0)),
-          readingsLeft: Math.max(0, MAX_READINGS_PER_DAY - t.readings.count),
-          photosLeft: photosLeft(t.mind, t.today),
-          seed: intentionSeed(t.forkling.seed, t.nowMs),
-        })
-  return { usable, check }
+  if (usable.length !== steps.length) return { usable, check: { ok: false, reasons: ['a step was missing its verb or its reason'] } as const }
+  const check = validateMindPlan(usable.map(mindStepOf), planContext(t))
+  if (!check.ok) return { usable, check }
+  return { usable: usable.map((s, i) => ({ ...s, minutes: check.steps[i]!.minutes })), check }
 }
 
 /** Begins step `index` of today's plan: a focus window for the body, and an intention that says why. */
@@ -52,14 +63,21 @@ export function startStep(t: Tick, index: number, reason?: string): void {
   if (!step) return
   t.goals.now = { index, startedAt: t.nowIso, until: new Date(t.nowMs + step.minutes * 60_000).toISOString() }
   const started = {
-    type: step.verb,
-    ...(step.targetId ? { targetId: step.targetId } : {}),
+    // The body shows a mind verb as one of its own actions (the pack's `mindPoses`).
+    type: t.pack.mindPoses[step.verb] ?? step.verb,
+    // What a mind verb is aimed at (a topic, a place, an idea) is the step's, not a thing the body walks to.
+    ...(step.targetId && !MIND_VERBS.includes(step.verb as MindVerb) ? { targetId: step.targetId } : {}),
     startedAt: t.nowIso,
     seed: intentionSeed(t.forkling.seed, t.nowMs),
     reason: clampText(reason?.trim() || step.reason, 200),
     goalRef: `today:${index}`,
   }
   t.started = started
+  // A step spends its points when it starts, so the next plan is made with what is left.
+  if ((MIND_VERBS as readonly string[]).includes(step.verb) && t.mind.allowance) {
+    const cost = stepCost({ verb: step.verb as MindVerb, ...(step.size ? { size: step.size } : {}), ...(step.deep ? { deep: true } : {}) })
+    t.mind.allowance = { ...t.mind.allowance, points: Math.max(0, t.mind.allowance.points - cost) }
+  }
   t.mind.recent = [...t.mind.recent, { verb: step.verb, ...(step.targetId ? { targetId: step.targetId } : {}), at: t.nowIso }].slice(-MAX_RECENT)
   const goalRef = `today:${index}`
   const heldBeliefs = step.because && step.because.length > 0 ? { beliefRefs: step.because } : {}

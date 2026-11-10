@@ -27,23 +27,17 @@ const TICK_MS = 10 * 60_000
 const MIN_STEP_SHARE = 0.8
 /**
  * Decide and morning calls in a day. One morning plan, about six replans (15.5 waking hours in plans of 2 to 3 hours),
- * and room for about five more: something new, a step whose target is gone, a need the body cannot fix. The loop the
- * review found made about 30 a day by itself.
+ * and room for about five more: something new on the beach. The loop the review found made about 30 a day by itself.
  */
 const MAX_DECIDE_CALLS = 12
 
-/** Ordinary steps that need nothing but the day: where and what, in an order that never repeats a verb three times. */
-const STEPS: { verb: string; target: string | null; x: number | null; z: number | null }[] = [
-  { verb: 'explore', target: null, x: -5, z: 12 },
-  { verb: 'inspect', target: 'bookshelf', x: null, z: null },
-  { verb: 'sit', target: null, x: null, z: null },
-  { verb: 'explore', target: null, x: 0, z: 16 },
-  { verb: 'inspect', target: 'berry-bush', x: null, z: null },
-  { verb: 'stretch', target: null, x: null, z: null },
-  { verb: 'explore', target: null, x: -8, z: 18 },
-  { verb: 'inspect', target: 'telescope', x: null, z: null },
+/** Steps in an order that never repeats a verb three times: wander, write, rest. The other six verbs run as rest in W1. */
+const STEPS: { verb: string; target: string | null }[] = [
+  { verb: 'wander', target: 'lighthouses' },
+  { verb: 'write', target: 'home' },
+  { verb: 'rest', target: null },
 ]
-const STEP_MINUTES = 25
+const STEP_MINUTES = 30
 
 const minutesOf = (hh: string, mm: string) => Number(hh) * 60 + Number(mm)
 
@@ -55,12 +49,14 @@ function fakeModel() {
     const now = /time: \w+ \d{4}-\d{2}-\d{2} (\d\d):(\d\d)/.exec(req.user)
     const bed = /bedtime (\d\d):(\d\d)/.exec(req.user)
     const left = now && bed ? minutesOf(bed[1]!, bed[2]!) - minutesOf(now[1]!, now[2]!) : 120
-    // Two to three hours, and never past bedtime.
-    const count = Math.max(0, Math.min(6, Math.floor((left - 20) / STEP_MINUTES)))
-    const plan = Array.from({ length: Math.max(0, count) }, () => {
-      const s = STEPS[next++ % STEPS.length]!
-      return { ...s, reason: `I felt like ${s.verb} for a while.`, minutes: STEP_MINUTES, materials: null, makes: null, because: null, topic: null }
-    })
+    // Up to three hours, and no step starts in the last 45 minutes before bed.
+    const count = Math.min(6, Math.floor((left - 45) / STEP_MINUTES))
+    const plan = count >= 3
+      ? Array.from({ length: count }, () => {
+          const s = STEPS[next++ % STEPS.length]!
+          return { ...s, reason: `I felt like ${s.verb} for a while.`, minutes: STEP_MINUTES, wantId: null, deep: null, size: null }
+        })
+      : []
     return {
       thought: 'The beach is mine, so I start with the part I know.',
       longGoal: req.kind === 'morning' ? { text: 'Learn every corner of the island.', reason: 'It is where I live.' } : null,
@@ -76,6 +72,7 @@ function fakeModel() {
       calls.push({ req, at: clockNow })
       let parsed: unknown = null
       if (req.kind === 'morning' || req.kind === 'decide' || req.kind === 'weekly') parsed = decide(req)
+      else if (req.kind === 'art') parsed = { title: 'A plaque', text: 'The lamp is on. I am still here.' }
       else if (req.kind === 'bedtime') {
         const ref = /\d{4}-\d{2}-\d{2}#\d+/.exec(req.user)?.[0]
         parsed = { journal: { title: 'A day', paragraphs: ref ? [{ text: 'I spent the day on the beach.', refs: [ref] }] : [] }, beliefOps: [] }

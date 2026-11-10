@@ -42,6 +42,12 @@ describe('SpeciesPack', () => {
     expect(pack.starterSpots).toEqual([])
   })
 
+  it('maps a mind verb to a pose that is one of its own actions, and rejects one that is not', () => {
+    expect(SpeciesPack.parse({ ...base, mindPoses: { rest: 'eat' } }).mindPoses).toEqual({ rest: 'eat' })
+    expect(SpeciesPack.parse(base).mindPoses).toEqual({})
+    expect(SpeciesPack.safeParse({ ...base, mindPoses: { rest: 'fly' } }).success).toBe(false)
+  })
+
   it('rejects duplicate action ids and weights for unknown actions', () => {
     expect(SpeciesPack.safeParse({ ...base, actions: [base.actions[0], base.actions[0]] }).success).toBe(false)
     expect(SpeciesPack.safeParse({ ...base, weights: { fly: 2 } }).success).toBe(false)

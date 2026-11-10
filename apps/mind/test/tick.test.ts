@@ -19,15 +19,18 @@ const pack: SpeciesPack = cat.pack
 
 const NOW = '2026-11-03T09:00:00Z' // 10:00 in Stockholm, a Tuesday, long after waking
 
+const llmStep = (verb: string, target: string | null, minutes: number, reason: string, over: Record<string, unknown> = {}) => ({ verb, target, reason, minutes, wantId: null, deep: null, size: null, ...over })
+const threeSteps = (first = 'wander'): Decision['plan'] => [
+  llmStep(first, 'lighthouses', 30, 'I want to know what a keeper does.'),
+  llmStep('write', 'home', 25, 'There is something worth putting on a plaque.'),
+  llmStep('rest', null, 30, 'Breakfast can wait while I think.'),
+]
+
 const morning: Decision = {
   thought: 'The rock catches the sun first, so I start there.',
   longGoal: { text: 'Make the sunny rock mine.', reason: 'It is the warmest place I have found.' },
   dropLongGoal: false,
-  plan: [
-    { verb: 'watch', target: 'sunny-rock', x: null, z: null, reason: 'I want the best seat on the beach.', minutes: 30, materials: null, makes: null, because: null, topic: null },
-    { verb: 'explore', target: null, x: -10, z: 5, reason: 'There is shoreline I have not seen.', minutes: 25, materials: null, makes: null, because: null, topic: null },
-    { verb: 'sit', target: null, x: null, z: null, reason: 'Breakfast can wait while I think.', minutes: 10, materials: null, makes: null, because: null, topic: null },
-  ],
+  plan: threeSteps(),
   planReason: 'A day for claiming things.',
   stayUpLate: null,
 }
@@ -84,11 +87,13 @@ describe('a morning tick', () => {
     const goals = Goals.parse(readJson('mind/goals.json'))
     expect(goals.long?.text).toBe('Make the sunny rock mine.')
     expect(goals.today?.date).toBe('2026-11-03')
-    expect(goals.today?.steps.map((s) => s.verb)).toEqual(['watch', 'explore', 'sit'])
+    expect(goals.today?.steps.map((s) => s.verb)).toEqual(['wander', 'write', 'rest'])
     expect(goals.now).toMatchObject({ index: 0, startedAt: '2026-11-03T09:00:00.000Z', until: '2026-11-03T09:30:00.000Z' })
 
     const forkling = Forkling.parse(readJson('forkling.json'))
-    expect(forkling.intention).toMatchObject({ type: 'watch', targetId: 'sunny-rock', goalRef: 'today:0', reason: 'The rock catches the sun first, so I start there.' })
+    // The body shows a mind verb as one of its own actions (the pack's mindPoses).
+    expect(forkling.intention).toMatchObject({ type: 'sit', goalRef: 'today:0', reason: 'The rock catches the sun first, so I start there.' })
+    expect(forkling.intention.targetId).toBeUndefined()
     expect(forkling.mood).toBe(0)
     expect(forkling.energy).toBe(0.5)
     expect(forkling.lastTickAt).toBe('2026-11-03T09:00:00.000Z')
@@ -96,7 +101,7 @@ describe('a morning tick', () => {
     const state = MindState.parse(readJson('mind/state.json'))
     expect(state.lastPlanDate).toBe('2026-11-03')
     expect(state.knownObjects.sort()).toEqual(['sunny-rock', 'tall-rock'])
-    expect(state.recent.map((s) => s.verb)).toEqual(['watch'])
+    expect(state.recent.map((s) => s.verb)).toEqual(['wander'])
 
     const ledger = BudgetLedger.parse(readJson('brain/budget.json'))
     expect(ledger.month).toBe('2026-11')
@@ -137,7 +142,7 @@ describe('following its own plan', () => {
     const goals = Goals.parse(readJson('mind/goals.json'))
     expect(goals.now).toMatchObject({ index: 1, startedAt: '2026-11-03T09:31:00.000Z', until: '2026-11-03T09:56:00.000Z' })
     const forkling = Forkling.parse(readJson('forkling.json'))
-    expect(forkling.intention).toMatchObject({ type: 'explore', goalRef: 'today:1', reason: 'There is shoreline I have not seen.' })
+    expect(forkling.intention).toMatchObject({ type: 'sit', goalRef: 'today:1', reason: 'There is something worth putting on a plaque.' })
     expect(forkling.intention.targetId).toBeUndefined()
     expect(result.summary).toMatch(/step 2/)
   })
@@ -152,7 +157,7 @@ describe('following its own plan', () => {
   })
 })
 
-const fishPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null, because: null, topic: null }]
+const fishPlan: Decision['plan'] = [llmStep('fish', null, 30, 'I will catch one.'), llmStep('write', 'home', 25, 'A plaque.'), llmStep('rest', null, 30, 'Rest.')]
 const stateOf = () => MindState.parse(readJson('mind/state.json'))
 const goalsOf = () => Goals.parse(readJson('mind/goals.json'))
 /** A new object turns up on the beach, which is news. */
@@ -186,6 +191,69 @@ describe('mood and energy (spec 3.2)', () => {
     await runTick(dir, at(NOW, { llm }))
     expect(llm.calls[0]!.user).toMatch(/mood: low, tired/)
     expect(llm.calls[0]!.user).not.toMatch(/-0\.3/)
+  })
+})
+
+describe('the nine verbs in the tick', () => {
+  const byKind = (answer: unknown) => (req: LlmRequest) => (req.kind === 'art' ? (answer as Decision) : morning)
+  const fiveSteps = () => [llmStep('wander', 'lighthouses', 30, 'a'), llmStep('write', 'home', 25, 'b'), llmStep('rest', null, 30, 'c'), llmStep('wander', 'radio', 30, 'd'), llmStep('write', 'home', 25, 'e')]
+
+  it('tops up the allowance at the first awake tick of the day and spends a step when it starts', async () => {
+    await runTick(dir, at(NOW))
+    expect(stateOf().allowance).toEqual({ points: 147, day: '2026-11-03' })
+    // The next morning: what was saved, plus 150, and the first step's 3 points.
+    await runTick(dir, at('2026-11-04T08:30:00Z'))
+    expect(stateOf().allowance).toEqual({ points: 294, day: '2026-11-04' })
+  })
+
+  it('turns down a plan that costs more than the points in hand, and says how much', async () => {
+    const dear = [llmStep('tinker', 'a clock that is always early', 90, 'I want to make one properly.', { size: 'full' }), llmStep('wander', 'clocks', 30, 'a'), llmStep('write', 'home', 25, 'b')]
+    const llm = fakeLlm({ ...morning, plan: dear })
+    await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls).toHaveLength(2)
+    expect(llm.calls[1]!.user).toMatch(/costs 244 points and you have 150 in hand/)
+    expect(stateOf().rejections[0]!.reasons.join(' ')).toMatch(/costs 244 points/)
+  })
+
+  it('holds a tired plan to 4 steps', async () => {
+    patchForkling({ energy: -0.6 })
+    const llm = fakeLlm({ ...morning, plan: fiveSteps() })
+    await runTick(dir, at(NOW, { llm }))
+    expect(stateOf().rejections[0]!.reasons.join(' ')).toMatch(/at most 4 steps/)
+  })
+
+  it('runs the verbs that are not built yet as rest, and says so', async () => {
+    await runTick(dir, at(NOW))
+    await runTick(dir, at(minutesAfter(31), { llm: fakeLlm(keep) }))
+    expect(streamText()).toMatch(/wander is not built yet, so it rested instead\./)
+  })
+
+  it('writes what a write step says into notebook/writing, and costs a little energy', async () => {
+    await runTick(dir, at(NOW))
+    writeJson('mind/goals.json', { ...goalsOf(), now: { index: 1, startedAt: NOW, until: '2026-11-03T09:10:00Z' } })
+    const llm = fakeLlm(byKind({ title: 'The lamp', text: 'A lamp is a small argument with the dark. I am winning slowly.' }))
+    await runTick(dir, at(minutesAfter(12), { llm }))
+    const written = readFileSync(file('notebook/writing/2026-11-03-0912-the-lamp.md'), 'utf8')
+    expect(written).toBe('# The lamp\n\nA lamp is a small argument with the dark. I am winning slowly.\n')
+    expect(streamText()).toMatch(/write: The lamp/)
+    expect(Forkling.parse(readJson('forkling.json')).energy).toBeCloseTo(0.45)
+  })
+
+  it('throws away writing that claims a human life, or runs over 300 words', async () => {
+    await runTick(dir, at(NOW))
+    writeJson('mind/goals.json', { ...goalsOf(), now: { index: 1, startedAt: NOW, until: '2026-11-03T09:10:00Z' } })
+    const human = fakeLlm(byKind({ title: 'Home', text: 'When I was a kid I kept a lamp.' }))
+    const result = await runTick(dir, at(minutesAfter(12), { llm: human }))
+    expect(existsSync(file('notebook/writing'))).toBe(false)
+    expect(result.notes.join(' ')).toMatch(/claimed to be human/)
+
+    writeJson('mind/goals.json', { ...goalsOf(), now: { index: 1, startedAt: minutesAfter(12), until: minutesAfter(14) } })
+    mkdirSync(file('mind'), { recursive: true })
+    writeJson('mind/state.json', { ...stateOf(), appliedStepAt: undefined })
+    const long = fakeLlm(byKind({ title: 'Long', text: 'word '.repeat(301) }))
+    const second = await runTick(dir, at(minutesAfter(16), { llm: long }))
+    expect(existsSync(file('notebook/writing'))).toBe(false)
+    expect(second.notes.join(' ')).toMatch(/over the 300 word limit/)
   })
 })
 
@@ -301,7 +369,8 @@ describe('when the model cannot answer', () => {
     expect(quiet.calls).toHaveLength(0)
     const later = fakeLlm(keep)
     await runTick(dir, at(minutesAfter(65), { llm: later }))
-    expect(later.calls).toHaveLength(1)
+    // The write step that ended in between has its own call, for the words.
+    expect(later.calls.filter((c) => c.kind !== 'art')).toHaveLength(1)
   })
 
   it('treats an answer with nothing usable like a failure', async () => {
@@ -309,29 +378,6 @@ describe('when the model cannot answer', () => {
     await runTick(dir, at(minutesAfter(31), { llm: fakeLlm(() => null) }))
     expect(stateOf().thinkFailedAt).toBe(minutesAfter(31))
     expect(goalsOf().now).toMatchObject({ index: 1 })
-  })
-})
-
-describe('a step whose target is gone', () => {
-  it('asks once, and moves past the step when the answer is to carry on', async () => {
-    await runTick(dir, at(NOW)) // step 0 watches the sunny rock
-    rmSync(file('objects/sunny-rock.json'))
-    const llm = fakeLlm(keep)
-    await runTick(dir, at(minutesAfter(10), { llm }))
-    expect(llm.calls).toHaveLength(1)
-    expect(llm.calls[0]!.user).toMatch(/- blocked: /)
-    expect(goalsOf().now).toMatchObject({ index: 1 })
-    expect(streamText()).toMatch(/Skipped watch/)
-    await runTick(dir, at(minutesAfter(20), { llm }))
-    expect(llm.calls).toHaveLength(1)
-  })
-
-  it('keeps the plan that the answer brings instead of skipping', async () => {
-    await runTick(dir, at(NOW))
-    rmSync(file('objects/sunny-rock.json'))
-    await runTick(dir, at(minutesAfter(10), { llm: fakeLlm({ ...keep, plan: [{ ...morning.plan![2]!, minutes: 40 }] }) }))
-    expect(goalsOf().today?.steps.map((x) => x.verb)).toEqual(['sit'])
-    expect(goalsOf().now).toMatchObject({ index: 0 })
   })
 })
 
@@ -384,37 +430,18 @@ describe('what it did before comes back to it', () => {
     expect(llm.calls[0]!.user).not.toMatch(/"The Sea"/)
   })
 
-  it('tells it how much of each daily limit is left, so it does not plan what would be refused', async () => {
+  it('tells it how many points it has and what a step costs, so it does not plan what would be refused', async () => {
     const llm = fakeLlm()
     await runTick(dir, at(NOW, { llm }))
-    expect(llm.calls[0]!.user.split('\n').find((l) => l.startsWith('left to do'))).toMatch(/left to do today: .*writing, drawing and the like 4 of 4.*photographs 1[12] of 12.*reading sessions 5 of 5.*coded projects this week 2 of 2/)
+    const user = llm.calls[0]!.user
+    expect(user).toMatch(/^points in hand: 150$/m)
+    expect(user).toMatch(/^prices today: wander 3, tend 2, revisit 1, expand 50, found 2, tinker \(full work\) 240, tinker \(sketch\) 2, write 1, reply 0, rest 0; a deep step costs 30$/m)
   })
 
   it('does not ask for a late night in the morning, when it cannot be one', async () => {
     const llm = fakeLlm()
     await runTick(dir, at(NOW, { llm }))
     expect(llm.calls[0]!.user).not.toMatch(/stayUpLate/)
-  })
-})
-
-describe('what broke the plan off', () => {
-  const note = (verb: string, need: string, step = 'watch') => ({ step, verb, need, at: '2026-11-03T09:05:00.000Z' })
-
-  it('is told to the mind at its next decision, so it can plan around it, and then forgotten', async () => {
-    await runTick(dir, at(NOW))
-    writeJson('mind/state.json', { ...stateOf(), brokenOff: [note('eat', 'hunger'), note('eat', 'hunger'), note('nap', 'energy')] })
-    newObject('pebble')
-    const llm = fakeLlm(keep)
-    await runTick(dir, at(minutesAfter(10), { llm }))
-    expect(llm.calls[0]!.user).toMatch(/you broke off watch 3 times: eat \(hunger\) 2, nap \(energy\) 1/)
-    expect(stateOf().brokenOff).toEqual([])
-  })
-
-  it('is kept while nobody has been asked', async () => {
-    await runTick(dir, at(NOW))
-    writeJson('mind/state.json', { ...stateOf(), brokenOff: [note('eat', 'hunger')] })
-    await runTick(dir, at(minutesAfter(5), { llm: fakeLlm(keep) }))
-    expect(stateOf().brokenOff).toHaveLength(1)
   })
 })
 
@@ -436,7 +463,7 @@ describe('what counts as news', () => {
 })
 
 describe('the validator', () => {
-  const badPlan: Decision['plan'] = [{ verb: 'fish', target: null, x: null, z: null, reason: 'I will catch one.', minutes: 30, materials: null, makes: null, because: null, topic: null }]
+  const badPlan = fishPlan
 
   it('asks again once with the reasons, and uses the corrected plan', async () => {
     let n = 0
@@ -446,7 +473,7 @@ describe('the validator', () => {
     expect(llm.calls[1]!.user).toMatch(/turned down/)
     expect(llm.calls[1]!.user).toMatch(/"fish"/)
     expect(llm.calls[1]!.system).toBe(llm.calls[0]!.system)
-    expect(Goals.parse(readJson('mind/goals.json')).today?.steps.map((s) => s.verb)).toEqual(['watch', 'explore', 'sit'])
+    expect(Goals.parse(readJson('mind/goals.json')).today?.steps.map((s) => s.verb)).toEqual(['wander', 'write', 'rest'])
     expect(MindState.parse(readJson('mind/state.json')).rejections).toEqual([])
     expect(BudgetLedger.parse(readJson('brain/budget.json')).calls).toHaveLength(2)
   })
@@ -467,7 +494,7 @@ describe('the validator', () => {
   })
 
   it('does not ask again the same morning after a rejected plan', async () => {
-    const llm = fakeLlm({ ...morning, plan: [{ verb: 'fish', target: null, x: null, z: null, reason: 'x', minutes: 30, materials: null, makes: null, because: null, topic: null }] })
+    const llm = fakeLlm({ ...morning, plan: fishPlan })
     await runTick(dir, at(NOW, { llm }))
     await runTick(dir, at(minutesAfter(10), { llm }))
     expect(llm.calls).toHaveLength(2)
@@ -566,13 +593,13 @@ describe('what the model is shown', () => {
     const second = fakeLlm(keep)
     newObject('shell')
     await runTick(dir, at(minutesAfter(90), { llm: second }))
-    expect(second.calls).toHaveLength(1)
-    expect(second.calls[0]!.system).toBe(llm.calls[0]!.system)
-    expect(second.calls[0]!.user).not.toBe(llm.calls[0]!.user)
+    const asked = second.calls.filter((c) => c.kind !== 'art')
+    expect(asked).toHaveLength(1)
+    expect(asked[0]!.system).toBe(llm.calls[0]!.system)
+    expect(asked[0]!.user).not.toBe(llm.calls[0]!.user)
     expect(llm.calls[0]!.system).not.toMatch(/\d{4}-\d{2}-\d{2}/)
-    expect(llm.calls[0]!.system).toContain('You are a cat')
-    expect(llm.calls[0]!.system).toContain('- watch: target: "perch"')
-    expect(llm.calls[0]!.system).toMatch(/dusk is 18:00 to 21:00/)
+    expect(llm.calls[0]!.system).toContain('You are Merge, an AI.')
+    expect(llm.calls[0]!.system).toContain('- wander: go and read.')
   })
 
   it('shows visitor text only as data, then clears the inbox', async () => {

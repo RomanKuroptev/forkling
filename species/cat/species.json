@@ -1,6 +1,17 @@
 {
   "id": "cat",
   "displayName": "Cat",
+  "mindPoses": {
+    "wander": "sit",
+    "tend": "sit",
+    "revisit": "sit",
+    "expand": "sit",
+    "found": "sit",
+    "tinker": "sit",
+    "write": "sit",
+    "reply": "sit",
+    "rest": "sit"
+  },
   "perception": { "noticeRadius": 5, "eyeHeight": 0.55, "fovDeg": 70 },
   "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
   "bodyPlans": {

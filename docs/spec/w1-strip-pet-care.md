@@ -32,7 +32,7 @@ That is too much for one PR to review, so W1 is five slices. Each is its own bra
 - `packages/sim`: remove `needs.ts`, `fixableNeeds` and the need trigger inputs, sleep decay, `temperament.ts` and the quirk weights, and the critical-need break in `forkling.ts` and `utility.ts`. The body is left with idle and verb animations only. `appraisal.ts` is replaced by the event table.
 - `species/cat`: `species.json` keeps the body, animations and locomotion. It loses `needs`, the care and cat actions (`eat`, `nap`, `curl_up`, `pounce`, `zoomies`, `sniff`, `vocalize`, `cook`, `plant`, `water`, `harvest`), `persona.md` and `temperament.json` (spec 15.1).
 
-### 2. Verbs, allowance and plan validation
+### 2. Verbs, allowance and plan validation (done, PRs #35 and the wiring PR)
 - **Tests first** for `validatePlan` as specced in 2.6: verb and target exist, the allowance and quotas, the same verb 3 times in a row, a reason of at most 140 characters, and the link to a want or a care step. Each rejection carries its reason text, which is what the next decide call is shown. The cold-start rule is tested in both directions: the link check is off with fewer than 3 wants, and on from 3.
 - The nine verbs are `wander`, `tend`, `revisit`, `expand`, `found`, `tinker`, `write`, `reply` and `rest`, with the durations in spec 2.4 (clamped by code). Everything but `write` and `rest` is accepted by the validator but runs as `rest` in W1 (a stub that says so in the step's result).
 - The allowance (9.8): 150 points at each wake, a price list, carry-over up to 450, and deep steps. Its prices are constants with a test that they match the spec table. A plan that costs more than the points in hand is rejected with that reason.

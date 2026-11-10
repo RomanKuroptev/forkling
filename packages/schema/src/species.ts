@@ -105,6 +105,11 @@ export const SpeciesPack = z
     id: z.string().min(1),
     displayName: z.string().min(1),
     actions: z.array(SpeciesAction).min(1),
+    /**
+     * How the body shows each mind verb (spec 2.7): the id of one of its own actions. The sim never names a species or a
+     * mind verb; the pack says `rest` is a sit. A verb with no entry is left to the body's own choice.
+     */
+    mindPoses: z.record(z.string(), z.string()).default({}),
     /** Body plans the species has, and the verb groups each allows. A cat stands up to work and drops to four legs to run. */
     bodyPlans: z.partialRecord(BodyPlan, z.array(VerbGroup).min(1)).default({ quadruped: ['body'] }),
     perception: z.object({
@@ -140,6 +145,9 @@ export const SpeciesPack = z
         ctx.addIssue({ code: 'custom', path: ['actions', i, 'group'], message: `${action.id} is a ${action.group} verb, which ${where} does not allow` })
       }
     })
+    for (const [verb, action] of Object.entries(pack.mindPoses)) {
+      if (!ids.has(action)) ctx.addIssue({ code: 'custom', path: ['mindPoses', verb], message: `no action ${action}` })
+    }
     for (const id of Object.keys(pack.weights)) {
       if (!ids.has(id)) ctx.addIssue({ code: 'custom', path: ['weights', id], message: `no action ${id}` })
     }

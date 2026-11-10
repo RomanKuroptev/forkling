@@ -110,6 +110,8 @@ export interface Tick {
   interests: World['interests']
   /** Set when a read or study step finishes: the visit to the shelf comes after the step is applied. */
   pendingReading: { depth: number; topic: string | null } | null
+  /** Set when a write step finishes: the words are written after the step is applied. */
+  pendingNote: { step: PlanStep; index: number } | null
   /** Set when a creative step finishes: what it made is written after the step is applied. */
   pendingArt: { kind: ArtifactKind; verb: string; step: PlanStep; index: number } | null
   /** Set when a photograph step finishes: the shot is queued after the step is applied. */

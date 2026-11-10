@@ -177,12 +177,12 @@ function stepTo(pb: Playback, nowSec: number, visitor: Point2 | null): void {
 }
 
 /** The focus the mind set: the current step of today's plan, until its time is up. */
-function focusFor(goals: Goals | undefined): { focus?: Focus } {
+function focusFor(goals: Goals | undefined, pack: SpeciesPack): { focus?: Focus } {
   const step = goals?.now ? goals.today?.steps[goals.now.index] : undefined
   if (!goals?.now || !step) return {}
   return {
     focus: {
-      action: step.verb,
+      action: pack.mindPoses[step.verb] ?? step.verb,
       ...(step.targetId ? { targetId: step.targetId } : {}),
       ...(step.position ? { position: { x: step.position[0], z: step.position[1] } } : {}),
       until: Date.parse(goals.now.until) / 1000,
@@ -207,7 +207,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     holding: forkling.holding !== undefined,
     // The body's drift is bent a little by how it feels: mood is valence, and energy is how wound up it is.
     feelings: { valence: forkling.mood, arousal: (forkling.energy + 1) / 2 },
-    ...focusFor(input.goals),
+    ...focusFor(input.goals, pack),
   })
   const pb: Playback = {
     input,
@@ -265,7 +265,7 @@ export function tallyWindow(input: PlaybackInput, fromMs: number, toMs: number):
   const seconds: Record<string, number> = {}
   const started: Record<string, number> = {}
   const interruptions: Tally['interruptions'] = []
-  const focus = focusFor(input.goals).focus
+  const focus = focusFor(input.goals, input.pack).focus
   let from = fromMs
   while (from < toMs) {
     const to = Math.min(toMs, (epochOf(from / 1000) + 1) * EPOCH_SECONDS * 1000)

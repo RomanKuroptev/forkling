@@ -18,14 +18,13 @@ const pack: SpeciesPack = cat.pack
 const NOW = '2026-11-03T09:00:00Z' // 10:00 in Stockholm, long after waking
 const DAY = '2026-11-03'
 
+const llmStep = (verb: string, target: string | null, minutes: number, reason: string) => ({ verb, target, reason, minutes, wantId: null, deep: null, size: null })
+
 const morning: Decision = {
   thought: 'The rock catches the sun first.',
   longGoal: { text: 'Make the sunny rock mine.', reason: 'It is warm.' },
   dropLongGoal: false,
-  plan: [
-    { verb: 'watch', target: 'sunny-rock', x: null, z: null, reason: 'The best seat.', minutes: 30, materials: null, makes: null, because: null, topic: null },
-    { verb: 'sit', target: null, x: null, z: null, reason: 'Rest.', minutes: 10, materials: null, makes: null, because: null, topic: null },
-  ],
+  plan: [llmStep('wander', 'lighthouses', 30, 'The best seat.'), llmStep('write', 'home', 25, 'A plaque.'), llmStep('rest', null, 30, 'Rest.')],
   planReason: 'A day for claiming things.',
   stayUpLate: null,
 }
@@ -67,7 +66,7 @@ describe('the tick log', () => {
     expect(line!.calls[0]).toMatchObject({ kind: 'morning', model: 'claude-haiku-5-5', ok: true })
     expect(line!.calls[0]!.usd).toBeGreaterThan(0)
     expect(line!.stepBefore).toBeNull()
-    expect(line!.stepAfter).toMatchObject({ index: 0, verb: 'watch', targetId: 'sunny-rock' })
+    expect(line!.stepAfter).toMatchObject({ index: 0, verb: 'wander', targetId: 'lighthouses' })
     expect(line!.planId).toMatch(/^2026-11-03:[0-9a-f]{6,}$/)
     expect(line!.wrote).toContain('mind/goals.json')
     expect(result.logged).toBe(true)
@@ -118,8 +117,8 @@ describe('the tick log', () => {
     await runTick(dir, deps(minutesAfter(31), { llm: fakeLlm() }))
     const second = lines()[1]!
     expect(second.triggers.map((t) => t.kind)).toEqual(['stepDone'])
-    expect(second.stepBefore).toMatchObject({ index: 0, verb: 'watch' })
-    expect(second.stepAfter).toMatchObject({ index: 1, verb: 'sit' })
+    expect(second.stepBefore).toMatchObject({ index: 0, verb: 'wander' })
+    expect(second.stepAfter).toMatchObject({ index: 1, verb: 'write' })
     expect(second.planId).toBe(lines()[0]!.planId)
   })
 
@@ -128,7 +127,7 @@ describe('the tick log', () => {
     // Something new on the beach makes it think again, and it writes a different plan.
     const rock = JSON.parse(readFileSync(file('objects/sunny-rock.json'), 'utf8'))
     writeFileSync(file('objects/pebble.json'), JSON.stringify({ ...rock, id: 'pebble', name: 'A pebble', position: [12, 0, 24] }))
-    await runTick(dir, deps(minutesAfter(10), { llm: fakeLlm({ ...morning, plan: [morning.plan![1]!] }) }))
+    await runTick(dir, deps(minutesAfter(10), { llm: fakeLlm({ ...morning, plan: [...morning.plan!].reverse() }) }))
     expect(lines()[1]!.think).toBe('decide')
     expect(lines()[1]!.planId).not.toBe(lines()[0]!.planId)
   })
@@ -163,7 +162,7 @@ describe('the health summary', () => {
     expect(h.lastTick.at).toBe('2026-11-03T09:10:00.000Z')
     expect(h.today.ticks).toBe(2)
     expect(h.today.decideCalls).toBe(1)
-    expect(h.plan.current).toMatchObject({ verb: 'watch' })
+    expect(h.plan.current).toMatchObject({ verb: 'wander' })
     expect(h.warnings).toEqual([])
   })
 })

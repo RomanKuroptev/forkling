@@ -65,12 +65,6 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
     found.push({ kind: 'novelty', score: 0.7, detail: parts.join('; ') })
   }
 
-  const step = goals.now ? goals.today?.steps[goals.now.index] : undefined
-  // Asked once per step: a plan that carries on is still the mind's answer, and asking again would only repeat it.
-  if (step?.targetId && step.targetId !== 'visitor' && !spotKinds.has(step.targetId) && mindState.blockedStep !== goals.now?.startedAt) {
-    found.push({ kind: 'blocked', score: 0.9, detail: `step "${step.verb}" targets "${step.targetId}", which is not in the world` })
-  }
-
   if (goals.now && nowMs >= Date.parse(goals.now.until)) {
     found.push({ kind: 'stepDone', score: 0.4, detail: `step ${goals.now.index + 1} of today's plan has run its time` })
   }
