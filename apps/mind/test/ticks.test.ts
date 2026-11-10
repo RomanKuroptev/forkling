@@ -13,7 +13,7 @@ import { noBatch } from './noBatch.ts'
 
 const templates = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
 const cat = loadSpecies('cat')
-const pack: SpeciesPack = { ...cat.pack, needs: Object.fromEntries(Object.entries(cat.pack.needs).map(([id, n]) => [id, { ...n!, decayPerHour: 0 }])) }
+const pack: SpeciesPack = cat.pack
 
 const NOW = '2026-11-03T09:00:00Z' // 10:00 in Stockholm, long after waking
 const DAY = '2026-11-03'

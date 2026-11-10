@@ -35,8 +35,6 @@ export const VerbEffect = z.enum([
 export type VerbEffect = z.infer<typeof VerbEffect>
 
 /** Shared need vocabulary. A pack declares the subset its species has. Values run 0 (empty) to 100 (satisfied). */
-export const NeedId = z.enum(['hunger', 'energy', 'curiosity', 'affection', 'fun', 'social'])
-export type NeedId = z.infer<typeof NeedId>
 
 /** Engine animation slots. A pack maps the ones it can play to clips, and missing slots fall back. */
 export const AnimationSlot = z.enum([
@@ -80,19 +78,12 @@ export type ActionTarget = z.infer<typeof ActionTarget>
 
 export const SpeciesAction = z.object({
   id: z.string().min(1),
-  /** Need change over a full run of the action, e.g. `{ hunger: 60 }` raises hunger by 60. */
-  satisfies: z.partialRecord(NeedId, z.number()),
   /** Min and max duration in seconds once the forkling has arrived. */
   durationSec: z.tuple([z.number().nonnegative(), z.number().nonnegative()]),
   target: ActionTarget,
   slot: AnimationSlot,
   gait: z.enum(['walk', 'run']).default('walk'),
   requires: z.array(ActionRequirement).default([]),
-  /**
-   * How much of the action's appeal survives when the needs it raises are already met, 0 to 1. Low for eating (a
-   * full cat doesn't eat), high for things done for fun, like exploring. Actions that raise nothing are unaffected.
-   */
-  spontaneous: z.number().min(0).max(1).default(0.05),
   /** One sentence in the forkling's voice, used as the intention `reason` until the mind (M4) writes its own. */
   reason: z.string().min(1).max(200),
   group: VerbGroup.default('body'),
@@ -113,15 +104,6 @@ export const SpeciesPack = z
   .object({
     id: z.string().min(1),
     displayName: z.string().min(1),
-    needs: z
-      .partialRecord(
-        NeedId,
-        z.object({
-          initial: z.number().min(0).max(100),
-          decayPerHour: z.number().min(0),
-        }),
-      )
-      .default({}),
     actions: z.array(SpeciesAction).min(1),
     /** Body plans the species has, and the verb groups each allows. A cat stands up to work and drops to four legs to run. */
     bodyPlans: z.partialRecord(BodyPlan, z.array(VerbGroup).min(1)).default({ quadruped: ['body'] }),
@@ -151,11 +133,6 @@ export const SpeciesPack = z
       ids.add(action.id)
       if (action.durationSec[0] > action.durationSec[1]) {
         ctx.addIssue({ code: 'custom', path: ['actions', i, 'durationSec'], message: 'min duration is above max' })
-      }
-      for (const need of Object.keys(action.satisfies)) {
-        if (!(need in pack.needs)) {
-          ctx.addIssue({ code: 'custom', path: ['actions', i, 'satisfies', need], message: `pack has no need ${need}` })
-        }
       }
       const plans = action.body ? [pack.bodyPlans[action.body] ?? []] : Object.values(pack.bodyPlans)
       if (!plans.some((groups) => groups.includes(action.group))) {

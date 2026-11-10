@@ -14,8 +14,8 @@ const templates = fileURLToPath(new URL('../../../templates/merge', import.meta.
 const worldTemplate = fileURLToPath(new URL('../../../templates/forkling-world', import.meta.url))
 const cat = loadSpecies('cat')
 
-/** The cat, with needs that never decay, so a test decides when a need becomes strong. */
-const pack: SpeciesPack = { ...cat.pack, needs: Object.fromEntries(Object.entries(cat.pack.needs).map(([id, n]) => [id, { ...n!, decayPerHour: 0 }])) }
+/** The cat. */
+const pack: SpeciesPack = cat.pack
 
 const NOW = '2026-11-03T09:00:00Z' // 10:00 in Stockholm, a Tuesday, long after waking
 

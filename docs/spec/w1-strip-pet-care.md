@@ -26,7 +26,7 @@ That is too much for one PR to review, so W1 is five slices. Each is its own bra
 
 ## Slices
 
-### 1. Schema and sim: mood and energy replace needs
+### 1. Schema and sim: mood and energy replace needs (done, PRs #31 to #34)
 - **Tests first** for the spec 3.2 table: each event's mood and energy change, the clamp to -1..1, and the wake rule (mood moves 20% toward 0, energy set to +0.5). Also the energy-under -0.5 effect: at most 4 steps and no expand, found or tinker. The words shown to the model ("low, tired") come from a pure function.
 - `packages/schema`: `forkling.json` loses `needs`, `inventory` and portions (spec 14.2) and gains `mood` and `energy`. A pet-era `forkling.json` still parses, so live Merge does not break before slice 5: unknown pet fields are dropped, never rejected (the same approach as `fix/tolerate-dropped-needs`).
 - `packages/sim`: remove `needs.ts`, `fixableNeeds` and the need trigger inputs, sleep decay, `temperament.ts` and the quirk weights, and the critical-need break in `forkling.ts` and `utility.ts`. The body is left with idle and verb animations only. `appraisal.ts` is replaced by the event table.

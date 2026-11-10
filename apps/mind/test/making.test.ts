@@ -13,7 +13,7 @@ import { runTick, type TickDeps } from '../src/tick.ts'
 const templates = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
 const cat = loadSpecies('cat')
 /** The cat, with needs that never decay, so nothing but the plan decides what happens. */
-const pack: SpeciesPack = { ...cat.pack, needs: Object.fromEntries(Object.entries(cat.pack.needs).map(([id, n]) => [id, { ...n!, decayPerHour: 0 }])) }
+const pack: SpeciesPack = cat.pack
 
 const NOW = Date.parse('2026-11-03T09:00:00Z') // 10:00 in Stockholm, long after waking
 const minutes = (n: number) => new Date(NOW + n * 60_000)

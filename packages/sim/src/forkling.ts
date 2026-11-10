@@ -109,13 +109,11 @@ export interface CreateOptions {
 
 const IDLE_ACTION: SpeciesAction = {
   id: 'idle',
-  satisfies: {},
   durationSec: [0, 0],
   target: { type: 'none' },
   slot: 'idle',
   gait: 'walk',
   requires: [],
-  spontaneous: 0,
   reason: 'Just looking around.',
   group: 'body',
   effect: 'none',

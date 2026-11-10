@@ -379,8 +379,6 @@ describe('templates/forkling-world starter objects', () => {
     }
     expect(byId('desk').unlocks).toEqual(expect.arrayContaining(['write', 'draw', 'code', 'broadcast']))
     expect(byId('workbench').unlocks).toEqual(expect.arrayContaining(['build', 'join', 'shape', 'sew', 'paint', 'tinker']))
-    expect(byId('kitchen').unlocks).toEqual(['cook'])
-    expect(byId('garden').unlocks).toEqual(['plant'])
     expect(byId('bookshelf').unlocks).toEqual(expect.arrayContaining(['read', 'study']))
     expect(byId('drum').unlocks).toEqual(expect.arrayContaining(['play', 'compose']))
     expect(byId('telescope').unlocks).toEqual(['observe'])
@@ -401,7 +399,7 @@ describe('templates/forkling-world starter objects', () => {
   })
 
   it('gives every object verb of the cat something to work on, except what must be made first', () => {
-    const needsMaking = new Set(['dine', 'water', 'harvest', 'tinker'])
+    const needsMaking = new Set(['tinker'])
     for (const verb of pack.actions) {
       if (verb.target.type !== 'object' || needsMaking.has(verb.id)) continue
       const target = verb.target
@@ -429,7 +427,7 @@ describe('templates/forkling-world starter objects', () => {
   it('lets a cat gather, put away and build, all the way through, with nothing but these files', () => {
     const step = (verb: string, extra: Record<string, unknown> = {}) => PlanStep.parse({ verb, reason: 'Because I can.', minutes: 5, ...extra })
     const run = runPlan({
-      pack: { ...pack, needs: Object.fromEntries(Object.entries(pack.needs).map(([id, n]) => [id, { ...n!, decayPerHour: 0 }])) },
+      pack,
       seed: 12,
       startMs: Date.parse('2026-11-03T09:00:00Z'),
       objects: starter,
@@ -439,14 +437,10 @@ describe('templates/forkling-world starter objects', () => {
         step('pick_up', { targetId: 'pebbles' }),
         step('put_on', { targetId: 'house' }),
         step('build', { targetId: 'workbench', materials: ['wood', 'stone'], makes: 'a driftwood marker' }),
-        step('pick_up', { targetId: 'meadow' }),
-        step('put_on', { targetId: 'house' }),
-        step('plant', { targetId: 'garden', materials: ['flowers'], makes: 'a first flower' }),
       ],
     })
-    expect(run.steps.map((s) => s.reason ?? 'ok')).toEqual(Array(8).fill('ok'))
+    expect(run.steps.map((s) => s.reason ?? 'ok')).toEqual(Array(5).fill('ok'))
     expect(run.objects.find((o) => o.id === 'a-driftwood-marker')?.made?.done).toBe(true)
-    expect(run.objects.find((o) => o.id === 'a-first-flower')?.grows?.gives).toBe('flowers')
     expect(run.stored).toEqual({})
   })
 })

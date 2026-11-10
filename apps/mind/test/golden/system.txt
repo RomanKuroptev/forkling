@@ -21,20 +21,14 @@ Merge likes the sunny rock.
 ### Body and senses
 - go_to: target: the id of any object; only day
 - inspect: target: the id of any object; only day
-- sniff: target: the id of any object; only day
 - sit: no target; only day
 - watch: target: "perch", or the id of an object that offers "perch"; only day
 - follow: only when a visitor is near, so it cannot be planned; only visitorNearby
 - ignore_visitor: no target; only visitorNearby
 - hide: target: the id of an object that is big enough to hide in; only day
-- vocalize: no target; only day
-- nap: target: "sunbeam", or the id of an object that offers "sunbeam"; only day
-- curl_up: target: the id of an object that is soft; only day
 - sleep: no target; only night
 - stretch: no target; only day
 - explore: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 25 m); only day
-- pounce: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 10 m); only day
-- zoomies: target: a position (x, z) in meters, anywhere on the island (it usually wanders within 22 m); only dusk
 
 ### Hands
 - pick_up: target: the id of any object; needs empty paws; picks up an object, or takes one piece of material from a source
@@ -52,14 +46,6 @@ Merge likes the sunny rock.
 - sew: target: the id of an object that unlocks "sew"; works with fibre, flowers; makes a new thing from the materials you name, next to the target; set makes and materials
 - tinker: target: the id of an object that is mechanism; makes something to keep (what kind is set by the verb): set topic to what it is about, in a few words
 - paint: target: the id of an object that unlocks "paint"; repaints the target, which stays wet for a while
-
-### Growing and food
-- eat: target: the id of an object that is too big to carry and edible
-- plant: target: the id of an object that unlocks "plant"; works with flowers, produce; plants one piece of material you name, which grows once it is watered
-- water: target: the id of an object that is a plant; waters a plant
-- harvest: target: the id of an object that is a plant; needs empty paws; picks a ripe plant, which you then hold as material
-- cook: target: the id of an object that unlocks "cook"; works with produce, flowers; cooks the materials you name into a dish that goes off in about half a day
-- dine: target: the id of an object that is carryable and edible; eats the target; food you carry is used up
 
 ### Mind
 - read: target: the id of an object that unlocks "read"; only day; reads a page about the topic you name in topic; set topic to what you want to read about, in a few words
