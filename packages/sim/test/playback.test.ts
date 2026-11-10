@@ -9,7 +9,6 @@ import {
   hourInZone,
   playbackStateTime,
   startPlayback,
-  tallyWindow,
   type PlaybackInput,
 } from '../src/playback.ts'
 import { starterWorld } from '../src/starter.ts'
@@ -105,54 +104,6 @@ describe('playbackStateTime', () => {
     // A commit at a later time would have moved the anchor, and the walk with it.
     const lateCommit = startPlayback({ ...base, stateTime: EPOCH_START + 900 }, now)
     expect(snapshot(lateCommit)).not.toEqual(snapshot(mind))
-  })
-})
-
-describe('tallyWindow', () => {
-  const focused = (min = 60): PlaybackInput => ({
-    ...input({ lastTickAt: iso(EPOCH_START + 60) }),
-    goals: Goals.parse({
-      today: { date: '2026-10-30', steps: [{ verb: 'roam', reason: 'A stroll.', minutes: min }], reason: 'A day.' },
-      now: { index: 0, startedAt: iso(EPOCH_START + 60), until: iso(EPOCH_START + 60 + min * 60) },
-    }),
-    stateTime: EPOCH_START + 60,
-  })
-  const from = (EPOCH_START + 60) * 1000
-  const sum = (t: { seconds: Record<string, number> }) => Object.values(t.seconds).reduce((a, b) => a + b, 0)
-
-  it('says how many seconds went to each verb in the window', () => {
-    const t = tallyWindow(focused(), from, from + 600_000)
-    expect(sum(t)).toBeCloseTo(600, 0)
-    expect(t.seconds.roam).toBeGreaterThan(300)
-  })
-
-  it('is deterministic', () => {
-    expect(tallyWindow(focused(), from, from + 600_000)).toEqual(tallyWindow(focused(), from, from + 600_000))
-  })
-
-  it('has nothing to count in an empty window', () => {
-    expect(tallyWindow(focused(), from, from)).toEqual({ seconds: {}, started: {}, interruptions: [] })
-  })
-
-  it('counts the same whole as its parts, including across the edge of an epoch', () => {
-    const edge = (EPOCH_START + EPOCH_SECONDS) * 1000
-    const whole = tallyWindow(focused(), edge - 300_000, edge + 300_000)
-    const a = tallyWindow(focused(), edge - 300_000, edge)
-    const b = tallyWindow(focused(), edge, edge + 300_000)
-    expect(sum(whole)).toBeCloseTo(600, 0)
-    for (const verb of new Set([...Object.keys(a.seconds), ...Object.keys(b.seconds)])) {
-      expect(whole.seconds[verb] ?? 0).toBeCloseTo((a.seconds[verb] ?? 0) + (b.seconds[verb] ?? 0), 1)
-    }
-  })
-
-  it('notes no break from the plan when nothing but a need could cause one, and there are no needs', () => {
-    const t = tallyWindow(focused(120), from, from + 7_200_000)
-    expect(t.interruptions).toEqual([])
-  })
-
-  it('does not count a break from the plan once the step is over', () => {
-    const t = tallyWindow(focused(5), from + 600_000, from + 7_200_000)
-    expect(t.interruptions).toEqual([])
   })
 })
 

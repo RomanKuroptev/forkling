@@ -96,7 +96,10 @@ export const Health = z.object({
     /** The longest wait between two awake ticks today, in minutes. Ticks should come every 10. */
     longestGapMinutes: z.number().int().nonnegative(),
   }),
-  quotas: z.object({ readings: Quota, creative: Quota, photos: Quota, builds: Quota, codeThisWeek: Quota }),
+  /** What is left of the limits that still exist. The pet-era quotas (creative, photos, builds, code) are only read from old files. */
+  quotas: z.object({ readings: Quota, creative: Quota.optional(), photos: Quota.optional(), builds: Quota.optional(), codeThisWeek: Quota.optional() }),
+  /** Points of the daily allowance in hand (spec 9.8), and the most that can be held. */
+  allowance: z.object({ points: z.number().nonnegative(), max: z.number().positive() }).default({ points: 0, max: 450 }),
   /** Minutes in a row each need has been under 15 while awake, as of the last tick. */
   /** Pet-era health files have it; nothing writes it any more. */
   needsCritical: z.record(z.string(), z.number().int().nonnegative()).default({}),

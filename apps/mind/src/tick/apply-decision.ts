@@ -1,14 +1,9 @@
-import type { BuildRequest } from '@forkling/schema'
 import { hourInZone } from '@forkling/sim'
-import { canSpend } from '../budget.ts'
-import { buildIdFor, checkBuildRequest } from '../builds.ts'
 import { clampText } from '../decision.ts'
 import type { Tick } from './context.ts'
 import { leaveStep } from './apply-step.ts'
 import { checkPlan, startStep } from './plan.ts'
 
-/** What a design call may cost, held back before a request is accepted. */
-const DESIGN_ESTIMATE_USD = 0.02
 /** A late night is only a choice for the evening. */
 const LATE_NIGHT_FROM_HOUR = 18
 /** After a plan came back empty or was turned down, a new one is not asked for before this long. */
@@ -40,31 +35,7 @@ export function applyDecision(t: Tick): void {
     goals.long = { ...goals.long, reviewedAt: nowIso }
   }
 
-  // The plan is checked first, against what was left before a design takes the build slot: both may be in one answer.
   const planned = decision.plan && decision.plan.length > 0 ? checkPlan(t, decision.plan) : null
-
-  if (decision.design?.name.trim() && decision.design.purpose.trim() && !t.deps.dryRun) {
-    const verdict = checkBuildRequest({ state: mind, today, asleep, canAfford: canSpend(t.budget, DESIGN_ESTIMATE_USD) })
-    if (verdict.ok) {
-      const name = clampText(decision.design.name.trim(), 60)
-      const request: BuildRequest = {
-        id: buildIdFor(name, new Set(t.objects.map((o) => o.id))),
-        kind: 'object',
-        name,
-        purpose: clampText(decision.design.purpose.trim(), 300),
-        contraption: decision.design.contraption === true,
-        ...(goals.now ? { goalRef: `today:${goals.now.index}` } : {}),
-        requestedAt: nowIso,
-      }
-      t.buildRequests.push(request)
-      mind.openBuild = { id: request.id, kind: request.kind, requestedAt: nowIso }
-      mind.builds = { date: today, count: (mind.builds?.date === today ? mind.builds.count : 0) + 1 }
-      remember.push({ at: nowIso, kind: 'event', text: `Asked for ${request.name} to be built: ${request.purpose}`, ...(request.goalRef ? { goalRef: request.goalRef } : {}) })
-      parts.push(`asked for ${request.name}`)
-    } else {
-      notes.push(`design not asked for: ${verdict.reason}`)
-    }
-  }
 
   if (decision.stayUpLate?.trim() && !asleep && hourInZone(tz, nowMs) >= LATE_NIGHT_FROM_HOUR) {
     t.lateNight = today

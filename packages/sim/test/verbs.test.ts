@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { PlanStep, SpeciesPack, WorldObject } from '@forkling/schema'
 import makerJson from './fixtures/maker.species.json'
-import { runHeadless, runPlan } from '../src/headless.ts'
+import { runHeadless } from '../src/headless.ts'
 import { scoreActions } from '../src/utility.ts'
 import { starterWorld, worldWithObjects } from '../src/starter.ts'
 
@@ -95,56 +95,5 @@ describe('how the body carries itself', () => {
     })
     const r = runHeadless({ pack: run, world, startHour: 12, seed: 5, seconds: 60, holding: true, focus: { action: 'go_to', targetId: 'house', until: 60 } })
     expect(r.slots.has('run')).toBe(true)
-  })
-})
-
-describe('runPlan: a day of making, end to end', () => {
-  const plan = [
-    step('pick_up', { targetId: 'driftwood' }),
-    step('put_on', { targetId: 'house' }),
-    step('pick_up', { targetId: 'driftwood' }),
-    step('put_on', { targetId: 'house' }),
-    step('build', { targetId: 'workbench', materials: ['wood', 'wood'], makes: 'a wooden shelf' }),
-  ]
-  const play = (seed: number, steps = plan) =>
-    runPlan({ pack, seed, startMs: T0, steps, objects: [driftwood, house, workbench] })
-
-  it('gathers, stores and builds, leaving a made thing with the step reason', () => {
-    const r = play(5)
-    expect(r.steps.map((s) => s.ok)).toEqual([true, true, true, true, true])
-    const shelf = r.objects.find((o) => o.id === 'a-wooden-shelf')!
-    expect(shelf.reason).toBe('I want to.')
-    expect(shelf.made?.done).toBe(true)
-    expect(r.stored).toEqual({})
-    expect(r.holding).toBeUndefined()
-    expect(r.objects.find((o) => o.id === 'driftwood')!.state.stock).toBe(3)
-  })
-
-  it('has the body at the right place for each step', () => {
-    const r = play(5)
-    const at = (i: number) => r.steps[i]!.position
-    expect(Math.hypot(at(0).x - (spawn.x + 6), at(0).z - (spawn.z - 2))).toBeLessThan(5)
-    expect(Math.hypot(at(1).x - (spawn.x - 6), at(1).z - (spawn.z - 3))).toBeLessThan(5)
-    expect(Math.hypot(at(4).x - (spawn.x - 3), at(4).z - (spawn.z - 6))).toBeLessThan(5)
-  })
-
-  it('earns practice from the work', () => {
-    const r = play(5)
-    expect(r.skills.hands!.xp).toBe(16)
-    expect(r.skills.making!.xp).toBe(4)
-  })
-
-  it('stops at the first step that cannot happen, and says why', () => {
-    const r = play(5, [step('pick_up', { targetId: 'driftwood' }), step('pick_up', { targetId: 'driftwood' })])
-    expect(r.steps.map((s) => s.ok)).toEqual([true, false])
-    expect(r.steps[1]!.reason).toMatch(/paws are full/)
-    expect(r.steps).toHaveLength(2)
-  })
-
-  it('is deterministic for a seed, and differs between seeds', () => {
-    expect(play(5).objects).toEqual(play(5).objects)
-    const a = play(5).objects.find((o) => o.id === 'a-wooden-shelf')!
-    const b = play(6).objects.find((o) => o.id === 'a-wooden-shelf')!
-    expect(a.model).not.toEqual(b.model)
   })
 })

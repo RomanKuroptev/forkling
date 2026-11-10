@@ -105,7 +105,6 @@ function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine
     stepAfter: stepOf(t.goals),
     planId: planIdOf(t.goals),
     mood: moodWords({ mood: t.mood, energy: t.energy }),
-    drift: t.drift.filter((d) => Date.parse(d.at) > since).slice(0, 20),
     wrote: result.written.slice(0, 60),
     summary: clampText(result.summary, 300),
   })

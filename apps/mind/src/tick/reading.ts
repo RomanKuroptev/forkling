@@ -56,26 +56,5 @@ export async function readStep(t: Tick): Promise<void> {
     t.interests = updatePhases(t.interests, nowIso)
   }
 
-  const pending = t.pendingReading
-  if (pending) {
-    const topic = pending.topic ?? t.interests.current?.topic ?? null
-    if (deps.dryRun) {
-      notes.push('dry run: would go to the shelf')
-    } else if (!deps.get || !deps.llm) {
-      notes.push('nothing to read with: no reading')
-    } else if (!topic) {
-      notes.push('it opened a book with no topic in mind: no reading')
-    } else if (t.readings.count >= MAX_READINGS_PER_DAY) {
-      notes.push(`reading limit reached (${MAX_READINGS_PER_DAY} a day): no reading`)
-    } else {
-      try {
-        const pages = await gatherPages(deps.get, topic, pending.depth, intentionSeed(t.forkling.seed, nowMs))
-        if (pages.length === 0) notes.push(`found nothing to read about "${topic}"`)
-        else if (await readSession(t, 'topic', pages, topic)) t.interests = updatePhases(t.interests, nowIso)
-      } catch (e) {
-        notes.push(`could not read about "${topic}": ${(e as Error).message}`)
-      }
-    }
-  }
   if (t.readings.count !== mind.readings?.count || t.readings.skimmed !== mind.readings?.skimmed) mind.readings = t.readings
 }

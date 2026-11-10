@@ -32,8 +32,6 @@ export const Decision = z.object({
   planReason: z.string().nullable(),
   /** A reason to stay up late tonight, or null. */
   stayUpLate: z.string().nullable(),
-  /** Ask for an object to be designed and built for it (once a day at most), or null. */
-  design: z.object({ name: z.string(), purpose: z.string(), contraption: z.boolean().nullish() }).nullish(),
 })
 export type Decision = z.infer<typeof Decision>
 
