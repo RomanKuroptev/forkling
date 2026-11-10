@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { PlanStep, SpeciesPack, WorldObject } from '@forkling/schema'
 import makerJson from './fixtures/maker.species.json'
 import { runHeadless, runPlan } from '../src/headless.ts'
-import { initialNeeds } from '../src/needs.ts'
 import { scoreActions } from '../src/utility.ts'
 import { starterWorld, worldWithObjects } from '../src/starter.ts'
 
@@ -35,7 +34,7 @@ describe('what the utility AI will choose by itself', () => {
     spotKinds: new Set(spotKinds),
     ...(focusAction ? { focusAction } : {}),
   })
-  const ids = (spotKinds: string[], focusAction?: string) => scoreActions(initialNeeds(pack), pack, ctx(spotKinds, focusAction)).map((s) => s.action.id)
+  const ids = (spotKinds: string[], focusAction?: string) => scoreActions(pack, ctx(spotKinds, focusAction)).map((s) => s.action.id)
 
   it('never picks a verb that changes the world, because only the mind plans those', () => {
     const chosen = ids(['for:build', 'for:pick_up', 'for:cut', 'for:eat'])

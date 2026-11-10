@@ -30,7 +30,7 @@ export async function think(t: Tick): Promise<void> {
     wakeTime: clock(tz, window.wakeMs),
     bedTime: clock(tz, window.bedMs),
     hoursLeft: Math.max(0, Math.round((window.bedMs - nowMs) / 3_600_000)),
-    body: { x: t.body.pos.x, z: t.body.pos.z, needs: t.body.needs as Record<string, number> },
+    body: { x: t.body.pos.x, z: t.body.pos.z },
     nowMs,
     holding: t.holding,
     stored: t.stored,

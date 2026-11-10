@@ -79,15 +79,12 @@ function describeAction(a: SpeciesAction): string {
           : t.type === 'object'
             ? describeObjectTarget(a.id, t)
             : `target: "${t.kind}", or the id of an object that offers "${t.kind}"`
-  const needs = Object.entries(a.satisfies)
-    .map(([id, n]) => `${n > 0 ? '+' : ''}${n} ${id}`)
-    .join(', ')
   const paws = a.hands === 'empty' ? 'needs empty paws' : a.hands === 'full' ? 'needs something in your paws' : ''
   const works = a.accepts.length > 0 ? `works with ${a.accepts.join(', ')}` : ''
   const when = a.requires.length > 0 ? `only ${a.requires.join(' and ')}` : ''
   // A photograph is of what is in front of the eyes; it has no topic to set.
   const effect = a.artifact === 'photo' ? 'takes a picture through your own eyes and keeps it with your caption' : EFFECTS[a.effect]
-  return `- ${a.id}: ${[where, paws, works, needs, when, effect].filter(Boolean).join('; ')}`
+  return `- ${a.id}: ${[where, paws, works, when, effect].filter(Boolean).join('; ')}`
 }
 
 /**
@@ -109,7 +106,7 @@ export function buildSystem(input: SystemInput): string {
     '',
     '## How planning works',
     '- A plan is a list of steps. Each step is one verb (from the list above, spelled exactly), where it happens, a reason in your voice, and how many minutes to spend on it.',
-    '- A step is a window of time, not a single act: for those minutes you keep coming back to that verb at that place, and when the minutes are up its effect happens once. The body looks after its own needs between steps, such as eating or resting, and then goes back to the step, so do not plan around that.',
+    '- A step is a window of time, not a single act: for those minutes you keep coming back to that verb at that place, and when the minutes are up its effect happens once.',
     '- Plans are your own. Nobody gives you goals. Follow what you are curious about, what you liked or disliked before, and what you saw.',
     '- The long goal is a want that takes days: something you want to make, learn, grow or understand, an ambition or a mystery. Write it as free text, the way a person would put their own aim. It is not a chore, not an item from a list, and not just an animal instinct like claiming territory.',
     '- Use only objects and places that are listed as being in the world. Do not invent any. Never give a verb a target it does not take.',

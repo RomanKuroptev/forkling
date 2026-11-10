@@ -104,7 +104,6 @@ function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine
     stepBefore: stepOf(t.w.goals),
     stepAfter: stepOf(t.goals),
     planId: planIdOf(t.goals),
-    needs: Object.fromEntries(Object.entries(t.body.needs).map(([id, v]) => [id, round(v ?? 0, 1)])),
     mood: moodWords({ mood: t.mood, energy: t.energy }),
     drift: t.drift.filter((d) => Date.parse(d.at) > since).slice(0, 20),
     wrote: result.written.slice(0, 60),

@@ -37,7 +37,6 @@ function input(overrides: Partial<Forkling> = {}, startedAt = EPOCH_START + 60):
 
 const snapshot = (pb: ReturnType<typeof startPlayback>) => ({
   pos: pb.state.pos,
-  needs: pb.state.needs,
   intention: pb.state.intention,
   phase: pb.state.phase,
   time: pb.state.time,
@@ -146,14 +145,9 @@ describe('tallyWindow', () => {
     }
   })
 
-  it('notes what broke the plan off while a step was running, and which need it was for', () => {
-    // The blob's hunger falls fast, so over two hours a need is bound to run low and break the plan off.
+  it('notes no break from the plan when nothing but a need could cause one, and there are no needs', () => {
     const t = tallyWindow(focused(120), from, from + 7_200_000)
-    expect(t.interruptions.length).toBeGreaterThan(0)
-    for (const i of t.interruptions) {
-      expect(i.verb).not.toBe('roam')
-      expect(['hunger', 'energy', 'fun', 'other']).toContain(i.need)
-    }
+    expect(t.interruptions).toEqual([])
   })
 
   it('does not count a break from the plan once the step is over', () => {

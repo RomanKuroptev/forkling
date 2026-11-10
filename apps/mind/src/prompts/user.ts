@@ -23,7 +23,7 @@ export interface UserInput {
   bedTime: string
   /** Hours of waking left today, rounded. */
   hoursLeft: number
-  body: { x: number; z: number; needs: Record<string, number> }
+  body: { x: number; z: number }
   /** Unix ms, for what grows, refills and goes off. */
   nowMs: number
   /** What it holds and has stored, after anything its last step did. */
@@ -131,9 +131,6 @@ function describeObject(o: WorldObject, nowMs: number): Record<string, unknown> 
 
 /** The part of the prompt that changes every call. It goes after the cache breakpoint. */
 export function buildUser(i: UserInput): string {
-  const needs = Object.entries(i.body.needs)
-    .map(([id, v]) => `${id} ${Math.round(v)}`)
-    .join(', ')
   const intention = i.forkling.intention
   const step = i.goals.now ? i.goals.today?.steps[i.goals.now.index] : undefined
   const paws = i.holding ? ('material' in i.holding ? `a piece of ${i.holding.material}` : `the object ${i.holding.objectId}`) : 'nothing'
@@ -148,7 +145,6 @@ export function buildUser(i: UserInput): string {
   return [
     '<situation>',
     `time: ${i.localTime} (${i.forkling.timezone}); woke at ${i.wakeTime}; bedtime ${i.bedTime}`,
-    `needs (0 empty, 100 full): ${needs}`,
     `mood: ${i.mood}`,
     `position: x ${i.body.x.toFixed(0)}, z ${i.body.z.toFixed(0)}`,
     `doing now: ${intention.type}${intention.targetId ? ` at ${intention.targetId}` : ''} ("${intention.reason}")`,

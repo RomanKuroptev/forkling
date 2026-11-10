@@ -2,7 +2,6 @@ import { Intention, type Holding, type MicroBehavior, type PlanStep, type Skills
 import { applyStep, type StepEvent, type Stored } from './effects.ts'
 import { createForkling, setFocus, stepForkling, STEP, toRepoIntention, type Focus, type StepContext } from './forkling.ts'
 import { isWalkable, nearestWalkable, type Point2 } from './nav.ts'
-import type { Needs } from './needs.ts'
 import { addXp, skillLevel } from './skills.ts'
 import { sunDirection } from './sky.ts'
 import { starterWorld, worldWithObjects, type StarterWorld } from './starter.ts'
@@ -18,8 +17,6 @@ export interface HeadlessOptions {
   /** A visitor that stalks the forkling from `arrive` seconds, stops near it, and leaves at `leave`. */
   visitor?: { arrive: number; leave: number }
   world?: StarterWorld
-  /** Starting need values; the rest start at the pack's initial values. */
-  needs?: Needs
   /** Favour this action and target until `until` seconds into the run. */
   focus?: Focus
   /** Start with full paws. */
@@ -37,9 +34,6 @@ export interface HeadlessRun {
   maxStuckSteps: number
   /** Steps spent off walkable ground. */
   offGrid: number
-  needsOutOfRange: number
-  /** Steps where a need rose without an action that satisfies it being performed. */
-  illegalRises: string[]
   badIntentions: number
   /** When the forkling first noticed the visitor, and when its current intention started at that moment. */
   noticeStep: { time: number; startedAt: number } | null
@@ -59,7 +53,6 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
   const world = opts.world ?? starterWorld()
   const start = nearestWalkable(world.nav.grid, { x: 0, z: 0 })!
   const state = createForkling(pack, behaviors, opts.seed, start, {
-    ...(opts.needs ? { needs: opts.needs } : {}),
     ...(opts.focus ? { focus: opts.focus } : {}),
     ...(opts.holding ? { holding: true } : {}),
     ...(opts.quirkWeights ? { quirkWeights: opts.quirkWeights } : {}),
@@ -70,8 +63,6 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
     micros: [],
     maxStuckSteps: 0,
     offGrid: 0,
-    needsOutOfRange: 0,
-    illegalRises: [],
     badIntentions: 0,
     noticeStep: null,
     slots: new Set(),
@@ -110,7 +101,6 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
       if (Math.hypot(visitor.x - state.pos.x, visitor.z - state.pos.z) > 40) visitor = null
     }
 
-    const before = { ...state.needs }
     const posBefore = { ...state.pos }
     const ctx: StepContext = { grid: world.nav.grid, visitor, timeOfDay: hour, spots }
     const wasNoticed = visitor !== null && Math.hypot(posBefore.x - visitor.x, posBefore.z - visitor.z) <= radius
@@ -118,16 +108,6 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
 
     if (wasNoticed && !run.noticeStep) run.noticeStep = { time: state.time, startedAt: state.intention.startedAt }
 
-    for (const [id, value] of Object.entries(state.needs)) {
-      if (value < 0 || value > 100 || Number.isNaN(value)) run.needsOutOfRange++
-      const prev = before[id as keyof typeof before] ?? 0
-      if (value > prev + 1e-9) {
-        const gain = (state.action.satisfies as Record<string, number | undefined>)[id] ?? 0
-        if (state.phase !== 'acting' || gain <= 0) {
-          run.illegalRises.push(`${id}@${state.time.toFixed(1)} ${state.action.id}/${state.phase}`)
-        }
-      }
-    }
     if (!isWalkable(world.nav.grid, state.pos.x, state.pos.z)) run.offGrid++
     if (state.phase === 'moving') {
       stuck = Math.hypot(state.pos.x - posBefore.x, state.pos.z - posBefore.z) < 1e-6 ? stuck + 1 : 0
@@ -164,7 +144,6 @@ export interface PlanRunOptions {
   holding?: Holding
   stored?: Stored
   skills?: Skills
-  needs?: Needs
 }
 
 export interface PlanStepRun {
@@ -199,7 +178,7 @@ export function runPlan(opts: PlanRunOptions): PlanRun {
 
   const first = worldWithObjects(objects)
   const start = nearestWalkable(first.nav.grid, { x: first.spawn.x, z: first.spawn.z }, 25) ?? { x: first.spawn.x, z: first.spawn.z }
-  const body = createForkling(pack, behaviors, opts.seed, start, opts.needs ? { needs: opts.needs } : {})
+  const body = createForkling(pack, behaviors, opts.seed, start)
   const steps: PlanStepRun[] = []
 
   let elapsed = 0

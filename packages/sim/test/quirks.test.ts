@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { SpeciesPack, WorldObject } from '@forkling/schema'
 import makerJson from './fixtures/maker.species.json'
 import { runHeadless } from '../src/headless.ts'
-import { initialNeeds } from '../src/needs.ts'
 import { starterWorld, worldWithObjects } from '../src/starter.ts'
 import { scoreActions } from '../src/utility.ts'
 
@@ -21,7 +20,7 @@ const world = worldWithObjects([house])
 
 describe('quirks in the utility AI', () => {
   const score = (id: string, quirkWeights?: Record<string, number>) =>
-    scoreActions(initialNeeds(pack), pack, {
+    scoreActions(pack, {
       visitorDistance: null,
       timeOfDay: 12,
       spotKinds: new Set(['for:go_to']),
@@ -36,8 +35,8 @@ describe('quirks in the utility AI', () => {
   it('lays on top of the pack weights instead of replacing them', () => {
     const weighted = SpeciesPack.parse({ ...makerJson, weights: { rest: 2 } })
     const ctx = { visitorDistance: null, timeOfDay: 12, spotKinds: new Set<string>(), quirkWeights: { rest: 3 } }
-    const plain = scoreActions(initialNeeds(weighted), weighted, { ...ctx, quirkWeights: {} }).find((s) => s.action.id === 'rest')!.score
-    const quirky = scoreActions(initialNeeds(weighted), weighted, ctx).find((s) => s.action.id === 'rest')!.score
+    const plain = scoreActions(weighted, { ...ctx, quirkWeights: {} }).find((s) => s.action.id === 'rest')!.score
+    const quirky = scoreActions(weighted, ctx).find((s) => s.action.id === 'rest')!.score
     expect(quirky).toBeCloseTo(plain * 3)
   })
 })

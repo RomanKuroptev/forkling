@@ -26,7 +26,7 @@ function input(kind: ThinkKind): UserInput {
     wakeTime: '07:10',
     bedTime: '23:05',
     hoursLeft: 13,
-    body: { x: 1, z: -2, needs: { hunger: 70, energy: 55 } },
+    body: { x: 1, z: -2 },
     nowMs: Date.parse('2026-11-03T09:00:00Z'),
     holding: undefined,
     stored: {},

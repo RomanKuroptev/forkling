@@ -109,7 +109,6 @@ export function validateWorld(dir: string, species: { pack: SpeciesPack; behavio
   const run = runHeadless({ pack: species.pack, behaviors: species.behaviors, seed: forkling.seed, startHour: 10, seconds: HEADLESS_SECONDS, world: sim })
   if (run.maxStuckSteps >= 30) problems.push(`the body got stuck for ${run.maxStuckSteps} steps in a row`)
   if (run.offGrid > 0) problems.push(`the body left the walkable ground ${run.offGrid} times`)
-  if (run.needsOutOfRange > 0) problems.push('a need left its range of 0 to 100')
   if (run.badIntentions > 0) problems.push(`the body chose ${run.badIntentions} intentions that do not exist in the pack`)
   return { problems, ticks: HEADLESS_SECONDS * STEPS_PER_SECOND }
 }

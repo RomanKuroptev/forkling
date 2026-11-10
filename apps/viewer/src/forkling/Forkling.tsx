@@ -106,7 +106,6 @@ export function Forkling() {
             phase: s.phase,
             slot: s.slot,
             intention: s.intention,
-            needs: s.needs,
             micro: s.micro?.behavior.id ?? null,
             hour: clock.hour(),
             time: s.time,

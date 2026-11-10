@@ -24,6 +24,12 @@ export const MOOD_EVENTS: Record<MoodEvent, { mood: number; energy: number }> = 
   stepCompleted: { mood: 0, energy: -0.05 },
 }
 
+/** Valence from bad (-1) to good (1) and arousal from calm (0) to wound up (1): what the body's drift takes in. Made from mood and energy. */
+export interface Feelings {
+  valence: number
+  arousal: number
+}
+
 export const INITIAL_MOOD: MoodState = { mood: 0, energy: 0.5 }
 
 /** Energy under this limits the day (spec 3.2). */

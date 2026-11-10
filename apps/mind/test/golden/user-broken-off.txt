@@ -1,6 +1,5 @@
 <situation>
 time: Tuesday 2026-11-03 10:00 (Europe/Stockholm); woke at 07:10; bedtime 23:05
-needs (0 empty, 100 full): hunger 70, energy 55
 mood: steady, rested
 position: x 1, z -2
 doing now: sit ("New island. I will allow it.")
