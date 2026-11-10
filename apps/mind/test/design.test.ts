@@ -109,8 +109,8 @@ describe('objectFromDesign', () => {
   })
 
   it('keeps only the unlocks that are verbs the pack takes at a place', () => {
-    const o = objectFromDesign(output({ unlocks: ['write', 'fly', 'go_to', 'read', 'sleep', 'cook', 'draw'] }), request, ctx())!
-    expect(o.unlocks).toEqual(['write', 'read', 'cook', 'draw'])
+    const o = objectFromDesign(output({ unlocks: ['write', 'fly', 'go_to', 'read', 'sleep', 'build', 'draw'] }), request, ctx())!
+    expect(o.unlocks).toEqual(['write', 'read', 'build', 'draw'])
   })
 
   it('does not trust the kind: a made-up kind becomes a plain word', () => {

@@ -38,7 +38,7 @@ const STEPS: { verb: string; target: string | null; x: number | null; z: number 
   { verb: 'inspect', target: 'bookshelf', x: null, z: null },
   { verb: 'sit', target: null, x: null, z: null },
   { verb: 'explore', target: null, x: 0, z: 16 },
-  { verb: 'sniff', target: 'berry-bush', x: null, z: null },
+  { verb: 'inspect', target: 'berry-bush', x: null, z: null },
   { verb: 'stretch', target: null, x: null, z: null },
   { verb: 'explore', target: null, x: -8, z: 18 },
   { verb: 'inspect', target: 'telescope', x: null, z: null },

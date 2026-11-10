@@ -22,15 +22,9 @@ function loadModel(): Promise<GLTF> {
 const byId = (id: string) => pack.actions.find((a) => a.id === id)!
 
 describe('cat species pack', () => {
-  it('parses, with no needs and a 5 m notice radius', () => {
+  it('parses, with a 5 m notice radius', () => {
     expect(pack.id).toBe('cat')
-    // The species pack is a body. How the forkling feels is mood and energy (spec 3.2), not needs.
-    expect(pack.needs).toEqual({})
     expect(pack.perception.noticeRadius).toBe(5)
-  })
-
-  it('has no action that raises or costs a need', () => {
-    expect(pack.actions.filter((a) => Object.keys(a.satisfies).length > 0).map((a) => a.id)).toEqual([])
   })
 
   it('drops to four legs for the body, and stands up to work with its hands', () => {
@@ -41,10 +35,9 @@ describe('cat species pack', () => {
   it('has every verb of the groups M5 ships, the mind verbs so far, and none of the later ones', () => {
     const ids = new Set(pack.actions.map((a) => a.id))
     const wanted = {
-      body: ['go_to', 'inspect', 'sniff', 'sit', 'watch', 'follow', 'hide', 'vocalize', 'sleep', 'nap', 'curl_up', 'stretch'],
+      body: ['go_to', 'inspect', 'sit', 'watch', 'follow', 'hide', 'sleep', 'stretch', 'explore'],
       hands: ['pick_up', 'carry', 'drop', 'put_on', 'open', 'close'],
       making: ['cut', 'join', 'shape', 'build', 'paint', 'sew', 'tinker'],
-      growing: ['plant', 'water', 'harvest', 'cook', 'eat'],
       mind: ['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph', 'code'],
     }
     for (const [group, verbs] of Object.entries(wanted)) {
@@ -62,19 +55,15 @@ describe('cat species pack', () => {
     }
   })
 
-  it('does its work upright and its running on four legs', () => {
+  it('does its work upright', () => {
     for (const verb of pack.actions.filter((a) => a.group === 'hands' || a.group === 'making' || a.group === 'growing')) {
       expect(verb.body ?? 'upright', verb.id).not.toBe('quadruped')
     }
-    expect(byId('zoomies').gait).toBe('run')
-    expect(byId('pounce').gait).toBe('run')
   })
 
-  it('only lets the mind plan what changes the world, apart from eating at a bowl', () => {
+  it('only lets the mind plan what changes the world', () => {
     const planned = pack.actions.filter((a) => a.effect !== 'none' && a.effect !== 'hide').map((a) => a.id)
-    expect(planned).toEqual(expect.arrayContaining(['pick_up', 'cut', 'build', 'plant', 'harvest', 'cook', 'dine']))
-    expect(byId('eat').effect).toBe('none')
-    expect(byId('dine').effect).toBe('eat')
+    expect(planned).toEqual(expect.arrayContaining(['pick_up', 'cut', 'build']))
   })
 
   it('maps every slot its verbs and behaviors use, so nothing silently falls back', () => {
@@ -93,7 +82,6 @@ describe('cat species pack', () => {
 
   it('only works with materials that make sense for each making verb', () => {
     expect(byId('sew').accepts).toEqual(['fibre', 'flowers'])
-    expect(byId('plant').accepts).toEqual(expect.arrayContaining(['flowers', 'produce']))
   })
 })
 
@@ -239,27 +227,15 @@ describe('cat in the headless sim', () => {
     expect(day.noticeStep!.startedAt).toBeCloseTo(day.noticeStep!.time, 5)
   })
 
-  it('follows a visitor without a need to satisfy', () => {
-    expect(byId('follow').satisfies).toEqual({})
-    expect(pack.actions.some((a) => (a.satisfies as Record<string, number>).affection !== undefined)).toBe(false)
-  })
-
   it('is deterministic for a seed', () => {
     const again = runHeadless({ pack, behaviors, seed: 7, startHour: 10, seconds: 600, visitor: { arrive: 120, leave: 360 } })
     expect(again.trace).toEqual(day.trace)
-  })
-
-  it('has zoomies at dusk and never by day', () => {
-    const dusk = runHeadless({ pack, behaviors, seed: 3, startHour: 19, seconds: 600 })
-    expect(dusk.intentionTypes.has('zoomies')).toBe(true)
-    expect(day.intentionTypes.has('zoomies')).toBe(false)
   })
 
   it('sleeps at night and does not wander the island', () => {
     const night = runHeadless({ pack, behaviors, seed: 3, startHour: 23, seconds: 600 })
     expect(night.intentionTypes.has('sleep')).toBe(true)
     expect(night.intentionTypes.has('explore')).toBe(false)
-    expect(night.intentionTypes.has('zoomies')).toBe(false)
   })
 
   it('goes straight to sleep at night, whatever its needs say', () => {
@@ -275,13 +251,15 @@ describe('cat in the headless sim', () => {
   it('plays its signature behaviors across a day of watching', () => {
     const runs = [11, 12, 13].map((seed) => runHeadless({ pack, behaviors, seed, startHour: 14, seconds: 900 }))
     const seen = new Set(runs.flatMap((r) => r.micros.map((m) => m.id)))
-    for (const id of ['groom', 'tail_flick', 'knead', 'stretch']) expect(seen.has(id), id).toBe(true)
+    for (const id of ['groom', 'tail_flick']) expect(seen.has(id), id).toBe(true)
+    // It kneads before it lies down to sleep, and stretches after it wakes.
+    const night = [11, 12, 13].flatMap((seed) => runHeadless({ pack, behaviors, seed, startHour: 23, seconds: 300 }).micros.map((m) => m.id))
+    for (const id of ['knead', 'stretch']) expect(night.includes(id), id).toBe(true)
   })
 
-  it('naps in sunbeams and watches from high ground', () => {
+  it('watches from high ground', () => {
     const runs = [21, 22, 23].map((seed) => runHeadless({ pack, behaviors, seed, startHour: 11, seconds: 900 }))
     const types = new Set(runs.flatMap((r) => [...r.intentionTypes]))
-    expect(types.has('nap')).toBe(true)
     expect(types.has('watch')).toBe(true)
   })
 

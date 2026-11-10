@@ -1,19 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { AnimationMap, AnimationSlot, NeedId, SpeciesPack } from '../src/index.ts'
+import { AnimationMap, AnimationSlot, SpeciesPack } from '../src/index.ts'
 
 const base = {
   id: 'test',
   displayName: 'Test',
-  needs: {
-    hunger: { initial: 80, decayPerHour: 10 },
-    energy: { initial: 90, decayPerHour: 6 },
-  },
   perception: { noticeRadius: 5, eyeHeight: 0.3 },
   locomotion: { walkSpeed: 1.2, runSpeed: 4 },
   actions: [
     {
       id: 'eat',
-      satisfies: { hunger: 60 },
       durationSec: [10, 20],
       target: { type: 'spot', kind: 'food' },
       slot: 'idle',
@@ -32,13 +27,6 @@ const base = {
 }
 
 describe('vocabularies', () => {
-  it('includes the shared needs from CLAUDE.md', () => {
-    for (const n of ['hunger', 'energy', 'curiosity', 'affection', 'fun', 'social']) {
-      expect(NeedId.safeParse(n).success).toBe(true)
-    }
-    expect(NeedId.safeParse('mana').success).toBe(false)
-  })
-
   it('includes the engine animation slots', () => {
     for (const s of ['idle', 'walk', 'run', 'sit', 'sleep', 'jump', 'happy', 'eat']) {
       expect(AnimationSlot.safeParse(s).success).toBe(true)
@@ -51,23 +39,7 @@ describe('SpeciesPack', () => {
     const pack = SpeciesPack.parse(base)
     expect(pack.actions[0]!.gait).toBe('walk')
     expect(pack.actions[0]!.requires).toEqual([])
-    expect(pack.actions[0]!.spontaneous).toBe(0.05)
     expect(pack.starterSpots).toEqual([])
-  })
-
-  it('rejects a need outside the shared vocabulary', () => {
-    const bad = { ...base, needs: { mana: { initial: 50, decayPerHour: 1 } } }
-    expect(SpeciesPack.safeParse(bad).success).toBe(false)
-  })
-
-  it('rejects negative decay and out-of-range initial values', () => {
-    expect(SpeciesPack.safeParse({ ...base, needs: { hunger: { initial: 50, decayPerHour: -1 } } }).success).toBe(false)
-    expect(SpeciesPack.safeParse({ ...base, needs: { hunger: { initial: 150, decayPerHour: 1 } } }).success).toBe(false)
-  })
-
-  it('rejects actions that satisfy a need the pack does not declare', () => {
-    const bad = { ...base, actions: [{ ...base.actions[0]!, satisfies: { curiosity: 10 } }] }
-    expect(SpeciesPack.safeParse(bad).success).toBe(false)
   })
 
   it('rejects duplicate action ids and weights for unknown actions', () => {
@@ -80,22 +52,8 @@ describe('SpeciesPack', () => {
     expect(SpeciesPack.safeParse(bad).success).toBe(false)
   })
 
-  it('accepts a spontaneous appeal from 0 to 1 and rejects anything else', () => {
-    const with_ = (spontaneous: number) => ({ ...base, actions: [{ ...base.actions[0]!, spontaneous }, base.actions[1]] })
-    expect(SpeciesPack.safeParse(with_(0.6)).success).toBe(true)
-    expect(SpeciesPack.safeParse(with_(1.5)).success).toBe(false)
-    expect(SpeciesPack.safeParse(with_(-0.1)).success).toBe(false)
-  })
-
   it('requires at least one action', () => {
     expect(SpeciesPack.safeParse({ ...base, actions: [] }).success).toBe(false)
-  })
-
-  it('needs no needs: a pack is a body, and the forkling has mood and energy instead (spec 3.2)', () => {
-    const noNeeds = SpeciesPack.safeParse({ ...base, needs: {}, actions: base.actions.map((a) => ({ ...a, satisfies: {} })) })
-    expect(noNeeds.success).toBe(true)
-    const left = SpeciesPack.safeParse({ ...base, needs: undefined, actions: base.actions.map((a) => ({ ...a, satisfies: {} })) })
-    expect(left.success && left.data.needs).toEqual({})
   })
 })
 
