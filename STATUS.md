@@ -16,6 +16,9 @@ Branch `claude/project-thread-403rmi`.
 - **W0 voice test (built, waiting for its live run):** `pnpm --filter @forkling/mind voice-test --merge <clone>`. See [`docs/spec/w0-voice-test.md`](docs/spec/w0-voice-test.md). It needs `ANTHROPIC_API_KEY` in Roman's terminal, because this machine has no key and the federation rule only works from the merge repo's Actions. The offline run fetches 20 items and measures the pet-era text; the numbers are in the W0 file. Estimated cost $0.13 at most, assuming no cache and full outputs.
 - New code that W1 and W2 reuse: `packages/sim/src/novelty.ts` (3-gram similarity, worn phrases, calibration profile), `apps/mind/src/web/clean.ts` (HTML to text, cut to 3,000 tokens) and `apps/mind/src/web/souvenir.ts` (word-for-word check). The script itself lives in `apps/mind/scripts/` and is thrown away after W0.
 
+## Release
+- **v0.9.0 (W1) is tagged** on 2026-11-11 and the template workflows pin it. Merge's repo is moved to it with `migrate-w1` (see `docs/spec/w1-release.md`); until that is pushed Merge still runs v0.8.0.
+
 ## W1 progress (slice 1 of 5, started)
 
 - **Decisions (Roman, 10 November, "go ahead" on my recommendations):** the bedtime reflection and nightly rewrite keep running until W7; `write` works in W1 as a plaque-style note in `notebook/`; PR #29 is merged. The W0 voice test ran live (see `docs/spec/w0-voice-test.md`).
