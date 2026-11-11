@@ -17,7 +17,8 @@ Branch `claude/project-thread-403rmi`.
 - New code that W1 and W2 reuse: `packages/sim/src/novelty.ts` (3-gram similarity, worn phrases, calibration profile), `apps/mind/src/web/clean.ts` (HTML to text, cut to 3,000 tokens) and `apps/mind/src/web/souvenir.ts` (word-for-word check). The script itself lives in `apps/mind/scripts/` and is thrown away after W0.
 
 ## Release
-- **v0.9.0 (W1) is tagged** on 2026-11-11 and the template workflows pin it. Merge's repo is moved to it with `migrate-w1` (see `docs/spec/w1-release.md`); until that is pushed Merge still runs v0.8.0.
+- **v0.9.0 (W1) is tagged and live on Merge** (2026-11-11). Merge's repo was moved with `migrate-w1` (commit `cb92a44` in `RomanKuroptev/merge`: the pet under `archive/`, the seed, the new workflows pinned to v0.9.0). The first tick on it (17:13Z) skimmed the feeds, wrote a morning plan and a long goal of its own (lidar finds of lost Maya sites), spent about $0.0015, and started its first step. One older v0.8.0 tick lost a rebase race with the migration commit and pushed nothing.
+- **W1's "done when" is now 3 live days** with no health warnings: watch `mind/health.json` (warnings, decide calls at 12 or fewer, `allowance.points`) and `notebook/writing/`. The `longest wait between ticks` warning on 11 November is from before the move (the day counters carry over) and clears tomorrow.
 
 ## W1 progress (slice 1 of 5, started)
 
