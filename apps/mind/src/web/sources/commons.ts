@@ -2,7 +2,7 @@ import { isAllowed } from '../allowlist.ts'
 import { cutToTokens, htmlToText } from '../clean.ts'
 import { WebError, type Fetcher } from '../fetch.ts'
 import { capLinks, normalizeLicence, wikipediaTopicLink, type Item, MAX_RECORD_LINKS } from '../item.ts'
-import { pageTitle, wikiPath } from './mediawiki.ts'
+import { pageTitle, wikiLinks, wikiPath } from './mediawiki.ts'
 
 const HOST = 'commons.wikimedia.org'
 const PICTURE = /\.(jpe?g|png|gif|svg|tiff?|webp)$/i
@@ -29,7 +29,8 @@ export async function commonsFile(f: Fetcher, title: string): Promise<Item> {
     url: `https://${HOST}/wiki/${wikiPath(heading)}`,
     title: heading,
     text: cutToTokens([`File: ${heading}`, description, `Licence: ${licenceName || 'unknown'}`, credit ? `Credit: ${credit}` : ''].filter(Boolean).join('\n')),
-    links: capLinks([wikipediaTopicLink(bare)], MAX_RECORD_LINKS),
+    // The Wikipedia articles that use the picture, then the article for what it shows: a way back into reading.
+    links: capLinks([...wikiLinks(html, 'en.wikipedia.org', '', false), wikipediaTopicLink(bare)], MAX_RECORD_LINKS),
     images: [{ url, licence: normalizeLicence(licenceName), credit }],
   }
 }

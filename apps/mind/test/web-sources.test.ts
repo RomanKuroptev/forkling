@@ -145,6 +145,13 @@ describe('Wikipedia, read through its article pages', () => {
     await expect(readUrl(f, `${wiki}/wiki/Special:Random`)).rejects.toBeInstanceOf(WebError)
   })
 
+  it('reads links written as full addresses, which is how the front page serves them', async () => {
+    const main = `<div id="mw-content-text"><a rel="mw:WikiLink" href="https://en.wikipedia.org/wiki/Free_content" title="Free content">Free content</a> <a href="https://en.wikipedia.org/wiki/Special:Statistics">stats</a> <a href="https://en.wikipedia.org/wiki/Moss#Uses">Moss</a> <a href="https://example.com/wiki/Fake">fake</a></div>`
+    const f = fake({ [`${wiki}/wiki/Main_Page`]: main, [`${wiki}/wiki/Moss`]: articleHtml() })
+    expect((await wikipediaFeatured(f, 1)).title).toBe('Lighthouse')
+    expect(f.asked).toEqual([`${wiki}/wiki/Main_Page`, `${wiki}/wiki/Moss`])
+  })
+
   it('starts a trip from the front page: the seed picks one of the articles it links to', async () => {
     const main = `<html><div id="mw-content-text"><p><a href="/wiki/Alpha">Alpha</a> <a href="/wiki/Beta">Beta</a> <a href="/wiki/Gamma">Gamma</a> <a href="/wiki/Wikipedia:About">About</a></p></div><div class="printfooter"></div></html>`
     const f = fake({ [`${wiki}/wiki/Main_Page`]: main, [`${wiki}/wiki/Beta`]: articleHtml() })
@@ -244,6 +251,13 @@ describe('records', () => {
     expect(item.text).toContain('Licence: CC BY-SA 4.0')
     expect(item.text).toContain('Credit: Jane Doe')
     expect(f.asked).toEqual(['https://commons.wikimedia.org/wiki/File:Fog.jpg'])
+  })
+
+  it('offers the Wikipedia articles that use the picture, so a trip can cross from the picture into reading', async () => {
+    const usage = '<div id="mw-imagepage-section-globalusage"><ul><li><a class="extiw" href="https://en.wikipedia.org/wiki/Hamburg">Hamburg</a></li><li><a href="//de.wikipedia.org/wiki/Hafen">de</a></li><li><a href="https://en.wikipedia.org/wiki/Category:Ports">cat</a></li><li><a href="https://en.wikipedia.org/wiki/Harbour_fog">Harbour fog</a></li></ul></div>'
+    const item = await commonsFile(fake({ 'https://commons.wikimedia.org/wiki/File:Fog.jpg': fileHtml('CC0', usage) }), 'File:Fog.jpg')
+    expect(item.links.map((l) => l.url)).toEqual(['https://en.wikipedia.org/wiki/Hamburg', 'https://en.wikipedia.org/wiki/Harbour_fog', 'https://en.wikipedia.org/wiki/Fog'])
+    expect(item.links.length).toBeLessThanOrEqual(MAX_RECORD_LINKS)
   })
 
   it('gives a licence the code cannot allow no licence at all, and refuses a page with no picture', async () => {
