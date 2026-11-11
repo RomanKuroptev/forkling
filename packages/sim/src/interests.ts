@@ -1,16 +1,22 @@
-import type { Interests, InterestSource, Obsession } from '@forkling/schema'
+import { MAX_INTEREST_HISTORY, type InterestChange, type Interests, type InterestSource, type Obsession } from '@forkling/schema'
 
 /** A topic this strong turns into an obsession. */
-export const OBSESSION_START = 0.8
+export const OBSESSION_START = 80
 /** An obsession ends when its topic has faded below this. */
-export const OBSESSION_END = 0.3
+export const OBSESSION_END = 30
 
 /** How much of a full delta moves a weight, so a topic takes a few feedings to become anything. */
-const FEED_STEP = 0.4
+const FEED_STEP = 40
 /** What is left of a weight after a day. Obsessions burn out faster, so they end unless something keeps feeding them. */
 const DAILY_KEEP = 0.92
 const OBSESSION_DAILY_KEEP = 0.8
-const FORGET_BELOW = 0.05
+const FORGET_BELOW = 5
+/** At most this many topics are kept; the lowest goes first (spec 3.1). */
+export const MAX_TOPICS = 40
+const MAX_WORDS = 4
+const MAX_WEIGHT = 100
+/** Points a change adds to a topic's weight (spec 3.1). */
+export const EVENT_POINTS = { page: 4, souvenir: 10, note: 6 } as const
 const MAX_SOURCES = 5
 const MAX_PAST = 30
 const MAX_TOPIC = 60
@@ -55,30 +61,71 @@ export interface Feeding {
   nowIso: string
 }
 
-/** Something it read made a topic more or less interesting. Pure. */
-export function feedInterest(interests: Interests, feeding: Feeding): Interests {
-  const typed = feeding.topic.trim().toLowerCase().slice(0, MAX_TOPIC).trim()
-  if (!typed || !Number.isFinite(feeding.delta)) return interests
+export interface TopicFeeding {
+  topic: string
+  event: keyof typeof EVENT_POINTS
+  /** The trail (trip) that caused it, or null. */
+  trail: string | null
+  source: InterestSource | null
+  nowIso: string
+}
+
+/** A topic is 1 to 4 lowercase words, so a long phrase is cut to its first four. */
+function keyOf(topic: string): string {
+  return topic.trim().toLowerCase().slice(0, MAX_TOPIC).trim().split(/\s+/).filter(Boolean).slice(0, MAX_WORDS).join(' ')
+}
+
+/** Keeps the strongest 40: the lowest weight goes first, then the one fed longest ago, then the one added first. */
+function capTopics(topics: Interests['topics']): Interests['topics'] {
+  const keys = Object.keys(topics)
+  if (keys.length <= MAX_TOPICS) return topics
+  const drop = new Set(
+    keys
+      .map((key, order) => ({ key, order }))
+      .sort((a, b) => topics[a.key]!.weight - topics[b.key]!.weight || topics[a.key]!.lastFed.localeCompare(topics[b.key]!.lastFed) || a.order - b.order)
+      .slice(0, keys.length - MAX_TOPICS)
+      .map((x) => x.key),
+  )
+  return Object.fromEntries(keys.filter((k) => !drop.has(k)).map((k) => [k, topics[k]!]))
+}
+
+/** Moves one topic by `points` (negative lowers it). The one place a weight changes by feeding. Pure. */
+function move(interests: Interests, typedTopic: string, points: number, record: Pick<InterestChange, 'event' | 'trail'>, source: InterestSource | null, nowIso: string): Interests {
+  const typed = keyOf(typedTopic)
+  if (!typed || !Number.isFinite(points)) return interests
   // Another spelling of a topic it already has is that topic.
   const key = Object.keys(interests.topics).find((k) => foldTopic(k) === foldTopic(typed)) ?? typed
   const old = interests.topics[key]
   // An obsession cannot keep itself alive: reading about it counts for less each day it has lasted, and for nothing after a few.
   const obsession = interests.current?.topic === key ? interests.current : null
-  const ageDays = obsession ? (Date.parse(feeding.nowIso) - Date.parse(obsession.startedAt)) / DAY_MS : 0
-  const step = obsession && feeding.delta > 0 ? FEED_STEP * clamp(1 - ageDays / OBSESSION_FEED_DAYS, 0, 1) : FEED_STEP
-  const weight = round3(clamp((old?.weight ?? 0) + clamp(feeding.delta, -1, 1) * step, 0, 1))
+  const ageDays = obsession ? (Date.parse(nowIso) - Date.parse(obsession.startedAt)) / DAY_MS : 0
+  const taper = obsession && points > 0 ? clamp(1 - ageDays / OBSESSION_FEED_DAYS, 0, 1) : 1
+  const weight = round3(clamp((old?.weight ?? 0) + points * taper, 0, MAX_WEIGHT))
   const topics = { ...interests.topics }
   if (weight <= 0) {
     delete topics[key]
     return { ...interests, topics }
   }
   let sources = old?.sources ?? []
-  if (feeding.source && !sources.some((s) => s.id === feeding.source!.id)) {
+  if (source && !sources.some((s) => s.id === source.id)) {
     // The first source is the origin and stays; after that only the latest few.
-    sources = sources.length < MAX_SOURCES ? [...sources, feeding.source] : [sources[0]!, ...sources.slice(2), feeding.source]
+    sources = sources.length < MAX_SOURCES ? [...sources, source] : [sources[0]!, ...sources.slice(2), source]
   }
-  topics[key] = { weight, firstSeen: old?.firstSeen ?? feeding.nowIso, lastFed: feeding.nowIso, sources }
-  return { ...interests, topics }
+  const change = round3(weight - (old?.weight ?? 0))
+  const history = [...(old?.history ?? []), { at: nowIso, change, ...record }].slice(-MAX_INTEREST_HISTORY)
+  topics[key] = { weight, firstSeen: old?.firstSeen ?? nowIso, lastFed: nowIso, sources, history }
+  return { ...interests, topics: capTopics(topics) }
+}
+
+/** Something it read made a topic more or less interesting (a pet-era reading, a delta from -1 to 1). Pure. */
+export function feedInterest(interests: Interests, feeding: Feeding): Interests {
+  if (!Number.isFinite(feeding.delta)) return interests
+  return move(interests, feeding.topic, clamp(feeding.delta, -1, 1) * FEED_STEP, { event: 'reading', trail: null }, feeding.source, feeding.nowIso)
+}
+
+/** A trip fed a topic: +4 for a page that lists it, +10 for a souvenir kept, +6 for a visitor note (spec 3.1). Pure. */
+export function feedTopic(interests: Interests, feeding: TopicFeeding): Interests {
+  return move(interests, feeding.topic, EVENT_POINTS[feeding.event], { event: feeding.event, trail: feeding.trail }, feeding.source, feeding.nowIso)
 }
 
 /** One day passes: every weight falls, an obsessed-over topic faster. What has faded away is forgotten. Pure. */
@@ -104,10 +151,11 @@ function mergeTopics(interests: Interests): Interests {
     const keep = ranked[0]!
     const all = ranked.map((k) => interests.topics[k]!)
     topics[keep] = {
-      weight: round3(Math.min(1, all.reduce((sum, t) => sum + t.weight, 0))),
+      weight: round3(Math.min(MAX_WEIGHT, all.reduce((sum, t) => sum + t.weight, 0))),
       firstSeen: all.map((t) => t.firstSeen).sort()[0]!,
       lastFed: all.map((t) => t.lastFed).sort().at(-1)!,
       sources: all.flatMap((t) => t.sources).filter((s, i, list) => list.findIndex((o) => o.id === s.id) === i).slice(0, MAX_SOURCES),
+      history: all.flatMap((t) => t.history).sort((a, b) => a.at.localeCompare(b.at)).slice(-MAX_INTEREST_HISTORY),
     }
     for (const k of keys) rename.set(k, keep)
   }

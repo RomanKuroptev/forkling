@@ -29,7 +29,7 @@ describe('buildReadingUser', () => {
   it('shows what it is already into, so that decides what grabs it', () => {
     const interests = Interests.parse({ topics: { moon: { weight: 0.6, firstSeen: NOW, lastFed: NOW, sources: [] } }, current: null })
     const user = buildReadingUser({ kind: 'skim', date: '2026-11-03', items, interests, topic: null })
-    expect(user).toContain('moon (0.6)')
+    expect(user).toContain('moon (60)')
   })
 
   it('names the topic when it went looking for one', () => {

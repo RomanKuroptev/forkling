@@ -235,7 +235,7 @@ export function renderSite(world: string, out: string): { pages: string[] } {
         : []),
       '<h2>What it is into</h2>',
       topics.length > 0
-        ? `<ul>${topics.map(([topic, t]) => `<li>${esc(topic)} <span class="quiet">${t.weight}${t.sources[0] ? `, first from ${sourceLink(t.sources[0])}` : ''}</span></li>`).join('')}</ul>`
+        ? `<ul>${topics.map(([topic, t]) => `<li>${esc(topic)} <span class="quiet">${Math.round(t.weight)}${t.sources[0] ? `, first from ${sourceLink(t.sources[0])}` : ''}</span></li>`).join('')}</ul>`
         : empty('Interests come from what it reads.'),
     ].join('\n'),
   })

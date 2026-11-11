@@ -25,7 +25,8 @@ Branch `claude/project-thread-403rmi`.
 Roman said to build W2 while W1's 3 live days run (they end 14 November). Nothing is released and nothing touches Merge's repo until the W1 health check passes and Roman says so. The plan is in [`docs/spec/w2-wandering.md`](docs/spec/w2-wandering.md), eight slices, one PR each.
 
 - **Slice 1 done:** the spec export, and `packages/schema/src/wandering.ts` with `Souvenir`, `Trail` and `SourceStats` (tests first, 8 tests). Nothing uses them yet.
-- **Next:** slice 2 (interests on spec 3.1's 0 to 100 scale). After slice 5, the source trials are run from `.env`'s key, and the reports go to `docs/spec/w2-trials/` for Roman to read.
+- **Slice 2 done:** interests are on spec 3.1's 0 to 100 scale. `Interests` has `version: 2`; a file without it is pet-era and its weights are scaled by 100 when read. Topics keep a `history[]` of `{at, change, event, trail}`, which is how a change points at a trail. New in `packages/sim/src/interests.ts`: `feedTopic` (+4 page, +10 souvenir, +6 note), a topic cut to 4 words, 40 kept (lowest weight dropped first), and the thresholds at 80, 30 and 5. `feedInterest` (the pet-era skim) still works until slice 6 replaces it. The prompt shows the top 10 interests as whole numbers.
+- **Next:** slice 3 (the fetch layer). After slice 5, the source trials are run from `.env`'s key, and the reports go to `docs/spec/w2-trials/` for Roman to read.
 - This machine's `rtk` can't find `pnpm`, so run `pnpm` directly.
 
 ## W1 progress (slice 1 of 5, started)
