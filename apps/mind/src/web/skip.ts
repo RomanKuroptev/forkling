@@ -14,10 +14,18 @@ export function skipReason(item: Item, readRecently: (url: string) => boolean = 
   if (readRecently(item.url)) return 'read in the last 30 days'
   if (/\(disambiguation\)\s*$/i.test(item.title) || /\b(may|can) (also )?refer to:?/i.test(item.text.slice(0, 300))) return 'a disambiguation page'
   if (/^lists? of /i.test(item.title)) return 'a list page'
-  const words = wordCount(item.text)
-  if (item.kind === 'page') {
+  if (!readable(item)) {
+    const words = wordCount(item.text)
+    if (item.kind === 'record') return `a record with no image and under ${MIN_RECORD_WORDS} words (${words})`
     const floor = item.tier === 'voices' ? MIN_VOICES_WORDS : MIN_PAGE_WORDS
-    return words < floor ? `a page under ${floor} words (${words})` : null
+    return `a page under ${floor} words (${words})`
   }
-  return item.images.length === 0 && words < MIN_RECORD_WORDS ? `a record with no image and under ${MIN_RECORD_WORDS} words (${words})` : null
+  return null
+}
+
+/** Enough to react to: a page has its word floor, a record has a picture or 40 words (spec 6.5 and 6.6). */
+export function readable(item: Item): boolean {
+  const words = wordCount(item.text)
+  if (item.kind === 'page') return words >= (item.tier === 'voices' ? MIN_VOICES_WORDS : MIN_PAGE_WORDS)
+  return item.images.length > 0 || words >= MIN_RECORD_WORDS
 }

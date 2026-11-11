@@ -11,12 +11,13 @@ export type FetchImpl = (url: string, init?: RequestInit) => Promise<Response>
 export type WebErrorCode = 'not-allowed' | 'redirect-not-allowed' | 'too-many-redirects' | 'paused' | 'timeout' | 'network' | 'too-big' | 'http'
 
 export class WebError extends Error {
-  constructor(
-    readonly code: WebErrorCode,
-    message: string,
-    readonly status?: number,
-  ) {
+  readonly code: WebErrorCode
+  readonly status: number | undefined
+  // Plain fields, not parameter properties: Node runs this file by stripping types, and that syntax cannot be stripped.
+  constructor(code: WebErrorCode, message: string, status?: number) {
     super(message)
+    this.code = code
+    this.status = status
   }
 }
 
