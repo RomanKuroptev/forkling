@@ -35,30 +35,3 @@ export async function hackerNewsStory(f: Fetcher, id: number | string): Promise<
     images: [],
   }
 }
-
-/** The short ids of the hottest stories on lobste.rs that have comments. */
-export async function lobstersHot(f: Fetcher): Promise<string[]> {
-  const hot = (await f.json('https://lobste.rs/hottest.json')) as { short_id: string; comment_count: number }[]
-  return hot.filter((s) => s.comment_count >= COMMENTS).map((s) => s.short_id)
-}
-
-/** A lobste.rs story with its tags and its top 5 top-level comments, as a voices page. */
-export async function lobstersStory(f: Fetcher, shortId: string): Promise<Item> {
-  const s = (await f.json(`https://lobste.rs/s/${shortId}.json`)) as any
-  if (!s?.title) throw new WebError('http', `no lobste.rs story ${shortId}`, 404)
-  const comments = (s.comments ?? [])
-    .filter((c: any) => !c.is_deleted && !c.parent_comment)
-    .slice(0, COMMENTS)
-    .map((c: any) => `${c.commenting_user?.username ?? c.commenting_user ?? 'someone'} said:\n${htmlToText(c.comment)}`)
-  const body = [s.title, `Tags: ${(s.tags ?? []).join(', ')}`, s.description_plain || '', s.url ? `Link: ${s.url}` : '', ...comments].filter(Boolean).join('\n\n')
-  return {
-    source: 'lobste.rs',
-    kind: 'page',
-    tier: 'voices',
-    url: s.short_id_url ?? `https://lobste.rs/s/${shortId}`,
-    title: s.title,
-    text: cutToTokens(body),
-    links: s.url ? capLinks([{ title: s.title, url: s.url }], MAX_LINKS, isAllowed) : [],
-    images: [],
-  }
-}

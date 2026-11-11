@@ -36,7 +36,8 @@ Roman said to build W2 while W1's 3 live days run (they end 14 November). Nothin
   - **Failed on the numbers, probably fixable:** api.github.com (403 on the first call, so the host paused: it needs a token, unauthenticated search is rate-limited) and api.nasa.gov (timeouts and a 429 on `DEMO_KEY`: it needs a real key). Both would be Actions secrets, and Roman's to make. p5js.org (the reference page is over 2 MB) and threejs.org (pages that are JavaScript-rendered give no text, plus 404s on guessed entry pages) fail on how the adapter reads them; tonejs.github.io is half empty pages.
   - **Failed on taste:** developer.mozilla.org reads fine (100% reliable and readable, 40 links) but scored 4.3 interest, a hair under 5; api.imgflip.com kept no souvenir (0 of 20) and scored 4.0. The marks are Roman's to keep or move.
   - The "8 allowed links" mark cannot pass for voices pages (a story's link goes off-list).
-- **Next:** Roman reads the reports and decides, then the allowlist PR. Slice 6 (the trip and the wander verb) does not depend on it and can start. After slice 5, the source trials are run from `.env`'s key, and the reports go to `docs/spec/w2-trials/` for Roman to read.
+- **lobste.rs is out** (its adapter, plan and allowlist entry are removed; 12 hosts remain in `ALLOWLIST`). No other host was changed: those need Roman.
+- **Next:** Roman reads the reports and decides, then the allowlist PR for the rest. Slice 6 (the trip and the wander verb) does not depend on it and can start. After slice 5, the source trials are run from `.env`'s key, and the reports go to `docs/spec/w2-trials/` for Roman to read.
 - This machine's `rtk` can't find `pnpm`, so run `pnpm` directly.
 
 ## W1 progress (slice 1 of 5, started)

@@ -3,7 +3,7 @@ import { isAllowed, isReadable } from '../src/web/allowlist.ts'
 import { WebError, type Fetcher } from '../src/web/fetch.ts'
 import { capLinks, normalizeLicence, wikipediaSearchLink, MAX_IMAGES, MAX_LINKS, MAX_RECORD_LINKS } from '../src/web/item.ts'
 import { skipReason } from '../src/web/skip.ts'
-import { apod, articWork, commonsFile, esolangPage, githubRepo, hackerNewsStory, imgflipFormat, lobstersStory, manualPage, readUrl, wikipediaArticle, wikipediaRandom, wikipediaSearch } from '../src/web/sources/index.ts'
+import { apod, articWork, commonsFile, esolangPage, githubRepo, hackerNewsStory, imgflipFormat, manualPage, readUrl, wikipediaArticle, wikipediaRandom, wikipediaSearch } from '../src/web/sources/index.ts'
 
 /** A Fetcher that answers from a table of URL to JSON, text or bytes, and says 404 to anything else. */
 function fake(answers: Record<string, unknown>): Fetcher & { asked: string[] } {
@@ -39,7 +39,7 @@ describe('items and links', () => {
       { title: 'a', url: `${wiki}/wiki/A` },
       { title: 'a again', url: `${wiki}/wiki/A` },
       { title: 'bad', url: 'https://example.com/x' },
-      { title: 'http', url: 'http://lobste.rs/s/x' },
+      { title: 'http', url: 'http://p5js.org/x' },
       ...Array.from({ length: 60 }, (_, n) => ({ title: `p${n}`, url: `${wiki}/wiki/P${n}` })),
     ]
     const kept = capLinks(links)
@@ -74,7 +74,7 @@ describe('isReadable', () => {
     expect(isReadable('https://news.ycombinator.com/item?id=1')).toBe(true)
     expect(isReadable('https://imgflip.com/meme/1')).toBe(true)
     expect(isReadable('https://github.com/a/b')).toBe(true)
-    expect(isReadable('https://lobste.rs/s/x')).toBe(true)
+    expect(isReadable('https://p5js.org/x')).toBe(true)
     expect(isReadable('http://github.com/a/b')).toBe(false)
     expect(isReadable('https://github.com.evil.com/a/b')).toBe(false)
     expect(isReadable('https://example.com/')).toBe(false)
@@ -140,7 +140,7 @@ describe('esolangs.org', () => {
   })
 })
 
-describe('Hacker News and lobste.rs', () => {
+describe('Hacker News', () => {
   const hn = 'https://hacker-news.firebaseio.com/v0'
 
   it('reads a story with its top 5 comments, as a voices page that names who said what', async () => {
@@ -161,17 +161,11 @@ describe('Hacker News and lobste.rs', () => {
     expect((await hackerNewsStory(f, 2)).links).toEqual([{ title: 'A wiki piece', url: 'https://en.wikipedia.org/wiki/Moon' }])
   })
 
-  it('maps a Hacker News item URL back to its API, and a lobste.rs story likewise', async () => {
+  it('maps a Hacker News item URL back to its API', async () => {
     const f = fake({
       [`${hn}/item/3.json`]: { id: 3, title: 'T', descendants: 0, kids: [] },
-      'https://lobste.rs/s/abc.json': { short_id: 'abc', short_id_url: 'https://lobste.rs/s/abc', title: 'Lobster', tags: ['art'], description_plain: '', url: '', comments: [{ commenting_user: 'amy', comment: '<p>hello</p>', is_deleted: false, parent_comment: null }] },
     })
     expect((await readUrl(f, 'https://news.ycombinator.com/item?id=3')).title).toBe('T')
-    const l = await lobstersStory(f, 'abc')
-    expect(l).toMatchObject({ source: 'lobste.rs', tier: 'voices', url: 'https://lobste.rs/s/abc' })
-    expect(l.text).toContain('Tags: art')
-    expect(l.text).toContain('amy said:\nhello')
-    expect((await readUrl(f, 'https://lobste.rs/s/abc')).title).toBe('Lobster')
   })
 })
 

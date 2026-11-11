@@ -20,6 +20,7 @@ export interface HostRule {
 const SLOW = 2000
 const FAST = 1000
 
+// lobste.rs is not here: its robots.txt disallows everything for general agents and says ai-input=no (source trial, 11 November 2026).
 export const ALLOWLIST: readonly HostRule[] = [
   { host: 'en.wikipedia.org', kind: 'page', tier: 'reference', gapMs: SLOW },
   { host: 'esolangs.org', kind: 'page', tier: 'reference', gapMs: SLOW },
@@ -28,7 +29,6 @@ export const ALLOWLIST: readonly HostRule[] = [
   { host: 'threejs.org', kind: 'page', tier: 'reference', gapMs: FAST },
   { host: 'developer.mozilla.org', kind: 'page', tier: 'reference', gapMs: FAST },
   { host: 'hacker-news.firebaseio.com', kind: 'page', tier: 'voices', gapMs: FAST },
-  { host: 'lobste.rs', kind: 'page', tier: 'voices', gapMs: FAST },
   { host: 'api.github.com', kind: 'record', tier: 'reference', gapMs: FAST },
   { host: 'api.imgflip.com', kind: 'record', tier: 'voices', gapMs: FAST },
   { host: 'i.imgflip.com', kind: 'image', tier: 'voices', gapMs: FAST },
