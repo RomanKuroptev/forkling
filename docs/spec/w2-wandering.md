@@ -11,6 +11,8 @@ Exported from [`spec.md`](spec.md) (v3.3) on 11 November 2026: sections 6, 7.8, 
 - **Reads a day is 40.** 2.4 and 9.8 say 40; 6.2 still says 24. 40 is used (9.8 lists it as a rail).
 - **Interest weights move to 0 to 100** (spec 3.1). A pet-era file with weights from 0 to 1 is scaled by 100 when read.
 - **The User-Agent** names the project and its repo URL as the contact: `forkling/0.10 (read-only reader for an autonomous AI; +https://github.com/RomanKuroptev/forkling)`.
+- **A voices thread needs 120 words, not 300** (6.6 says 300 for any page). The W0 voice test showed a Hacker News or lobste.rs thread is short but full; 17 of 19 reads kept a souvenir with this floor. The source trial's "Readable" mark for a voices host uses 120 too.
+- **Links that name an item through an API** (a Hacker News story, an Imgflip format, a GitHub repository) are offered and followed by their page URL, which `readUrl` maps to the API on the allowlist. A story's own outgoing link is offered only when its site is on the allowlist itself.
 - **The old reading module and the novelty trigger go** when `wander` replaces them (12.7, W2).
 
 ## 3. Interests and moods
