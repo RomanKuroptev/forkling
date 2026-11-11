@@ -20,24 +20,19 @@ export interface HostRule {
 const SLOW = 2000
 const FAST = 1000
 
-// lobste.rs is not here: its robots.txt disallows everything for general agents and says ai-input=no (source trial, 11 November 2026).
+// The hosts of W2 (Roman, 12 November 2026, after the source trials). Left out for now, with the reason:
+//   lobste.rs and hacker-news.firebaseio.com: their robots.txt disallows us (a voices host can come back as its own trial, e.g. hn.algolia.com).
+//   developer.mozilla.org, p5js.org, tonejs.github.io, threejs.org: the library manuals are for tinker (W4).
+//   api.imgflip.com: meme formats are for W4. api.nasa.gov: needs a key and a better adapter.
+// Wikipedia, the Esolang wiki and Commons are read through their `/wiki/` pages: their robots.txt allows those and disallows the API.
 export const ALLOWLIST: readonly HostRule[] = [
   { host: 'en.wikipedia.org', kind: 'page', tier: 'reference', gapMs: SLOW },
   { host: 'esolangs.org', kind: 'page', tier: 'reference', gapMs: SLOW },
-  { host: 'p5js.org', kind: 'page', tier: 'reference', gapMs: FAST },
-  { host: 'tonejs.github.io', kind: 'page', tier: 'reference', gapMs: FAST },
-  { host: 'threejs.org', kind: 'page', tier: 'reference', gapMs: FAST },
-  { host: 'developer.mozilla.org', kind: 'page', tier: 'reference', gapMs: FAST },
-  { host: 'hacker-news.firebaseio.com', kind: 'page', tier: 'voices', gapMs: FAST },
   { host: 'api.github.com', kind: 'record', tier: 'reference', gapMs: FAST },
-  { host: 'api.imgflip.com', kind: 'record', tier: 'voices', gapMs: FAST },
-  { host: 'i.imgflip.com', kind: 'image', tier: 'voices', gapMs: FAST },
-  { host: 'commons.wikimedia.org', kind: 'image', tier: 'reference', gapMs: SLOW },
+  { host: 'commons.wikimedia.org', kind: 'record', tier: 'reference', gapMs: SLOW },
   { host: 'upload.wikimedia.org', kind: 'image', tier: 'reference', gapMs: SLOW },
   { host: 'api.artic.edu', kind: 'record', tier: 'reference', gapMs: SLOW },
   { host: 'www.artic.edu', kind: 'image', tier: 'reference', gapMs: SLOW },
-  { host: 'api.nasa.gov', kind: 'record', tier: 'reference', gapMs: FAST },
-  { host: 'apod.nasa.gov', kind: 'image', tier: 'reference', gapMs: FAST },
 ]
 
 /** The project's name and where to find it. A contact address that is a repo, never anyone's email. */
@@ -59,11 +54,11 @@ export function isAllowed(url: string): boolean {
 }
 
 /**
- * Public pages that name an item on a site the code does not read directly: a Hacker News story, an Imgflip format and a
- * GitHub repository are read through their APIs (`hacker-news.firebaseio.com`, `api.imgflip.com`, `api.github.com`).
+ * Public pages that name an item on a site the code does not read directly: a GitHub repository is read through its API
+ * (`api.github.com`).
  * Their page URLs are what a trail and a souvenir cite, and what a link can point at.
  */
-export const NAMED_BY_PAGE: readonly string[] = ['news.ycombinator.com', 'imgflip.com', 'github.com']
+export const NAMED_BY_PAGE: readonly string[] = ['github.com']
 
 /** A URL the mind may be offered and may read: an allowed URL, or the page URL of an item an allowed API gives. */
 export function isReadable(url: string): boolean {

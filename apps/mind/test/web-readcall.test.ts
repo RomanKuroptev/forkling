@@ -84,12 +84,12 @@ describe('performRead', () => {
 describe('the trial hosts', () => {
   it('have a plan for every page and record host on the allowlist, each with paths for robots.txt', () => {
     const readable = ALLOWLIST.filter((h) => h.kind !== 'image').map((h) => h.host)
-    expect(HOST_PLANS.map((p) => p.host).sort()).toEqual([...readable, 'commons.wikimedia.org'].sort())
+    expect(HOST_PLANS.map((p) => p.host).sort()).toEqual([...readable].sort())
     for (const plan of HOST_PLANS) expect(plan.paths.length, plan.host).toBeGreaterThan(0)
   })
 
   it('find a plan by the host of the API or of the items', () => {
-    expect(planFor('hacker-news.firebaseio.com')).toBe(planFor('news.ycombinator.com'))
+    expect(planFor('api.github.com')).toBe(planFor('github.com'))
     expect(planFor('api.artic.edu')!.itemHost).toBe('www.artic.edu')
     expect(planFor('example.com')).toBeUndefined()
   })
