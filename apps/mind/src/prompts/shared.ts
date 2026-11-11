@@ -8,8 +8,8 @@ export const json = (value: unknown) => JSON.stringify(value)
 export function describeInterests(interests: Interests): string[] {
   const top = Object.entries(interests.topics)
     .sort((a, b) => b[1].weight - a[1].weight)
-    .slice(0, 8)
-    .map(([topic, t]) => `${topic} (${t.weight})`)
+    .slice(0, 10)
+    .map(([topic, t]) => `${topic} (${Math.round(t.weight)})`)
   return [
     ...(top.length > 0 ? [`strongest interests: ${top.join(', ')}`] : ['You are not especially into anything yet.']),
     ...(interests.current ? [`You are obsessed with "${interests.current.topic}" (since ${interests.current.startedAt.slice(0, 10)}). It keeps pulling at you.`] : []),

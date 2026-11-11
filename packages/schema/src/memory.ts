@@ -94,13 +94,30 @@ export const InterestSource = z.object({
 })
 export type InterestSource = z.infer<typeof InterestSource>
 
+/** What changed a topic's weight: a page that listed it, a souvenir kept, a visitor note, or a pet-era reading. */
+export const INTEREST_EVENTS = ['page', 'souvenir', 'note', 'reading'] as const
+
+/** One change to a topic, and the trail (trip) that caused it, so every change can be traced (spec 3.1, W2). */
+export const InterestChange = z.object({
+  at: Timestamp,
+  change: z.number(),
+  event: z.enum(INTEREST_EVENTS),
+  /** The trail id, or null when nothing on a trail caused it. */
+  trail: z.string().max(60).nullable(),
+})
+export type InterestChange = z.infer<typeof InterestChange>
+
+export const MAX_INTEREST_HISTORY = 20
+
 export const Topic = z.object({
-  /** 0 to 1. Rises when fed, fades daily. */
-  weight: z.number().min(0).max(1),
+  /** 0 to 100. Rises when fed, fades daily. */
+  weight: z.number().min(0).max(100),
   firstSeen: Timestamp,
   lastFed: Timestamp,
   /** The first is the origin; later ones are the latest few. */
   sources: z.array(InterestSource).max(5).default([]),
+  /** The latest changes, oldest first. */
+  history: z.array(InterestChange).max(MAX_INTEREST_HISTORY).default([]),
 })
 export type Topic = z.infer<typeof Topic>
 
@@ -112,13 +129,25 @@ export const Obsession = z.object({
 })
 export type Obsession = z.infer<typeof Obsession>
 
-/** `brain/interests.json`: topics with weights that rise when fed and fade daily, and the obsession phases they cause. */
-export const Interests = z.object({
+const InterestsBase = z.object({
+  /** 2 is the 0 to 100 scale. A file without it is pet-era (weights from 0 to 1) and is scaled when read. */
+  version: z.literal(2).default(2),
   topics: z.record(z.string(), Topic).default({}),
   current: Obsession.nullable().default(null),
   past: z.array(Obsession.extend({ endedAt: Timestamp })).max(30).default([]),
 })
-export type Interests = z.infer<typeof Interests>
+
+/** `brain/interests.json`: topics with weights that rise when fed and fade daily, and the obsession phases they cause. */
+export const Interests = z.preprocess((raw) => {
+  if (typeof raw !== 'object' || raw === null || (raw as { version?: unknown }).version === 2) return raw
+  const file = raw as { topics?: Record<string, { weight?: unknown }> }
+  if (typeof file.topics !== 'object' || file.topics === null) return raw
+  const topics = Object.fromEntries(
+    Object.entries(file.topics).map(([key, t]) => [key, typeof t?.weight === 'number' ? { ...t, weight: Math.round(t.weight * 100 * 1000) / 1000 } : t]),
+  )
+  return { ...file, topics }
+}, InterestsBase)
+export type Interests = z.infer<typeof InterestsBase>
 
 /** What a reading session returns: a note for its notebook and how it moved its interests. */
 export const ReadingNote = z.object({

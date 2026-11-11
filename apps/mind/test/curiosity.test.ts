@@ -155,7 +155,7 @@ describe('interests across days', () => {
     const llm = fake(plan([step('rest', null), step('write', 'home'), step('wander', 'logic gates')]))
     await tick(MORNING, llm, { get: undefined })
     const interests = Interests.parse(readJson('brain/interests.json'))
-    expect(interests.topics['logic gates']!.weight).toBeCloseTo(0.874, 2)
+    expect(interests.topics['logic gates']!.weight).toBeCloseTo(87.4, 1)
     expect(interests.current).toMatchObject({ topic: 'logic gates', origin: { id: 'hn:1' } })
     expect(llm.calls[0]!.user).toContain('obsessed with "logic gates"')
   })
