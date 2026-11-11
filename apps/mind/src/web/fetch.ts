@@ -36,6 +36,11 @@ export interface FetcherOptions {
   sleep?: (ms: number) => Promise<void>
   /** Hosts an earlier tick paused, with the time each pause ends. */
   paused?: Record<string, string>
+  /**
+   * An `Authorization` header for a host, such as a token that lifts GitHub's limit from 60 requests an hour. It goes to
+   * that host only: a redirect to another host is a new request with the headers of that host.
+   */
+  authorization?: Record<string, string>
 }
 
 export interface Got {
@@ -131,7 +136,7 @@ export function createFetcher(options: FetcherOptions = {}): Fetcher {
 
       let res: Response
       try {
-        res = await fetchImpl(url, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'User-Agent': USER_AGENT, Accept: accept } })
+        res = await fetchImpl(url, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'User-Agent': USER_AGENT, Accept: accept, ...(options.authorization?.[host] ? { Authorization: options.authorization[host] } : {}) } })
       } catch (error) {
         const name = (error as Error)?.name
         const timedOut = name === 'TimeoutError' || name === 'AbortError'

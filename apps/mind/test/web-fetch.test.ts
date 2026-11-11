@@ -5,7 +5,7 @@ import { createFetcher, WebError, type FetchImpl } from '../src/web/fetch.ts'
 const NOW = Date.parse('2026-11-18T10:00:00Z')
 
 /** A fetch that answers from a table, records every call, and a clock the test moves by hand. */
-function setup(answers: Record<string, () => Response | Promise<Response>>, paused: Record<string, string> = {}) {
+function setup(answers: Record<string, () => Response | Promise<Response>>, paused: Record<string, string> = {}, authorization: Record<string, string> = {}) {
   const calls: { url: string; init?: RequestInit }[] = []
   const sleeps: number[] = []
   let now = NOW
@@ -23,6 +23,7 @@ function setup(answers: Record<string, () => Response | Promise<Response>>, paus
       now += ms
     },
     paused,
+    authorization,
   })
   return { fetcher, calls, sleeps, advance: (ms: number) => (now += ms), clock: () => now }
 }
@@ -32,7 +33,7 @@ const redirect = (to: string) => () => new Response(null, { status: 302, headers
 
 describe('the allowlist', () => {
   it('holds the hosts of spec 6.1, each with a kind, a tier and a rate', () => {
-    for (const host of ['en.wikipedia.org', 'esolangs.org', 'p5js.org', 'tonejs.github.io', 'threejs.org', 'developer.mozilla.org', 'hacker-news.firebaseio.com', 'api.github.com', 'api.imgflip.com', 'commons.wikimedia.org', 'api.artic.edu', 'api.nasa.gov']) {
+    for (const host of ['en.wikipedia.org', 'esolangs.org', 'api.github.com', 'commons.wikimedia.org', 'api.artic.edu']) {
       expect(isAllowed(`https://${host}/x`), host).toBe(true)
     }
     for (const rule of ALLOWLIST) {
@@ -56,8 +57,9 @@ describe('the allowlist', () => {
   it('sets the rates of spec 6.1: Wikimedia 1 every 2 s, artic.edu 30 a minute, anything else 1 a second', () => {
     expect(hostRule('en.wikipedia.org')!.gapMs).toBe(2000)
     expect(hostRule('commons.wikimedia.org')!.gapMs).toBe(2000)
+    expect(hostRule('api.github.com')!.gapMs).toBe(1000)
     expect(hostRule('api.artic.edu')!.gapMs).toBe(2000)
-    expect(hostRule('p5js.org')!.gapMs).toBe(1000)
+    expect(hostRule('api.github.com')!.gapMs).toBe(1000)
   })
 
   it('names the project and where to find it in the User-Agent, with no email address', () => {
@@ -69,8 +71,8 @@ describe('the allowlist', () => {
 
 describe('a fetch', () => {
   it('reads an allowed page with the User-Agent and an Accept header', async () => {
-    const { fetcher, calls } = setup({ 'https://p5js.org/hottest.json': ok('[]') })
-    expect(await fetcher.text('https://p5js.org/hottest.json', { accept: 'application/json' })).toBe('[]')
+    const { fetcher, calls } = setup({ 'https://api.github.com/hottest.json': ok('[]') })
+    expect(await fetcher.text('https://api.github.com/hottest.json', { accept: 'application/json' })).toBe('[]')
     expect(calls).toHaveLength(1)
     const headers = calls[0]!.init!.headers as Record<string, string>
     expect(headers['User-Agent']).toBe(USER_AGENT)
@@ -97,29 +99,29 @@ describe('a fetch', () => {
   })
 
   it('refuses a redirect to a host that is not on the list, without following it', async () => {
-    const { fetcher, calls } = setup({ 'https://p5js.org/s/x': redirect('https://example.com/steal') })
-    await expect(fetcher.text('https://p5js.org/s/x')).rejects.toMatchObject({ code: 'redirect-not-allowed' })
-    expect(calls.map((c) => c.url)).toEqual(['https://p5js.org/s/x'])
+    const { fetcher, calls } = setup({ 'https://api.github.com/s/x': redirect('https://example.com/steal') })
+    await expect(fetcher.text('https://api.github.com/s/x')).rejects.toMatchObject({ code: 'redirect-not-allowed' })
+    expect(calls.map((c) => c.url)).toEqual(['https://api.github.com/s/x'])
   })
 
   it('refuses a redirect to plain http, resolves a relative redirect, and gives up after 5 redirects', async () => {
-    const a = setup({ 'https://p5js.org/a': redirect('http://p5js.org/b') })
-    await expect(a.fetcher.text('https://p5js.org/a')).rejects.toMatchObject({ code: 'redirect-not-allowed' })
-    const b = setup({ 'https://p5js.org/a': redirect('/b'), 'https://p5js.org/b': ok('fine') })
-    expect(await b.fetcher.text('https://p5js.org/a')).toBe('fine')
-    const loop = setup({ 'https://p5js.org/a': redirect('https://p5js.org/a') })
-    await expect(loop.fetcher.text('https://p5js.org/a')).rejects.toMatchObject({ code: 'too-many-redirects' })
+    const a = setup({ 'https://api.github.com/a': redirect('http://api.github.com/b') })
+    await expect(a.fetcher.text('https://api.github.com/a')).rejects.toMatchObject({ code: 'redirect-not-allowed' })
+    const b = setup({ 'https://api.github.com/a': redirect('/b'), 'https://api.github.com/b': ok('fine') })
+    expect(await b.fetcher.text('https://api.github.com/a')).toBe('fine')
+    const loop = setup({ 'https://api.github.com/a': redirect('https://api.github.com/a') })
+    await expect(loop.fetcher.text('https://api.github.com/a')).rejects.toMatchObject({ code: 'too-many-redirects' })
     expect(loop.calls).toHaveLength(6)
   })
 
   it('refuses a body over 2 MB, by its header and by counting what arrives', async () => {
     const big = 'x'.repeat(2 * 1024 * 1024 + 1)
-    const byHeader = setup({ 'https://p5js.org/a': ok('small', { 'content-length': String(big.length) }) })
-    await expect(byHeader.fetcher.text('https://p5js.org/a')).rejects.toMatchObject({ code: 'too-big' })
-    const byCount = setup({ 'https://p5js.org/a': ok(big) })
-    await expect(byCount.fetcher.text('https://p5js.org/a')).rejects.toMatchObject({ code: 'too-big' })
-    const exact = setup({ 'https://p5js.org/a': ok('x'.repeat(2 * 1024 * 1024)) })
-    expect((await exact.fetcher.text('https://p5js.org/a')).length).toBe(2 * 1024 * 1024)
+    const byHeader = setup({ 'https://api.github.com/a': ok('small', { 'content-length': String(big.length) }) })
+    await expect(byHeader.fetcher.text('https://api.github.com/a')).rejects.toMatchObject({ code: 'too-big' })
+    const byCount = setup({ 'https://api.github.com/a': ok(big) })
+    await expect(byCount.fetcher.text('https://api.github.com/a')).rejects.toMatchObject({ code: 'too-big' })
+    const exact = setup({ 'https://api.github.com/a': ok('x'.repeat(2 * 1024 * 1024)) })
+    expect((await exact.fetcher.text('https://api.github.com/a')).length).toBe(2 * 1024 * 1024)
   })
 
   it('gives bytes for an image, and refuses an image over its limit', async () => {
@@ -130,13 +132,35 @@ describe('a fetch', () => {
   })
 
   it('turns a timeout, a network error and a bad status into errors with a code, and logs each', async () => {
-    const t = setup({ 'https://p5js.org/slow': () => Promise.reject(new DOMException('slow', 'TimeoutError')) })
-    await expect(t.fetcher.text('https://p5js.org/slow')).rejects.toMatchObject({ code: 'timeout' })
-    const n = setup({ 'https://p5js.org/down': () => Promise.reject(new TypeError('fetch failed')) })
-    await expect(n.fetcher.text('https://p5js.org/down')).rejects.toMatchObject({ code: 'network' })
-    const s = setup({ 'https://p5js.org/missing': () => new Response('no', { status: 404 }) })
-    await expect(s.fetcher.text('https://p5js.org/missing')).rejects.toMatchObject({ code: 'http', status: 404 })
+    const t = setup({ 'https://api.github.com/slow': () => Promise.reject(new DOMException('slow', 'TimeoutError')) })
+    await expect(t.fetcher.text('https://api.github.com/slow')).rejects.toMatchObject({ code: 'timeout' })
+    const n = setup({ 'https://api.github.com/down': () => Promise.reject(new TypeError('fetch failed')) })
+    await expect(n.fetcher.text('https://api.github.com/down')).rejects.toMatchObject({ code: 'network' })
+    const s = setup({ 'https://api.github.com/missing': () => new Response('no', { status: 404 }) })
+    await expect(s.fetcher.text('https://api.github.com/missing')).rejects.toMatchObject({ code: 'http', status: 404 })
     expect([t, n, s].map((x) => x.fetcher.log[0]!.outcome)).toEqual(['timeout', 'network', 'http-404'])
+  })
+})
+
+describe('an Authorization header', () => {
+  it('goes to the host it is for and to no other, including after a redirect', async () => {
+    const { fetcher, calls } = setup(
+      { 'https://api.github.com/a': redirect('https://en.wikipedia.org/wiki/B'), 'https://en.wikipedia.org/wiki/B': ok('B'), 'https://commons.wikimedia.org/wiki/C': ok('C') },
+      {},
+      { 'api.github.com': 'Bearer secret' },
+    )
+    await fetcher.text('https://api.github.com/a')
+    await fetcher.text('https://commons.wikimedia.org/wiki/C')
+    const header = (i: number) => (calls[i]!.init!.headers as Record<string, string>).Authorization
+    expect(header(0)).toBe('Bearer secret')
+    expect(header(1)).toBeUndefined()
+    expect(header(2)).toBeUndefined()
+  })
+
+  it('is never written to the log', async () => {
+    const { fetcher } = setup({ 'https://api.github.com/a': ok('a') }, {}, { 'api.github.com': 'Bearer secret' })
+    await fetcher.text('https://api.github.com/a')
+    expect(JSON.stringify(fetcher.log)).not.toContain('secret')
   })
 })
 
@@ -145,20 +169,20 @@ describe('the rate of each host', () => {
     const { fetcher, sleeps } = setup({
       'https://en.wikipedia.org/a': ok('a'),
       'https://en.wikipedia.org/b': ok('b'),
-      'https://p5js.org/a': ok('c'),
+      'https://api.github.com/a': ok('c'),
     })
     await fetcher.text('https://en.wikipedia.org/a')
-    await fetcher.text('https://p5js.org/a')
+    await fetcher.text('https://api.github.com/a')
     expect(sleeps).toEqual([])
     await fetcher.text('https://en.wikipedia.org/b')
     expect(sleeps).toEqual([2000])
   })
 
   it('does not wait when the gap has already passed', async () => {
-    const { fetcher, sleeps, advance } = setup({ 'https://p5js.org/a': ok('a'), 'https://p5js.org/b': ok('b') })
-    await fetcher.text('https://p5js.org/a')
+    const { fetcher, sleeps, advance } = setup({ 'https://api.github.com/a': ok('a'), 'https://api.github.com/b': ok('b') })
+    await fetcher.text('https://api.github.com/a')
     advance(1500)
-    await fetcher.text('https://p5js.org/b')
+    await fetcher.text('https://api.github.com/b')
     expect(sleeps).toEqual([])
   })
 })
@@ -166,11 +190,11 @@ describe('the rate of each host', () => {
 describe('a host that says no', () => {
   it('is paused for 24 hours after a 429 or a 403, with no retry', async () => {
     for (const status of [429, 403]) {
-      const { fetcher, calls, advance } = setup({ 'https://p5js.org/a': () => new Response('slow down', { status }) })
-      await expect(fetcher.text('https://p5js.org/a')).rejects.toMatchObject({ code: 'http', status })
+      const { fetcher, calls, advance } = setup({ 'https://api.github.com/a': () => new Response('slow down', { status }) })
+      await expect(fetcher.text('https://api.github.com/a')).rejects.toMatchObject({ code: 'http', status })
       expect(calls).toHaveLength(1)
-      expect(fetcher.pausedHosts()).toEqual({ 'p5js.org': new Date(NOW + 24 * 3_600_000).toISOString() })
-      await expect(fetcher.text('https://p5js.org/a')).rejects.toMatchObject({ code: 'paused' })
+      expect(fetcher.pausedHosts()).toEqual({ 'api.github.com': new Date(NOW + 24 * 3_600_000).toISOString() })
+      await expect(fetcher.text('https://api.github.com/a')).rejects.toMatchObject({ code: 'paused' })
       expect(calls).toHaveLength(1)
       advance(24 * 3_600_000 + 1)
       expect(fetcher.pausedHosts()).toEqual({})
@@ -179,32 +203,32 @@ describe('a host that says no', () => {
 
   it('starts out paused for a host the last tick paused, and reads again once the time is up', async () => {
     const until = new Date(NOW + 3_600_000).toISOString()
-    const { fetcher, calls, advance } = setup({ 'https://p5js.org/a': ok('back') }, { 'p5js.org': until })
-    await expect(fetcher.text('https://p5js.org/a')).rejects.toMatchObject({ code: 'paused' })
+    const { fetcher, calls, advance } = setup({ 'https://api.github.com/a': ok('back') }, { 'api.github.com': until })
+    await expect(fetcher.text('https://api.github.com/a')).rejects.toMatchObject({ code: 'paused' })
     expect(calls).toHaveLength(0)
     advance(3_600_001)
-    expect(await fetcher.text('https://p5js.org/a')).toBe('back')
+    expect(await fetcher.text('https://api.github.com/a')).toBe('back')
   })
 
   it('pauses only the host that answered no, and a 403 on a redirect target pauses that host', async () => {
     const { fetcher } = setup({
       'https://en.wikipedia.org/a': redirect('https://commons.wikimedia.org/b'),
       'https://commons.wikimedia.org/b': () => new Response('no', { status: 403 }),
-      'https://p5js.org/a': ok('fine'),
+      'https://api.github.com/a': ok('fine'),
     })
     await expect(fetcher.text('https://en.wikipedia.org/a')).rejects.toBeInstanceOf(WebError)
     expect(Object.keys(fetcher.pausedHosts())).toEqual(['commons.wikimedia.org'])
-    expect(await fetcher.text('https://p5js.org/a')).toBe('fine')
+    expect(await fetcher.text('https://api.github.com/a')).toBe('fine')
   })
 })
 
 describe('the log', () => {
   it('has one line for every request or refusal, with the host and what came of it', async () => {
-    const { fetcher } = setup({ 'https://p5js.org/a': ok('a') })
-    await fetcher.text('https://p5js.org/a')
+    const { fetcher } = setup({ 'https://api.github.com/a': ok('a') })
+    await fetcher.text('https://api.github.com/a')
     await fetcher.text('https://example.com/').catch(() => {})
     expect(fetcher.log.map((l) => [l.host, l.outcome])).toEqual([
-      ['p5js.org', 'ok'],
+      ['api.github.com', 'ok'],
       ['example.com', 'not-allowed'],
     ])
   })

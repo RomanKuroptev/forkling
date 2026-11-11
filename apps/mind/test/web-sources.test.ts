@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { isAllowed, isReadable } from '../src/web/allowlist.ts'
 import { WebError, type Fetcher } from '../src/web/fetch.ts'
-import { capLinks, normalizeLicence, wikipediaSearchLink, MAX_IMAGES, MAX_LINKS, MAX_RECORD_LINKS } from '../src/web/item.ts'
+import { capLinks, normalizeLicence, wikipediaTopicLink, MAX_IMAGES, MAX_LINKS, MAX_RECORD_LINKS } from '../src/web/item.ts'
 import { skipReason } from '../src/web/skip.ts'
-import { apod, articWork, commonsFile, esolangPage, githubRepo, hackerNewsStory, imgflipFormat, manualPage, readUrl, wikipediaArticle, wikipediaRandom, wikipediaSearch } from '../src/web/sources/index.ts'
+import { articWork, commonsFeatured, commonsFile, esolangMainLinks, esolangPage, githubRepo, readUrl, wikipediaArticle, wikipediaFeatured, wikipediaSearch } from '../src/web/sources/index.ts'
 
 /** A Fetcher that answers from a table of URL to JSON, text or bytes, and says 404 to anything else. */
 function fake(answers: Record<string, unknown>): Fetcher & { asked: string[] } {
@@ -31,7 +31,6 @@ function fake(answers: Record<string, unknown>): Fetcher & { asked: string[] } {
 
 const words = (n: number, w = 'word') => Array.from({ length: n }, () => w).join(' ')
 const wiki = 'https://en.wikipedia.org'
-const wikiApi = (title: string) => `${wiki}/w/api.php?action=query&format=json&formatversion=2&prop=extracts|links|pageimages&explaintext=1&pllimit=40&plnamespace=0&piprop=original&redirects=1&titles=${encodeURIComponent(title)}`
 
 describe('items and links', () => {
   it('keeps at most 40 links, only allowed ones, each once', () => {
@@ -50,9 +49,9 @@ describe('items and links', () => {
     expect([MAX_IMAGES, MAX_LINKS, MAX_RECORD_LINKS]).toEqual([10, 40, 8])
   })
 
-  it('makes a Wikipedia search link that is on the allowlist', () => {
-    const link = wikipediaSearchLink('Les Demoiselles d Avignon')
-    expect(link.url).toBe(`${wiki}/w/index.php?search=Les%20Demoiselles%20d%20Avignon`)
+  it('makes a link to the Wikipedia page for a topic, on the allowlist and not through search', () => {
+    const link = wikipediaTopicLink('les Demoiselles d Avignon')
+    expect(link.url).toBe(`${wiki}/wiki/Les_Demoiselles_d_Avignon`)
     expect(isAllowed(link.url)).toBe(true)
   })
 
@@ -70,120 +69,115 @@ describe('items and links', () => {
 })
 
 describe('isReadable', () => {
-  it('adds the page URLs of items an allowed API gives, and nothing else', () => {
-    expect(isReadable('https://news.ycombinator.com/item?id=1')).toBe(true)
-    expect(isReadable('https://imgflip.com/meme/1')).toBe(true)
+  it('adds the page URL of a GitHub repository, which an allowed API gives, and nothing else', () => {
     expect(isReadable('https://github.com/a/b')).toBe(true)
-    expect(isReadable('https://p5js.org/x')).toBe(true)
     expect(isReadable('http://github.com/a/b')).toBe(false)
     expect(isReadable('https://github.com.evil.com/a/b')).toBe(false)
     expect(isReadable('https://example.com/')).toBe(false)
     expect(isAllowed('https://github.com/a/b')).toBe(false)
+    expect(isReadable('https://news.ycombinator.com/item?id=1')).toBe(false)
   })
 })
 
-describe('Wikipedia', () => {
-  const page = { title: 'Lighthouse', extract: `<b>A lighthouse</b> is a tower.\n\n${words(400)}`, links: [{ title: 'Fresnel lens' }, { title: 'Fog signal' }], original: { source: 'https://upload.wikimedia.org/lh.jpg' } }
+const words2 = (n: number) => Array.from({ length: n }, () => 'word').join(' ')
 
-  it('reads an article as text with its links and its picture', async () => {
-    const f = fake({ [wikiApi('Lighthouse')]: { query: { pages: [page] } } })
+/** A Wikipedia article as the site serves it: heading, content, an infobox picture, a navbox, and the sections after the text. */
+const articleHtml = (body = `<p>${words2(400)}</p>`) => `<html><head><title>Lighthouse - Wikipedia</title></head><body>
+<nav>Main menu</nav>
+<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">Lighthouse</span></h1>
+<div id="siteSub">From Wikipedia, the free encyclopedia</div>
+<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output">
+<table class="infobox"><tr><td><a href="/wiki/File:Lh.jpg"><img resource="https://en.wikipedia.org/wiki/File:Lh.jpg" src="//thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Lh.jpg/250px-Lh.jpg?utm_source=en.wikipedia.org&amp;utm_campaign=parser"></a></td></tr><tr><td>Height 20 m</td></tr></table>
+<p><b>A lighthouse</b> is a tower.<sup class="reference"><a href="#cite_note-1">[1]</a></sup> It uses a <a href="/wiki/Fresnel_lens" title="Fresnel lens">Fresnel lens</a> and a <a href="/wiki/Fog_signal">fog signal</a>; see <a href="/wiki/File:Lh.jpg">the picture</a>, <a href="/wiki/Category:Towers">Towers</a>, <a href="/wiki/Special:Random">random</a>, <a href="/wiki/Lighthouse#History">history</a>, <a href="/w/index.php?title=X&amp;action=edit">edit</a>, <a href="https://example.com/x">elsewhere</a> and <a href="/wiki/Halo:_Combat_Evolved">a game</a>.</p>
+${body}
+<div class="navbox"><div class="navbox-inner">Navbox stuff <a href="/wiki/Navlink">n</a></div></div>
+<div class="mw-heading mw-heading2"><h2 id="See_also">See also</h2></div><ul><li><a href="/wiki/Beacon">Beacon</a></li></ul>
+<div class="mw-heading mw-heading2"><h2 id="References">References</h2></div><ol class="references"><li>Cite junk</li></ol>
+</div></div>
+<div class="printfooter">Retrieved from "https://en.wikipedia.org/wiki/Lighthouse"</div><div id="catlinks">Categories: Towers</div>
+<footer>Privacy policy</footer></body></html>`
+
+describe('Wikipedia, read through its article pages', () => {
+  it('reads /wiki/<Title> as text: the heading, the content and not the furniture around it', async () => {
+    const f = fake({ [`${wiki}/wiki/Lighthouse`]: articleHtml() })
     const item = await wikipediaArticle(f, 'Lighthouse')
     expect(item).toMatchObject({ source: 'en.wikipedia.org', kind: 'page', tier: 'reference', url: `${wiki}/wiki/Lighthouse`, title: 'Lighthouse' })
-    expect(item.text.startsWith('A lighthouse is a tower.')).toBe(true)
+    expect(item.text).toContain('A lighthouse is a tower. It uses a Fresnel lens')
+    expect(item.text).toContain('Height 20 m')
+    for (const junk of ['Main menu', 'From Wikipedia', '[1]', 'Navbox stuff', 'See also', 'Cite junk', 'Retrieved from', 'Privacy policy', 'Categories']) expect(item.text, junk).not.toContain(junk)
+    expect(f.asked).toEqual([`${wiki}/wiki/Lighthouse`])
+  })
+
+  it('offers the links to other articles, in order, leaving out namespaces, fragments, edit links and other sites', async () => {
+    const item = await wikipediaArticle(fake({ [`${wiki}/wiki/Lighthouse`]: articleHtml() }), 'Lighthouse')
     expect(item.links).toEqual([
       { title: 'Fresnel lens', url: `${wiki}/wiki/Fresnel_lens` },
       { title: 'Fog signal', url: `${wiki}/wiki/Fog_signal` },
+      { title: 'Halo: Combat Evolved', url: `${wiki}/wiki/Halo:_Combat_Evolved` },
     ])
-    expect(item.images).toEqual([{ url: 'https://upload.wikimedia.org/lh.jpg', licence: null, credit: null }])
+  })
+
+  it('gives the pictures at a host the allowlist knows, without tracking parameters', async () => {
+    const item = await wikipediaArticle(fake({ [`${wiki}/wiki/Lighthouse`]: articleHtml() }), 'Lighthouse')
+    expect(item.images).toEqual([{ url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Lh.jpg/250px-Lh.jpg', licence: null, credit: null }])
+    expect(item.images.length).toBeLessThanOrEqual(MAX_IMAGES)
   })
 
   it('cuts a long article to 3,000 tokens', async () => {
-    const f = fake({ [wikiApi('Long')]: { query: { pages: [{ title: 'Long', extract: words(20_000) }] } } })
-    const item = await wikipediaArticle(f, 'Long')
+    const item = await wikipediaArticle(fake({ [`${wiki}/wiki/Lighthouse`]: articleHtml(`<p>${words2(20_000)}</p>`) }), 'Lighthouse')
     expect(item.text.length).toBeLessThan(12_100)
     expect(item.text.endsWith(' …')).toBe(true)
   })
 
-  it('finds the first search result for a topic, and nothing for a topic with none', async () => {
-    const f = fake({
-      [`${wiki}/w/rest.php/v1/search/title?q=lighthouses&limit=1`]: { pages: [{ title: 'Lighthouse' }] },
-      [wikiApi('Lighthouse')]: { query: { pages: [page] } },
-      [`${wiki}/w/rest.php/v1/search/title?q=zzzz&limit=1`]: { pages: [] },
-    })
-    expect((await wikipediaSearch(f, 'lighthouses'))!.title).toBe('Lighthouse')
-    expect(await wikipediaSearch(f, 'zzzz')).toBeNull()
+  it('finds a topic by going straight to its page, and gives nothing for a topic with no page', async () => {
+    const f = fake({ [`${wiki}/wiki/Logic_gates`]: articleHtml() })
+    expect((await wikipediaSearch(f, 'logic gates'))!.title).toBe('Lighthouse')
+    expect(f.asked).toEqual([`${wiki}/wiki/Logic_gates`])
+    expect(await wikipediaSearch(f, 'zzzz qqqq')).toBeNull()
   })
 
-  it('takes a random article, and follows a search link when a trip clicks one', async () => {
-    const f = fake({
-      [`${wiki}/w/api.php?action=query&format=json&list=random&rnnamespace=0&rnlimit=1`]: { query: { random: [{ title: 'Lighthouse' }] } },
-      [wikiApi('Lighthouse')]: { query: { pages: [page] } },
-      [`${wiki}/w/rest.php/v1/search/title?q=Fresnel%20lens&limit=1`]: { pages: [{ title: 'Lighthouse' }] },
-    })
-    expect((await wikipediaRandom(f)).title).toBe('Lighthouse')
-    expect((await readUrl(f, `${wiki}/w/index.php?search=Fresnel%20lens`)).title).toBe('Lighthouse')
-    expect((await readUrl(f, `${wiki}/wiki/Lighthouse`)).url).toBe(`${wiki}/wiki/Lighthouse`)
+  it('never asks for the search page, Special:Random or the API, which robots.txt disallows', async () => {
+    const f = fake({ [`${wiki}/wiki/Main_Page`]: '<div id="mw-content-text"><p><a href="/wiki/Moss">Moss</a></p></div>', [`${wiki}/wiki/Moss`]: articleHtml() })
+    await wikipediaFeatured(f, 0)
+    await wikipediaSearch(f, 'moss')
+    expect(f.asked.every((u) => !/\/w\/|Special:/.test(u))).toBe(true)
+    await expect(readUrl(f, `${wiki}/w/index.php?search=moss`)).rejects.toMatchObject({ code: 'not-allowed' })
+    await expect(readUrl(f, `${wiki}/wiki/Special:Random`)).rejects.toBeInstanceOf(WebError)
+  })
+
+  it('starts a trip from the front page: the seed picks one of the articles it links to', async () => {
+    const main = `<html><div id="mw-content-text"><p><a href="/wiki/Alpha">Alpha</a> <a href="/wiki/Beta">Beta</a> <a href="/wiki/Gamma">Gamma</a> <a href="/wiki/Wikipedia:About">About</a></p></div><div class="printfooter"></div></html>`
+    const f = fake({ [`${wiki}/wiki/Main_Page`]: main, [`${wiki}/wiki/Beta`]: articleHtml() })
+    const item = await wikipediaFeatured(f, 1)
+    expect(item.title).toBe('Lighthouse')
+    expect(f.asked).toEqual([`${wiki}/wiki/Main_Page`, `${wiki}/wiki/Beta`])
+    expect((await readUrl(fake({ [`${wiki}/wiki/Lighthouse`]: articleHtml() }), `${wiki}/wiki/Lighthouse`)).url).toBe(`${wiki}/wiki/Lighthouse`)
   })
 })
 
-describe('esolangs.org', () => {
-  it('reads a language page from the MediaWiki API, with only the links to existing pages', async () => {
-    const api = 'https://esolangs.org/w/api.php'
-    const f = fake({
-      [`${api}?action=parse&format=json&formatversion=2&prop=text|links&page=Brainfuck`]: {
-        parse: { text: `<p>${words(350)}</p>`, links: [{ title: 'Befunge', ns: 0, exists: true }, { title: 'Missing', ns: 0, exists: false }, { title: 'Talk:Brainfuck', ns: 1, exists: true }] },
-      },
-    })
-    const item = await esolangPage(f, 'Brainfuck')
-    expect(item).toMatchObject({ source: 'esolangs.org', kind: 'page', tier: 'reference', url: 'https://esolangs.org/wiki/Brainfuck' })
+describe('esolangs.org, read through its wiki pages', () => {
+  const html = `<html><head><title>brainfuck - Esolang</title></head><body><h1 id="firstHeading" class="firstHeading mw-first-heading"><span>Brainfuck</span></h1>
+<div id="mw-content-text" class="mw-body-content"><p>${words2(350)} See <a href="/wiki/Befunge">Befunge</a>, <a href="/wiki/Talk:Brainfuck">talk</a> and <a href="/w/index.php?title=Missing&amp;action=edit&amp;redlink=1">Missing</a>.</p>
+<div class="printfooter">Retrieved from</div></div></body></html>`
+
+  it('reads a language page with only the links to real pages', async () => {
+    const item = await esolangPage(fake({ 'https://esolangs.org/wiki/Brainfuck': html }), 'Brainfuck')
+    expect(item).toMatchObject({ source: 'esolangs.org', kind: 'page', tier: 'reference', url: 'https://esolangs.org/wiki/Brainfuck', title: 'Brainfuck' })
     expect(item.links).toEqual([{ title: 'Befunge', url: 'https://esolangs.org/wiki/Befunge' }])
-  })
-})
-
-describe('Hacker News', () => {
-  const hn = 'https://hacker-news.firebaseio.com/v0'
-
-  it('reads a story with its top 5 comments, as a voices page that names who said what', async () => {
-    const f = fake({
-      [`${hn}/item/1.json`]: { id: 1, title: 'Show HN: a tiny CPU', url: 'https://example.com/cpu', descendants: 9, by: 'x', kids: [10, 11, 12, 13, 14, 15, 16] },
-      ...Object.fromEntries([10, 11, 12, 13, 14, 15, 16].map((id) => [`${hn}/item/${id}.json`, { id, by: `user${id}`, text: `comment <i>number</i> ${id}` }])),
-    })
-    const item = await hackerNewsStory(f, 1)
-    expect(item).toMatchObject({ source: 'news.ycombinator.com', kind: 'page', tier: 'voices', url: 'https://news.ycombinator.com/item?id=1' })
-    expect(item.text).toContain('user10 said:\ncomment number 10')
-    expect(item.text).toContain('user14 said:')
-    expect(item.text).not.toContain('user15')
-    expect(item.links).toEqual([])
+    expect(item.text).not.toContain('Retrieved from')
   })
 
-  it('offers the story link only when its site is on the list', async () => {
-    const f = fake({ [`${hn}/item/2.json`]: { id: 2, title: 'A wiki piece', url: 'https://en.wikipedia.org/wiki/Moon', descendants: 0, kids: [] } })
-    expect((await hackerNewsStory(f, 2)).links).toEqual([{ title: 'A wiki piece', url: 'https://en.wikipedia.org/wiki/Moon' }])
-  })
-
-  it('maps a Hacker News item URL back to its API', async () => {
-    const f = fake({
-      [`${hn}/item/3.json`]: { id: 3, title: 'T', descendants: 0, kids: [] },
-    })
-    expect((await readUrl(f, 'https://news.ycombinator.com/item?id=3')).title).toBe('T')
+  it('starts from the links on its front page', async () => {
+    const f = fake({ 'https://esolangs.org/wiki/Main_Page': '<div id="mw-content-text"><a href="/wiki/Befunge">Befunge</a> <a href="/wiki/Brainfuck">Brainfuck</a></div>', 'https://esolangs.org/wiki/Brainfuck': html })
+    expect(await esolangMainLinks(f)).toEqual([
+      { title: 'Befunge', url: 'https://esolangs.org/wiki/Befunge' },
+      { title: 'Brainfuck', url: 'https://esolangs.org/wiki/Brainfuck' },
+    ])
+    expect((await readUrl(f, 'https://esolangs.org/wiki/Brainfuck')).title).toBe('Brainfuck')
   })
 })
 
 describe('records', () => {
-  it('reads an Imgflip format with the formats next to it and a Wikipedia search as links', async () => {
-    const memes = Array.from({ length: 10 }, (_, n) => ({ id: String(100 + n), name: `Format ${n}`, url: `https://i.imgflip.com/${n}.jpg`, box_count: 2, captions: 1000 - n }))
-    const f = fake({ 'https://api.imgflip.com/get_memes': { data: { memes } } })
-    const item = await imgflipFormat(f, '105')
-    expect(item).toMatchObject({ source: 'api.imgflip.com', kind: 'record', tier: 'voices', url: 'https://imgflip.com/meme/105', title: 'Format 5' })
-    expect(item.text).toContain('Rank among the 100 most-captioned formats of the last 30 days: 6')
-    expect(item.images).toEqual([{ url: 'https://i.imgflip.com/5.jpg', licence: null, credit: null }])
-    expect(item.links.length).toBeGreaterThanOrEqual(4)
-    expect(item.links.length).toBeLessThanOrEqual(MAX_RECORD_LINKS)
-    expect(item.links.some((l) => l.url === 'https://imgflip.com/meme/104')).toBe(true)
-    expect(item.links.some((l) => l.url.startsWith(`${wiki}/w/index.php?search=`))).toBe(true)
-    expect((await readUrl(f, 'https://imgflip.com/meme/105')).title).toBe('Format 5')
-  })
-
   const artFields = 'id,title,artist_display,artist_title,date_display,medium_display,place_of_origin,description,short_description,image_id,is_public_domain,subject_titles'
   const art = { id: 27992, title: 'A Sunday on La Grande Jatte', artist_display: 'Georges Seurat\nFrench, 1859-1891', artist_title: 'Georges Seurat', date_display: '1884-86', medium_display: 'Oil on canvas', place_of_origin: 'France', description: '<p>Dots of colour.</p>', image_id: 'abc', is_public_domain: true, subject_titles: ['landscape'] }
   const search = (q: string) => `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(q)}&limit=4&fields=id,title`
@@ -205,7 +199,7 @@ describe('records', () => {
     expect(urls).toContain('https://www.artic.edu/artworks/3')
     expect(urls).toContain('https://www.artic.edu/artworks/4')
     expect(urls).not.toContain('https://www.artic.edu/artworks/27992')
-    expect(urls.some((u) => u.startsWith(`${wiki}/w/index.php?search=`))).toBe(true)
+    expect(urls.some((u) => u.startsWith(`${wiki}/wiki/`))).toBe(true)
     expect(item.links.length).toBeLessThanOrEqual(MAX_RECORD_LINKS)
   })
 
@@ -213,23 +207,8 @@ describe('records', () => {
     const f = fake({ [`https://api.artic.edu/api/v1/artworks/5?fields=${artFields}`]: { data: { ...art, id: 5, is_public_domain: false } } })
     const item = await articWork(f, 5)
     expect(item.images[0]!.licence).toBeNull()
-    expect(item.links.some((l) => l.url.startsWith(`${wiki}/w/index.php?search=`))).toBe(true)
+    expect(item.links.some((l) => l.url.startsWith(`${wiki}/wiki/`))).toBe(true)
     expect((await readUrl(f, 'https://www.artic.edu/artworks/5')).title).toBe(art.title)
-  })
-
-  it('reads the astronomy picture of a date: public domain without a copyright line, no licence with one', async () => {
-    const day = (date: string, copyright?: string) => ({ date, title: 'The Moon', media_type: 'image', explanation: words(60), url: 'https://apod.nasa.gov/apod/image/moon.jpg', ...(copyright ? { copyright } : {}) })
-    const url = (date: string) => `https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date=${date}&thumbs=true`
-    const f = fake({ [url('2026-11-01')]: day('2026-11-01'), [url('2026-11-02')]: day('2026-11-02', 'A. Photographer') })
-    const free = await apod(f, '2026-11-01')
-    expect(free).toMatchObject({ kind: 'record', url: 'https://apod.nasa.gov/apod/ap261101.html', title: 'The Moon' })
-    expect(free.images[0]).toEqual({ url: 'https://apod.nasa.gov/apod/image/moon.jpg', licence: 'public domain', credit: 'NASA' })
-    expect(free.links.length).toBeGreaterThanOrEqual(4)
-    expect(free.links.some((l) => l.url === 'https://apod.nasa.gov/apod/ap261031.html')).toBe(true)
-    const owned = await apod(f, '2026-11-02')
-    expect(owned.images[0]!.licence).toBeNull()
-    expect(owned.text).toContain('Image credit: A. Photographer')
-    expect((await readUrl(f, 'https://apod.nasa.gov/apod/ap261101.html')).title).toBe('The Moon')
   })
 
   it('reads a repository with its description, topics and README, and offers its topics and others like it', async () => {
@@ -244,37 +223,41 @@ describe('records', () => {
     expect(item.text).toContain('# Sketch')
     expect(item.links.some((l) => l.url === 'https://github.com/b/loops')).toBe(true)
     expect(item.links.some((l) => l.url === 'https://github.com/a/sketch')).toBe(false)
-    expect(item.links.some((l) => l.url.startsWith(`${wiki}/w/index.php?search=`))).toBe(true)
+    expect(item.links.some((l) => l.url.startsWith(`${wiki}/wiki/`))).toBe(true)
     expect((await readUrl(f, 'https://github.com/a/sketch')).title).toBe('a/sketch')
   })
 
-  it('reads a Commons file page with its licence read from the licence name, and the credit', async () => {
-    const api = (t: string) => `https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2&prop=imageinfo&iiprop=url|extmetadata&titles=${encodeURIComponent(t)}`
-    const info = (licence: string) => ({ query: { pages: [{ title: 'File:Fog.jpg', imageinfo: [{ url: 'https://upload.wikimedia.org/fog.jpg', extmetadata: { LicenseShortName: { value: licence }, Artist: { value: '<a href="x">Jane Doe</a>' }, ImageDescription: { value: '<p>Fog over a harbour.</p>' } } }] }] } })
-    const f = fake({ [api('File:Fog.jpg')]: info('CC BY-SA 4.0'), [api('File:Bad.jpg')]: info('CC BY-NC 4.0') })
+  const fileHtml = (licence: string, extra = '') => `<html><body><h1 id="firstHeading" class="firstHeading"><span>File:Fog.jpg</span></h1>
+<div id="mw-content-text"><div class="fullImageLink" id="file"><a href="https://upload.wikimedia.org/wikipedia/commons/2/28/Fog.jpg?utm_source=commons.wikimedia.org&amp;utm_campaign=index&amp;utm_content=original"><img src="x"></a></div>
+<table class="fileinfotpl-type-information"><tr><td id="fileinfotpl&#95;desc" class="fileinfo-paramfield">Description</td><td class="description"><div class="description en" dir="ltr" lang="en"><span class="language en"><b>English&#58; </b></span> Fog over a harbour.</div></td></tr>
+<tr><td id="fileinfotpl&#95;aut" class="fileinfo-paramfield" lang="en">Author</td>
+<td>
+<a href="/wiki/User:Jane" title="User:Jane">Jane Doe</a></td></tr></table>${extra}
+<span class="licensetpl&#95;link" style="display:none;">https://creativecommons.org</span><span class="licensetpl&#95;short" style="display:none;">${licence} </span></div></body></html>`
+
+  it('reads a Commons file page: the picture, the licence read from its name, the author and the description', async () => {
+    const f = fake({ 'https://commons.wikimedia.org/wiki/File:Fog.jpg': fileHtml('CC BY-SA 4.0') })
     const item = await commonsFile(f, 'File:Fog.jpg')
-    expect(item).toMatchObject({ source: 'commons.wikimedia.org', kind: 'record', url: 'https://commons.wikimedia.org/wiki/File:Fog.jpg' })
-    expect(item.images).toEqual([{ url: 'https://upload.wikimedia.org/fog.jpg', licence: 'CC BY-SA', credit: 'Jane Doe' }])
+    expect(item).toMatchObject({ source: 'commons.wikimedia.org', kind: 'record', tier: 'reference', url: 'https://commons.wikimedia.org/wiki/File:Fog.jpg', title: 'File:Fog.jpg' })
+    expect(item.images).toEqual([{ url: 'https://upload.wikimedia.org/wikipedia/commons/2/28/Fog.jpg', licence: 'CC BY-SA', credit: 'Jane Doe' }])
     expect(item.text).toContain('Fog over a harbour.')
-    expect((await commonsFile(f, 'File:Bad.jpg')).images[0]!.licence).toBeNull()
+    expect(item.text).toContain('Licence: CC BY-SA 4.0')
+    expect(item.text).toContain('Credit: Jane Doe')
+    expect(f.asked).toEqual(['https://commons.wikimedia.org/wiki/File:Fog.jpg'])
+  })
+
+  it('gives a licence the code cannot allow no licence at all, and refuses a page with no picture', async () => {
+    const f = fake({ 'https://commons.wikimedia.org/wiki/File:Fog.jpg': fileHtml('CC BY-NC 4.0'), 'https://commons.wikimedia.org/wiki/File:Clip.webm': '<h1 id="firstHeading">File:Clip.webm</h1><div id="mw-content-text">video</div>' })
+    expect((await commonsFile(f, 'File:Fog.jpg')).images[0]!.licence).toBeNull()
+    await expect(commonsFile(f, 'File:Clip.webm')).rejects.toMatchObject({ code: 'http' })
     expect((await readUrl(f, 'https://commons.wikimedia.org/wiki/File:Fog.jpg')).title).toBe('File:Fog.jpg')
   })
-})
 
-describe('library manuals', () => {
-  it('reads a manual page as text, and offers only the links that are on the allowlist', async () => {
-    const html = `<html><head><title>Array - JavaScript | MDN</title></head><body><nav>menu</nav><main><h1>Array</h1><p>${words(320)}</p>
-      <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map">Map</a>
-      <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window">Window</a>
-      <a href="https://example.com/ads">ad</a><a href="http://developer.mozilla.org/insecure">plain http</a><a href="#top">top</a><a href="javascript:alert(1)">js</a></main></body></html>`
-    const url = 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'
-    const f = fake({ [url]: html })
-    const item = await manualPage(f, url)
-    expect(item).toMatchObject({ source: 'developer.mozilla.org', kind: 'page', tier: 'reference', url, title: 'Array - JavaScript | MDN' })
-    expect(item.text).toContain('Array')
-    expect(item.text).not.toContain('menu')
-    expect(item.links.map((l) => l.url)).toEqual(['https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map', 'https://developer.mozilla.org/en-US/docs/Web/API/Window'])
-    expect((await readUrl(f, url)).title).toBe('Array - JavaScript | MDN')
+  it('starts from the pictures on its front page, leaving out video and sound', async () => {
+    const main = '<div id="mw-content-text"><a href="/wiki/File:Clip.webm">v</a> <a href="/wiki/File:Fog.jpg">f</a> <a href="/wiki/File:Song.ogg">s</a> <a href="/wiki/File:Dune.PNG">d</a></div>'
+    const f = fake({ 'https://commons.wikimedia.org/wiki/Main_Page': main, 'https://commons.wikimedia.org/wiki/File:Dune.PNG': fileHtml('CC0') })
+    expect((await commonsFeatured(f, 1)).images[0]!.licence).toBe('CC0')
+    expect(f.asked.at(-1)).toBe('https://commons.wikimedia.org/wiki/File:Dune.PNG')
   })
 })
 

@@ -5,6 +5,7 @@
  * `--out <dir>` it also saves the report as `<dir>/<host>.md`, which is what Roman reads. A host joins the allowlist only after
  * this passes and he has read it.
  */
+import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -26,6 +27,19 @@ Hosts: ${HOST_PLANS.map((p) => p.host).join(', ')}
 --offline fetches and measures without any model call. --cap is the most the read calls may cost, in dollars.
 A host whose robots.txt disallows the paths the engine uses (or cannot be read) is not read at all: the trial stops after
 robots.txt. Only Roman may override that with --ignore-robots, for an API a site documents for bots.`
+
+/**
+ * A token for api.github.com, which lifts the limit from 60 requests an hour to 1,000 (an Actions job's own `GITHUB_TOKEN`, or
+ * the one `gh` holds on this machine). It is only ever sent to api.github.com and never printed.
+ */
+function githubToken(): string | undefined {
+  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN
+  try {
+    return execFileSync('gh', ['auth', 'token'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || undefined
+  } catch {
+    return undefined
+  }
+}
 
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
@@ -60,7 +74,9 @@ async function main(): Promise<void> {
     return
   }
 
-  const fetcher = createFetcher()
+  const token = plan.host === 'api.github.com' ? githubToken() : undefined
+  const fetcher = createFetcher(token ? { authorization: { 'api.github.com': `Bearer ${token}` } } : {})
+  if (plan.host === 'api.github.com') console.log(token ? 'Using a GitHub token (60 requests an hour without one)' : 'No GitHub token found: expect the 60 an hour limit')
   const llm = values.offline ? null : anthropicClient()
   let spent = 0
   const interests = Interests.parse({})

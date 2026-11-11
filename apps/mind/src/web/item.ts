@@ -44,9 +44,11 @@ export function capLinks(links: readonly ItemLink[], max = MAX_LINKS, ok: (url: 
   return kept
 }
 
-export function wikipediaSearchLink(query: string): ItemLink {
-  const q = query.trim().slice(0, 100)
-  return { title: `${q} (Wikipedia search)`, url: `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(q)}` }
+/** A link to the Wikipedia page for a topic. A page, not a search: robots.txt disallows the search path. */
+export function wikipediaTopicLink(topic: string): ItemLink {
+  const t = topic.trim().replace(/\s+/g, ' ').slice(0, 100)
+  const title = t.charAt(0).toUpperCase() + t.slice(1)
+  return { title: `${title} (Wikipedia)`, url: `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_')).replace(/%3A/gi, ':')}` }
 }
 
 /** The licences the code allows (spec 6.3), from the words a site uses. Anything it cannot read is null. */
