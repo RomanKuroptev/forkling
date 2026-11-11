@@ -2,29 +2,29 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Artifact, Goals, type ReadingNote } from '@forkling/schema'
-import { parsePlanReason, parseReadingNote, readRecentPast } from '../src/past.ts'
-import { renderPlan, renderReadingNote } from '../src/reading.ts'
+import { Artifact, Goals } from '@forkling/schema'
+import { parsePlanReason, readRecentPast } from '../src/past.ts'
+import { renderPlan } from '../src/plan-page.ts'
 
-const note: ReadingNote = { note: { title: 'A CPU in Minecraft', text: 'Someone built logic gates out of redstone. It is slow, but it computes. I want to know how.\n\nSecond paragraph.' }, interests: [] }
+const trail = (id: string, pages: { title: string; reaction?: string; interest?: number }[]) => ({
+  id,
+  date: id.slice(0, 10),
+  purpose: `Purpose of ${id}.`,
+  start: { kind: 'topic', value: 'x' },
+  pages: pages.map((p, n) => ({ url: `https://en.wikipedia.org/wiki/${id}-${n}`, title: p.title, fetchedAt: `${id.slice(0, 10)}T10:00:00Z`, topics: [], ...(p.reaction ? { reaction: p.reaction } : {}), ...(p.interest !== undefined ? { interest: p.interest } : {}) })),
+})
 const goals = Goals.parse({
   long: { text: 'Learn logic.', reason: 'It is a puzzle.', setAt: '2026-11-01T07:00:00Z', reviewedAt: '2026-11-01T07:00:00Z' },
   today: { date: '2026-11-02', steps: [{ verb: 'read', targetId: 'bookshelf', reason: 'There is a page I want.', minutes: 20 }], reason: 'A day for finding out how things work.' },
 })
 
 describe('parsing what it wrote', () => {
-  it('takes the title and the opening of a reading note', () => {
-    const parsed = parseReadingNote(renderReadingNote('2026-11-02', note, []))
-    expect(parsed).toEqual({ title: 'A CPU in Minecraft', summary: 'Someone built logic gates out of redstone.' })
-  })
-
   it('takes the reason for a day from its plan, with or without a long goal', () => {
     expect(parsePlanReason(renderPlan('2026-11-02', goals))).toBe('A day for finding out how things work.')
     expect(parsePlanReason(renderPlan('2026-11-02', Goals.parse({ today: goals.today })))).toBe('A day for finding out how things work.')
   })
 
   it('gives nothing for a file that is not one of those', () => {
-    expect(parseReadingNote('')).toBeNull()
     expect(parsePlanReason('# Plan for 2026-11-02\n')).toBeNull()
   })
 })
@@ -45,15 +45,17 @@ describe('readRecentPast', () => {
     expect(readRecentPast(dir, '2026-11-03', [])).toEqual({ readings: [], plans: [], art: [] })
   })
 
-  it('reads the last three notes, newest first, with the date from the file name', () => {
-    for (const [name, title] of [['2026-10-30-1', 'Old'], ['2026-11-01-1', 'One'], ['2026-11-02-1', 'Two'], ['2026-11-02-2', 'Three']] as const) {
-      put(`notebook/reading/${name}.md`, renderReadingNote(name.slice(0, 10), { ...note, note: { title, text: `About ${title}. More.` } }, []))
-    }
+  it('reads the last three trips, newest first: the page it liked best and what it made of it', () => {
+    put('trails/2026-10-30-1.json', JSON.stringify(trail('2026-10-30-1', [{ title: 'Old', reaction: 'Old one.', interest: 9 }])))
+    put('trails/2026-11-01-1.json', JSON.stringify(trail('2026-11-01-1', [{ title: 'One', reaction: 'About one.', interest: 4 }])))
+    put('trails/2026-11-02-1.json', JSON.stringify(trail('2026-11-02-1', [{ title: 'Two', reaction: 'About two.', interest: 3 }, { title: 'Two b', reaction: 'Better.', interest: 8 }])))
+    put('trails/2026-11-02-2.json', JSON.stringify(trail('2026-11-02-2', [{ title: 'Three' }])))
+    put('trails/broken.json', '{"nonsense":true}')
     const { readings } = readRecentPast(dir, '2026-11-03', [])
     expect(readings).toEqual([
-      { date: '2026-11-02', title: 'Three', summary: 'About Three.' },
-      { date: '2026-11-02', title: 'Two', summary: 'About Two.' },
-      { date: '2026-11-01', title: 'One', summary: 'About One.' },
+      { date: '2026-11-02', title: 'Three', summary: 'Purpose of 2026-11-02-2.' },
+      { date: '2026-11-02', title: 'Two b', summary: 'Better.' },
+      { date: '2026-11-01', title: 'One', summary: 'About one.' },
     ])
   })
 

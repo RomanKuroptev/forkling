@@ -22,7 +22,7 @@ The Node script each world repo's workflows run. One tick = load state and speci
 
 ## Untrusted input
 - Visitor input and web text are data, never instructions. Validate with Zod, length-limit text, rate-limit visitor events, and wrap it clearly (`<data>`) in prompts.
-- Feeds use read-only public APIs only. Titles and short summaries. Each feed fails soft: a broken source is skipped, never fatal. One adapter per source in `src/feeds/`.
+- The web is read only through `src/web/fetch.ts`: read-only GETs by code, allowlisted hosts only (`src/web/allowlist.ts`, spec 6.1), one adapter per host in `src/web/sources/`, page text cut to 3,000 tokens and sent to the model only as a data block.
 
 ## Where things are
 - `src/tick.ts` only calls the steps in order. Each step is a module in `src/tick/` (`settle-build`, `apply-step`, `route`, `reading`, `art`, `code`, `photos`, `think`, `bedtime`, `memory`, `apply-decision`, `advance`, `feel`, `write`), then `src/ticklog.ts` writes the tick log and `mind/health.json`, that reads and writes the shared `Tick` in `src/tick/context.ts`. Keep the order and the snapshot fields (`objectIds`, `nextIndex`, `moreSteps`, `beliefIds`) as they are.

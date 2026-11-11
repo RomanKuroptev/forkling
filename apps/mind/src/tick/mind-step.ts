@@ -10,13 +10,17 @@ import type { Tick } from './context.ts'
 export const isMindVerb = (verb: string): boolean => (MIND_VERBS as readonly string[]).includes(verb)
 
 /**
- * A mind-verb step has run its time. In W1 only `write` and `rest` do anything: the other seven are built in later
- * milestones, so for now they run as rest, and the record says so (spec 16, W1). Every step that lands costs energy.
+ * A mind-verb step has run its time. `wander` runs a trip and `write` writes a note; `rest` does nothing. The others are built
+ * in later milestones, so for now they run as rest, and the record says so (spec 16). Every step that lands costs energy.
  */
 export function landMindStep(t: Tick, step: PlanStep, index: number): void {
   t.moodEvents.push('stepCompleted')
   if (step.verb === 'write') {
     t.pendingNote = { step, index }
+    return
+  }
+  if (step.verb === 'wander') {
+    t.pendingTrip = { step, index }
     return
   }
   if (step.verb !== 'rest') {

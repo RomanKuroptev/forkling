@@ -2,7 +2,6 @@ import { appendFileSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { hasCredentials } from './credentials.ts'
-import { httpGetJson } from './feeds/index.ts'
 import { anthropicClient } from './llm.ts'
 import { loadSpecies } from './species.ts'
 import { runTick } from './tick.ts'
@@ -43,7 +42,8 @@ async function main(): Promise<void> {
     pack: species.pack,
     behaviors: species.behaviors,
     speciesPersona: species.persona,
-    get: httpGetJson,
+    // A token lifts GitHub's limit for api.github.com from 60 requests an hour; it is sent to that host only.
+    web: process.env.GITHUB_TOKEN ? { authorization: { 'api.github.com': `Bearer ${process.env.GITHUB_TOKEN}` } } : {},
     dryRun: values['dry-run'],
     engine: process.env.FORKLING_REF ?? 'dev',
   })

@@ -1,6 +1,6 @@
 import { Forkling, type Goals, type Intention, type MindState } from '@forkling/schema'
 import { toRepoIntention } from '@forkling/sim'
-import { renderPlan } from '../reading.ts'
+import { renderPlan } from '../plan-page.ts'
 import { appendStream, appendTimeline, prune } from '../stream.ts'
 import { deleteFile, writeJson, writeText } from '../world.ts'
 import type { Tick, TickResult } from './context.ts'
@@ -33,6 +33,7 @@ export function writeWorld(t: Tick): TickResult {
   const budgetChanged = !same(budget, w.budget)
   const beliefsChanged = !same(beliefs, w.beliefs)
   const interestsChanged = !same(interests, w.interests)
+  const sourcesChanged = !same(t.sources, w.sources)
   const writeBody =
     t.started !== null ||
     t.touched.size > 0 ||
@@ -89,6 +90,9 @@ export function writeWorld(t: Tick): TickResult {
     if (budgetChanged && writeJson(dir, 'brain/budget.json', budget)) written.push('brain/budget.json')
     if (beliefsChanged && writeJson(dir, 'memory/beliefs.json', beliefs)) written.push('memory/beliefs.json')
     if (interestsChanged && writeJson(dir, 'brain/interests.json', interests)) written.push('brain/interests.json')
+    if (sourcesChanged && writeJson(dir, 'mind/sources.json', t.sources)) written.push('mind/sources.json')
+    for (const trail of t.newTrails) if (writeJson(dir, `trails/${trail.id}.json`, trail)) written.push(`trails/${trail.id}.json`)
+    for (const souvenir of t.newSouvenirs) if (writeJson(dir, `souvenirs/${souvenir.id}.json`, souvenir)) written.push(`souvenirs/${souvenir.id}.json`)
     if (t.planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)
     for (const page of t.notebook) if (writeText(dir, page.path, page.text)) written.push(page.path)
     if (t.journal && writeText(dir, `journal/${t.journal.date}.md`, t.journal.text)) written.push(`journal/${t.journal.date}.md`)

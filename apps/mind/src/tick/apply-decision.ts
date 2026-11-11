@@ -62,6 +62,7 @@ export function applyDecision(t: Tick): void {
 
   if (planned) {
     const { usable, check } = planned
+    if (planned.droppedStarts.length > 0) notes.push(`wander removed from the plan (a trip already started from it today): ${planned.droppedStarts.join(', ')}`)
     if (check.ok) {
       t.planPage = true
       // A plan that takes over in the middle of a step settles the old step first.

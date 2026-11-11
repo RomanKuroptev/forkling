@@ -1,6 +1,7 @@
 import type { Belief, Forkling, Goals, Interests, MindState, VisitorEvent } from '@forkling/schema'
 import { liveBeliefs, type Prices, type Trigger } from '@forkling/sim'
 import type { RecentPast } from '../past.ts'
+import type { StartingPoint } from '../web/doors.ts'
 import { decideTask } from './decide.ts'
 import { morningTask } from './morning.ts'
 import { describeBelief, describeInterests, json, type ThinkKind } from './shared.ts'
@@ -36,6 +37,8 @@ export interface UserInput {
   interests: Interests
   /** What it did and wrote before, so it can build on its own work. Missing means none is shown. */
   past?: RecentPast
+  /** Where a morning may start from: the front pages' links, 3 marked as doors outside its interests. Missing means none. */
+  startingPoints?: readonly StartingPoint[]
 }
 
 /** The points in hand and the prices that apply today, in one line each. */
@@ -65,6 +68,15 @@ function describePast(i: UserInput): string[] {
   return lines.length > 0 ? ['', '<past>', ...lines, '</past>'] : []
 }
 
+/** Text from outside goes in between data tags, so it must not be able to close them. */
+const defang = (text: string) => text.replaceAll('</data', '<\\/data')
+
+/** The links of the front pages, as data: a title and an address each, and a mark on the doors. */
+function describeStartingPoints(points: readonly StartingPoint[] | undefined): string[] {
+  if (!points || points.length === 0) return []
+  return ['', '<data source="starting-points">', ...points.map((p) => defang(`${p.door ? '(door) ' : ''}${p.title} | ${p.url}`)), '</data>']
+}
+
 const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
   morning: morningTask,
   decide: decideTask,
@@ -90,6 +102,7 @@ export function buildUser(i: UserInput): string {
     ...(i.memory.trim() ? ['', '<memory>', i.memory.trim(), '</memory>'] : []),
     ...(liveBeliefs(i.beliefs).length > 0 ? ['', '<beliefs>', ...liveBeliefs(i.beliefs).map(describeBelief), '</beliefs>'] : []),
     ...describePast(i),
+    ...describeStartingPoints(i.startingPoints),
     '',
     '<goals>',
     json({

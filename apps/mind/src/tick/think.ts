@@ -31,6 +31,7 @@ export async function think(t: Tick): Promise<void> {
     memory: t.w.summary,
     interests: t.interests,
     past: readRecentPast(t.dir, t.today, t.w.art),
+    startingPoints: t.startingPoints,
   })
   let asking = user
   // A plan the body cannot carry out gets one more chance, with the reasons, before the body falls back on itself.

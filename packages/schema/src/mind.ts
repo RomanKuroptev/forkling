@@ -72,6 +72,8 @@ export const MindState = z.object({
   allowance: z.object({ points: z.number().min(0), day: z.iso.date() }).optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */
   recent: z.array(z.object({ verb: z.string(), targetId: z.string().optional(), at: Timestamp })).max(20).default([]),
+  /** Local date interests last faded, so they fade once a day. */
+  interestsFadedOn: z.iso.date().optional(),
   /** Local date of the last bedtime reflection, so it happens once a day. */
   lastReflectDate: z.iso.date().optional(),
   /** Local date of the last nightly memory rewrite that was sent, so it is sent once a night. */

@@ -105,6 +105,7 @@ function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine
     stepAfter: stepOf(t.goals),
     planId: planIdOf(t.goals),
     mood: moodWords({ mood: t.mood, energy: t.energy }),
+    web: { requests: t.fetcher?.log.length ?? 0, refused: t.fetcher?.log.filter((l) => l.outcome === 'not-allowed').length ?? 0 },
     wrote: result.written.slice(0, 60),
     summary: clampText(result.summary, 300),
   })
@@ -120,6 +121,6 @@ export function logTick(t: Tick, result: TickResult): TickResult {
   const line = lineFor(t, result, previous)
   appendTick(t.dir, t.today, line)
   pruneTicks(t.dir, t.today)
-  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget }))
+  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources }))
   return { ...result, logged: true }
 }
