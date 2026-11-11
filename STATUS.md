@@ -36,7 +36,9 @@ Roman said to build W2 while W1's 3 live days run (they end 14 November). Nothin
   - **Out of the allowlist (11 left → 7 entries):** lobste.rs and Hacker News (robots), MDN and the other manuals (W4, for tinker), Imgflip (W4, memes), NASA (needs a key). Their adapters were deleted from the tree; they are in git history at commit `cf3fd84`, and the W4 prompt says so.
   - **GitHub** gets an `Authorization` header (only to api.github.com, never logged): `GITHUB_TOKEN` or `gh auth token`.
   - Tiers as in the spec: Wikipedia, Esolangs, Commons, GitHub, Art Institute are reference.
-- **Next:** Roman reads the reports and decides, then the allowlist PR for the rest. Slice 6 (the trip and the wander verb) does not depend on it and can start. After slice 5, the source trials are run from `.env`'s key, and the reports go to `docs/spec/w2-trials/` for Roman to read.
+- **Reruns (12 November), through the page URLs and with a GitHub token:** Esolangs passes, GitHub passes (100% reliable, interest 5.1). Wikipedia: 90% reliable (18 of 20), under the 95% mark only because two fetches were the 2 MB cap on one huge article ("Wikipedia" itself); everything else passes (39 links, 94% keep a souvenir, interest 5.8). Commons: only "Not boring" fails (interest 3.7 against 5); links are now 8 (the Wikipedia articles that use the picture, so a trip crosses back into reading). Fixes found by the reruns: the front page serves full addresses (`href="https://en.wikipedia.org/wiki/…"`), which the link reader now handles.
+- **Roman's call:** keep Wikipedia (2 MB cap on a rare huge page is the rule working) and Commons (picture host; the interest mark is taste) in the allowlist, or take them out. They are in it now. Image souvenirs come in slice 7.
+- **Next:** slice 6 (the trip and the `wander` verb). After
 - This machine's `rtk` can't find `pnpm`, so run `pnpm` directly.
 
 ## W1 progress (slice 1 of 5, started)

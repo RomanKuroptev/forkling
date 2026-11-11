@@ -71,10 +71,12 @@ export function pageTitle(html: string, fallback: string): string {
 }
 
 /** The links to other pages of the site in some HTML, in order and each once, with namespaces, fragments and edit links left out. */
-export function wikiLinks(html: string, host: string, not: string): ItemLink[] {
+export function wikiLinks(html: string, host: string, not: string, relative = true): ItemLink[] {
   const links: ItemLink[] = []
   const self = not.trim().toLowerCase()
-  for (const m of html.matchAll(/<a\s[^>]*?href="\/wiki\/([^"#?]+)(?:#[^"]*)?"[^>]*>/gi)) {
+  // A page may write its links as `/wiki/X` or, like the front page, as full addresses.
+  const href = new RegExp(`<a\\s[^>]*?href="(?:https://${host.replace(/\./g, '\\.')}${relative ? ')?' : ')'}/wiki/([^"#?]+)(?:#[^"]*)?"[^>]*>`, 'gi')
+  for (const m of html.matchAll(href)) {
     const path = m[1]!
     let title: string
     try {
