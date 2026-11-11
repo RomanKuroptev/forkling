@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SourceStats, Souvenir, SOUVENIR_LICENCES, Trail, TrailPage } from '../src/index.ts'
+import { MindState, SourceStats, Souvenir, SOUVENIR_LICENCES, Trail, TrailPage } from '../src/index.ts'
 
 const source = { url: 'https://example.org/log', title: "Keeper's log, 1891", fetchedAt: '2026-11-18T10:12:00+01:00' }
 const base = { id: '2026-11-18-keepers-log', why: 'Nine days of the same word and he still lit it.', topics: ['lighthouses'], source, licence: null, placedIn: null }
@@ -61,5 +61,13 @@ describe('SourceStats', () => {
     const week = { reads: 10, souvenirs: 3, placed: 1, boring: 2, failures: 0 }
     expect(SourceStats.safeParse({ weeks: { '2026-W46': { 'en.wikipedia.org': week } } }).success).toBe(true)
     expect(SourceStats.safeParse({ weeks: { '2026-W46': { 'en.wikipedia.org': { ...week, reads: -1 } } } }).success).toBe(false)
+  })
+})
+
+describe('MindState.pausedHosts', () => {
+  it('defaults to no paused hosts, and holds the time each pause ends', () => {
+    expect(MindState.parse({}).pausedHosts).toEqual({})
+    expect(MindState.parse({ pausedHosts: { 'lobste.rs': '2026-11-19T10:00:00Z' } }).pausedHosts).toEqual({ 'lobste.rs': '2026-11-19T10:00:00Z' })
+    expect(MindState.safeParse({ pausedHosts: { 'lobste.rs': 'tomorrow' } }).success).toBe(false)
   })
 })

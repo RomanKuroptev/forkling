@@ -97,6 +97,8 @@ export const MindState = z.object({
   openCode: z.object({ id: z.string().min(1), kind: BuildKind, requestedAt: Timestamp }).nullable().default(null),
   /** Times the body broke off a plan step to look after a need since the mind last decided, for its next prompt. Newest last. */
   brokenOff: z.array(z.object({ step: z.string().max(40), verb: z.string().max(40), need: z.string().max(20), at: Timestamp })).max(30).default([]),
+  /** Web hosts paused after a 429 or a 403, with when each pause ends (spec 6.1). Nothing is fetched from one until then. */
+  pausedHosts: z.record(z.string(), Timestamp).default({}),
   /** Why the validator last turned a plan down, newest last.*/
   rejections: z.array(z.object({ at: Timestamp, reasons: z.array(z.string()) })).max(10).default([]),
 })
