@@ -20,6 +20,14 @@ Branch `claude/project-thread-403rmi`.
 - **v0.9.0 (W1) is tagged and live on Merge** (2026-11-11). Merge's repo was moved with `migrate-w1` (commit `cb92a44` in `RomanKuroptev/merge`: the pet under `archive/`, the seed, the new workflows pinned to v0.9.0). The first tick on it (17:13Z) skimmed the feeds, wrote a morning plan and a long goal of its own (lidar finds of lost Maya sites), spent about $0.0015, and started its first step. One older v0.8.0 tick lost a rebase race with the migration commit and pushed nothing.
 - **W1's "done when" is now 3 live days** with no health warnings: watch `mind/health.json` (warnings, decide calls at 12 or fewer, `allowance.points`) and `notebook/writing/`. The `longest wait between ticks` warning on 11 November is from before the move (the day counters carry over) and clears tomorrow.
 
+## W2 progress (building on `main`, nothing released)
+
+Roman said to build W2 while W1's 3 live days run (they end 14 November). Nothing is released and nothing touches Merge's repo until the W1 health check passes and Roman says so. The plan is in [`docs/spec/w2-wandering.md`](docs/spec/w2-wandering.md), eight slices, one PR each.
+
+- **Slice 1 done:** the spec export, and `packages/schema/src/wandering.ts` with `Souvenir`, `Trail` and `SourceStats` (tests first, 8 tests). Nothing uses them yet.
+- **Next:** slice 2 (interests on spec 3.1's 0 to 100 scale). After slice 5, the source trials are run from `.env`'s key, and the reports go to `docs/spec/w2-trials/` for Roman to read.
+- This machine's `rtk` can't find `pnpm`, so run `pnpm` directly.
+
 ## W1 progress (slice 1 of 5, started)
 
 - **Decisions (Roman, 10 November, "go ahead" on my recommendations):** the bedtime reflection and nightly rewrite keep running until W7; `write` works in W1 as a plaque-style note in `notebook/`; PR #29 is merged. The W0 voice test ran live (see `docs/spec/w0-voice-test.md`).
