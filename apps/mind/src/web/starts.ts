@@ -2,7 +2,7 @@ import { createPrng } from '@forkling/sim'
 import type { Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
 import {
-  apod, articRandomId, articWork, commonsFile, esolangRandom, githubRepo, githubTopicRepos, hackerNewsIds, hackerNewsStory, imgflipFormat, imgflipIds, lobstersHot, lobstersStory,
+  apod, articRandomId, articWork, commonsFile, esolangRandom, githubRepo, githubTopicRepos, hackerNewsIds, hackerNewsStory, imgflipFormat, imgflipIds,
   manualPage, wikipediaRandom,
 } from './sources/index.ts'
 
@@ -59,7 +59,6 @@ export const HOST_PLANS: readonly HostPlan[] = [
       return hackerNewsStory(f, at(ids, offset + Math.floor(seed / 2) * 3))
     },
   },
-  { host: 'lobste.rs', itemHost: 'lobste.rs', paths: ['/hottest.json', '/s/'], start: async (f, seed, offset) => lobstersStory(f, at(await lobstersHot(f), offset + seed)) },
   {
     host: 'api.github.com',
     itemHost: 'github.com',

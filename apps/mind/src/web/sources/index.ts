@@ -3,7 +3,7 @@ import { WebError, type Fetcher } from '../fetch.ts'
 import type { Item } from '../item.ts'
 import { MANUAL_HOSTS, manualPage } from './manuals.ts'
 import { apod, articWork, commonsFile, githubRepo, imgflipFormat } from './records.ts'
-import { hackerNewsStory, lobstersStory } from './voices.ts'
+import { hackerNewsStory } from './voices.ts'
 import { esolangPage, wikipediaArticle, wikipediaSearch } from './wikipedia.ts'
 
 export * from './manuals.ts'
@@ -47,9 +47,6 @@ export async function readUrl(f: Fetcher, url: string): Promise<Item> {
       if (u.pathname === '/item' && id && /^\d+$/.test(id)) return hackerNewsStory(f, id)
       throw nothing()
     }
-    case 'lobste.rs':
-      if (parts[0] === 's' && parts[1]) return lobstersStory(f, parts[1])
-      throw nothing()
     case 'imgflip.com':
       if (parts[0] === 'meme' && parts[1]) return imgflipFormat(f, parts[1])
       throw nothing()
