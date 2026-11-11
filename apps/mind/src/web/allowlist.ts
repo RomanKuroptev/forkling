@@ -57,3 +57,21 @@ export function isAllowed(url: string): boolean {
   }
   return u.protocol === 'https:' && u.port === '' && u.username === '' && u.password === '' && hostRule(u.hostname) !== undefined
 }
+
+/**
+ * Public pages that name an item on a site the code does not read directly: a Hacker News story, an Imgflip format and a
+ * GitHub repository are read through their APIs (`hacker-news.firebaseio.com`, `api.imgflip.com`, `api.github.com`).
+ * Their page URLs are what a trail and a souvenir cite, and what a link can point at.
+ */
+export const NAMED_BY_PAGE: readonly string[] = ['news.ycombinator.com', 'imgflip.com', 'github.com']
+
+/** A URL the mind may be offered and may read: an allowed URL, or the page URL of an item an allowed API gives. */
+export function isReadable(url: string): boolean {
+  if (isAllowed(url)) return true
+  try {
+    const u = new URL(url)
+    return u.protocol === 'https:' && u.port === '' && u.username === '' && u.password === '' && NAMED_BY_PAGE.includes(u.hostname)
+  } catch {
+    return false
+  }
+}

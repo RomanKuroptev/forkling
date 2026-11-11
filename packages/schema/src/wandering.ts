@@ -4,6 +4,7 @@ import { Timestamp } from './intention.ts'
 /** Image licences the code can read and allows (spec 6.3). */
 export const SOUVENIR_LICENCES = ['public domain', 'CC0', 'CC BY', 'CC BY-SA'] as const
 export const SouvenirLicence = z.enum(SOUVENIR_LICENCES)
+export type SouvenirLicence = z.infer<typeof SouvenirLicence>
 
 export const MAX_QUOTE_CHARS = 280
 export const MAX_FACT_CHARS = 200
