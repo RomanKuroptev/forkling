@@ -38,6 +38,8 @@ Branch `claude/project-thread-403rmi`.
 - **The site** shows the archived diary at `/archive/` when a world has one.
 - **Not done, and Roman's call:** the release PR and the `v0.9.0` tag, then the migration of `RomanKuroptev/merge`, then 3 live days. The steps are in [`docs/spec/w1-release.md`](docs/spec/w1-release.md). Nothing has touched Merge's repo.
 
+- **Carrying on in Claude Code:** ready-to-paste prompts for the 3-day health check and for W2 to W8 are in [`docs/spec/claude-code-prompts.md`](docs/spec/claude-code-prompts.md).
+
 ## Next
 
 1. Roman runs the voice test (or gives the go to run it from an Actions workflow), reads the report and says whether the voice is worth building a world around (or what to change in the seed or the models).
