@@ -114,3 +114,33 @@ describe('running a job', () => {
     expect(started).toBe(1)
   })
 })
+
+describe('a handler that cannot finish yet, and one with a work to report', () => {
+  it('leaves the job where it is and writes no result when the handler says later, and tries it again next tick', async () => {
+    request('a-lamp', 1)
+    let tries = 0
+    const worker = createBuildWorker({ dir, now: () => NOW, handlers: { tinker: async () => (tries++, { status: 'later' as const }) } })
+    expect(await worker.tick()).toEqual({ ran: null, closed: [] })
+    expect(hasResult('a-lamp')).toBe(false)
+    await worker.tick()
+    expect(tries).toBe(2)
+  })
+
+  it('still closes a job that has waited 48 hours, whatever the handler says', async () => {
+    request('old-lamp', 49)
+    const worker = createBuildWorker({ dir, now: () => NOW, handlers: { tinker: async () => ({ status: 'later' as const }) } })
+    expect((await worker.tick()).closed).toEqual(['old-lamp'])
+  })
+
+  it('writes the work, the pull request and the calls into the result', async () => {
+    request('a-lamp', 1)
+    const call = { at: new Date(NOW).toISOString(), kind: 'tinker', model: 'claude-sonnet-5-5', input: 1, cacheRead: 0, cacheWrite: 0, output: 1, usd: 0.1 }
+    const worker = createBuildWorker({
+      dir,
+      now: () => NOW,
+      handlers: { tinker: async () => ({ status: 'done' as const, extra: { workId: 'tide-pool-clock', title: 'Tide pool clock', workStatus: 'shelf' as const, prUrl: 'https://github.com/o/r/pull/3', calls: [call] } }) },
+    })
+    await worker.tick()
+    expect(result('a-lamp')).toMatchObject({ status: 'done', workId: 'tide-pool-clock', title: 'Tide pool clock', workStatus: 'shelf', prUrl: 'https://github.com/o/r/pull/3', calls: [call] })
+  })
+})

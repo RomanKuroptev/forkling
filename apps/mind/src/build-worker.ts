@@ -11,8 +11,11 @@ const BUILDS = 'mind/builds'
 const MAX_REASON = 300
 
 export interface BuildHandlerOutcome {
-  status: 'done' | 'failed'
+  /** `later` means it could not start (no key, no browser): no result is written and the job is tried again. */
+  status: 'done' | 'failed' | 'later'
   reason?: string
+  /** For a work: which one, whether it is on the shelf or in the scrap bin, its pull request, and what the calls cost. */
+  extra?: Partial<Pick<JobResult, 'workId' | 'title' | 'workStatus' | 'prUrl' | 'calls'>>
 }
 /** What runs one kind of job. W4 adds `tinker`, W6 adds `expand` and `found`; W3 has none. */
 export type BuildHandler = (job: JobRequest, ctx: { dir: string; nowMs: number }) => Promise<BuildHandlerOutcome>
@@ -76,8 +79,8 @@ export interface BuildTickResult {
 export function createBuildWorker(opts: BuildWorkerOptions) {
   let running = false
 
-  const finish = (job: JobRequest, nowMs: number, outcome: BuildHandlerOutcome): void => {
-    const result = JobResult.parse({ id: job.id, kind: job.kind, status: outcome.status, ...(outcome.reason ? { reason: clampText(outcome.reason, MAX_REASON) } : {}), at: new Date(nowMs).toISOString() })
+  const finish = (job: JobRequest, nowMs: number, outcome: BuildHandlerOutcome & { status: 'done' | 'failed' }): void => {
+    const result = JobResult.parse({ id: job.id, kind: job.kind, status: outcome.status, ...(outcome.reason ? { reason: clampText(outcome.reason, MAX_REASON) } : {}), ...outcome.extra, at: new Date(nowMs).toISOString() })
     writeJson(opts.dir, `${BUILDS}/${job.id}.result.json`, result)
   }
 
@@ -103,7 +106,8 @@ export function createBuildWorker(opts: BuildWorkerOptions) {
         } catch (e) {
           outcome = { status: 'failed', reason: e instanceof Error ? e.message : String(e) }
         }
-        finish(next, opts.now(), outcome)
+        if (outcome.status === 'later') return { ran: null, closed }
+        finish(next, opts.now(), { ...outcome, status: outcome.status })
         return { ran: next.id, closed }
       } finally {
         running = false
