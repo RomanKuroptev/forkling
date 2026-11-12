@@ -23,7 +23,7 @@ export function landMindStep(t: Tick, step: PlanStep, index: number): void {
     t.pendingTrip = { step, index }
     return
   }
-  if (step.verb === 'tinker' && step.size === 'sketch') {
+  if (step.verb === 'tinker') {
     t.pendingWork = { step, index }
     return
   }

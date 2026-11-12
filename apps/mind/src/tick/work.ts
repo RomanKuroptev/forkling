@@ -1,7 +1,36 @@
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { TinkerJob, type PlanStep } from '@forkling/schema'
+import { pendingJobs } from '../build-worker.ts'
 import { runTinker, type TinkerInput } from '../builds/tinker.ts'
 import { existingWorkIds, readWorks, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
 import type { Tick } from './context.ts'
+
+/**
+ * A full work is not made in the tick: the step asks the build worker for it with a job file (spec 2.4, 10.2), and the result
+ * comes back later (`settleJobs`). One at a time: while a work is being built a second step rests.
+ */
+function askForWork(t: Tick, step: PlanStep, index: number): void {
+  const idea = clampText((step.targetId ?? '').trim(), 120)
+  if (!idea) {
+    t.notes.push('tinker: a work needs an idea, so the step rested')
+    return
+  }
+  if (pendingJobs(t.dir).some((j) => j.kind === 'tinker') || t.newJobs.length > 0) {
+    t.notes.push('tinker: a work is already being built, so this step rested instead')
+    const text = 'A work was already being built, so I rested instead of asking for another.'
+    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: 'tinker' })
+    t.justNow.push(text)
+    return
+  }
+  const base = `tinker-${t.today.replaceAll('-', '')}-${t.nowIso.slice(11, 16).replace(':', '')}`
+  let id = base
+  for (let n = 2; existsSync(join(t.dir, 'mind/builds', `${id}.json`)) || existsSync(join(t.dir, 'mind/builds', `${id}.result.json`)); n++) id = `${base}-${n}`
+  t.newJobs.push(TinkerJob.parse({ id, kind: 'tinker', requestedAt: t.nowIso, idea, reason: clampText(step.reason, 200), remixOf: null }))
+  t.remember.push({ at: t.nowIso, kind: 'made', text: `Asked the workshop to build "${idea}".`, verb: 'tinker', goalRef: `today:${index}` })
+  t.parts.push('asked for a work')
+}
 
 /**
  * When a sketch step finishes, one Haiku call makes the sketch (Sonnet if the step is marked deep), the browser checks it, and
@@ -13,6 +42,7 @@ export async function workStep(t: Tick): Promise<void> {
   const pending = t.pendingWork
   if (!pending) return
   const { step, index } = pending
+  if (step.size !== 'sketch') return askForWork(t, step, index)
 
   const rested = (why: string) => {
     t.notes.push(`tinker: ${why}`)

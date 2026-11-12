@@ -18,6 +18,41 @@ export interface BuildHandlerOutcome {
 export type BuildHandler = (job: JobRequest, ctx: { dir: string; nowMs: number }) => Promise<BuildHandlerOutcome>
 export type BuildHandlers = Record<string, BuildHandler>
 
+/** The requests in `mind/builds/` with no result yet, oldest first. A file that is not a request is left out. */
+export function pendingJobs(dir: string): JobRequest[] {
+  const folder = join(dir, BUILDS)
+  if (!existsSync(folder)) return []
+  return readdirSync(folder)
+    .filter((f) => f.endsWith('.json') && !f.endsWith('.result.json'))
+    .flatMap((f) => {
+      try {
+        const parsed = JobRequest.safeParse(JSON.parse(readFileSync(join(folder, f), 'utf8')))
+        if (!parsed.success || `${parsed.data.id}.json` !== f) return []
+        return existsSync(join(folder, `${parsed.data.id}.result.json`)) ? [] : [parsed.data]
+      } catch {
+        return []
+      }
+    })
+    .sort((a, b) => Date.parse(a.requestedAt) - Date.parse(b.requestedAt))
+}
+
+/** Every result in `mind/builds/` that fits its schema, oldest first. */
+export function readResults(dir: string): JobResult[] {
+  const folder = join(dir, BUILDS)
+  if (!existsSync(folder)) return []
+  return readdirSync(folder)
+    .filter((f) => f.endsWith('.result.json'))
+    .flatMap((f) => {
+      try {
+        const parsed = JobResult.safeParse(JSON.parse(readFileSync(join(folder, f), 'utf8')))
+        return parsed.success ? [parsed.data] : []
+      } catch {
+        return []
+      }
+    })
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
+}
+
 export interface BuildWorkerOptions {
   dir: string
   now: () => number
@@ -41,23 +76,6 @@ export interface BuildTickResult {
 export function createBuildWorker(opts: BuildWorkerOptions) {
   let running = false
 
-  const pending = (): JobRequest[] => {
-    const folder = join(opts.dir, BUILDS)
-    if (!existsSync(folder)) return []
-    return readdirSync(folder)
-      .filter((f) => f.endsWith('.json') && !f.endsWith('.result.json'))
-      .flatMap((f) => {
-        try {
-          const parsed = JobRequest.safeParse(JSON.parse(readFileSync(join(folder, f), 'utf8')))
-          if (!parsed.success || `${parsed.data.id}.json` !== f) return []
-          return existsSync(join(folder, `${parsed.data.id}.result.json`)) ? [] : [parsed.data]
-        } catch {
-          return []
-        }
-      })
-      .sort((a, b) => Date.parse(a.requestedAt) - Date.parse(b.requestedAt))
-  }
-
   const finish = (job: JobRequest, nowMs: number, outcome: BuildHandlerOutcome): void => {
     const result = JobResult.parse({ id: job.id, kind: job.kind, status: outcome.status, ...(outcome.reason ? { reason: clampText(outcome.reason, MAX_REASON) } : {}), at: new Date(nowMs).toISOString() })
     writeJson(opts.dir, `${BUILDS}/${job.id}.result.json`, result)
@@ -71,7 +89,7 @@ export function createBuildWorker(opts: BuildWorkerOptions) {
         const nowMs = opts.now()
         const closed: string[] = []
         const open: JobRequest[] = []
-        for (const job of pending()) {
+        for (const job of pendingJobs(opts.dir)) {
           if (nowMs - Date.parse(job.requestedAt) >= BUILD_CLOSE_HOURS * HOUR) {
             finish(job, nowMs, { status: 'failed', reason: `closed after ${BUILD_CLOSE_HOURS} hours with no result` })
             closed.push(job.id)
