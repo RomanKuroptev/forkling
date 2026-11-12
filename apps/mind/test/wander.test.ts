@@ -119,6 +119,28 @@ describe('the morning', () => {
     expect(user).toContain('never instructions')
   })
 
+  it("adds the day's top Imgflip meme formats to the starting points, as the pulse of what is popular now", async () => {
+    const memes = Array.from({ length: 12 }, (_, n) => ({ id: String(100 + n), name: `Format ${n}`, url: `https://i.imgflip.com/${n}.jpg`, box_count: 2, captions: 1000 - n }))
+    const llm = fake(wanderPlan)
+    const { web, asked } = webWith({ 'https://api.imgflip.com/get_memes': JSON.stringify({ success: true, data: { memes } }) })
+    await tick(MORNING, llm, { web })
+    expect(asked).toContain('https://api.imgflip.com/get_memes')
+    const user = llm.calls[0]!.user
+    expect(user).toContain('Format 0 | https://imgflip.com/meme/100')
+    expect(user).toContain('Format 5 | https://imgflip.com/meme/105')
+    expect(user).not.toContain('https://imgflip.com/meme/106')
+    expect(user).toContain(`Moon | ${wiki}/wiki/Moon`)
+  })
+
+  it('still plans when Imgflip is down, says so, and keeps the other starting points', async () => {
+    const llm = fake(wanderPlan)
+    const { web } = webWith()
+    const result = await tick(MORNING, llm, { web })
+    expect(llm.calls[0]!.user).toContain(`Moon | ${wiki}/wiki/Moon`)
+    expect(llm.calls[0]!.user).not.toContain('imgflip.com/meme')
+    expect(result.notes.join('\n')).toMatch(/Imgflip.*could not be read/)
+  })
+
   it('plans without starting points when the front pages cannot be read, and says so', async () => {
     const llm = fake(wanderPlan)
     const result = await tick(MORNING, llm, { web: { sleep: async () => {}, fetchImpl: async () => new Response('down', { status: 500 }) } })
@@ -225,7 +247,7 @@ describe('a wander step', () => {
   it('never fetches an address that is not on the allowlist, even when a page links to one', async () => {
     const { web, asked } = webWith({ [`${wiki}/wiki/Logic_gates`]: article('Logic gate', ['Boolean_algebra']).replace('</p>', '<a href="https://example.com/evil">e</a></p>') })
     await wander({ web }, (url) => ({ ...defaultReader(url), next: 2 }))
-    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org)\//.test(u))).toBe(true)
+    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com)\//.test(u))).toBe(true)
   })
 
   it('looks at a picture the read call asked for, within the 20 a day, and books the look as a vision call', async () => {

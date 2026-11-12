@@ -6,7 +6,7 @@ import { addStats } from '../web/stats.ts'
 import { MAX_LOOKS_PER_DAY, performLook } from '../web/look.ts'
 import { performRead } from '../web/readcall.ts'
 import { startKey } from '../web/rails.ts'
-import { frontPageLinks, readUrl } from '../web/sources/index.ts'
+import { frontPageLinks, imgflipTopLinks, readUrl } from '../web/sources/index.ts'
 import { resolveStart } from '../web/start.ts'
 import { MAX_READS_PER_DAY, runTrip } from '../web/trip.ts'
 import type { Tick } from './context.ts'
@@ -15,6 +15,8 @@ const HAIKU = 'claude-haiku-5-5' as const
 /** The front pages offer these many links to the morning, most from Wikipedia. */
 const WIKIPEDIA_POINTS = 12
 const ESOLANG_POINTS = 6
+/** And the most-captioned meme formats of the last 30 days, the pulse of memes (spec 6.1). */
+const MEME_POINTS = 6
 
 const soft = async <T>(run: () => Promise<T>, note: (why: string) => void): Promise<T | null> => {
   try {
@@ -44,11 +46,12 @@ export async function morningStep(t: Tick): Promise<void> {
     return
   }
   if (!fetcher) return
-  const [wiki, esolangs] = await Promise.all([
+  const [wiki, esolangs, memes] = await Promise.all([
     soft(() => frontPageLinks(fetcher, 'en.wikipedia.org'), (why) => notes.push(`the Wikipedia front page could not be read: ${why}`)),
     soft(() => frontPageLinks(fetcher, 'esolangs.org'), (why) => notes.push(`the Esolang front page could not be read: ${why}`)),
+    soft(() => imgflipTopLinks(fetcher, MEME_POINTS), (why) => notes.push(`the Imgflip meme formats could not be read: ${why}`)),
   ])
-  const links = [...(wiki ?? []).slice(0, WIKIPEDIA_POINTS), ...(esolangs ?? []).slice(0, ESOLANG_POINTS)]
+  const links = [...(wiki ?? []).slice(0, WIKIPEDIA_POINTS), ...(esolangs ?? []).slice(0, ESOLANG_POINTS), ...(memes ?? [])]
   t.startingPoints = pickDoors(links, t.interests, createPrng((t.forkling.seed ^ Number(today.replaceAll('-', ''))) >>> 0))
   mind.pausedHosts = fetcher.pausedHosts()
 }

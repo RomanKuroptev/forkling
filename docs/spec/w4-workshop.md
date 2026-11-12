@@ -147,3 +147,4 @@ Decisions: Roman chose retire and restore through a tinker step on an existing w
 10. **Site: the workshop.**
 11. **Site: feed and "since your last visit".**
 12. **Setup, docs, release prep.**
+13. **Imgflip back (Roman's veto of the slice 9 drop, 12 November 2026).** The adapter, a morning feed of the top formats, and `verifyMemeSources` accepting an Imgflip record. Its source trial is in [`w4-trials/api.imgflip.com.md`](w4-trials/api.imgflip.com.md).

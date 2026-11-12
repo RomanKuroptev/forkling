@@ -3,7 +3,7 @@ import { isAllowed, isReadable } from '../src/web/allowlist.ts'
 import { WebError, type Fetcher } from '../src/web/fetch.ts'
 import { capLinks, normalizeLicence, wikipediaTopicLink, MAX_IMAGES, MAX_LINKS, MAX_RECORD_LINKS } from '../src/web/item.ts'
 import { skipReason } from '../src/web/skip.ts'
-import { articWork, commonsFeatured, commonsFile, esolangMainLinks, esolangPage, githubRepo, readUrl, wikipediaArticle, wikipediaFeatured, wikipediaSearch } from '../src/web/sources/index.ts'
+import { articWork, commonsFeatured, commonsFile, esolangMainLinks, esolangPage, githubRepo, imgflipFormat, imgflipTopLinks, readUrl, wikipediaArticle, wikipediaFeatured, wikipediaSearch } from '../src/web/sources/index.ts'
 
 /** A Fetcher that answers from a table of URL to JSON, text or bytes, and says 404 to anything else. */
 function fake(answers: Record<string, unknown>): Fetcher & { asked: string[] } {
@@ -31,6 +31,49 @@ function fake(answers: Record<string, unknown>): Fetcher & { asked: string[] } {
 
 const words = (n: number, w = 'word') => Array.from({ length: n }, () => w).join(' ')
 const wiki = 'https://en.wikipedia.org'
+
+describe('Imgflip, the pulse of meme formats (spec 6.1)', () => {
+  const memes = Array.from({ length: 10 }, (_, n) => ({ id: String(100 + n), name: `Format ${n}`, url: `https://i.imgflip.com/${n}.jpg`, box_count: 2, captions: 1000 - n }))
+  const f = () => fake({ 'https://api.imgflip.com/get_memes': { data: { memes } } })
+
+  it('is read by a wander and a meme, its pictures are fetched from i.imgflip.com, and a format page is readable', () => {
+    expect(isAllowed('https://api.imgflip.com/get_memes')).toBe(true)
+    expect(isAllowed('https://api.imgflip.com/get_memes', 'meme')).toBe(true)
+    expect(isAllowed('https://i.imgflip.com/5.jpg')).toBe(true)
+    expect(isAllowed('https://imgflip.com/meme/105')).toBe(false)
+    expect(isReadable('https://imgflip.com/meme/105')).toBe(true)
+    expect(isReadable('https://imgflip.com.evil.com/meme/105')).toBe(false)
+  })
+
+  it('offers the top formats in rank order as links to their format pages, and nothing is kept from the feed itself', async () => {
+    const links = await imgflipTopLinks(f(), 4)
+    expect(links).toEqual([0, 1, 2, 3].map((n) => ({ title: `Format ${n}`, url: `https://imgflip.com/meme/${100 + n}` })))
+  })
+
+  it('reads a format: its rank and caption count as text, its template picture, and the formats next to it and a Wikipedia page as links', async () => {
+    const item = await imgflipFormat(f(), '105')
+    expect(item).toMatchObject({ source: 'api.imgflip.com', kind: 'record', tier: 'voices', url: 'https://imgflip.com/meme/105', title: 'Format 5' })
+    expect(item.text).toContain('Rank among the 100 most-captioned formats of the last 30 days: 6')
+    expect(item.text).toContain('Captions in the last 30 days: 995')
+    expect(item.images).toEqual([{ url: 'https://i.imgflip.com/5.jpg', licence: null, credit: null }])
+    expect(item.links.length).toBeGreaterThanOrEqual(4)
+    expect(item.links.length).toBeLessThanOrEqual(MAX_RECORD_LINKS)
+    expect(item.links.some((l) => l.url === 'https://imgflip.com/meme/104')).toBe(true)
+    expect(item.links.some((l) => l.url === 'https://en.wikipedia.org/wiki/Format_5')).toBe(true)
+  })
+
+  it('is opened from a format page link, and a format that is not in the ranking is a 404', async () => {
+    expect((await readUrl(f(), 'https://imgflip.com/meme/105')).title).toBe('Format 5')
+    await expect(readUrl(f(), 'https://imgflip.com/meme/999')).rejects.toMatchObject({ code: 'http', status: 404 })
+    await expect(readUrl(f(), 'https://imgflip.com/')).rejects.toMatchObject({ code: 'not-allowed' })
+  })
+
+  it('does not trust the shape of the answer: a reply without a list of formats is an error, and odd entries are dropped', async () => {
+    await expect(imgflipTopLinks(fake({ 'https://api.imgflip.com/get_memes': { success: false } }), 4)).rejects.toBeInstanceOf(WebError)
+    const odd = fake({ 'https://api.imgflip.com/get_memes': { data: { memes: [{ id: 7, name: 5 }, { id: '8', name: 'Fine', url: 'https://i.imgflip.com/8.jpg', box_count: 2 }, null] } } })
+    expect(await imgflipTopLinks(odd, 4)).toEqual([{ title: 'Fine', url: 'https://imgflip.com/meme/8' }])
+  })
+})
 
 describe('items and links', () => {
   it('keeps at most 40 links, only allowed ones, each once', () => {
