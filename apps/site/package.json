@@ -19,6 +19,7 @@
     "@types/node": "^24.19.2"
   },
   "exports": {
+    "./build": "./src/build.ts",
     "./libs": "./src/libs.ts"
   }
 }

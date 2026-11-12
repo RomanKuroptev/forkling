@@ -54,4 +54,9 @@ td { padding: 2px 12px 2px 0; }
 dt { font-weight: bold; margin-top: 8px; }
 dd { margin: 0; }
 .pager { display: flex; justify-content: space-between; font-family: system-ui, sans-serif; }
+.shelf, .strip { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.strip { grid-template-columns: 1fr; }
+.strip > li > .shelf { margin-top: 4px; }
+.work img { display: block; max-width: 100%; height: auto; border: 1px solid var(--line, #ccc); }
+.work-frame iframe { display: block; width: 100%; max-width: 640px; height: 480px; border: 1px solid var(--line, #ccc); background: #fff; }
 `
