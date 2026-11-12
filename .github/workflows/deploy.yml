@@ -1,0 +1,54 @@
+name: deploy
+
+# Roman runs this by hand (Actions, deploy, Run workflow) with an engine release tag. It logs into the server as the deploy
+# user and runs deploy/deploy.sh there: check out the tag, install from the lockfile, restart the service, and wait until
+# it answers on /health. Nothing runs it by itself. The secrets are set once, in this repository's settings (see
+# docs/spec/w3-runbook.md): DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY and DEPLOY_KNOWN_HOSTS (the server's host key, so the
+# connection cannot be turned aside).
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Engine release to run, like v0.11.0'
+        required: true
+        type: string
+
+# Two deploys at once would fight over the checkout.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Check the tag
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$TAG' is not a release tag like v0.11.0"
+            exit 1
+          fi
+
+      - name: Prepare SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" "/opt/forkling/engine/deploy/deploy.sh '$TAG'"

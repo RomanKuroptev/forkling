@@ -10,6 +10,9 @@ export interface MindServerOptions {
   pagesOrigin: string
 }
 
+/** The loopback port Caddy forwards to. The unit file and the Caddyfile name the same one, and a test holds them together. */
+export const DEFAULT_PORT = 8787
+
 /** The server exposes only these three (spec 11.2). */
 const ROUTES: Record<string, string> = { '/now.json': 'GET', '/health': 'GET', '/notes': 'POST' }
 

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Installed by setup.sh as /usr/local/sbin/forkling-restart, owned by root. It is the only thing the deploy user may run as
+# root (see /etc/sudoers.d/forkling-deploy): it records which engine release is running and restarts the service. It never
+# runs anything from the engine checkout, which the deploy user owns, so a deploy key can run code as the service user and
+# never as root. The unit file is installed once by setup.sh from a root-owned copy for the same reason.
+set -euo pipefail
+
+TAG=${1:?usage: forkling-restart vX.Y.Z}
+[[ $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "not a release tag: $TAG" >&2; exit 1; }
+
+ENV_FILE=/etc/forkling/mind.env
+[ -f "$ENV_FILE" ] || { echo "$ENV_FILE is missing: run setup.sh first" >&2; exit 1; }
+
+if grep -q '^FORKLING_REF=' "$ENV_FILE"; then
+  sed -i "s/^FORKLING_REF=.*/FORKLING_REF=$TAG/" "$ENV_FILE"
+else
+  echo "FORKLING_REF=$TAG" >> "$ENV_FILE"
+fi
+systemctl restart forkling-mind

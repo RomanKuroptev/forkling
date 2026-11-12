@@ -10,6 +10,10 @@ on:
   push:
     branches: [main]
     paths: ['site/**', 'art/**']
+  # From the server on, nothing dispatches this after a commit, so it looks every 30 minutes (spec 14.3) and builds only if
+  # this commit is not already the one on the site.
+  schedule:
+    - cron: '*/30 * * * *'
 
 # A burst of changes collapses into one waiting deploy.
 concurrency:
@@ -17,6 +21,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -27,7 +32,28 @@ env:
   FORKLING_REF: v0.10.0
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      build: ${{ steps.gate.outputs.build }}
+    steps:
+      - id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          build=true
+          if [ "$EVENT" = schedule ]; then
+            last=$(gh run list --workflow pages.yml --status success --limit 1 --json headSha --jq '.[0].headSha // empty')
+            if [ "$last" = "$GITHUB_SHA" ]; then build=false; fi
+          fi
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
   deploy:
+    needs: check
+    if: needs.check.outputs.build == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:

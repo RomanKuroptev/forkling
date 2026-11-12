@@ -55,7 +55,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|trails\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|trails\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|watchdog)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
@@ -149,7 +149,7 @@ describe('templates/forkling-world seed', () => {
 
   it('has no builder or photo workflows, which come back with the milestones that need them', () => {
     const dir = join(root, 'forkling-world', '.github/workflows')
-    expect(readdirSync(dir).sort()).toEqual(['heartbeat.yml', 'mind.yml', 'pages.yml'])
+    expect(readdirSync(dir).sort()).toEqual(['heartbeat.yml', 'mind.yml', 'pages.yml', 'watchdog.yml'])
     const mind = readFileSync(join(dir, 'mind.yml'), 'utf8')
     expect(mind).not.toMatch(/photos|eyecam|build\.yml/)
   })
@@ -181,6 +181,16 @@ describe('templates/forkling-world website', () => {
   it('pins the same engine release as the mind', () => {
     const ref = (text: string) => /FORKLING_REF: (v\d+\.\d+\.\d+)/.exec(text)?.[1]
     expect(ref(read('pages.yml'))).toBe(ref(read('mind.yml')))
+    expect(ref(read('watchdog.yml'))).toBe(ref(read('mind.yml')))
+  })
+
+  it('also builds every 30 minutes once the server has replaced mind.yml, and skips a build when this commit is already up', () => {
+    const text = read('pages.yml')
+    expect(text).toMatch(/schedule:\s+- cron: '\*\/30 \* \* \* \*'/)
+    expect(text).toMatch(/gh run list --workflow pages\.yml --status success/)
+    expect(text).toMatch(/\$GITHUB_SHA/)
+    expect(text).toMatch(/needs\.check\.outputs\.build == 'true'/)
+    expect(text).toMatch(/actions: read/)
   })
 
   it('is started by the mind after a commit that changes what the site shows', () => {
@@ -285,5 +295,32 @@ describe('templates/forkling-world starter objects', () => {
       expect(spots[o.id]?.length, `${o.id} is somewhere unreachable`).toBe(1)
       expect(isWalkable(world.nav.grid, spots[o.id]![0]!.x, spots[o.id]![0]!.z), o.id).toBe(true)
     }
+  })
+})
+
+describe('templates/forkling-world watchdog (spec 14.3)', () => {
+  const text = () => readFileSync(join(root, 'forkling-world', '.github/workflows/watchdog.yml'), 'utf8')
+
+  it('checks every 30 minutes, only once the server address is set, so GitHub emails Roman when it fails', () => {
+    expect(text()).toMatch(/cron: '\*\/30 \* \* \* \*'/)
+    expect(text()).toMatch(/if: vars\.MIND_URL != ''/)
+    expect(text()).toMatch(/MIND_URL: \$\{\{ vars\.MIND_URL \}\}/)
+    expect(text()).toMatch(/workflow_dispatch:/)
+  })
+
+  it('reads only: no write permission and no secret', () => {
+    expect(text()).toMatch(/contents: read/)
+    expect(text()).not.toMatch(/contents: write|secrets\./)
+  })
+
+  it('runs watchdog.ts from the pinned engine release, without installing anything', () => {
+    expect(text()).toMatch(/FORKLING_REF: v\d+\.\d+\.\d+\s/)
+    expect(text()).toMatch(/sparse-checkout:\s+apps\/mind\/src\/watchdog\.ts/)
+    expect(text()).toMatch(/node engine\/apps\/mind\/src\/watchdog\.ts "\$MIND_URL"/)
+    expect(text()).not.toMatch(/pnpm install/)
+  })
+
+  it('does not run two at once', () => {
+    expect(text()).toMatch(/concurrency:\s+group: watchdog\s+cancel-in-progress: false/)
   })
 })
