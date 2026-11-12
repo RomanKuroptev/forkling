@@ -61,6 +61,10 @@ describe('WorkMeta (spec 7.1)', () => {
     for (const id of ['', 'A Work', '../x', 'x/y', 'x'.repeat(62)]) expect(WorkMeta.safeParse({ ...base, id }).success, id).toBe(false)
   })
 
+  it('keeps the name index for the workshop itself', () => {
+    expect(WorkMeta.safeParse({ ...base, id: 'index' }).success).toBe(false)
+  })
+
   it('a sketch is a size, not a kind', () => {
     expect(WorkMeta.safeParse({ ...base, size: 'sketch' }).success).toBe(true)
     expect(WorkMeta.safeParse({ ...base, size: 'huge' }).success).toBe(false)

@@ -6,6 +6,9 @@ import { JobId } from './job.ts'
 export const MAX_WORK_BYTES = 150 * 1024
 export const MAX_SKETCH_BYTES = 4 * 1024
 
+/** A work's page is `workshop/<id>.html`, so this name would take the place of the shelf. */
+export const RESERVED_WORK_IDS: readonly string[] = ['index']
+
 export const WorkKind = z.enum(['art', 'game', 'tool', 'sound', 'zine', 'meme'])
 export type WorkKind = z.infer<typeof WorkKind>
 
@@ -47,6 +50,7 @@ export const WorkMeta = z
     sources: z.array(WorkSource).max(6).default([]),
   })
   .superRefine((meta, ctx) => {
+    if (RESERVED_WORK_IDS.includes(meta.id)) ctx.addIssue({ code: 'custom', path: ['id'], message: `"${meta.id}" is a name the workshop keeps for itself` })
     if (meta.status === 'scrap' && !meta.scrapReason) ctx.addIssue({ code: 'custom', path: ['scrapReason'], message: 'a scrap says why' })
     if (meta.status !== 'scrap' && meta.scrapReason) ctx.addIssue({ code: 'custom', path: ['scrapReason'], message: 'only a scrap has a scrap reason' })
     if (meta.status === 'retired' && !meta.retireReason) ctx.addIssue({ code: 'custom', path: ['retireReason'], message: 'a retired work says why' })

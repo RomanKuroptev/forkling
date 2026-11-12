@@ -5,6 +5,7 @@ import { Beliefs, Forkling, Goals, Interests, SourceStats, Souvenir, TimelineEnt
 import { moodWords } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { esc, markdown } from './md.ts'
+import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
 
 /** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
 function localStamp(iso: string, timeZone: string): string {
@@ -64,6 +65,7 @@ const NAV: [string, string][] = [
   ['Journal', 'journal/'],
   ['Notebook', 'notebook/'],
   ['Obsessions', 'obsessions/'],
+  ['Workshop', 'workshop/'],
   ['Why?', 'why/'],
 ]
 
@@ -331,6 +333,10 @@ export function renderSite(world: string, out: string): { pages: string[] } {
     ].join('\n'),
   })
 
+  // The workshop is always there (spec 8): an empty shelf says so. A work is shown only through its own page, in its sandbox.
+  const works = loadWorks(world)
+  renderWorkshop({ works, tz, goals, add })
+
   const written: string[] = []
   const write = (rel: string, text: string) => {
     mkdirSync(dirname(join(out, rel)), { recursive: true })
@@ -339,5 +345,6 @@ export function renderSite(world: string, out: string): { pages: string[] } {
   }
   for (const [rel, html] of pages) write(rel, html)
   write('style.css', STYLE)
+  written.push(...publishWorks(world, out, works))
   return { pages: written }
 }

@@ -1,4 +1,4 @@
-import { WorkMeta, WorkMetaDraft, type WorkLibrary } from '@forkling/schema'
+import { RESERVED_WORK_IDS, WorkMeta, WorkMetaDraft, type WorkLibrary } from '@forkling/schema'
 import { z } from 'zod'
 import type { ModelId } from '../budget.ts'
 import { clampText } from '../decision.ts'
@@ -144,7 +144,7 @@ export function slugify(title: string): string {
 
 const uniqueId = (title: string, taken: ReadonlySet<string>): string => {
   const base = slugify(title)
-  if (!taken.has(base)) return base
+  if (!taken.has(base) && !RESERVED_WORK_IDS.includes(base)) return base
   for (let n = 2; n < 1000; n++) {
     const id = `${base.slice(0, 36)}-${n}`
     if (!taken.has(id)) return id
