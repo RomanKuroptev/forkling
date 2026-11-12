@@ -3,7 +3,13 @@ import type { UserInput } from './user.ts'
 /** The task when something has come up, or when the plan for the day has run out. */
 export const decideTask = (i: UserInput): string =>
   [
-    ...(i.triggers.some((t) => t.kind === 'replan')
+    ...(i.triggers.some((t) => t.kind === 'replan') && i.mindState.thought?.replanRequest
+      ? [
+          `One of your own thoughts said the plan no longer fits: "${i.mindState.thought.replanRequest.reason}". Look at the rest of today (until bedtime ${i.bedTime}, ${i.hoursLeft} ${i.hoursLeft === 1 ? 'hour' : 'hours'} left) and decide: write a new plan (set plan to the steps; the first starts now), or carry on as planned (set plan to null).`,
+          '',
+        ]
+      : []),
+    ...(i.triggers.some((t) => t.kind === 'replan') && !i.mindState.thought?.replanRequest
       ? [
           `Your plan for today has run out, or there is none. Write the next one, for the remaining ${i.hoursLeft} ${i.hoursLeft === 1 ? 'hour' : 'hours'} (until bedtime ${i.bedTime}): set plan to the steps; the first starts now.`,
           'Set plan to null only if you would rather be left to wander for a while; you will be asked again in an hour.',

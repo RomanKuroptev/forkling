@@ -76,6 +76,11 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
       found.push({ kind: 'replan', score: 0.45, detail: goals.now ? 'the last step of the day\'s plan has run its time' : 'there is no step in progress and nothing planned next' })
     }
   }
+  // A thought tick said the plan no longer fits (spec 2.3). It stays until a decide call answers it.
+  const asked = mindState.thought?.replanRequest
+  if (asked && !found.some((x) => x.kind === 'replan')) {
+    found.push({ kind: 'replan', score: 0.5, detail: `a thought said the plan no longer fits: ${asked.reason}` })
+  }
   // A new day starts when the forkling wakes, not at midnight, so a late night doesn't get a morning plan at 00:00.
   const awakeToday = sleepWindow(today, forkling.seed, forkling.timezone).wakeMs <= nowMs
   if (mindState.lastPlanDate !== today && awakeToday) {

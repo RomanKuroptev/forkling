@@ -22,6 +22,10 @@ export const StreamEntry = z.object({
   goalRef: z.string().optional(),
   /** Beliefs the mind said it was acting on. */
   beliefRefs: z.array(z.string()).optional(),
+  /** On a thought entry: the importance (1 to 10) it gave to earlier entries (spec 9.3). Append-only, so earlier lines are never rewritten. */
+  scored: z.array(z.object({ id: StreamId, importance: z.number().int().min(1).max(10) })).max(20).optional(),
+  /** On a thought entry: how surprising the current step is, 0 to 10. */
+  surprise: z.number().int().min(0).max(10).optional(),
 })
 export type StreamEntry = z.infer<typeof StreamEntry>
 

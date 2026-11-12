@@ -4,7 +4,7 @@ import type { RecentPast } from '../past.ts'
 import type { StartingPoint } from '../web/doors.ts'
 import { decideTask } from './decide.ts'
 import { morningTask } from './morning.ts'
-import { describeBelief, describeInterests, json, type ThinkKind } from './shared.ts'
+import { defang, describeBelief, describeInterests, json, type ThinkKind } from './shared.ts'
 import { weeklyTask } from './weekly.ts'
 
 export interface UserInput {
@@ -69,7 +69,6 @@ function describePast(i: UserInput): string[] {
 }
 
 /** Text from outside goes in between data tags, so it must not be able to close them. */
-const defang = (text: string) => text.replaceAll('</data', '<\\/data')
 
 /** The links of the front pages, as data: a title and an address each, and a mark on the doors. */
 function describeStartingPoints(points: readonly StartingPoint[] | undefined): string[] {

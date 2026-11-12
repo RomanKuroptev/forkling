@@ -187,3 +187,12 @@ describe('scoreSurprise', () => {
     })
   })
 })
+
+describe('a replan asked for by a thought tick (spec 2.3)', () => {
+  it('fires the replan trigger with the reason, though the plan has not run out', () => {
+    const asked = { ...calm, mindState: MindState.parse({ knownObjects: ['sunny-rock'], lastPlanDate: '2026-11-03', thought: { replanRequest: { reason: 'the lamp is not where I thought', at: '2026-11-03T09:58:00Z' } } }) }
+    const found = scoreSurprise(asked).find((t) => t.kind === 'replan')
+    expect(found?.detail).toContain('the lamp is not where I thought')
+    expect(kinds(calm)).not.toContain('replan')
+  })
+})
