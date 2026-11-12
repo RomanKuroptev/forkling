@@ -10,6 +10,7 @@ import { writeJson } from './world.ts'
 
 const ticksPath = (date: string) => `mind/ticks/${date}.jsonl`
 const HEALTH_PATH = 'mind/health.json'
+const PUSH_FAILING = 'push failing'
 
 /** A day's tick lines. A line that does not fit the schema is skipped, never fatal. */
 export function readTicks(dir: string, date: string): TickLine[] {
@@ -118,9 +119,13 @@ function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine
 export function logTick(t: Tick, result: TickResult): TickResult {
   if (t.deps.dryRun) return result
   const previous = readHealth(t.dir)
+  // The loop ticks every 10 seconds: a quiet tick leaves no line until the last one is `logEveryMs` old.
+  const quiet = t.deps.logEveryMs
+  const eventful = result.changed || t.attempts.length > 0 || t.triggers.length > 0
+  if (quiet !== undefined && previous && !eventful && t.nowMs - Date.parse(previous.lastTick.at) < quiet && !!t.deps.pushFailing === previous.warnings.includes(PUSH_FAILING)) return result
   const line = lineFor(t, result, previous)
   appendTick(t.dir, t.today, line)
   pruneTicks(t.dir, t.today)
-  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources }))
+  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing }))
   return { ...result, logged: true }
 }
