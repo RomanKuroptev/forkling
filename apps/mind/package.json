@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "tick": "node src/cli.ts",
+    "serve": "node --env-file-if-exists=../../.env src/serve.ts",
     "replay": "node src/replay-cli.ts",
     "migrate-w1": "node src/migrate-cli.ts",
     "source-trial": "node --env-file-if-exists=../../.env src/trial-cli.ts",
