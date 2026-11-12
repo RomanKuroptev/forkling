@@ -39,6 +39,8 @@ export const WorkMeta = z
     constraint: z.string().max(200).nullable().default(null),
     status: WorkStatus,
     scrapReason: z.string().min(1).max(300).optional(),
+    /** Why Merge put it away (spec 9.9). */
+    retireReason: z.string().min(1).max(140).optional(),
     size: z.enum(['full', 'sketch']),
     installedIn: z.string().max(80).nullable().default(null),
     libraries: z.array(WorkLibrary).max(3).default([]),
@@ -47,6 +49,8 @@ export const WorkMeta = z
   .superRefine((meta, ctx) => {
     if (meta.status === 'scrap' && !meta.scrapReason) ctx.addIssue({ code: 'custom', path: ['scrapReason'], message: 'a scrap says why' })
     if (meta.status !== 'scrap' && meta.scrapReason) ctx.addIssue({ code: 'custom', path: ['scrapReason'], message: 'only a scrap has a scrap reason' })
+    if (meta.status === 'retired' && !meta.retireReason) ctx.addIssue({ code: 'custom', path: ['retireReason'], message: 'a retired work says why' })
+    if (meta.status !== 'retired' && meta.retireReason) ctx.addIssue({ code: 'custom', path: ['retireReason'], message: 'only a retired work has a retire reason' })
     // A scrap is kept with its reason whatever was wrong with it, a missing source included.
     if (meta.kind === 'meme' && meta.status !== 'scrap') {
       for (const role of ['looked', 'read'] as const) {

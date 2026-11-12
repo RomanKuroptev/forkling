@@ -162,3 +162,26 @@ describe('the tinker handler (spec 10.2)', () => {
     expect(JobResult.safeParse({ id: 'x', kind: 'tinker', status: out.status, reason: out.reason, at: '2026-11-14T10:31:00Z' }).success).toBe(true)
   })
 })
+
+describe('a remix job (spec 7.5)', () => {
+  it('reads the earlier work from the world, puts its page in the prompt, and says the new work remixes it', async () => {
+    mkdirSync(file('works/lamp'), { recursive: true })
+    writeFileSync(file('works/lamp/index.html'), '<html><body>OLD-LAMP-MARKER</body></html>')
+    writeFileSync(file('works/lamp/meta.json'), JSON.stringify(WorkMeta.parse({ id: 'lamp', title: 'Humming lamp', kind: 'art', about: 'A lamp that hums.', interest: null, made: '2026-11-01T10:00:00Z', status: 'shelf', size: 'full' })))
+    const { llm, calls } = fakeLlm([output()])
+    const github = fakeGithub()
+    const h = handler(llm, checkerOf([{ ok: true }]), github.client)
+    await h({ ...job, remixOf: 'lamp' }, { dir, nowMs: NOW })
+    expect(calls[0]!.user).toContain('<data source="remix">')
+    expect(calls[0]!.user).toContain('OLD-LAMP-MARKER')
+    expect(WorkMeta.parse(JSON.parse(String(github.opened[0]!.files[1]!.content))).remixOf).toBe('lamp')
+  })
+
+  it('goes on without a remix when the earlier work is gone', async () => {
+    const { llm, calls } = fakeLlm([output()])
+    const github = fakeGithub()
+    await handler(llm, checkerOf([{ ok: true }]), github.client)({ ...job, remixOf: 'gone' }, { dir, nowMs: NOW })
+    expect(calls[0]!.user).not.toContain('<data source="remix">')
+    expect(WorkMeta.parse(JSON.parse(String(github.opened[0]!.files[1]!.content))).remixOf).toBeNull()
+  })
+})

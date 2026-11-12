@@ -114,6 +114,8 @@ export const Health = z.object({
   mood: z.object({ label: z.string(), minutes: z.number().int().nonnegative() }),
   spend: z.object({ monthUsd: z.number(), capUsd: z.number(), paceUsd: z.number() }),
   openBuild: z.object({ id: z.string(), kind: z.string(), ageHours: z.number().nonnegative() }).nullable(),
+  /** What is measured about sameness, and never enforced (spec 12.3, 12.6). Only the work numbers so far; W7 adds the rest. */
+  novelty: z.object({ works: z.object({ made: z.number().int().nonnegative(), wouldFire: z.number().int().nonnegative(), byKind: z.record(z.string(), z.number().int().nonnegative()) }) }).optional(),
   /** What looks wrong, in plain words. Empty means nothing does. */
   warnings: z.array(z.string().max(200)).max(20),
 })

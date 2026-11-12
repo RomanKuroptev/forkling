@@ -10,7 +10,7 @@ import type { BuildHandler } from '../build-worker.ts'
 import type { WorkChecker } from './browser-check.ts'
 import type { GithubClient, GithubFile } from './github.ts'
 import { runTinker, type Complete, type TinkerInput } from './tinker.ts'
-import { existingWorkIds, readWorks, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from './works.ts'
+import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from './works.ts'
 
 export interface TinkerHandlerOptions {
   /** The world, read only: this handler never writes in it. */
@@ -77,7 +77,7 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
       size: 'full',
       interests: topInterestLines(interests.success ? interests.data : Interests.parse({})),
       souvenirs: recentSouvenirs(o.dir),
-      remix: null,
+      remix: job.remixOf ? readWorkSource(o.dir, job.remixOf) : null,
       untried: untriedLibraries(works),
       recentTitles: recentWorkTitles(works),
       manuals: [],

@@ -98,6 +98,8 @@ export const MindState = z.object({
    */
   sparked: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), pending: z.object({ topic: z.string().max(60), gain: z.number() }).nullable() }).optional(),
   thought: ThoughtState.optional(),
+  /** When Merge put works away in the last 7 days (spec 9.9: at most 2 a week). */
+  retirements: z.array(Timestamp).max(10).optional(),
   /** Results of the build worker the mind has booked (`seen`), and the ones it has not yet answered with a decide call (`pending`, spec 2.3). */
   jobs: z.object({ seen: z.array(z.string().max(80)).max(100).default([]), pending: z.array(z.object({ id: z.string().max(80), text: z.string().max(300) })).max(10).default([]) }).optional(),
   /** Sketches made on `date` (spec 9.8: at most 3 a day), counted when one is shelved or scrapped. */
