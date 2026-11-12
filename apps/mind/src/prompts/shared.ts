@@ -4,6 +4,9 @@ export type ThinkKind = 'morning' | 'weekly' | 'decide'
 
 export const json = (value: unknown) => JSON.stringify(value)
 
+/** Text inside a `<data>` block cannot close it early. */
+export const defang = (text: string) => text.replaceAll('</data', '<\\/data')
+
 /** What it is into right now: its strongest topics and any obsession, as lines for a prompt. */
 export function describeInterests(interests: Interests): string[] {
   const top = Object.entries(interests.topics)

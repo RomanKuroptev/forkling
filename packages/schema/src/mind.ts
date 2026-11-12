@@ -53,6 +53,22 @@ export const PhotoShot = z.object({
 export type PhotoShot = z.infer<typeof PhotoShot>
 
 /** `mind/state.json`: what the mind has already seen, so it can tell what is new. */
+/** What the thought tick keeps between ticks (spec 2.2, 2.3, 11.3). Absent in a world that has never had one. */
+export const ThoughtState = z.object({
+  /** When the last thought tick ran, good or not, so the next one is an interval later. */
+  lastAt: Timestamp.optional(),
+  /** Failed thought ticks in a row. The fifth pauses them for 15 minutes. */
+  failures: z.number().int().nonnegative().default(0),
+  pausedUntil: Timestamp.optional(),
+  /** Replans a thought tick has asked for on `date`: at most 4 a day. */
+  replans: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
+  /** A replan asked for and not yet answered by a decide call. */
+  replanRequest: z.object({ reason: z.string().max(140), at: Timestamp }).optional(),
+  /** The last 5 thought lines, newest last: "you just thought". */
+  recent: z.array(z.string().max(140)).max(5).default([]),
+})
+export type ThoughtState = z.infer<typeof ThoughtState>
+
 export const MindState = z.object({
   /** Object ids the forkling has met. An id not in here is a novelty. */
   knownObjects: z.array(z.string()).default([]),
@@ -81,6 +97,7 @@ export const MindState = z.object({
    * sparks a day wake the mind. `count` is the sparks answered on `date`.
    */
   sparked: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), pending: z.object({ topic: z.string().max(60), gain: z.number() }).nullable() }).optional(),
+  thought: ThoughtState.optional(),
   /** Local date interests last faded, so they fade once a day. */
   interestsFadedOn: z.iso.date().optional(),
   /** Local date of the last bedtime reflection, so it happens once a day. */

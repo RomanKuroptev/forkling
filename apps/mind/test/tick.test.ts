@@ -654,3 +654,37 @@ describe('dry runs', () => {
     expect(readFileSync(file('forkling.json'), 'utf8')).toBe(readFileSync(join(templates, 'forkling.json'), 'utf8'))
   })
 })
+
+describe('a replan asked for by a thought tick', () => {
+  it('wakes one decide call that is told why, and the request is cleared once answered', async () => {
+    await runTick(dir, at(NOW, { llm: fakeLlm() }))
+    const state = MindState.parse(readJson('mind/state.json'))
+    writeJson('mind/state.json', { ...state, thought: { replanRequest: { reason: 'the lighthouse trip no longer feels right', at: minutesAfter(4) } } })
+
+    const llm = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(5), { llm }))
+    expect(llm.calls).toHaveLength(1)
+    expect(llm.calls[0]!.user).toContain('the lighthouse trip no longer feels right')
+    expect(llm.calls[0]!.user).not.toContain('has run out')
+
+    const after = MindState.parse(readJson('mind/state.json'))
+    expect(after.thought?.replanRequest).toBeUndefined()
+    expect(after.replanAfter).toBeUndefined()
+  })
+
+  it('stays asked for when the decide call fails, and is tried again after the 30-minute wait', async () => {
+    await runTick(dir, at(NOW, { llm: fakeLlm() }))
+    const state = MindState.parse(readJson('mind/state.json'))
+    writeJson('mind/state.json', { ...state, thought: { replanRequest: { reason: 'it no longer fits', at: minutesAfter(4) } } })
+
+    await runTick(dir, at(minutesAfter(5), { llm: fakeLlm(() => null) }))
+    expect(MindState.parse(readJson('mind/state.json')).thought?.replanRequest).toBeDefined()
+
+    const waiting = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(10), { llm: waiting }))
+    expect(waiting.calls).toHaveLength(0)
+    const later = fakeLlm(keep)
+    await runTick(dir, at(minutesAfter(36), { llm: later }))
+    expect(later.calls).toHaveLength(1)
+  })
+})

@@ -85,8 +85,10 @@ export function applyDecision(t: Tick): void {
         delete goals.now
       }
     }
-  } else if (triggers.some((x) => x.kind === 'replan')) {
+  } else if (triggers.some((x) => x.kind === 'replan') && !mind.thought?.replanRequest) {
     // It was asked for a plan and wants none: it is left to itself for a while before it is asked again.
     mind.replanAfter = replanAfter
   }
+  // A replan a thought asked for is answered by this call, whatever it decided (a failed call never gets here).
+  if (mind.thought?.replanRequest) delete mind.thought.replanRequest
 }
