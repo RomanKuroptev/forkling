@@ -156,6 +156,26 @@ describe('the pass marks of spec 6.5', () => {
     expect(trial(reads(20, { answer: answer({ interest: 3 }) })).checks.find((c) => c.name === 'Not boring')!.pass).toBe(false)
   })
 
+  it('holds a feed host to the marks that fit a feed: nothing is kept from a feed, so "gives something" and "not boring" are shown but not marked (spec 6.1)', () => {
+    const feed = (rs: TrialRead[]) => evaluateTrial({ host: 'api.imgflip.com', kind: 'record', tier: 'voices', seeds: 5, reads: rs, robots, feed: true })
+    const dull = reads(20, { item: page({ kind: 'record', text: words(10), images: [{ url: 'https://x', licence: null, credit: null }], links: Array.from({ length: 5 }, (_, n) => link(n)) }), souvenir: 'none', answer: answer({ interest: 3 }) })
+    expect(trial(dull, 'record', 'voices').verdict).toBe('fail')
+    const report = feed(dull)
+    expect(report.verdict).toBe('pass')
+    expect(report.checks.find((c) => c.name === 'Gives something')).toMatchObject({ pass: null, value: '0% (0 of 20)' })
+    expect(report.checks.find((c) => c.name === 'Not boring')).toMatchObject({ pass: null, value: '3.0 out of 10 on average' })
+    expect(report.checks.find((c) => c.name === 'Gives something')!.mark).toMatch(/feed/i)
+  })
+
+  it('still holds a feed host to being allowed, reliable, readable and leading somewhere', () => {
+    const feed = (rs: TrialRead[]) => evaluateTrial({ host: 'api.imgflip.com', kind: 'record', tier: 'voices', seeds: 5, reads: rs, robots, feed: true })
+    const record = (over: Partial<TrialRead> = {}, item: Partial<Item> = {}) => reads(20, { item: page({ kind: 'record', text: words(10), images: [{ url: 'https://x', licence: null, credit: null }], links: Array.from({ length: 5 }, (_, n) => link(n)), ...item }), ...over })
+    expect(feed([...record().slice(0, 18), ...record({ item: null, fetchOk: false, answer: null, souvenir: 'none' }).slice(0, 2)]).verdict).toBe('fail')
+    expect(feed(record({}, { links: [link(1)] })).verdict).toBe('fail')
+    expect(feed(record({}, { images: [] })).verdict).toBe('fail')
+    expect(feed([]).verdict).toBe('fail')
+  })
+
   it('holds a record to its own marks: a picture or 40 words, and 4 links', () => {
     const record = (links: number, over: Partial<Item> = {}) => reads(20, { item: page({ kind: 'record', text: words(10), images: [{ url: 'https://x', licence: null, credit: null }], links: Array.from({ length: links }, (_, n) => link(n)), ...over }) })
     expect(trial(record(4), 'record').verdict).toBe('pass')

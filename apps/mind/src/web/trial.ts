@@ -50,6 +50,8 @@ export interface TrialInput {
   seeds: number
   reads: readonly TrialRead[]
   robots: RobotsResult
+  /** A feed host gives starting points only and nothing is kept from it (spec 6.1), so "gives something" and "not boring" are shown, not marked. */
+  feed?: boolean
 }
 
 const pct = (n: number, of: number) => (of === 0 ? 0 : n / of)
@@ -63,6 +65,7 @@ export function evaluateTrial(input: TrialInput): TrialReport {
   const fetched = reads.filter((r) => r.item)
   const answered = reads.filter((r) => r.answer)
   const empty = reads.length === 0
+  const feed = input.feed === true
 
   const reliable = reads.filter((r) => r.fetchOk).length
   const readableN = fetched.filter((r) => readable(r.item!)).length
@@ -83,8 +86,18 @@ export function evaluateTrial(input: TrialInput): TrialReport {
       pass: fetched.length > 0 && pct(readableN, fetched.length) >= marks.readable,
     },
     { name: 'Leads somewhere', value: `${links.toFixed(1)} links on average`, mark: `${marks.links} or more`, pass: fetched.length > 0 && links >= marks.links },
-    { name: 'Gives something', value: show(gave, answered.length), mark: `${marks.gives * 100}% or more keep a souvenir`, pass: answered.length > 0 && pct(gave, answered.length) >= marks.gives },
-    { name: 'Not boring', value: `${interest.toFixed(1)} out of 10 on average`, mark: `${marks.interest} or more`, pass: answered.length > 0 && interest >= marks.interest },
+    {
+      name: 'Gives something',
+      value: show(gave, answered.length),
+      mark: feed ? 'not marked for a feed: nothing is kept from a feed (6.1)' : `${marks.gives * 100}% or more keep a souvenir`,
+      pass: feed ? null : answered.length > 0 && pct(gave, answered.length) >= marks.gives,
+    },
+    {
+      name: 'Not boring',
+      value: `${interest.toFixed(1)} out of 10 on average`,
+      mark: feed ? 'not marked for a feed: it is only where a trip starts (6.1)' : `${marks.interest} or more`,
+      pass: feed ? null : answered.length > 0 && interest >= marks.interest,
+    },
     {
       name: 'Licences',
       value: images.length === 0 ? 'no image souvenirs kept' : show(licensed, images.length),

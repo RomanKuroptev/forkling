@@ -10,6 +10,8 @@ export interface HostPlan {
   itemHost: string
   /** Paths the engine fetches there, checked against robots.txt. */
   paths: string[]
+  /** A feed host (spec 6.1): it only offers starting points, so the trial does not mark what a read keeps or how interesting it was. */
+  feed?: boolean
   /** Seed number to a starting item. `offset` gives a different mix on another run. */
   start(f: Fetcher, seed: number, offset: number): Promise<Item>
 }
@@ -32,6 +34,7 @@ export const HOST_PLANS: readonly HostPlan[] = [
     host: 'api.imgflip.com',
     itemHost: 'imgflip.com',
     paths: ['/get_memes'],
+    feed: true,
     start: async (f, seed, offset) => imgflipFormat(f, at(await imgflipTopLinks(f, 100), offset + seed).url.split('/').pop()!),
   },
   { host: 'api.artic.edu', itemHost: 'www.artic.edu', paths: ['/api/v1/artworks/'], start: async (f, seed, offset) => articWork(f, await articRandomId(f, 1 + ((offset * 97 + seed * 331) % 900))) },
