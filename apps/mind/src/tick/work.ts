@@ -6,6 +6,8 @@ import { buildReworkUser, MAX_RETIRES_PER_WEEK, REWORK_MAX_TOKENS, ReworkAnswer,
 import { runTinker, type TinkerInput } from '../builds/tinker.ts'
 import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
+import { createFetcher } from '../web/fetch.ts'
+import { manualPagesFor } from '../web/sources/manuals.ts'
 import type { Tick } from './context.ts'
 
 /**
@@ -116,6 +118,9 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
   const checker = t.deps.workCheck
   if (!checker) return rested('there is no browser here to check a sketch')
 
+  const untried = untriedLibraries(works)
+  // The manuals are for tinker only, read by code, and a page that cannot be read is just left out. (A pause from a 429 on one is not kept.)
+  const manuals = t.deps.web && untried.length > 0 ? await manualPagesFor(createFetcher({ ...t.deps.web, verb: 'tinker' }), untried) : []
   const input: TinkerInput = {
     idea: o.idea,
     reason: step.reason,
@@ -123,9 +128,9 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
     interests: topInterestLines(t.interests),
     souvenirs: recentSouvenirs(t.dir),
     remix: o.remix,
-    untried: untriedLibraries(works),
+    untried,
     recentTitles: recentWorkTitles(works),
-    manuals: [],
+    manuals,
   }
   const taken = new Set([...existingWorkIds(t.dir), ...t.newWorks.map((w) => w.meta.id)])
   const outcome = await runTinker({ complete: (kind, model, user, schema, maxTokens) => t.ask(kind, model, user, schema, maxTokens), checker, nowIso: t.nowIso, existingIds: taken, deep: !!step.deep }, input)

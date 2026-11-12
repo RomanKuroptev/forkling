@@ -1,4 +1,4 @@
-import { hostRule, isAllowed, USER_AGENT } from './allowlist.ts'
+import { hostRule, isAllowed, USER_AGENT, type ReadVerb } from './allowlist.ts'
 
 /** The most one response may be, in bytes (spec 6.2). */
 export const MAX_BYTES = 2 * 1024 * 1024
@@ -31,6 +31,8 @@ export interface FetchLine {
 }
 
 export interface FetcherOptions {
+  /** Who is reading (default `wander`): a host is only fetched for a verb it allows, at every step of a redirect too. */
+  verb?: ReadVerb
   fetchImpl?: FetchImpl
   now?: () => number
   sleep?: (ms: number) => Promise<void>
@@ -122,7 +124,7 @@ export function createFetcher(options: FetcherOptions = {}): Fetcher {
     let url = start
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       const host = hostOf(url)
-      if (!isAllowed(url)) {
+      if (!isAllowed(url, options.verb)) {
         note(url, 'not-allowed')
         throw new WebError(hop === 0 ? 'not-allowed' : 'redirect-not-allowed', `${url} is not on the allowlist`)
       }

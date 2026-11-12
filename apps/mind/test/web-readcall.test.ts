@@ -83,7 +83,8 @@ describe('performRead', () => {
 
 describe('the trial hosts', () => {
   it('have a plan for every page and record host on the allowlist, each with paths for robots.txt', () => {
-    const readable = ALLOWLIST.filter((h) => h.kind !== 'image').map((h) => h.host)
+    // Manual hosts are for tinker only, and were trialled in W2 (docs/spec/w2-trials/); the plans here are for wander trips.
+    const readable = ALLOWLIST.filter((h) => h.kind !== 'image' && !h.verbs).map((h) => h.host)
     expect(HOST_PLANS.map((p) => p.host).sort()).toEqual([...readable].sort())
     for (const plan of HOST_PLANS) expect(plan.paths.length, plan.host).toBeGreaterThan(0)
   })

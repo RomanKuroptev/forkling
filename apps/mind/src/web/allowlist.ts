@@ -7,6 +7,8 @@
  */
 export type HostKind = 'page' | 'record' | 'image'
 export type Tier = 'reference' | 'voices'
+/** Who is reading: a wander trip, a tinker step (the library manuals) or a meme (spec 6.1, 7.7). */
+export type ReadVerb = 'wander' | 'tinker' | 'meme'
 
 export interface HostRule {
   host: string
@@ -14,7 +16,11 @@ export interface HostRule {
   tier: Tier
   /** The least time between two requests to the host. */
   gapMs: number
+  /** The verbs that may read it. A host with none named is for wander only. */
+  verbs?: readonly ReadVerb[]
 }
+
+const allowsVerb = (rule: HostRule, verb: ReadVerb) => (rule.verbs ? rule.verbs.includes(verb) : verb === 'wander')
 
 /** Wikimedia sites 1 request every 2 seconds, artic.edu 30 a minute (the same thing), any other host 1 a second. */
 const SLOW = 2000
@@ -22,8 +28,9 @@ const FAST = 1000
 
 // The hosts of W2 (Roman, 12 November 2026, after the source trials). Left out for now, with the reason:
 //   lobste.rs and hacker-news.firebaseio.com: their robots.txt disallows us (a voices host can come back as its own trial, e.g. hn.algolia.com).
-//   developer.mozilla.org, p5js.org, tonejs.github.io, threejs.org: the library manuals are for tinker (W4).
-//   api.imgflip.com: meme formats are for W4. api.nasa.gov: needs a key and a better adapter.
+//   api.nasa.gov: needs a key and a better adapter.
+// The library manuals (W4) are on the list for tinker only: a wander is refused them, and they were trialled in W2.
+// Meme formats (api.imgflip.com) join for memes only.
 // Wikipedia, the Esolang wiki and Commons are read through their `/wiki/` pages: their robots.txt allows those and disallows the API.
 export const ALLOWLIST: readonly HostRule[] = [
   { host: 'en.wikipedia.org', kind: 'page', tier: 'reference', gapMs: SLOW },
@@ -33,6 +40,11 @@ export const ALLOWLIST: readonly HostRule[] = [
   { host: 'upload.wikimedia.org', kind: 'image', tier: 'reference', gapMs: SLOW },
   { host: 'api.artic.edu', kind: 'record', tier: 'reference', gapMs: SLOW },
   { host: 'www.artic.edu', kind: 'image', tier: 'reference', gapMs: SLOW },
+  // The library manuals, for tinker only (spec 6.1): what Merge reads about the tool it is making something with.
+  { host: 'p5js.org', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },
+  { host: 'tonejs.github.io', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },
+  { host: 'threejs.org', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },
+  { host: 'developer.mozilla.org', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },
 ]
 
 /** The project's name and where to find it. A contact address that is a repo, never anyone's email. */
@@ -42,15 +54,16 @@ export function hostRule(host: string): HostRule | undefined {
   return ALLOWLIST.find((rule) => rule.host === host)
 }
 
-/** A URL Merge may fetch: https, no port, no login, and a host on the list exactly. */
-export function isAllowed(url: string): boolean {
+/** A URL Merge may fetch for this verb (a wander unless said otherwise): https, no port, no login, and a host on the list exactly that the verb may read. */
+export function isAllowed(url: string, verb: ReadVerb = 'wander'): boolean {
   let u: URL
   try {
     u = new URL(url)
   } catch {
     return false
   }
-  return u.protocol === 'https:' && u.port === '' && u.username === '' && u.password === '' && hostRule(u.hostname) !== undefined
+  const rule = hostRule(u.hostname)
+  return u.protocol === 'https:' && u.port === '' && u.username === '' && u.password === '' && rule !== undefined && allowsVerb(rule, verb)
 }
 
 /**

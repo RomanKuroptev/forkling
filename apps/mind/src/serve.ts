@@ -58,6 +58,7 @@ async function main(): Promise<void> {
   // Checks a sketch in a browser (spec 7.3). It starts one only when a sketch is made.
   const workCheck = createBrowserChecker()
 
+  const web = env.GITHUB_TOKEN ? { authorization: { 'api.github.com': `Bearer ${env.GITHUB_TOKEN}` } } : {}
   const loop = createLoop({
     dir,
     clock: Date.now,
@@ -68,7 +69,7 @@ async function main(): Promise<void> {
       behaviors: species.behaviors,
       speciesPersona: species.persona,
       workCheck,
-      web: env.GITHUB_TOKEN ? { authorization: { 'api.github.com': `Bearer ${env.GITHUB_TOKEN}` } } : {},
+      web,
       engine: env.FORKLING_REF ?? 'dev',
     },
   })
@@ -76,7 +77,7 @@ async function main(): Promise<void> {
   const repo = env.FORKLING_GITHUB_REPO ?? repoFromUrl(values.repo ?? env.FORKLING_REPO_URL ?? '')
   const github = env.GITHUB_TOKEN && repo ? createGithubClient({ token: env.GITHUB_TOKEN, repo }) : null
   if (!github) console.log('the build worker has no jobs: it needs GITHUB_TOKEN and the world repository (FORKLING_REPO_URL or FORKLING_GITHUB_REPO)')
-  const worker = createBuildWorker({ dir, now: Date.now, handlers: github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now }) } : {} })
+  const worker = createBuildWorker({ dir, now: Date.now, handlers: github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now, web }) } : {} })
 
   const server = createMindServer({ now: () => loop.now(), health: () => buildHealthResponse(dir, Date.now()), pagesOrigin })
   await new Promise<void>((ready, fail) => {

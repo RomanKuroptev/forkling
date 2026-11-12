@@ -7,6 +7,8 @@ import { effortFor, thinkingFor, type LlmClient } from '../llm.ts'
 import { buildSystem } from '../prompts.ts'
 import { DEFAULT_SEED } from '../seed.ts'
 import type { BuildHandler } from '../build-worker.ts'
+import { createFetcher, type FetcherOptions } from '../web/fetch.ts'
+import { manualPagesFor } from '../web/sources/manuals.ts'
 import type { WorkChecker } from './browser-check.ts'
 import type { GithubClient, GithubFile } from './github.ts'
 import { runTinker, type Complete, type TinkerInput } from './tinker.ts'
@@ -20,6 +22,8 @@ export interface TinkerHandlerOptions {
   checker: WorkChecker
   github: GithubClient
   now: () => number
+  /** How the web is reached, for the manuals. Without it no manual is offered. */
+  web?: Omit<FetcherOptions, 'paused' | 'verb'>
 }
 
 const readJson = (dir: string, rel: string): unknown => {
@@ -70,6 +74,8 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
     }
 
     const works = readWorks(o.dir)
+    const untried = untriedLibraries(works)
+    const manuals = o.web && untried.length > 0 ? await manualPagesFor(createFetcher({ ...o.web, verb: 'tinker' }), untried) : []
     const interests = Interests.safeParse(readJson(o.dir, 'brain/interests.json'))
     const input: TinkerInput = {
       idea: job.idea,
@@ -78,9 +84,9 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
       interests: topInterestLines(interests.success ? interests.data : Interests.parse({})),
       souvenirs: recentSouvenirs(o.dir),
       remix: job.remixOf ? readWorkSource(o.dir, job.remixOf) : null,
-      untried: untriedLibraries(works),
+      untried,
       recentTitles: recentWorkTitles(works),
-      manuals: [],
+      manuals,
     }
     const outcome = await runTinker({ complete, checker: o.checker, nowIso, existingIds: new Set(existingWorkIds(o.dir)) }, input)
 
