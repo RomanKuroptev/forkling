@@ -99,6 +99,7 @@ export function writeWorld(t: Tick): TickResult {
       if (writeJson(dir, `${base}/meta.json`, work.meta)) written.push(`${base}/meta.json`)
       if (work.thumb && writeBytes(dir, `${base}/thumb.png`, work.thumb)) written.push(`${base}/thumb.png`)
     }
+    for (const job of t.newJobs) if (writeJson(dir, `mind/builds/${job.id}.json`, job)) written.push(`mind/builds/${job.id}.json`)
     if (t.planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)
     for (const page of t.notebook) if (writeText(dir, page.path, page.text)) written.push(page.path)
     if (t.journal && writeText(dir, `journal/${t.journal.date}.md`, t.journal.text)) written.push(`journal/${t.journal.date}.md`)

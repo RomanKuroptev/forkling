@@ -89,6 +89,8 @@ export function applyDecision(t: Tick): void {
     // It was asked for a plan and wants none: it is left to itself for a while before it is asked again.
     mind.replanAfter = replanAfter
   }
+  // Build results the call was told about are answered once, whatever it decided (a failed call never gets here).
+  if (mind.jobs && mind.jobs.pending.length > 0) mind.jobs.pending = []
   // A replan a thought asked for is answered by this call, whatever it decided (a failed call never gets here).
   if (mind.thought?.replanRequest) delete mind.thought.replanRequest
 }

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { Timestamp } from './intention.ts'
+import { BudgetCall } from './mind.ts'
 
 /** A job id is a plain slug, so it is safe as part of a file name. */
 export const JobId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,60}$/, 'lowercase words with dashes')
@@ -23,8 +24,25 @@ export const JobResult = z.object({
   id: JobId,
   kind: z.string().min(1).max(30),
   status: z.enum(['done', 'failed']),
-  /** Why it failed. */
+  /** Why it failed, or why a finished work is in the scrap bin. */
   reason: z.string().max(300).optional(),
+  /** For a work (spec 10.2): which one, its title, whether it is on the shelf or in the scrap bin, and the pull request that carries it. */
+  workId: JobId.optional(),
+  title: z.string().max(40).optional(),
+  workStatus: z.enum(['shelf', 'scrap']).optional(),
+  prUrl: z.url().max(300).optional(),
+  /** What the worker spent, for the mind to book once. The worker never writes the ledger. */
+  calls: z.array(BudgetCall).default([]),
   at: Timestamp,
 })
 export type JobResult = z.infer<typeof JobResult>
+
+/** A full work the mind asks the worker for (spec 2.4, 10.2): the idea and the reason are Merge's own words. */
+export const TinkerJob = JobRequest.extend({
+  kind: z.literal('tinker'),
+  idea: z.string().min(1).max(120),
+  reason: z.string().min(1).max(200),
+  /** An earlier work to remix (spec 7.5). */
+  remixOf: JobId.nullable().default(null),
+})
+export type TinkerJob = z.infer<typeof TinkerJob>

@@ -127,6 +127,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     newTrails: [],
     newSouvenirs: [],
     newWorks: [],
+    newJobs: [],
     arts: mind.arts?.date === today ? mind.arts : { date: today, count: 0 },
 
     decision: null,

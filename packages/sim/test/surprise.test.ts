@@ -196,3 +196,19 @@ describe('a replan asked for by a thought tick (spec 2.3)', () => {
     expect(kinds(calm)).not.toContain('replan')
   })
 })
+
+describe('a build that finished (spec 2.3: buildResult, each result once)', () => {
+  it('fires with what happened, while the mind has not answered it', () => {
+    const done = { ...calm, mindState: MindState.parse({ knownObjects: ['sunny-rock'], lastPlanDate: '2026-11-03', jobs: { seen: ['a'], pending: [{ id: 'a', text: 'the workshop finished "A lamp": it passed its check' }] } }) }
+    const found = scoreSurprise(done).find((t) => t.kind === 'buildResult')
+    expect(found?.detail).toContain('the workshop finished "A lamp"')
+    expect(kinds(calm)).not.toContain('buildResult')
+  })
+
+  it('fires once for several results, and the detail lists each', () => {
+    const two = { ...calm, mindState: MindState.parse({ knownObjects: ['sunny-rock'], lastPlanDate: '2026-11-03', jobs: { seen: ['a', 'b'], pending: [{ id: 'a', text: 'first thing' }, { id: 'b', text: 'second thing' }] } }) }
+    const found = scoreSurprise(two).filter((t) => t.kind === 'buildResult')
+    expect(found).toHaveLength(1)
+    expect(found[0]!.detail).toMatch(/first thing[\s\S]*second thing/)
+  })
+})
