@@ -124,9 +124,9 @@ describe('the tick log', () => {
 
   it('changes the plan id when the plan is replaced', async () => {
     await runTick(dir, deps(NOW))
-    // Something new on the beach makes it think again, and it writes a different plan.
-    const rock = JSON.parse(readFileSync(file('objects/sunny-rock.json'), 'utf8'))
-    writeFileSync(file('objects/pebble.json'), JSON.stringify({ ...rock, id: 'pebble', name: 'A pebble', position: [12, 0, 24] }))
+    // A trip that raised an interest makes it think again, and it writes a different plan.
+    const state = JSON.parse(readFileSync(file('mind/state.json'), 'utf8'))
+    writeFileSync(file('mind/state.json'), JSON.stringify({ ...state, sparked: { date: '2026-11-03', count: 0, pending: { topic: 'moss', gain: 20 } } }))
     await runTick(dir, deps(minutesAfter(10), { llm: fakeLlm({ ...morning, plan: [...morning.plan!].reverse() }) }))
     expect(lines()[1]!.think).toBe('decide')
     expect(lines()[1]!.planId).not.toBe(lines()[0]!.planId)

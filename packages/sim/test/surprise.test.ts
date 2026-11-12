@@ -56,17 +56,21 @@ describe('scoreSurprise', () => {
     expect(kinds({ ...calm, asleep: true, goals: {}, objects: [rock, { ...rock, id: 'new' }] })).toEqual([])
   })
 
-  it('notices an object it has not met', () => {
+  it('does not wake for a new object or a new kind of visitor event any more', () => {
     const fresh = { ...rock, id: 'red-ball', name: 'A red ball' }
-    const t = scoreSurprise({ ...calm, objects: [rock, fresh] })
-    expect(t.map((x) => x.kind)).toEqual(['novelty'])
-    expect(t[0]!.detail).toContain('red-ball')
+    const bell: VisitorEvent = { type: 'bell', payload: {}, visitorId: 'v_abc', createdAt: '2026-11-03T09:59:00Z' }
+    expect(kinds({ ...calm, objects: [rock, fresh], events: [bell] })).toEqual([])
   })
 
-  it('notices a type of visitor event it has not met, but not a repeat', () => {
-    const bell: VisitorEvent = { type: 'bell', payload: {}, visitorId: 'v_abc', createdAt: '2026-11-03T09:59:00Z' }
-    expect(kinds({ ...calm, events: [bell] })).toEqual(['novelty'])
-    expect(kinds({ ...calm, events: [bell], mindState: MindState.parse({ ...calm.mindState, seenEventTypes: ['bell'] }) })).toEqual([])
+  it('wakes for a trip that raised an interest by 15 or more, twice a day at most (spec 2.3)', () => {
+    const spark = (count: number, date = '2026-11-03') => MindState.parse({ ...calm.mindState, sparked: { date, count, pending: { topic: 'moss', gain: 24 } } })
+    const t = scoreSurprise({ ...calm, mindState: spark(0) })
+    expect(t.map((x) => x.kind)).toEqual(['sparked'])
+    expect(t[0]!.detail).toBe('a trip raised "moss" by 24')
+    expect(kinds({ ...calm, mindState: spark(1) })).toEqual(['sparked'])
+    expect(kinds({ ...calm, mindState: spark(2) })).toEqual([])
+    expect(kinds({ ...calm, mindState: spark(2, '2026-11-02') })).toEqual(['sparked'])
+    expect(kinds({ ...calm, mindState: MindState.parse({ ...calm.mindState, sparked: { date: '2026-11-03', count: 0, pending: null } }) })).toEqual([])
   })
 
   it('notices the end of a step', () => {
@@ -146,10 +150,10 @@ describe('scoreSurprise', () => {
   it('ranks the most pressing first', () => {
     const t = scoreSurprise({
       ...calm,
-      objects: [rock, { ...rock, id: 'red-ball', name: 'A red ball' }],
+      mindState: MindState.parse({ ...calm.mindState, sparked: { date: '2026-11-03', count: 0, pending: { topic: 'moss', gain: 20 } } }),
       nowMs: Date.parse('2026-11-03T10:11:00Z'),
     })
-    expect(t.map((x) => x.kind)).toEqual(expect.arrayContaining(['novelty', 'stepDone']))
+    expect(t.map((x) => x.kind)).toEqual(expect.arrayContaining(['sparked', 'stepDone']))
     const scores = t.map((x) => x.score)
     expect(scores).toEqual([...scores].sort((a, b) => b - a))
   })

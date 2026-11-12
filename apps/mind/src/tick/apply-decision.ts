@@ -45,12 +45,14 @@ export function applyDecision(t: Tick): void {
 
   // What the mind took in and thought, for the day's stream.
   for (const x of triggers) {
-    if (x.kind === 'novelty' || x.kind === 'blocked' || x.kind === 'need') remember.push({ at: nowIso, kind: 'trigger', text: x.detail })
+    if (x.kind === 'sparked' || x.kind === 'blocked' || x.kind === 'need') remember.push({ at: nowIso, kind: 'trigger', text: x.detail })
   }
   for (const e of events) remember.push({ at: nowIso, kind: 'visitor', text: `A visitor left a ${e.type}.` })
   if (decision.thought.trim()) remember.push({ at: nowIso, kind: 'thought', text: decision.thought.trim() })
 
   if (thinkKind === 'morning') mind.lastPlanDate = today
+  // Any decide call answers a spark that was waiting.
+  if ((thinkKind === 'morning' || thinkKind === 'decide') && mind.sparked?.pending) mind.sparked = { date: today, count: (mind.sparked.date === today ? mind.sparked.count : 0) + 1, pending: null }
   // The mind has been told what broke its steps off; the count starts again.
   mind.brokenOff = []
   // A weekly review looks at the long goal, not at the beach, so what is new stays new until it is looked at.

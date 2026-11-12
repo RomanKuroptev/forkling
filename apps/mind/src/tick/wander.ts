@@ -1,5 +1,5 @@
 import type { BudgetCall, InterestSource } from '@forkling/schema'
-import { createPrng, fadeInterests, feedTopic, updatePhases } from '@forkling/sim'
+import { createPrng, fadeInterests, feedTopic, SPARK_GAIN, updatePhases } from '@forkling/sim'
 import { canSpend, recordCall } from '../budget.ts'
 import { pickDoors } from '../web/doors.ts'
 import { addStats } from '../web/stats.ts'
@@ -104,11 +104,21 @@ export async function tripStep(t: Tick): Promise<void> {
     { id, date: today, purpose: step.reason, startKind: start.kind, startValue: start.value, startUrl: start.url },
   )
 
+  const before = t.interests
   t.newTrails.push(result.trail)
   t.newSouvenirs.push(...result.souvenirs)
   for (const feed of result.feeds) {
     const source: InterestSource = { id: (feed.souvenirId ?? `trail:${id}`).slice(0, 80), title: feed.title.slice(0, 200), url: feed.url.slice(0, 300), at: nowIso }
     t.interests = feedTopic(t.interests, { topic: feed.topic, event: feed.event, trail: id, source, nowIso })
+  }
+  // The topic a trip raised the most, if by 15 or more, is a spark for the next decide call.
+  const gains = [...new Set(result.feeds.map((f) => f.topic))].map((topic) => {
+    const key = Object.keys(t.interests.topics).find((k) => k === topic) ?? topic
+    return { topic, gain: (t.interests.topics[key]?.weight ?? 0) - (before.topics[key]?.weight ?? 0) }
+  })
+  const best = gains.sort((a, b) => b.gain - a.gain)[0]
+  if (best && best.gain >= SPARK_GAIN && (t.mind.sparked?.date !== today || t.mind.sparked.count < 2)) {
+    t.mind.sparked = { date: today, count: t.mind.sparked?.date === today ? t.mind.sparked.count : 0, pending: { topic: best.topic.slice(0, 60), gain: best.gain } }
   }
   t.mind.trips = { date: today, reads: t.trips.reads + result.reads, trips: t.trips.trips + 1, starts: [...t.trips.starts, startKey(start.value)].slice(-60) }
   t.trips = t.mind.trips
