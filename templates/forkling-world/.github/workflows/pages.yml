@@ -60,9 +60,11 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # The whole history, because the site's list of recent changes ("since your last visit") is written from the commits.
       - uses: actions/checkout@v4
         with:
           path: world
+          fetch-depth: 0
 
       - uses: actions/checkout@v4
         with:
@@ -86,7 +88,7 @@ jobs:
 
       - name: Build the site
         working-directory: engine
-        run: pnpm --filter @forkling/site build --world "$GITHUB_WORKSPACE/world" --out "$GITHUB_WORKSPACE/_site"
+        run: pnpm --filter @forkling/site build --world "$GITHUB_WORKSPACE/world" --out "$GITHUB_WORKSPACE/_site" --base-url "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
 
       - uses: actions/configure-pages@v5
 

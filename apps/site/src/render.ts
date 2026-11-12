@@ -5,6 +5,9 @@ import { Beliefs, Forkling, Goals, Interests, SourceStats, Souvenir, TimelineEnt
 import { moodWords } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { esc, markdown } from './md.ts'
+import { defaultGitLog, parseChanges } from './changes.ts'
+import { renderFeed, type FeedItem } from './feed.ts'
+import { SINCE_SCRIPT } from './since.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
 
 /** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
@@ -88,6 +91,7 @@ function layout(p: PageInput): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(p.title)} · ${esc(p.name)}</title>
 <link rel="stylesheet" href="${p.root}style.css">
+<link rel="alternate" type="application/rss+xml" title="${esc(p.name)}" href="${p.root}feed.xml">
 </head>
 <body>
 <header>
@@ -131,7 +135,14 @@ function trailPage(p: Trail['pages'][number], souvenir: Souvenir | undefined): s
 }
 
 /** Renders the forkling's website from the files of its world repo. A file that doesn't fit its schema is left out. */
-export function renderSite(world: string, out: string): { pages: string[] } {
+export interface RenderOptions {
+  /** The address of the site, for the links in the feed, like `https://owner.github.io/merge/`. Without it the feed links are relative. */
+  baseUrl?: string | undefined
+  /** The world's history for `changes.json` (see `defaultGitLog`). Injected by a test; a world with no history gives an empty list. */
+  gitLog?: () => string
+}
+
+export function renderSite(world: string, out: string, opts: RenderOptions = {}): { pages: string[] } {
   const forkling = readJson(world, 'forkling.json', Forkling)
   if (!forkling) throw new Error('forkling.json is missing or invalid: there is nobody to show')
   const { name } = forkling
@@ -337,6 +348,25 @@ export function renderSite(world: string, out: string): { pages: string[] } {
   const works = loadWorks(world)
   renderWorkshop({ works, tz, goals, add })
 
+  // The feed (works shelved, diary entries) and the list of changes the home page panel reads (spec 8).
+  const heading = (text: string) => /^# (.+)$/m.exec(text)?.[1]?.trim()
+  const summary = (text: string) => text.split(/\r?\n/).filter((l) => l.trim() && !l.startsWith('#') && !/^\*[^*]+\*$/.test(l.trim())).join(' ').replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 300)
+  const feedItems: FeedItem[] = [
+    ...works.filter((w) => w.meta.status === 'shelf').map((w) => ({ title: `Shelved: ${w.meta.title}`, path: `workshop/${w.meta.id}.html`, at: w.meta.made, description: w.meta.about })),
+    ...journal.map((j) => ({ title: heading(j.text) ?? j.date, path: `journal/${j.date}.html`, at: `${j.date}T12:00:00Z`, description: summary(j.text) })),
+  ]
+  const titles = new Map(works.map((w) => [w.meta.id, w.meta.title]))
+  let log = ''
+  try {
+    log = (opts.gitLog ?? (() => defaultGitLog(world)))()
+  } catch {
+    log = ''
+  }
+  const changes = parseChanges(log, { titleOf: (id) => titles.get(id) })
+  const home = pages.get('index.html')
+  const panel = ['<aside id="since" hidden><h2>Since your last visit</h2><ul></ul></aside>', '<script src="since.js" data-root=""></script>', '</main>'].join('\n')
+  if (home) pages.set('index.html', home.replace('</main>', () => panel))
+
   const written: string[] = []
   const write = (rel: string, text: string) => {
     mkdirSync(dirname(join(out, rel)), { recursive: true })
@@ -345,6 +375,10 @@ export function renderSite(world: string, out: string): { pages: string[] } {
   }
   for (const [rel, html] of pages) write(rel, html)
   write('style.css', STYLE)
+  write('feed.xml', renderFeed({ name, items: feedItems, baseUrl: opts.baseUrl }))
+  write('changes.json', `${JSON.stringify(changes)}
+`)
+  write('since.js', SINCE_SCRIPT)
   written.push(...publishWorks(world, out, works))
   return { pages: written }
 }
