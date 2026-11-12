@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BudgetLedger } from '@forkling/schema'
-import { canSpend, costUsd, estimateCallUsd, estimateTokens, monthOf, recordCall, rollLedger } from '../src/budget.ts'
+import { canSpend, costUsd, estimateCallUsd, estimateTokens, monthOf, paceAhead, paceUsd, recordCall, rollLedger } from '../src/budget.ts'
 
 const usage = { input: 1000, cacheRead: 3000, cacheWrite: 0, output: 200 }
 
@@ -62,11 +62,11 @@ describe('ledger', () => {
   })
 
   it('stops at the cap, estimate included', () => {
-    const nearly = BudgetLedger.parse({ month: '2026-11', spentUsd: 9.999 })
+    const nearly = BudgetLedger.parse({ month: '2026-11', capUsd: 10, spentUsd: 9.999 })
     expect(canSpend(nearly, 0.0005)).toBe(true)
     expect(canSpend(nearly, 0.002)).toBe(false)
-    expect(canSpend(BudgetLedger.parse({ month: '2026-11', spentUsd: 10 }), 0)).toBe(true)
-    expect(canSpend(BudgetLedger.parse({ month: '2026-11', spentUsd: 10 }), 0.0001)).toBe(false)
+    expect(canSpend(BudgetLedger.parse({ month: '2026-11', capUsd: 10, spentUsd: 10 }), 0)).toBe(true)
+    expect(canSpend(BudgetLedger.parse({ month: '2026-11', capUsd: 10, spentUsd: 10 }), 0.0001)).toBe(false)
   })
 
   it('does not keep an empty month in the history', () => {
@@ -87,5 +87,28 @@ describe('ledger', () => {
     expect(rolled.calls).toEqual([])
     expect(rolled.history).toEqual([{ month: '2026-11', spentUsd: used.spentUsd, calls: 1 }])
     expect(rollLedger(used, '2026-11')).toBe(used)
+  })
+})
+
+describe('paceUsd and paceAhead (spec 13)', () => {
+  const ledger = (spentUsd: number) => BudgetLedger.parse({ month: '2026-11', capUsd: 12, serverUsd: 7.49, spentUsd })
+
+  it('is the cap spread evenly over the month, counting the whole of today', () => {
+    expect(paceUsd(ledger(0), '2026-11-15')).toBeCloseTo(6, 10)
+    expect(paceUsd(ledger(0), '2026-11-30')).toBeCloseTo(12, 10)
+    expect(paceUsd(ledger(0), '2026-02-14')).toBeCloseTo(6, 10) // 14 of 28 days
+  })
+
+  it('is ahead only when spend is more than 15% over the pace', () => {
+    expect(paceAhead(ledger(6.9), '2026-11-15')).toBe(false) // exactly 15%
+    expect(paceAhead(ledger(6.91), '2026-11-15')).toBe(true)
+    expect(paceAhead(ledger(0), '2026-11-15')).toBe(false)
+  })
+})
+
+describe('rollLedger keeps the server price', () => {
+  it('carries serverUsd into the new month along with the cap', () => {
+    const next = rollLedger(BudgetLedger.parse({ month: '2026-11', capUsd: 12, serverUsd: 8, spentUsd: 3 }), '2026-12')
+    expect(next).toMatchObject({ month: '2026-12', capUsd: 12, serverUsd: 8, spentUsd: 0 })
   })
 })

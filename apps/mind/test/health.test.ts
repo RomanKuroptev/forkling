@@ -66,7 +66,7 @@ describe('buildHealth', () => {
     expect(h.plan.current).toMatchObject({ index: 0, verb: 'watch', overdueMinutes: 0 })
     expect(h.plan.stepsLeft).toBe(1)
     expect(h.today.ticks).toBe(2)
-    expect(h.spend).toMatchObject({ monthUsd: 0, capUsd: 10 })
+    expect(h.spend).toMatchObject({ monthUsd: 0, capUsd: 12.51 })
   })
 
   it('counts triggers and calls by kind, and the decide calls, for the day', () => {
@@ -141,10 +141,15 @@ describe('buildHealth', () => {
       expect(h.warnings.join(' ')).toMatch(/16 decide calls today/)
     })
 
-    it('warns when spend runs ahead of the month', () => {
+    it('warns when spend runs more than 15% ahead of the pace of the month (spec 13)', () => {
       const h = run([{ min: 0, ctx: { budget: BudgetLedger.parse({ month: '2026-11', spentUsd: 4 }) } }])
-      expect(h.spend.paceUsd).toBeCloseTo(1, 1)
+      expect(h.spend.paceUsd).toBeCloseTo(1.25, 2) // $12.51 cap, 3 of 30 days
       expect(h.warnings.join(' ')).toMatch(/spent \$4\.00 .* pace/)
+    })
+
+    it('does not warn within 15% of the pace', () => {
+      const h = run([{ min: 0, ctx: { budget: BudgetLedger.parse({ month: '2026-11', spentUsd: 1.4 }) } }])
+      expect(h.warnings.join(' ')).not.toMatch(/pace/)
     })
 
     it('warns about a build open for more than two days', () => {

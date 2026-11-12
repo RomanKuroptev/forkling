@@ -354,7 +354,7 @@ describe('when the model cannot answer', () => {
 
   it('still moves on to the next step at the budget cap', async () => {
     await stepOverWithNews()
-    writeJson('brain/budget.json', { month: '2026-11', spentUsd: 10 })
+    writeJson('brain/budget.json', { month: '2026-11', capUsd: 10, spentUsd: 10 })
     const llm = fakeLlm()
     await runTick(dir, at(minutesAfter(31), { llm }))
     expect(llm.calls).toHaveLength(0)
@@ -518,7 +518,7 @@ describe('the validator', () => {
   })
 
   it('does not ask again when the budget cannot cover it', async () => {
-    writeJson('brain/budget.json', { month: '2026-11', spentUsd: 9.9999 })
+    writeJson('brain/budget.json', { month: '2026-11', capUsd: 10, spentUsd: 9.9999 })
     const llm = fakeLlm({ ...morning, plan: badPlan })
     await runTick(dir, at(NOW, { llm }))
     expect(llm.calls.length).toBeLessThanOrEqual(1)
@@ -552,7 +552,7 @@ describe('sleep', () => {
 
 describe('the budget', () => {
   it('makes no call at the cap', async () => {
-    writeJson('brain/budget.json', { month: '2026-11', spentUsd: 10 })
+    writeJson('brain/budget.json', { month: '2026-11', capUsd: 10, spentUsd: 10 })
     const llm = fakeLlm()
     const result = await runTick(dir, at(NOW, { llm }))
     expect(llm.calls).toHaveLength(0)
@@ -561,7 +561,7 @@ describe('the budget', () => {
   })
 
   it('starts a new month from zero and keeps the old total', async () => {
-    writeJson('brain/budget.json', { month: '2026-10', spentUsd: 9.99 })
+    writeJson('brain/budget.json', { month: '2026-10', capUsd: 10, spentUsd: 9.99 })
     await runTick(dir, at(NOW))
     const ledger = BudgetLedger.parse(readJson('brain/budget.json'))
     expect(ledger.month).toBe('2026-11')
