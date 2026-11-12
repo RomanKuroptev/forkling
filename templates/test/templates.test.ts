@@ -178,6 +178,12 @@ describe('templates/forkling-world website', () => {
     expect(text).toMatch(/actions\/deploy-pages@v4/)
   })
 
+  it('is built with the whole history and the address of the site, for the changes list and the feed', () => {
+    const text = read('pages.yml')
+    expect(text).toMatch(/path: world\s+fetch-depth: 0/)
+    expect(text).toMatch(/--base-url "https:\/\/\$\{GITHUB_REPOSITORY_OWNER\}\.github\.io\/\$\{GITHUB_REPOSITORY#\*\/\}\/"/)
+  })
+
   it('pins the same engine release as the mind', () => {
     const ref = (text: string) => /FORKLING_REF: (v\d+\.\d+\.\d+)/.exec(text)?.[1]
     expect(ref(read('pages.yml'))).toBe(ref(read('mind.yml')))
