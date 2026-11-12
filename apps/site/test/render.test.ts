@@ -191,3 +191,104 @@ describe('renderSite', () => {
     expect(() => renderSite(world, out)).not.toThrow()
   })
 })
+
+describe('trails (what it read, what it kept)', () => {
+  const trail = (id: string, over: object = {}) => ({
+    id,
+    date: id.slice(0, 10),
+    purpose: 'Find out how lamps were lit.',
+    start: { kind: 'topic', value: 'lighthouses' },
+    pages: [
+      { url: 'https://en.wikipedia.org/wiki/Lighthouse', title: 'Lighthouse', fetchedAt: `${id.slice(0, 10)}T10:12:00Z`, reaction: 'Tall things that tell ships to stay away.', topics: ['lighthouses', 'lamps'], interest: 8, souvenirId: '2026-11-03-lighthouse', look: 'A white tower on black rock. It looks proud.' },
+      { url: 'https://en.wikipedia.org/wiki/Fresnel_lens', title: 'Fresnel lens', fetchedAt: `${id.slice(0, 10)}T10:14:00Z`, reaction: 'Glass that bends the light flat.', topics: ['optics'], interest: 6 },
+      { url: 'https://en.wikipedia.org/wiki/Nope', title: 'Nope', fetchedAt: `${id.slice(0, 10)}T10:15:00Z`, topics: [], failed: 'http: 404 from en.wikipedia.org' },
+    ],
+    ...over,
+  })
+  const quote = { id: '2026-11-03-lighthouse', kind: 'quote', content: 'The lamp was lit at four.', why: 'It stayed.', topics: ['lighthouses'], source: { url: 'https://en.wikipedia.org/wiki/Lighthouse', title: 'Lighthouse', fetchedAt: '2026-11-03T10:12:00Z' }, licence: null, placedIn: null }
+  const picture = { id: '2026-11-03-fog', kind: 'image', content: 'https://upload.wikimedia.org/wikipedia/commons/2/28/Fog.jpg', why: 'Fog, again.', topics: [], source: { url: 'https://commons.wikimedia.org/wiki/File:Fog.jpg', title: 'File:Fog.jpg', fetchedAt: '2026-11-03T11:00:00Z' }, licence: 'CC BY-SA', credit: 'Jane Doe', placedIn: null }
+  const fact = { id: '2026-11-03-lens', kind: 'fact', content: 'The lens bends light flat.', evidence: 'bends the light into a beam', why: 'w', topics: [], source: { url: 'https://en.wikipedia.org/wiki/Fresnel_lens', title: 'Fresnel lens', fetchedAt: '2026-11-03T10:14:00Z' }, licence: null, placedIn: null }
+  const stats = { weeks: { '2026-W45': { 'en.wikipedia.org': { reads: 5, souvenirs: 2, placed: 0, boring: 1, failures: 1 } } } }
+
+  it('has no page and no link until it has made a trip', () => {
+    renderSite(world, out)
+    expect(existsSync(join(out, 'trails/index.html'))).toBe(false)
+    expect(page('index.html')).not.toContain('trails/')
+  })
+
+  it('lists each trip, newest first, with where it started, its purpose, its pages and what it kept', () => {
+    put('trails/2026-11-02-1.json', trail('2026-11-02-1', { purpose: 'An earlier trip.' }))
+    put('trails/2026-11-03-1.json', trail('2026-11-03-1'))
+    put('souvenirs/2026-11-03-lighthouse.json', quote)
+    renderSite(world, out)
+    const html = page('trails/index.html')
+    expect(page('index.html')).toContain('trails/')
+    expect(html.indexOf('2026-11-03-1')).toBeLessThan(html.indexOf('2026-11-02-1'))
+    expect(html).toContain('Find out how lamps were lit.')
+    expect(html).toContain('lighthouses')
+    expect(html).toContain('href="2026-11-03-1.html"')
+    expect(html).toMatch(/3 pages/)
+  })
+
+  it('shows the pile: quotes with who and where, facts with their evidence, pictures with their credit and licence', () => {
+    put('trails/2026-11-03-1.json', trail('2026-11-03-1'))
+    for (const s of [quote, picture, fact]) put(`souvenirs/${s.id}.json`, s)
+    renderSite(world, out)
+    const html = page('trails/index.html')
+    expect(html).toContain('The lamp was lit at four.')
+    expect(html).toContain('href="https://en.wikipedia.org/wiki/Lighthouse"')
+    expect(html).toContain('bends the light into a beam')
+    expect(html).toContain('Jane Doe')
+    expect(html).toContain('CC BY-SA')
+    expect(html).toContain('href="https://upload.wikimedia.org/wikipedia/commons/2/28/Fog.jpg"')
+  })
+
+  it('shows each host\'s weekly numbers', () => {
+    put('trails/2026-11-03-1.json', trail('2026-11-03-1'))
+    put('mind/sources.json', stats)
+    renderSite(world, out)
+    const html = page('trails/index.html')
+    expect(html).toContain('en.wikipedia.org')
+    expect(html).toContain('2026-W45')
+    expect(html).toMatch(/5 reads/)
+  })
+
+  it('shows one trip as a chain: each page with its reaction, topics, interest and look, a souvenir where it kept one, and a failed read as failed', () => {
+    put('trails/2026-11-03-1.json', trail('2026-11-03-1'))
+    put('souvenirs/2026-11-03-lighthouse.json', quote)
+    renderSite(world, out)
+    const html = page('trails/2026-11-03-1.html')
+    expect(html.indexOf('Lighthouse')).toBeLessThan(html.indexOf('Fresnel lens'))
+    expect(html).toContain('Tall things that tell ships to stay away.')
+    expect(html).toContain('A white tower on black rock.')
+    expect(html).toContain('optics')
+    expect(html).toContain('The lamp was lit at four.')
+    expect(html).toContain('http: 404 from en.wikipedia.org')
+    expect(html).toContain('href="https://en.wikipedia.org/wiki/Fresnel_lens"')
+    expect(html).toContain('href="index.html"')
+  })
+
+  it('never lets what it read or wrote become markup or script, or a link that is not a web address', () => {
+    put('trails/2026-11-03-1.json', trail('2026-11-03-1', { purpose: '<script>steal()</script>', pages: [{ url: 'javascript:alert(1)', title: '<img src=x onerror=alert(1)>', fetchedAt: '2026-11-03T10:12:00Z', reaction: '<b>bold</b>', topics: ['<i>t</i>'], interest: 3 }] }))
+    put('souvenirs/x.json', { ...quote, id: 'x', content: '<script>alert(2)</script>', source: { ...quote.source, url: 'javascript:alert(3)' } })
+    renderSite(world, out)
+    for (const rel of ['trails/index.html', 'trails/2026-11-03-1.html']) {
+      const html = page(rel)
+      expect(html, rel).not.toMatch(/<script>(alert|steal)|<img|<b>bold/)
+      expect(html, rel).not.toMatch(/<[^>]*\son(error|load|click)=/i)
+      expect(html, rel).not.toMatch(/(href|src)="javascript:/i)
+    }
+    expect(page('trails/index.html')).toContain('&lt;script&gt;steal()&lt;/script&gt;')
+  })
+
+  it('leaves out a trail or a souvenir that does not fit its schema, and a trail id that is not a safe file name', () => {
+    put('trails/2026-11-03-1.json', trail('2026-11-03-1'))
+    put('trails/broken.json', '{"nonsense":true}')
+    put('trails/2026-11-03-2.json', trail('../../evil'))
+    put('souvenirs/broken.json', 'not json')
+    expect(() => renderSite(world, out)).not.toThrow()
+    expect(existsSync(join(out, 'trails/2026-11-03-1.html'))).toBe(true)
+    expect(existsSync(join(out, 'evil.html'))).toBe(false)
+    expect(page('trails/index.html')).not.toContain('evil')
+  })
+})
