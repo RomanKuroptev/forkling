@@ -11,6 +11,7 @@ import type {
   Trail,
   MicroBehavior,
   MindState,
+  NowJson,
   PlanStep,
   SpeciesPack,
   TickCall,
@@ -43,7 +44,16 @@ export interface TickDeps {
   dryRun?: boolean
   /** The engine ref that runs this tick, written into the tick log so a replay can use the same sim. */
   engine?: string
+  /** The loop's ticks also make a thought tick when one is due (spec 2.2). The Actions tick has none. */
+  thoughts?: boolean
+  /** The loop's ticks write the tick log and health at most this often (ms) unless something happened. Absent means every tick. */
+  logEveryMs?: number
+  /** The loop's last push failed 3 times: health.json says `push failing` until one goes through (spec 2.2). */
+  pushFailing?: boolean
 }
+
+/** What a tick gives back to the loop: the result, and `now.json` as the tick left the world. */
+export type TickOutcome = TickResult & { now: NowJson }
 
 export interface TickResult {
   /** Whether any file in the world changed. */

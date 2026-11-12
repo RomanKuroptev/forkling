@@ -14,6 +14,8 @@ export interface HealthContext {
   budget: BudgetLedger
   /** `mind/sources.json`, for the host that gave most of the week's reads. Missing means none yet. */
   sources?: SourceStats
+  /** The loop could not push after 3 tries (spec 2.2). */
+  pushFailing?: boolean
 }
 
 /** A need under 15, an idle spell or a wait this long (in minutes) is worth a warning. */
@@ -92,6 +94,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   const openBuild = waiting ? { id: waiting.id, kind: waiting.kind, ageHours: Math.max(0, Math.round((ctx.nowMs - Date.parse(waiting.requestedAt)) / 3_600_000)) } : null
 
   const warnings: string[] = []
+  if (ctx.pushFailing) warnings.push('push failing')
   if (idleMinutes > WARN_MINUTES) warnings.push(`no step in progress for ${idleMinutes} minutes while awake`)
   for (const [step, n] of Object.entries(stepsStarted)) {
     if (n >= WARN_SAME_STEP) warnings.push(`started "${step}" ${n} times today`)
