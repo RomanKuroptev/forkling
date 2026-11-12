@@ -1,5 +1,5 @@
 import type { Interests } from '@forkling/schema'
-import { costUsd, estimateCallUsd, estimateTokens } from '../budget.ts'
+import { costUsd, estimateCallUsd, estimateTokens, type Usage } from '../budget.ts'
 import { IMAGE_TOKENS, type LlmClient, type LlmImage } from '../llm.ts'
 import type { Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
@@ -43,6 +43,8 @@ export interface ReadOutcome {
   souvenir: SouvenirOutcome
   skipped?: string
   usd: number
+  /** What the call used, for the budget ledger. Absent when no call was made. */
+  usage?: Usage
   /** Why there is no answer, when there is not one and nothing was skipped. */
   note?: string
 }
@@ -65,8 +67,8 @@ export async function performRead(deps: ReadDeps, item: Item): Promise<ReadOutco
   try {
     const r = await deps.llm.complete({ kind: 'read', model: HAIKU, system, user, images: picture ? [picture] : [], maxTokens: READ_MAX_TOKENS, effort: 'low', schema: ReadAnswer })
     const usd = costUsd(HAIKU, r.usage)
-    if (!r.parsed) return { answer: null, souvenir: {}, usd, note: `no usable answer (stopped: ${r.stopReason ?? 'unknown'})` }
-    return { answer: r.parsed, souvenir: judgeSouvenir(r.parsed, item), usd }
+    if (!r.parsed) return { answer: null, souvenir: {}, usd, usage: r.usage, note: `no usable answer (stopped: ${r.stopReason ?? 'unknown'})` }
+    return { answer: r.parsed, souvenir: judgeSouvenir(r.parsed, item), usd, usage: r.usage }
   } catch (error) {
     return { answer: null, souvenir: {}, usd: 0, note: `the call failed: ${(error as Error).message}` }
   }

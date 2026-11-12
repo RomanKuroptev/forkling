@@ -50,6 +50,8 @@ export const TickLine = z.object({
   needs: z.record(z.string(), z.number()).default({}),
   mood: z.string().max(30),
   drift: z.array(DriftNote).max(20).default([]),
+  /** Web requests this tick made, and how many were refused before the network because the host is not on the allowlist. */
+  web: z.object({ requests: z.number().int().nonnegative(), refused: z.number().int().nonnegative() }).default({ requests: 0, refused: 0 }),
   /** World files this tick wrote, not counting the log itself. */
   wrote: z.array(z.string().max(120)).max(60),
   summary: z.string().max(300),
@@ -100,7 +102,8 @@ export const Health = z.object({
   quotas: z.object({ readings: Quota, creative: Quota.optional(), photos: Quota.optional(), builds: Quota.optional(), codeThisWeek: Quota.optional() }),
   /** Points of the daily allowance in hand (spec 9.8), and the most that can be held. */
   allowance: z.object({ points: z.number().nonnegative(), max: z.number().positive() }).default({ points: 0, max: 450 }),
-  /** Minutes in a row each need has been under 15 while awake, as of the last tick. */
+  /** Hosts paused after a 429 or a 403 (spec 6.1), and the host that gave most of this week's reads (spec 12.3, "one host"). */
+  web: z.object({ pausedHosts: z.record(z.string(), Timestamp).default({}), topHost: z.object({ host: z.string(), share: z.number() }).nullable().default(null) }).default({ pausedHosts: {}, topHost: null }),
   /** Pet-era health files have it; nothing writes it any more. */
   needsCritical: z.record(z.string(), z.number().int().nonnegative()).default({}),
   mood: z.object({ label: z.string(), minutes: z.number().int().nonnegative() }),

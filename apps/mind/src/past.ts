@@ -1,11 +1,11 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Artifact } from '@forkling/schema'
+import { Trail, type Artifact } from '@forkling/schema'
 import { clampText } from './decision.ts'
 
 /** What it did and wrote before, brought back for the mind to build on: it can only continue its own work if it can see it. */
 export interface RecentPast {
-  /** The last notes it wrote about what it read, newest first. */
+  /** The last trips it made, newest first: where it started and what it made of the page it liked best. */
   readings: { date: string; title: string; summary: string }[]
   /** The reason it gave for each of the two days before today, newest first. */
   plans: { date: string; reason: string }[]
@@ -17,16 +17,6 @@ const MAX_READINGS = 3
 const PLAN_DAYS = 2
 const MAX_ART = 10
 const MAX_SUMMARY = 160
-
-/** The title and the opening sentence of a note written by `renderReadingNote`. Null for anything else. */
-export function parseReadingNote(text: string): { title: string; summary: string } | null {
-  const lines = text.split('\n')
-  const title = /^# (.+)$/.exec(lines[0] ?? '')?.[1]?.trim()
-  if (!title) return null
-  const body = lines.slice(1).find((l) => l.trim() !== '' && !/^\*.*\*$/.test(l.trim()) && !l.startsWith('#') && !l.startsWith('- '))
-  const sentence = /^.*?[.!?](?=\s|$)/.exec(body?.trim() ?? '')?.[0] ?? body?.trim() ?? ''
-  return { title, summary: clampText(sentence, MAX_SUMMARY) }
-}
 
 /** The day's reason from a plan page written by `renderPlan`: the first line that is not a heading, the long goal or a step. */
 export function parsePlanReason(text: string): string | null {
@@ -43,12 +33,19 @@ function daysBefore(date: string, n: number): string {
 
 /** Reads the recent past from the notebook and the art it has made. A missing folder or an unreadable file is skipped. */
 export function readRecentPast(dir: string, today: string, art: readonly Artifact[]): RecentPast {
-  const readings = listFiles(dir, 'notebook/reading')
-    .filter((f) => /^\d{4}-\d{2}-\d{2}-\d+\.md$/.test(f))
+  const readings = listFiles(dir, 'trails')
+    .filter((f) => f.endsWith('.json'))
     .reverse()
     .flatMap((f) => {
-      const parsed = parseReadingNote(readFileSync(join(dir, 'notebook/reading', f), 'utf8'))
-      return parsed ? [{ date: f.slice(0, 10), ...parsed }] : []
+      try {
+        const parsed = Trail.safeParse(JSON.parse(readFileSync(join(dir, 'trails', f), 'utf8')))
+        if (!parsed.success) return []
+        const best = [...parsed.data.pages].filter((p) => p.reaction).sort((a, b) => (b.interest ?? 0) - (a.interest ?? 0))[0]
+        const first = parsed.data.pages[0]!
+        return [{ date: parsed.data.date, title: clampText(best?.title ?? first.title, 80), summary: clampText(best?.reaction ?? parsed.data.purpose, MAX_SUMMARY) }]
+      } catch {
+        return []
+      }
     })
     .slice(0, MAX_READINGS)
 

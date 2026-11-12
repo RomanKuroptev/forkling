@@ -6,6 +6,9 @@ import type {
   BuildRequest,
   Goals,
   Intention,
+  Souvenir,
+  SourceStats,
+  Trail,
   MicroBehavior,
   MindState,
   PlanStep,
@@ -18,7 +21,9 @@ import type {
 import type { MoodEvent, Trigger, sleepWindow, startPlayback, worldWithObjects } from '@forkling/sim'
 import type { ModelId, rollLedger } from '../budget.ts'
 import type { Decision } from '../decision.ts'
-import type { GetJson } from '../feeds/index.ts'
+import type { StartingPoint } from '../web/doors.ts'
+import type { Fetcher, FetcherOptions } from '../web/fetch.ts'
+import type { WanderState } from '../web/wander-state.ts'
 import type { CallKind, LlmClient, LlmResult } from '../llm.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { NewEntry } from '../stream.ts'
@@ -32,8 +37,8 @@ export interface TickDeps {
   behaviors: MicroBehavior[]
   /** The species `persona.md`. */
   speciesPersona: string
-  /** Reads a public URL as JSON, for the feeds and Wikipedia. Without it the forkling reads nothing. */
-  get?: GetJson
+  /** How the web is reached: the fetcher's options (a test swaps in a fake `fetchImpl`). Without it the forkling reads nothing. */
+  web?: Omit<FetcherOptions, 'paused'>
   /** Work out the prompt and what it would cost, but call nothing and write nothing. */
   dryRun?: boolean
   /** The engine ref that runs this tick, written into the tick log so a replay can use the same sim. */
@@ -134,7 +139,20 @@ export interface Tick {
   ask: Ask
 
   notebook: { path: string; text: string }[]
-  readings: NonNullable<MindState['readings']>
+  /** Web trips so far today (spec 9.8). */
+  trips: NonNullable<MindState['trips']>
+  /** The only way the tick reads the web, or null when there is none. */
+  fetcher: Fetcher | null
+  /** What earlier trips left: pages read lately, souvenirs kept, trails of today. */
+  wander: WanderState
+  /** `mind/sources.json`. */
+  sources: SourceStats
+  /** Set when a wander step finishes: the trip runs after the step is applied. */
+  pendingTrip: { step: PlanStep; index: number } | null
+  /** Where the morning may start from, with 3 doors, shown to the morning plan. */
+  startingPoints: StartingPoint[]
+  newTrails: Trail[]
+  newSouvenirs: Souvenir[]
   arts: NonNullable<MindState['arts']>
 
   decision: Decision | null

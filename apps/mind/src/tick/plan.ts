@@ -3,6 +3,7 @@ import { MIND_VERBS, stepCost, validateMindPlan, type MindPlanContext, type Mind
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
+import { dropRepeatedStarts } from '../web/rails.ts'
 import { intentionSeed } from './util.ts'
 
 const MAX_RECENT = 20
@@ -47,14 +48,20 @@ export function planContext(t: Tick): MindPlanContext {
   }
 }
 
-/** The plan as plan steps, checked by the rules of spec 2.6. The steps come back with their minutes clamped to the verb's range. */
+/**
+ * The plan as plan steps, checked by the rules of spec 2.6. A wander that starts where a trip already started today is taken
+ * out first (the trip-start rail, spec 12.2) and the rest stands, so the check sees the plan as it will run. The steps come
+ * back with their minutes clamped to the verb's range.
+ */
 export function checkPlan(t: Tick, plan: LlmStep[]) {
   const steps = plan.map((s) => planStepFrom(s))
-  const usable = steps.filter((s): s is PlanStep => s !== null)
-  if (usable.length !== steps.length) return { usable, check: { ok: false, reasons: ['a step was missing its verb or its reason'] } as const }
+  const made = steps.filter((s): s is PlanStep => s !== null)
+  if (made.length !== steps.length) return { usable: made, droppedStarts: [] as string[], check: { ok: false, reasons: ['a step was missing its verb or its reason'] } as const }
+  const rail = dropRepeatedStarts(made, t.trips.date === t.today ? t.trips.starts : [])
+  const usable = rail.steps
   const check = validateMindPlan(usable.map(mindStepOf), planContext(t))
-  if (!check.ok) return { usable, check }
-  return { usable: usable.map((s, i) => ({ ...s, minutes: check.steps[i]!.minutes })), check }
+  if (!check.ok) return { usable, droppedStarts: rail.dropped, check }
+  return { usable: usable.map((s, i) => ({ ...s, minutes: check.steps[i]!.minutes })), droppedStarts: rail.dropped, check }
 }
 
 /** Begins step `index` of today's plan: a focus window for the body, and an intention that says why. */

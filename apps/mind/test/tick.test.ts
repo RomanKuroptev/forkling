@@ -223,9 +223,18 @@ describe('the nine verbs in the tick', () => {
   })
 
   it('runs the verbs that are not built yet as rest, and says so', async () => {
+    const sketch: Decision = { ...morning, plan: [llmStep('tinker', 'a lamp that hums', 60, 'I want to make a small thing.', { size: 'sketch' }), llmStep('write', 'home', 25, 'A plaque.'), llmStep('rest', null, 30, 'Breakfast can wait.')] }
+    await runTick(dir, at(NOW, { llm: fakeLlm(sketch) }))
+    await runTick(dir, at(minutesAfter(61), { llm: fakeLlm(keep) }))
+    expect(streamText()).toMatch(/tinker is not built yet, so it rested instead\./)
+  })
+
+  it('says it could not go wandering when there is no way to reach the web, instead of resting', async () => {
     await runTick(dir, at(NOW))
-    await runTick(dir, at(minutesAfter(31), { llm: fakeLlm(keep) }))
-    expect(streamText()).toMatch(/wander is not built yet, so it rested instead\./)
+    const result = await runTick(dir, at(minutesAfter(31), { llm: fakeLlm(keep) }))
+    expect(result.notes.join('\n')).toMatch(/wander: there is no way to reach the web this tick/)
+    expect(streamText()).toMatch(/Could not go wandering: there is no way to reach the web this tick\./)
+    expect(streamText()).not.toMatch(/wander is not built yet/)
   })
 
   it('writes what a write step says into notebook/writing, and costs a little energy', async () => {
@@ -400,11 +409,19 @@ describe('the weekly review of the long goal', () => {
   })
 })
 
+/** A trail with one page it liked, as a trip leaves it in `trails/`. */
+const trailOf = (id: string, title: string, reaction: string) => ({
+  id,
+  date: id.slice(0, 10),
+  purpose: 'See what is out there.',
+  start: { kind: 'topic', value: 'x' },
+  pages: [{ url: 'https://en.wikipedia.org/wiki/Example', title, fetchedAt: `${id.slice(0, 10)}T10:00:00Z`, reaction, topics: [], interest: 8 }],
+})
+
 describe('what it did before comes back to it', () => {
   it('shows the morning prompt what it read, decided and made lately, and what has ended', async () => {
-    mkdirSync(file('notebook/reading'), { recursive: true })
     mkdirSync(file('notebook/plans'), { recursive: true })
-    writeFileSync(file('notebook/reading/2026-11-02-1.md'), '# A CPU in Minecraft\n\n*2026-11-02*\n\nSomeone built logic gates out of redstone. It is slow.\n')
+    writeJson('trails/2026-11-02-1.json', trailOf('2026-11-02-1', 'A CPU in Minecraft', 'Someone built logic gates out of redstone.'))
     writeFileSync(file('notebook/plans/2026-11-02.md'), '# Plan for 2026-11-02\n\nA day for finding out how things work.\n\n1. **read**, 20 min: A page.\n')
     writeJson('art/the-sea.json', { id: 'the-sea', kind: 'writing', title: 'The Sea', content: { text: 'Big.' }, skillLevel: 0, createdAt: '2026-11-02T10:00:00Z' })
     writeJson('brain/interests.json', { topics: {}, current: null, past: [{ topic: 'octopuses', startedAt: '2026-10-20T08:00:00Z', endedAt: '2026-10-25T08:00:00Z', origin: { id: 'hn:1', title: 'Octopus', url: 'https://example.com', at: '2026-10-20T08:00:00Z' } }] })
@@ -419,8 +436,7 @@ describe('what it did before comes back to it', () => {
   })
 
   it('shows a decision what it read lately but not the whole of its past', async () => {
-    mkdirSync(file('notebook/reading'), { recursive: true })
-    writeFileSync(file('notebook/reading/2026-11-02-1.md'), '# A CPU in Minecraft\n\n*2026-11-02*\n\nSomeone built logic gates out of redstone.\n')
+    writeJson('trails/2026-11-02-1.json', trailOf('2026-11-02-1', 'A CPU in Minecraft', 'Someone built logic gates out of redstone.'))
     writeJson('art/the-sea.json', { id: 'the-sea', kind: 'writing', title: 'The Sea', content: { text: 'Big.' }, skillLevel: 0, createdAt: '2026-11-02T10:00:00Z' })
     await runTick(dir, at(NOW))
     newObject('pebble')
@@ -599,7 +615,7 @@ describe('what the model is shown', () => {
     expect(asked[0]!.user).not.toBe(llm.calls[0]!.user)
     expect(llm.calls[0]!.system).not.toMatch(/\d{4}-\d{2}-\d{2}/)
     expect(llm.calls[0]!.system).toContain('You are Merge, an AI.')
-    expect(llm.calls[0]!.system).toContain('- wander: go and read.')
+    expect(llm.calls[0]!.system).toContain('- wander: go and read: a trip of up to 6 pages')
   })
 
   it('shows visitor text only as data, then clears the inbox', async () => {

@@ -72,6 +72,8 @@ export const MindState = z.object({
   allowance: z.object({ points: z.number().min(0), day: z.iso.date() }).optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */
   recent: z.array(z.object({ verb: z.string(), targetId: z.string().optional(), at: Timestamp })).max(20).default([]),
+  /** Local date interests last faded, so they fade once a day. */
+  interestsFadedOn: z.iso.date().optional(),
   /** Local date of the last bedtime reflection, so it happens once a day. */
   lastReflectDate: z.iso.date().optional(),
   /** Local date of the last nightly memory rewrite that was sent, so it is sent once a night. */
@@ -80,6 +82,11 @@ export const MindState = z.object({
   memoryBatch: z.object({ id: z.string().min(1), date: z.iso.date() }).nullable().default(null),
   /** Reading sessions so far on a local date, for the daily limit; and whether the morning skim of the feeds is done. */
   readings: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), skimmed: z.boolean().default(false) }).optional(),
+  /**
+   * Web trips so far on a local date (spec 9.8): the reads they used (at most 40 a day), the trips, and where each started,
+   * so the trip-start rail can drop a wander that starts where one already did today.
+   */
+  trips: z.object({ date: z.iso.date(), reads: z.number().int().nonnegative(), trips: z.number().int().nonnegative(), starts: z.array(z.string().max(300)).max(60) }).optional(),
   /** Things made so far on a local date, for the daily limit. */
   arts: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   /** Eye-cam frames taken so far on a local date, for the daily limit, and the shots waiting to be rendered. */

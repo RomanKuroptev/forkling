@@ -16,6 +16,8 @@ import type { WorldObject } from '@forkling/schema'
 import { monthOf, rollLedger } from '../budget.ts'
 import { buildSystem } from '../prompts.ts'
 import { readWorld } from '../world.ts'
+import { createFetcher } from '../web/fetch.ts'
+import { readWanderState } from '../web/wander-state.ts'
 import { makeAsk } from './ask.ts'
 import type { Tick, TickDeps } from './context.ts'
 
@@ -115,7 +117,14 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     ask: undefined as never,
 
     notebook: [],
-    readings: mind.readings?.date === today ? mind.readings : { date: today, count: 0, skimmed: false },
+    trips: mind.trips?.date === today ? mind.trips : { date: today, reads: 0, trips: 0, starts: [] },
+    fetcher: deps.web ? createFetcher({ ...deps.web, paused: mind.pausedHosts }) : null,
+    wander: readWanderState(dir, today),
+    sources: w.sources,
+    pendingTrip: null,
+    startingPoints: [],
+    newTrails: [],
+    newSouvenirs: [],
     arts: mind.arts?.date === today ? mind.arts : { date: today, count: 0 },
 
     decision: null,

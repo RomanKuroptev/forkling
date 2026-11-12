@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, VisitorEvent, WorldObject } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, SourceStats, VisitorEvent, WorldObject } from '@forkling/schema'
 import { DEFAULT_SEED } from './seed.ts'
 
 /** Most inbox events one tick will look at. Newer ones win; the rest are dropped with the rest of the inbox. */
@@ -23,6 +23,8 @@ export interface WorldFiles {
   goals: Goals
   mindState: MindState
   budget: BudgetLedger
+  /** `mind/sources.json`: each source's weekly numbers. */
+  sources: SourceStats
   /** The forkling's own `brain/persona.md`, or empty. Pet era: nothing reads it any more. */
   persona: string
   /** `self/seed.md`: the only authored personality text, or the engine's own copy until the world has one. */
@@ -103,6 +105,7 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
     goals: readJson(dir, 'mind/goals.json', Goals, {}),
     mindState: readJson(dir, 'mind/state.json', MindState, {}),
     budget: readJson(dir, 'brain/budget.json', BudgetLedger, { month: monthFor(forkling) }),
+    sources: readJson(dir, 'mind/sources.json', SourceStats, {}),
     persona: existsSync(personaPath) ? readFileSync(personaPath, 'utf8') : '',
     seed: existsSync(join(dir, 'self/seed.md')) ? readFileSync(join(dir, 'self/seed.md'), 'utf8') : DEFAULT_SEED,
     beliefs: readJson(dir, 'memory/beliefs.json', Beliefs, []),

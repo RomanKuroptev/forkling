@@ -1,6 +1,7 @@
-import { type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
+import { SourceStats, type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
 import { MAX_POINTS_IN_HAND } from '@forkling/sim'
-import { MAX_READINGS_PER_DAY } from './reading.ts'
+import { topHostShare } from './web/stats.ts'
+import { MAX_READS_PER_DAY } from './web/trip.ts'
 
 /** What the health summary needs besides the tick line: the world as the tick left it. */
 export interface HealthContext {
@@ -10,6 +11,8 @@ export interface HealthContext {
   goals: Goals
   mind: MindState
   budget: BudgetLedger
+  /** `mind/sources.json`, for the host that gave most of the week's reads. Missing means none yet. */
+  sources?: SourceStats
 }
 
 /** A need under 15, an idle spell or a wait this long (in minutes) is worth a warning. */
@@ -81,8 +84,9 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   }
 
   const { mind, budget } = ctx
-  const used = (state: { date: string; count: number } | undefined) => (state?.date === ctx.today ? state.count : 0)
-  const quotas: Health['quotas'] = { readings: { used: used(mind.readings), max: MAX_READINGS_PER_DAY } }
+  const quotas: Health['quotas'] = { readings: { used: mind.trips?.date === ctx.today ? mind.trips.reads : 0, max: MAX_READS_PER_DAY } }
+  const pausedHosts = Object.fromEntries(Object.entries(mind.pausedHosts).filter(([, until]) => Date.parse(until) > ctx.nowMs))
+  const web: Health['web'] = { pausedHosts, topHost: topHostShare(ctx.sources ?? SourceStats.parse({}), ctx.today) }
   const dayOfMonth = Number(ctx.today.slice(8, 10))
   const spend = { monthUsd: budget.spentUsd, capUsd: budget.capUsd, paceUsd: (budget.capUsd * dayOfMonth) / daysInMonth(ctx.today) }
   // The one that has waited longest: an object, or a coded project waiting for a person to read it.
@@ -99,6 +103,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   if (rejections >= WARN_REJECTIONS) warnings.push(`${rejections} plans turned down today`)
   if (longestGapMinutes > WARN_GAP_MINUTES) warnings.push(`longest wait between ticks today was ${longestGapMinutes} minutes (they should come every 10)`)
   if (spend.monthUsd > spend.paceUsd + PACE_SLACK_USD) warnings.push(`spent $${spend.monthUsd.toFixed(2)} of $${spend.capUsd}, ahead of the pace ($${spend.paceUsd.toFixed(2)} by today)`)
+  for (const [host, until] of Object.entries(pausedHosts)) warnings.push(`${host} is paused until ${until.slice(0, 16)}Z (it answered 429 or 403)`)
   if (openBuild && openBuild.ageHours > WARN_BUILD_HOURS) warnings.push(`build ${openBuild.id} has been open for ${openBuild.ageHours} hours`)
 
   return {
@@ -109,6 +114,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     plan,
     today: { ticks: (before?.ticks ?? 0) + 1, decideCalls, callsByKind, triggersByKind, failures, rejections, stepsStarted, longestGapMinutes },
     quotas,
+    web,
     allowance: { points: Math.round(mind.allowance?.points ?? 0), max: MAX_POINTS_IN_HAND },
     mood,
     needsCritical: {},

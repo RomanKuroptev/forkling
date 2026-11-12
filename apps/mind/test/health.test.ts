@@ -164,9 +164,9 @@ describe('buildHealth', () => {
   })
 
   it('counts the day against the limits that remain, and shows the points in hand', () => {
-    const mind = MindState.parse({ readings: { date: '2026-11-03', count: 2, skimmed: true }, allowance: { points: 120.4, day: '2026-11-03' } })
+    const mind = MindState.parse({ trips: { date: '2026-11-03', reads: 7, trips: 2, starts: [] }, allowance: { points: 120.4, day: '2026-11-03' } })
     const h = run([{ min: 0, ctx: { mind } }])
-    expect(h.quotas.readings).toEqual({ used: 2, max: 5 })
+    expect(h.quotas.readings).toEqual({ used: 7, max: 40 })
     expect(h.quotas.creative).toBeUndefined()
     expect(h.allowance).toEqual({ points: 120, max: 450 })
   })
