@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
-import { renderSite } from './render.ts'
+import { buildSite } from './build.ts'
 
 const USAGE = `usage: pnpm --filter @forkling/site build [--world <dir>] [--out <dir>]
 
@@ -13,6 +13,6 @@ if (values.help) {
 } else {
   // `pnpm --filter` runs from apps/site; relative paths mean relative to where the user typed the command.
   const base = process.env.INIT_CWD ?? process.cwd()
-  const { pages } = renderSite(resolve(base, values.world ?? '.'), resolve(base, values.out ?? '_site'))
+  const { pages } = buildSite(resolve(base, values.world ?? '.'), resolve(base, values.out ?? '_site'))
   console.log(`wrote ${pages.length} files`)
 }
