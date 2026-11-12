@@ -224,10 +224,10 @@ describe('the nine verbs in the tick', () => {
   })
 
   it('runs the verbs that are not built yet as rest, and says so', async () => {
-    const sketch: Decision = { ...morning, plan: [llmStep('tinker', 'a lamp that hums', 60, 'I want to make a small thing.', { size: 'sketch' }), llmStep('write', 'home', 25, 'A plaque.'), llmStep('rest', null, 30, 'Breakfast can wait.')] }
+    const sketch: Decision = { ...morning, plan: [llmStep('tend', 'home', 30, 'I want to put a shelf straight.'), llmStep('write', 'home', 25, 'A plaque.'), llmStep('rest', null, 30, 'Breakfast can wait.')] }
     await runTick(dir, at(NOW, { llm: fakeLlm(sketch) }))
     await runTick(dir, at(minutesAfter(61), { llm: fakeLlm(keep) }))
-    expect(streamText()).toMatch(/tinker is not built yet, so it rested instead\./)
+    expect(streamText()).toMatch(/tend is not built yet, so it rested instead\./)
   })
 
   it('says it could not go wandering when there is no way to reach the web, instead of resting', async () => {

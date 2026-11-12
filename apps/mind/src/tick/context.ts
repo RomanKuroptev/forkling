@@ -17,11 +17,13 @@ import type {
   TickCall,
   TimelineEntry,
   VisitorEvent,
+  WorkMeta,
   WorldObject,
 } from '@forkling/schema'
 import type { MoodEvent, Trigger, sleepWindow, startPlayback, worldWithObjects } from '@forkling/sim'
 import type { ModelId, rollLedger } from '../budget.ts'
 import type { Decision } from '../decision.ts'
+import type { WorkChecker } from '../builds/browser-check.ts'
 import type { StartingPoint } from '../web/doors.ts'
 import type { Fetcher, FetcherOptions } from '../web/fetch.ts'
 import type { WanderState } from '../web/wander-state.ts'
@@ -44,6 +46,8 @@ export interface TickDeps {
   dryRun?: boolean
   /** The engine ref that runs this tick, written into the tick log so a replay can use the same sim. */
   engine?: string
+  /** Checks a work in a browser (spec 7.3). Only the server has one, so on the Actions tick a work step rests. */
+  workCheck?: WorkChecker
   /** The loop's ticks also make a thought tick when one is due (spec 2.2). The Actions tick has none. */
   thoughts?: boolean
   /** The loop's ticks write the tick log and health at most this often (ms) unless something happened. Absent means every tick. */
@@ -116,6 +120,8 @@ export interface Tick {
   interests: World['interests']
   /** Set when a write step finishes: the words are written after the step is applied. */
   pendingNote: { step: PlanStep; index: number } | null
+  /** Set when a sketch step finishes: the sketch is made after the step is applied. */
+  pendingWork: { step: PlanStep; index: number } | null
   touched: Set<string>
   gone: Set<string>
   /** What happened this tick that moves mood and energy (spec 3.2), applied by `feel`. */
@@ -163,6 +169,8 @@ export interface Tick {
   startingPoints: StartingPoint[]
   newTrails: Trail[]
   newSouvenirs: Souvenir[]
+  /** Works made this tick (a shelved sketch, or a scrap), written to `works/<id>/` with the tick. */
+  newWorks: { meta: WorkMeta; html: string; thumb: Buffer | null }[]
   arts: NonNullable<MindState['arts']>
 
   decision: Decision | null

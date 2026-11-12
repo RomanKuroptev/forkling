@@ -98,6 +98,8 @@ export const MindState = z.object({
    */
   sparked: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), pending: z.object({ topic: z.string().max(60), gain: z.number() }).nullable() }).optional(),
   thought: ThoughtState.optional(),
+  /** Sketches made on `date` (spec 9.8: at most 3 a day), counted when one is shelved or scrapped. */
+  sketches: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   /** Local date interests last faded, so they fade once a day. */
   interestsFadedOn: z.iso.date().optional(),
   /** Local date of the last bedtime reflection, so it happens once a day. */

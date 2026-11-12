@@ -43,7 +43,7 @@ export function planContext(t: Tick): MindPlanContext {
     notes: new Set(),
     wants: [],
     recent: t.mind.recent,
-    used: { repliesToday: 0, sketchesToday: 0, foundThisWeek: 0 },
+    used: { repliesToday: 0, sketchesToday: t.mind.sketches?.date === t.today ? t.mind.sketches.count : 0, foundThisWeek: 0 },
     lastExpandedPlace: null,
   }
 }

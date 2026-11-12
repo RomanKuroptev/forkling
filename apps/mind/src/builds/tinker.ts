@@ -9,9 +9,12 @@ import type { WorkChecker } from './browser-check.ts'
 import { withPolicy } from './sandbox.ts'
 
 const SONNET: ModelId = 'claude-sonnet-5-5'
+const HAIKU: ModelId = 'claude-haiku-5-5'
 
 /** A work is about 12K tokens of output on average (spec 13); the limit is twice that, so thinking cannot cut the page short. */
 export const TINKER_MAX_TOKENS = 24_000
+/** A sketch is about 3K tokens of output (spec 13); the limit is twice that, so thinking cannot cut the page short. */
+export const SKETCH_MAX_TOKENS = 6_000
 /** Under the limits of 7.1 and 7.6 by what the build adds (the policy tag is about 0.4 KB). */
 const FULL_TARGET = '140 KB'
 const SKETCH_TARGET = '3.5 KB'
@@ -148,6 +151,8 @@ export interface TinkerDeps {
   nowIso: string
   /** Ids of the works that exist, so a new one never takes one. */
   existingIds: ReadonlySet<string>
+  /** A sketch marked deep is made by Sonnet instead of Haiku (spec 9.8). */
+  deep?: boolean
 }
 
 export type TinkerOutcome =
@@ -169,12 +174,16 @@ const clampDraft = (d: WorkMetaDraft): Draft => ({
 
 /**
  * One tinker (spec 7.2, 7.3): the Sonnet call, the check, and if the check fails one repair call with the reasons and a
- * second check. A second failure keeps the work as a scrap, with the reason. A refusal, an answer cut off or no call at all
+ * second check. A second failure keeps the work as a scrap, with the reason. A sketch (spec 7.6) is the same with a Haiku call
+ * (Sonnet if it is deep), a smaller page, and no repair: the first failed check is the scrap. A refusal, an answer cut off or no call at all
  * is `failed`, with nothing kept and no second try with the same input; no browser is `unavailable`, with nothing decided.
  * The model call and the checker are given, so the same code serves a full work in the worker and a sketch in a step.
  */
 export async function runTinker(deps: TinkerDeps, input: TinkerInput): Promise<TinkerOutcome> {
   const size = input.size
+  const sketch = size === 'sketch'
+  const model: ModelId = sketch && !deps.deep ? HAIKU : SONNET
+  const maxTokens = sketch ? SKETCH_MAX_TOKENS : TINKER_MAX_TOKENS
 
   /** The title, kind and sources as a work's meta must have them, and the page, then the check. */
   const assess = async (out: TinkerOutput): Promise<Assessment> => {
@@ -219,7 +228,7 @@ export async function runTinker(deps: TinkerDeps, input: TinkerInput): Promise<T
     return null
   }
 
-  const first = await deps.complete('tinker', SONNET, buildTinkerUser(input), TinkerOutput, TINKER_MAX_TOKENS)
+  const first = await deps.complete(sketch ? 'sketch' : 'tinker', model, buildTinkerUser(input), TinkerOutput, maxTokens)
   const gave = unpack(first)
   if (gave.kind === 'failed') return { status: 'failed', reason: gave.reason }
   const one = await assess(gave.output)
@@ -227,10 +236,11 @@ export async function runTinker(deps: TinkerDeps, input: TinkerInput): Promise<T
   if (done) return done
   // Not on the shelf and not unavailable, so the check failed.
   const bad = one as Extract<Assessment, { kind: 'bad' }>
+  const scrap = (a: { draft: Draft; page: string; reasons: string[] }): TinkerOutcome => ({ status: 'scrap', meta: meta(a.draft, a.page, 'scrap', a.reasons.join('; ')), html: a.page })
+  if (sketch) return scrap(bad)
 
   const second = await deps.complete('repair', SONNET, buildRepairUser({ reasons: bad.reasons, html: bad.page, size }), TinkerOutput, TINKER_MAX_TOKENS)
   const again = unpack(second)
-  const scrap = (a: { draft: Draft; page: string; reasons: string[] }): TinkerOutcome => ({ status: 'scrap', meta: meta(a.draft, a.page, 'scrap', a.reasons.join('; ')), html: a.page })
   // The repair gave nothing: the work is kept as it was, with what was wrong with it.
   if (again.kind === 'failed') return scrap(bad)
   const two = await assess(again.output)
