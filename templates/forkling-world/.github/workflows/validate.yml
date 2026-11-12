@@ -1,0 +1,77 @@
+name: validate
+
+# Every pull request is checked (spec 11.1, 14.3). A build may change only places/, works/ and wishes/. A work is checked again
+# here, in a real browser, exactly as the build job checked it: its files, its meta, the policy in its page, what it loads,
+# and what it does for a few seconds. Nothing from the pull request is run outside that sandbox, and the checker is the
+# pinned engine's, not the pull request's.
+#
+# A pull request from the build worker has a branch named work/<id>. When it passes it is merged here, by this workflow, with
+# no one looking: so a work/<id> branch may hold that one work and nothing else (validate-pr refuses anything more). Any other
+# pull request, Roman's builds included, is only checked and waits for a person.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  # The engine release this world runs on. Keep it the same as in mind.yml.
+  FORKLING_REPO: RomanKuroptev/forkling
+  FORKLING_REF: v0.11.0
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: world
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.FORKLING_REPO }}
+          ref: ${{ env.FORKLING_REF }}
+          path: engine
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: engine/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: engine/pnpm-lock.yaml
+
+      - name: Install the checker
+        working-directory: engine
+        run: pnpm install --frozen-lockfile --filter "@forkling/mind..."
+
+      - name: Install a browser
+        working-directory: engine
+        run: pnpm --filter @forkling/mind exec playwright install --with-deps chromium
+
+      - name: Check the pull request
+        working-directory: engine
+        run: >
+          pnpm --filter @forkling/mind validate-pr
+          --world "$GITHUB_WORKSPACE/world"
+          --base "${{ github.event.pull_request.base.sha }}"
+          --head "${{ github.event.pull_request.head.sha }}"
+          --branch "${{ github.head_ref }}"
+
+      - name: Merge a work that passed
+        if: startsWith(github.head_ref, 'work/') && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" --squash --delete-branch

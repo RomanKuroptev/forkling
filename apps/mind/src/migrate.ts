@@ -58,9 +58,9 @@ const START_FROM_TEMPLATE = [
 ]
 
 /** Files the engine owns, copied over whatever the world has. */
-const ENGINE_OWNED = ['CLAUDE.md', '.github/workflows/mind.yml', '.github/workflows/pages.yml', '.github/workflows/heartbeat.yml']
+const ENGINE_OWNED = ['CLAUDE.md', '.github/workflows/mind.yml', '.github/workflows/pages.yml', '.github/workflows/heartbeat.yml', '.github/workflows/validate.yml']
 
-const REMOVED_WORKFLOWS = ['.github/workflows/build.yml', '.github/workflows/validate.yml']
+const REMOVED_WORKFLOWS = ['.github/workflows/build.yml']
 
 function isPetEra(raw: Record<string, unknown>): boolean {
   return 'needs' in raw || 'feelings' in raw || typeof raw.mood === 'string'

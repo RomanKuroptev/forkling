@@ -103,13 +103,13 @@ describe('migrating a pet-era world to W1', () => {
     expect(text('mind/ticks/2026-11-08.jsonl')).toBe('{"at":"x"}\n')
   })
 
-  it('gives it the seed, the new CLAUDE.md and the new workflows, and removes the builder and validate workflows', () => {
+  it('gives it the seed, the new CLAUDE.md and the new workflows (the old validate one is replaced), and removes the builder workflow', () => {
     migrateToW1(world, template, { apply: true })
     expect(text('self/seed.md').trim()).toBe(DEFAULT_SEED)
     expect(text('CLAUDE.md')).toBe(readFileSync(join(template, 'CLAUDE.md'), 'utf8'))
     expect(text('.github/workflows/mind.yml')).toBe(readFileSync(join(template, '.github/workflows/mind.yml'), 'utf8'))
     expect(existsSync(join(world, '.github/workflows/build.yml'))).toBe(false)
-    expect(existsSync(join(world, '.github/workflows/validate.yml'))).toBe(false)
+    expect(text('.github/workflows/validate.yml')).toBe(readFileSync(join(template, '.github/workflows/validate.yml'), 'utf8'))
   })
 
   it('leaves a world the engine can read, with the seed it was given', () => {
