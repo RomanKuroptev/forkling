@@ -23,7 +23,7 @@ permissions:
 env:
   # The engine release this world runs on. Keep it the same as in mind.yml. Only watchdog.ts is fetched from it.
   FORKLING_REPO: RomanKuroptev/forkling
-  FORKLING_REF: v0.10.0
+  FORKLING_REF: v0.11.0
 
 jobs:
   check:

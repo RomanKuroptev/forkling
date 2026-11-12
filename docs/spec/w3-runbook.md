@@ -10,14 +10,13 @@ W3's "done when" is in section 10. Rollback is in section 9.
 - A free DuckDNS name, or a domain of your own. The name is one value; the rest of the page calls it `HOST` (for example `merge-mind.duckdns.org`).
 - The Anthropic Console, for a workspace of its own with a monthly spend limit, and an API key inside it.
 - GitHub: the `gh` CLI logged in as you, and a fine-grained personal access token for the world repo.
-- The engine release that has all of W3. Section 1 makes it. The page calls it `v0.11.0`; use whatever the release PR tagged.
+- The engine release that has all of W3: `v0.11.0`, tagged on 12 November (section 1).
 
-## 1. Release the engine (a stop, and yours)
+## 1. The engine release (done)
 
-1. A release PR changes `FORKLING_REF` from `v0.10.0` to `v0.11.0` in the template's four workflows: `mind.yml`, `pages.yml`, `heartbeat.yml` and `watchdog.yml`. A test requires them to match.
-2. Once it is merged, tag that merge commit `v0.11.0`. The tag has to contain the new pins, and `apps/mind/src/watchdog.ts` (the watchdog fetches that file from the tag), so tag after the PR, never before.
+`v0.11.0` is tagged on the merge commit of the release PR, which changed `FORKLING_REF` from `v0.10.0` to `v0.11.0` in the three template workflows that carry the pin: `mind.yml`, `pages.yml` and `watchdog.yml` (`heartbeat.yml` has none). A test requires them to match. The tag contains `apps/mind/src/watchdog.ts`, which the watchdog fetches from it. Go on to section 2.
 
-Two things change by themselves at this release, so read them before you tag:
+Merge's own repo still pins `v0.10.0` and runs the Actions tick. Two things change the day it moves to `v0.11.0` (section 6 or 8), so read them first:
 
 - **Decide and morning calls run at medium effort** (spec 13), where they ran at low. A little more thinking per call; it shows in the ledger.
 - **A new world's model cap is $12.51** ($20 minus a guessed $7.49 for the server). **Merge's own `brain/budget.json` keeps `capUsd: 10`** until you change it (section 6).
