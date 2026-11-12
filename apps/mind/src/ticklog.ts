@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { Health, TICK_KEEP_DAYS, TickLine, type Goals, type TickStep } from '@forkling/schema'
 import { moodWords } from '@forkling/sim'
 import { clampText } from './decision.ts'
+import { readWorks } from './builds/works.ts'
 import { buildHealth } from './health.ts'
 import type { Tick, TickResult } from './tick/context.ts'
 import { round } from './tick/util.ts'
@@ -126,6 +127,6 @@ export function logTick(t: Tick, result: TickResult): TickResult {
   const line = lineFor(t, result, previous)
   appendTick(t.dir, t.today, line)
   pruneTicks(t.dir, t.today)
-  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing }))
+  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir) }))
   return { ...result, logged: true }
 }

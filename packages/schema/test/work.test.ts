@@ -34,7 +34,8 @@ describe('WorkMeta (spec 7.1)', () => {
   it('knows the six kinds and the three statuses', () => {
     for (const kind of ['art', 'game', 'tool', 'sound', 'zine']) expect(WorkMeta.safeParse({ ...base, kind }).success, kind).toBe(true)
     expect(WorkMeta.safeParse({ ...base, kind: 'video' }).success).toBe(false)
-    for (const status of ['shelf', 'retired']) expect(WorkMeta.safeParse({ ...base, status }).success, status).toBe(true)
+    expect(WorkMeta.safeParse({ ...base, status: 'shelf' }).success).toBe(true)
+    expect(WorkMeta.safeParse({ ...base, status: 'retired', retireReason: 'outgrown' }).success).toBe(true)
     expect(WorkMeta.safeParse({ ...base, status: 'published' }).success).toBe(false)
   })
 
@@ -73,6 +74,15 @@ describe('WorkMeta (spec 7.1)', () => {
     expect(WorkMeta.safeParse({ ...meme, sources: [looked] }).success).toBe(false)
     expect(WorkMeta.safeParse({ ...meme, sources: [looked, read] }).success).toBe(true)
     expect(WorkMeta.safeParse({ ...base, sources: [looked] }).success).toBe(true)
+  })
+})
+
+describe('a retired work (spec 9.9)', () => {
+  it('says why it was put away, and only a retired work has a reason', () => {
+    expect(WorkMeta.safeParse({ ...base, status: 'retired' }).success).toBe(false)
+    expect(WorkMeta.safeParse({ ...base, status: 'retired', retireReason: 'I have outgrown it' }).success).toBe(true)
+    expect(WorkMeta.safeParse({ ...base, retireReason: 'a reason' }).success).toBe(false)
+    expect(WorkMeta.safeParse({ ...base, status: 'retired', retireReason: 'x'.repeat(141) }).success).toBe(false)
   })
 })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BudgetLedger, Goals, MindState, TickLine, type Health } from '@forkling/schema'
+import { BudgetLedger, Goals, MindState, TickLine, WorkMeta, type Health } from '@forkling/schema'
 import { buildHealth, type HealthContext } from '../src/health.ts'
 
 const T0 = Date.parse('2026-11-03T09:00:00Z')
@@ -194,5 +194,24 @@ describe('buildHealth', () => {
     const h = run([{ min: 0, line: { mood: 'upset' } }, { min: 10, line: { mood: 'upset' } }, { min: 20, line: { mood: 'upset' } }])
     expect(h.mood).toEqual({ label: 'upset', minutes: 20 })
     expect(run([{ min: 0, line: { mood: 'upset' } }, { min: 10, line: { mood: 'content' } }]).mood).toEqual({ label: 'content', minutes: 0 })
+  })
+})
+
+describe('the work numbers in health (spec 12.6, 12.3: repeated work is measured, never enforced)', () => {
+  const w = (id: string, title: string, kind: string, made: string) => WorkMeta.parse({ id, title, kind, about: `about ${title}`, interest: null, made, status: 'shelf', size: 'full' })
+
+  it('gives the works made in the last 7 days, per kind, and how many would have tripped a nudge', () => {
+    const works = [w('a', 'Alpha', 'art', '2026-10-01T10:00:00Z'), w('b', 'Bravo', 'art', '2026-11-02T10:00:00Z'), w('c', 'Charlie', 'art', '2026-11-03T08:00:00Z'), w('d', 'Delta', 'art', '2026-11-03T09:00:00Z')]
+    const h = buildHealth(null, line(0), ctx(0, { works }))
+    expect(h.novelty?.works).toEqual({ made: 3, wouldFire: 2, byKind: { art: 3 } }) // the third and the fourth art work in a row
+  })
+
+  it('has no novelty block for a world with no works yet', () => {
+    expect(buildHealth(null, line(0), ctx(0)).novelty?.works).toEqual({ made: 0, wouldFire: 0, byKind: {} })
+  })
+
+  it('never turns a nudge into a warning', () => {
+    const works = [w('a', 'Alpha', 'art', '2026-11-02T10:00:00Z'), w('b', 'Bravo', 'art', '2026-11-03T08:00:00Z'), w('c', 'Charlie', 'art', '2026-11-03T09:00:00Z')]
+    expect(buildHealth(null, line(0), ctx(0, { works })).warnings.join(' ')).not.toMatch(/work|repeat/i)
   })
 })

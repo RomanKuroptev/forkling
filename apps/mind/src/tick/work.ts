@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { TinkerJob, type PlanStep } from '@forkling/schema'
+import { TinkerJob, WorkMeta, type PlanStep } from '@forkling/schema'
 import { pendingJobs } from '../build-worker.ts'
+import { buildReworkUser, MAX_RETIRES_PER_WEEK, REWORK_MAX_TOKENS, ReworkAnswer, retirementsInWeek } from '../builds/rework.ts'
 import { runTinker, type TinkerInput } from '../builds/tinker.ts'
-import { existingWorkIds, readWorks, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from '../builds/works.ts'
+import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
 import type { Tick } from './context.ts'
 
@@ -11,8 +12,8 @@ import type { Tick } from './context.ts'
  * A full work is not made in the tick: the step asks the build worker for it with a job file (spec 2.4, 10.2), and the result
  * comes back later (`settleJobs`). One at a time: while a work is being built a second step rests.
  */
-function askForWork(t: Tick, step: PlanStep, index: number): void {
-  const idea = clampText((step.targetId ?? '').trim(), 120)
+function askForWork(t: Tick, step: PlanStep, index: number, o: { idea: string; remixOf: string | null }): void {
+  const idea = clampText(o.idea.trim(), 120)
   if (!idea) {
     t.notes.push('tinker: a work needs an idea, so the step rested')
     return
@@ -27,9 +28,76 @@ function askForWork(t: Tick, step: PlanStep, index: number): void {
   const base = `tinker-${t.today.replaceAll('-', '')}-${t.nowIso.slice(11, 16).replace(':', '')}`
   let id = base
   for (let n = 2; existsSync(join(t.dir, 'mind/builds', `${id}.json`)) || existsSync(join(t.dir, 'mind/builds', `${id}.result.json`)); n++) id = `${base}-${n}`
-  t.newJobs.push(TinkerJob.parse({ id, kind: 'tinker', requestedAt: t.nowIso, idea, reason: clampText(step.reason, 200), remixOf: null }))
+  t.newJobs.push(TinkerJob.parse({ id, kind: 'tinker', requestedAt: t.nowIso, idea, reason: clampText(step.reason, 200), remixOf: o.remixOf }))
   t.remember.push({ at: t.nowIso, kind: 'made', text: `Asked the workshop to build "${idea}".`, verb: 'tinker', goalRef: `today:${index}` })
   t.parts.push('asked for a work')
+}
+
+/** An earlier work a sketch remixes. */
+type Remix = { id: string; title: string; about: string; html: string }
+
+/**
+ * What a tinker step does when it lands. A step on an earlier work first asks a cheap question: remix it, put it away, or bring
+ * it back (spec 7.5, 9.9). Otherwise a sketch is made right away and a full work is asked of the build worker.
+ */
+export async function workStep(t: Tick): Promise<void> {
+  const pending = t.pendingWork
+  if (!pending) return
+  const { step, index } = pending
+  const target = (step.targetId ?? '').trim()
+  const works = readWorks(t.dir)
+  const earlier = works.find((w) => w.id === target)
+  if (earlier) return reworkStep(t, step, index, earlier)
+  if (step.size !== 'sketch') return askForWork(t, step, index, { idea: target, remixOf: null })
+  return makeSketch(t, step, index, { idea: target, remix: null }, works)
+}
+
+/** A tinker step on one of its own works. Putting away and bringing back only change the work's status; nothing is made. */
+async function reworkStep(t: Tick, step: PlanStep, index: number, work: WorkMeta): Promise<void> {
+  const label = `"${work.title}"`
+  if (work.status === 'scrap') {
+    t.notes.push(`tinker: ${label} is in the scrap bin, so it cannot be remixed, put away or brought back`)
+    return
+  }
+  const user = buildReworkUser({ title: work.title, kind: work.kind, about: work.about, status: work.status, retireReason: work.retireReason, reason: step.reason })
+  const result = await t.ask('rework', 'claude-haiku-5-5', user, ReworkAnswer, REWORK_MAX_TOKENS)
+  if (!result) return
+  const answer = result.parsed
+  if (!answer) {
+    t.notes.push(`tinker: no usable answer about ${label} (stopped: ${result.stopReason ?? 'unknown'})`)
+    return
+  }
+  const reason = clampText(answer.reason.trim(), 140)
+
+  if (answer.action === 'retire') {
+    const recent = retirementsInWeek(t.mind.retirements, t.nowMs)
+    if (work.status !== 'shelf') t.notes.push(`tinker: ${label} is already put away, so there is nothing to retire`)
+    else if (!reason) t.notes.push(`tinker: putting a work away needs a reason, so ${label} stays on the shelf`)
+    else if (recent.length >= MAX_RETIRES_PER_WEEK) t.notes.push(`tinker: two works were already put away this week (at most ${MAX_RETIRES_PER_WEEK} a week), so ${label} stays on the shelf`)
+    else {
+      t.workUpdates.push(WorkMeta.parse({ ...work, status: 'retired', retireReason: reason }))
+      t.mind.retirements = [...recent, t.nowIso]
+      t.remember.push({ at: t.nowIso, kind: 'made', text: `Put away ${label}: ${reason}`, verb: 'tinker', goalRef: `today:${index}` })
+      t.parts.push(`retired ${label}`)
+    }
+    return
+  }
+  if (answer.action === 'restore') {
+    if (work.status !== 'retired') {
+      t.notes.push(`tinker: ${label} is not put away, so there is nothing to bring back`)
+      return
+    }
+    const { retireReason: _gone, ...rest } = work
+    t.workUpdates.push(WorkMeta.parse({ ...rest, status: 'shelf' }))
+    t.remember.push({ at: t.nowIso, kind: 'made', text: `Brought back ${label}.`, verb: 'tinker', goalRef: `today:${index}` })
+    t.parts.push(`brought back ${label}`)
+    return
+  }
+
+  // Remix: the old work stays as it is, and a new one is made from it.
+  const idea = `a new take on "${work.title}"`
+  if (step.size !== 'sketch') return askForWork(t, step, index, { idea, remixOf: work.id })
+  return makeSketch(t, step, index, { idea, remix: readWorkSource(t.dir, work.id) }, readWorks(t.dir))
 }
 
 /**
@@ -38,12 +106,7 @@ function askForWork(t: Tick, step: PlanStep, index: number): void {
  * repair. With no browser (the Actions tick has none) the step rests, and a refusal or a cut-off page leaves nothing; neither
  * counts against the 3 a day. A sketch that was made, shelved or scrapped, does.
  */
-export async function workStep(t: Tick): Promise<void> {
-  const pending = t.pendingWork
-  if (!pending) return
-  const { step, index } = pending
-  if (step.size !== 'sketch') return askForWork(t, step, index)
-
+async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: string; remix: Remix | null }, works: readonly WorkMeta[]): Promise<void> {
   const rested = (why: string) => {
     t.notes.push(`tinker: ${why}`)
     const text = 'I could not check the sketch, so it rested instead.'
@@ -53,14 +116,13 @@ export async function workStep(t: Tick): Promise<void> {
   const checker = t.deps.workCheck
   if (!checker) return rested('there is no browser here to check a sketch')
 
-  const works = readWorks(t.dir)
   const input: TinkerInput = {
-    idea: step.targetId ?? '',
+    idea: o.idea,
     reason: step.reason,
     size: 'sketch',
     interests: topInterestLines(t.interests),
     souvenirs: recentSouvenirs(t.dir),
-    remix: null,
+    remix: o.remix,
     untried: untriedLibraries(works),
     recentTitles: recentWorkTitles(works),
     manuals: [],

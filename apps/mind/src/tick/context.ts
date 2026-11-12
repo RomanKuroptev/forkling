@@ -172,6 +172,8 @@ export interface Tick {
   newSouvenirs: Souvenir[]
   /** Works made this tick (a shelved sketch, or a scrap), written to `works/<id>/` with the tick. */
   newWorks: { meta: WorkMeta; html: string; thumb: Buffer | null }[]
+  /** Works whose meta changed this tick (put away, brought back), written to `works/<id>/meta.json`. */
+  workUpdates: WorkMeta[]
   /** Requests for the build worker made this tick, written to `mind/builds/<id>.json` (spec 10.2). */
   newJobs: TinkerJob[]
   arts: NonNullable<MindState['arts']>

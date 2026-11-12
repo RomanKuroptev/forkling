@@ -1,5 +1,5 @@
 import { SourceStats, type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
-import { MAX_POINTS_IN_HAND } from '@forkling/sim'
+import { MAX_POINTS_IN_HAND, workNovelty, type WorkLike } from '@forkling/sim'
 import { paceAhead, paceUsd } from './budget.ts'
 import { topHostShare } from './web/stats.ts'
 import { MAX_READS_PER_DAY } from './web/trip.ts'
@@ -16,6 +16,8 @@ export interface HealthContext {
   sources?: SourceStats
   /** The loop could not push after 3 tries (spec 2.2). */
   pushFailing?: boolean
+  /** The works in `works/`, for the week's work numbers. */
+  works?: readonly WorkLike[]
 }
 
 /** A need under 15, an idle spell or a wait this long (in minutes) is worth a warning. */
@@ -122,6 +124,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     needsCritical: {},
     spend,
     openBuild,
+    novelty: { works: workNovelty(ctx.works ?? [], { sinceMs: ctx.nowMs - 7 * 86_400_000 }) },
     warnings,
   }
 }

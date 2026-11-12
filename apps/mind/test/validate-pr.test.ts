@@ -159,7 +159,7 @@ describe('a work in a pull request (spec 7.3, 7.1)', () => {
   })
 
   it('does not let a pull request put a work away, or change or delete one that exists: only the loop does that', async () => {
-    putWork('a-lamp', { meta: { status: 'retired' } })
+    putWork('a-lamp', { meta: { status: 'retired', retireReason: 'outgrown' } })
     expect((await run(work())).problems.join(' ')).toMatch(/retired/)
     putWork()
     expect((await run([{ status: 'M', path: 'works/a-lamp/index.html' }])).problems.join(' ')).toMatch(/already|change/i)

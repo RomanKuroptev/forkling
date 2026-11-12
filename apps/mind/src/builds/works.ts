@@ -22,6 +22,18 @@ export function readWorks(dir: string): WorkMeta[] {
     .sort((a, b) => b.made.localeCompare(a.made))
 }
 
+/** An earlier work's meta and page, for a remix. Null when there is no such work. */
+export function readWorkSource(dir: string, id: string): { id: string; title: string; about: string; html: string } | null {
+  if (!/^[a-z0-9][a-z0-9-]{0,60}$/.test(id)) return null
+  try {
+    const meta = WorkMeta.safeParse(JSON.parse(readFileSync(join(dir, 'works', id, 'meta.json'), 'utf8')))
+    if (!meta.success || meta.data.id !== id) return null
+    return { id, title: meta.data.title, about: meta.data.about, html: readFileSync(join(dir, 'works', id, 'index.html'), 'utf8') }
+  } catch {
+    return null
+  }
+}
+
 /** The names of every folder in `works/`, valid or not, so a new work never takes one. */
 export function existingWorkIds(dir: string): string[] {
   const folder = join(dir, 'works')

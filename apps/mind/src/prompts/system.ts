@@ -28,7 +28,7 @@ export function buildSystem(input: SystemInput): string {
     `- revisit: go back to a place you have not cared for in 7 days or more. Target: a place id. ${range('revisit')}. Costs ${PRICES.revisit} point.`,
     `- expand: grow a place when an interest keeps coming back to it. Target: a place id. ${range('expand')}. Costs ${PRICES.expand} points.`,
     `- found: ask Roman to build a new place for an interest that fits nowhere. Target: its name. ${range('found')}. Costs ${PRICES.foundRequest} points.`,
-    `- tinker: make a small web work. Target: the idea. Set size to "full" or "sketch". ${range('tinker')}. A full work costs ${PRICES.fullWork} points and a sketch ${PRICES.sketch}. A sketch is made at once; a full work is built by the workshop and arrives later, and you hear when it is done.`,
+    `- tinker: make a small web work, or do something with an earlier one. Target: the idea, or the id of one of your earlier works: you are then asked whether to remix it, put it away (with a reason, at most 2 a week) or, if it is put away, bring it back. Set size to "full" or "sketch". ${range('tinker')}. A full work costs ${PRICES.fullWork} points and a sketch ${PRICES.sketch}; putting a work away or bringing it back needs no more than a sketch, so use size sketch for those. A sketch is made at once; a full work is built by the workshop and arrives later, and you hear when it is done.`,
     `- write: put something in words: a plaque, a short page, a letter, up to 300 words. Target: a place or a subject. ${range('write')}. Costs ${PRICES.write} point.`,
     `- reply: answer a visitor's note. Target: the note id. ${range('reply')}. Free, and at most 5 a day.`,
     `- rest: sit at home and do nothing. No target. ${range('rest')}. Free.`,
