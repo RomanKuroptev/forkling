@@ -26,8 +26,25 @@ export interface LlmRequest<T = unknown> {
   images?: readonly LlmImage[]
   maxTokens: number
   effort: 'low' | 'medium'
+  /** `off` sends `thinking: {type: 'disabled'}`. Only for Haiku at low effort; Sonnet's thinking cannot be switched off. */
+  thinking?: 'off'
   /** The shape of the answer, as structured output. */
   schema: z.ZodType<T>
+}
+
+/** Effort per call kind (spec 13). The calls that decide, reflect or review think at medium; the rest are low. */
+const MEDIUM_KINDS: ReadonlySet<CallKind> = new Set(['morning', 'decide', 'bedtime', 'weekly'])
+export const effortFor = (kind: CallKind): 'low' | 'medium' => (MEDIUM_KINDS.has(kind) ? 'medium' : 'low')
+
+/** Haiku 5.5 thinks by default and accepts `disabled` at effort `high` or below, so low-effort Haiku rows run without it (spec 13). */
+export const thinkingFor = (model: ModelId, effort: 'low' | 'medium'): 'off' | undefined => (model === 'claude-haiku-5-5' && effort === 'low' ? 'off' : undefined)
+
+/** Why a call that came back gave no answer (spec 11.3). A refusal is never retried with the same input. */
+export type StopFailure = 'refusal' | 'cut_off' | 'unparsed'
+export function stopFailure(stopReason: string | null, parsed: unknown): StopFailure | null {
+  if (stopReason === 'refusal') return 'refusal'
+  if (parsed !== null && parsed !== undefined) return null
+  return stopReason === 'max_tokens' ? 'cut_off' : 'unparsed'
 }
 
 export interface LlmResult<T = unknown> {
@@ -65,17 +82,22 @@ function usageOf(u: { input_tokens: number; cache_read_input_tokens?: number | n
   return { input: u.input_tokens, cacheRead: u.cache_read_input_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0, output: u.output_tokens }
 }
 
-/** The real thing. Reads `ANTHROPIC_API_KEY` (or whatever the SDK finds) from the environment. */
-export function anthropicClient(): LlmClient {
-  const client = new Anthropic()
-  /** The request body shared by a live call and a batched one. The prefix is identical on every call, so cache it. */
-  const params = (request: LlmRequest) => ({
+/** The request body shared by a live call and a batched one. The prefix is identical on every call, so cache it. */
+export function requestParams(request: LlmRequest) {
+  return {
     model: request.model,
     max_tokens: request.maxTokens,
     system: [{ type: 'text' as const, text: request.system, cache_control: { type: 'ephemeral' as const } }],
     messages: [{ role: 'user' as const, content: userContent(request.user, request.images) }],
     output_config: { effort: request.effort, format: zodOutputFormat(request.schema) },
-  })
+    ...(request.thinking === 'off' ? { thinking: { type: 'disabled' as const } } : {}),
+  }
+}
+
+/** The real thing. Reads `ANTHROPIC_API_KEY` (or whatever the SDK finds) from the environment. */
+export function anthropicClient(): LlmClient {
+  const client = new Anthropic()
+  const params = requestParams
   return {
     async complete<T>(request: LlmRequest<T>): Promise<LlmResult<T>> {
       const response = await client.messages.parse(params(request))

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { costUsd, estimateCallUsd, estimateTokens, type Usage } from '../budget.ts'
-import { IMAGE_TOKENS, type LlmClient } from '../llm.ts'
+import { IMAGE_TOKENS, thinkingFor, type LlmClient } from '../llm.ts'
 import type { Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
 import { clampReaction, dataBlock, readSystem } from './read.ts'
@@ -54,7 +54,7 @@ export async function performLook(deps: LookDeps, item: Item, picture: number, r
   if (deps.mayCall && !deps.mayCall(estimate)) return { text: null, usd: 0, note: 'over the budget' }
 
   try {
-    const r = await deps.llm.complete({ kind: 'vision', model: HAIKU, system, user, images: [seen], maxTokens: MAX_LOOK_TOKENS, effort: 'low', schema: LookAnswer })
+    const r = await deps.llm.complete({ kind: 'vision', model: HAIKU, system, user, images: [seen], maxTokens: MAX_LOOK_TOKENS, effort: 'low', thinking: thinkingFor(HAIKU, 'low'), schema: LookAnswer })
     const usd = costUsd(HAIKU, r.usage)
     if (!r.parsed) return { text: null, usd, usage: r.usage, note: `no usable answer (stopped: ${r.stopReason ?? 'unknown'})` }
     const text = `${clampReaction(r.parsed.description)} ${r.parsed.thought.replace(/\s+/g, ' ').trim()}`.trim().slice(0, MAX_LOOK_CHARS)

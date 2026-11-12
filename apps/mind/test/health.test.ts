@@ -80,6 +80,20 @@ describe('buildHealth', () => {
     expect(h.today.failures).toBe(1)
   })
 
+  it('counts refusals and answers cut off at the output limit apart from other failures', () => {
+    const h = run([
+      { min: 0, line: { calls: [{ ...failedCall('decide'), stop: 'refusal' }, { ...failedCall('read'), stop: 'cut_off' }, { ...failedCall('read'), stop: 'cut_off' }, failedCall('read')] } },
+    ])
+    expect(h.today.failures).toBe(4)
+    expect(h.today.refusals).toBe(1)
+    expect(h.today.cutOff).toBe(2)
+  })
+
+  it('warns when answers keep being cut off, since the output limit is then too low', () => {
+    const h = run([{ min: 0, line: { calls: [{ ...failedCall('read'), stop: 'cut_off' }, { ...failedCall('read'), stop: 'cut_off' }, { ...failedCall('read'), stop: 'cut_off' }] } }])
+    expect(h.warnings.some((w) => w.includes('output limit'))).toBe(true)
+  })
+
   it('starts the day over when the date changes', () => {
     const first = run([{ min: 0, line: { calls: [okCall('decide')] } }])
     const next = buildHealth(first, line(24 * 60), ctx(24 * 60, { today: '2026-11-04' }))
