@@ -6,6 +6,7 @@ import { WorkMeta } from '@forkling/schema'
 import type { WorkChecker } from '../src/builds/browser-check.ts'
 import { withPolicy } from '../src/builds/sandbox.ts'
 import { listChanges, parseNameStatus, validatePullRequest, type Change } from '../src/validate-pr.ts'
+import { Trail } from '@forkling/schema'
 
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0])
 const HTML = withPolicy('<!doctype html><html><head><meta charset="utf-8"><title>t</title></head><body><script src="../../lib/p5.min.js"></script><script>function setup(){createCanvas(480,360)} function draw(){background(20)}</script></body></html>')
@@ -200,5 +201,30 @@ describe('a branch named work/<id> (the build worker\'s, which is merged on its 
 
   it('may not hold nothing at all', async () => {
     expect((await run([], { branch: 'work/a-lamp' })).ok).toBe(false)
+  })
+})
+
+describe('a meme in a pull request (spec 7.7)', () => {
+  const MEME_PAGE = withPolicy('<!doctype html><html><head><meta charset="utf-8"></head><body><canvas id="c" width="480" height="360"></canvas><script>document.getElementById("c").getContext("2d").fillRect(0,0,10,10)</script></body></html>')
+  const url = 'https://en.wikipedia.org/wiki/Distracted_boyfriend'
+  const sources = [{ role: 'looked', url }, { role: 'read', url }]
+  const putTrail = () =>
+    put('trails/2026-11-12-1.json', JSON.stringify(Trail.parse({ id: '2026-11-12-1', date: '2026-11-12', purpose: 'a trip', start: { kind: 'topic', value: 'memes' }, pages: [{ url, title: 'Distracted boyfriend', fetchedAt: '2026-11-12T10:00:00Z', look: 'a man turning' }] })))
+
+  it('passes when it is drawn in code and its sources are in the trails', async () => {
+    putTrail()
+    putWork('a-lamp', { html: MEME_PAGE, meta: { kind: 'meme', sources } })
+    expect(await run(work())).toEqual({ ok: true, problems: [] })
+  })
+
+  it('fails when it carries a picture', async () => {
+    putTrail()
+    putWork('a-lamp', { html: withPolicy('<html><head></head><body><img src="data:image/png;base64,iVBORw0KGgo=" alt=""></body></html>'), meta: { kind: 'meme', sources } })
+    expect((await run(work())).problems.join(' ')).toMatch(/meme/i)
+  })
+
+  it('fails when its sources are not pages in the trails', async () => {
+    putWork('a-lamp', { html: MEME_PAGE, meta: { kind: 'meme', sources } })
+    expect((await run(work())).problems.join(' ')).toMatch(/looked at/)
   })
 })

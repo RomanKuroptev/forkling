@@ -17,7 +17,7 @@ export type WorkStatus = z.infer<typeof WorkStatus>
 export const WorkLibrary = z.enum(['p5', 'tone', 'three'])
 export type WorkLibrary = z.infer<typeof WorkLibrary>
 
-/** What a meme is drawn from (spec 7.7): a format it looked at, and a page it read about it. */
+/** What a meme is drawn from (spec 7.7): a page whose picture it looked at, and a Wikipedia page it read about the format (often the same page). Both are pages on its trails. */
 export const WorkSource = z.object({ role: z.enum(['looked', 'read']), url: z.url().max(500) })
 export type WorkSource = z.infer<typeof WorkSource>
 

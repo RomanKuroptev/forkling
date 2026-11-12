@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { TinkerJob, WorkMeta, type PlanStep } from '@forkling/schema'
 import { pendingJobs } from '../build-worker.ts'
 import { buildReworkUser, MAX_RETIRES_PER_WEEK, REWORK_MAX_TOKENS, ReworkAnswer, retirementsInWeek } from '../builds/rework.ts'
+import { memeSeeds } from '../builds/memes.ts'
 import { runTinker, type TinkerInput } from '../builds/tinker.ts'
 import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
@@ -131,6 +132,7 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
     untried,
     recentTitles: recentWorkTitles(works),
     manuals,
+    memeSeeds: memeSeeds(t.dir),
   }
   const taken = new Set([...existingWorkIds(t.dir), ...t.newWorks.map((w) => w.meta.id)])
   const outcome = await runTinker({ complete: (kind, model, user, schema, maxTokens) => t.ask(kind, model, user, schema, maxTokens), checker, nowIso: t.nowIso, existingIds: taken, deep: !!step.deep }, input)

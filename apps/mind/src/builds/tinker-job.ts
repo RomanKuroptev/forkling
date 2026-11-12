@@ -11,6 +11,7 @@ import { createFetcher, type FetcherOptions } from '../web/fetch.ts'
 import { manualPagesFor } from '../web/sources/manuals.ts'
 import type { WorkChecker } from './browser-check.ts'
 import type { GithubClient, GithubFile } from './github.ts'
+import { memeSeeds } from './memes.ts'
 import { runTinker, type Complete, type TinkerInput } from './tinker.ts'
 import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from './works.ts'
 
@@ -87,6 +88,7 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
       untried,
       recentTitles: recentWorkTitles(works),
       manuals,
+      memeSeeds: memeSeeds(o.dir),
     }
     const outcome = await runTinker({ complete, checker: o.checker, nowIso, existingIds: new Set(existingWorkIds(o.dir)) }, input)
 

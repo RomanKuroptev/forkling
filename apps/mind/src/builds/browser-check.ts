@@ -1,6 +1,7 @@
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
+import type { WorkKind } from '@forkling/schema'
 import type { Browser, BrowserContext, Frame, Page } from 'playwright'
 import { copyLibs } from '@forkling/site/libs'
 import { launchChromium } from './browser.ts'
@@ -26,7 +27,7 @@ export interface WorkCheckResult extends CheckResult {
 
 export interface WorkChecker {
   /** `html` is the page as it will be stored, with the policy tag in it (see `withPolicy`). One check at a time. */
-  check(html: string, opts: { size: 'full' | 'sketch' }): Promise<WorkCheckResult>
+  check(html: string, opts: { size: 'full' | 'sketch'; kind?: WorkKind | undefined }): Promise<WorkCheckResult>
   available(): Promise<boolean>
   close(): Promise<void>
 }
@@ -163,8 +164,8 @@ export function createBrowserChecker(opts: BrowserCheckerOptions = {}): WorkChec
     return { ok: list.length === 0, reasons: list, thumb: list.length === 0 ? thumb : null }
   }
 
-  async function run(html: string, size: 'full' | 'sketch'): Promise<WorkCheckResult> {
-    const fixed = staticCheck(html, { size })
+  async function run(html: string, size: 'full' | 'sketch', kind?: WorkKind): Promise<WorkCheckResult> {
+    const fixed = staticCheck(html, { size, kind })
     if (!fixed.ok) return { ...fixed, thumb: null }
 
     const browser = await getBrowser()
@@ -189,7 +190,7 @@ export function createBrowserChecker(opts: BrowserCheckerOptions = {}): WorkChec
 
   return {
     check(html, o) {
-      const next = tail.then(() => run(html, o.size))
+      const next = tail.then(() => run(html, o.size, o.kind))
       tail = next.catch(() => undefined)
       return next
     },

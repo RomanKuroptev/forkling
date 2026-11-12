@@ -174,3 +174,33 @@ describe('staticCheck: the reasons', () => {
     expect(reasons(script("fetch('/a')"))).not.toMatch(/[<>]/)
   })
 })
+
+describe('staticCheck: a meme is drawn in code and never carries the original picture (spec 7.7)', () => {
+  const meme = (body: string) => staticCheck(page(body), { size: 'full', kind: 'meme' })
+
+  it('passes a meme drawn on a canvas or from SVG shapes, with its caption', () => {
+    expect(meme('<canvas id="c" width="480" height="360"></canvas><script>const x = document.getElementById("c").getContext("2d"); x.fillStyle = "#fc0"; x.fillRect(40, 40, 200, 150); x.fillText("my situation", 60, 300)</script>').ok).toBe(true)
+    expect(meme('<svg width="480" height="360"><rect width="200" height="150" fill="#fc0"/><text x="20" y="300">my situation</text></svg>').ok).toBe(true)
+  })
+
+  it('refuses any picture element, SVG image or data image, in the page or in its CSS', () => {
+    for (const body of [
+      '<img src="data:image/png;base64,iVBORw0KGgo=" alt="">',
+      '<svg><image href="data:image/png;base64,iVBORw0KGgo="/></svg>',
+      '<picture><source srcset="data:image/png;base64,iVBORw0KGgo="></picture>',
+      '<div style="background:url(data:image/png;base64,iVBORw0KGgo=)"></div>',
+      '<style>body{background:url(data:image/png;base64,iVBORw0KGgo=)}</style>',
+      '<script>const i = new Image(); i.src = "data:image/png;base64,iVBORw0KGgo="</script>',
+      '<video src="data:video/mp4;base64,AAAA"></video>',
+    ]) {
+      const r = meme(body)
+      expect(r.ok, body).toBe(false)
+      expect(r.reasons.join(' '), body).toMatch(/meme/i)
+    }
+  })
+
+  it('leaves the same things allowed in a work that is not a meme', () => {
+    expect(staticCheck(page('<img src="data:image/png;base64,iVBORw0KGgo=" alt="">'), { size: 'full', kind: 'art' }).ok).toBe(true)
+    expect(staticCheck(page('<img src="data:image/png;base64,iVBORw0KGgo=" alt="">'), { size: 'full' }).ok).toBe(true)
+  })
+})
