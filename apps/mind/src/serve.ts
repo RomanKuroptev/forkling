@@ -3,6 +3,8 @@ import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createBuildWorker } from './build-worker.ts'
 import { createBrowserChecker } from './builds/browser-check.ts'
+import { createGithubClient, repoFromUrl } from './builds/github.ts'
+import { createTinkerHandler } from './builds/tinker-job.ts'
 import { hasCredentials } from './credentials.ts'
 import { buildHealthResponse } from './health-response.ts'
 import { anthropicClient } from './llm.ts'
@@ -70,8 +72,11 @@ async function main(): Promise<void> {
       engine: env.FORKLING_REF ?? 'dev',
     },
   })
-  // No job kinds yet: the worker is idle until W4 gives it tinker.
-  const worker = createBuildWorker({ dir, now: Date.now, handlers: {} })
+  // A full work needs a key (the call), a browser (the check) and the GitHub token (the pull request); without them it waits.
+  const repo = env.FORKLING_GITHUB_REPO ?? repoFromUrl(values.repo ?? env.FORKLING_REPO_URL ?? '')
+  const github = env.GITHUB_TOKEN && repo ? createGithubClient({ token: env.GITHUB_TOKEN, repo }) : null
+  if (!github) console.log('the build worker has no jobs: it needs GITHUB_TOKEN and the world repository (FORKLING_REPO_URL or FORKLING_GITHUB_REPO)')
+  const worker = createBuildWorker({ dir, now: Date.now, handlers: github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now }) } : {} })
 
   const server = createMindServer({ now: () => loop.now(), health: () => buildHealthResponse(dir, Date.now()), pagesOrigin })
   await new Promise<void>((ready, fail) => {

@@ -1,0 +1,164 @@
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { JobResult, TinkerJob, WorkMeta } from '@forkling/schema'
+import type { WorkCheckResult, WorkChecker } from '../src/builds/browser-check.ts'
+import type { GithubClient } from '../src/builds/github.ts'
+import { createTinkerHandler } from '../src/builds/tinker-job.ts'
+import type { LlmClient, LlmRequest } from '../src/llm.ts'
+import { noBatch } from './noBatch.ts'
+
+const templates = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
+const NOW = Date.parse('2026-11-14T10:31:00Z')
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+const HTML = `<!doctype html><html><head><meta charset="utf-8"><title>t</title></head><body><script src="../../lib/p5.min.js"></script><script>function setup(){createCanvas(480,360)} function draw(){background(20)}</script></body></html>`
+const output = (title = 'Tide pool clock') => ({ meta: { title, kind: 'art', about: 'A clock that tells the time by how full a pool is.', interest: 'tide pools', sources: [] }, html: HTML })
+
+const job = TinkerJob.parse({ id: 'tinker-20261114-1031', kind: 'tinker', requestedAt: '2026-11-14T10:31:00Z', idea: 'a clock made of a tide pool', reason: 'I keep coming back to the tide pools.' })
+
+/** A model that answers from a list and remembers what it was asked. */
+function fakeLlm(answers: (unknown | null)[]) {
+  const calls: LlmRequest[] = []
+  const llm: LlmClient = {
+    ...noBatch,
+    async complete<T>(req: LlmRequest<T>) {
+      calls.push(req)
+      const a = answers[calls.length - 1]
+      return { parsed: (a ?? null) as T | null, stopReason: a ? 'end_turn' : 'refusal', usage: { input: 20_000, cacheRead: 0, cacheWrite: 0, output: 12_000 } }
+    },
+  }
+  return { llm, calls }
+}
+const checkerOf = (results: Partial<WorkCheckResult>[], available = true): WorkChecker & { pages: string[] } => {
+  const pages: string[] = []
+  return {
+    pages,
+    async check(html) {
+      pages.push(html)
+      const r = results[pages.length - 1] ?? {}
+      return { ok: r.ok ?? true, reasons: r.reasons ?? [], thumb: r.ok === false ? null : PNG }
+    },
+    available: async () => available,
+    close: async () => undefined,
+  }
+}
+function fakeGithub(fail?: string) {
+  const opened: Parameters<GithubClient['openWorkPullRequest']>[0][] = []
+  const client: GithubClient = {
+    async openWorkPullRequest(args) {
+      if (fail) throw new Error(fail)
+      opened.push(args)
+      return { number: 3, url: 'https://github.com/o/r/pull/3' }
+    },
+  }
+  return { client, opened }
+}
+
+let dir: string
+const file = (rel: string) => join(dir, rel)
+beforeEach(() => {
+  dir = mkdtempSync(join(tmpdir(), 'tinker-job-'))
+  copyFileSync(join(templates, 'forkling.json'), file('forkling.json'))
+})
+afterEach(() => rmSync(dir, { recursive: true, force: true }))
+
+const handler = (llm: LlmClient | null, checker: WorkChecker, github: GithubClient) => createTinkerHandler({ dir, llm, checker, github, now: () => NOW })
+const run = (h: ReturnType<typeof handler>) => h(job, { dir, nowMs: NOW })
+
+describe('the tinker handler (spec 10.2)', () => {
+  it('makes the work, checks it, and opens a pull request with the work and its thumbnail, and says what it cost', async () => {
+    const { llm, calls } = fakeLlm([output()])
+    const github = fakeGithub()
+    const out = await run(handler(llm, checkerOf([{ ok: true }]), github.client))
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toMatchObject({ kind: 'tinker', model: 'claude-sonnet-5-5', effort: 'medium' })
+    expect(calls[0]!.user).toContain('a clock made of a tide pool')
+    expect(calls[0]!.user).toContain('I keep coming back to the tide pools.')
+    expect(github.opened).toHaveLength(1)
+    const pr = github.opened[0]!
+    expect(pr.id).toBe('tide-pool-clock')
+    expect(pr.files.map((f) => f.path)).toEqual(['works/tide-pool-clock/index.html', 'works/tide-pool-clock/meta.json', 'works/tide-pool-clock/thumb.png'])
+    expect(WorkMeta.parse(JSON.parse(String(pr.files[1]!.content)))).toMatchObject({ status: 'shelf', size: 'full' })
+    expect(pr.title).toMatch(/Tide pool clock/)
+    expect(pr.body).not.toMatch(/@/)
+    expect(out).toMatchObject({ status: 'done', extra: { workId: 'tide-pool-clock', title: 'Tide pool clock', workStatus: 'shelf', prUrl: 'https://github.com/o/r/pull/3' } })
+    const calls1 = out.extra!.calls!
+    expect(calls1).toHaveLength(1)
+    expect(calls1[0]).toMatchObject({ kind: 'tinker', model: 'claude-sonnet-5-5', input: 20_000, output: 12_000 })
+    expect(calls1[0]!.usd).toBeCloseTo((20_000 * 2 + 12_000 * 10) / 1e6, 6)
+  })
+
+  it('keeps a work that fails twice as a scrap: it goes up as a pull request too, with the reason, and both calls are counted', async () => {
+    const { llm } = fakeLlm([output(), output()])
+    const github = fakeGithub()
+    const out = await run(handler(llm, checkerOf([{ ok: false, reasons: ['first'] }, { ok: false, reasons: ['the screenshot is a single colour'] }]), github.client))
+    expect(out).toMatchObject({ status: 'done', extra: { workStatus: 'scrap', workId: 'tide-pool-clock' } })
+    expect(out.reason).toMatch(/single colour/)
+    expect(out.extra!.calls!.map((c) => c.kind)).toEqual(['tinker', 'repair'])
+    const pr = github.opened[0]!
+    expect(pr.files.map((f) => f.path)).toEqual(['works/tide-pool-clock/index.html', 'works/tide-pool-clock/meta.json'])
+    expect(pr.title).toMatch(/^Scrap/)
+  })
+
+  it('does nothing yet, and spends nothing, when there is no browser to check with: the job stays and is tried again', async () => {
+    const { llm, calls } = fakeLlm([output()])
+    const out = await run(handler(llm, checkerOf([], false), fakeGithub().client))
+    expect(out.status).toBe('later')
+    expect(calls).toHaveLength(0)
+  })
+
+  it('does nothing yet when there is no model to ask', async () => {
+    expect((await run(handler(null, checkerOf([]), fakeGithub().client))).status).toBe('later')
+  })
+
+  it('fails the job, with the reason and the cost, when the model refuses', async () => {
+    const { llm } = fakeLlm([null])
+    const github = fakeGithub()
+    const out = await run(handler(llm, checkerOf([]), github.client))
+    expect(out.status).toBe('failed')
+    expect(out.reason).toMatch(/refus/i)
+    expect(out.extra!.calls).toHaveLength(1)
+    expect(github.opened).toHaveLength(0)
+  })
+
+  it('makes no call and fails the job when the month\'s budget has no room', async () => {
+    mkdirSync(file('brain'), { recursive: true })
+    writeFileSync(file('brain/budget.json'), JSON.stringify({ month: '2026-11', capUsd: 10, spentUsd: 9.99 }))
+    const { llm, calls } = fakeLlm([output()])
+    const out = await run(handler(llm, checkerOf([]), fakeGithub().client))
+    expect(calls).toHaveLength(0)
+    expect(out.status).toBe('failed')
+    expect(out.reason).toMatch(/no call was made|budget/i)
+  })
+
+  it('fails the job with the reason, and still counts the cost, when the pull request cannot be opened', async () => {
+    const { llm } = fakeLlm([output()])
+    const out = await run(handler(llm, checkerOf([{ ok: true }]), fakeGithub('GitHub answered 422: Reference already exists').client))
+    expect(out.status).toBe('failed')
+    expect(out.reason).toMatch(/pull request/i)
+    expect(out.reason).toMatch(/422/)
+    expect(out.extra!.calls).toHaveLength(1)
+  })
+
+  it('takes an id that no work has, on disk or in its folder', async () => {
+    mkdirSync(file('works/tide-pool-clock'), { recursive: true })
+    const github = fakeGithub()
+    await run(handler(fakeLlm([output()]).llm, checkerOf([{ ok: true }]), github.client))
+    expect(github.opened[0]!.id).toBe('tide-pool-clock-2')
+  })
+
+  it('writes nothing in the world: it never touches a file the mind is writing', async () => {
+    const before = readdirSync(dir).sort()
+    await run(handler(fakeLlm([output()]).llm, checkerOf([{ ok: true }]), fakeGithub().client))
+    expect(readdirSync(dir).sort()).toEqual(before)
+  })
+
+  it('refuses a job that is not a tinker job', async () => {
+    const h = handler(fakeLlm([output()]).llm, checkerOf([{ ok: true }]), fakeGithub().client)
+    const out = await h({ id: 'x', kind: 'tinker', requestedAt: '2026-11-14T10:31:00Z' }, { dir, nowMs: NOW })
+    expect(out.status).toBe('failed')
+    expect(JobResult.safeParse({ id: 'x', kind: 'tinker', status: out.status, reason: out.reason, at: '2026-11-14T10:31:00Z' }).success).toBe(true)
+  })
+})
