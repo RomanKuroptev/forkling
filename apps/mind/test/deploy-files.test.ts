@@ -182,3 +182,17 @@ describe('runners that start a sandboxed Chromium on Ubuntu 24.04 (a throwaway V
     })
   }
 })
+
+describe('the deploy scripts can be run (found on the server: a file committed on Windows had no executable bit)', () => {
+  it('are executable in git, so a checkout on the server can run them', () => {
+    const modes = execFileSync('git', ['ls-files', '-s', 'deploy/deploy.sh', 'deploy/setup.sh', 'deploy/forkling-restart'], { cwd: root, encoding: 'utf8' })
+      .trim()
+      .split('\n')
+      .map((line) => line.split(/\s+/)[0])
+    expect(modes).toEqual(['100755', '100755', '100755'])
+  })
+
+  it('the deploy workflow starts the script with bash, whatever mode the checkout gave it', () => {
+    expect(read('.github/workflows/deploy.yml')).toMatch(/"bash \/opt\/forkling\/engine\/deploy\/deploy\.sh '\$TAG'"/)
+  })
+})

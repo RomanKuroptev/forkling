@@ -2,7 +2,7 @@
 # Updates the server to an engine release and restarts the service (spec 14.3). Run it as the deploy user, over SSH, by hand
 # or from the `deploy` workflow:
 #
-#   /opt/forkling/engine/deploy/deploy.sh v0.11.0
+#   bash /opt/forkling/engine/deploy/deploy.sh v0.11.0
 #
 # The first time, clone the engine into /opt/forkling/engine as the deploy user and run it from there. To go back, deploy
 # the tag it printed (it is also kept in ~/previous-tag).

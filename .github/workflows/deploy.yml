@@ -51,4 +51,4 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "$DEPLOY_USER@$DEPLOY_HOST" "/opt/forkling/engine/deploy/deploy.sh '$TAG'"
+            "$DEPLOY_USER@$DEPLOY_HOST" "bash /opt/forkling/engine/deploy/deploy.sh '$TAG'"

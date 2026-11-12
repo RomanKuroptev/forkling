@@ -143,7 +143,7 @@ Delete `deploy_key` from your machine once it is in the secret.
 ```bash
 ssh deploy@HOST
 git clone https://github.com/RomanKuroptev/forkling.git /opt/forkling/engine
-/opt/forkling/engine/deploy/deploy.sh v0.11.0
+bash /opt/forkling/engine/deploy/deploy.sh v0.11.0
 ```
 
 `deploy.sh` checks out the tag, installs from the lockfile, writes the tag into `FORKLING_REF`, restarts the service and waits for `/health`. That starts the service, so **do section 8 first** if Merge's Actions tick is still running. After this first one, deploys are Actions, then `deploy`, then Run workflow, with the tag.
@@ -187,7 +187,7 @@ What does not work after the cut-over, and is not W3's job: a visitor event no l
 
 ## 9. Rollback
 
-- **A bad deploy.** The deploy prints the tag it replaced, and keeps it in `~/previous-tag` for the `deploy` user. Deploy that one: Actions, deploy, Run workflow, with the old tag. Or on the server, as `deploy`: `/opt/forkling/engine/deploy/deploy.sh <old tag>`.
+- **A bad deploy.** The deploy prints the tag it replaced, and keeps it in `~/previous-tag` for the `deploy` user. Deploy that one: Actions, deploy, Run workflow, with the old tag. Or on the server, as `deploy`: `bash /opt/forkling/engine/deploy/deploy.sh <old tag>`.
 - **Back to the Actions tick.** On the server: `sudo systemctl stop forkling-mind`. In Merge's repo: `gh workflow enable mind.yml --repo RomanKuroptev/merge` (and `heartbeat.yml` if you used it). Everything is in the repo, so the Actions tick carries on from the last push. The server commits every 15 minutes, so at most 15 minutes of the stream are missing.
 - **The disk is lost.** Make a new server with sections 2 to 5 and 7, and start the service: with no world on disk it clones `FORKLING_REPO_URL` itself.
 - **Stop and start.** `sudo systemctl stop forkling-mind` finishes the tick in progress and commits (up to 2 minutes). `sudo systemctl start forkling-mind` starts it again.

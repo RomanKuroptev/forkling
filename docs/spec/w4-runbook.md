@@ -27,7 +27,7 @@ bash deploy/setup.sh HOST
 
 New in `setup.sh`: the system libraries Chromium needs (installed with the Playwright version the engine pins), `/opt/forkling/browsers` for the browsers, and an AppArmor profile that lets Chromium make the user namespace its own sandbox is built on, for the browsers in that one folder only. The sandbox is never switched off: the pages it opens are written by a model. The unit file gets `PLAYWRIGHT_BROWSERS_PATH`, so `setup.sh` has to be run again for it to take effect.
 
-Then deploy the release (Actions, `deploy`, Run workflow, with the tag; or `/opt/forkling/engine/deploy/deploy.sh v0.12.1` as `deploy`). Each deploy also fetches the browser for that release's Playwright version.
+Then deploy the release (Actions, `deploy`, Run workflow, with the tag; or `bash /opt/forkling/engine/deploy/deploy.sh v0.12.1` as `deploy`). Each deploy also fetches the browser for that release's Playwright version.
 
 **Check the browser starts, with its sandbox on, for the service user.** Playwright starts Chromium with its sandbox switched off unless `chromiumSandbox: true` is passed, so a bare `chromium.launch()` proves nothing about the profile: it passes with the sandbox off. The engine passes the option (`launchChromium`), and so does this check:
 
