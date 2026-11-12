@@ -19,6 +19,7 @@ Branch `claude/project-thread-403rmi`.
 ## Release
 - **v0.9.0 (W1) is tagged and live on Merge** (2026-11-11). Merge's repo was moved with `migrate-w1` (commit `cb92a44` in `RomanKuroptev/merge`: the pet under `archive/`, the seed, the new workflows pinned to v0.9.0). The first tick on it (17:13Z) skimmed the feeds, wrote a morning plan and a long goal of its own (lidar finds of lost Maya sites), spent about $0.0015, and started its first step. One older v0.8.0 tick lost a rebase race with the migration commit and pushed nothing.
 - **W1's "done when" is now 3 live days** with no health warnings: watch `mind/health.json` (warnings, decide calls at 12 or fewer, `allowance.points`) and `notebook/writing/`. The `longest wait between ticks` warning on 11 November is from before the move (the day counters carry over) and clears tomorrow.
+- **v0.10.0 (W2) is released** (12 November): the template workflows pin it and the tag is on that merge commit. Merge's workflows are moved to the pin in a commit to `RomanKuroptev/merge`. W2's "done when" is 3 live days: at least 8 trips, every souvenir passes its word-for-word check, zero fetches outside the allowlist (`web.refused` in the tick log stays 0), and interests change with each change pointing at a trail. Roman kept Wikipedia and Commons in the allowlist.
 
 ## W2 progress (building on `main`, nothing released)
 
