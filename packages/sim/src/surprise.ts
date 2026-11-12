@@ -1,7 +1,7 @@
 import type { Forkling, Goals, MindState, VisitorEvent, WorldObject } from '@forkling/schema'
 import { localDate, sleepWindow } from './sleep.ts'
 
-export type TriggerKind = 'novelty' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'weekly' | 'bedtime'
+export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'weekly' | 'bedtime'
 
 /** A reason to wake the LLM. Anything the sim can tell on its own stays with the utility AI. */
 export interface Trigger {
@@ -38,6 +38,9 @@ export function eveningOf(timezone: string, seed: number, nowMs: number): string
 
 /** A need below this many points is strong enough to think about. */
 export const STRONG_NEED = 15
+/** A trip that raises an interest by this much wakes the mind (spec 2.3). */
+export const SPARK_GAIN = 15
+export const MAX_SPARKS_PER_DAY = 2
 const WEEK_MS = 7 * 24 * 3_600_000
 /** No new plan is asked for this close to bed: the evening is for winding down, and the reflection comes next. */
 export const REPLAN_BEFORE_BED_MS = 45 * 60_000
@@ -49,20 +52,14 @@ export const REFLECT_BEFORE_BED_MS = 30 * 60_000
  * day, bedtime, a long goal due for review. Pure and deterministic. Empty means no LLM call. Never wakes the mind in bed.
  */
 export function scoreSurprise(input: SurpriseInput): Trigger[] {
-  const { forkling, goals, mindState, objects, events, nowMs, asleep, spotKinds } = input
+  const { forkling, goals, mindState, nowMs, asleep } = input
   if (asleep) return []
   const found: Trigger[] = []
 
-  const knownObjects = new Set(mindState.knownObjects)
-  const newObjects = objects.filter((o) => !knownObjects.has(o.id)).map((o) => o.id)
-  const seen = new Set(mindState.seenEventTypes)
-  const newEvents = [...new Set(events.map((e) => e.type))].filter((t) => !seen.has(t))
-  if (newObjects.length > 0 || newEvents.length > 0) {
-    const parts = [
-      ...(newObjects.length > 0 ? [`new objects: ${newObjects.join(', ')}`] : []),
-      ...(newEvents.length > 0 ? [`new kinds of visitor event: ${newEvents.join(', ')}`] : []),
-    ]
-    found.push({ kind: 'novelty', score: 0.7, detail: parts.join('; ') })
+  // A trip raised an interest by 15 or more (spec 2.3): at most 2 a day.
+  const sparked = mindState.sparked
+  if (sparked?.pending && (sparked.date !== localDate(forkling.timezone, nowMs) || sparked.count < MAX_SPARKS_PER_DAY)) {
+    found.push({ kind: 'sparked', score: 0.7, detail: `a trip raised "${sparked.pending.topic}" by ${Math.round(sparked.pending.gain)}` })
   }
 
   if (goals.now && nowMs >= Date.parse(goals.now.until)) {

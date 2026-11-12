@@ -188,6 +188,11 @@ describe('a wander step', () => {
     for (const t of Object.values(interests.topics)) for (const h of t.history) expect(h.trail).toBe(`${DAY}-1`)
   })
 
+  it('is a spark when a trip raised an interest by 15 or more, which wakes the next decide call', async () => {
+    await wander()
+    expect(MindState.parse(readJson('mind/state.json')).sparked).toMatchObject({ date: DAY, count: 0, pending: { topic: 'boolean algebra', gain: 18 } })
+  })
+
   it('counts its reads and trips for the day, and the host numbers for the week', async () => {
     await wander()
     expect(MindState.parse(readJson('mind/state.json')).trips).toEqual({ date: DAY, reads: 2, trips: 1, starts: ['logic gate'] })

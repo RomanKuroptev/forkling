@@ -72,6 +72,11 @@ export const MindState = z.object({
   allowance: z.object({ points: z.number().min(0), day: z.iso.date() }).optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */
   recent: z.array(z.object({ verb: z.string(), targetId: z.string().optional(), at: Timestamp })).max(20).default([]),
+  /**
+   * A trip that raised an interest by 15 or more is a spark (spec 2.3): `pending` waits for the next decide call, and at most 2
+   * sparks a day wake the mind. `count` is the sparks answered on `date`.
+   */
+  sparked: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), pending: z.object({ topic: z.string().max(60), gain: z.number() }).nullable() }).optional(),
   /** Local date interests last faded, so they fade once a day. */
   interestsFadedOn: z.iso.date().optional(),
   /** Local date of the last bedtime reflection, so it happens once a day. */

@@ -105,6 +105,8 @@ jobs:
         working-directory: engine
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Lifts GitHub's limit for reading repositories from 60 requests an hour; sent to api.github.com only.
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           # An unset secret arrives as an empty variable, which would still outrank federation.
           if [ -z "$ANTHROPIC_API_KEY" ]; then unset ANTHROPIC_API_KEY; fi

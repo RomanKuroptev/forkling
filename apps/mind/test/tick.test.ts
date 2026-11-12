@@ -161,7 +161,8 @@ const fishPlan: Decision['plan'] = [llmStep('fish', null, 30, 'I will catch one.
 const stateOf = () => MindState.parse(readJson('mind/state.json'))
 const goalsOf = () => Goals.parse(readJson('mind/goals.json'))
 /** A new object turns up on the beach, which is news. */
-const newObject = (id: string) => writeJson(`objects/${id}.json`, { ...readJson('objects/sunny-rock.json'), id, name: `A ${id}`, position: [12, 0, 24] })
+/** Wakes the mind the way a trip does: an interest was raised by 15 or more (spec 2.3). */
+const newObject = (id: string) => writeJson('mind/state.json', { ...(existsSync(file('mind/state.json')) ? readJson('mind/state.json') : {}), sparked: { date: '2026-11-03', count: 0, pending: { topic: id, gain: 20 } } })
 const streamText = () => readFileSync(file('memory/stream/2026-11-03.jsonl'), 'utf8')
 
 describe('mood and energy (spec 3.2)', () => {
@@ -470,11 +471,11 @@ describe('what counts as news', () => {
     const llm = fakeLlm(keep)
     await runTick(dir, at(minutesAfter(5), { llm }))
     expect(llm.calls[0]!.model).toBe('claude-sonnet-5-5')
-    expect(stateOf().knownObjects).not.toContain('pebble')
+    expect(stateOf().sparked?.pending).toMatchObject({ topic: 'pebble' })
     const next = fakeLlm(keep)
     await runTick(dir, at(minutesAfter(10), { llm: next }))
-    expect(next.calls[0]!.user).toMatch(/new objects: pebble/)
-    expect(stateOf().knownObjects).toContain('pebble')
+    expect(next.calls[0]!.user).toMatch(/a trip raised "pebble" by 20/)
+    expect(stateOf().sparked).toMatchObject({ count: 1, pending: null })
   })
 })
 
