@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hasPolicy, POLICY, policyMeta, withPolicy } from '../src/builds/sandbox.ts'
+import { hasPolicy, POLICY, policyMeta, withPolicy, workFrame } from '../src/builds/sandbox.ts'
 
 describe('the policy (spec 7.4)', () => {
   it('is the one in the spec, word for word', () => {
@@ -63,5 +63,22 @@ describe('hasPolicy: the check verifies the tag is there', () => {
 
   it('is false when the tag is in the body', () => {
     expect(hasPolicy(`<html><head></head><body>${policyMeta()}</body></html>`)).toBe(false)
+  })
+})
+
+describe('workFrame: how the site shows a work (spec 7.4)', () => {
+  it('is an iframe that may run scripts and nothing else', () => {
+    const frame = workFrame('works/a-lamp/index.html', 'A lamp')
+    expect(frame).toMatch(/^<iframe /)
+    expect(frame).toContain('sandbox="allow-scripts"')
+    expect(frame).not.toContain('allow-same-origin')
+    expect(frame).toContain('src="works/a-lamp/index.html"')
+    expect(frame).toContain('referrerpolicy="no-referrer"')
+  })
+
+  it('escapes the title and the address, so neither can break out of the tag', () => {
+    const frame = workFrame('works/"><script>x</script>/index.html', '"><img src=x onerror=alert(1)>')
+    expect(frame).not.toMatch(/<script|<img/)
+    expect(frame.match(/</g)).toHaveLength(2) // the opening tag and the closing one, nothing more
   })
 })

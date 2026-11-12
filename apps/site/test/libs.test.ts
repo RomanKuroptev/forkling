@@ -29,9 +29,9 @@ describe('the vendored libraries (spec 7.1: p5.js, Tone.js and three.js, served 
   })
 
   it('pins each library to an exact version in package.json, so the engine release decides what is served', () => {
-    const pkg = JSON.parse(readFileSync(join(siteRoot, 'package.json'), 'utf8')) as { devDependencies: Record<string, string> }
-    for (const name of ['p5', 'tone', 'three']) expect(pkg.devDependencies[name], name).toMatch(/^\d+\.\d+\.\d+$/)
-    expect(libVersions()).toEqual({ p5: pkg.devDependencies.p5, tone: pkg.devDependencies.tone, three: pkg.devDependencies.three })
+    const pkg = JSON.parse(readFileSync(join(siteRoot, 'package.json'), 'utf8')) as { dependencies: Record<string, string> }
+    for (const name of ['p5', 'tone', 'three']) expect(pkg.dependencies[name], name).toMatch(/^\d+\.\d+\.\d+$/)
+    expect(libVersions()).toEqual({ p5: pkg.dependencies.p5, tone: pkg.dependencies.tone, three: pkg.dependencies.three })
   })
 })
 

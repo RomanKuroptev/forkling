@@ -26,9 +26,15 @@ importers:
       '@forkling/sim':
         specifier: workspace:*
         version: link:../../packages/sim
+      '@forkling/site':
+        specifier: workspace:*
+        version: link:../site
       '@forkling/species-cat':
         specifier: workspace:*
         version: link:../../species/cat
+      playwright:
+        specifier: 1.65.0
+        version: 1.65.0
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -36,9 +42,6 @@ importers:
       '@types/node':
         specifier: ^24.19.2
         version: 24.19.2
-      playwright:
-        specifier: 1.65.0
-        version: 1.65.0
 
   apps/site:
     dependencies:
@@ -48,13 +51,6 @@ importers:
       '@forkling/sim':
         specifier: workspace:*
         version: link:../../packages/sim
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@types/node':
-        specifier: ^24.19.2
-        version: 24.19.2
       p5:
         specifier: 2.4.0
         version: 2.4.0
@@ -64,6 +60,13 @@ importers:
       tone:
         specifier: 15.1.22
         version: 15.1.22
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^24.19.2
+        version: 24.19.2
 
   apps/viewer:
     dependencies:

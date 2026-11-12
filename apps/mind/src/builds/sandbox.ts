@@ -42,3 +42,13 @@ export function hasPolicy(html: string): boolean {
   while (/\s/.test(html[at] ?? '')) at++
   return html.startsWith(policyMeta(), at)
 }
+
+const escapeAttr = (text: string) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/**
+ * The iframe that shows a work (spec 7.4): scripts may run and nothing else, and above all not `allow-same-origin`, so the
+ * work cannot read the site or the visitor's data. No referrer is sent. The address and the title are escaped.
+ */
+export function workFrame(src: string, title: string): string {
+  return `<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="${escapeAttr(title)}" src="${escapeAttr(src)}"></iframe>`
+}
