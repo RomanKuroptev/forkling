@@ -71,7 +71,7 @@ The Claude Code Action and coded Pages projects from M7 are retired; tinker repl
 
 The expected cost is $17.36 a month: $10.36 for models and about $7 for the server, which leaves $2.64 under the $20 cap. **(v3: version 2 was $19.95.)** The margin exists to cover the two things this table cannot know yet, listed under it.
 
-Prices: Haiku 5.5 $0.10 in / $0.50 out per million tokens (prompts under 100K), cached input at a tenth of the input price; Sonnet 5.5 $2 / $10; Message Batches half price. Server: Hetzner CX23 (2 vCPU, 4 GB, Helsinki) at €5.99 a month including IPv4 ([price list, August 2026](https://kimmo.suominen.com/stuff/cpc-2026-08.txt)). Token figures are averages for the answer itself.
+Prices: Haiku 5.5 $0.10 in / $0.50 out per million tokens (prompts under 100K), cached input at a tenth of the input price; Sonnet 5.5 $2 / $10; Message Batches half price. Server: Contabo Cloud VPS 4 (4 vCPU, 8 GB, 100 GB SSD, Hub Europe) at €6.88 a month including VAT on a 1-month term, plus a one-off €2.50 setup fee (Roman's order, 12 November 2026; version 3.3 assumed a Hetzner CX23 at €5.99). Token figures are averages for the answer itself.
 
 | Call | Model | Effort | Per month | Avg in / out tokens | $ a month |
 |---|---|---|---|---|---|
@@ -88,13 +88,13 @@ Prices: Haiku 5.5 $0.10 in / $0.50 out per million tokens (prompts under 100K), 
 | Found | Sonnet (batch) | low | 4.3 | 25K / 8K | 0.28 |
 | Tend | Haiku | medium | 150 (5 a day) | 10K / 1.5K | 0.26 |
 | Revisit, write | Haiku | medium | 180 (6 a day) | 6K / 600 | 0.16 |
-| Server | Hetzner CX23 |  | 1 |  | about 7.00 |
+| Server | Contabo Cloud VPS 4 (€6.88 incl. VAT) |  | 1 |  | about 7.00 |
 | **Total** |  |  |  |  | **17.36** |
 
 **What the table does not include (v3):**
 
 - **Thinking tokens.** Both models think before answering and bill that as output. Haiku's thinking is switched off for the low-effort rows (allowed at that level); Sonnet's cannot be switched off. Each Sonnet call's output limit is set to twice the answer size in the table so thinking cannot cut the answer short. The real cost is measured from the ledger in W3 (Haiku) and W4 (Sonnet) and this table is corrected then.
-- **VAT and exchange rate on the server.** If €5.99 is the price before Swedish VAT, the server is about €7.49. Roman checks the first invoice; the model cap below follows the real price.
+- **VAT and exchange rate on the server.** The price is €6.88 a month including VAT (1-month term, €2.50 one-off setup fee). The table's "about 7.00" is a rounded dollar guess and the default `serverUsd` of 7.49 stays as a cautious upper figure: Roman converts the real euro price and sets `serverUsd` in Merge's `brain/budget.json`, and the model cap below follows it.
 - **A late sleep rewrite** run as a normal call costs twice as much that night (at most $1.05 more in a month if it happened every night).
 
 **Added in version 3.1:** sketches (30 a month, Haiku, medium effort, about 6K in and 3K out) cost $0.06, and looks (600 a month, Haiku, low effort, about 2K in and 200 out) cost $0.18. That takes the total from $17.36 to **$17.60**.
