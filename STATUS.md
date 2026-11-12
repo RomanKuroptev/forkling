@@ -45,6 +45,12 @@ Roman said to build W2 while W1's 3 live days run (they end 14 November). Nothin
 - **W2 is built.** What is left is not code: a release (a PR pinning the new `FORKLING_REF`, the tag, then Merge's repo), and W2's 3 live days, both Roman's call, and the W1 health check comes first (14 November or later). The release needs Merge's `GITHUB_TOKEN` to reach the tick (the template workflow does this) and a look at whether Wikipedia (90% reliable, the 2 MB cap) and Commons (interest 3.7) stay in the allowlist.
 - This machine's `rtk` can't find `pnpm`, so run `pnpm` directly.
 
+## W3 progress (building on `main`, nothing released)
+
+Roman's prompt says to carry on while W1's and W2's live days run (W1 ends 14 November, W2 about 15 November; no health check is due yet). Nothing is released and nothing touches Merge's repo or a server. The plan is in [`docs/spec/w3-server.md`](docs/spec/w3-server.md): six slices, one PR each.
+
+- **Slice 1 done:** effort per call kind (`effortFor`: medium for morning, decide, bedtime and weekly, low for the rest) and thinking off for Haiku at low effort (`thinkingFor`; checked against the API docs: Haiku 5.5 accepts `disabled` at effort `high` or below, Sonnet 5.5 does not and is left alone). A refusal or an answer cut off at its output limit is now a failed call: `stop` on the tick-log call, `refusals` and `cutOff` in `mind/health.json`, a warning at 3 cut-offs a day, no retry with the same input. The read, look and memory calls send thinking off too. **Changes live behaviour at the next release:** decide and morning calls run at medium effort (spec 13). The read and look calls count their own failures in the trip notes, not yet in `refusals`.
+
 ## W1 progress (slice 1 of 5, started)
 
 - **Decisions (Roman, 10 November, "go ahead" on my recommendations):** the bedtime reflection and nightly rewrite keep running until W7; `write` works in W1 as a plaque-style note in `notebook/`; PR #29 is merged. The W0 voice test ran live (see `docs/spec/w0-voice-test.md`).

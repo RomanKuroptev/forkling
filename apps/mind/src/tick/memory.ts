@@ -1,6 +1,7 @@
 import { MemorySlots, type BudgetCall } from '@forkling/schema'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, recordCall } from '../budget.ts'
 import { buildMemoryUser, renderSummary } from '../reflect.ts'
+import { thinkingFor } from '../llm.ts'
 import { readText } from '../world.ts'
 import type { Tick } from './context.ts'
 
@@ -50,7 +51,7 @@ export async function memoryStep(t: Tick): Promise<void> {
       notes.push(`monthly budget reached ($${t.budget.spentUsd.toFixed(2)} of $${t.budget.capUsd}): no memory rewrite`)
     } else {
       try {
-        const id = await deps.llm.submitBatch({ kind: 'memory', model: 'claude-haiku-5-5', system, user, maxTokens: MEMORY_OUTPUT_TOKENS, effort: 'low', schema: MemorySlots })
+        const id = await deps.llm.submitBatch({ kind: 'memory', model: 'claude-haiku-5-5', system, user, maxTokens: MEMORY_OUTPUT_TOKENS, effort: 'low', thinking: thinkingFor('claude-haiku-5-5', 'low'), schema: MemorySlots })
         mind.memoryBatch = { id, date: evening }
         mind.lastMemoryDate = evening
         t.parts.push('sent its memory off to be rewritten')

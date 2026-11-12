@@ -1,6 +1,6 @@
 import type { Interests } from '@forkling/schema'
 import { costUsd, estimateCallUsd, estimateTokens, type Usage } from '../budget.ts'
-import { IMAGE_TOKENS, type LlmClient, type LlmImage } from '../llm.ts'
+import { IMAGE_TOKENS, thinkingFor, type LlmClient, type LlmImage } from '../llm.ts'
 import type { Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
 import { buildReadPrompt, judgeSouvenir, READ_MAX_TOKENS, ReadAnswer, readSystem, type SouvenirOutcome } from './read.ts'
@@ -72,7 +72,7 @@ export async function performRead(deps: ReadDeps, item: Item): Promise<ReadOutco
   if (deps.mayCall && !deps.mayCall(estimate)) return { answer: null, souvenir: {}, usd: 0, note: 'over the budget' }
 
   try {
-    const r = await deps.llm.complete({ kind: 'read', model: HAIKU, system, user, images: picture ? [picture] : [], maxTokens: READ_MAX_TOKENS, effort: 'low', schema: ReadAnswer })
+    const r = await deps.llm.complete({ kind: 'read', model: HAIKU, system, user, images: picture ? [picture] : [], maxTokens: READ_MAX_TOKENS, effort: 'low', thinking: thinkingFor(HAIKU, 'low'), schema: ReadAnswer })
     const usd = costUsd(HAIKU, r.usage)
     if (!r.parsed) return { answer: null, souvenir: {}, usd, usage: r.usage, note: `no usable answer (stopped: ${r.stopReason ?? 'unknown'})` }
     return { answer: r.parsed, souvenir: judgeSouvenir(r.parsed, item), usd, usage: r.usage }

@@ -22,6 +22,7 @@ const WARN_DECIDE_CALLS = 15
 const WARN_SAME_STEP = 3
 const WARN_FAILED_CALLS = 3
 const WARN_REJECTIONS = 3
+const WARN_CUT_OFF = 3
 const WARN_BUILD_HOURS = 48
 /** How far past an even share of the month the spend may run before it is a warning, in dollars. */
 const PACE_SLACK_USD = 0.5
@@ -55,9 +56,13 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   let decideCalls = before?.decideCalls ?? 0
   let failures = before?.failures ?? 0
   let rejections = before?.rejections ?? 0
+  let refusals = before?.refusals ?? 0
+  let cutOff = before?.cutOff ?? 0
   for (const c of line.calls) {
     if (!c.ok) {
       failures++
+      if (c.stop === 'refusal') refusals++
+      if (c.stop === 'cut_off') cutOff++
       continue
     }
     callsByKind = bump(callsByKind, c.kind)
@@ -100,6 +105,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   }
   if (decideCalls > WARN_DECIDE_CALLS) warnings.push(`${decideCalls} decide calls today (more than ${WARN_DECIDE_CALLS})`)
   if (failures >= WARN_FAILED_CALLS) warnings.push(`${failures} failed calls today`)
+  if (cutOff >= WARN_CUT_OFF) warnings.push(`${cutOff} answers cut off at the output limit today (the limit may be too low)`)
   if (rejections >= WARN_REJECTIONS) warnings.push(`${rejections} plans turned down today`)
   if (longestGapMinutes > WARN_GAP_MINUTES) warnings.push(`longest wait between ticks today was ${longestGapMinutes} minutes (they should come every 10)`)
   if (spend.monthUsd > spend.paceUsd + PACE_SLACK_USD) warnings.push(`spent $${spend.monthUsd.toFixed(2)} of $${spend.capUsd}, ahead of the pace ($${spend.paceUsd.toFixed(2)} by today)`)
@@ -112,7 +118,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     date: ctx.today,
     lastTick: { at: line.at, asleep: line.asleep, summary: line.summary, think: line.think, triggers: line.triggers.map((t) => t.kind), callsFailed: line.calls.filter((c) => !c.ok).length },
     plan,
-    today: { ticks: (before?.ticks ?? 0) + 1, decideCalls, callsByKind, triggersByKind, failures, rejections, stepsStarted, longestGapMinutes },
+    today: { ticks: (before?.ticks ?? 0) + 1, decideCalls, callsByKind, triggersByKind, failures, rejections, refusals, cutOff, stepsStarted, longestGapMinutes },
     quotas,
     web,
     allowance: { points: Math.round(mind.allowance?.points ?? 0), max: MAX_POINTS_IN_HAND },

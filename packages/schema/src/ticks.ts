@@ -21,6 +21,8 @@ export const TickCall = z.object({
   usd: z.number().nonnegative(),
   ok: z.boolean(),
   error: z.string().max(200).optional(),
+  /** Why a call that reached the model gave no answer (spec 11.3): the model refused, or the answer ran into its output limit. */
+  stop: z.enum(['refusal', 'cut_off']).optional(),
 })
 export type TickCall = z.infer<typeof TickCall>
 
@@ -93,6 +95,9 @@ export const Health = z.object({
     triggersByKind: z.record(z.string(), z.number().int().nonnegative()),
     failures: z.number().int().nonnegative(),
     rejections: z.number().int().nonnegative(),
+    /** Calls the model declined (`stop_reason` refusal), and answers cut off at their output limit (spec 11.3). Both are also in `failures`. */
+    refusals: z.number().int().nonnegative().default(0),
+    cutOff: z.number().int().nonnegative().default(0),
     /** Steps started today, by `verb target`. */
     stepsStarted: z.record(z.string(), z.number().int().nonnegative()),
     /** The longest wait between two awake ticks today, in minutes. Ticks should come every 10. */
