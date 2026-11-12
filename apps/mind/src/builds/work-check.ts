@@ -1,4 +1,4 @@
-import { MAX_SKETCH_BYTES, MAX_WORK_BYTES } from '@forkling/schema'
+import { MAX_SKETCH_BYTES, MAX_WORK_BYTES, type WorkKind } from '@forkling/schema'
 import { hasPolicy } from './sandbox.ts'
 
 /** At most this many reasons are given, so a repair prompt stays short. */
@@ -73,7 +73,7 @@ function leaves(tag: string, attr: string, value: string): boolean {
  * check, and one that this check misses (`window['fe' + 'tch']`) is still stopped by the sandbox and the policy, which are
  * the real boundary; this is what gives the repair call a reason in plain words.
  */
-export function staticCheck(html: string, opts: { size: 'full' | 'sketch' }): CheckResult {
+export function staticCheck(html: string, opts: { size: 'full' | 'sketch'; kind?: WorkKind | undefined }): CheckResult {
   const reasons = new Set<string>()
 
   const limit = opts.size === 'sketch' ? MAX_SKETCH_BYTES : MAX_WORK_BYTES
@@ -105,6 +105,15 @@ export function staticCheck(html: string, opts: { size: 'full' | 'sketch' }): Ch
   for (const m of html.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/gi)) {
     const value = (m[2] ?? '').trim()
     if (value && !value.startsWith('#') && !DATA_URI.test(value)) reasons.add(`the CSS loads "${short(value)}", and a work may use only data: images in CSS`)
+  }
+
+  // A meme is Merge's own drawing in code (spec 7.7): no picture element, SVG image or data picture, so the original cannot be embedded.
+  if (opts.kind === 'meme') {
+    for (const [tag] of [...tags(html)].map((x) => [x.name])) {
+      if (['img', 'picture', 'image', 'video', 'source', 'object'].includes(tag!)) reasons.add('a meme is drawn in code and carries no picture: it uses a picture element, and it may use canvas or SVG shapes')
+    }
+    if (/data:\s*(?:image|video)\//i.test(html)) reasons.add('a meme is drawn in code and carries no picture: it holds a data: image')
+    if (/\bnew\s+Image\s*\(|\bloadImage\s*\(|\bcreateImg\s*\(/.test(html)) reasons.add('a meme is drawn in code and carries no picture: it loads an image')
   }
 
   const list = [...reasons]

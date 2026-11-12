@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { WorkMeta } from '@forkling/schema'
 import type { WorkChecker } from './builds/browser-check.ts'
+import { memeSeeds, verifyMemeSources } from './builds/memes.ts'
 import { staticCheck } from './builds/work-check.ts'
 import type { GitRunner } from './tick/git.ts'
 
@@ -141,10 +142,11 @@ export async function validatePullRequest(o: ValidateOptions): Promise<ValidateR
     }
 
     const html = readFileSync(join(folder, 'index.html'), 'utf8')
-    const fixed = staticCheck(html, { size: meta.data.size })
+    const fixed = staticCheck(html, { size: meta.data.size, kind: meta.data.kind })
     for (const reason of fixed.reasons) here(reason)
+    if (meta.data.kind === 'meme') for (const reason of verifyMemeSources(meta.data.sources, memeSeeds(o.world))) here(reason)
     if (fixed.ok && o.checker) {
-      const checked = await o.checker.check(html, { size: meta.data.size })
+      const checked = await o.checker.check(html, { size: meta.data.size, kind: meta.data.kind })
       if (!checked.ok) for (const reason of checked.reasons) here(reason)
     }
   }

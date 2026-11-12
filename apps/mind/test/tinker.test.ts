@@ -44,10 +44,10 @@ const answer = (parsed: unknown): LlmResult<unknown> => ({ parsed, usage, stopRe
 
 /** A checker that answers from a list, and remembers the pages it was given. */
 function fakeChecker(results: Partial<WorkCheckResult>[]) {
-  const pages: { html: string; size: string }[] = []
+  const pages: { html: string; size: string; kind?: string | undefined }[] = []
   const checker: WorkChecker = {
     async check(html, opts) {
-      pages.push({ html, size: opts.size })
+      pages.push({ html, size: opts.size, kind: opts.kind })
       const r = results[pages.length - 1] ?? { ok: true }
       return { ok: r.ok ?? true, reasons: r.reasons ?? [], thumb: r.ok === false ? null : (r.thumb ?? PNG), ...(r.unavailable ? { unavailable: true as const } : {}) }
     },
@@ -192,7 +192,8 @@ describe('runTinker: a work that passes', () => {
 
   it('keeps meme sources only on a meme', async () => {
     const sources = [{ role: 'looked' as const, url: 'https://upload.wikimedia.org/a.jpg' }, { role: 'read' as const, url: 'https://en.wikipedia.org/wiki/A' }]
-    const meme = await runTinker(deps(fakeComplete([answer(output({ kind: 'meme', sources }))]).complete, fakeChecker([{ ok: true }]).checker), input())
+    const memeSeeds = { looked: [{ url: 'https://upload.wikimedia.org/a.jpg', title: 'A', what: 'a picture' }], read: [{ url: 'https://en.wikipedia.org/wiki/A', title: 'A' }] }
+    const meme = await runTinker(deps(fakeComplete([answer(output({ kind: 'meme', sources }))]).complete, fakeChecker([{ ok: true }]).checker), input({ memeSeeds }))
     expect(meme.status === 'shelf' && meme.meta.sources).toHaveLength(2)
     const art = await runTinker(deps(fakeComplete([answer(output({ sources }))]).complete, fakeChecker([{ ok: true }]).checker), input())
     expect(art.status === 'shelf' && art.meta.sources).toEqual([])
@@ -298,5 +299,46 @@ describe('runTinker: a sketch (spec 7.6)', () => {
     expect(calls).toHaveLength(1)
     expect(out.status).toBe('scrap')
     if (out.status === 'scrap') expect(out.meta).toMatchObject({ size: 'sketch', status: 'scrap' })
+  })
+})
+
+describe('runTinker: a meme (spec 7.7)', () => {
+  const seeds = {
+    looked: [{ url: 'https://en.wikipedia.org/wiki/Distracted_boyfriend', title: 'Distracted boyfriend', what: 'a man turning to look at another woman' }],
+    read: [{ url: 'https://en.wikipedia.org/wiki/Distracted_boyfriend', title: 'Distracted boyfriend' }],
+  }
+  const good = [{ role: 'looked' as const, url: seeds.looked[0]!.url }, { role: 'read' as const, url: seeds.read[0]!.url }]
+
+  it('shows the pages it looked at and read as data, and says a meme takes its sources from them', () => {
+    const t = buildTinkerUser(input({ memeSeeds: seeds }))
+    expect(t).toContain('<data source="meme-sources">')
+    expect(t).toContain('a man turning to look at another woman')
+    expect(t).toMatch(/meme[^\n]*sources[^\n]*(list|below)/i)
+    expect(t).toMatch(/never[^\n]*(likeness|real person)/i)
+    expect(buildTinkerUser(input())).toMatch(/not looked at any picture|no page/i)
+  })
+
+  it('shelves a meme whose sources are pages it looked at and read, and the check is told it is a meme', async () => {
+    const { checker, pages } = fakeChecker([{ ok: true }])
+    const out = await runTinker(deps(fakeComplete([answer(output({ kind: 'meme', sources: good }))]).complete, checker), input({ memeSeeds: seeds }))
+    expect(out.status).toBe('shelf')
+    expect(pages[0]!.kind).toBe('meme')
+    expect(out.status === 'shelf' && out.meta.sources).toEqual(good)
+  })
+
+  it('repairs, and then scraps, a meme whose sources are pages it never looked at or read', async () => {
+    const invented = [{ role: 'looked' as const, url: 'https://en.wikipedia.org/wiki/Invented' }, { role: 'read' as const, url: 'https://en.wikipedia.org/wiki/Invented' }]
+    const { complete, calls } = fakeComplete([answer(output({ kind: 'meme', sources: invented })), answer(output({ kind: 'meme', sources: invented }))])
+    const { checker, pages } = fakeChecker([])
+    const out = await runTinker(deps(complete, checker), input({ memeSeeds: seeds }))
+    expect(calls.map((c) => c.kind)).toEqual(['tinker', 'repair'])
+    expect(calls[1]!.user).toMatch(/Invented/)
+    expect(pages).toHaveLength(0)
+    expect(out.status).toBe('scrap')
+  })
+
+  it('asks nothing of the sources of a work that is not a meme', async () => {
+    const out = await runTinker(deps(fakeComplete([answer(output())]).complete, fakeChecker([{ ok: true }]).checker), input({ memeSeeds: { looked: [], read: [] } }))
+    expect(out.status).toBe('shelf')
   })
 })
