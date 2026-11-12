@@ -8,6 +8,7 @@ import type { WorkCheckResult, WorkChecker } from '../src/builds/browser-check.t
 import type { GithubClient } from '../src/builds/github.ts'
 import { createTinkerHandler } from '../src/builds/tinker-job.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
+import type { FetchImpl } from '../src/web/fetch.ts'
 import { noBatch } from './noBatch.ts'
 
 const templates = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
@@ -64,7 +65,7 @@ beforeEach(() => {
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-const handler = (llm: LlmClient | null, checker: WorkChecker, github: GithubClient) => createTinkerHandler({ dir, llm, checker, github, now: () => NOW })
+const handler = (llm: LlmClient | null, checker: WorkChecker, github: GithubClient, web?: { fetchImpl: FetchImpl; sleep: () => Promise<void> }) => createTinkerHandler({ dir, llm, checker, github, now: () => NOW, ...(web ? { web } : {}) })
 const run = (h: ReturnType<typeof handler>) => h(job, { dir, nowMs: NOW })
 
 describe('the tinker handler (spec 10.2)', () => {
@@ -183,5 +184,25 @@ describe('a remix job (spec 7.5)', () => {
     await handler(llm, checkerOf([{ ok: true }]), github.client)({ ...job, remixOf: 'gone' }, { dir, nowMs: NOW })
     expect(calls[0]!.user).not.toContain('<data source="remix">')
     expect(WorkMeta.parse(JSON.parse(String(github.opened[0]!.files[1]!.content))).remixOf).toBeNull()
+  })
+})
+
+describe('manuals in a full work (spec 6.1: for tinker only)', () => {
+  it('shows the manuals of the first two libraries it has never used to the call as data', async () => {
+    const asked: string[] = []
+    const web = { fetchImpl: (async (url: string) => (asked.push(url), new Response('<html><head><title>p5 reference</title></head><body>circle(x, y, d)</body></html>'))) as FetchImpl, sleep: async () => undefined }
+    const { llm, calls } = fakeLlm([output()])
+    await handler(llm, checkerOf([{ ok: true }]), fakeGithub().client, web)(job, { dir, nowMs: NOW })
+    expect(calls[0]!.user).toContain('<data source="manuals">')
+    expect(calls[0]!.user).toContain('circle(x, y, d)')
+    expect(asked).toEqual(['https://p5js.org/reference/', 'https://tonejs.github.io/docs/'])
+  })
+
+  it('makes the work without them when the web cannot be reached', async () => {
+    const web = { fetchImpl: (async () => { throw new Error('offline') }) as FetchImpl, sleep: async () => undefined }
+    const { llm, calls } = fakeLlm([output()])
+    const out = await handler(llm, checkerOf([{ ok: true }]), fakeGithub().client, web)(job, { dir, nowMs: NOW })
+    expect(out.status).toBe('done')
+    expect(calls[0]!.user).not.toContain('manuals')
   })
 })

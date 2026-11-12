@@ -9,6 +9,7 @@ import { hasPolicy } from '../src/builds/sandbox.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
 import { loadSpecies } from '../src/species.ts'
 import { runTick } from '../src/tick.ts'
+import type { FetchImpl } from '../src/web/fetch.ts'
 import { noBatch } from './noBatch.ts'
 
 const templates = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
@@ -80,12 +81,12 @@ beforeEach(() => {
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-const deps = (llm: LlmClient | null, now: string, workCheck?: WorkChecker) => ({ now: new Date(now), llm, pack: cat.pack, behaviors: cat.behaviors, speciesPersona: cat.persona, ...(workCheck ? { workCheck } : {}) })
+const deps = (llm: LlmClient | null, now: string, workCheck?: WorkChecker, web?: { fetchImpl: FetchImpl; sleep: () => Promise<void> }) => ({ now: new Date(now), llm, pack: cat.pack, behaviors: cat.behaviors, speciesPersona: cat.persona, ...(workCheck ? { workCheck } : {}), ...(web ? { web } : {}) })
 
 /** The morning plan starts the sketch step; an hour later it lands and the sketch is made. */
-async function sketchHour(fake: Fake, workCheck?: WorkChecker) {
-  await runTick(dir, deps(fake.llm, NOW, workCheck))
-  return runTick(dir, deps(fake.llm, minutesAfter(61), workCheck))
+async function sketchHour(fake: Fake, workCheck?: WorkChecker, web?: { fetchImpl: FetchImpl; sleep: () => Promise<void> }) {
+  await runTick(dir, deps(fake.llm, NOW, workCheck, web))
+  return runTick(dir, deps(fake.llm, minutesAfter(61), workCheck, web))
 }
 
 describe('a sketch step (spec 7.6, 2.4)', () => {
@@ -187,5 +188,49 @@ describe('the plan sees how many sketches were made (spec 9.8: 3 a day)', () => 
     writeFileSync(file('mind/state.json'), JSON.stringify({ sketches: { date: '2026-11-02', count: 3 } }))
     const result = await runTick(dir, deps(fakeLlm(planWith()).llm, NOW, checkerOf({})))
     expect(result.notes.join(' ')).not.toMatch(/at most 3 sketches a day/)
+  })
+})
+
+describe('the manuals offered to a sketch (spec 6.1: for tinker only; 12.4: untried things)', () => {
+  const page = '<html><head><title>p5 reference</title></head><body><p>circle(x, y, d) draws a circle.</p></body></html>'
+  const web = (answer: (url: string) => Response) => {
+    const asked: string[] = []
+    // The morning tick reads front pages through the same web; only the manuals are counted here.
+    const manuals = () => asked.filter((u) => /p5js\.org|tonejs\.github\.io|threejs\.org|developer\.mozilla\.org/.test(u))
+    return { manuals, web: { fetchImpl: (async (url: string) => (asked.push(url), answer(url))) as FetchImpl, sleep: async () => undefined } }
+  }
+
+  it('reads the manuals of the first two libraries it has never used, and shows them to the call as data', async () => {
+    const w = web(() => new Response(page))
+    const fake = fakeLlm(planWith())
+    await sketchHour(fake, checkerOf({}), w.web)
+    const user = fake.calls.find((c) => c.kind === 'sketch')!.user
+    expect(user).toContain('<data source="manuals">')
+    expect(user).toContain('circle(x, y, d) draws a circle.')
+    expect(w.manuals()).toEqual(['https://p5js.org/reference/', 'https://tonejs.github.io/docs/'])
+  })
+
+  it('reads none when every library has been used, and still makes the sketch', async () => {
+    mkdirSync(file('works/old'), { recursive: true })
+    writeFileSync(file('works/old/meta.json'), JSON.stringify(WorkMeta.parse({ id: 'old', title: 'Old work', kind: 'art', about: 'x', interest: null, made: NOW, status: 'shelf', size: 'full', libraries: ['p5', 'tone', 'three'] })))
+    const w = web(() => new Response(page))
+    const fake = fakeLlm(planWith())
+    await sketchHour(fake, checkerOf({}), w.web)
+    expect(w.manuals()).toEqual([])
+    expect(workIds()).toContain('humming-lamp')
+  })
+
+  it('goes without a manual that cannot be read, and still makes the sketch', async () => {
+    const w = web(() => new Response('nope', { status: 500 }))
+    const fake = fakeLlm(planWith())
+    await sketchHour(fake, checkerOf({}), w.web)
+    expect(fake.calls.find((c) => c.kind === 'sketch')!.user).not.toContain('<data source="manuals">')
+    expect(workIds()).toEqual(['humming-lamp'])
+  })
+
+  it('reads no manual when the tick has no way to reach the web', async () => {
+    const fake = fakeLlm(planWith())
+    await sketchHour(fake, checkerOf({}))
+    expect(fake.calls.find((c) => c.kind === 'sketch')!.user).not.toContain('manuals')
   })
 })
