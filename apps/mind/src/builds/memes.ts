@@ -2,18 +2,20 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Trail, type WorkSource } from '@forkling/schema'
 
-/** What a meme may be made from (spec 7.7, 7.8): a page whose picture Merge looked at, and a Wikipedia page it read. */
+/** What a meme may be made from (spec 7.7, 7.8): a page whose picture Merge looked at, and a Wikipedia page or Imgflip format it read. */
 export interface MemeSeeds {
   looked: { url: string; title: string; what: string }[]
   read: { url: string; title: string }[]
 }
 
+/** A format is read about on a Wikipedia page or on its own Imgflip record (spec 7.7). */
+const READ_ABOUT_HOSTS = ['en.wikipedia.org', 'imgflip.com']
 const PER_LIST = 5
 const TRAILS_SCANNED = 40
 
 /**
  * The pages on its trails that a meme may name as sources, newest first. A page whose picture it looked at has a `look` on the
- * trail; a page it read about is a Wikipedia page that was fetched. The same page can be both. Taken from the trails, so a
+ * trail; a page it read about is a Wikipedia page or an Imgflip format record that was fetched. The same page can be both. Taken from the trails, so a
  * meme cannot name a format it never met.
  */
 export function memeSeeds(dir: string): MemeSeeds {
@@ -39,7 +41,7 @@ export function memeSeeds(dir: string): MemeSeeds {
       } catch {
         // Not a URL: not a source.
       }
-      if (host === 'en.wikipedia.org' && seeds.read.length < PER_LIST && !seeds.read.some((s) => s.url === page.url)) seeds.read.push({ url: page.url, title: page.title })
+      if (READ_ABOUT_HOSTS.includes(host) && seeds.read.length < PER_LIST && !seeds.read.some((s) => s.url === page.url)) seeds.read.push({ url: page.url, title: page.title })
     }
   }
   return seeds
@@ -50,7 +52,7 @@ export function verifyMemeSources(sources: readonly WorkSource[], seeds: MemeSee
   const reasons: string[] = []
   for (const s of sources) {
     if (s.role === 'looked' && !seeds.looked.some((l) => l.url === s.url)) reasons.push(`the format it looked at, ${s.url}, is not a page whose picture it looked at (it must come from the list)`)
-    if (s.role === 'read' && !seeds.read.some((r) => r.url === s.url)) reasons.push(`the page it read about the format, ${s.url}, is not a Wikipedia page it read (it must come from the list)`)
+    if (s.role === 'read' && !seeds.read.some((r) => r.url === s.url)) reasons.push(`the page it read about the format, ${s.url}, is not a Wikipedia page or an Imgflip format it read (it must come from the list)`)
   }
   return reasons
 }

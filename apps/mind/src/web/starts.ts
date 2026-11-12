@@ -1,6 +1,6 @@
 import type { Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
-import { articRandomId, articWork, commonsFeatured, esolangFeatured, githubRepo, githubTopicRepos, wikipediaFeatured } from './sources/index.ts'
+import { articRandomId, articWork, commonsFeatured, esolangFeatured, githubRepo, githubTopicRepos, imgflipFormat, imgflipTopLinks, wikipediaFeatured } from './sources/index.ts'
 
 /** How a trial starts on a host: from what the host itself puts forward, never a topic picked here (spec 6.5). */
 export interface HostPlan {
@@ -27,6 +27,12 @@ export const HOST_PLANS: readonly HostPlan[] = [
     itemHost: 'github.com',
     paths: ['/repos/', '/search/repositories'],
     start: async (f, seed, offset) => githubRepo(f, at(await githubTopicRepos(f, at(GITHUB_TOPICS, seed)), offset + Math.floor(seed / GITHUB_TOPICS.length))),
+  },
+  {
+    host: 'api.imgflip.com',
+    itemHost: 'imgflip.com',
+    paths: ['/get_memes'],
+    start: async (f, seed, offset) => imgflipFormat(f, at(await imgflipTopLinks(f, 100), offset + seed).url.split('/').pop()!),
   },
   { host: 'api.artic.edu', itemHost: 'www.artic.edu', paths: ['/api/v1/artworks/'], start: async (f, seed, offset) => articWork(f, await articRandomId(f, 1 + ((offset * 97 + seed * 331) % 900))) },
 ]

@@ -11,6 +11,57 @@ async function soft<T>(run: () => Promise<T>): Promise<T | null> {
   }
 }
 
+// ---- Imgflip: the 100 most-captioned meme formats of the last 30 days (the pulse of memes, spec 6.1) ----
+
+interface Format {
+  id: string
+  name: string
+  url: string
+  boxes: number | null
+  captions: number | null
+}
+
+/**
+ * The ranking, in rank order. The reply is a stranger's data: an entry that does not have a text id, a name and an https
+ * picture on i.imgflip.com is dropped, and a reply with no list at all is an error.
+ */
+async function formats(f: Fetcher): Promise<Format[]> {
+  const list = ((await f.json('https://api.imgflip.com/get_memes')) as { data?: { memes?: unknown } } | null)?.data?.memes
+  if (!Array.isArray(list)) throw new WebError('http', 'Imgflip gave no list of formats', 502)
+  const out: Format[] = []
+  for (const m of list as Record<string, unknown>[]) {
+    if (!m || typeof m.id !== 'string' || !/^\d{1,20}$/.test(m.id) || typeof m.name !== 'string' || !m.name.trim() || typeof m.url !== 'string' || !m.url.startsWith('https://i.imgflip.com/')) continue
+    out.push({ id: m.id, name: m.name.trim().slice(0, 100), url: m.url, boxes: typeof m.box_count === 'number' ? m.box_count : null, captions: typeof m.captions === 'number' ? m.captions : null })
+  }
+  return out
+}
+
+const imgflipPage = (id: string) => `https://imgflip.com/meme/${id}`
+
+/** The top formats as links, most captioned first: starting points for a morning. Nothing is kept from the feed itself. */
+export async function imgflipTopLinks(f: Fetcher, n: number): Promise<ItemLink[]> {
+  return (await formats(f)).slice(0, n).map((m) => ({ title: m.name, url: imgflipPage(m.id) }))
+}
+
+/** One format. Its links are the formats next to it in the ranking and the Wikipedia page for its name. */
+export async function imgflipFormat(f: Fetcher, id: string): Promise<Item> {
+  const all = await formats(f)
+  const at = all.findIndex((m) => m.id === id)
+  if (at < 0) throw new WebError('http', `no Imgflip format ${id}`, 404)
+  const m = all[at]!
+  const near = [-1, 1, -2, 2].flatMap((d) => (all[at + d] ? [all[at + d]!] : []))
+  return {
+    source: 'api.imgflip.com',
+    kind: 'record',
+    tier: 'voices',
+    url: imgflipPage(m.id),
+    title: m.name,
+    text: `Meme format: ${m.name}\nRank among the 100 most-captioned formats of the last 30 days: ${at + 1}\nCaption boxes: ${m.boxes ?? 'unknown'}\nCaptions in the last 30 days: ${m.captions ?? 'unknown'}`,
+    links: capLinks([...near.map((n) => ({ title: n.name, url: imgflipPage(n.id) })), wikipediaTopicLink(m.name)], MAX_RECORD_LINKS),
+    images: [{ url: m.url, licence: null, credit: null }],
+  }
+}
+
 // ---- Art Institute of Chicago ----
 
 const ARTIC_FIELDS = 'id,title,artist_display,artist_title,date_display,medium_display,place_of_origin,description,short_description,image_id,is_public_domain,subject_titles'

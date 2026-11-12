@@ -37,6 +37,18 @@ describe('memeSeeds (what Merge has looked at and read, from its trails; spec 7.
     expect(seeds.read.map((s) => s.url)).toEqual(['https://en.wikipedia.org/wiki/Moon', 'https://en.wikipedia.org/wiki/Distracted_boyfriend', 'https://en.wikipedia.org/wiki/Old_meme'])
   })
 
+  it('counts an Imgflip format record it read as a page it read about, and its template picture it looked at as a look', () => {
+    put(trail('2026-11-13-1', '2026-11-13', [{ url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling', look: 'a man waving away, then pointing' }]))
+    const seeds = memeSeeds(dir)
+    expect(seeds.read).toEqual([{ url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling' }])
+    expect(seeds.looked.map((s) => s.url)).toEqual(['https://imgflip.com/meme/181913649'])
+  })
+
+  it('does not count any other host as a page it read about the format', () => {
+    put(trail('2026-11-13-2', '2026-11-13', [{ url: 'https://api.github.com/repos/a/b', title: 'b' }, { url: 'https://imgflip.com.evil.com/meme/1', title: 'evil' }]))
+    expect(memeSeeds(dir).read).toEqual([])
+  })
+
   it('offers at most a handful of each, and skips a trail file that does not fit its schema', () => {
     for (let i = 0; i < 12; i++) put(trail(`2026-11-${String(i + 1).padStart(2, '0')}-1`, `2026-11-${String(i + 1).padStart(2, '0')}`, [{ url: `https://en.wikipedia.org/wiki/P${i}`, title: `P${i}`, look: `picture ${i}` }]))
     writeFileSync(join(dir, 'trails', 'broken.json'), '{ nope')
@@ -56,6 +68,12 @@ describe('verifyMemeSources (a meme names a format it looked at and read about)'
 
   it('passes sources that are pages it really looked at and read, even the same page for both', () => {
     expect(verifyMemeSources([looked, read], seeds)).toEqual([])
+  })
+
+  it('accepts an Imgflip format record it read, and still refuses one it never opened', () => {
+    const withImgflip = { looked: [{ url: 'https://imgflip.com/meme/1', title: 'Drake', what: 'x' }], read: [{ url: 'https://imgflip.com/meme/1', title: 'Drake' }] }
+    expect(verifyMemeSources([{ role: 'looked', url: 'https://imgflip.com/meme/1' }, { role: 'read', url: 'https://imgflip.com/meme/1' }], withImgflip)).toEqual([])
+    expect(verifyMemeSources([{ role: 'read', url: 'https://imgflip.com/meme/2' }], withImgflip).join(' ')).toMatch(/read.*meme\/2/)
   })
 
   it('names a source it never looked at or read', () => {

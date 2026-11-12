@@ -30,7 +30,7 @@ const FAST = 1000
 //   lobste.rs and hacker-news.firebaseio.com: their robots.txt disallows us (a voices host can come back as its own trial, e.g. hn.algolia.com).
 //   api.nasa.gov: needs a key and a better adapter.
 // The library manuals (W4) are on the list for tinker only: a wander is refused them, and they were trialled in W2.
-// Meme formats (api.imgflip.com) join for memes only.
+// Meme formats (api.imgflip.com) came back after a second look (Roman, 12 November 2026): a feed of starting points, and a record a meme may cite.
 // Wikipedia, the Esolang wiki and Commons are read through their `/wiki/` pages: their robots.txt allows those and disallows the API.
 export const ALLOWLIST: readonly HostRule[] = [
   { host: 'en.wikipedia.org', kind: 'page', tier: 'reference', gapMs: SLOW },
@@ -40,6 +40,10 @@ export const ALLOWLIST: readonly HostRule[] = [
   { host: 'upload.wikimedia.org', kind: 'image', tier: 'reference', gapMs: SLOW },
   { host: 'api.artic.edu', kind: 'record', tier: 'reference', gapMs: SLOW },
   { host: 'www.artic.edu', kind: 'image', tier: 'reference', gapMs: SLOW },
+  // The pulse of memes (spec 6.1): the most-captioned formats of the last 30 days, and their template pictures, which a look may see
+  // but a meme may never embed (the work check refuses a picture of any kind in a meme).
+  { host: 'api.imgflip.com', kind: 'record', tier: 'voices', gapMs: FAST, verbs: ['wander', 'meme'] },
+  { host: 'i.imgflip.com', kind: 'image', tier: 'voices', gapMs: FAST, verbs: ['wander', 'meme'] },
   // The library manuals, for tinker only (spec 6.1): what Merge reads about the tool it is making something with.
   { host: 'p5js.org', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },
   { host: 'tonejs.github.io', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },
@@ -68,10 +72,10 @@ export function isAllowed(url: string, verb: ReadVerb = 'wander'): boolean {
 
 /**
  * Public pages that name an item on a site the code does not read directly: a GitHub repository is read through its API
- * (`api.github.com`).
+ * (`api.github.com`) and an Imgflip format through the ranking (`api.imgflip.com`).
  * Their page URLs are what a trail and a souvenir cite, and what a link can point at.
  */
-export const NAMED_BY_PAGE: readonly string[] = ['github.com']
+export const NAMED_BY_PAGE: readonly string[] = ['github.com', 'imgflip.com']
 
 /** A URL the mind may be offered and may read: an allowed URL, or the page URL of an item an allowed API gives. */
 export function isReadable(url: string): boolean {

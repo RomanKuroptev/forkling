@@ -2,7 +2,7 @@ import { isReadable } from '../allowlist.ts'
 import { WebError, type Fetcher } from '../fetch.ts'
 import type { Item } from '../item.ts'
 import { commonsFile } from './commons.ts'
-import { articWork, githubRepo } from './records.ts'
+import { articWork, githubRepo, imgflipFormat } from './records.ts'
 import { esolangPage, wikipediaArticle } from './wikipedia.ts'
 
 export * from './commons.ts'
@@ -39,6 +39,9 @@ export async function readUrl(f: Fetcher, url: string): Promise<Item> {
       throw nothing()
     case 'github.com':
       if (parts.length === 2) return githubRepo(f, `${parts[0]}/${parts[1]}`)
+      throw nothing()
+    case 'imgflip.com':
+      if (parts.length === 2 && parts[0] === 'meme' && parts[1] && /^\d+$/.test(parts[1])) return imgflipFormat(f, parts[1])
       throw nothing()
     case 'commons.wikimedia.org':
       if (parts[0] === 'wiki' && parts[1]?.startsWith('File:')) return commonsFile(f, decode(parts.slice(1).join('/')))
