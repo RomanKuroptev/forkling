@@ -46,6 +46,24 @@ export function monthOf(timezone: string, ms: number): string {
   return localDate(timezone, ms).slice(0, 7)
 }
 
+/** Days in the month of a local date (`YYYY-MM-DD`). */
+export function daysInMonth(date: string): number {
+  const [y, m] = date.split('-').map(Number) as [number, number]
+  return new Date(Date.UTC(y, m, 0)).getUTCDate()
+}
+
+/** The model cap spread evenly over the month, counting the whole of today. */
+export function paceUsd(ledger: BudgetLedger, today: string): number {
+  return (ledger.capUsd * Number(today.slice(8, 10))) / daysInMonth(today)
+}
+
+/** Spend more than this share over the month's pace slows the thought tick and holds tinker and expand (spec 13). */
+export const PACE_AHEAD_SHARE = 0.15
+
+export function paceAhead(ledger: BudgetLedger, today: string): boolean {
+  return ledger.spentUsd > paceUsd(ledger, today) * (1 + PACE_AHEAD_SHARE) + 1e-9
+}
+
 export function canSpend(ledger: BudgetLedger, estimateUsd: number): boolean {
   return ledger.spentUsd + estimateUsd <= ledger.capUsd + 1e-9
 }
@@ -67,6 +85,7 @@ export function rollLedger(ledger: BudgetLedger, month: string): BudgetLedger {
   const unused = ledger.spentUsd === 0 && ledger.calls.length === 0
   return {
     month,
+    serverUsd: ledger.serverUsd,
     capUsd: ledger.capUsd,
     spentUsd: 0,
     calls: [],

@@ -2,8 +2,12 @@ import { z } from 'zod'
 import { Timestamp } from './intention.ts'
 import { VerbGroup } from './species.ts'
 
-/** Hard monthly ceiling per forkling, in US dollars. */
-export const MONTHLY_CAP_USD = 10
+/** Hard monthly ceiling per forkling in US dollars, the server included (CLAUDE.md, spec 13). */
+export const TOTAL_CAP_USD = 20
+/** What the server is guessed to cost a month (Hetzner CX23 with Swedish VAT) until Roman has the first invoice. */
+export const DEFAULT_SERVER_USD = 7.49
+/** The model cap is the total cap minus what the server really costs. */
+export const modelCapUsd = (serverUsd: number): number => Math.round((TOTAL_CAP_USD - serverUsd) * 100) / 100
 
 /** One designed object (or coded project) a day, and a request that is never answered is given up on after this long. */
 export const MAX_BUILDS_PER_DAY = 1
@@ -128,16 +132,22 @@ export const BudgetCall = z.object({
 })
 export type BudgetCall = z.infer<typeof BudgetCall>
 
-/** `brain/budget.json`: this month's spend. The guard stops all LLM calls once `spentUsd` reaches `capUsd`. */
+/**
+ * `brain/budget.json`: this month's spend. The guard stops all LLM calls once `spentUsd` reaches `capUsd`, the model
+ * cap. The model cap and the server's monthly price together never pass $20 (an older file with `capUsd: 10` stays at 10
+ * until someone raises it).
+ */
 export const BudgetLedger = z.object({
   /** `YYYY-MM` in the forkling's time zone. */
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'like 2026-11'),
-  capUsd: z.number().positive().max(MONTHLY_CAP_USD).default(MONTHLY_CAP_USD),
+  /** What the server costs a month. Roman sets the real price after the first invoice. */
+  serverUsd: z.number().nonnegative().max(TOTAL_CAP_USD).default(DEFAULT_SERVER_USD),
+  capUsd: z.number().positive().max(TOTAL_CAP_USD).default(modelCapUsd(DEFAULT_SERVER_USD)),
   spentUsd: z.number().nonnegative().default(0),
   calls: z.array(BudgetCall).default([]),
   /** Totals of earlier months, kept after the call list is reset. */
   history: z.array(z.object({ month: z.string(), spentUsd: z.number().nonnegative(), calls: z.number().int().nonnegative() })).default([]),
-})
+}).refine((l) => l.capUsd + l.serverUsd <= TOTAL_CAP_USD + 1e-9, { message: 'the model cap plus the server price must stay within $20', path: ['capUsd'] })
 export type BudgetLedger = z.infer<typeof BudgetLedger>
 
 /** `brain/skills.json`: practice per verb group. Level only rises with use, and sets how good the things it makes are. */

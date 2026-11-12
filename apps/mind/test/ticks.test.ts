@@ -107,7 +107,7 @@ describe('the tick log', () => {
 
   it('says when the budget refused a call', async () => {
     mkdirSync(file('brain'), { recursive: true })
-    writeFileSync(file('brain/budget.json'), JSON.stringify({ month: '2026-11', spentUsd: 10 }))
+    writeFileSync(file('brain/budget.json'), JSON.stringify({ month: '2026-11', capUsd: 10, spentUsd: 10 }))
     await runTick(dir, deps(NOW))
     expect(lines()[0]!.calls[0]).toMatchObject({ ok: false, error: expect.stringMatching(/budget/) })
   })

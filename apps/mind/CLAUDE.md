@@ -14,7 +14,7 @@ The Node script each world repo's workflows run. One tick = load state and speci
 ## Cost rules (non-negotiable)
 - Every prompt stays under 100K tokens (Haiku's price jumps 5x above that). Summarize memory instead of passing history.
 - Skip the LLM entirely when no surprise trigger fired.
-- At the $10 monthly cap (`brain/budget.json`), stop all LLM calls until the month resets.
+- At the monthly model cap (`brain/budget.json`: `capUsd`, and `capUsd` plus `serverUsd` never over $20), stop all LLM calls until the month resets.
 - No LLM calls while asleep except the single nightly memory batch.
 - Ticks: every 10 minutes while awake, hourly while asleep, plus an immediate tick on a visitor event (debounced to 2 minutes; none are sent yet). Every tick commits: world state only when it changed, and the tick log (`mind/ticks/`, `mind/health.json`) always, in commits that start with `tick:`.
 - Reading: max 5 sessions a day (the morning one skims the trend feeds), up to 3 linked pages each. Artifacts: about 4 a day, short outputs. Vision: max 12 eye-cam frames a day, 512 px, when something new is in view or a planned photograph step asks. Builds: 1 object a day, 2 coded Pages projects a week, and at most one open object build and one open coded project at a time. The builder reports in `mind/builds/<id>.result.json`; the mind books its cost, closes a failed build and gives back the slot. A coded project whose PR waits for a person never expires.

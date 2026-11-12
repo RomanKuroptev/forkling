@@ -230,7 +230,7 @@ describe('the bedtime reflection', () => {
   })
 
   it('does not spend past the monthly cap', async () => {
-    writeJson('brain/budget.json', BudgetLedger.parse({ month: '2026-11', spentUsd: 9.999 }))
+    writeJson('brain/budget.json', BudgetLedger.parse({ month: '2026-11', capUsd: 10, spentUsd: 9.999 }))
     const llm = fake()
     const result = await tick(beforeBed(20), llm)
     expect(llm.calls).toHaveLength(0)

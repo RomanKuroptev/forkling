@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BudgetLedger, BuildRequest, Forkling, Goals, Intention, MindState, PlanStep } from '../src/index.ts'
+import { BudgetLedger, BuildRequest, Forkling, Goals, Intention, MindState, modelCapUsd, PlanStep } from '../src/index.ts'
 
 const step = { verb: 'perch', targetId: 'sunny-rock', reason: 'I want the best view of the beach.', minutes: 30 }
 
@@ -114,9 +114,11 @@ describe('BudgetLedger', () => {
     usd: 0.012,
   }
 
-  it('starts empty with the $10 cap', () => {
+  it('starts empty with the model cap of $20 minus the server (spec 13)', () => {
     const ledger = BudgetLedger.parse({ month: '2026-11' })
-    expect(ledger.capUsd).toBe(10)
+    expect(ledger.serverUsd).toBe(7.49)
+    expect(ledger.capUsd).toBe(12.51)
+    expect(modelCapUsd(7.49)).toBe(12.51)
     expect(ledger.spentUsd).toBe(0)
     expect(ledger.calls).toEqual([])
   })
@@ -125,8 +127,11 @@ describe('BudgetLedger', () => {
     expect(BudgetLedger.parse({ month: '2026-11', spentUsd: 0.012, calls: [call] }).calls).toHaveLength(1)
   })
 
-  it('refuses a cap above $10 and a malformed month', () => {
-    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 11 }).success).toBe(false)
+  it('keeps the model cap and the server price within $20 together, and refuses a malformed month', () => {
+    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 13 }).success).toBe(false)
+    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 10 }).success).toBe(true)
+    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 14, serverUsd: 6 }).success).toBe(true)
+    expect(BudgetLedger.safeParse({ month: '2026-11', serverUsd: 21 }).success).toBe(false)
     expect(BudgetLedger.safeParse({ month: 'November' }).success).toBe(false)
   })
 })
