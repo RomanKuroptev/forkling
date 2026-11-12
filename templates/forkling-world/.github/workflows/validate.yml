@@ -56,6 +56,11 @@ jobs:
         working-directory: engine
         run: pnpm install --frozen-lockfile --filter "@forkling/mind..."
 
+      # The browser keeps its own sandbox on (the pages are written by a model). Ubuntu 24.04 stops a program making the user
+      # namespace that sandbox needs; this runner is a throwaway VM, so it is allowed here (the server uses a narrow AppArmor profile).
+      - name: Allow the browser sandbox on this runner
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - name: Install a browser
         working-directory: engine
         run: pnpm --filter @forkling/mind exec playwright install --with-deps chromium

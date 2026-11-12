@@ -135,3 +135,50 @@ describe('Chromium on the server, for the work check (spec 7.3, 14.3)', () => {
     for (const file of [setup, deploy, unit, read('apps/mind/src/builds/browser.ts')]) expect(file).not.toMatch(/--no-sandbox|chromiumSandbox: false/)
   })
 })
+
+describe('the AppArmor profile covers the browsers Playwright really installs (found on the server, 12 November 2026)', () => {
+  const setup = read('deploy/setup.sh')
+  const profile = /profile forkling-chromium (\S+) flags=\(unconfined\)/.exec(setup)?.[1] ?? ''
+
+  /** AppArmor path globs: `**` crosses folders, `*` does not, `{a,b}` is a choice. */
+  const matches = (glob: string, path: string) => {
+    let source = ''
+    for (let i = 0; i < glob.length; i++) {
+      const c = glob[i]!
+      if (c === '*' && glob[i + 1] === '*') {
+        source += '.*'
+        i++
+      } else if (c === '*') source += '[^/]*'
+      else if (c === '{') {
+        const end = glob.indexOf('}', i)
+        source += `(?:${glob.slice(i + 1, end).split(',').map((a) => a.replace(/[.+^$()|[\]\\]/g, '\\$&')).join('|')})`
+        i = end
+      } else source += c.replace(/[.+^$()|[\]\\]/g, '\\$&')
+    }
+    return new RegExp(`^${source}$`).test(path)
+  }
+
+  it('matches the full browser and the headless shell (the one chromium.launch() uses) as Playwright 1.65 lays them out on x86_64', () => {
+    expect(profile).not.toBe('')
+    expect(matches(profile, '/opt/forkling/browsers/chromium-1254/chrome-linux64/chrome')).toBe(true)
+    expect(matches(profile, '/opt/forkling/browsers/chromium_headless_shell-1254/chrome-headless-shell-linux64/chrome-headless-shell')).toBe(true)
+  })
+
+  it('matches nothing outside the browsers folder, and no other program in it', () => {
+    expect(matches(profile, '/usr/bin/chrome')).toBe(false)
+    expect(matches(profile, '/opt/forkling/engine/chrome')).toBe(false)
+    expect(matches(profile, '/opt/forkling/browsers/chromium-1254/chrome-linux64/chrome_sandbox')).toBe(false)
+    expect(matches(profile, '/opt/forkling/browsers/ffmpeg-1013/ffmpeg-linux')).toBe(false)
+  })
+})
+
+describe('runners that start a sandboxed Chromium on Ubuntu 24.04 (a throwaway VM may allow user namespaces; the server uses its narrow profile)', () => {
+  for (const file of ['.github/workflows/ci.yml', 'templates/forkling-world/.github/workflows/validate.yml']) {
+    it(`${file} allows unprivileged user namespaces before it starts a browser`, () => {
+      const yml = read(file)
+      const sysctl = yml.indexOf('kernel.apparmor_restrict_unprivileged_userns=0')
+      expect(sysctl, 'the sysctl line').toBeGreaterThan(-1)
+      expect(yml.indexOf('playwright install'), 'the browser is installed after it').toBeGreaterThan(sysctl)
+    })
+  }
+})

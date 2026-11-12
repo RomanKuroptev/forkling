@@ -8,7 +8,8 @@ import type { Browser } from 'playwright'
  */
 export async function launchChromium(): Promise<Browser | null> {
   const { chromium } = await import('playwright')
-  for (const options of [{}, { channel: 'chrome' }, { channel: 'msedge' }]) {
+  // `chromiumSandbox: true` has to be asked for: unless it is, Playwright starts Chromium with its sandbox switched off.
+  for (const options of [{ chromiumSandbox: true }, { chromiumSandbox: true, channel: 'chrome' as const }, { chromiumSandbox: true, channel: 'msedge' as const }]) {
     try {
       return await chromium.launch(options)
     } catch {

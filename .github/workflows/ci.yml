@@ -32,6 +32,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The browser keeps its own sandbox on; Ubuntu 24.04 restricts the user namespace it needs, and this runner is a throwaway VM.
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: pnpm --filter @forkling/mind exec playwright install --with-deps chromium
       - run: pnpm vitest run apps/mind/test/browser
         env:
