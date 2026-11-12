@@ -1,8 +1,9 @@
 import type { BudgetCall, InterestSource } from '@forkling/schema'
 import { createPrng, fadeInterests, feedTopic, SPARK_GAIN, updatePhases } from '@forkling/sim'
-import { canSpend, recordCall } from '../budget.ts'
+import { canSpend, recordCall, type Usage } from '../budget.ts'
 import { pickDoors } from '../web/doors.ts'
 import { addStats } from '../web/stats.ts'
+import { MAX_LOOKS_PER_DAY, performLook } from '../web/look.ts'
 import { performRead } from '../web/readcall.ts'
 import { startKey } from '../web/rails.ts'
 import { frontPageLinks, readUrl } from '../web/sources/index.ts'
@@ -80,6 +81,17 @@ export async function tripStep(t: Tick): Promise<void> {
   const start = resolveStart(step.targetId ?? '', t.wander.souvenirs)
   if (!start.ok) return skip(start.reason)
 
+  /** A model call booked in the ledger and the tick log. A call that never happened is only noted. */
+  const book = (kind: 'read' | 'vision', usage: Usage | undefined, usd: number, ok: boolean, note: string | undefined) => {
+    if (usage) {
+      const call: BudgetCall = { at: nowIso, kind, model: HAIKU, ...usage, usd }
+      t.calls.push(call)
+      t.budget = recordCall(t.budget, call)
+      t.attempts.push({ kind, model: HAIKU, usd, ok })
+    } else if (note) {
+      t.attempts.push({ kind, model: HAIKU, usd: 0, ok: false, error: note.slice(0, 200) })
+    }
+  }
   const id = `${today}-${t.wander.trailsToday + t.newTrails.length + 1}`
   const result = await runTrip(
     {
@@ -89,17 +101,11 @@ export async function tripStep(t: Tick): Promise<void> {
       now: () => nowIso,
       known: { souvenirs: t.wander.souvenirs, readRecently: t.wander.readRecently },
       readsLeft,
+      look: (item, picture, reaction) => performLook({ llm, fetcher, seed: t.w.seed, mayCall: (usd) => canSpend(t.budget, usd) }, item, picture, reaction),
+      looksLeft: MAX_LOOKS_PER_DAY - t.trips.looks,
       // Booked at once, so the guard sees the cost before the next call.
-      onRead: (_item, outcome) => {
-        if (outcome.usage) {
-          const call: BudgetCall = { at: nowIso, kind: 'read', model: HAIKU, ...outcome.usage, usd: outcome.usd }
-          t.calls.push(call)
-          t.budget = recordCall(t.budget, call)
-          t.attempts.push({ kind: 'read', model: HAIKU, usd: outcome.usd, ok: outcome.answer !== null })
-        } else if (outcome.note) {
-          t.attempts.push({ kind: 'read', model: HAIKU, usd: 0, ok: false, error: outcome.note.slice(0, 200) })
-        }
-      },
+      onRead: (_item, outcome) => book('read', outcome.usage, outcome.usd, outcome.answer !== null, outcome.note),
+      onLook: (_item, outcome) => book('vision', outcome.usage, outcome.usd, outcome.text !== null, outcome.note),
     },
     { id, date: today, purpose: step.reason, startKind: start.kind, startValue: start.value, startUrl: start.url },
   )
@@ -120,7 +126,7 @@ export async function tripStep(t: Tick): Promise<void> {
   if (best && best.gain >= SPARK_GAIN && (t.mind.sparked?.date !== today || t.mind.sparked.count < 2)) {
     t.mind.sparked = { date: today, count: t.mind.sparked?.date === today ? t.mind.sparked.count : 0, pending: { topic: best.topic.slice(0, 60), gain: best.gain } }
   }
-  t.mind.trips = { date: today, reads: t.trips.reads + result.reads, trips: t.trips.trips + 1, starts: [...t.trips.starts, startKey(start.value)].slice(-60) }
+  t.mind.trips = { date: today, reads: t.trips.reads + result.reads, trips: t.trips.trips + 1, looks: t.trips.looks + result.looks, starts: [...t.trips.starts, startKey(start.value)].slice(-60) }
   t.trips = t.mind.trips
   t.sources = addStats(t.sources, today, result.stats)
   t.mind.pausedHosts = fetcher.pausedHosts()

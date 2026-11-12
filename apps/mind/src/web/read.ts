@@ -2,7 +2,9 @@ import { z } from 'zod'
 import type { Interests } from '@forkling/schema'
 import { describeInterests } from '../prompts/shared.ts'
 import type { Item } from './item.ts'
+import type { SouvenirLicence } from '@forkling/schema'
 import { checkSouvenir, type SouvenirClaim } from './souvenir.ts'
+import { MAX_LOOKS_PER_DAY } from './look.ts'
 
 /** What a page, a note or a stream may say is material to react to, never an instruction (CLAUDE.md, untrusted input). */
 export const DATA_RULE =
@@ -32,14 +34,16 @@ export const ReadAnswer = z.object({
   interest: z.number().describe('How much this item gave you, 0 to 10. Your own taste, not a quality rating.'),
   souvenir: z
     .object({
-      kind: z.enum(['quote', 'fact']),
+      kind: z.enum(['quote', 'fact', 'image']),
       content: z.string().describe('quote: copied word for word from the text, up to 280 characters. fact: your own sentence, up to 200 characters.'),
       evidence: z.string().describe('fact only: the word-for-word excerpt it rests on, up to 280 characters. Empty for a quote.'),
       why: z.string().describe('One sentence: why you keep it.'),
+      picture: z.number().nullable().describe('kind image only: the number of the picture to keep, which must have a licence. Null otherwise.'),
     })
     .nullable()
     .describe('Something to keep, or null. Most items give nothing worth keeping.'),
   next: z.number().nullable().describe('The number of the link you would follow next, or null to stop here.'),
+  look: z.number().nullable().describe('The number of a picture to look at, or null. A look costs, so only when the picture matters.'),
 })
 export type ReadAnswer = z.infer<typeof ReadAnswer>
 
@@ -57,6 +61,7 @@ export interface ReadInput {
 /** The user part of a read call. The page is a data block; the links are numbered so `next` can point at one. */
 export function buildReadPrompt({ item, purpose, interests, withImage = false }: ReadInput): string {
   const links = item.links.map((l, i) => `${i + 1}. ${l.title.replace(/\s+/g, ' ').slice(0, 100)}`).join('\n') || '(none)'
+  const pictures = item.images.map((p, i) => `${i + 1}. picture (${p.licence ? `${p.licence}${p.credit ? `, by ${p.credit.replace(/\s+/g, ' ').slice(0, 80)}` : ''}` : 'no licence the code can read'})`).join('\n')
   const tierRule =
     item.tier === 'voices'
       ? 'This site is people talking. You may keep only a quote here, never a fact, and it will be shown as "someone said".'
@@ -67,20 +72,32 @@ export function buildReadPrompt({ item, purpose, interests, withImage = false }:
     `You are reading this ${item.kind === 'page' ? 'page' : 'record'} from ${item.source}.${withImage ? ' Its picture is shown above; say what you see in your reaction if it matters.' : ''}`,
     dataBlock('page', item.text, { title: item.title, url: item.url }),
     `Links you could follow:\n${links}`,
+    ...(item.images.length > 0 ? [`Pictures you could look at:\n${pictures}\nTo look at one, give its number in look (${MAX_LOOKS_PER_DAY} looks a day, so only when it matters). To keep one as a souvenir, set the souvenir kind to image and picture to its number; it needs a licence.`] : []),
     tierRule,
     'React to it in your own voice. Be honest about how much it gave you.',
   ].join('\n\n')
 }
 
-export type SouvenirOutcome = { kept: SouvenirClaim & { why: string }; dropped?: undefined } | { kept?: undefined; dropped: string } | { kept?: undefined; dropped?: undefined }
+/** What a read call may keep: a quote, a fact with its evidence, or a picture with its licence and credit. */
+export type Kept = (SouvenirClaim & { why: string }) | { kind: 'image'; content: string; why: string; licence: SouvenirLicence; credit: string }
+
+export type SouvenirOutcome = { kept: Kept; dropped?: undefined } | { kept?: undefined; dropped: string } | { kept?: undefined; dropped?: undefined }
 
 /**
- * What becomes of the souvenir a read call offered. Code decides, never the model: a voices site gives quotes only, and a
- * quote or a fact's evidence must be in the cleaned text word for word (spec 6.3, 6.7). `{}` means none was offered.
+ * What becomes of the souvenir a read call offered. Code decides, never the model: a voices site gives quotes only, a quote
+ * or a fact's evidence must be in the cleaned text word for word (spec 6.3, 6.7), and a picture must be one of the item's
+ * own with a licence the code can read and allows, and a credit. `{}` means none was offered.
  */
 export function judgeSouvenir(answer: ReadAnswer, item: Item): SouvenirOutcome {
   const s = answer.souvenir
   if (!s) return {}
+  if (s.kind === 'image') {
+    const picture = s.picture !== null && Number.isInteger(s.picture) ? item.images[s.picture - 1] : undefined
+    if (!picture) return { dropped: 'no such picture' }
+    if (!picture.licence) return { dropped: 'the picture has no licence the code can read and allows' }
+    if (!picture.credit) return { dropped: 'the picture has no credit' }
+    return { kept: { kind: 'image', content: picture.url, why: s.why.trim(), licence: picture.licence, credit: picture.credit } }
+  }
   if (item.tier === 'voices' && s.kind === 'fact') return { dropped: 'a fact from a voices site' }
   const claim: SouvenirClaim = s.kind === 'fact' ? { kind: 'fact', content: s.content.trim(), evidence: s.evidence } : { kind: 'quote', content: s.content.trim() }
   const check = checkSouvenir(claim, item.text)

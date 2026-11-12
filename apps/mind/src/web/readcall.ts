@@ -9,17 +9,24 @@ import { skipReason } from './skip.ts'
 const HAIKU = 'claude-haiku-5-5' as const
 const MAX_PICTURE_BYTES = 2 * 1024 * 1024
 
-/** An item's first picture as a JPEG for the model to look at, or null (not a JPEG, over 2 MB, or the fetch failed). */
-export async function pictureOf(f: Fetcher, item: Item): Promise<LlmImage | null> {
-  const first = item.images[0]
-  if (!first) return null
+const PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const
+
+/** A picture at an address as something the model can look at, or null (not JPEG, PNG, WebP or GIF, over 2 MB, or the fetch failed). */
+export async function pictureAt(f: Fetcher, url: string): Promise<LlmImage | null> {
   try {
-    const got = await f.bytes(first.url, { accept: 'image/jpeg,image/*' })
-    if (!got.contentType.includes('jpeg') || got.bytes.length === 0 || got.bytes.length > MAX_PICTURE_BYTES) return null
-    return { mediaType: 'image/jpeg', base64: Buffer.from(got.bytes).toString('base64') }
+    const got = await f.bytes(url, { accept: 'image/jpeg,image/png,image/webp,image/gif' })
+    const type = PICTURE_TYPES.find((t) => got.contentType.toLowerCase().startsWith(t))
+    if (!type || got.bytes.length === 0 || got.bytes.length > MAX_PICTURE_BYTES) return null
+    return { mediaType: type, base64: Buffer.from(got.bytes).toString('base64') }
   } catch {
     return null
   }
+}
+
+/** An item's first picture for the model to look at, or null. */
+export async function pictureOf(f: Fetcher, item: Item): Promise<LlmImage | null> {
+  const first = item.images[0]
+  return first ? pictureAt(f, first.url) : null
 }
 
 export interface ReadDeps {
@@ -33,8 +40,8 @@ export interface ReadDeps {
   mayCall?(estimateUsd: number): boolean
   /** Skip items read in the last 30 days. */
   readRecently?(url: string): boolean
-  /** Show a record's picture to the read call. */
-  look?: boolean
+  /** Show a record's first picture to the read call itself. Off by default: a picture is seen through a look (spec 7.8), which has its own daily limit. */
+  showPicture?: boolean
 }
 
 export interface ReadOutcome {
@@ -58,7 +65,7 @@ export async function performRead(deps: ReadDeps, item: Item): Promise<ReadOutco
   if (skipped) return { answer: null, souvenir: {}, skipped, usd: 0 }
   if (!deps.llm) return { answer: null, souvenir: {}, usd: 0, note: 'no model' }
 
-  const picture = deps.look !== false && item.kind === 'record' ? await pictureOf(deps.fetcher, item) : null
+  const picture = deps.showPicture === true && item.kind === 'record' ? await pictureOf(deps.fetcher, item) : null
   const system = readSystem(deps.seed)
   const user = buildReadPrompt({ item, purpose: deps.purpose, interests: deps.interests, withImage: picture !== null })
   const estimate = estimateCallUsd(HAIKU, estimateTokens(system + user) + (picture ? IMAGE_TOKENS * 6 : 0), READ_MAX_TOKENS)
