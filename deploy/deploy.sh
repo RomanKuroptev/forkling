@@ -22,6 +22,8 @@ echo "$previous" > "$HOME/previous-tag"
 git fetch --tags --force --quiet
 git checkout --detach --quiet "refs/tags/$TAG"
 pnpm install --frozen-lockfile --filter "@forkling/mind..."
+# The browser for the work check, for the Playwright version of this release, in the folder the service reads. It is quick when it is already there.
+PLAYWRIGHT_BROWSERS_PATH=/opt/forkling/browsers pnpm --filter @forkling/mind exec playwright install chromium
 
 sudo /usr/local/sbin/forkling-restart "$TAG"
 
