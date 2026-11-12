@@ -117,7 +117,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     ask: undefined as never,
 
     notebook: [],
-    trips: mind.trips?.date === today ? mind.trips : { date: today, reads: 0, trips: 0, starts: [] },
+    trips: mind.trips?.date === today ? mind.trips : { date: today, reads: 0, trips: 0, looks: 0, starts: [] },
     fetcher: deps.web ? createFetcher({ ...deps.web, paused: mind.pausedHosts }) : null,
     wander: readWanderState(dir, today),
     sources: w.sources,

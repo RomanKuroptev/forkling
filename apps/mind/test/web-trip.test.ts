@@ -19,7 +19,7 @@ const page = (name: string, over: Partial<Item> = {}): Item => ({
   images: [],
   ...over,
 })
-const answer = (over: Partial<ReadAnswer> = {}): ReadAnswer => ({ reaction: 'Huh.', topics: ['lamps'], interest: 7, souvenir: null, next: 1, ...over })
+const answer = (over: Partial<ReadAnswer> = {}): ReadAnswer => ({ reaction: 'Huh.', topics: ['lamps'], interest: 7, souvenir: null, next: 1, look: null, ...over })
 const read = (over: Partial<ReadAnswer> = {}, extra: Partial<ReadOutcome> = {}): ReadOutcome => ({ answer: answer(over), souvenir: {}, usd: 0.002, ...extra })
 const keep = (name: string): ReadOutcome =>
   read({ next: null }, { souvenir: { kept: { kind: 'quote', content: `The lamp of ${name} was lit at four.`, why: 'It stayed.' } } })

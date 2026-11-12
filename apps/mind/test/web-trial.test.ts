@@ -9,7 +9,7 @@ import { evaluateTrial, formatTrial, PASS_MARKS, runTrial, type TrialRead } from
 const words = (n: number, w = 'word') => Array.from({ length: n }, () => w).join(' ')
 const link = (n: number) => ({ title: `Link ${n}`, url: `https://en.wikipedia.org/wiki/L${n}` })
 const page = (over: Partial<Item> = {}): Item => ({ source: 'en.wikipedia.org', kind: 'page', tier: 'reference', url: 'https://en.wikipedia.org/wiki/X', title: 'X', text: `The lamp was lit at four. ${words(400)}`, links: Array.from({ length: 10 }, (_, n) => link(n)), images: [], ...over })
-const answer = (over: Partial<ReadAnswer> = {}): ReadAnswer => ({ reaction: 'Huh.', topics: ['lamps'], interest: 7, souvenir: null, next: null, ...over })
+const answer = (over: Partial<ReadAnswer> = {}): ReadAnswer => ({ reaction: 'Huh.', topics: ['lamps'], interest: 7, souvenir: null, next: null, look: null, ...over })
 
 describe('the read prompt', () => {
   it('puts the page in a data block, numbers the links, and shows the purpose and the interests', () => {
@@ -47,14 +47,14 @@ describe('the read prompt', () => {
 
 describe('what the code makes of an answer', () => {
   it('keeps a quote that is in the text word for word, and drops one that is not', () => {
-    const ok = judgeSouvenir(answer({ souvenir: { kind: 'quote', content: 'The lamp was lit at four.', evidence: '', why: 'It stayed.' } }), page())
+    const ok = judgeSouvenir(answer({ souvenir: { kind: 'quote', content: 'The lamp was lit at four.', evidence: '', why: 'It stayed.', picture: null } }), page())
     expect(ok.kept).toMatchObject({ kind: 'quote', content: 'The lamp was lit at four.', why: 'It stayed.' })
-    const bad = judgeSouvenir(answer({ souvenir: { kind: 'quote', content: 'The lamp was lit at five.', evidence: '', why: 'x' } }), page())
+    const bad = judgeSouvenir(answer({ souvenir: { kind: 'quote', content: 'The lamp was lit at five.', evidence: '', why: 'x', picture: null } }), page())
     expect(bad.dropped).toMatch(/not found word for word/)
   })
 
   it('checks a fact by its evidence, and never lets a voices site give one', () => {
-    const fact = { kind: 'fact' as const, content: 'The lamp was lit every day.', evidence: 'The lamp was lit at four.', why: 'x' }
+    const fact = { kind: 'fact' as const, content: 'The lamp was lit every day.', evidence: 'The lamp was lit at four.', why: 'x', picture: null }
     expect(judgeSouvenir(answer({ souvenir: fact }), page()).kept).toMatchObject({ kind: 'fact', evidence: 'The lamp was lit at four.' })
     expect(judgeSouvenir(answer({ souvenir: { ...fact, evidence: 'Made up.' } }), page()).dropped).toMatch(/evidence not found/)
     expect(judgeSouvenir(answer({ souvenir: fact }), page({ tier: 'voices' })).dropped).toMatch(/voices/)

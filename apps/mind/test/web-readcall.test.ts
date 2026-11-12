@@ -10,7 +10,7 @@ import { HOST_PLANS, planFor } from '../src/web/starts.ts'
 
 const words = (n: number) => Array.from({ length: n }, () => 'word').join(' ')
 const item = (over: Partial<Item> = {}): Item => ({ source: 'en.wikipedia.org', kind: 'page', tier: 'reference', url: 'https://en.wikipedia.org/wiki/X', title: 'X', text: `The lamp was lit at four. ${words(400)}`, links: [{ title: 'A', url: 'https://en.wikipedia.org/wiki/A' }], images: [], ...over })
-const good: ReadAnswer = { reaction: 'Huh.', topics: ['lamps'], interest: 7, souvenir: { kind: 'quote', content: 'The lamp was lit at four.', evidence: '', why: 'It stayed.' }, next: 1 }
+const good: ReadAnswer = { reaction: 'Huh.', topics: ['lamps'], interest: 7, souvenir: { kind: 'quote', content: 'The lamp was lit at four.', evidence: '', why: 'It stayed.', picture: null }, next: 1, look: null }
 
 function fakeLlm(answer: ReadAnswer | null | Error) {
   const seen: LlmRequest[] = []
@@ -65,19 +65,19 @@ describe('performRead', () => {
     expect((await performRead(deps(fakeLlm(null).llm), item())).note).toMatch(/no usable answer/)
   })
 
-  it('shows a record its picture when it can get a JPEG, and reads on without one', async () => {
+  it('shows a record its picture only when asked to (a look is the usual way), and reads on without one', async () => {
     const jpeg = { bytes: async () => ({ bytes: new Uint8Array([1, 2, 3]), contentType: 'image/jpeg', url: 'u' }) } as unknown as Fetcher
     const record = item({ kind: 'record', text: words(60), images: [{ url: 'https://i.imgflip.com/a.jpg', licence: null, credit: null }] })
     const withPic = fakeLlm(good)
-    await performRead(deps(withPic.llm, { fetcher: jpeg }), record)
+    await performRead(deps(withPic.llm, { fetcher: jpeg, showPicture: true }), record)
     expect(withPic.seen[0]!.images).toEqual([{ mediaType: 'image/jpeg', base64: 'AQID' }])
     expect(withPic.seen[0]!.user).toContain('Its picture is shown above')
     const without = fakeLlm(good)
-    await performRead(deps(without.llm), record)
+    await performRead(deps(without.llm, { fetcher: jpeg }), record)
     expect(without.seen[0]!.images).toEqual([])
     expect(await pictureOf(noFetch, item())).toBeNull()
-    const png = { bytes: async () => ({ bytes: new Uint8Array([1]), contentType: 'image/png', url: 'u' }) } as unknown as Fetcher
-    expect(await pictureOf(png, record)).toBeNull()
+    const svg = { bytes: async () => ({ bytes: new Uint8Array([1]), contentType: 'image/svg+xml', url: 'u' }) } as unknown as Fetcher
+    expect(await pictureOf(svg, record)).toBeNull()
   })
 })
 

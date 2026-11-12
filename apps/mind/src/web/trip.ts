@@ -3,6 +3,8 @@ import { similarity } from '@forkling/sim'
 import { WebError } from './fetch.ts'
 import type { Item } from './item.ts'
 import { chosenLink, clampInterest, clampReaction, cleanTopics } from './read.ts'
+import type { LookOutcome } from './look.ts'
+import type { Kept } from './read.ts'
 import type { ReadOutcome } from './readcall.ts'
 
 /** The most reads a day (spec 9.8). A skipped item does not count. */
@@ -32,6 +34,11 @@ export interface TripDeps {
   readsLeft: number
   /** Called after each model call and before the next, so the caller books its cost in time. */
   onRead?(item: Item, outcome: ReadOutcome): void
+  /** A look at one of an item's pictures (spec 7.8), given what the read call made of the page. */
+  look?(item: Item, picture: number, reaction: string): Promise<LookOutcome>
+  /** Looks the day still allows. Missing means none. */
+  looksLeft?: number
+  onLook?(item: Item, outcome: LookOutcome): void
 }
 
 export interface TripInput {
@@ -69,6 +76,8 @@ export interface TripResult {
   feeds: TopicFeed[]
   /** Reads this trip used from the day's allowance: fetches that were tried, not items skipped. */
   reads: number
+  /** Looks this trip made at pictures. */
+  looks: number
   usd: number
   stats: HostStat[]
   notes: string[]
@@ -112,6 +121,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
   let reads = 0
   let failures = 0
   let skips = 0
+  let looks = 0
   let usd = 0
 
   const stat = (host: string): HostStat => {
@@ -175,6 +185,17 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
 
     for (const topic of topics) feeds.push({ topic, event: 'page', url: item.url, title: item.title })
 
+    // A look at a picture it asked for, within the day's 20 (spec 7.8).
+    const want = answer.look
+    if (want !== null && deps.look && Number.isInteger(want) && want >= 1 && want <= item.images.length && looks < (deps.looksLeft ?? 0)) {
+      looks++
+      const seen = await deps.look(item, want, page.reaction ?? '')
+      usd += seen.usd
+      deps.onLook?.(item, seen)
+      if (seen.text) page.look = seen.text.slice(0, 600)
+      else notes.push(`look at ${item.title}: ${seen.note ?? 'nothing seen'}`)
+    }
+
     const kept = outcome.souvenir.kept
     if (outcome.souvenir.dropped) dropped.push({ title: item.title, reason: outcome.souvenir.dropped })
     if (kept) {
@@ -204,6 +225,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
     dropped,
     feeds,
     reads,
+    looks,
     usd,
     stats: [...stats.values()],
     notes,
@@ -213,12 +235,14 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
 type Made = { ok: true; souvenir: Souvenir } | { ok: false; reason: string }
 
 /** A kept souvenir as a file, after the rails of spec 12.2: one a page, no near copies, 3 a trip. */
-function makeSouvenir(a: { kept: NonNullable<ReadOutcome['souvenir']['kept']>; item: Item; topics: string[]; date: string; now: string; have: readonly Souvenir[]; known: readonly KnownSouvenir[] }): Made {
+function makeSouvenir(a: { kept: Kept; item: Item; topics: string[]; date: string; now: string; have: readonly Souvenir[]; known: readonly KnownSouvenir[] }): Made {
   const { kept, item, have, known } = a
   if (have.length >= MAX_SOUVENIRS_PER_TRIP) return { ok: false, reason: `at most ${MAX_SOUVENIRS_PER_TRIP} souvenirs a trip` }
   const earlier = [...known.map((k) => ({ url: k.url, content: k.content, id: k.id })), ...have.map((s) => ({ url: s.source.url, content: s.content, id: s.id }))]
   if (earlier.some((e) => e.url === item.url)) return { ok: false, reason: 'same source as an earlier souvenir' }
-  if (earlier.some((e) => similarity(e.content, kept.content) > SOUVENIR_SIMILARITY)) return { ok: false, reason: 'a near copy of an earlier souvenir' }
+  if (kept.kind === 'image') {
+    if (earlier.some((e) => e.content === kept.content)) return { ok: false, reason: 'the same picture as an earlier souvenir' }
+  } else if (earlier.some((e) => similarity(e.content, kept.content) > SOUVENIR_SIMILARITY)) return { ok: false, reason: 'a near copy of an earlier souvenir' }
 
   const taken = new Set(earlier.map((e) => e.id))
   const base = `${a.date}-${slug(item.title)}`
@@ -226,6 +250,12 @@ function makeSouvenir(a: { kept: NonNullable<ReadOutcome['souvenir']['kept']>; i
   for (let n = 2; taken.has(id); n++) id = `${base}-${n}`
 
   const common = { id, why: kept.why.slice(0, 300), topics: a.topics, source: { url: item.url.slice(0, 500), title: item.title.slice(0, 200), fetchedAt: a.now }, licence: null, placedIn: null }
-  const parsed = Souvenir.safeParse(kept.kind === 'fact' ? { ...common, kind: 'fact', content: kept.content, evidence: kept.evidence } : { ...common, kind: 'quote', content: kept.content })
+  const shape =
+    kept.kind === 'image'
+      ? { ...common, kind: 'image', content: kept.content, licence: kept.licence, credit: kept.credit }
+      : kept.kind === 'fact'
+        ? { ...common, kind: 'fact', content: kept.content, evidence: kept.evidence }
+        : { ...common, kind: 'quote', content: kept.content }
+  const parsed = Souvenir.safeParse(shape)
   return parsed.success ? { ok: true, souvenir: parsed.data } : { ok: false, reason: 'it did not fit the souvenir format' }
 }

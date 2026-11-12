@@ -22,7 +22,7 @@ export interface TrialRead {
   answer: ReadAnswer | null
   /** `kept`, `none` or `dropped: <reason>`. */
   souvenir: string
-  kept?: { kind: 'quote' | 'fact'; content: string; why: string }
+  kept?: { kind: 'quote' | 'fact' | 'image'; content: string; why: string }
   keptImage?: ItemImage
 }
 

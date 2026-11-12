@@ -8,7 +8,7 @@ export type CallKind = 'morning' | 'weekly' | 'decide' | 'bedtime' | 'memory' | 
 
 /** A picture for the model to look at: the eye-cam frame. */
 export interface LlmImage {
-  mediaType: 'image/jpeg'
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
   base64: string
 }
 

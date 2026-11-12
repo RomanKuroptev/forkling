@@ -76,15 +76,15 @@ function fake(decision: Decision, reader: (url: string) => ReadAnswer | null = d
     async complete<T>(req: LlmRequest<T>) {
       calls.push(req)
       const url = /<page [^>]*url="([^"]+)"/.exec(req.user)?.[1] ?? ''
-      const parsed = req.kind === 'read' ? reader(url) : decision
+      const parsed = req.kind === 'read' ? reader(url) : req.kind === 'vision' ? { description: 'A small gate drawn in black and white.', thought: 'It looks like a decision.' } : decision
       return { parsed: (parsed ?? null) as T | null, stopReason: 'end_turn', usage: { input: 800, cacheRead: 0, cacheWrite: 3000, output: 300 } }
     },
   }
 }
 const defaultReader = (url: string): ReadAnswer =>
   url.endsWith('/Logic_gate')
-    ? { reaction: 'Tiny decisions!', topics: ['logic gates', 'boolean algebra'], interest: 8, souvenir: { kind: 'quote', content: 'A logic gate is a tiny decision.', evidence: '', why: 'It says it plainly.' }, next: 1 }
-    : { reaction: 'Two values, that is all.', topics: ['boolean algebra'], interest: 6, souvenir: null, next: null }
+    ? { reaction: 'Tiny decisions!', topics: ['logic gates', 'boolean algebra'], interest: 8, souvenir: { kind: 'quote', content: 'A logic gate is a tiny decision.', evidence: '', why: 'It says it plainly.', picture: null }, next: 1, look: null }
+    : { reaction: 'Two values, that is all.', topics: ['boolean algebra'], interest: 6, souvenir: null, next: null, look: null }
 
 let dir: string
 const file = (rel: string) => join(dir, rel)
@@ -169,7 +169,7 @@ describe('a wander step', () => {
   })
 
   it('does not keep a souvenir the page does not hold', async () => {
-    await wander({}, (url) => ({ ...defaultReader(url), souvenir: { kind: 'quote', content: 'Never said on that page.', evidence: '', why: 'x' } }))
+    await wander({}, (url) => ({ ...defaultReader(url), souvenir: { kind: 'quote', content: 'Never said on that page.', evidence: '', why: 'x', picture: null } }))
     expect(existsSync(file('souvenirs'))).toBe(false)
     expect(Trail.parse(readJson(`trails/${DAY}-1.json`)).pages.every((p) => !p.souvenirId)).toBe(true)
   })
@@ -195,7 +195,7 @@ describe('a wander step', () => {
 
   it('counts its reads and trips for the day, and the host numbers for the week', async () => {
     await wander()
-    expect(MindState.parse(readJson('mind/state.json')).trips).toEqual({ date: DAY, reads: 2, trips: 1, starts: ['logic gate'] })
+    expect(MindState.parse(readJson('mind/state.json')).trips).toEqual({ date: DAY, reads: 2, trips: 1, looks: 0, starts: ['logic gate'] })
     const stats = SourceStats.parse(readJson('mind/sources.json'))
     expect(stats.weeks['2026-W45']).toEqual({ 'en.wikipedia.org': { reads: 2, souvenirs: 1, placed: 0, boring: 0, failures: 0 } })
   })
@@ -226,6 +226,23 @@ describe('a wander step', () => {
     const { web, asked } = webWith({ [`${wiki}/wiki/Logic_gates`]: article('Logic gate', ['Boolean_algebra']).replace('</p>', '<a href="https://example.com/evil">e</a></p>') })
     await wander({ web }, (url) => ({ ...defaultReader(url), next: 2 }))
     expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org)\//.test(u))).toBe(true)
+  })
+
+  it('looks at a picture the read call asked for, within the 20 a day, and books the look as a vision call', async () => {
+    const withPicture = article('Logic gate', ['Boolean_algebra']).replace('<p>', '<p><img src="//thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Gate.jpg/250px-Gate.jpg?utm_source=x">')
+    const { web } = webWith({ [`${wiki}/wiki/Logic_gates`]: withPicture })
+    const inner = web.fetchImpl
+    const asked: string[] = []
+    const both = { ...web, fetchImpl: async (url: string) => (url.includes('Gate.jpg') ? (asked.push(url), new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { 'content-type': 'image/jpeg' } })) : inner(url)) }
+    const llm = fake(wanderPlan, (url) => ({ ...defaultReader(url), look: url.endsWith('/Logic_gate') ? 1 : null }))
+    await tick(MORNING, llm, { web: both })
+    await tick(at(31), llm, { web: both })
+    expect(asked).toEqual(['https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Gate.jpg/250px-Gate.jpg'])
+    expect(llm.kinds().filter((k) => k === 'vision')).toHaveLength(1)
+    expect(llm.calls.find((c) => c.kind === 'vision')!.images).toHaveLength(1)
+    expect(Trail.parse(readJson(`trails/${DAY}-1.json`)).pages[0]!.look).toBeTruthy()
+    expect(BudgetLedger.parse(readJson('brain/budget.json')).calls.filter((c) => c.kind === 'vision')).toHaveLength(1)
+    expect(MindState.parse(readJson('mind/state.json')).trips).toMatchObject({ reads: 2, looks: 1 })
   })
 
   it('does not follow orders written in a page: the page is data in the prompt, and the model has no tools', async () => {

@@ -113,7 +113,8 @@ async function main(): Promise<void> {
       return {
         answer: out.answer,
         souvenir: s.kept ? 'kept' : s.dropped ? `dropped: ${s.dropped}` : 'none',
-        ...(s.kept && s.kept.kind !== undefined ? { kept: { kind: s.kept.kind, content: s.kept.content, why: s.kept.why } } : {}),
+        ...(s.kept ? { kept: { kind: s.kept.kind, content: s.kept.content, why: s.kept.why } } : {}),
+        ...(s.kept?.kind === 'image' ? { keptImage: { url: s.kept.content, licence: s.kept.licence, credit: s.kept.credit } } : {}),
         ...(out.skipped ? { skipped: out.skipped } : {}),
       }
     },
