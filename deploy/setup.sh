@@ -87,7 +87,7 @@ if command -v apparmor_parser >/dev/null 2>&1; then
 abi <abi/4.0>,
 include <tunables/global>
 
-profile forkling-chromium /opt/forkling/browsers/**/chrome-linux*/{chrome,headless_shell} flags=(unconfined) {
+profile forkling-chromium /opt/forkling/browsers/**/{chrome,chrome-headless-shell} flags=(unconfined) {
   userns,
 
   include if exists <local/forkling-chromium>

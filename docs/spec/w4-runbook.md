@@ -29,14 +29,16 @@ New in `setup.sh`: the system libraries Chromium needs (installed with the Playw
 
 Then deploy the release (Actions, `deploy`, Run workflow, with the tag; or `/opt/forkling/engine/deploy/deploy.sh v0.12.0` as `deploy`). Each deploy also fetches the browser for that release's Playwright version.
 
-**Check the browser starts for the service user.** I wrote the profile from Ubuntu's documentation and could not try it: this machine is Windows. So this step is the test:
+**Check the browser starts, with its sandbox on, for the service user.** Playwright starts Chromium with its sandbox switched off unless `chromiumSandbox: true` is passed, so a bare `chromium.launch()` proves nothing about the profile: it passes with the sandbox off. The engine passes the option (`launchChromium`), and so does this check:
 
 ```bash
 sudo -u forkling env PLAYWRIGHT_BROWSERS_PATH=/opt/forkling/browsers HOME=/var/lib/forkling \
-  node -e "import('/opt/forkling/engine/apps/mind/node_modules/playwright/index.mjs').then(async ({ chromium }) => { const b = await chromium.launch(); console.log('chromium', b.version()); await b.close() })"
+  node -e "import('/opt/forkling/engine/apps/mind/node_modules/playwright/index.mjs').then(async ({ chromium }) => { const b = await chromium.launch({ chromiumSandbox: true }); console.log('chromium', b.version(), 'with its sandbox on'); await b.close() })"
 ```
 
-It should print `chromium` and a version. If it says the sandbox cannot start (a "No usable sandbox" or "user namespaces" message), tell me. The fallback is one line, `sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`, which loosens a protection for the whole machine; I would rather fix the profile than ship that.
+It should print `chromium`, a version and `with its sandbox on`. If it says "Chromium sandboxing failed", the AppArmor profile does not cover the binary Playwright installed: compare `find /opt/forkling/browsers -type f -name 'chrome*' -perm -u+x` with the path in `/etc/apparmor.d/forkling-chromium`. (It first did not: Playwright 1.65 puts the headless shell, which `launch()` uses, at `chromium_headless_shell-<rev>/chrome-headless-shell-linux64/chrome-headless-shell`, and the profile now names `chrome` and `chrome-headless-shell` anywhere under the browsers folder; a test holds both paths.) The fallback is one line, `sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`, which loosens a protection for the whole machine; fix the profile instead.
+
+GitHub's runners are throwaway VMs, so `ci.yml` and the template's `validate.yml` allow user namespaces on the runner with that sysctl instead (a test requires it before the browser is installed).
 
 ## 3. Merge's repository
 
