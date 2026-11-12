@@ -1,0 +1,28 @@
+[Unit]
+Description=Forkling mind (Merge): the loop, the build worker and the server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=forkling
+Group=forkling
+WorkingDirectory=/opt/forkling/engine/apps/mind
+# Keys live only here, in a file only root and this service can read. See docs/spec/w3-runbook.md.
+EnvironmentFile=/etc/forkling/mind.env
+Environment=HOME=/var/lib/forkling
+ExecStart=/usr/bin/node src/serve.ts --world /var/lib/forkling/world --port 8787
+Restart=always
+RestartSec=5
+# A tick in progress may be waiting on a model call; it is allowed to finish and be saved before the process is killed.
+TimeoutStopSec=120
+
+# It reads the web and runs on a shared host: give it only what it needs.
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/forkling
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

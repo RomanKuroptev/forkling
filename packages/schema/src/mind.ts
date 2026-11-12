@@ -149,6 +149,17 @@ export const BudgetCall = z.object({
 })
 export type BudgetCall = z.infer<typeof BudgetCall>
 
+/** What one kind of call has cost so far this month: enough to compare the cost table in spec 13 with what really happened. */
+export const KindTotals = z.object({
+  calls: z.number().int().nonnegative(),
+  input: z.number().int().nonnegative(),
+  cacheRead: z.number().int().nonnegative(),
+  cacheWrite: z.number().int().nonnegative(),
+  output: z.number().int().nonnegative(),
+  usd: z.number().nonnegative(),
+})
+export type KindTotals = z.infer<typeof KindTotals>
+
 /**
  * `brain/budget.json`: this month's spend. The guard stops all LLM calls once `spentUsd` reaches `capUsd`, the model
  * cap. The model cap and the server's monthly price together never pass $20 (an older file with `capUsd: 10` stays at 10
@@ -162,6 +173,8 @@ export const BudgetLedger = z.object({
   capUsd: z.number().positive().max(TOTAL_CAP_USD).default(modelCapUsd(DEFAULT_SERVER_USD)),
   spentUsd: z.number().nonnegative().default(0),
   calls: z.array(BudgetCall).default([]),
+  /** The month's calls by kind, counted from the first, so the list above being cut to its last 500 loses nothing here. */
+  byKind: z.record(z.string(), KindTotals).default({}),
   /** Totals of earlier months, kept after the call list is reset. */
   history: z.array(z.object({ month: z.string(), spentUsd: z.number().nonnegative(), calls: z.number().int().nonnegative() })).default([]),
 }).refine((l) => l.capUsd + l.serverUsd <= TOTAL_CAP_USD + 1e-9, { message: 'the model cap plus the server price must stay within $20', path: ['capUsd'] })

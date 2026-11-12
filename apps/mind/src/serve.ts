@@ -5,18 +5,18 @@ import { createBuildWorker } from './build-worker.ts'
 import { hasCredentials } from './credentials.ts'
 import { buildHealthResponse } from './health-response.ts'
 import { anthropicClient } from './llm.ts'
-import { createMindServer } from './server.ts'
+import { createMindServer, DEFAULT_PORT } from './server.ts'
 import { loadSpecies } from './species.ts'
 import { commitAndPush, gitRunner } from './tick/git.ts'
 import { createLoop } from './tick/loop.ts'
 import { cloneRunner, ensureWorld } from './world-dir.ts'
 
-const USAGE = `usage: pnpm --filter @forkling/mind serve --world <dir> --pages-origin <origin> [--repo <url>] [--port 8787] [--no-git] [--no-llm]
+const USAGE = `usage: pnpm --filter @forkling/mind serve --world <dir> --pages-origin <origin> [--repo <url>] [--port ${DEFAULT_PORT}] [--no-git] [--no-llm]
 
   --world         the world repo to run (or FORKLING_WORLD)
   --pages-origin  the only browser origin the server answers: Merge's Pages address (or FORKLING_PAGES_ORIGIN)
   --repo          clone the world from here if the disk has none (or FORKLING_REPO_URL)
-  --port          the loopback port Caddy forwards to (default 8787, or PORT)
+  --port          the loopback port Caddy forwards to (default ${DEFAULT_PORT}, or PORT)
   --no-git        never commit or push (a local try-out)
   --no-llm        run without ever calling the model
 
@@ -41,7 +41,7 @@ async function main(): Promise<void> {
   const worldArg = values.world ?? env.FORKLING_WORLD
   const pagesOrigin = values['pages-origin'] ?? env.FORKLING_PAGES_ORIGIN
   if (!worldArg || !pagesOrigin) throw new Error(`--world and --pages-origin are required\n\n${USAGE}`)
-  const port = Number(values.port ?? env.PORT ?? 8787)
+  const port = Number(values.port ?? env.PORT ?? DEFAULT_PORT)
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`the port "${values.port ?? env.PORT}" is not a port`)
 
   const dir = resolve(env.INIT_CWD ?? process.cwd(), worldArg)

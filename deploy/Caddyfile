@@ -1,0 +1,6 @@
+# Caddy gets and renews the certificate by itself. setup.sh puts the real host name in place of the placeholder on the next
+# line, which is the one place the name is written (spec 11.2). It forwards to the loopback port the server listens on and nothing else is exposed.
+__HOST__ {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8787
+}

@@ -112,3 +112,29 @@ describe('rollLedger keeps the server price', () => {
     expect(next).toMatchObject({ month: '2026-12', capUsd: 12, serverUsd: 8, spentUsd: 0 })
   })
 })
+
+describe('byKind: the month so far for each kind of call (spec 13: compare the table with what was spent)', () => {
+  const call = (kind: string, model: 'claude-haiku-5-5' | 'claude-sonnet-5-5', input: number, output: number, usd: number) => ({ at: '2026-11-12T10:00:00Z', kind, model, input, cacheRead: 100, cacheWrite: 10, output, usd })
+
+  it('adds up calls, tokens and dollars per kind, however many calls the list has dropped', () => {
+    let ledger = BudgetLedger.parse({ month: '2026-11' })
+    ledger = recordCall(ledger, call('thought', 'claude-haiku-5-5', 500, 80, 0.001))
+    ledger = recordCall(ledger, call('thought', 'claude-haiku-5-5', 700, 120, 0.002))
+    ledger = recordCall(ledger, call('decide', 'claude-haiku-5-5', 2000, 300, 0.01))
+    expect(ledger.byKind.thought).toEqual({ calls: 2, input: 1200, cacheRead: 200, cacheWrite: 20, output: 200, usd: 0.003 })
+    expect(ledger.byKind.decide).toMatchObject({ calls: 1, usd: 0.01 })
+  })
+
+  it('is empty in an older file, and starts over with the month', () => {
+    expect(BudgetLedger.parse({ month: '2026-11' }).byKind).toEqual({})
+    const used = recordCall(BudgetLedger.parse({ month: '2026-11' }), call('read', 'claude-haiku-5-5', 100, 10, 0.0005))
+    expect(rollLedger(used, '2026-12').byKind).toEqual({})
+  })
+
+  it('keeps counting after the list of calls has been cut to its last 500', () => {
+    let ledger = BudgetLedger.parse({ month: '2026-11' })
+    for (let i = 0; i < 520; i++) ledger = recordCall(ledger, call('thought', 'claude-haiku-5-5', 10, 1, 0.0001))
+    expect(ledger.calls).toHaveLength(500)
+    expect(ledger.byKind.thought?.calls).toBe(520)
+  })
+})

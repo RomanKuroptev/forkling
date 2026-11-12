@@ -69,10 +69,22 @@ export function canSpend(ledger: BudgetLedger, estimateUsd: number): boolean {
 }
 
 export function recordCall(ledger: BudgetLedger, call: BudgetCall): BudgetLedger {
+  const before = ledger.byKind[call.kind] ?? { calls: 0, input: 0, cacheRead: 0, cacheWrite: 0, output: 0, usd: 0 }
   return {
     ...ledger,
     spentUsd: Math.round((ledger.spentUsd + call.usd) * 1e8) / 1e8,
     calls: [...ledger.calls, call].slice(-MAX_LOGGED_CALLS),
+    byKind: {
+      ...ledger.byKind,
+      [call.kind]: {
+        calls: before.calls + 1,
+        input: before.input + call.input,
+        cacheRead: before.cacheRead + call.cacheRead,
+        cacheWrite: before.cacheWrite + call.cacheWrite,
+        output: before.output + call.output,
+        usd: Math.round((before.usd + call.usd) * 1e8) / 1e8,
+      },
+    },
   }
 }
 
@@ -89,6 +101,7 @@ export function rollLedger(ledger: BudgetLedger, month: string): BudgetLedger {
     capUsd: ledger.capUsd,
     spentUsd: 0,
     calls: [],
+    byKind: {},
     history: unused ? ledger.history : [...ledger.history, { month: ledger.month, spentUsd: ledger.spentUsd, calls: ledger.calls.length }],
   }
 }

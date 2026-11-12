@@ -1,0 +1,49 @@
+name: watchdog
+
+# Checks every 30 minutes that the server is alive (spec 11.3, 14.3). It asks the server's /health and fails when the last
+# thought is more than 20 minutes old while the forkling should be awake, or when the server does not answer in the waking
+# hours. A failed run makes GitHub email the owner. It only reads: no secret and no write permission.
+#
+# Off until the repository variable MIND_URL is set to the server's address (like https://merge-mind.duckdns.org), which is
+# also how the site finds the server. Scheduled workflows start switched off in a repo made from a template: enable it
+# once under Actions.
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+# One check at a time.
+concurrency:
+  group: watchdog
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # The engine release this world runs on. Keep it the same as in mind.yml. Only watchdog.ts is fetched from it.
+  FORKLING_REPO: RomanKuroptev/forkling
+  FORKLING_REF: v0.10.0
+
+jobs:
+  check:
+    if: vars.MIND_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      MIND_URL: ${{ vars.MIND_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.FORKLING_REPO }}
+          ref: ${{ env.FORKLING_REF }}
+          path: engine
+          sparse-checkout: apps/mind/src/watchdog.ts
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Ask the server
+        run: node engine/apps/mind/src/watchdog.ts "$MIND_URL"
