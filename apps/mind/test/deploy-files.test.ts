@@ -109,3 +109,29 @@ describe('docs/spec/w3-runbook.md', () => {
     expect(existsSync(`${root}docs/spec/w3-runbook.md`)).toBe(true)
   })
 })
+
+describe('Chromium on the server, for the work check (spec 7.3, 14.3)', () => {
+  const setup = read('deploy/setup.sh')
+  const deploy = read('deploy/deploy.sh')
+  const unit = read('deploy/forkling-mind.service')
+  const playwright = (JSON.parse(read('apps/mind/package.json')) as { dependencies: Record<string, string> }).dependencies.playwright
+
+  it('setup installs the system libraries of the browser with the same Playwright version the engine uses', () => {
+    expect(/PLAYWRIGHT_VERSION=([0-9.]+)/.exec(setup)?.[1]).toBe(playwright)
+    expect(setup).toMatch(/npx --yes "playwright@\$PLAYWRIGHT_VERSION" install-deps chromium/)
+  })
+
+  it('keeps the browsers in one shared folder that the deploy user can fill and the service can read', () => {
+    expect(setup).toMatch(/mkdir -p \/opt\/forkling\/browsers/)
+    expect(setup).toMatch(/chown deploy:deploy \/opt\/forkling\/browsers/)
+    expect(unit).toMatch(/^Environment=PLAYWRIGHT_BROWSERS_PATH=\/opt\/forkling\/browsers$/m)
+    expect(deploy).toMatch(/PLAYWRIGHT_BROWSERS_PATH=\/opt\/forkling\/browsers pnpm --filter @forkling\/mind exec playwright install chromium/)
+  })
+
+  it('lets Chromium keep its own sandbox with a profile for that one folder, and never turns the sandbox off', () => {
+    expect(setup).toMatch(/userns,/)
+    expect(setup).toMatch(/\/opt\/forkling\/browsers\//)
+    expect(setup).toMatch(/apparmor_parser -r \/etc\/apparmor\.d\/forkling-chromium/)
+    for (const file of [setup, deploy, unit, read('apps/mind/src/builds/browser.ts')]) expect(file).not.toMatch(/--no-sandbox|chromiumSandbox: false/)
+  })
+})

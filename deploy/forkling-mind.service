@@ -11,6 +11,8 @@ WorkingDirectory=/opt/forkling/engine/apps/mind
 # Keys live only here, in a file only root and this service can read. See docs/spec/w3-runbook.md.
 EnvironmentFile=/etc/forkling/mind.env
 Environment=HOME=/var/lib/forkling
+# Where the work check finds its Chromium (deploy.sh puts it there).
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/forkling/browsers
 ExecStart=/usr/bin/node src/serve.ts --world /var/lib/forkling/world --port 8787
 Restart=always
 RestartSec=5

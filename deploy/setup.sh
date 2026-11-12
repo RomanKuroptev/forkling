@@ -70,6 +70,32 @@ echo 'deploy ALL=(root) NOPASSWD: /usr/local/sbin/forkling-restart' > /etc/sudoe
 chmod 440 /etc/sudoers.d/forkling-deploy
 visudo -cf /etc/sudoers.d/forkling-deploy
 
+# Chromium, for the work check (spec 7.3): a work is opened in a real browser before it goes up. The system libraries it needs
+# come from the Playwright version the engine pins (keep this the same as apps/mind/package.json; a test holds them together).
+# The browsers themselves are fetched by each deploy, as the deploy user, into one shared folder the service reads.
+PLAYWRIGHT_VERSION=1.65.0
+npx --yes "playwright@$PLAYWRIGHT_VERSION" install-deps chromium
+mkdir -p /opt/forkling/browsers
+chown deploy:deploy /opt/forkling/browsers
+chmod 755 /opt/forkling/browsers
+
+# Ubuntu 24.04 stops an ordinary program making the user namespace that Chromium's own sandbox is built on. The pages it opens are
+# written by a model, so the browser's sandbox is never switched off: this profile allows the user namespace for the browsers in that
+# one folder and for nothing else, instead of loosening the whole machine.
+if command -v apparmor_parser >/dev/null 2>&1; then
+  cat > /etc/apparmor.d/forkling-chromium <<'EOF'
+abi <abi/4.0>,
+include <tunables/global>
+
+profile forkling-chromium /opt/forkling/browsers/**/chrome-linux*/{chrome,headless_shell} flags=(unconfined) {
+  userns,
+
+  include if exists <local/forkling-chromium>
+}
+EOF
+  apparmor_parser -r /etc/apparmor.d/forkling-chromium
+fi
+
 # The keys file: filled in by hand, never in a repository.
 if [ ! -f /etc/forkling/mind.env ]; then
   cat > /etc/forkling/mind.env <<'EOF'
