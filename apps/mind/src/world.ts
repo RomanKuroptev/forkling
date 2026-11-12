@@ -150,6 +150,15 @@ export function writeText(dir: string, rel: string, text: string): boolean {
   return true
 }
 
+/** Writes a binary file (a thumbnail). Returns whether the content changed. */
+export function writeBytes(dir: string, rel: string, bytes: Buffer): boolean {
+  const full = join(dir, rel)
+  if (existsSync(full) && readFileSync(full).equals(bytes)) return false
+  mkdirSync(dirname(full), { recursive: true })
+  writeFileSync(full, bytes)
+  return true
+}
+
 export function deleteFile(dir: string, rel: string): void {
   rmSync(join(dir, rel), { force: true })
 }

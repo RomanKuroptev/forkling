@@ -19,7 +19,7 @@ describe('userContent', () => {
 
 describe('effortFor (spec 13: effort per call kind)', () => {
   it('is medium for the calls that decide, reflect or review, and low for the rest', () => {
-    for (const kind of ['morning', 'decide', 'bedtime', 'weekly', 'tinker', 'repair'] as const) expect(effortFor(kind)).toBe('medium')
+    for (const kind of ['morning', 'decide', 'bedtime', 'weekly', 'tinker', 'repair', 'sketch'] as const) expect(effortFor(kind)).toBe('medium')
     for (const kind of ['read', 'vision', 'memory', 'art', 'design', 'voice', 'thought'] as const) expect(effortFor(kind)).toBe('low')
   })
 })

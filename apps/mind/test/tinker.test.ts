@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { WorkMeta, type WorkMetaDraft } from '@forkling/schema'
 import { stopFailure, type CallKind, type LlmResult } from '../src/llm.ts'
 import { hasPolicy } from '../src/builds/sandbox.ts'
-import { buildRepairUser, buildTinkerUser, runTinker, slugify, TINKER_MAX_TOKENS, TinkerOutput, type TinkerInput } from '../src/builds/tinker.ts'
+import { buildRepairUser, buildTinkerUser, runTinker, SKETCH_MAX_TOKENS, slugify, TINKER_MAX_TOKENS, TinkerOutput, type TinkerInput } from '../src/builds/tinker.ts'
 import type { WorkCheckResult, WorkChecker } from '../src/builds/browser-check.ts'
 
 const usage = { input: 1000, cacheRead: 0, cacheWrite: 0, output: 500 }
@@ -274,5 +274,29 @@ describe('runTinker: when the model gives no work', () => {
     const out = await runTinker(deps(complete, fakeChecker([{ ok: false, reasons: ['uses fetch, and a work has no network'] }]).checker), input())
     expect(out.status).toBe('scrap')
     if (out.status === 'scrap') expect(out.meta.scrapReason).toMatch(/fetch/)
+  })
+})
+
+describe('runTinker: a sketch (spec 7.6)', () => {
+  it('is one Haiku call of its own kind, at the sketch output limit', async () => {
+    const { complete, calls } = fakeComplete([answer(output())])
+    const out = await runTinker(deps(complete, fakeChecker([{ ok: true }]).checker), input({ size: 'sketch' }))
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toMatchObject({ kind: 'sketch', model: 'claude-haiku-5-5', maxTokens: SKETCH_MAX_TOKENS })
+    expect(out.status).toBe('shelf')
+  })
+
+  it('may be marked deep, and then Sonnet makes it (spec 9.8)', async () => {
+    const { complete, calls } = fakeComplete([answer(output())])
+    await runTinker({ ...deps(complete, fakeChecker([{ ok: true }]).checker), deep: true }, input({ size: 'sketch' }))
+    expect(calls[0]).toMatchObject({ kind: 'sketch', model: 'claude-sonnet-5-5' })
+  })
+
+  it('goes to the scrap bin on the first failed check, with no repair call', async () => {
+    const { complete, calls } = fakeComplete([answer(output()), answer(output())])
+    const out = await runTinker(deps(complete, fakeChecker([{ ok: false, reasons: ['the screenshot is a single colour'] }]).checker), input({ size: 'sketch' }))
+    expect(calls).toHaveLength(1)
+    expect(out.status).toBe('scrap')
+    if (out.status === 'scrap') expect(out.meta).toMatchObject({ size: 'sketch', status: 'scrap' })
   })
 })

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createBuildWorker } from './build-worker.ts'
+import { createBrowserChecker } from './builds/browser-check.ts'
 import { hasCredentials } from './credentials.ts'
 import { buildHealthResponse } from './health-response.ts'
 import { anthropicClient } from './llm.ts'
@@ -52,6 +53,8 @@ async function main(): Promise<void> {
   const llm = values['no-llm'] || !hasCredentials(env) ? null : anthropicClient()
   if (!llm) console.log('no model calls: no key, or --no-llm')
   const git = values['no-git'] ? null : gitRunner(dir)
+  // Checks a sketch in a browser (spec 7.3). It starts one only when a sketch is made.
+  const workCheck = createBrowserChecker()
 
   const loop = createLoop({
     dir,
@@ -62,6 +65,7 @@ async function main(): Promise<void> {
       pack: species.pack,
       behaviors: species.behaviors,
       speciesPersona: species.persona,
+      workCheck,
       web: env.GITHUB_TOKEN ? { authorization: { 'api.github.com': `Bearer ${env.GITHUB_TOKEN}` } } : {},
       engine: env.FORKLING_REF ?? 'dev',
     },
@@ -99,6 +103,7 @@ async function main(): Promise<void> {
   await loop.run({ sleep, signal, onError: (e) => console.error('tick failed:', e instanceof Error ? e.message : e) })
 
   server.close()
+  await workCheck.close()
   // The world is on disk after every tick; this sends what has not gone out yet.
   if (git) console.log(`final commit: ${await commitAndPush(git, 'chore(mind): stopped', { retryPush: loop.pushFailing })}`)
 }

@@ -91,6 +91,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     objectIds: new Set(objects.map((o) => o.id)),
     interests: w.interests,
     pendingNote: null,
+    pendingWork: null,
     touched: new Set(),
     gone: new Set(),
     moodEvents: [],
@@ -125,6 +126,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     startingPoints: [],
     newTrails: [],
     newSouvenirs: [],
+    newWorks: [],
     arts: mind.arts?.date === today ? mind.arts : { date: today, count: 0 },
 
     decision: null,

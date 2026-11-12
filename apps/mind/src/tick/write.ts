@@ -2,7 +2,7 @@ import { Forkling, type Goals, type Intention, type MindState } from '@forkling/
 import { toRepoIntention } from '@forkling/sim'
 import { renderPlan } from '../plan-page.ts'
 import { appendStream, appendTimeline, prune } from '../stream.ts'
-import { deleteFile, writeJson, writeText } from '../world.ts'
+import { deleteFile, writeBytes, writeJson, writeText } from '../world.ts'
 import type { Tick, TickResult } from './context.ts'
 import { epochOf, round, same } from './util.ts'
 
@@ -93,6 +93,12 @@ export function writeWorld(t: Tick): TickResult {
     if (sourcesChanged && writeJson(dir, 'mind/sources.json', t.sources)) written.push('mind/sources.json')
     for (const trail of t.newTrails) if (writeJson(dir, `trails/${trail.id}.json`, trail)) written.push(`trails/${trail.id}.json`)
     for (const souvenir of t.newSouvenirs) if (writeJson(dir, `souvenirs/${souvenir.id}.json`, souvenir)) written.push(`souvenirs/${souvenir.id}.json`)
+    for (const work of t.newWorks) {
+      const base = `works/${work.meta.id}`
+      if (writeText(dir, `${base}/index.html`, work.html)) written.push(`${base}/index.html`)
+      if (writeJson(dir, `${base}/meta.json`, work.meta)) written.push(`${base}/meta.json`)
+      if (work.thumb && writeBytes(dir, `${base}/thumb.png`, work.thumb)) written.push(`${base}/thumb.png`)
+    }
     if (t.planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)
     for (const page of t.notebook) if (writeText(dir, page.path, page.text)) written.push(page.path)
     if (t.journal && writeText(dir, `journal/${t.journal.date}.md`, t.journal.text)) written.push(`journal/${t.journal.date}.md`)
