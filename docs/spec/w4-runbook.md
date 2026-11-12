@@ -6,7 +6,7 @@ Without the server nothing changes. The tinker verb makes sketches and asks for 
 
 ## 1. The release (a stop, and yours)
 
-1. A release PR changes `FORKLING_REF` to the new tag (the page calls it `v0.12.0`) in the four template workflows that carry it: `mind.yml`, `pages.yml`, `watchdog.yml` and `validate.yml`. A test requires them to match.
+1. A release PR changes `FORKLING_REF` to the new tag (the page calls it `v0.12.1`) in the four template workflows that carry it: `mind.yml`, `pages.yml`, `watchdog.yml` and `validate.yml`. A test requires them to match.
 2. Once it is merged, tag that merge commit. The tag has to contain the new pins and `apps/mind/src/validate-pr.ts` (the validator in `validate.yml` is fetched from it), so tag after the PR, never before.
 
 Read before you tag: the system prompt changed in three places during W4, and its golden file with it. `git diff v0.11.0 -- apps/mind/test/golden/system.txt` shows them:
@@ -21,13 +21,13 @@ On the server as root (safe to run again; it changes only what is new):
 
 ```bash
 cd /root/forkling-setup
-git fetch --tags && git checkout v0.12.0
+git fetch --tags && git checkout v0.12.1
 bash deploy/setup.sh HOST
 ```
 
 New in `setup.sh`: the system libraries Chromium needs (installed with the Playwright version the engine pins), `/opt/forkling/browsers` for the browsers, and an AppArmor profile that lets Chromium make the user namespace its own sandbox is built on, for the browsers in that one folder only. The sandbox is never switched off: the pages it opens are written by a model. The unit file gets `PLAYWRIGHT_BROWSERS_PATH`, so `setup.sh` has to be run again for it to take effect.
 
-Then deploy the release (Actions, `deploy`, Run workflow, with the tag; or `/opt/forkling/engine/deploy/deploy.sh v0.12.0` as `deploy`). Each deploy also fetches the browser for that release's Playwright version.
+Then deploy the release (Actions, `deploy`, Run workflow, with the tag; or `/opt/forkling/engine/deploy/deploy.sh v0.12.1` as `deploy`). Each deploy also fetches the browser for that release's Playwright version.
 
 **Check the browser starts, with its sandbox on, for the service user.** Playwright starts Chromium with its sandbox switched off unless `chromiumSandbox: true` is passed, so a bare `chromium.launch()` proves nothing about the profile: it passes with the sandbox off. The engine passes the option (`launchChromium`), and so does this check:
 
