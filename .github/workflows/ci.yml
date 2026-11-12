@@ -19,3 +19,20 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  # The sandbox and work checks drive a real browser. The bundled Chromium is what the server runs, so this installs it and
+  # makes a missing browser a failure (the `check` job above runs the same tests with whatever Chrome the runner has).
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @forkling/mind exec playwright install --with-deps chromium
+      - run: pnpm vitest run apps/mind/test/browser
+        env:
+          FORKLING_BROWSER: '1'
