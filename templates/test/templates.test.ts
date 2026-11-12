@@ -55,7 +55,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|trails\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
@@ -133,7 +133,7 @@ describe('templates/forkling-world website updates', () => {
   })
 
   it('still rebuilds at once for what it wrote or made', () => {
-    expect(website).toMatch(/\^\(journal\/\|art\/\|notebook\/\|memory\/beliefs\\.json\|memory\/timeline\/\|brain\/interests\\.json\)/)
+    expect(website).toMatch(/\^\(journal\/\|art\/\|notebook\/\|souvenirs\/\|trails\/\|memory\/beliefs\\.json\|memory\/timeline\/\|brain\/interests\\.json\)/)
   })
 })
 

@@ -142,7 +142,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           changed=$(git diff --name-only HEAD~1 HEAD)
-          if echo "$changed" | grep -qE '^(journal/|art/|notebook/|memory/beliefs\.json|memory/timeline/|brain/interests\.json)'; then
+          if echo "$changed" | grep -qE '^(journal/|art/|notebook/|souvenirs/|trails/|memory/beliefs\.json|memory/timeline/|brain/interests\.json)'; then
             gh workflow run pages.yml || echo "could not start the website build (is pages.yml on this branch?)"
           elif echo "$changed" | grep -qE '^(forkling\.json|mind/goals\.json)$'; then
             # The home page shows where it is and what it is doing, so it follows those too, but at most once an hour:

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { z } from 'zod'
-import { Beliefs, Forkling, Goals, Interests, TimelineEntry, type Belief, type InterestSource } from '@forkling/schema'
+import { Beliefs, Forkling, Goals, Interests, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
 import { moodWords } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { esc, markdown } from './md.ts'
@@ -18,6 +18,7 @@ const MAX_WHY_ENTRIES = 400
 const MAX_NOTES_SHOWN = 20
 const MAX_PLANS_SHOWN = 7
 const MAX_WRITINGS_SHOWN = 10
+const MAX_PILE_SHOWN = 100
 
 function readJson<T>(world: string, rel: string, schema: z.ZodType<T>): T | null {
   try {
@@ -111,6 +112,22 @@ function renderBelief(b: Belief, root: string): string {
   return `<li id="${esc(b.id)}"><strong>${esc(b.statement)}</strong> <span class="quiet">${esc(b.id)}, ${b.confidence} sure, ${esc(b.status)}${b.revisedAt ? `, changed ${esc(b.revisedAt.slice(0, 10))}` : ''}</span>${history ? `<ul class="history">${history}</ul>` : ''}</li>`
 }
 
+/** A kept souvenir with where it came from: a quote, a fact with its evidence, or a picture with its licence and credit. */
+function souvenirHtml(v: Souvenir): string {
+  const from = anchor(v.source.title || v.source.url, v.source.url)
+  const why = v.why ? ` ${esc(v.why)}` : ''
+  if (v.kind === 'quote') return `<blockquote>${esc(v.content)}</blockquote><span class="quiet">${why} From ${from}.</span>`
+  if (v.kind === 'fact') return `<p>${esc(v.content)}</p><span class="quiet">Evidence: “${esc(v.evidence)}”.${why} From ${from}.</span>`
+  return `<p>A picture: ${anchor('open it', v.content)}</p><span class="quiet">${esc(v.licence)}, credit ${esc(v.credit)}.${why} From ${from}.</span>`
+}
+
+/** One read of a trip: the page, how it felt about it, what it saw, and what it kept there. */
+function trailPage(p: Trail['pages'][number], souvenir: Souvenir | undefined): string {
+  if (p.failed) return `<li>${anchor(p.title || p.url, p.url)} <span class="quiet">could not be read: ${esc(p.failed)}</span></li>`
+  const topics = p.topics.length > 0 ? `, about ${p.topics.map(esc).join(', ')}` : ''
+  return `<li><strong>${anchor(p.title || p.url, p.url)}</strong> <span class="quiet">interest ${p.interest ?? '?'}${topics}</span>${p.reaction ? `<p>${esc(p.reaction)}</p>` : ''}${p.look ? `<p class="quiet">It looked at a picture: ${esc(p.look)}</p>` : ''}${souvenir ? `<div class="kept">${souvenirHtml(souvenir)}</div>` : ''}</li>`
+}
+
 /** Renders the forkling's website from the files of its world repo. A file that doesn't fit its schema is left out. */
 export function renderSite(world: string, out: string): { pages: string[] } {
   const forkling = readJson(world, 'forkling.json', Forkling)
@@ -145,7 +162,22 @@ export function renderSite(world: string, out: string): { pages: string[] } {
     .map((f) => ({ date: f.slice(0, -3), text: readText(world, `archive/journal/${f}`) ?? '' }))
     .filter((j) => /^\d{4}-\d{2}-\d{2}$/.test(j.date))
     .sort((a, b) => b.date.localeCompare(a.date))
-  const nav: [string, string][] = archived.length > 0 ? [...NAV, ['Archive', 'archive/']] : NAV
+  // Trails: where it wandered and what it kept. The page and its link are there only once it has made a trip.
+  const dayOf = (id: string) => /^(\d{4}-\d{2}-\d{2})-(\d+)$/.exec(id)
+  const trails = files(world, 'trails', '.json')
+    .flatMap((f) => {
+      const trail = readJson(world, `trails/${f}`, Trail)
+      return trail && dayOf(trail.id) ? [trail] : []
+    })
+    .sort((a, b) => b.date.localeCompare(a.date) || Number(dayOf(b.id)![2]) - Number(dayOf(a.id)![2]))
+  const souvenirs = new Map(
+    files(world, 'souvenirs', '.json').flatMap((f) => {
+      const souvenir = readJson(world, `souvenirs/${f}`, Souvenir)
+      return souvenir ? [[souvenir.id, souvenir] as const] : []
+    }),
+  )
+  const sourceStats = readJson(world, 'mind/sources.json', SourceStats) ?? SourceStats.parse({})
+  const nav: [string, string][] = [...NAV, ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
   const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, ...input }))
 
   // Home: who it is, what it wants, what it is doing and why.
@@ -198,6 +230,40 @@ export function renderSite(world: string, out: string): { pages: string[] } {
 <ul>${archived.map((j) => `<li><a href="journal/${esc(j.date)}.html">${esc(j.date)}</a> ${esc(titleOf(j.text))}</li>`).join('')}</ul>`,
     })
     for (const j of archived) add(`archive/journal/${j.date}.html`, { title: `${j.date} (archive)`, active: 'archive/', body: markdown(j.text) })
+  }
+
+  if (trails.length > 0) {
+    const kept = (t: Trail) => t.pages.filter((p) => p.souvenirId && souvenirs.has(p.souvenirId)).length
+    const pile = [...souvenirs.values()].filter((v) => v.placedIn === null).sort((a, b) => b.id.localeCompare(a.id)).slice(0, MAX_PILE_SHOWN)
+    const weeks = Object.entries(sourceStats.weeks).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 4)
+    add('trails/index.html', {
+      title: 'Trails',
+      active: 'trails/',
+      body: [
+        '<h1>Trails</h1>',
+        '<p class="quiet">Every trip it made across the web: where it started, what it read, and what it kept.</p>',
+        `<ul>${trails.map((t) => `<li><a href="${esc(t.id)}.html">${esc(t.id)}</a> ${esc(t.purpose)} <span class="quiet">Started from ${esc(t.start.kind)} “${esc(t.start.value)}”. ${t.pages.length} page${t.pages.length === 1 ? '' : 's'}, ${kept(t)} kept.</span></li>`).join('')}</ul>`,
+        '<h2>The pile</h2>',
+        pile.length > 0 ? `<ul class="pile">${pile.map((v) => `<li>${souvenirHtml(v)}</li>`).join('')}</ul>` : empty('Nothing kept yet.'),
+        '<h2>Where it reads</h2>',
+        weeks.length > 0
+          ? weeks.map(([week, hosts]) => `<h3>${esc(week)}</h3><ul>${Object.entries(hosts).map(([host, h]) => `<li>${esc(host)}: ${h.reads} reads, ${h.souvenirs} kept, ${h.boring} boring, ${h.failures} failed</li>`).join('')}</ul>`).join('')
+          : empty('No numbers yet.'),
+      ].join('\n'),
+    })
+    for (const t of trails) {
+      add(`trails/${t.id}.html`, {
+        title: `Trail ${t.id}`,
+        active: 'trails/',
+        body: [
+          `<h1>Trail ${esc(t.id)}</h1>`,
+          `<p>${esc(t.purpose)}</p>`,
+          `<p class="quiet">Started from ${esc(t.start.kind)} “${esc(t.start.value)}”.</p>`,
+          `<ol class="trail">${t.pages.map((p) => trailPage(p, p.souvenirId ? souvenirs.get(p.souvenirId) : undefined)).join('')}</ol>`,
+          '<p class="pager"><a href="index.html">← all trails</a></p>',
+        ].join('\n'),
+      })
+    }
   }
 
   // Notebook: what it believes, what it read, what it planned.
