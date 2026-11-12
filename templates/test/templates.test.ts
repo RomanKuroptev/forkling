@@ -55,7 +55,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|trails\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|watchdog)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|trails\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
@@ -149,7 +149,7 @@ describe('templates/forkling-world seed', () => {
 
   it('has no builder or photo workflows, which come back with the milestones that need them', () => {
     const dir = join(root, 'forkling-world', '.github/workflows')
-    expect(readdirSync(dir).sort()).toEqual(['heartbeat.yml', 'mind.yml', 'pages.yml', 'watchdog.yml'])
+    expect(readdirSync(dir).sort()).toEqual(['heartbeat.yml', 'mind.yml', 'pages.yml', 'validate.yml', 'watchdog.yml'])
     const mind = readFileSync(join(dir, 'mind.yml'), 'utf8')
     expect(mind).not.toMatch(/photos|eyecam|build\.yml/)
   })
@@ -182,6 +182,7 @@ describe('templates/forkling-world website', () => {
     const ref = (text: string) => /FORKLING_REF: (v\d+\.\d+\.\d+)/.exec(text)?.[1]
     expect(ref(read('pages.yml'))).toBe(ref(read('mind.yml')))
     expect(ref(read('watchdog.yml'))).toBe(ref(read('mind.yml')))
+    expect(ref(read('validate.yml'))).toBe(ref(read('mind.yml')))
   })
 
   it('also builds every 30 minutes once the server has replaced mind.yml, and skips a build when this commit is already up', () => {
@@ -322,5 +323,36 @@ describe('templates/forkling-world watchdog (spec 14.3)', () => {
 
   it('does not run two at once', () => {
     expect(text()).toMatch(/concurrency:\s+group: watchdog\s+cancel-in-progress: false/)
+  })
+})
+
+describe('templates/forkling-world validate (spec 11.1, 14.3)', () => {
+  const text = () => readFileSync(join(root, 'forkling-world', '.github/workflows/validate.yml'), 'utf8')
+
+  it('checks every pull request, at its head, against the pinned engine, in a real browser', () => {
+    expect(text()).toMatch(/on:\s+pull_request:/)
+    expect(text()).toMatch(/ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/)
+    expect(text()).toMatch(/fetch-depth: 0/)
+    expect(text()).toMatch(/ref: \$\{\{ env\.FORKLING_REF \}\}/)
+    expect(text()).toMatch(/playwright install --with-deps chromium/)
+    expect(text()).toMatch(/pnpm --filter @forkling\/mind validate-pr/)
+    expect(text()).toMatch(/--branch "\$\{\{ github\.head_ref \}\}"/)
+  })
+
+  it('merges a work/ branch from this repository, after the check, and nothing else', () => {
+    const merge = text().slice(text().indexOf('Merge a work that passed'))
+    expect(merge).toMatch(/if: startsWith\(github\.head_ref, 'work\/'\) && github\.event\.pull_request\.head\.repo\.full_name == github\.repository/)
+    expect(merge).toMatch(/gh pr merge "\$PR" --repo "\$GITHUB_REPOSITORY" --squash --delete-branch/)
+    expect(text().match(/gh pr merge/g)).toHaveLength(1)
+  })
+
+  it('has only the permissions it needs, and no secret', () => {
+    expect(text()).toMatch(/contents: write/)
+    expect(text()).toMatch(/pull-requests: write/)
+    expect(text()).not.toMatch(/secrets\./)
+  })
+
+  it('checks one pull request at a time and cancels an older run of it', () => {
+    expect(text()).toMatch(/concurrency:\s+group: validate-\$\{\{ github\.event\.pull_request\.number \}\}\s+cancel-in-progress: true/)
   })
 })
