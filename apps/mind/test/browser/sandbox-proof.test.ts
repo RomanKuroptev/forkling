@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { BrowserContext, Frame, Page } from 'playwright'
 import { copyLibs } from '../../../site/src/libs.ts'
 import { launchBrowser, outsideServer, serveDir, type Fixture } from './helpers.ts'
@@ -19,6 +19,9 @@ const POLICY =
 const META = `<meta http-equiv="Content-Security-Policy" content="${POLICY}">`
 
 const browser = await launchBrowser()
+
+// Starting a browser takes seconds when the whole suite is running at once, so these get far more than the default 5.
+vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 })
 
 describe.skipIf(!browser)('the sandbox proof (spec 7.3, 7.4)', () => {
   let root: string
