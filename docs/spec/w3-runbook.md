@@ -6,11 +6,11 @@ W3's "done when" is in section 10. Rollback is in section 9.
 
 ## What you need
 
-- A Hetzner Cloud account, and an SSH key pair you already use (or make one: `ssh-keygen -t ed25519`).
+- A Contabo account (or any VPS provider) and an SSH key pair you already use (or make one: `ssh-keygen -t ed25519`).
 - A free DuckDNS name, or a domain of your own. The name is one value; the rest of the page calls it `HOST` (for example `merge-mind.duckdns.org`).
 - The Anthropic Console, for a workspace of its own with a monthly spend limit, and an API key inside it.
 - GitHub: the `gh` CLI logged in as you, and a fine-grained personal access token for the world repo.
-- The engine release that has all of W3: `v0.11.0`, tagged on 12 November (section 1).
+- The engine release that has all of W3: `v0.11.0`, tagged on 12 November (section 1). The commands below say `v0.11.0`; use the newest tag instead (`STATUS.md` says which, and `w4-runbook.md` covers what W4 adds to the server).
 
 ## 1. The engine release (done)
 
@@ -23,11 +23,21 @@ Merge's own repo still pins `v0.10.0` and runs the Actions tick. Two things chan
 
 ## 2. Create the server
 
-In the Hetzner Cloud console:
+Merge's server is a **Contabo Cloud VPS 4** (4 vCPU, 8 GB RAM, 100 GB SSD, x86_64) in the Hub Europe location: €6.88 a month including VAT on a 1-month term, plus a one-off €2.50 setup fee. Any VPS with Ubuntu 24.04 on x86_64 works the same way.
 
-1. New project, then Add server. Location Helsinki, image **Ubuntu 24.04**, type **CX23** (2 vCPU, 4 GB), IPv4 on, your SSH key selected. Name it `merge-mind`.
+1. In the Contabo customer panel, order the VPS: image **Ubuntu 24.04**, 1-month term, and add your **SSH public key** in the order form if it offers one, so root login by key works from the first boot (otherwise add it to `/root/.ssh/authorized_keys` through the panel's console or the emailed password, once). Contabo emails the IPv4 address and hostname when the server is ready (a few minutes).
 2. Note the IPv4 address. The page calls it `IP`.
-3. Check the first invoice. If the price with VAT is not about $7.49 a month, tell me, or edit `serverUsd` in Merge's `brain/budget.json` (section 6). The model cap is $20 minus that.
+3. **Log in as root with the key, from Windows** (PowerShell or Git Bash, with the key in `~/.ssh`). Use `-o BatchMode=yes` so a missing key fails at once instead of waiting on a password prompt:
+
+   ```bash
+   ssh -o BatchMode=yes root@IP 'lsb_release -a; uname -m; free -h; df -h /'
+   ```
+
+   Stop if it is not Ubuntu 24.04 on `x86_64`. The first connection asks you to trust the host key (with `BatchMode` it refuses instead: connect once without it, and compare the fingerprint with the panel's if it shows one).
+4. **There is no cloud firewall.** Contabo's plain VPS has none, so the firewall that `setup.sh` turns on (`ufw`, opening 22, 80 and 443 only) is the only one. Do not close your session until a second, fresh `ssh -o BatchMode=yes root@IP true` works after `setup.sh` (it switches SSH to keys only).
+5. The first invoice shows the real price. If it is not €6.88 with VAT, tell me, or edit `serverUsd` in Merge's `brain/budget.json` (section 6, in dollars). The model cap is $20 minus that.
+
+`setup.sh` upgrades the system, and if `/var/run/reboot-required` exists after it, reboot once (`reboot`) before the cut-over, when nothing is running yet.
 
 ## 3. The DNS name
 
