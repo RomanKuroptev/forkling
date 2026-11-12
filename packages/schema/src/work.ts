@@ -47,10 +47,21 @@ export const WorkMeta = z
   .superRefine((meta, ctx) => {
     if (meta.status === 'scrap' && !meta.scrapReason) ctx.addIssue({ code: 'custom', path: ['scrapReason'], message: 'a scrap says why' })
     if (meta.status !== 'scrap' && meta.scrapReason) ctx.addIssue({ code: 'custom', path: ['scrapReason'], message: 'only a scrap has a scrap reason' })
-    if (meta.kind === 'meme') {
+    // A scrap is kept with its reason whatever was wrong with it, a missing source included.
+    if (meta.kind === 'meme' && meta.status !== 'scrap') {
       for (const role of ['looked', 'read'] as const) {
         if (!meta.sources.some((s) => s.role === role)) ctx.addIssue({ code: 'custom', path: ['sources'], message: `a meme names a format it ${role === 'looked' ? 'looked at' : 'read about'}` })
       }
     }
   })
 export type WorkMeta = z.infer<typeof WorkMeta>
+
+/** What the tinker call writes (spec 7.2); the id, date, size, status and libraries are set by code. Every field is required, as structured outputs need. */
+export const WorkMetaDraft = z.object({
+  title: z.string().describe('Up to 40 characters.'),
+  kind: WorkKind,
+  about: z.string().describe('Up to 200 characters, in your own voice: what it is and why you made it.'),
+  interest: z.string().nullable().describe('The interest it grew from, or null.'),
+  sources: z.array(WorkSource).describe('Empty unless the work is a meme: then a format you looked at and a page you read about it.'),
+})
+export type WorkMetaDraft = z.infer<typeof WorkMetaDraft>

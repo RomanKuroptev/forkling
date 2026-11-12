@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_SKETCH_BYTES, MAX_WORK_BYTES, WorkMeta } from '../src/index.ts'
+import { MAX_SKETCH_BYTES, MAX_WORK_BYTES, WorkMeta, WorkMetaDraft } from '../src/index.ts'
 
 const base = {
   id: 'tide-pool-clock',
@@ -73,6 +73,19 @@ describe('WorkMeta (spec 7.1)', () => {
     expect(WorkMeta.safeParse({ ...meme, sources: [looked] }).success).toBe(false)
     expect(WorkMeta.safeParse({ ...meme, sources: [looked, read] }).success).toBe(true)
     expect(WorkMeta.safeParse({ ...base, sources: [looked] }).success).toBe(true)
+  })
+})
+
+describe('a scrapped meme', () => {
+  it('can be saved without its sources, since a work that failed its check is kept with the reason (spec 7.3)', () => {
+    expect(WorkMeta.safeParse({ ...base, kind: 'meme', status: 'scrap', scrapReason: 'a meme names a format it looked at' }).success).toBe(true)
+  })
+})
+
+describe('WorkMetaDraft (what the model writes; code sets the rest)', () => {
+  it('is the title, kind, about, interest and sources', () => {
+    const draft = { title: 'Tide pool clock', kind: 'art', about: 'A clock.', interest: null, sources: [] }
+    expect(WorkMetaDraft.parse({ ...draft, id: 'x', status: 'shelf' })).toEqual(draft)
   })
 })
 
