@@ -128,6 +128,8 @@ export interface Tick {
   pendingWork: { step: PlanStep; index: number } | null
   /** Set when a tend step finishes: the place is changed after the step is applied. */
   pendingTend: { step: PlanStep; index: number } | null
+  /** Set when a revisit step finishes: the visit is written after the step is applied. */
+  pendingRevisit: { step: PlanStep; index: number } | null
   /** Places whose file changed this tick (a tend), written to `places/<id>.json`. */
   placeUpdates: Place[]
   /** Souvenirs whose `placedIn` changed this tick, written to `souvenirs/<id>.json`. */
