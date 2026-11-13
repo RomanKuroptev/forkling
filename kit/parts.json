@@ -1,0 +1,2223 @@
+{
+  "parts": [
+    {
+      "id": "wall-timber",
+      "name": "Timber wall",
+      "category": "structure",
+      "size": [4, 3, 0.2],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [4, 3, 0.2],
+          "at": [0, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [4, 0.15, 0.26],
+          "at": [0, 0.075, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [4, 0.15, 0.26],
+          "at": [0, 2.925, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.15, 3, 0.26],
+          "at": [-1.9, 1.5, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.15, 3, 0.26],
+          "at": [1.9, 1.5, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 3, 0.24],
+          "at": [-0.95, 1.5, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 3, 0.24],
+          "at": [0.95, 1.5, 0],
+          "color": "wood"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "wall-stone",
+      "name": "Stone wall",
+      "category": "structure",
+      "size": [4, 3, 0.3],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [4, 3, 0.3],
+          "at": [0, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [4.05, 0.3, 0.34],
+          "at": [0, 0.15, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [4.05, 0.2, 0.34],
+          "at": [0, 1.1, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [4.05, 0.2, 0.34],
+          "at": [0, 2.1, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [4.05, 0.25, 0.36],
+          "at": [0, 2.875, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "wall-glass",
+      "name": "Glass wall",
+      "category": "structure",
+      "size": [4, 3, 0.1],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [3.8, 2.9, 0.04],
+          "at": [0, 1.5, 0],
+          "color": "#bfe3f0"
+        },
+        {
+          "shape": "box",
+          "size": [4, 0.1, 0.12],
+          "at": [0, 0.05, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [4, 0.1, 0.12],
+          "at": [0, 2.95, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 3, 0.12],
+          "at": [-1.95, 1.5, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 3, 0.12],
+          "at": [1.95, 1.5, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 3, 0.1],
+          "at": [0, 1.5, 0],
+          "color": "metal"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "wall-tin",
+      "name": "Tin wall",
+      "category": "structure",
+      "size": [4, 3, 0.12],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [4, 3, 0.1],
+          "at": [0, 1.5, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 3, 0.14],
+          "at": [-1.6, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 3, 0.14],
+          "at": [-1.2, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 3, 0.14],
+          "at": [-0.8, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 3, 0.14],
+          "at": [-0.4, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 3, 0.14],
+          "at": [0, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 3, 0.14],
+          "at": [0.4, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 3, 0.14],
+          "at": [0.8, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 3, 0.14],
+          "at": [1.2, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 3, 0.14],
+          "at": [1.6, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [4, 0.12, 0.16],
+          "at": [0, 0.06, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "wall-tower",
+      "name": "Tower wall",
+      "category": "structure",
+      "size": [4, 3, 0.4],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [4, 3, 0.4],
+          "at": [0, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [4.1, 0.2, 0.5],
+          "at": [0, 0.1, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [4.1, 0.3, 0.55],
+          "at": [0, 2.85, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.4, 3, 0.5],
+          "at": [-1.8, 1.5, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.4, 3, 0.5],
+          "at": [1.8, 1.5, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "window-small",
+      "name": "Small window",
+      "category": "structure",
+      "size": [1, 1, 0.25],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.8, 0.8, 0.06],
+          "at": [0, 0.5, 0],
+          "color": "#bfe3f0"
+        },
+        {
+          "shape": "box",
+          "size": [1, 0.1, 0.2],
+          "at": [0, 0.05, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [1, 0.1, 0.2],
+          "at": [0, 0.95, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 1, 0.2],
+          "at": [-0.45, 0.5, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 1, 0.2],
+          "at": [0.45, 0.5, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 0.8, 0.12],
+          "at": [0, 0.5, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "window-large",
+      "name": "Large window",
+      "category": "structure",
+      "size": [2, 1.4, 0.25],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.8, 1.2, 0.06],
+          "at": [0, 0.7, 0],
+          "color": "#bfe3f0"
+        },
+        {
+          "shape": "box",
+          "size": [2, 0.1, 0.2],
+          "at": [0, 0.05, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [2, 0.1, 0.2],
+          "at": [0, 1.35, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 1.4, 0.2],
+          "at": [-0.95, 0.7, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 1.4, 0.2],
+          "at": [0.95, 0.7, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 1.2, 0.12],
+          "at": [-0.3, 0.7, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 1.2, 0.12],
+          "at": [0.3, 0.7, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "window-round",
+      "name": "Round window",
+      "category": "structure",
+      "size": [1, 1, 0.25],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.85, 0.06, 0.85],
+          "at": [0, 0.105, 0],
+          "rotation": [1.5707963267948966, 0, 0],
+          "color": "#bfe3f0"
+        },
+        {
+          "shape": "cylinder",
+          "size": [1, 0.1, 1],
+          "at": [0, 0.05, 0],
+          "rotation": [1.5707963267948966, 0, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 0.85, 0.12],
+          "at": [0, 0.5, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.85, 0.06, 0.12],
+          "at": [0, 0.53, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "door-wood",
+      "name": "Wooden door",
+      "category": "structure",
+      "size": [1.2, 2.2, 0.25],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1, 2.1, 0.1],
+          "at": [0, 1.05, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.2, 0.1, 0.2],
+          "at": [0, 2.15, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 2.2, 0.2],
+          "at": [-0.55, 1.1, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 2.2, 0.2],
+          "at": [0.55, 1.1, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.1, 0.1, 0.1],
+          "at": [0.35, 1.1, 0.08],
+          "color": "metal"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "door-glass",
+      "name": "Glass door",
+      "category": "structure",
+      "size": [1.4, 2.3, 0.2],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.2, 2.2, 0.04],
+          "at": [0, 1.1, 0],
+          "color": "#bfe3f0"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.1, 0.12],
+          "at": [0, 2.25, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 2.3, 0.12],
+          "at": [-0.65, 1.15, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 2.3, 0.12],
+          "at": [0.65, 1.15, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.05, 0.5, 0.08],
+          "at": [0.4, 1.15, 0.06],
+          "color": "metal"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "stairs",
+      "name": "Stairs",
+      "category": "structure",
+      "size": [1.2, 3, 3],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.2, 0.5, 0.5],
+          "at": [0, 0.25, -1.25],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.2, 0.5, 0.5],
+          "at": [0, 0.75, -0.75],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.2, 0.5, 0.5],
+          "at": [0, 1.25, -0.25],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.2, 0.5, 0.5],
+          "at": [0, 1.75, 0.25],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.2, 0.5, 0.5],
+          "at": [0, 2.25, 0.75],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.2, 0.5, 0.5],
+          "at": [0, 2.75, 1.25],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 0.9, 3],
+          "at": [-0.6, 0.95, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 0.9, 3],
+          "at": [0.6, 0.95, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "roof-gable",
+      "name": "Gable roof",
+      "category": "structure",
+      "size": [4, 1.5, 4],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [2.4, 0.15, 4.1],
+          "at": [-1, 0.775, 0],
+          "rotation": [0, 0, 0.62],
+          "color": "roof"
+        },
+        {
+          "shape": "box",
+          "size": [2.4, 0.15, 4.1],
+          "at": [1, 0.775, 0],
+          "rotation": [0, 0, -0.62],
+          "color": "roof"
+        },
+        {
+          "shape": "box",
+          "size": [0.2, 0.2, 4.1],
+          "at": [0, 1.5, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "roof-flat",
+      "name": "Flat roof",
+      "category": "structure",
+      "size": [4, 0.3, 4],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [4.1, 0.2, 4.1],
+          "at": [0, 0.1, 0],
+          "color": "roof"
+        },
+        {
+          "shape": "box",
+          "size": [4.2, 0.1, 4.2],
+          "at": [0, 0.25, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "roof-cone",
+      "name": "Pointed roof",
+      "category": "structure",
+      "size": [4, 3, 4],
+      "primitives": [
+        {
+          "shape": "cone",
+          "size": [4.2, 3, 4.2],
+          "at": [0, 1.5, 0],
+          "color": "roof"
+        },
+        {
+          "shape": "cylinder",
+          "size": [4.3, 0.15, 4.3],
+          "at": [0, 0.075, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "floor-boards",
+      "name": "Board floor",
+      "category": "structure",
+      "size": [4, 0.1, 4],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [4, 0.1, 4],
+          "at": [0, 0.05, 0],
+          "color": "floor"
+        },
+        {
+          "shape": "box",
+          "size": [0.03, 0.11, 4],
+          "at": [-1.5, 0.055, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.03, 0.11, 4],
+          "at": [-0.5, 0.055, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.03, 0.11, 4],
+          "at": [0.5, 0.055, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.03, 0.11, 4],
+          "at": [1.5, 0.055, 0],
+          "color": "wood"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "floor-stone",
+      "name": "Stone floor",
+      "category": "structure",
+      "size": [4, 0.1, 4],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [4, 0.1, 4],
+          "at": [0, 0.05, 0],
+          "color": "floor"
+        },
+        {
+          "shape": "box",
+          "size": [0.04, 0.11, 4],
+          "at": [0, 0.055, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [4, 0.11, 0.04],
+          "at": [0, 0.055, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "pillar",
+      "name": "Pillar",
+      "category": "structure",
+      "size": [0.5, 3, 0.5],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.5, 0.2, 0.5],
+          "at": [0, 0.1, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "cylinder",
+          "size": [0.36, 2.6, 0.36],
+          "at": [0, 1.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.5, 0.2, 0.5],
+          "at": [0, 2.9, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "fence",
+      "name": "Fence",
+      "category": "structure",
+      "size": [2, 1, 0.1],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.08, 1, 0.08],
+          "at": [-0.9, 0.5, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 1, 0.08],
+          "at": [0.9, 0.5, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [2, 0.08, 0.06],
+          "at": [0, 0.39, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [2, 0.08, 0.06],
+          "at": [0, 0.79, 0],
+          "color": "wood"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "arch",
+      "name": "Arch",
+      "category": "structure",
+      "size": [2, 2.6, 0.4],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.4, 2.2, 0.4],
+          "at": [-0.8, 1.1, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.4, 2.2, 0.4],
+          "at": [0.8, 1.1, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [2, 0.4, 0.4],
+          "at": [0, 2.4, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.3, 0.3, 0.45],
+          "at": [0, 2.45, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "shelf-low",
+      "name": "Low shelf",
+      "category": "furniture",
+      "size": [1.4, 0.9, 0.4],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.4, 0.06, 0.4],
+          "at": [0, 0.87, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.06, 0.4],
+          "at": [0, 0.45, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 0.9, 0.4],
+          "at": [-0.67, 0.45, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 0.9, 0.4],
+          "at": [0.67, 0.45, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.9, 0.04],
+          "at": [0, 0.45, -0.18],
+          "color": "trim"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "shelf",
+          "at": [-0.45, 0.45, 0]
+        },
+        {
+          "kind": "shelf",
+          "at": [0, 0.45, 0]
+        },
+        {
+          "kind": "shelf",
+          "at": [0.45, 0.45, 0]
+        }
+      ]
+    },
+    {
+      "id": "shelf-tall",
+      "name": "Tall shelf",
+      "category": "furniture",
+      "size": [1.4, 2.2, 0.4],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.4, 0.06, 0.4],
+          "at": [0, 2.17, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.06, 0.4],
+          "at": [0, 1.63, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.06, 0.4],
+          "at": [0, 1.09, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.06, 0.4],
+          "at": [0, 0.53, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 2.2, 0.4],
+          "at": [-0.67, 1.1, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 2.2, 0.4],
+          "at": [0.67, 1.1, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 2.2, 0.04],
+          "at": [0, 1.1, -0.18],
+          "color": "trim"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "shelf",
+          "at": [-0.4, 1.1, 0]
+        },
+        {
+          "kind": "shelf",
+          "at": [0, 1.65, 0]
+        },
+        {
+          "kind": "shelf",
+          "at": [0.4, 1.1, 0]
+        }
+      ]
+    },
+    {
+      "id": "bookcase",
+      "name": "Bookcase",
+      "category": "furniture",
+      "size": [1.6, 2, 0.4],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.6, 2, 0.4],
+          "at": [0, 1, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.35, 0.3],
+          "at": [0, 0.475, 0.08],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.5, 0.35, 0.3],
+          "at": [0.45, 0.475, 0.1],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.35, 0.3],
+          "at": [0, 0.975, 0.08],
+          "color": "accent"
+        },
+        {
+          "shape": "box",
+          "size": [0.5, 0.35, 0.3],
+          "at": [0.45, 0.975, 0.1],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.35, 0.3],
+          "at": [0, 1.475, 0.08],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.5, 0.35, 0.3],
+          "at": [0.45, 1.475, 0.1],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.35, 0.3],
+          "at": [0, 1.925, 0.08],
+          "color": "accent"
+        },
+        {
+          "shape": "box",
+          "size": [0.5, 0.35, 0.3],
+          "at": [0.45, 1.925, 0.1],
+          "color": "wall"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "desk",
+      "name": "Desk",
+      "category": "furniture",
+      "size": [1.6, 0.8, 0.8],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.6, 0.06, 0.8],
+          "at": [0, 0.77, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 0.74, 0.7],
+          "at": [-0.75, 0.37, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.06, 0.74, 0.7],
+          "at": [0.75, 0.37, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.4, 0.3, 0.04],
+          "at": [0, 0.45, -0.33],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "workbench",
+      "name": "Workbench",
+      "category": "furniture",
+      "size": [2, 1.2, 0.8],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [2, 0.1, 0.8],
+          "at": [0, 0.9, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 0.85, 0.7],
+          "at": [-0.9, 0.425, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 0.85, 0.7],
+          "at": [0.9, 0.425, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.8, 0.06, 0.6],
+          "at": [0, 0.38, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.3, 0.15, 0.2],
+          "at": [-0.6, 1.025, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.15, 0.25, 0.15],
+          "at": [0.5, 1.075, 0.1],
+          "color": "accent"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "table",
+      "name": "Table",
+      "category": "furniture",
+      "size": [1.4, 0.75, 1],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.4, 0.06, 1],
+          "at": [0, 0.72, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.07, 0.69, 0.07],
+          "at": [-0.62, 0.345, -0.42],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.07, 0.69, 0.07],
+          "at": [0.62, 0.345, -0.42],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.07, 0.69, 0.07],
+          "at": [-0.62, 0.345, 0.42],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.07, 0.69, 0.07],
+          "at": [0.62, 0.345, 0.42],
+          "color": "wood"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "chair",
+      "name": "Chair",
+      "category": "furniture",
+      "size": [0.5, 0.9, 0.5],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.45, 0.05, 0.45],
+          "at": [0, 0.475, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.45, 0.45, 0.04],
+          "at": [0, 0.725, -0.2],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.05, 0.45, 0.05],
+          "at": [-0.2, 0.225, -0.2],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.05, 0.45, 0.05],
+          "at": [0.2, 0.225, -0.2],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.05, 0.45, 0.05],
+          "at": [-0.2, 0.225, 0.2],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.05, 0.45, 0.05],
+          "at": [0.2, 0.225, 0.2],
+          "color": "wood"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "stool",
+      "name": "Stool",
+      "category": "furniture",
+      "size": [0.4, 0.5, 0.4],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.4, 0.05, 0.4],
+          "at": [0, 0.475, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "cylinder",
+          "size": [0.05, 0.45, 0.05],
+          "at": [-0.12, 0.225, -0.12],
+          "color": "wood"
+        },
+        {
+          "shape": "cylinder",
+          "size": [0.05, 0.45, 0.05],
+          "at": [0.12, 0.225, -0.12],
+          "color": "wood"
+        },
+        {
+          "shape": "cylinder",
+          "size": [0.05, 0.45, 0.05],
+          "at": [0, 0.225, 0.14],
+          "color": "wood"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "bench",
+      "name": "Bench",
+      "category": "furniture",
+      "size": [1.6, 0.5, 0.5],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.6, 0.06, 0.5],
+          "at": [0, 0.47, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 0.44, 0.45],
+          "at": [-0.7, 0.22, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 0.44, 0.45],
+          "at": [0.7, 0.22, 0],
+          "color": "wood"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "rug-round",
+      "name": "Round rug",
+      "category": "furniture",
+      "size": [2, 0.03, 2],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [2, 0.03, 2],
+          "at": [0, 0.015, 0],
+          "color": "accent"
+        },
+        {
+          "shape": "cylinder",
+          "size": [1.3, 0.04, 1.3],
+          "at": [0, 0.02, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "rug-square",
+      "name": "Square rug",
+      "category": "furniture",
+      "size": [2, 0.03, 3],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [2, 0.03, 3],
+          "at": [0, 0.015, 0],
+          "color": "accent"
+        },
+        {
+          "shape": "box",
+          "size": [1.6, 0.04, 2.6],
+          "at": [0, 0.02, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "plinth",
+      "name": "Plinth",
+      "category": "furniture",
+      "size": [0.7, 1, 0.7],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.7, 0.1, 0.7],
+          "at": [0, 0.05, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.55, 0.8, 0.55],
+          "at": [0, 0.5, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "box",
+          "size": [0.7, 0.1, 0.7],
+          "at": [0, 0.95, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "cabinet",
+      "name": "Cabinet",
+      "category": "furniture",
+      "size": [1, 1.2, 0.6],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1, 1.2, 0.5],
+          "at": [0, 0.6, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.45, 1, 0.04],
+          "at": [-0.24, 0.6, 0.26],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.45, 1, 0.04],
+          "at": [0.24, 0.6, 0.26],
+          "color": "trim"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.06, 0.06, 0.06],
+          "at": [-0.06, 0.63, 0.3],
+          "color": "metal"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.06, 0.06, 0.06],
+          "at": [0.06, 0.63, 0.3],
+          "color": "metal"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "crate",
+      "name": "Crate",
+      "category": "furniture",
+      "size": [0.6, 0.5, 0.6],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.6, 0.5, 0.6],
+          "at": [0, 0.25, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.64, 0.06, 0.64],
+          "at": [0, 0.03, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.64, 0.06, 0.64],
+          "at": [0, 0.47, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "cat-bed",
+      "name": "Cat bed",
+      "category": "furniture",
+      "size": [0.8, 0.3, 0.8],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.8, 0.1, 0.8],
+          "at": [0, 0.05, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "cylinder",
+          "size": [0.62, 0.2, 0.62],
+          "at": [0, 0.15, 0],
+          "color": "accent"
+        },
+        {
+          "shape": "cylinder",
+          "size": [0.45, 0.22, 0.45],
+          "at": [0, 0.21, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "frame-small",
+      "name": "Small frame",
+      "category": "display",
+      "size": [0.6, 0.6, 0.08],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.6, 0.6, 0.06],
+          "at": [0, 0.3, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.48, 0.48, 0.04],
+          "at": [0, 0.3, 0.03],
+          "color": "wall"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "frame",
+          "at": [0, 0.3, 0.06]
+        }
+      ]
+    },
+    {
+      "id": "frame-large",
+      "name": "Large frame",
+      "category": "display",
+      "size": [1.2, 0.9, 0.08],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.2, 0.9, 0.06],
+          "at": [0, 0.45, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.08, 0.78, 0.04],
+          "at": [0, 0.45, 0.03],
+          "color": "wall"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "frame",
+          "at": [0, 0.45, 0.06]
+        }
+      ]
+    },
+    {
+      "id": "screen-small",
+      "name": "Small screen",
+      "category": "display",
+      "size": [0.9, 0.8, 0.2],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.9, 0.6, 0.08],
+          "at": [0, 0.5, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.8, 0.5, 0.04],
+          "at": [0, 0.5, 0.04],
+          "color": "#2a3340"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 0.2, 0.1],
+          "at": [0, 0.1, -0.04],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.4, 0.04, 0.2],
+          "at": [0, 0.02, 0],
+          "color": "metal"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "screen",
+          "at": [0, 0.5, 0.07]
+        }
+      ]
+    },
+    {
+      "id": "screen-large",
+      "name": "Large screen",
+      "category": "display",
+      "size": [1.6, 1.2, 0.2],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.6, 1, 0.08],
+          "at": [0, 0.7, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [1.5, 0.9, 0.04],
+          "at": [0, 0.7, 0.04],
+          "color": "#2a3340"
+        },
+        {
+          "shape": "box",
+          "size": [0.1, 0.2, 0.1],
+          "at": [0, 0.1, -0.04],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.4, 0.04, 0.2],
+          "at": [0, 0.02, 0],
+          "color": "metal"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "screen",
+          "at": [0, 0.7, 0.07]
+        }
+      ]
+    },
+    {
+      "id": "terminal",
+      "name": "Gallery terminal",
+      "category": "display",
+      "size": [0.7, 1.3, 0.6],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.7, 0.9, 0.5],
+          "at": [0, 0.45, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.55, 0.4, 0.06],
+          "at": [0, 1.1, -0.05],
+          "rotation": [-0.4, 0, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.5, 0.34, 0.04],
+          "at": [0, 1.1, -0.02],
+          "rotation": [-0.4, 0, 0],
+          "color": "#2a3340"
+        },
+        {
+          "shape": "box",
+          "size": [0.6, 0.06, 0.3],
+          "at": [0, 0.93, 0.1],
+          "color": "trim"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "terminal",
+          "at": [0, 1.1, 0]
+        }
+      ]
+    },
+    {
+      "id": "case-glass",
+      "name": "Glass case",
+      "category": "display",
+      "size": [0.7, 1.1, 0.7],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.7, 0.5, 0.7],
+          "at": [0, 0.25, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.66, 0.55, 0.66],
+          "at": [0, 0.775, 0],
+          "color": "#bfe3f0"
+        },
+        {
+          "shape": "box",
+          "size": [0.7, 0.05, 0.7],
+          "at": [0, 1.075, 0],
+          "color": "wood"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "case",
+          "at": [0, 0.78, 0]
+        }
+      ]
+    },
+    {
+      "id": "case-table",
+      "name": "Table case",
+      "category": "display",
+      "size": [1, 0.9, 0.6],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1, 0.7, 0.6],
+          "at": [0, 0.35, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.9, 0.12, 0.5],
+          "at": [0, 0.76, 0],
+          "color": "#bfe3f0"
+        },
+        {
+          "shape": "box",
+          "size": [1, 0.06, 0.6],
+          "at": [0, 0.87, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "case",
+          "at": [0, 0.78, 0]
+        }
+      ]
+    },
+    {
+      "id": "plaque-stand",
+      "name": "Plaque stand",
+      "category": "display",
+      "size": [0.5, 1.1, 0.3],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.08, 0.8, 0.08],
+          "at": [0, 0.4, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.4, 0.05, 0.3],
+          "at": [0, 0.025, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.5, 0.3, 0.04],
+          "at": [0, 0.95, 0],
+          "rotation": [-0.35, 0, 0],
+          "color": "trim"
+        },
+        {
+          "shape": "box",
+          "size": [0.44, 0.24, 0.02],
+          "at": [0, 0.95, 0.02],
+          "rotation": [-0.35, 0, 0],
+          "color": "wall"
+        }
+      ],
+      "slots": [
+        {
+          "kind": "plaque",
+          "at": [0, 0.95, 0.04]
+        }
+      ]
+    },
+    {
+      "id": "sign-post",
+      "name": "Sign post",
+      "category": "display",
+      "size": [0.15, 2, 0.6],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.12, 2, 0.12],
+          "at": [0, 1, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [0.08, 0.5, 0.6],
+          "at": [0, 1.65, 0],
+          "color": "trim"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "notice-board",
+      "name": "Notice board",
+      "category": "display",
+      "size": [1.2, 1, 0.1],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [1.2, 1, 0.06],
+          "at": [0, 0.5, 0],
+          "color": "wood"
+        },
+        {
+          "shape": "box",
+          "size": [1.08, 0.88, 0.04],
+          "at": [0, 0.5, 0.03],
+          "color": "accent"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "lamp-floor",
+      "name": "Floor lamp",
+      "category": "light",
+      "size": [0.3, 1.6, 0.3],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.3, 0.05, 0.3],
+          "at": [0, 0.025, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "cylinder",
+          "size": [0.04, 1.2, 0.04],
+          "at": [0, 0.65, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "cone",
+          "size": [0.34, 0.3, 0.34],
+          "at": [0, 1.45, 0],
+          "color": "glow"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "lamp-desk",
+      "name": "Desk lamp",
+      "category": "light",
+      "size": [0.25, 0.4, 0.25],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.2, 0.03, 0.2],
+          "at": [0, 0.015, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.03, 0.25, 0.03],
+          "at": [0, 0.155, 0],
+          "rotation": [0, 0, 0.3],
+          "color": "metal"
+        },
+        {
+          "shape": "cone",
+          "size": [0.22, 0.14, 0.22],
+          "at": [0.04, 0.33, 0],
+          "color": "glow"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "lantern-hanging",
+      "name": "Hanging lantern",
+      "category": "light",
+      "size": [0.3, 0.5, 0.3],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.02, 0.2, 0.02],
+          "at": [0, 0.4, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.24, 0.3, 0.24],
+          "at": [0, 0.15, 0],
+          "color": "glow"
+        },
+        {
+          "shape": "box",
+          "size": [0.3, 0.04, 0.3],
+          "at": [0, 0.32, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.3, 0.04, 0.3],
+          "at": [0, 0.02, 0],
+          "color": "metal"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "lantern-ground",
+      "name": "Ground lantern",
+      "category": "light",
+      "size": [0.3, 0.4, 0.3],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [0.3, 0.04, 0.3],
+          "at": [0, 0.02, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "box",
+          "size": [0.22, 0.28, 0.22],
+          "at": [0, 0.18, 0],
+          "color": "glow"
+        },
+        {
+          "shape": "box",
+          "size": [0.3, 0.04, 0.3],
+          "at": [0, 0.34, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.08, 0.08, 0.08],
+          "at": [0, 0.4, 0],
+          "color": "metal"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "string-lights",
+      "name": "String lights",
+      "category": "light",
+      "size": [3, 0.3, 0.05],
+      "primitives": [
+        {
+          "shape": "box",
+          "size": [3, 0.02, 0.02],
+          "at": [0, 0.26, 0],
+          "color": "metal"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.12, 0.12, 0.12],
+          "at": [-1.2, 0.16, 0],
+          "color": "glow"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.12, 0.12, 0.12],
+          "at": [-0.6, 0.13, 0],
+          "color": "glow"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.12, 0.12, 0.12],
+          "at": [0, 0.16, 0],
+          "color": "glow"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.12, 0.12, 0.12],
+          "at": [0.6, 0.13, 0],
+          "color": "glow"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.12, 0.12, 0.12],
+          "at": [1.2, 0.16, 0],
+          "color": "glow"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "candle",
+      "name": "Candle",
+      "category": "light",
+      "size": [0.1, 0.2, 0.1],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.06, 0.12, 0.06],
+          "at": [0, 0.06, 0],
+          "color": "wall"
+        },
+        {
+          "shape": "cone",
+          "size": [0.04, 0.07, 0.04],
+          "at": [0, 0.155, 0],
+          "color": "glow"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "tree-round",
+      "name": "Round tree",
+      "category": "nature",
+      "size": [2.5, 3.5, 2.5],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.3, 1.4, 0.3],
+          "at": [0, 0.7, 0],
+          "color": "#6b4a2f"
+        },
+        {
+          "shape": "sphere",
+          "size": [2.3, 2.3, 2.3],
+          "at": [0, 3.35, 0],
+          "color": "#4f9a4f"
+        },
+        {
+          "shape": "sphere",
+          "size": [1.5, 1.5, 1.5],
+          "at": [0.5, 3.45, 0.3],
+          "color": "#5cab5c"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "tree-pine",
+      "name": "Pine tree",
+      "category": "nature",
+      "size": [2, 4, 2],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.3, 0.8, 0.3],
+          "at": [0, 0.4, 0],
+          "color": "#6b4a2f"
+        },
+        {
+          "shape": "cone",
+          "size": [2, 1.6, 2],
+          "at": [0, 1.5, 0],
+          "color": "#2f6b45"
+        },
+        {
+          "shape": "cone",
+          "size": [1.6, 1.4, 1.6],
+          "at": [0, 2.3, 0],
+          "color": "#3a7a50"
+        },
+        {
+          "shape": "cone",
+          "size": [1.1, 1.2, 1.1],
+          "at": [0, 3.1, 0],
+          "color": "#468a5b"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "tree-tall",
+      "name": "Tall tree",
+      "category": "nature",
+      "size": [2, 6, 2],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.4, 3, 0.4],
+          "at": [0, 1.5, 0],
+          "color": "#7a5a3a"
+        },
+        {
+          "shape": "sphere",
+          "size": [1.8, 1.8, 1.8],
+          "at": [0, 4.5, 0],
+          "color": "#5a9a45"
+        },
+        {
+          "shape": "sphere",
+          "size": [1.2, 1.2, 1.2],
+          "at": [0.3, 5.4, 0],
+          "color": "#6aaa55"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "bush",
+      "name": "Bush",
+      "category": "nature",
+      "size": [1.2, 0.9, 1.2],
+      "primitives": [
+        {
+          "shape": "sphere",
+          "size": [1.1, 1.1, 1.1],
+          "at": [0, 0.85, 0],
+          "color": "#4f9a4f"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.7, 0.7, 0.7],
+          "at": [0.3, 0.85, 0.2],
+          "color": "#5cab5c"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "flower-patch",
+      "name": "Flower patch",
+      "category": "nature",
+      "size": [1.2, 0.5, 1.2],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [1.1, 0.08, 1.1],
+          "at": [0, 0.04, 0],
+          "color": "#5a9a45"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.14, 0.14, 0.14],
+          "at": [-0.3, 0.27, 0.1],
+          "color": "#e8c547"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.14, 0.14, 0.14],
+          "at": [0.2, 0.32, -0.2],
+          "color": "#e07a9a"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.14, 0.14, 0.14],
+          "at": [0.35, 0.27, 0.3],
+          "color": "#f2f2f2"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.14, 0.14, 0.14],
+          "at": [-0.1, 0.32, -0.35],
+          "color": "#8a6ad8"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "rock-small",
+      "name": "Small rock",
+      "category": "nature",
+      "size": [0.7, 0.5, 0.7],
+      "primitives": [
+        {
+          "shape": "sphere",
+          "size": [0.6, 0.6, 0.6],
+          "at": [0, 0.4, 0],
+          "color": "#8d8d8d"
+        },
+        {
+          "shape": "sphere",
+          "size": [0.35, 0.35, 0.35],
+          "at": [0.2, 0.225, 0.15],
+          "color": "#a0a0a0"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "rock-large",
+      "name": "Large rock",
+      "category": "nature",
+      "size": [1.8, 1.4, 1.8],
+      "primitives": [
+        {
+          "shape": "sphere",
+          "size": [1.6, 1.6, 1.6],
+          "at": [0, 1, 0],
+          "color": "#7f8085"
+        },
+        {
+          "shape": "sphere",
+          "size": [1, 1, 1],
+          "at": [0.4, 1.1, 0.3],
+          "color": "#93949a"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "mushroom",
+      "name": "Mushroom",
+      "category": "nature",
+      "size": [0.4, 0.4, 0.4],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.1, 0.2, 0.1],
+          "at": [0, 0.1, 0],
+          "color": "#efe6d2"
+        },
+        {
+          "shape": "cone",
+          "size": [0.36, 0.2, 0.36],
+          "at": [0, 0.3, 0],
+          "color": "#c8503c"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "fern",
+      "name": "Fern",
+      "category": "nature",
+      "size": [0.9, 0.7, 0.9],
+      "primitives": [
+        {
+          "shape": "cone",
+          "size": [0.8, 0.6, 0.8],
+          "at": [0, 0.3, 0],
+          "color": "#3f8a4a"
+        },
+        {
+          "shape": "cone",
+          "size": [0.5, 0.5, 0.5],
+          "at": [0.15, 0.25, 0.1],
+          "color": "#52a05c"
+        }
+      ],
+      "slots": []
+    },
+    {
+      "id": "log",
+      "name": "Log",
+      "category": "nature",
+      "size": [1.4, 0.4, 0.5],
+      "primitives": [
+        {
+          "shape": "cylinder",
+          "size": [0.4, 1.4, 0.4],
+          "at": [0, 0.2, 0],
+          "rotation": [0, 0, 1.5707963267948966],
+          "color": "#7a5a3a"
+        },
+        {
+          "shape": "cylinder",
+          "size": [0.34, 0.02, 0.34],
+          "at": [0.7, 0.2, 0],
+          "rotation": [0, 0, 1.5707963267948966],
+          "color": "#d8b98a"
+        }
+      ],
+      "slots": []
+    }
+  ],
+  "styles": [
+    {
+      "id": "timber",
+      "name": "Timber",
+      "wall": "wall-timber",
+      "window": "window-small",
+      "door": "door-wood",
+      "roof": "roof-gable"
+    },
+    {
+      "id": "stone",
+      "name": "Stone",
+      "wall": "wall-stone",
+      "window": "window-small",
+      "door": "door-wood",
+      "roof": "roof-gable"
+    },
+    {
+      "id": "glass",
+      "name": "Glass",
+      "wall": "wall-glass",
+      "window": "window-large",
+      "door": "door-glass",
+      "roof": "roof-flat"
+    },
+    {
+      "id": "tin-shack",
+      "name": "Tin shack",
+      "wall": "wall-tin",
+      "window": "window-small",
+      "door": "door-wood",
+      "roof": "roof-flat"
+    },
+    {
+      "id": "tower",
+      "name": "Tower",
+      "wall": "wall-tower",
+      "window": "window-round",
+      "door": "door-wood",
+      "roof": "roof-cone"
+    }
+  ],
+  "palettes": [
+    {
+      "id": "harbour",
+      "name": "Harbour",
+      "colors": {
+        "wall": "#d8dde0",
+        "trim": "#4a6275",
+        "roof": "#3e5668",
+        "floor": "#b8a58a",
+        "accent": "#c8503c",
+        "wood": "#8a6a4a",
+        "metal": "#7b8a94",
+        "glow": "#ffd98a"
+      }
+    },
+    {
+      "id": "meadow",
+      "name": "Meadow",
+      "colors": {
+        "wall": "#efe6c8",
+        "trim": "#7a9a4a",
+        "roof": "#a8c070",
+        "floor": "#c9b98a",
+        "accent": "#e0863a",
+        "wood": "#8a6a3a",
+        "metal": "#8a8f7a",
+        "glow": "#fff0a0"
+      }
+    },
+    {
+      "id": "ember",
+      "name": "Ember",
+      "colors": {
+        "wall": "#e8d2bc",
+        "trim": "#7a3a2a",
+        "roof": "#9a4a30",
+        "floor": "#a88a6a",
+        "accent": "#e0a030",
+        "wood": "#6a4228",
+        "metal": "#6f6460",
+        "glow": "#ffb060"
+      }
+    },
+    {
+      "id": "moss",
+      "name": "Moss",
+      "colors": {
+        "wall": "#cfd8c2",
+        "trim": "#4a6a45",
+        "roof": "#5c7a52",
+        "floor": "#9a9a78",
+        "accent": "#b8a040",
+        "wood": "#6e5a3a",
+        "metal": "#7a8678",
+        "glow": "#e8f0a0"
+      }
+    },
+    {
+      "id": "dusk",
+      "name": "Dusk",
+      "colors": {
+        "wall": "#cfc8dc",
+        "trim": "#5a4a7a",
+        "roof": "#4a3e6a",
+        "floor": "#a89cb8",
+        "accent": "#e07a9a",
+        "wood": "#6a5a6a",
+        "metal": "#7a748a",
+        "glow": "#ffc0e0"
+      }
+    },
+    {
+      "id": "paper",
+      "name": "Paper",
+      "colors": {
+        "wall": "#f3eee0",
+        "trim": "#8a8272",
+        "roof": "#b8b09a",
+        "floor": "#d8d0b8",
+        "accent": "#4a7aa0",
+        "wood": "#9a8a6a",
+        "metal": "#a09a8a",
+        "glow": "#fff4c0"
+      }
+    },
+    {
+      "id": "slate",
+      "name": "Slate",
+      "colors": {
+        "wall": "#b8bec4",
+        "trim": "#3a4450",
+        "roof": "#2e3844",
+        "floor": "#8a9098",
+        "accent": "#e0c050",
+        "wood": "#5a5248",
+        "metal": "#68727c",
+        "glow": "#d8f0ff"
+      }
+    },
+    {
+      "id": "coral",
+      "name": "Coral",
+      "colors": {
+        "wall": "#f2d8cf",
+        "trim": "#c85a50",
+        "roof": "#d8766a",
+        "floor": "#d8b8a0",
+        "accent": "#3a8a8a",
+        "wood": "#8a5a48",
+        "metal": "#9a8a88",
+        "glow": "#ffd0a0"
+      }
+    }
+  ]
+}
