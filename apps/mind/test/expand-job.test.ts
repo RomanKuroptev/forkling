@@ -181,6 +181,7 @@ describe('the expand handler (spec 10.2)', () => {
     const a = await run(handler(refused.llm))
     expect(a.status).toBe('failed')
     expect(a.reason).toMatch(/refus/i)
+    expect(a.extra!.placeId).toBe('house-of-lights')
     expect(refused.calls).toHaveLength(1)
     expect(a.extra!.calls).toHaveLength(1)
     const cut = fakeLlm([null], 'max_tokens')

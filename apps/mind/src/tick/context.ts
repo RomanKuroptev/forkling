@@ -18,7 +18,9 @@ import type {
   TickCall,
   TimelineEntry,
   TinkerJob,
+  ExpandJob,
   VisitorEvent,
+  Wish,
   WorkMeta,
   WorldObject,
 } from '@forkling/schema'
@@ -130,7 +132,9 @@ export interface Tick {
   pendingTend: { step: PlanStep; index: number } | null
   /** Set when a revisit step finishes: the visit is written after the step is applied. */
   pendingRevisit: { step: PlanStep; index: number } | null
-  /** Places whose file changed this tick (a tend), written to `places/<id>.json`. */
+  /** Set when an expand step finishes: the builders are asked for it after the step is applied (spec 2.4). */
+  pendingExpand: { step: PlanStep; index: number } | null
+  /** Places whose file changed this tick (a tend, an expand), written to `places/<id>.json`. */
   placeUpdates: Place[]
   /** Souvenirs whose `placedIn` changed this tick, written to `souvenirs/<id>.json`. */
   souvenirUpdates: Souvenir[]
@@ -186,7 +190,9 @@ export interface Tick {
   /** Works whose meta changed this tick (put away, brought back), written to `works/<id>/meta.json`. */
   workUpdates: WorkMeta[]
   /** Requests for the build worker made this tick, written to `mind/builds/<id>.json` (spec 10.2). */
-  newJobs: TinkerJob[]
+  newJobs: (TinkerJob | ExpandJob)[]
+  /** Wishes written or counted up this tick, written to `wishes/<id>.json` (spec 5.3). */
+  wishUpdates: Wish[]
   arts: NonNullable<MindState['arts']>
 
   decision: Decision | null
