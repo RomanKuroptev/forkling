@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { TinkerJob, WorkMeta, type PlanStep } from '@forkling/schema'
 import { pendingJobs } from '../build-worker.ts'
 import { buildReworkUser, MAX_RETIRES_PER_WEEK, REWORK_MAX_TOKENS, ReworkAnswer, retirementsInWeek } from '../builds/rework.ts'
+import { drawForBuild } from '../builds/draw.ts'
 import { memeSeeds } from '../builds/memes.ts'
 import { runTinker, type TinkerInput } from '../builds/tinker.ts'
 import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from '../builds/works.ts'
@@ -122,6 +123,8 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
   const untried = untriedLibraries(works)
   // The manuals are for tinker only, read by code, and a page that cannot be read is just left out. (A pause from a 429 on one is not kept.)
   const manuals = t.deps.web && untried.length > 0 ? await manualPagesFor(createFetcher({ ...t.deps.web, verb: 'tinker' }), untried) : []
+  const draw = drawForBuild(t.dir, { seed: t.forkling.seed, key: `sketch:${t.today}:${index}`, interests: t.interests })
+  const drawn = { constraint: draw.constraint, collision: draw.collision ?? undefined }
   const input: TinkerInput = {
     idea: o.idea,
     reason: step.reason,
@@ -133,6 +136,7 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
     recentTitles: recentWorkTitles(works),
     manuals,
     memeSeeds: memeSeeds(t.dir),
+    ...drawn,
   }
   const taken = new Set([...existingWorkIds(t.dir), ...t.newWorks.map((w) => w.meta.id)])
   const outcome = await runTinker({ complete: (kind, model, user, schema, maxTokens) => t.ask(kind, model, user, schema, maxTokens), checker, nowIso: t.nowIso, existingIds: taken, deep: !!step.deep }, input)

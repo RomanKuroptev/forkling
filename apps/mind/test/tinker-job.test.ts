@@ -1,12 +1,13 @@
-import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { JobResult, TinkerJob, WorkMeta } from '@forkling/schema'
+import { Interests, JobResult, Souvenir, TinkerJob, WorkMeta } from '@forkling/schema'
 import type { WorkCheckResult, WorkChecker } from '../src/builds/browser-check.ts'
 import type { GithubClient } from '../src/builds/github.ts'
 import { createTinkerHandler } from '../src/builds/tinker-job.ts'
+import { drawConstraint } from '../src/prompts/constraints.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
 import type { FetchImpl } from '../src/web/fetch.ts'
 import { noBatch } from './noBatch.ts'
@@ -204,5 +205,34 @@ describe('manuals in a full work (spec 6.1: for tinker only)', () => {
     const out = await handler(llm, checkerOf([{ ok: true }]), fakeGithub().client, web)(job, { dir, nowMs: NOW })
     expect(out.status).toBe('done')
     expect(calls[0]!.user).not.toContain('manuals')
+  })
+})
+
+describe('the constraint and the collision in a full work (spec 12.4)', () => {
+  const seed = () => (JSON.parse(readFileSync(file('forkling.json'), 'utf8')) as { seed: number }).seed
+
+  it('offers the constraint drawn for this job, and the pull request carries it in the work\'s meta', async () => {
+    const { llm, calls } = fakeLlm([{ ...output(), constraintRefusal: null }])
+    const github = fakeGithub()
+    await run(handler(llm, checkerOf([{ ok: true }]), github.client))
+    const expected = drawConstraint(seed(), `tinker:${job.id}`)
+    expect(calls[0]!.user).toContain('## A constraint for this one')
+    expect(calls[0]!.user).toContain(expected)
+    const meta = WorkMeta.parse(JSON.parse(String(github.opened[0]!.files[1]!.content)))
+    expect(meta.constraint).toEqual({ text: expected, refused: false, reason: null })
+  })
+
+  it('puts two souvenirs side by side when the world has two interests that share no place', async () => {
+    mkdirSync(file('brain'), { recursive: true })
+    mkdirSync(file('souvenirs'), { recursive: true })
+    writeFileSync(file('brain/interests.json'), JSON.stringify(Interests.parse({ version: 2, topics: Object.fromEntries(['maps', 'tides'].map((t) => [t, { weight: 40, firstSeen: '2026-11-01T10:00:00Z', lastFed: '2026-11-01T10:00:00Z', sources: [] }])) })))
+    for (const [id, topic] of [['s1', 'maps'], ['s2', 'tides']]) {
+      writeFileSync(file(`souvenirs/2026-11-02-${id}.json`), JSON.stringify(Souvenir.parse({ kind: 'quote', id, why: 'it stuck', content: `words about ${id}`, topics: [topic], source: { url: 'https://en.wikipedia.org/wiki/Tide', title: id, fetchedAt: '2026-11-02T10:00:00Z' } })))
+    }
+    const { llm, calls } = fakeLlm([output()])
+    const github = fakeGithub()
+    await run(handler(llm, checkerOf([{ ok: true }]), github.client))
+    expect(calls[0]!.user).toContain('## Two things side by side')
+    expect(WorkMeta.parse(JSON.parse(String(github.opened[0]!.files[1]!.content))).collision?.slice().sort()).toEqual(['s1', 's2'])
   })
 })

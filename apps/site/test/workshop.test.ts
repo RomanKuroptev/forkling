@@ -129,6 +129,20 @@ describe('a work page (spec 7.4, 8)', () => {
     expect(page('workshop/third.html')).not.toContain('href="gone.html"')
   })
 
+  it('shows the constraint a work was given, and when Merge refused it, says so with the reason', () => {
+    putWork('kept', { constraint: { text: 'Use only two colours.', refused: false, reason: null } })
+    putWork('refused', { constraint: { text: 'Make it quiet.', refused: true, reason: 'It is a <b>siren</b>.' } })
+    putWork('none')
+    renderSite(world, out)
+    expect(page('workshop/kept.html')).toMatch(/constraint it was given: Use only two colours\./)
+    expect(page('workshop/kept.html')).not.toMatch(/refused/i)
+    const refused = page('workshop/refused.html')
+    expect(refused).toMatch(/constraint it was given: Make it quiet\./)
+    expect(refused).toMatch(/refused it: It is a &lt;b&gt;siren&lt;\/b&gt;\./)
+    expect(refused).not.toContain('<b>siren</b>')
+    expect(page('workshop/none.html')).not.toMatch(/constraint it was given/)
+  })
+
   it('links a meme to the pages it looked at and read, and only as web addresses', () => {
     putWork('a-meme', {
       kind: 'meme',

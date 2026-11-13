@@ -75,3 +75,20 @@ export function topInterestLines(interests: Interests, n = 10): string[] {
     .slice(0, n)
     .map(([topic, t]) => `${topic} (${Math.round(t.weight)})`)
 }
+
+/** Every souvenir in `souvenirs/` that fits its schema, in file order (the date is the start of the name, so oldest first). */
+export function readAllSouvenirs(dir: string): Souvenir[] {
+  const folder = join(dir, 'souvenirs')
+  if (!existsSync(folder)) return []
+  return readdirSync(folder)
+    .filter((f) => f.endsWith('.json'))
+    .sort()
+    .flatMap((f) => {
+      try {
+        const s = Souvenir.safeParse(JSON.parse(readFileSync(join(folder, f), 'utf8')))
+        return s.success ? [s.data] : []
+      } catch {
+        return []
+      }
+    })
+}

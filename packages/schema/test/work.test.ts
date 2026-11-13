@@ -109,3 +109,33 @@ describe('the size limits (spec 7.1, 7.6)', () => {
     expect(MAX_SKETCH_BYTES).toBe(4 * 1024)
   })
 })
+
+describe('the constraint a work was given (spec 12.4, item 4)', () => {
+  const given = { text: 'Use only two colours.', refused: false, reason: null }
+
+  it('is null until a call is offered one, and stores the rule, whether it was refused and why', () => {
+    expect(WorkMeta.parse(base).constraint).toBeNull()
+    expect(WorkMeta.parse({ ...base, constraint: given }).constraint).toEqual(given)
+    const refused = { text: 'Use only two colours.', refused: true, reason: 'The picture needs a third to read at all.' }
+    expect(WorkMeta.parse({ ...base, constraint: refused }).constraint).toEqual(refused)
+  })
+
+  it('wants a reason for a refusal and none otherwise', () => {
+    expect(WorkMeta.safeParse({ ...base, constraint: { ...given, refused: true } }).success).toBe(false)
+    expect(WorkMeta.safeParse({ ...base, constraint: { ...given, reason: 'because' } }).success).toBe(false)
+    expect(WorkMeta.safeParse({ ...base, constraint: { text: '', refused: false, reason: null } }).success).toBe(false)
+    expect(WorkMeta.safeParse({ ...base, constraint: { ...given, text: 'x'.repeat(201) } }).success).toBe(false)
+  })
+
+  it('is no longer a bare string', () => {
+    expect(WorkMeta.safeParse({ ...base, constraint: 'Use only two colours.' }).success).toBe(false)
+  })
+})
+
+describe('the collision a work was offered (spec 12.4, item 5)', () => {
+  it('is null, or the ids of the two souvenirs it was offered', () => {
+    expect(WorkMeta.parse(base).collision).toBeNull()
+    expect(WorkMeta.parse({ ...base, collision: ['2026-11-18-a', '2026-11-19-b'] }).collision).toEqual(['2026-11-18-a', '2026-11-19-b'])
+    expect(WorkMeta.safeParse({ ...base, collision: ['only-one'] }).success).toBe(false)
+  })
+})

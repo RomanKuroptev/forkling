@@ -1,0 +1,81 @@
+import { drawPrng } from '@forkling/sim'
+
+/**
+ * The constraint draw (spec 12.4, item 4): rules of form, never of subject. A constraint says how a thing is made, and never
+ * names a topic or an activity (CLAUDE.md: no goal, hobby, interest, topic or activity lists). Every tinker, expand and found call
+ * is offered one, drawn by the seeded PRNG, and may refuse it with a reason. Each is under 120 characters so it can be stored
+ * with the work.
+ */
+export const CONSTRAINTS: readonly string[] = [
+  'Use only two colours.',
+  'It must change when no one is looking.',
+  'Make the smallest version that still works.',
+  'Use something from the pile.',
+  'Build it around something missing.',
+  'Use only one shape.',
+  'Use no straight lines.',
+  'Use only straight lines.',
+  'Let nothing in it move faster than a walk.',
+  'Make it end by itself.',
+  'Make it so that it never ends.',
+  'Make it understandable with the sound off.',
+  'Make it readable at a glance, from across a room.',
+  'Make it reward a second look.',
+  'Hide one small thing in it.',
+  'Make it the same from every side.',
+  'Use only the colours of one time of day.',
+  'Use exactly three of one thing and nothing else.',
+  'Use no words at all.',
+  'Use only words.',
+  'Count something, and show the count.',
+  'Make doing nothing a valid way to use it.',
+  'Keep it to a single idea.',
+  'Make the first thing a visitor sees a surprise.',
+  'Leave one part deliberately unfinished.',
+  'Keep the core idea under twenty lines.',
+  'Make it respond to the time of day.',
+  'Make it look different every time it opens.',
+  'Make it look the same every time it opens.',
+  'Make it from one small rule, repeated.',
+  'Use a grid, and break it once.',
+  'Use no grid at all.',
+  'Let chance decide one thing, and say which.',
+  'Make the ending look like the beginning.',
+  'Use a palette of four colours at most.',
+  'Use only black, white and one colour.',
+  'Make it feel heavy.',
+  'Make it feel light.',
+  'Make it quiet.',
+  'Make it as loud as it can be without being rude.',
+  'Make it larger than its frame, so only part of it shows.',
+  'Make it very small, so the frame is mostly empty.',
+  'Put the most important thing off centre.',
+  'Put the most important thing in the exact centre.',
+  'Make it symmetrical, then spoil the symmetry once.',
+  'Move only one thing at a time.',
+  'Make everything move together, in the same rhythm.',
+  'Make something that grows, and let it stop growing.',
+  'Make something that wears away.',
+  'Use only techniques a beginner would know.',
+  'Do the opposite of your first idea.',
+  'Take your first idea and remove half of it.',
+  'Combine two ideas that do not belong together.',
+  'Make it a gift for a stranger who has five seconds.',
+  'Make it for someone who will stay a long time.',
+  'Give it a rule the visitor can discover, and never state it.',
+  'State its single rule out loud, and keep to it.',
+  'Make it look like a small machine with one job.',
+  'Make it look handmade.',
+  'Make it look perfectly precise.',
+  'Give every part of it a plain name in the code.',
+  'Make the title do half the work.',
+  'Make it better the more often it is opened.',
+  'Make it best on the first look.',
+  'Use the fewest moving parts that still feel alive.',
+  'Start from a mistake and keep it.',
+]
+
+/** The constraint a call is offered: one rule, fixed by the forkling's seed and a key naming the call (`tinker:<id>`). */
+export function drawConstraint(seed: number, key: string): string {
+  return CONSTRAINTS[drawPrng(seed, key).int(CONSTRAINTS.length)]!
+}

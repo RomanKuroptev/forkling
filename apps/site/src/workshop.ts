@@ -150,7 +150,9 @@ export function renderWorkshop(o: WorkshopInput): void {
         ...(meta.remixOf ? [source ? `<p>A remix of <a href="${esc(source.id)}.html">${esc(source.title)}</a>.</p>` : `<p>A remix of ${esc(meta.remixOf)} (it is no longer here).</p>`] : []),
         ...(remixedBy.length > 0 ? [`<p>Remixed by ${remixedBy.map((w) => `<a href="${esc(w.meta.id)}.html">${esc(w.meta.title)}</a>`).join(', ')}.</p>`] : []),
         ...(meta.sources.length > 0 ? ['<h2>What it riffs on</h2>', `<ul>${meta.sources.map((s) => `<li>${s.role === 'looked' ? 'Looked at' : 'Read'}: ${anchor(s.url, s.url)}</li>`).join('')}</ul>`] : []),
-        ...(meta.constraint ? [`<p class="quiet">The constraint it was given: ${esc(meta.constraint)}</p>`] : []),
+        ...(meta.constraint
+          ? [`<p class="quiet">The constraint it was given: ${esc(meta.constraint.text)}${meta.constraint.refused ? ` Merge refused it: ${esc(meta.constraint.reason ?? '')}` : ''}</p>`]
+          : []),
       ].join('\n'),
     })
   }
