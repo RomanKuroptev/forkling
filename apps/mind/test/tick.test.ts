@@ -91,8 +91,8 @@ describe('a morning tick', () => {
     expect(goals.now).toMatchObject({ index: 0, startedAt: '2026-11-03T09:00:00.000Z', until: '2026-11-03T09:30:00.000Z' })
 
     const forkling = Forkling.parse(readJson('forkling.json'))
-    // The body shows a mind verb as one of its own actions (the pack's mindPoses).
-    expect(forkling.intention).toMatchObject({ type: 'sit', goalRef: 'today:0', reason: 'The rock catches the sun first, so I start there.' })
+    // The body shows a mind verb as one of its own actions (the pack's mindPoses): a wander step is reading at the desk.
+    expect(forkling.intention).toMatchObject({ type: 'mind_read', goalRef: 'today:0', reason: 'The rock catches the sun first, so I start there.' })
     expect(forkling.intention.targetId).toBeUndefined()
     expect(forkling.mood).toBe(0)
     expect(forkling.energy).toBe(0.5)
@@ -142,7 +142,7 @@ describe('following its own plan', () => {
     const goals = Goals.parse(readJson('mind/goals.json'))
     expect(goals.now).toMatchObject({ index: 1, startedAt: '2026-11-03T09:31:00.000Z', until: '2026-11-03T09:56:00.000Z' })
     const forkling = Forkling.parse(readJson('forkling.json'))
-    expect(forkling.intention).toMatchObject({ type: 'sit', goalRef: 'today:1', reason: 'There is something worth putting on a plaque.' })
+    expect(forkling.intention).toMatchObject({ type: 'mind_write', goalRef: 'today:1', reason: 'There is something worth putting on a plaque.' })
     expect(forkling.intention.targetId).toBeUndefined()
     expect(result.summary).toMatch(/step 2/)
   })

@@ -2,15 +2,15 @@
   "id": "cat",
   "displayName": "Cat",
   "mindPoses": {
-    "wander": "sit",
-    "tend": "sit",
-    "revisit": "sit",
-    "expand": "sit",
-    "found": "sit",
-    "tinker": "sit",
-    "write": "sit",
-    "reply": "sit",
-    "rest": "sit"
+    "wander": "mind_read",
+    "tend": "mind_tend",
+    "revisit": "mind_visit",
+    "expand": "mind_build",
+    "found": "mind_build",
+    "tinker": "mind_tinker",
+    "write": "mind_write",
+    "reply": "mind_write",
+    "rest": "mind_rest"
   },
   "perception": { "noticeRadius": 5, "eyeHeight": 0.55, "fovDeg": 70 },
   "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
@@ -19,6 +19,13 @@
     "upright": ["body", "hands", "making", "growing", "mind"]
   },
   "actions": [
+    { "id": "mind_read", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "desk" }, "slot": "holdUp", "reason": "I am reading at my desk." },
+    { "id": "mind_write", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "desk" }, "slot": "useTool", "reason": "I am writing at my desk." },
+    { "id": "mind_tinker", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "workbench" }, "slot": "useTool", "reason": "I am working at the bench." },
+    { "id": "mind_tend", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "home" }, "slot": "carry", "reason": "I am carrying things where they belong." },
+    { "id": "mind_visit", "group": "body", "durationSec": [30, 70], "target": { "type": "spot", "kind": "home" }, "slot": "idle", "reason": "I am looking round." },
+    { "id": "mind_build", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "home" }, "slot": "useTool", "reason": "I am building." },
+    { "id": "mind_rest", "group": "body", "durationSec": [30, 90], "target": { "type": "spot", "kind": "home" }, "slot": "sit", "reason": "I am resting at home." },
     {
       "id": "go_to",
       "group": "body",

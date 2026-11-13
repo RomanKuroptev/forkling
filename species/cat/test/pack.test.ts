@@ -300,3 +300,45 @@ describe('cat in the headless sim', () => {
     expect(hid).toBe(true)
   })
 })
+
+describe("the cat's poses for the mind verbs (spec 2.7: the engine says where, the pack says how it looks)", () => {
+  const verbs = ['wander', 'tend', 'revisit', 'expand', 'found', 'tinker', 'write', 'reply', 'rest'] as const
+
+  it('shows every mind verb as one of its own actions, which goes to a place', () => {
+    for (const verb of verbs) {
+      const action = byId(pack.mindPoses[verb]!)
+      expect(action, verb).toBeDefined()
+      expect(action.target.type, `${verb} goes somewhere`).toBe('spot')
+    }
+  })
+
+  it('plays a clip the model really has for each of them', async () => {
+    const gltf = await loadModel()
+    const clips = new Set(gltf.animations.map((c) => c.name))
+    for (const verb of verbs) {
+      const slot = byId(pack.mindPoses[verb]!).slot
+      expect(clips.has(animations[slot]!), `${verb}: ${slot} -> ${animations[slot]}`).toBe(true)
+    }
+  })
+
+  it('reads with something held up, writes and works with a tool, carries when it tends, and sits to rest', () => {
+    const slot = (verb: (typeof verbs)[number]) => byId(pack.mindPoses[verb]!).slot
+    expect(slot('wander')).toBe('holdUp')
+    expect(slot('write')).toBe('useTool')
+    expect(slot('reply')).toBe('useTool')
+    expect(slot('tinker')).toBe('useTool')
+    expect(slot('tend')).toBe('carry')
+    expect(slot('rest')).toBe('sit')
+  })
+
+  it('may be taken up by the body at any hour, so a plan step is never refused for the time of day', () => {
+    for (const verb of verbs) expect(byId(pack.mindPoses[verb]!).requires ?? []).toEqual([])
+  })
+
+  it('names no place of its own: the places come from the engine, so the fallback spot is Home or the usual furniture', () => {
+    for (const verb of verbs) {
+      const target = byId(pack.mindPoses[verb]!).target
+      expect(target.type === 'spot' && ['desk', 'workbench', 'home']).toContain(target.type === 'spot' ? target.kind : '')
+    }
+  })
+})

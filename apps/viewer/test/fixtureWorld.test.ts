@@ -14,9 +14,13 @@ describe('the fixture world (?world=local&fixture=10)', () => {
     expect(world.pack).toBe(pack)
     expect(world.objects).toEqual([])
   })
-  it('puts the cat at rest at Home, on the fixture\'s own clock', () => {
-    const world = loadFixtureWorld(10, pack)
-    expect(world.goals).toEqual({})
+  it("gives the cat a wander step in progress, so it is reading at Home's desk, on the fixture's own clock", () => {
+    const at = Date.parse('2026-12-20T12:00:00Z')
+    const world = loadFixtureWorld(10, pack, at)
+    expect(world.goals.today?.steps[0]).toMatchObject({ verb: 'wander' })
+    expect(world.goals.now).toMatchObject({ index: 0, startedAt: '2026-12-20T12:00:00.000Z' })
+    expect(Date.parse(world.goals.now!.until)).toBeGreaterThan(at)
+    expect(world.forkling.intention.type).toBe('mind_read')
     expect(Number.isFinite(Date.parse(world.forkling.lastTickAt))).toBe(true)
   })
   it('is the same every time, and bounded by what a world may have', () => {

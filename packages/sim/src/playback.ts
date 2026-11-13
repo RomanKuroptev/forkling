@@ -3,6 +3,7 @@ import type { BodyWorld } from './body-world.ts'
 import { createForkling, STEP, stepForkling, type Focus, type ForklingState, type StepContext } from './forkling.ts'
 import { nearestWalkable, type Point2 } from './nav.ts'
 import { isAsleepAt } from './sleep.ts'
+import { stationFor } from './stations.ts'
 import { sunDirection } from './sky.ts'
 import { STRONG_NEED } from './surprise.ts'
 
@@ -175,14 +176,21 @@ function stepTo(pb: Playback, nowSec: number, visitor: Point2 | null): void {
   while (pb.steps < target) stepOnce(pb, visitor)
 }
 
-/** The focus the mind set: the current step of today's plan, until its time is up. */
-function focusFor(goals: Goals | undefined, pack: SpeciesPack): { focus?: Focus } {
+/**
+ * The focus the mind set: the current step of today's plan, until its time is up. The pack says which of its actions shows the verb;
+ * the engine says where it happens (`stationFor`): the desk at Home, the place being tended, and so on. A world with none of those
+ * (the old island) keeps the step's own target.
+ */
+function focusFor(goals: Goals | undefined, pack: SpeciesPack, world: BodyWorld): { focus?: Focus } {
   const step = goals?.now ? goals.today?.steps[goals.now.index] : undefined
   if (!goals?.now || !step) return {}
+  const spots = world.spots([0, 1, 0])
+  const station = stationFor(step.verb, step.targetId, new Set(Object.keys(spots).filter((k) => (spots[k]?.length ?? 0) > 0)))
+  const target = station ?? step.targetId
   return {
     focus: {
       action: pack.mindPoses[step.verb] ?? step.verb,
-      ...(step.targetId ? { targetId: step.targetId } : {}),
+      ...(target ? { targetId: target } : {}),
       ...(step.position ? { position: { x: step.position[0], z: step.position[1] } } : {}),
       until: Date.parse(goals.now.until) / 1000,
     },
@@ -206,7 +214,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     holding: forkling.holding !== undefined,
     // The body's drift is bent a little by how it feels: mood is valence, and energy is how wound up it is.
     feelings: { valence: forkling.mood, arousal: (forkling.energy + 1) / 2 },
-    ...focusFor(input.goals, pack),
+    ...focusFor(input.goals, pack, world),
   })
   const pb: Playback = {
     input,
