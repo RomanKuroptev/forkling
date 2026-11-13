@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Ecctrl, type EcctrlHandle } from 'ecctrl'
 import { useButtonStore, useJoystickStore } from 'ecctrl/input'
 import { useEffect, useRef } from 'react'
+import { parseStand } from '../world/at.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { touchUi } from '../touch.ts'
 import { visitor } from '../visitor.ts'
@@ -19,7 +20,9 @@ const clipMode = new URLSearchParams(location.search).has('clip')
 /** The visitor: a simple capsule avatar driven by ecctrl, with an orbiting follow camera. */
 export function Player() {
   const { simWorld } = useWorld()
-  const spawn = simWorld.visitorSpawn
+  // `?stand=x,z,yaw` starts the visitor somewhere else, to look at a part of the world.
+  const at = parseStand(location.search)
+  const spawn = at ? { x: at.x, z: at.z, y: simWorld.heightAt(at.x, at.z), yaw: at.yaw } : simWorld.visitorSpawn
   const body = useRef<EcctrlHandle>(null)
   const camera = useRef<CameraControlsImpl>(null)
   const [, getKeys] = useKeyboardControls()

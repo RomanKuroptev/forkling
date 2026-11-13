@@ -1,8 +1,8 @@
 import { createLand, toLandPlace } from '@forkling/sim'
 import { RigidBody, TrimeshCollider } from '@react-three/rapier'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { landMesh } from './landGeometry.ts'
+import { landMesh, visibleChunks } from './landGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
 
 const GRASS = new THREE.Color('#86b95c')
@@ -39,6 +39,21 @@ export function Land() {
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
     indexed.dispose()
     return { geometry, vertices: mesh.positions, indices: mesh.indices }
+  }, [world])
+
+  // `?debug` lets a browser test know how far the land reaches, to go and look at its edge.
+  useEffect(() => {
+    if (!new URLSearchParams(location.search).has('debug')) return
+    const chunks = visibleChunks(createLand(world.forkling.seed, world.places.map(toLandPlace)))
+    Object.assign(window, {
+      __forklingLand: () => ({
+        minX: Math.min(...chunks.map((c) => c.chunk[0])) * 32,
+        maxX: (Math.max(...chunks.map((c) => c.chunk[0])) + 1) * 32,
+        minZ: Math.min(...chunks.map((c) => c.chunk[1])) * 32,
+        maxZ: (Math.max(...chunks.map((c) => c.chunk[1])) + 1) * 32,
+        chunks: chunks.map((c) => [c.chunk[0], c.chunk[1], c.owned]),
+      }),
+    })
   }, [world])
 
   return (

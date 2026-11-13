@@ -71,9 +71,11 @@ export function landMesh(land: Land, segments = 2): IndexedMesh {
 }
 
 export interface FogWall {
-  /** The middle of the wall, on the chunk edge. */
+  /** The middle of the wall: on the chunk edge, or `inset` meters into the edge chunk. */
   x: number
   z: number
+  /** How far into the chunk this layer stands. The layers together thicken the fog towards the edge. */
+  inset: number
   /** 0 for a wall along x (facing z), a quarter turn for one along z. */
   rotY: number
   length: number
@@ -86,14 +88,25 @@ const SIDES: [number, number, number][] = [
   [CHUNK_SIZE / 2, 0, Math.PI / 2],
 ]
 
-/** A wall of fog on every side of a drawn chunk that faces fog, so the world ends in a bank of mist and not in a cliff. */
-export function fogWalls(land: Land): FogWall[] {
+/** How many layers of fog stand on each side, and how far apart: together they cover most of the outer chunk (spec 4.1: terrain fading into fog). */
+export const FOG_LAYERS = 4
+export const FOG_LAYER_GAP = 7
+
+/**
+ * Layers of fog on every side of a drawn chunk that faces fog, the first on the chunk edge and each next one further in, so the
+ * ground whitens towards the edge and the world ends in a bank of mist, not in a cliff or a hard line.
+ */
+export function fogWalls(land: Land, layers = FOG_LAYERS): FogWall[] {
   const walls: FogWall[] = []
   for (const { chunk } of visibleChunks(land)) {
     const [cx, cz] = chunkCentre(chunk)
     for (const [dx, dz, rotY] of SIDES) {
       const beyond = chunkAt(cx + dx * 2, cz + dz * 2)
-      if (land.classify(beyond) === 'fog') walls.push({ x: cx + dx, z: cz + dz, rotY, length: CHUNK_SIZE })
+      if (land.classify(beyond) !== 'fog') continue
+      for (let layer = 0; layer < layers; layer++) {
+        const inset = layer * FOG_LAYER_GAP
+        walls.push({ x: cx + dx - Math.sign(dx) * inset, z: cz + dz - Math.sign(dz) * inset, inset, rotY, length: CHUNK_SIZE })
+      }
     }
   }
   return walls

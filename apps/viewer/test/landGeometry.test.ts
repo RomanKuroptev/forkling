@@ -56,11 +56,28 @@ describe('the terrain mesh', () => {
 })
 
 describe('the fog at the world\'s edge', () => {
-  it('stands on every side of a drawn chunk that faces fog: 12 for a world of one place', () => {
-    expect(fogWalls(single)).toHaveLength(12)
+  const edgeOnly = (l: Parameters<typeof fogWalls>[0]) => fogWalls(l).filter((w) => w.inset === 0)
+  it('stands on every side of a drawn chunk that faces fog: 12 sides for a world of one place, in 4 layers each', () => {
+    expect(edgeOnly(single)).toHaveLength(12)
+    expect(fogWalls(single)).toHaveLength(12 * 4)
+  })
+  it('thickens inward: each layer is further into the edge chunk, so the ground fades into the fog and does not end in a line', () => {
+    const insets = [...new Set(fogWalls(single).map((w) => w.inset))].sort((a, b) => a - b)
+    expect(insets).toHaveLength(4)
+    expect(insets[0]).toBe(0)
+    expect(insets.at(-1)!).toBeLessThan(32)
+    for (const wall of fogWalls(land).filter((w) => w.inset > 0)) {
+      // Both sides of an inner layer are the same drawn chunk: it is inside the edge chunk, not past it.
+      const nx = wall.rotY === 0 ? 0 : 1
+      const nz = wall.rotY === 0 ? 1 : 0
+      const a = chunkAt(wall.x + nx, wall.z + nz)
+      const b = chunkAt(wall.x - nx, wall.z - nz)
+      expect(a.join(',')).toBe(b.join(','))
+      expect(land.classify(a)).not.toBe('fog')
+    }
   })
   it('stands exactly between a drawn chunk and a fog chunk, along the chunk edge', () => {
-    for (const wall of fogWalls(land)) {
+    for (const wall of edgeOnly(land)) {
       const nx = wall.rotY === 0 ? 0 : 1
       const nz = wall.rotY === 0 ? 1 : 0
       const a = chunkAt(wall.x + nx * 1, wall.z + nz * 1)
@@ -72,7 +89,7 @@ describe('the fog at the world\'s edge', () => {
     }
   })
   it('has no wall between two drawn chunks', () => {
-    const walls = fogWalls(land)
+    const walls = fogWalls(land).filter((w) => w.inset === 0)
     const keys = new Set(walls.map((w) => `${w.x},${w.z},${w.rotY}`))
     expect(keys.size).toBe(walls.length)
     for (const c of visibleChunks(land)) {

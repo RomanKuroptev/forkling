@@ -13,6 +13,7 @@ import { Fog } from './world/Fog.tsx'
 import { Land } from './world/Land.tsx'
 import { Objects } from './world/Objects.tsx'
 import { Paths } from './world/Paths.tsx'
+import { Places } from './world/Places.tsx'
 import { Props } from './world/Props.tsx'
 import { Terrain } from './world/Terrain.tsx'
 import { Water } from './world/Water.tsx'
@@ -50,6 +51,7 @@ export function App() {
                 <>
                   <Land />
                   <Paths />
+                  <Places />
                   <Fog />
                 </>
               ) : (
