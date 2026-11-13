@@ -1,7 +1,10 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { WorkMeta } from '@forkling/schema'
+import { Wish, WorkMeta } from '@forkling/schema'
+import { kit } from '@forkling/schema/kit'
+import { validatePlace } from '@forkling/sim'
 import type { WorkChecker } from './builds/browser-check.ts'
+import { refFile } from './builds/tend.ts'
 import { memeSeeds, verifyMemeSources } from './builds/memes.ts'
 import { staticCheck } from './builds/work-check.ts'
 import type { GitRunner } from './tick/git.ts'
@@ -67,8 +70,35 @@ const readJson = (file: string): { ok: true; value: unknown } | { ok: false } =>
 }
 
 /**
+ * A place or a wish in a pull request (spec 5.2, 10.3): JSON that parses, directly in its folder, with an id that is its file name.
+ * A place must pass `validatePlace` (every limit of 5.2, the kit, the files its exhibits show) and a wish must fit `Wish`.
+ */
+function checkDataFile(world: string, path: string, problems: string[]) {
+  const file = join(world, path)
+  const read = existsSync(file) ? readJson(file) : { ok: false as const }
+  if (!read.ok) {
+    problems.push(`${path} is not valid JSON`)
+    return
+  }
+  const m = /^(places|wishes)\/(.+)\.json$/.exec(path)
+  if (!m) return
+  const [, folder, name] = m
+  if (name!.includes('/')) {
+    problems.push(`${path} is not directly inside ${folder}/`)
+    return
+  }
+  const id = (read.value as { id?: unknown } | null)?.id
+  const reasons =
+    folder === 'places'
+      ? validatePlace(read.value, { kit, exists: (ref) => { const f = refFile(ref); return f !== null && existsSync(join(world, f)) } })
+      : (() => { const w = Wish.safeParse(read.value); return w.success ? [] : w.error.issues.map((i) => `${i.path.join('.') || 'wish'}: ${i.message}`) })()
+  for (const reason of reasons.slice(0, 3)) problems.push(`${path}: ${reason}`)
+  if (reasons.length === 0 && id !== name) problems.push(`${path}: its id is "${String(id)}", not "${name}"`)
+}
+
+/**
  * What `validate.yml` asks of a pull request (spec 11.1, 14.3): it changes only `places/`, `works/` and `wishes/`; a place or a
- * wish is JSON that parses; a work is `index.html`, `meta.json` and (when it is on the shelf) `thumb.png`, nothing else, with a
+ * wish is JSON that fits its schema; a work is `index.html`, `meta.json` and (when it is on the shelf) `thumb.png`, nothing else, with a
  * meta that fits its schema and a page that passes the work check again. A work in a pull request is new: only the mind
  * retires, changes or removes one. A scrap is kept with its reason and not run. Every problem is listed, not just the first.
  */
@@ -93,9 +123,7 @@ export async function validatePullRequest(o: ValidateOptions): Promise<ValidateR
       continue
     }
     if (c.path.startsWith('works/')) problems.push(`${c.path} is not inside a work's own folder`)
-    else if (c.status !== 'D' && c.path.endsWith('.json')) {
-      if (!existsSync(join(o.world, c.path)) || !readJson(join(o.world, c.path)).ok) problems.push(`${c.path} is not valid JSON`)
-    }
+    else if (c.status !== 'D' && c.path.endsWith('.json')) checkDataFile(o.world, c.path, problems)
   }
 
   for (const [id, changes] of byWork) {

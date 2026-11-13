@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -88,13 +88,61 @@ describe('what a pull request may change (spec 11.1)', () => {
     expect((await run(added('works/../self/seed.md'))).ok).toBe(false)
   })
 
-  it('accepts places and wishes, and wants their JSON to parse', async () => {
-    put('places/house.json', '{"id":"house"}')
+  it('wants a wish and a place to be JSON that parses', async () => {
     put('wishes/lamp.json', '{ nope')
-    expect((await run(added('places/house.json'))).ok).toBe(true)
-    const bad = await run(added('wishes/lamp.json'))
-    expect(bad.ok).toBe(false)
-    expect(bad.problems.join(' ')).toMatch(/wishes\/lamp\.json.*JSON/)
+    put('places/house.json', 'nope')
+    for (const path of ['wishes/lamp.json', 'places/house.json']) {
+      const bad = await run(added(path))
+      expect(bad.ok, path).toBe(false)
+      expect(bad.problems.join(' ')).toMatch(/not valid JSON/)
+    }
+  })
+})
+
+describe('a place or a wish in a pull request (spec 5.2, 10.3)', () => {
+  const home = JSON.parse(readFileSync(new URL('../../../templates/forkling-world/places/home.json', import.meta.url), 'utf8')) as Record<string, any>
+  const wish = { id: 'spiral-staircase', name: 'Spiral staircase', description: 'A staircase that turns.', forPlace: null, count: 1, written: '2026-11-21T10:00:00Z', status: 'open', statusAt: null, note: null }
+  const putPlace = (id: string, over: Record<string, unknown> = {}) => put(`places/${id}.json`, JSON.stringify({ ...home, id, ...over }))
+
+  it('passes a place that fits spec 5.2 and a wish that fits its schema', async () => {
+    putPlace('harbour', { name: 'Harbour', chunk: [1, 0] })
+    put('wishes/spiral-staircase.json', JSON.stringify(wish))
+    expect(await run(added('places/harbour.json', 'wishes/spiral-staircase.json'))).toEqual({ ok: true, problems: [] })
+  })
+
+  it('refuses a place over a limit of 5.2, with the reason', async () => {
+    putPlace('harbour', { name: 'x'.repeat(41) })
+    const r = await run(added('places/harbour.json'))
+    expect(r.ok).toBe(false)
+    expect(r.problems.join(' ')).toMatch(/places\/harbour\.json.*name must be 3 to 40/)
+  })
+
+  it('refuses a place whose id is not its file name, and a place that is not a place', async () => {
+    putPlace('harbour', { id: 'other' })
+    put('places/junk.json', '{"id":"junk"}')
+    const r = await run(added('places/harbour.json', 'places/junk.json'))
+    expect(r.problems.join(' ')).toMatch(/harbour\.json.*id is "other"/)
+    expect(r.problems.join(' ')).toMatch(/places\/junk\.json/)
+  })
+
+  it('refuses a place that shows a file the world does not have', async () => {
+    const exhibit = { id: 'k', kind: 'souvenir', ref: 'souvenirs/nope', slot: 'main/4/0', label: 'x', added: '2026-11-20' }
+    putPlace('harbour', { exhibits: [exhibit] })
+    expect((await run(added('places/harbour.json'))).problems.join(' ')).toMatch(/harbour\.json.*souvenirs\/nope/)
+    put('souvenirs/nope.json', '{}')
+    expect((await run(added('places/harbour.json'))).ok).toBe(true)
+  })
+
+  it('refuses a wish that does not fit, or whose id is not its file name', async () => {
+    put('wishes/spiral-staircase.json', JSON.stringify({ ...wish, description: 'x'.repeat(201) }))
+    put('wishes/lamp.json', JSON.stringify(wish))
+    const r = await run(added('wishes/spiral-staircase.json', 'wishes/lamp.json'))
+    expect(r.problems.join(' ')).toMatch(/spiral-staircase\.json.*description/)
+    expect(r.problems.join(' ')).toMatch(/lamp\.json.*id is "spiral-staircase"/)
+  })
+
+  it('does not read a deleted file', async () => {
+    expect((await run([{ status: 'D', path: 'wishes/old.json' }])).ok).toBe(true)
   })
 })
 
