@@ -112,3 +112,19 @@ describe('the kit schema', () => {
     expect(Kit.safeParse({ ...base, styles: [{ id: 'hut', name: 'Hut', wall: 'nope', window: 'crate', door: 'crate', roof: 'crate' }] }).success).toBe(false)
   })
 })
+
+describe("a part's model (spec 5.3: a part may be a CC0 model file, and always has its primitives as the fallback)", () => {
+  it('names a .glb file in kit/models and a scale', () => {
+    expect(KitPart.safeParse({ ...part, model: { file: 'tree_default.glb', scale: 2 } }).success).toBe(true)
+  })
+  it('refuses a path, another kind of file, or a scale that is not positive', () => {
+    expect(KitPart.safeParse({ ...part, model: { file: '../secret.glb', scale: 1 } }).success).toBe(false)
+    expect(KitPart.safeParse({ ...part, model: { file: 'sub/tree.glb', scale: 1 } }).success).toBe(false)
+    expect(KitPart.safeParse({ ...part, model: { file: 'tree.obj', scale: 1 } }).success).toBe(false)
+    expect(KitPart.safeParse({ ...part, model: { file: 'tree.glb', scale: 0 } }).success).toBe(false)
+    expect(KitPart.safeParse({ ...part, model: { file: 'tree.glb', scale: 1, extra: true } }).success).toBe(false)
+  })
+  it('is optional: most parts are only primitives', () => {
+    expect(kit.parts.some((p) => p.model === undefined)).toBe(true)
+  })
+})

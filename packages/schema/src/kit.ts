@@ -60,6 +60,12 @@ export const PartId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,40}$/, 'lowercase w
 export const KitSlot = z.object({ kind: SlotKind, at: Vec3 }).strict()
 export type KitSlot = z.infer<typeof KitSlot>
 
+/** A CC0 model file in `kit/models/` that stands in for the primitives, at this scale. Its origin is the middle of its base. The primitives stay as the fallback. */
+export const KitModel = z
+  .object({ file: z.string().regex(/^[A-Za-z0-9_-]+\.glb$/, 'a .glb file name in kit/models'), scale: z.number().positive().max(20) })
+  .strict()
+export type KitModel = z.infer<typeof KitModel>
+
 export const KitPart = z
   .object({
     id: PartId,
@@ -68,6 +74,7 @@ export const KitPart = z
     size: z.tuple([z.number().positive(), z.number().positive(), z.number().positive()]),
     primitives: z.array(KitPrimitive).min(1).max(MAX_PRIMITIVES),
     slots: z.array(KitSlot).max(3).default([]),
+    model: KitModel.optional(),
   })
   .strict()
 export type KitPart = z.infer<typeof KitPart>
