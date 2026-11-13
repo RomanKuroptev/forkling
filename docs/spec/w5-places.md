@@ -8,6 +8,9 @@ Exported from `spec.md` (v3.3) at the start of W5, so a coding session reads onl
 
 - **The kit is primitives plus CC0 models.** Every part works as primitives; about 20 furniture and nature parts may also point at a CC0 model file in `kit/models/`, each listed in `kit/models/CREDITS.md` with its licence. A model that fails to load falls back to the primitives.
 - **Works on screens: a gallery terminal.** A screen holds one work. The Workshop also has a **terminal** part whose exhibit kind `gallery` opens a picker of every shelved work, so every work stays reachable while older sketches rotate off the single-work screens.
+- **The founding clearing (a reading of 4.1 for Roman to veto).** Spec 4.1 says each chunk holds exactly one place, and also that chunk (0, 0) is the clearing with Home and the Workshop. W5 reads it as: chunk (0, 0) holds exactly Home and the Workshop side by side, each with an `offset` from the chunk's middle (for example [-8, 0] and [8, 0]) and a footprint that fits its half; every other chunk holds one place, centred (`offset` [0, 0]). `layoutProblems` in `packages/sim/src/land.ts` checks it, and `validatePlace` checks that a footprint stays inside its chunk.
+- **Rooms get a position.** Spec 5.1's example gives a room only a size, but 5.2 needs rooms to fit inside the footprint and not overlap on a floor. A room has an optional `at` [x, z] (from the middle of the footprint, default the middle) and `floor` (default 0), and `size` is [width, depth, height].
+- **The grid distance** in the placement score (4.2) is the Manhattan distance between chunks.
 - **No release, no deploy in W5.** Home and Workshop reach Merge through the template and a migrate step that Roman runs at release.
 
 ## Slices

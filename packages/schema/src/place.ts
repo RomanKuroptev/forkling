@@ -80,6 +80,8 @@ export const Place = z
     founded: DateOnly,
     /** The chunk it stands on (spec 4.1). */
     chunk: z.tuple([z.number().int(), z.number().int()]),
+    /** Where its middle is from its chunk's middle. Only the founding clearing, which holds Home and the Workshop side by side, uses it (spec 4.1). */
+    offset: z.tuple([z.number().finite(), z.number().finite()]).default([0, 0]),
     related: z.array(PlaceId).max(10).default([]),
     exterior: z
       .object({

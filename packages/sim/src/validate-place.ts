@@ -65,6 +65,7 @@ export function validatePlace(input: unknown, ctx: PlaceContext): string[] {
 
   const { footprint, floors, style, palette, sign } = place.exterior
   if (footprint[0] > L.footprintMax || footprint[1] > L.footprintMax) no(`footprint must be at most ${L.footprintMax} by ${L.footprintMax} meters (it is ${footprint[0]} by ${footprint[1]})`)
+  if (Math.abs(place.offset[0]) + footprint[0] / 2 > 16 + 1e-9 || Math.abs(place.offset[1]) + footprint[1] / 2 > 16 + 1e-9) no(`place ${place.id}: the footprint must fit inside its chunk (a chunk is 32 m, the footprint is centred on the offset)`)
   if (floors < L.floorsMin || floors > L.floorsMax) no(`floors must be ${L.floorsMin} to ${L.floorsMax} (it is ${floors})`)
   if (sign.length > L.signMax) no(`sign must be up to ${L.signMax} characters (it is ${sign.length})`)
   if (!ctx.kit.styles.some((s) => s.id === style)) no(`exterior style "${style}" is not one of the kit's styles`)

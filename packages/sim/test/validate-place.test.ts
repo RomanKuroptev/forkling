@@ -92,6 +92,7 @@ describe('the limits of spec 5.2 (each one is rejected)', () => {
     ['an exhibit in a slot the part does not have', (p) => (p.exhibits[0]!.slot = 'hall/0/3'), /slot/],
     ['a label over 120 characters', (p) => (p.exhibits[0]!.label = 'x'.repeat(121)), /label/],
     ['a history summary over 140 characters', (p) => (p.history[0]!.summary = 'x'.repeat(141)), /summary/],
+    ['a footprint pushed out of its chunk by its offset', (p) => { (p as { offset?: number[] }).offset = [10, 0] }, /inside its chunk/],
     ['a sign over 24 characters', (p) => (p.exterior.sign = 'X'.repeat(25)), /sign/],
     ['more than 50 history entries', (p) => { p.history = Array.from({ length: 51 }, (_, i) => ({ at: `2026-11-20T18:${String(i).padStart(2, '0')}:00+01:00`, verb: 'tend', summary: 'x' })) as never }, /history/],
   ]
@@ -149,5 +150,13 @@ describe('what the place names must exist (spec 11.1)', () => {
   it('rejects two exhibits, two rooms or two ids that share an id', () => {
     expect(reasonsAfter((p) => (p.exhibits[1]!.id = 'keepers-log'))).toMatch(/exhibit id/)
     expect(reasonsAfter((p) => p.rooms.push({ id: 'hall', name: 'Hall 2', size: [2, 2, 3], parts: [], at: [7, 0], floor: 0 } as never))).toMatch(/room id/)
+  })
+})
+
+describe('where a place stands in its chunk (the founding clearing holds two, side by side)', () => {
+  it('takes an offset from the middle of the chunk, as long as the footprint stays inside the chunk', () => {
+    expect(reasonsAfter((p) => { (p as { offset?: number[] }).offset = [0, 0] })).toBe('')
+    expect(reasonsAfter((p) => { p.exterior.footprint = [12, 10]; p.rooms[0]!.size = [10, 8, 4]; (p as { offset?: number[] }).offset = [-10, 0] })).toBe('')
+    expect(reasonsAfter((p) => { p.exterior.footprint = [12, 10]; p.rooms[0]!.size = [10, 8, 4]; (p as { offset?: number[] }).offset = [-11, 0] })).toMatch(/inside its chunk/)
   })
 })
