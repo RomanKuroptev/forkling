@@ -16,6 +16,8 @@ import { collectSpots } from './world.ts'
 export interface BodyWorld {
   grid: NavGrid
   spawn: Spawn
+  /** Where a visitor first stands: on open ground, facing the way in. */
+  visitorSpawn: Spawn
   /** Ground height at a world point, for standing on it. */
   heightAt(x: number, z: number): number
   /** Where the body can go, by name, with the sun where it is. */
@@ -83,7 +85,13 @@ export function buildBodyWorld(seed: number, places: readonly Place[]): BodyWorl
   const home = places.find((p) => p.id === 'home') ?? places[0]
   const [sx, sz] = home ? [spots[home.id]![0]!.x, spots[home.id]![0]!.z] : [CHUNK_SIZE / 2, CHUNK_SIZE / 2]
   const heightAt = (x: number, z: number) => land.heightAt(x, z)
-  return { grid, spawn: { x: sx, y: heightAt(sx, sz), z: sz, yaw: 0 }, heightAt, spots: () => spots }
+  // The visitor starts outside the front door of Home (or of the first place), looking at it.
+  const front = home ? placeCentre(toLandPlace(home)) : [sx, sz]
+  const fd = home ? home.exterior.footprint[1] : 0
+  const vx = front[0]!
+  const vz = front[1]! + fd / 2 + 4
+  const visitorSpawn: Spawn = { x: vx, y: heightAt(vx, vz), z: vz, yaw: Math.PI }
+  return { grid, spawn: { x: sx, y: heightAt(sx, sz), z: sz, yaw: 0 }, visitorSpawn, heightAt, spots: () => spots }
 }
 
 /** The pet-era starter island as a body world, so playback runs on one kind of world until the island is retired. */
@@ -91,6 +99,7 @@ export function bodyWorldFromStarter(world: StarterWorld, pack: SpeciesPack): Bo
   return {
     grid: world.nav.grid,
     spawn: world.spawn,
+    visitorSpawn: world.spawn,
     heightAt: (x, z) => islandHeight(x, z, world.cfg),
     spots: (sun) => collectSpots(pack, world.cfg, world.nav, world.spawn, sun, world.objects),
   }

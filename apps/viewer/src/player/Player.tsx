@@ -3,8 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Ecctrl, type EcctrlHandle } from 'ecctrl'
 import { useButtonStore, useJoystickStore } from 'ecctrl/input'
 import { useEffect, useRef } from 'react'
-import { heightAt } from '@forkling/sim'
-import { island, spawn } from '../island.ts'
+import { useWorld } from '../world/WorldContext.tsx'
 import { touchUi } from '../touch.ts'
 import { visitor } from '../visitor.ts'
 import { mergeMovement } from './touchInput.ts'
@@ -19,6 +18,8 @@ const clipMode = new URLSearchParams(location.search).has('clip')
 
 /** The visitor: a simple capsule avatar driven by ecctrl, with an orbiting follow camera. */
 export function Player() {
+  const { simWorld } = useWorld()
+  const spawn = simWorld.visitorSpawn
   const body = useRef<EcctrlHandle>(null)
   const camera = useRef<CameraControlsImpl>(null)
   const [, getKeys] = useKeyboardControls()
@@ -40,7 +41,7 @@ export function Player() {
     if (clipMode) {
       const forward = { x: Math.sin(spawn.yaw), z: Math.cos(spawn.yaw) }
       const cat = { x: spawn.x + forward.x * 3.5, z: spawn.z + forward.z * 3.5 }
-      const y = heightAt(cat.x, cat.z, island)
+      const y = simWorld.heightAt(cat.x, cat.z)
       c.setLookAt(cat.x + forward.z * 1.4, y + 0.5, cat.z - forward.x * 1.4, cat.x, y + 0.2, cat.z, false)
       return
     }

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { SpeciesPack } from '@forkling/schema'
 import catSpecies from '@forkling/species-cat/species.json'
 import { loadWorld, type LoadDeps } from '../src/world/loadWorld.ts'
+import homeFile from '../../../templates/forkling-world/places/home.json'
+import workshopFile from '../../../templates/forkling-world/places/workshop.json'
 
 const SHA = 'abc123'
 const ref = { owner: 'RomanKuroptev', repo: 'merge' }
@@ -176,5 +178,37 @@ describe('loadWorld', () => {
     })
     expect(result.ok).toBe(true)
     expect(seen[0]).toContain('/commits/builder%2Fnew-box')
+  })
+})
+
+describe('loadWorld places (W5)', () => {
+  const home = { ...homeFile }
+  const workshop = { ...workshopFile }
+
+  it('reads places/<id>.json, in id order', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'places/workshop.json': workshop, 'places/home.json': home }))
+    expect(result.ok && result.world.places.map((p) => p.id)).toEqual(['home', 'workshop'])
+  })
+
+  it('has no places for a world that has none yet', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling }))
+    expect(result.ok && result.world.places).toEqual([])
+  })
+
+  it('leaves out a place file that does not fit, as the mind does, instead of failing the whole world', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'places/home.json': home, 'places/broken.json': { id: 'broken' }, 'places/worse.json': 'not json at all' }))
+    expect(result.ok && result.world.places.map((p) => p.id)).toEqual(['home'])
+  })
+
+  it('reads only the files directly in places/, and only json', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'places/home.json': home, 'places/old/workshop.json': workshop, 'places/notes.md': 'x', 'other/places/workshop.json': workshop }))
+    expect(result.ok && result.world.places.map((p) => p.id)).toEqual(['home'])
+  })
+
+  it('reads at most 64, the most a world may have', async () => {
+    const many: Files = { 'forkling.json': forkling }
+    for (let i = 0; i < 70; i++) many[`places/p${String(i).padStart(2, '0')}.json`] = { ...home, id: `p${String(i).padStart(2, '0')}` }
+    const result = await loadWorld(ref, deps(many))
+    expect(result.ok && result.world.places).toHaveLength(64)
   })
 })

@@ -92,6 +92,19 @@ describe('the body\'s world on the new land (spec 2.7, 4)', () => {
     expect(world.spawn.y).toBeCloseTo(world.heightAt(world.spawn.x, world.spawn.z), 9)
   })
 
+  it("puts the visitor on the open ground outside Home's door, facing it", () => {
+    const [hx, hz] = centre('home')
+    const [, fd] = place('home').exterior.footprint
+    const v = world.visitorSpawn
+    expect(v.x).toBeCloseTo(hx, 0)
+    expect(v.z).toBeGreaterThan(hz + fd / 2 + 2)
+    expect(isWalkable(world.grid, v.x, v.z)).toBe(true)
+    // Facing -z, towards the door (forward is [sin yaw, cos yaw]).
+    expect(Math.sin(v.yaw)).toBeCloseTo(0, 6)
+    expect(Math.cos(v.yaw)).toBeCloseTo(-1, 6)
+    expect(v.y).toBeCloseTo(world.heightAt(v.x, v.z), 9)
+  })
+
   it('gives the ground height of the land, flat under a building', () => {
     const [hx, hz] = centre('home')
     expect(world.heightAt(hx - 4, hz)).toBeCloseTo(world.heightAt(hx + 4, hz), 6)
@@ -112,6 +125,7 @@ describe('the pet-era island as a body world, until it is retired', () => {
     const adapted = bodyWorldFromStarter(starter, blob)
     expect(adapted.grid).toBe(starter.nav.grid)
     expect(adapted.spawn).toBe(starter.spawn)
+    expect(adapted.visitorSpawn).toBe(starter.spawn)
     expect(adapted.spots(sun)).toEqual(collectSpots(blob, starter.cfg, starter.nav, starter.spawn, sun, starter.objects))
   })
 })

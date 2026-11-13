@@ -2,6 +2,7 @@ import { Component, useEffect, useState, type ReactNode } from 'react'
 import { App } from './App.tsx'
 import { speciesPacks } from './species/registry.ts'
 import { ASSETS } from './world/assets.ts'
+import { loadFixtureWorld } from './world/fixtureWorld.ts'
 import { loadWorld, type LoadedWorld, type LoadResult, type WorldError } from './world/loadWorld.ts'
 import { LOCAL_REF, localFetch } from './world/localWorld.ts'
 import { parseRoute, type WorldRef } from './world/route.ts'
@@ -37,7 +38,13 @@ export function Root() {
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL
-    const local = new URLSearchParams(location.search).get('world') === 'local'
+    const query = new URLSearchParams(location.search)
+    const local = query.get('world') === 'local'
+    // `?world=local&fixture=10` is a made-up world of that many places, built here, for looking at the land.
+    if (local && query.has('fixture')) {
+      setState({ status: 'ready', world: loadFixtureWorld(Number(query.get('fixture')) || 10, speciesPacks.cat!) })
+      return
+    }
     let route: ReturnType<typeof parseRoute> = local ? { kind: 'world', ref: LOCAL_REF } : parseRoute(location.pathname, base, location.search)
     if (route.kind === 'home') {
       history.replaceState(null, '', `${base}${DEFAULT_WORLD}${location.search}`)

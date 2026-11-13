@@ -9,7 +9,10 @@ import { touchUi } from './touch.ts'
 import { useWorld } from './world/WorldContext.tsx'
 import { TouchControls } from './ui/TouchControls.tsx'
 import { Environment } from './world/Environment.tsx'
+import { Fog } from './world/Fog.tsx'
+import { Land } from './world/Land.tsx'
 import { Objects } from './world/Objects.tsx'
+import { Paths } from './world/Paths.tsx'
 import { Props } from './world/Props.tsx'
 import { Terrain } from './world/Terrain.tsx'
 import { Water } from './world/Water.tsx'
@@ -33,6 +36,9 @@ function Loading() {
 }
 
 export function App() {
+  // A world with places is drawn as land (chunks, fog, paths); one without any keeps the pet-era island until it is migrated.
+  const { world } = useWorld()
+  const land = world.places.length > 0
   return (
     <>
       <KeyboardControls map={keyboardMap}>
@@ -40,10 +46,20 @@ export function App() {
           <Suspense fallback={null}>
             <Environment />
             <Physics debug={physicsDebug}>
-              <Terrain />
-              <Props />
-              <Objects />
-              <Water />
+              {land ? (
+                <>
+                  <Land />
+                  <Paths />
+                  <Fog />
+                </>
+              ) : (
+                <>
+                  <Terrain />
+                  <Props />
+                  <Objects />
+                  <Water />
+                </>
+              )}
               <Forkling />
               <Player />
             </Physics>
