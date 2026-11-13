@@ -1,4 +1,4 @@
-import { worldWithObjects, type StarterWorld } from '@forkling/sim'
+import { bodyWorldFor, type BodyWorld } from '@forkling/sim'
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { createWorldClock, type WorldClock } from '../clock.ts'
 import { species, type SpeciesEntry } from '../species/registry.ts'
@@ -7,8 +7,8 @@ import type { LoadedWorld } from './loadWorld.ts'
 export interface WorldView {
   world: LoadedWorld
   species: SpeciesEntry
-  /** The island plus this world's objects, as the sim sees it. */
-  simWorld: StarterWorld
+  /** What the body walks on, as the sim sees it: the same world the mind builds from the same files. */
+  simWorld: BodyWorld
   clock: WorldClock
 }
 
@@ -20,7 +20,7 @@ export function WorldProvider({ world, children }: { world: LoadedWorld; childre
       world,
       // loadWorld only accepts species from the registry, so this always exists.
       species: species[world.forkling.species]!,
-      simWorld: worldWithObjects(world.objects),
+      simWorld: bodyWorldFor({ seed: world.forkling.seed, pack: species[world.forkling.species]!.pack, places: [], objects: world.objects }),
       clock: createWorldClock(world.forkling.timezone, location.search),
     }),
     [world],

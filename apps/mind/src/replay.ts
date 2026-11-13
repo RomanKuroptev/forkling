@@ -1,5 +1,5 @@
-import type { Forkling, Goals, MicroBehavior, SpeciesPack, WorldObject } from '@forkling/schema'
-import { isAsleepAt, playbackStateTime, startPlayback, worldWithObjects } from '@forkling/sim'
+import type { Forkling, Goals, MicroBehavior, Place, SpeciesPack, WorldObject } from '@forkling/schema'
+import { bodyWorldFor, isAsleepAt, playbackStateTime, startPlayback, type BodyWorld } from '@forkling/sim'
 
 /** The repo as one commit of `forkling.json` left it: what a viewer loading that commit would have been given. */
 export interface ReplayState {
@@ -8,6 +8,8 @@ export interface ReplayState {
   forkling: Forkling
   goals: Goals
   objects: WorldObject[]
+  /** The places as of that commit; missing means the world had none. */
+  places?: Place[]
 }
 
 export interface ReplayOptions {
@@ -44,7 +46,7 @@ export interface Replay {
  */
 export function replay(states: readonly ReplayState[], opts: ReplayOptions): Replay {
   const ordered = [...states].sort((a, b) => a.atMs - b.atMs)
-  const worlds = new Map<ReplayState, ReturnType<typeof worldWithObjects>>()
+  const worlds = new Map<ReplayState, BodyWorld>()
   const rows: ReplayRow[] = []
   let planRows = 0
   let onPlanRows = 0
@@ -55,7 +57,7 @@ export function replay(states: readonly ReplayState[], opts: ReplayOptions): Rep
     if (!state) continue
     let world = worlds.get(state)
     if (!world) {
-      world = worldWithObjects(state.objects)
+      world = bodyWorldFor({ seed: state.forkling.seed, pack: opts.pack, places: state.places ?? [], objects: state.objects })
       worlds.set(state, world)
     }
     const { forkling, goals } = state

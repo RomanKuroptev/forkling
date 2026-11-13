@@ -1,11 +1,10 @@
-import { advancePlayback, heightAt, materialColor, playbackStateTime, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
+import { advancePlayback, materialColor, playbackStateTime, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { island, spawn } from '../island.ts'
 import { visitor } from '../visitor.ts'
 import { disposeParts, partsGroup } from '../world/primitives.ts'
 import { useWorld } from '../world/WorldContext.tsx'
@@ -25,6 +24,7 @@ const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a))
 
 export function Forkling() {
   const { world, species, simWorld, clock } = useWorld()
+  const { spawn } = simWorld
   const gltf = useGLTF(species.modelUrl)
   const group = useRef<THREE.Group>(null)
   const body = useRef<RapierRigidBody>(null)
@@ -153,7 +153,7 @@ export function Forkling() {
     view.shown.x += (sim.pos.x - view.shown.x) * follow
     view.shown.z += (sim.pos.z - view.shown.z) * follow
     view.heading += wrapAngle(sim.heading - view.heading) * (1 - Math.exp(-dt * 10))
-    const y = heightAt(view.shown.x, view.shown.z, island)
+    const y = simWorld.heightAt(view.shown.x, view.shown.z)
 
     if (group.current) {
       group.current.position.set(view.shown.x, y, view.shown.z)

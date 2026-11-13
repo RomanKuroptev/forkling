@@ -1,4 +1,5 @@
 import {
+  bodyWorldFor,
   collectSpots,
   eveningOf,
   hourInZone,
@@ -17,6 +18,7 @@ import { monthOf, rollLedger } from '../budget.ts'
 import { buildSystem } from '../prompts.ts'
 import { readWorld } from '../world.ts'
 import { createFetcher } from '../web/fetch.ts'
+import { readPlaces } from '../places.ts'
 import { readWanderState } from '../web/wander-state.ts'
 import { makeAsk } from './ask.ts'
 import type { Tick, TickDeps } from './context.ts'
@@ -49,7 +51,8 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   if (asleep !== forkling.asleep) remember.push({ at: nowIso, kind: asleep ? 'sleep' : 'wake', text: asleep ? 'Went to bed.' : 'Woke up.' })
 
   // Where the body is now: exactly what a viewer would have seen since the last commit.
-  const world = worldWithObjects(w.objects)
+  const places = readPlaces(dir)
+  const world = bodyWorldFor({ seed: forkling.seed, pack, places, objects: w.objects })
   const playbackInput = { forkling, pack, behaviors, world, goals: w.goals, stateTime: playbackStateTime(forkling) }
   const playback = startPlayback(playbackInput, nowMs)
   // What the body really did on the plan step since the last write: the step's effect waits on it.
@@ -84,6 +87,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
 
 
     world,
+    places,
     body,
     events: w.inbox.flatMap((item) => (item.event ? [item.event] : [])),
 

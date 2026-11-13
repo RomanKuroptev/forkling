@@ -11,10 +11,11 @@ import {
   startPlayback,
   type PlaybackInput,
 } from '../src/playback.ts'
+import { bodyWorldFromStarter } from '../src/body-world.ts'
 import { starterWorld } from '../src/starter.ts'
 
 const blob = SpeciesPack.parse(blobJson)
-const world = starterWorld()
+const world = bodyWorldFromStarter(starterWorld(), blob)
 
 /** 2026-10-30T12:00:00Z, which is the start of an epoch. */
 const EPOCH_START = Date.UTC(2026, 9, 30, 12, 0, 0) / 1000
@@ -191,7 +192,7 @@ describe('startPlayback', () => {
   it('starts at the forkling position on walkable ground', () => {
     const pb = startPlayback(input({ position: [3, 0, -4] }), (EPOCH_START + 60) * 1000)
     expect(Math.hypot(pb.state.pos.x - 3, pb.state.pos.z + 4)).toBeLessThan(1.5)
-    expect(isWalkable(world.nav.grid, pb.state.pos.x, pb.state.pos.z)).toBe(true)
+    expect(isWalkable(world.grid, pb.state.pos.x, pb.state.pos.z)).toBe(true)
   })
 
   it('starts at the edited position right after a commit', () => {
