@@ -8,6 +8,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { visitor } from '../visitor.ts'
 import { exhibitSpots, signSpot } from './exhibitGeometry.ts'
 import { hoverStore } from './hoverStore.ts'
+import { panelStore } from './panelStore.ts'
 import { kitModelUrl } from './kitModels.ts'
 import { restyleMaterial } from './modelStyle.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
@@ -148,8 +149,8 @@ export function Places() {
       return land.heightAt(x, z)
     }
     return {
-      exhibits: world.places.filter((p) => interiors.has(p.id)).flatMap((p) => exhibitSpots(p, kit, baseOf(p)).map((s) => ({ key: `${p.id}/${s.exhibit.id}`, position: s.position, rotY: s.rotY, title: p.name, text: s.exhibit.label }))),
-      signs: world.places.map((p) => ({ key: p.id, position: signSpot(p, baseOf(p)).position, title: p.exterior.sign || p.name, text: `${p.name}: ${p.purpose}` })),
+      exhibits: world.places.filter((p) => interiors.has(p.id)).flatMap((p) => exhibitSpots(p, kit, baseOf(p)).map((s) => ({ key: `${p.id}/${s.exhibit.id}`, position: s.position, rotY: s.rotY, title: p.name, text: s.exhibit.label, open: () => void panelStore.open({ kind: 'exhibit', place: p, exhibit: s.exhibit }, world) }))),
+      signs: world.places.map((p) => ({ key: p.id, position: signSpot(p, baseOf(p)).position, title: p.exterior.sign || p.name, text: `${p.name}: ${p.purpose}`, open: () => void panelStore.open({ kind: 'sign', place: p }, world) })),
     }
   }, [world, land, interiors])
 
@@ -168,13 +169,13 @@ export function Places() {
   return (
     <>
       {targets.exhibits.map((t) => (
-        <mesh key={t.key} position={t.position} rotation={[0, t.rotY, 0]} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
+        <mesh key={t.key} position={t.position} rotation={[0, t.rotY, 0]} onClick={t.open} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
           <boxGeometry args={[0.7, 0.55, 0.45]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}
       {targets.signs.map((t) => (
-        <mesh key={t.key} position={[t.position[0], t.position[1] + 1, t.position[2]]} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
+        <mesh key={t.key} position={[t.position[0], t.position[1] + 1, t.position[2]]} onClick={t.open} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
           <boxGeometry args={[0.8, 2, 0.8]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>

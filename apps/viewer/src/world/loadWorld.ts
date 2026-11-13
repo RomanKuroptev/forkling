@@ -12,6 +12,8 @@ export interface LoadedWorld {
   objects: WorldObject[]
   /** `places/*.json`, in id order. Empty for a world that has none yet, which then keeps the pet-era island. */
   places: Place[]
+  /** The ids of the works in the repo (`works/<id>/meta.json`), in name order: what the Workshop's terminal lists. Their files are read when it opens. */
+  workIds: string[]
   /** `mind/goals.json`, or empty for a world whose forkling has no mind yet. */
   goals: Goals
   /** What it has made, newest first. Only the latest few are read, and one that doesn't fit is left out, never an error. */
@@ -193,6 +195,7 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         pack: forkling.pack,
         objects: objects.filter((o): o is WorldObject => o !== null),
         places,
+        workIds: paths.flatMap((p) => /^works\/([^/]+)\/meta\.json$/.exec(p)?.[1] ?? []).sort(),
         goals: goals ?? {},
       },
     }

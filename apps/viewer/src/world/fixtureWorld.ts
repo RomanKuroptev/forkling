@@ -22,5 +22,5 @@ export function loadFixtureWorld(count: number, pack: SpeciesPack, nowMs: number
     intention: { ...templateForkling.intention, startedAt: now },
     lastTickAt: now,
   })
-  return { ref: LOCAL_REF, sha: 'fixture', committedAt: now, forkling, pack, objects: [], places: world.places, goals: {} }
+  return { ref: LOCAL_REF, sha: 'fixture', committedAt: now, forkling, pack, objects: [], places: world.places, workIds: [], goals: {} }
 }
