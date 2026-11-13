@@ -69,6 +69,10 @@ export const ThoughtState = z.object({
 })
 export type ThoughtState = z.infer<typeof ThoughtState>
 
+/** The interests at 70 or more when Merge woke on a local date (spec 2.5: found needs 3 days in a row). */
+export const WakeSnapshot = z.object({ date: z.iso.date(), topics: z.record(z.string().max(60), z.number()) })
+export type WakeSnapshot = z.infer<typeof WakeSnapshot>
+
 export const MindState = z.object({
   /** Object ids the forkling has met. An id not in here is a novelty. */
   knownObjects: z.array(z.string()).default([]),
@@ -102,6 +106,12 @@ export const MindState = z.object({
   retirements: z.array(Timestamp).max(10).optional(),
   /** Results of the build worker the mind has booked (`seen`), and the ones it has not yet answered with a decide call (`pending`, spec 2.3). */
   jobs: z.object({ seen: z.array(z.string().max(80)).max(100).default([]), pending: z.array(z.object({ id: z.string().max(80), text: z.string().max(300) })).max(10).default([]) }).optional(),
+  /** The last 3 wake-day snapshots of the strong interests (spec 2.5), newest last. */
+  wakeTop: z.array(WakeSnapshot).max(3).optional(),
+  /** The place the last expand was for, so the same place is never expanded twice in a row (spec 2.4). */
+  lastExpandedPlace: z.string().max(80).nullable().optional(),
+  /** When Merge last wrote a found request, for the 1 a week rail (spec 2.4). */
+  founds: z.array(Timestamp).max(10).optional(),
   /** Sketches made on `date` (spec 9.8: at most 3 a day), counted when one is shelved or scrapped. */
   sketches: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   /** Local date interests last faded, so they fade once a day. */
