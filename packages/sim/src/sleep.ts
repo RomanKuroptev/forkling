@@ -64,7 +64,8 @@ function zonedMs(date: string, hours: number, timezone: string): number {
   return guess - offsetAt(timezone, first)
 }
 
-function addDays(date: string, days: number): string {
+/** A local date moved by whole days. */
+export function addDays(date: string, days: number): string {
   const [y, m, d] = date.split('-').map(Number) as [number, number, number]
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10)
 }
@@ -90,6 +91,28 @@ export function sleepWindow(date: string, seed: number, timezone: string, lateNi
     wakeMs: Math.round(zonedMs(date, WAKE_HOUR, timezone) + wakeShift * MIN),
     bedMs: Math.round(zonedMs(date, BED_HOUR, timezone) + bedShift * MIN),
   }
+}
+
+/**
+ * The Unix time at which `ms` of waking time have passed since `startMs`: the night does not count (spec 4.5: construction time
+ * does not run while Merge sleeps). A start in bed begins at the next wake, so with `ms` 0 it is the first awake moment at or
+ * after the start.
+ */
+export function addWakingMs(startMs: number, ms: number, opts: SleepOptions): number {
+  let remaining = Math.max(0, ms)
+  let cur = startMs
+  // Begin a day early: a late night's bedtime can fall after midnight.
+  let date = addDays(localDate(opts.timezone, startMs), -1)
+  for (let i = 0; i < 400; i++, date = addDays(date, 1)) {
+    const w = sleepWindow(date, opts.seed, opts.timezone, opts.lateNight === date)
+    const from = Math.max(w.wakeMs, cur)
+    if (w.bedMs <= from) continue
+    const awake = w.bedMs - from
+    if (awake >= remaining) return from + remaining
+    remaining -= awake
+    cur = w.bedMs
+  }
+  return cur + remaining
 }
 
 /** Whether the forkling is in bed at a Unix time in milliseconds. */
