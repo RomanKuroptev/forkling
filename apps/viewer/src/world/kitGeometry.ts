@@ -1,5 +1,6 @@
 import type { Kit, KitColor, KitPalette, KitPart, Place } from '@forkling/schema'
 import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
+import { constructionInstances } from './constructionGeometry.ts'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
 import { SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
@@ -207,7 +208,7 @@ export type SceneInstances = Record<Shape, ShapeInstances> & {
 }
 
 /**
- * Every place's shapes, grouped by shape: its outside always, its inside only when `interiors` has it. Each stands on the ground
+ * Every place's shapes, grouped by shape: its outside always (with scaffolding while it is being built), its inside only when `interiors` has it. Each stands on the ground
  * under it. `models` are the model files that have loaded: a part that has one is drawn from it, the others from their primitives.
  */
 export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number }): SceneInstances {
@@ -221,6 +222,8 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     const lampsOn = neglectLook(level, place.state.lamps).lampsOn
     for (const i of exteriorInstances(place, kit, baseY)) lists[i.shape].push(i)
     for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
+    // A place that is being built is wrapped in scaffolding until its finish time (spec 4.5).
+    for (const i of constructionInstances(place, baseY, opts.nowMs)) lists[i.shape].push(i)
     if (opts.interiors.has(place.id)) {
       const inside = interiorParts(place, kit, baseY, opts.models, { lampsOn })
       for (const i of inside.instances) lists[i.shape].push(i)

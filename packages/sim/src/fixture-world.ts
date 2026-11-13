@@ -3,7 +3,7 @@ import { kit } from '@forkling/schema/kit'
 import homeFile from '../../../templates/forkling-world/places/home.json'
 import workshopFile from '../../../templates/forkling-world/places/workshop.json'
 import { choosePlacement, toLandPlace } from './land.ts'
-import { derivePaths, type WorldPath } from './paths.ts'
+import { allPaths, derivePaths, type WorldPath } from './paths.ts'
 import { createPrng } from './prng.ts'
 
 /**
@@ -86,11 +86,22 @@ export function makeFixtureWorld(seed = 1, count = 10, now: string = FIXTURE_NOW
         exterior: { style: kit.styles[i % kit.styles.length]!.id, footprint, floors: 1, palette: kit.palettes[i % kit.palettes.length]!.id, sign: name.toUpperCase().slice(0, 24) },
         rooms: [{ id: 'main', name: 'Main room', size: [footprint[0] - 2, footprint[1] - 2, 3.4], at: [0, 0], floor: 0, parts }],
         exhibits,
-        state: { construction: null, lastCareAt: lastCare, neglect: 0, lamps: true },
+        // One place is being built (spec 4.5), so the scaffolding can be seen: it finishes 2 hours from now.
+        state: { construction: i === 4 ? { kind: 'expand', finishesAt: new Date(Date.parse(now) + 2 * 3_600_000).toISOString() } : null, lastCareAt: lastCare, neglect: 0, lamps: true },
         history: [{ at: `${founded}T10:00:00+01:00`, verb: 'found', summary: `Founded ${name}.` }],
       }),
     )
   }
 
-  return { seed, now, places, paths: derivePaths(places.map(toLandPlace)), souvenirs }
+  // One place has a path an expand made (spec 5.4): between the first two places in a row that founding did not join.
+  const joined = new Set(derivePaths(places.map(toLandPlace)).map((p) => [p.from, p.to].sort().join('|')))
+  outer: for (let b = 3; b < places.length; b++) {
+    for (let a = 2; a < b; a++) {
+      if (joined.has([places[a]!.id, places[b]!.id].sort().join('|'))) continue
+      places[b] = Place.parse({ ...places[b]!, paths: [{ to: places[a]!.id, at: places[a]!.founded }] })
+      break outer
+    }
+  }
+
+  return { seed, now, places, paths: allPaths(places.map(toLandPlace)), souvenirs }
 }

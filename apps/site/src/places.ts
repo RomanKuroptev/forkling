@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Place, Souvenir, workFrame, type PlaceVerb } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import { derivePaths, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
+import { allPaths, isBuilding, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
 import { esc, markdown } from './md.ts'
 import type { FeedItem } from './feed.ts'
 import type { SiteWork } from './workshop.ts'
@@ -85,10 +85,18 @@ function stamp(iso: string, tz: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d)
 }
 
+/** A moment as `2026-11-20 19:00` in the forkling's zone. */
+function stampTime(iso: string, tz: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(d).map((x) => [x.type, x.value]))
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`
+}
+
 /** The top-down map: a square for each chunk with a place or a path on it, each place a square in its colour for its neglect level. */
 function mapSvg(places: readonly Place[], nowMs: number): string {
   const land = places.map(toLandPlace)
-  const paths = derivePaths(land)
+  const paths = allPaths(land)
   const chunks = new Map<string, [number, number]>()
   for (const p of places) chunks.set(p.chunk.join(','), p.chunk)
   for (const path of paths) for (const c of path.chunks) chunks.set(`${c[0]},${c[1]}`, [c[0], c[1]])
@@ -102,13 +110,14 @@ function mapSvg(places: readonly Place[], nowMs: number): string {
   const toX = (m: number) => ((m - minX * 32) * CELL) / 32
   const toZ = (m: number) => ((m - minZ * 32) * CELL) / 32
   const squares = [...chunks.values()].map(([cx, cz]) => `<rect class="chunk" x="${(cx - minX) * CELL}" y="${(cz - minZ) * CELL}" width="${CELL}" height="${CELL}" fill="none" stroke="currentColor" stroke-opacity="0.2"/>`)
-  const tracks = paths.map((path) => `<polyline points="${path.chunks.map((c) => `${(c[0] - minX + 0.5) * CELL},${(c[1] - minZ + 0.5) * CELL}`).join(' ')}" fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-width="3"/>`)
+  const tracks = paths.map((path) => `<polyline data-kind="${path.kind ?? 'founding'}" points="${path.chunks.map((c) => `${(c[0] - minX + 0.5) * CELL},${(c[1] - minZ + 0.5) * CELL}`).join(' ')}" fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-width="3"/>`)
   const houses = places.map((p, i) => {
     const [x, z] = placeCentre(land[i]!)
     const w = (p.exterior.footprint[0] * CELL) / 32
     const d = (p.exterior.footprint[1] * CELL) / 32
     const level = neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded }, nowMs)
-    return `<a href="${esc(p.id)}/"><rect data-place="${esc(p.id)}" data-neglect="${level}" x="${(toX(x) - w / 2).toFixed(1)}" y="${(toZ(z) - d / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${d.toFixed(1)}" fill="${NEGLECT_FILL[level]}" stroke="currentColor"><title>${esc(p.name)}: ${NEGLECT_WORDS[level]}</title></rect></a>`
+    const building = isBuilding(p.state, nowMs)
+    return `<a href="${esc(p.id)}/"><rect data-place="${esc(p.id)}" data-neglect="${level}"${building ? ' data-building="true"' : ''} x="${(toX(x) - w / 2).toFixed(1)}" y="${(toZ(z) - d / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${d.toFixed(1)}" fill="${NEGLECT_FILL[level]}" stroke="currentColor"><title>${esc(p.name)}: ${NEGLECT_WORDS[level]}${building ? ', under construction' : ''}</title></rect></a>`
   })
   return `<svg role="img" aria-label="Top-down map of the places" viewBox="0 0 ${cols * CELL} ${rows * CELL}" width="${Math.min(cols * CELL, 640)}" style="max-width:100%;height:auto">${[...squares, ...tracks, ...houses].join('')}</svg>`
 }
@@ -153,7 +162,7 @@ export function renderPlaces(i: PlacesInput): void {
       '<ul class="places">',
       ...i.places.map((p) => {
         const last = lastChange(p)
-        return `<li><strong><a href="${esc(p.id)}/">${esc(p.name)}</a></strong> <span class="quiet">${esc(p.tags.join(', '))}; ${NEGLECT_WORDS[level(p)]}</span><p>${esc(p.purpose)}</p>${last ? `<p class="quiet">Last change, ${esc(stamp(last.at, i.tz))}: ${esc(last.summary)}</p>` : ''}</li>`
+        return `<li><strong><a href="${esc(p.id)}/">${esc(p.name)}</a></strong> <span class="quiet">${esc(p.tags.join(', '))}; ${NEGLECT_WORDS[level(p)]}${isBuilding(p.state, i.nowMs) ? '; under construction' : ''}</span><p>${esc(p.purpose)}</p>${last ? `<p class="quiet">Last change, ${esc(stamp(last.at, i.tz))}: ${esc(last.summary)}</p>` : ''}</li>`
       }),
       '</ul>',
     ].join('\n'),
@@ -175,6 +184,7 @@ export function renderPlaces(i: PlacesInput): void {
         `<h1>${esc(p.name)}</h1>`,
         `<p>${esc(p.purpose)}</p>`,
         `<p class="quiet">${esc(p.tags.join(', '))}. Founded ${esc(p.founded)}. ${capital(NEGLECT_WORDS[level(p)]!)}.${p.state.lamps ? ' The lamps are on.' : ' The lamps are off.'}</p>`,
+        ...(isBuilding(p.state, i.nowMs) ? [`<p class="quiet">Under construction until ${esc(stampTime(p.state.construction!.finishesAt, i.tz))}.</p>`] : []),
         ...(related.length > 0 ? [`<p>Related: ${related.join(', ')}.</p>`] : []),
         '<h2>What is in it</h2>',
         p.exhibits.length > 0 ? p.exhibits.map((ex) => `<section class="exhibit">${exhibitHtml(p, ex, i, works)}</section>`).join('\n') : '<p class="quiet">Nothing on show yet.</p>',

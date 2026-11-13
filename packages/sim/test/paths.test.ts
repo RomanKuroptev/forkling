@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LandPlace } from '../src/land.ts'
-import { PATH_WIDTH, derivePaths, findChunkPath, pathPolyline } from '../src/paths.ts'
+import { PATH_WIDTH, allPaths, derivePaths, findChunkPath, pathPolyline } from '../src/paths.ts'
 
 const key = (c: readonly [number, number]) => `${c[0]},${c[1]}`
 const owned = (...cs: [number, number][]) => new Set(cs.map(key))
@@ -67,5 +67,56 @@ describe('the paths a world has (spec 4.3: founding always makes one path, to th
     const b = place('b', [0, 1], ['x'], '2026-11-06')
     const c = place('c', [1, 1], ['x'], '2026-11-07')
     expect(derivePaths([home, workshop, a, b, c]).find((p) => p.from === 'c')!.to).toBe('a')
+  })
+})
+
+describe('allPaths: the founding paths and the paths an expand added (spec 4.3, 5.4)', () => {
+  // home (0,0), workshop (0,0) shares it, a (1,0), b (2,0), c (1,1): a row with a spur.
+  const withPaths = (p: LandPlace & { founded: string }, paths: { to: string; at: string }[]) => ({ ...p, paths })
+  const world = () => [
+    withPaths(place('home', [0, 0], ['home'], '2026-11-01'), []),
+    withPaths(place('a', [1, 0], ['maps'], '2026-11-02', ['home']), []),
+    withPaths(place('b', [2, 0], ['tides'], '2026-11-03', ['a']), []),
+    withPaths(place('c', [1, 1], ['knots'], '2026-11-04', ['a']), []),
+  ]
+
+  it('is the founding paths, and nothing more, when no expand added one', () => {
+    expect(allPaths(world())).toEqual(derivePaths(world()).map((p) => ({ ...p, kind: 'founding' })))
+  })
+
+  it('adds each path an expand made, routed over the owned chunks, and marks it as one', () => {
+    const w = world()
+    w[3] = withPaths(w[3]!, [{ to: 'b', at: '2026-11-10' }])
+    const added = allPaths(w).filter((p) => p.kind === 'expand')
+    expect(added).toHaveLength(1)
+    expect(added[0]).toMatchObject({ from: 'c', to: 'b' })
+    expect(added[0]!.chunks[0]).toEqual([1, 1])
+    expect(added[0]!.chunks.at(-1)).toEqual([2, 0])
+    for (const c of added[0]!.chunks) expect(['0,0', '1,0', '2,0', '1,1']).toContain(key(c))
+  })
+
+  it('draws a path that two places both made once, and one that founding already made not at all', () => {
+    const w = world()
+    w[3] = withPaths(w[3]!, [{ to: 'b', at: '2026-11-10' }, { to: 'a', at: '2026-11-11' }])
+    w[2] = withPaths(w[2]!, [{ to: 'c', at: '2026-11-12' }, { to: 'a', at: '2026-11-12' }])
+    const pairs = allPaths(w).map((p) => [p.from, p.to].sort().join('+'))
+    expect(pairs.filter((p) => p === 'b+c')).toHaveLength(1)
+    expect(pairs.filter((p) => p === 'a+c')).toHaveLength(1) // founding made c -> a
+    expect(pairs.filter((p) => p === 'a+b')).toHaveLength(1) // founding made b -> a
+  })
+
+  it('leaves out a path to a place that does not exist, and one with no way through the owned chunks', () => {
+    const w = world()
+    w[1] = withPaths(w[1]!, [{ to: 'nowhere', at: '2026-11-10' }])
+    expect(allPaths(w).filter((p) => p.kind === 'expand')).toEqual([])
+    const far = [...world(), withPaths(place('z', [9, 9], ['far'], '2026-11-05'), [])]
+    far[1] = withPaths(far[1]!, [{ to: 'z', at: '2026-11-10' }])
+    expect(allPaths(far).filter((p) => p.kind === 'expand' && p.to === 'z')).toEqual([])
+  })
+
+  it('is the same every time and does not depend on the order of the places', () => {
+    const w = world()
+    w[3] = withPaths(w[3]!, [{ to: 'b', at: '2026-11-10' }])
+    expect(JSON.stringify(allPaths([...w].reverse()))).toBe(JSON.stringify(allPaths(w)))
   })
 })

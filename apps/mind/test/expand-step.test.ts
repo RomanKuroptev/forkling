@@ -298,3 +298,61 @@ describe('what comes back from the builders (spec 10.2: the loop checks it again
     expect(place.state.construction).toMatchObject({ kind: 'expand' })
   })
 })
+
+describe('a construction ends when its time is up (spec 4.5)', () => {
+  const building = (finishesAt: string) => lights({ state: { construction: { kind: 'expand', finishesAt }, lastCareAt: '2026-11-02T10:00:00Z', neglect: 0, lamps: true } })
+
+  it('clears it from the place file, says so, and changes nothing else', async () => {
+    put('places/house-of-lights.json', building('2026-11-03T08:00:00Z'))
+    const before = placeOf('house-of-lights')
+    const out = await runTick(dir, deps(fakeLlm(planFor(step('write', 'home', 25, 'A plaque.'))).llm, NOW))
+    const after = placeOf('house-of-lights')
+    expect(after.state.construction).toBeNull()
+    expect({ ...after, state: { ...after.state, construction: before.state.construction } }).toEqual(before)
+    expect(out.written).toContain('places/house-of-lights.json')
+    expect(streamText()).toMatch(/House of Lights is finished/)
+  })
+
+  it('leaves a construction that is still going on, and writes nothing for it', async () => {
+    put('places/house-of-lights.json', building('2026-11-03T12:00:00Z'))
+    const out = await runTick(dir, deps(fakeLlm(planFor(step('write', 'home', 25, 'A plaque.'))).llm, NOW))
+    expect(placeOf('house-of-lights').state.construction).toMatchObject({ kind: 'expand', finishesAt: '2026-11-03T12:00:00Z' })
+    expect(out.written).not.toContain('places/house-of-lights.json')
+  })
+
+  it('does it once: the next tick has nothing to clear', async () => {
+    put('places/house-of-lights.json', building('2026-11-03T08:00:00Z'))
+    const fake = fakeLlm(planFor(step('write', 'home', 25, 'A plaque.')))
+    await runTick(dir, deps(fake.llm, NOW))
+    const out = await runTick(dir, deps(fake.llm, minutesAfter(20)))
+    expect(out.written).not.toContain('places/house-of-lights.json')
+    expect(streamText().match(/House of Lights is finished/g)).toHaveLength(1)
+  })
+
+  it('lets the place grow again at once: the plan of the same tick may expand it', async () => {
+    put('places/house-of-lights.json', building('2026-11-03T08:00:00Z'))
+    await runTick(dir, deps(fakeLlm(planFor(expandStep()), true).llm, NOW))
+    expect(read('mind/goals.json').today.steps[0]).toMatchObject({ verb: 'expand', targetId: 'house-of-lights' })
+  })
+
+  it('clears it before it takes in a result, so a result that comes the moment a build ends is not turned away', async () => {
+    put('places/house-of-lights.json', building('2026-11-03T09:30:00Z'))
+    const fake = fakeLlm(planFor(step('write', 'home', 25, 'A plaque.')))
+    await runTick(dir, deps(fake.llm, NOW))
+    put(
+      'mind/builds/expand-20261103-1000.result.json',
+      JobResult.parse({
+        id: 'expand-20261103-1000',
+        kind: 'expand',
+        status: 'done',
+        placeId: 'house-of-lights',
+        patch: { verb: 'expand', change: { kind: 'path', to: 'workshop' }, summary: 'A path to the Workshop.' },
+        calls: [],
+        at: '2026-11-03T10:05:00Z',
+      }),
+    )
+    await runTick(dir, deps(fake.llm, minutesAfter(40)))
+    expect(placeOf('house-of-lights').paths.map((p) => p.to)).toEqual(['workshop'])
+    expect(placeOf('house-of-lights').state.construction).toMatchObject({ kind: 'expand' })
+  })
+})
