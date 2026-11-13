@@ -29,6 +29,8 @@ jobs:
       - run: pnpm --filter @forkling/viewer build
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
+          # The mind server's address, so the viewer can keep the places current. Empty until Roman sets the MIND_URL variable.
+          VITE_MIND_URL: ${{ vars.MIND_URL }}
       # Serve index.html for unknown paths, so /<owner>/<repo> routes work from M3 on.
       - run: cp apps/viewer/dist/index.html apps/viewer/dist/404.html
       - uses: actions/upload-pages-artifact@v3

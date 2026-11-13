@@ -1,11 +1,13 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
-import type { NowJson } from '@forkling/schema'
+import type { NowJson, Place } from '@forkling/schema'
 import type { HealthResponse } from './health-response.ts'
 
 export interface MindServerOptions {
   /** `now.json` as the last reflex tick left it, or null before the first. */
   now: () => NowJson | null
   health: () => HealthResponse
+  /** The places as the last tick left them, with their fingerprint, or null before the first tick. */
+  places?: () => { rev: string; places: Place[] } | null
   /** The only origin that may call the server from a browser: Merge's Pages address (spec 11.2). */
   pagesOrigin: string
 }
@@ -13,8 +15,8 @@ export interface MindServerOptions {
 /** The loopback port Caddy forwards to. The unit file and the Caddyfile name the same one, and a test holds them together. */
 export const DEFAULT_PORT = 8787
 
-/** The server exposes only these three (spec 11.2). */
-const ROUTES: Record<string, string> = { '/now.json': 'GET', '/health': 'GET', '/notes': 'POST' }
+/** The server exposes only these four (spec 11.2; `/places.json` is the W5 addition, read-only like `/now.json`). */
+const ROUTES: Record<string, string> = { '/now.json': 'GET', '/health': 'GET', '/places.json': 'GET', '/notes': 'POST' }
 
 function send(res: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}): void {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers })
@@ -22,7 +24,7 @@ function send(res: ServerResponse, status: number, body: unknown, headers: Recor
 }
 
 /**
- * The server on the box (spec 2.2, 11.2): `GET /now.json`, `GET /health` and `POST /notes`, and nothing else. It binds to
+ * The server on the box (spec 2.2, 11.2): `GET /now.json`, `GET /places.json`, `GET /health` and `POST /notes`, and nothing else. It binds to
  * the loopback address, behind Caddy, which does the HTTPS. A browser call from any origin but Merge's own Pages address is
  * refused; a request with no origin (the watchdog, curl) is not a cross-origin one and is served. `POST /notes` says the
  * mailbox is closed until W7 builds it.
@@ -47,6 +49,10 @@ export function createMindServer(opts: MindServerOptions): Server {
       if (path === '/now.json') {
         const now = opts.now()
         return now ? send(res, 200, now, cors) : send(res, 503, { error: 'not ready yet' }, cors)
+      }
+      if (path === '/places.json') {
+        const places = opts.places?.() ?? null
+        return places ? send(res, 200, places, cors) : send(res, 503, { error: 'not ready yet' }, cors)
       }
       if (path === '/health') return send(res, 200, opts.health(), cors)
       // /notes: nobody reads a note until W7, so the body is thrown away unread.

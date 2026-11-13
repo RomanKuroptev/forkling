@@ -1,7 +1,7 @@
 import type { AddressInfo } from 'node:net'
 import type { Server } from 'node:http'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { NowJson } from '@forkling/schema'
+import type { NowJson, Place } from '@forkling/schema'
 import { createMindServer, type MindServerOptions } from '../src/server.ts'
 
 const PAGES = 'https://romankuroptev.github.io'
@@ -60,7 +60,25 @@ describe('POST /notes (closed until W7)', () => {
   })
 })
 
-describe('only those three routes exist', () => {
+describe('GET /places.json (W5: so a tend shows in the viewer within a minute, without GitHub)', () => {
+  const places = { rev: 'abc123', places: [{ id: 'home' }] as unknown as Place[] }
+  it('gives the places as the last tick left them, never cached', async () => {
+    const { call } = await start({ places: () => places })
+    const res = await call('/places.json', { origin: PAGES })
+    expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe('no-store')
+    expect(res.headers.get('access-control-allow-origin')).toBe(PAGES)
+    expect(await res.json()).toEqual(places)
+  })
+  it('says it is not ready before the first tick, and refuses other origins and methods', async () => {
+    const { call } = await start({ places: () => null })
+    expect((await call('/places.json')).status).toBe(503)
+    expect((await call('/places.json', { origin: 'https://evil.example' })).status).toBe(403)
+    expect((await call('/places.json', { method: 'POST' })).status).toBe(405)
+  })
+})
+
+describe('only those four routes exist', () => {
   it('answers 404 for anything else, and 405 for the wrong method on a route', async () => {
     const { call } = await start()
     expect((await call('/')).status).toBe(404)

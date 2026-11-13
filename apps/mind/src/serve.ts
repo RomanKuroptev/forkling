@@ -79,7 +79,7 @@ async function main(): Promise<void> {
   if (!github) console.log('the build worker has no jobs: it needs GITHUB_TOKEN and the world repository (FORKLING_REPO_URL or FORKLING_GITHUB_REPO)')
   const worker = createBuildWorker({ dir, now: Date.now, handlers: github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now, web }) } : {} })
 
-  const server = createMindServer({ now: () => loop.now(), health: () => buildHealthResponse(dir, Date.now()), pagesOrigin })
+  const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now()), pagesOrigin })
   await new Promise<void>((ready, fail) => {
     server.once('error', fail)
     server.listen(port, '127.0.0.1', ready)

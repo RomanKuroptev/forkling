@@ -1,7 +1,9 @@
-import { Component, useEffect, useState, type ReactNode } from 'react'
+import { placesRev } from '@forkling/sim'
+import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
 import { App } from './App.tsx'
 import { speciesPacks } from './species/registry.ts'
 import { ASSETS } from './world/assets.ts'
+import { mindUrlFrom, startLiveSync } from './world/liveSync.ts'
 import { loadFixtureWorld } from './world/fixtureWorld.ts'
 import { loadWorld, type LoadedWorld, type LoadResult, type WorldError } from './world/loadWorld.ts'
 import { LOCAL_REF, localFetch } from './world/localWorld.ts'
@@ -74,6 +76,25 @@ export function Root() {
       cancelled = true
     }
   }, [])
+
+  // The places stay current by polling the mind server's now.json (spec 4.6). Only a world read from a real repo does; a local
+  // or fixture world has no server. Without a server address the viewer shows the committed state, as before.
+  const shown = useRef<LoadedWorld | null>(null)
+  shown.current = state.status === 'ready' ? state.world : null
+  const live = state.status === 'ready' && state.world.ref !== LOCAL_REF && !new URLSearchParams(location.search).has('fixture')
+  useEffect(() => {
+    const first = shown.current
+    if (!live || !first) return
+    return startLiveSync({
+      mindUrl: mindUrlFrom(new URLSearchParams(location.search).get('mind'), import.meta.env.VITE_MIND_URL as string | undefined),
+      intervalMs: 30_000,
+      fetch: (input, init) => fetch(input, init),
+      setTimer: (run, ms) => setTimeout(run, ms),
+      clearTimer: (id) => clearTimeout(id as ReturnType<typeof setTimeout>),
+      knownRev: placesRev(first.places),
+      onPlaces: (places) => setState((s) => (s.status === 'ready' ? { status: 'ready', world: { ...s.world, places } } : s)),
+    })
+  }, [live])
 
   if (state.status === 'loading') return <div className="loading">Finding the world…</div>
   if (state.status === 'error') return <WorldErrorPanel error={state.error} worldRef={state.ref} />

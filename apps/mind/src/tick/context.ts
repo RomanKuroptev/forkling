@@ -59,7 +59,7 @@ export interface TickDeps {
 }
 
 /** What a tick gives back to the loop: the result, and `now.json` as the tick left the world. */
-export type TickOutcome = TickResult & { now: NowJson }
+export type TickOutcome = TickResult & { now: NowJson; places: Place[] }
 
 export interface TickResult {
   /** Whether any file in the world changed. */
