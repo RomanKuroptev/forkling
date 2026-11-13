@@ -20,7 +20,7 @@ export function WorldProvider({ world, children }: { world: LoadedWorld; childre
       world,
       // loadWorld only accepts species from the registry, so this always exists.
       species: species[world.forkling.species]!,
-      simWorld: bodyWorldFor({ seed: world.forkling.seed, pack: species[world.forkling.species]!.pack, places: [], objects: world.objects }),
+      simWorld: bodyWorldFor({ seed: world.forkling.seed, pack: species[world.forkling.species]!.pack, places: world.places, objects: world.objects }),
       clock: createWorldClock(world.forkling.timezone, location.search),
     }),
     [world],

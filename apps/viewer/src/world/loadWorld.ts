@@ -1,4 +1,4 @@
-import { Forkling, forklingPackIssues, Goals, objectIdFromPath, WorldObject, type SpeciesPack } from '@forkling/schema'
+import { Forkling, forklingPackIssues, Goals, objectIdFromPath, Place, WorldObject, type SpeciesPack } from '@forkling/schema'
 import type { WorldRef } from './route.ts'
 
 export interface LoadedWorld {
@@ -10,6 +10,8 @@ export interface LoadedWorld {
   forkling: Forkling
   pack: SpeciesPack
   objects: WorldObject[]
+  /** `places/*.json`, in id order. Empty for a world that has none yet, which then keeps the pet-era island. */
+  places: Place[]
   /** `mind/goals.json`, or empty for a world whose forkling has no mind yet. */
   goals: Goals
   /** What it has made, newest first. Only the latest few are read, and one that doesn't fit is left out, never an error. */
@@ -39,6 +41,8 @@ export interface LoadDeps {
 }
 
 const MAX_OBJECTS = 300
+/** The most places a world may have (spec 4.1). */
+const MAX_PLACES = 64
 
 class LoadFailure extends Error {
   constructor(readonly error: WorldError) {
@@ -151,6 +155,24 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
       ),
     )
 
+    // Places are read the way the mind reads them: one that does not fit is left out, never an error and never guessed at,
+    // so the viewer and the mind always agree on which places exist.
+    const placePaths = paths.filter((p) => /^places\/[^/]+\.json$/.test(p)).slice(0, MAX_PLACES)
+    const places = (
+      await Promise.all(
+        placePaths.map(async (path) => {
+          try {
+            const parsed = Place.safeParse(await raw(deps, ref, commit.sha, path))
+            return parsed.success ? parsed.data : null
+          } catch {
+            return null
+          }
+        }),
+      )
+    )
+      .filter((p): p is Place => p !== null)
+      .sort((a, b) => a.id.localeCompare(b.id))
+
     if (problems.length > 0 || !forkling) {
       problems.sort((a, b) => (a.file === 'forkling.json' ? -1 : b.file === 'forkling.json' ? 1 : a.file.localeCompare(b.file)))
       return fail({
@@ -170,6 +192,7 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         forkling: forkling.forkling,
         pack: forkling.pack,
         objects: objects.filter((o): o is WorldObject => o !== null),
+        places,
         goals: goals ?? {},
       },
     }
