@@ -20,6 +20,15 @@ export const SHAPE_TRIANGLES: Record<Shape, number> = {
   cone: ROUND_SEGMENTS + ROUND_SEGMENTS,
 }
 
+/**
+ * The most a model file may cost: meshes (a draw call each) and triangles. `apps/mind/test/kit-models.test.ts` holds every file in
+ * `kit/models` to this, so the render budget below can count a model at the limit without opening it.
+ */
+export const MODEL_LIMITS = { meshes: 2, triangles: 2000 } as const
+
+/** The model files the kit's parts use, once each, in name order: what the viewer loads. */
+export const modelFiles = (kit: Kit): string[] => [...new Set(kit.parts.flatMap((p) => (p.model ? [p.model.file] : [])))].sort()
+
 export interface Instance {
   shape: Shape
   matrix: Mat4
@@ -108,13 +117,23 @@ export function exteriorInstances(place: Place, kit: Kit, baseY: number): Instan
   return out
 }
 
-/** The inside: a floor for each floor of the building, and every room's furniture where the place file put it. */
-export function interiorInstances(place: Place, kit: Kit, baseY: number): Instance[] {
+/** A part drawn from its model file instead of its primitives. */
+export interface ModelInstance {
+  file: string
+  matrix: Mat4
+}
+
+/**
+ * The inside: a floor for each floor of the building, and every room's furniture where the place file put it. A part with a model
+ * is a model instance once its file is in `models` (it has loaded), and its primitives until then, or for good if it never loads.
+ */
+export function interiorParts(place: Place, kit: Kit, baseY: number, models: ReadonlySet<string> = new Set()): { instances: Instance[]; models: ModelInstance[] } {
   const { palette } = look(place, kit)
   const [px, pz] = placeCentre(toLandPlace(place))
   const [fw, fd] = place.exterior.footprint
   const height = floorHeight(place)
   const out: Instance[] = []
+  const modelOut: ModelInstance[] = []
   for (let f = 0; f < place.exterior.floors; f++) {
     out.push({ shape: 'box', matrix: compose([px, baseY + f * height + 0.06, pz], [0, 0, 0], [fw - 1, 0.12, fd - 1]), color: palette.colors.floor })
   }
@@ -122,11 +141,20 @@ export function interiorInstances(place: Place, kit: Kit, baseY: number): Instan
     for (const placed of room.parts) {
       const part = kit.parts.find((p) => p.id === placed.part)
       if (!part) continue
-      out.push(...partInstances(part, [px + room.at[0] + placed.at[0], baseY + room.floor * height + placed.at[1], pz + room.at[1] + placed.at[2]], placed.rot, palette))
+      const at: [number, number, number] = [px + room.at[0] + placed.at[0], baseY + room.floor * height + placed.at[1], pz + room.at[1] + placed.at[2]]
+      if (part.model && models.has(part.model.file)) {
+        const s = part.model.scale
+        modelOut.push({ file: part.model.file, matrix: compose(at, [0, placed.rot, 0], [s, s, s]) })
+      } else {
+        out.push(...partInstances(part, at, placed.rot, palette))
+      }
     }
   }
-  return out
+  return { instances: out, models: modelOut }
 }
+
+/** The inside as primitives only. */
+export const interiorInstances = (place: Place, kit: Kit, baseY: number): Instance[] => interiorParts(place, kit, baseY).instances
 
 /** A wall the visitor cannot walk through, as an axis-aligned box from the ground up. */
 export interface WallBox {
@@ -176,14 +204,33 @@ function rgb(hex: string): [number, number, number] {
   return [srgbToLinear(((n >> 16) & 255) / 255), srgbToLinear(((n >> 8) & 255) / 255), srgbToLinear((n & 255) / 255)]
 }
 
-/** Every place's shapes, grouped by shape: its outside always, its inside only when `interiors` has it. Each stands on the ground under it. */
-export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string> }): Record<Shape, ShapeInstances> {
+export type SceneInstances = Record<Shape, ShapeInstances> & {
+  /** For each model file, the matrices of its instances (16 numbers each). */
+  models: Record<string, Float32Array>
+}
+
+/**
+ * Every place's shapes, grouped by shape: its outside always, its inside only when `interiors` has it. Each stands on the ground
+ * under it. `models` are the model files that have loaded: a part that has one is drawn from it, the others from their primitives.
+ */
+export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string> }): SceneInstances {
   const lists: Record<Shape, Instance[]> = { box: [], sphere: [], cylinder: [], cone: [] }
+  const modelLists: Record<string, Mat4[]> = {}
   for (const place of places) {
     const [px, pz] = placeCentre(toLandPlace(place))
     const baseY = opts.heightAt(px, pz)
     for (const i of exteriorInstances(place, kit, baseY)) lists[i.shape].push(i)
-    if (opts.interiors.has(place.id)) for (const i of interiorInstances(place, kit, baseY)) lists[i.shape].push(i)
+    if (opts.interiors.has(place.id)) {
+      const inside = interiorParts(place, kit, baseY, opts.models)
+      for (const i of inside.instances) lists[i.shape].push(i)
+      for (const m of inside.models) (modelLists[m.file] ??= []).push(m.matrix)
+    }
+  }
+  const models: Record<string, Float32Array> = {}
+  for (const [file, list] of Object.entries(modelLists)) {
+    const packed = new Float32Array(list.length * 16)
+    list.forEach((m, k) => packed.set(m, k * 16))
+    models[file] = packed
   }
   const pack = (list: Instance[]): ShapeInstances => {
     const matrices = new Float32Array(list.length * 16)
@@ -194,13 +241,17 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     })
     return { matrices, colors, count: list.length }
   }
-  return { box: pack(lists.box), sphere: pack(lists.sphere), cylinder: pack(lists.cylinder), cone: pack(lists.cone) }
+  return { box: pack(lists.box), sphere: pack(lists.sphere), cylinder: pack(lists.cylinder), cone: pack(lists.cone), models }
 }
 
-/** What drawing these shapes costs: one draw call for each shape that has any, and the triangles of every instance. */
-export function renderBudget(scene: Record<Shape, ShapeInstances>): { drawCalls: number; triangles: number } {
+/** What drawing these costs: a draw call for each shape that has any and the triangles of every instance, and for each model file at most `MODEL_LIMITS`. */
+export function renderBudget(scene: Record<Shape, ShapeInstances> & { models?: Record<string, Float32Array> }): { drawCalls: number; triangles: number } {
   let drawCalls = 0
   let triangles = 0
+  for (const matrices of Object.values(scene.models ?? {})) {
+    drawCalls += MODEL_LIMITS.meshes
+    triangles += (matrices.length / 16) * MODEL_LIMITS.triangles
+  }
   for (const shape of SHAPES) {
     if (scene[shape].count === 0) continue
     drawCalls++

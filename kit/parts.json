@@ -1813,6 +1813,7 @@
       "id": "tree-round",
       "name": "Round tree",
       "category": "nature",
+      "model": { "file": "tree_default.glb", "scale": 2.05 },
       "size": [2.5, 3.5, 2.5],
       "primitives": [
         {
@@ -1840,6 +1841,7 @@
       "id": "tree-pine",
       "name": "Pine tree",
       "category": "nature",
+      "model": { "file": "tree_pineDefaultA.glb", "scale": 2.6 },
       "size": [2, 4, 2],
       "primitives": [
         {
@@ -1873,6 +1875,7 @@
       "id": "tree-tall",
       "name": "Tall tree",
       "category": "nature",
+      "model": { "file": "tree_pineTallA.glb", "scale": 3.9 },
       "size": [2, 6, 2],
       "primitives": [
         {
@@ -1960,6 +1963,7 @@
       "id": "rock-small",
       "name": "Small rock",
       "category": "nature",
+      "model": { "file": "rock_smallA.glb", "scale": 2.5 },
       "size": [0.7, 0.5, 0.7],
       "primitives": [
         {
@@ -1981,6 +1985,7 @@
       "id": "rock-large",
       "name": "Large rock",
       "category": "nature",
+      "model": { "file": "rock_largeA.glb", "scale": 1.8 },
       "size": [1.8, 1.4, 1.8],
       "primitives": [
         {

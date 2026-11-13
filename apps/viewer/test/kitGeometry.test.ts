@@ -4,7 +4,7 @@ import { kit } from '@forkling/schema/kit'
 import { DOOR_HALF, WALL, createLand, placeCentre, toLandPlace } from '@forkling/sim'
 import { makeFixtureWorld } from '@forkling/sim/fixture'
 import { compose, multiply } from '../src/world/matrix.ts'
-import { SHAPES, SHAPE_TRIANGLES, exteriorInstances, floorHeight, interiorInstances, interiorsToLoad, partInstances, renderBudget, resolveColor, sceneInstances, wallBoxes } from '../src/world/kitGeometry.ts'
+import { MODEL_LIMITS, SHAPES, SHAPE_TRIANGLES, exteriorInstances, floorHeight, interiorInstances, interiorsToLoad, modelFiles, partInstances, renderBudget, resolveColor, sceneInstances, wallBoxes } from '../src/world/kitGeometry.ts'
 
 const fixture = makeFixtureWorld(1, 10)
 const place = (id: string) => fixture.places.find((p) => p.id === id)!
@@ -222,5 +222,64 @@ describe('the whole scene as instanced shapes (a draw call per shape, however ma
     expect(SHAPE_TRIANGLES.box).toBe(12)
     const one = renderBudget({ box: { matrices: new Float32Array(16), colors: new Float32Array(3), count: 1 }, sphere: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, cylinder: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, cone: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 } })
     expect(one).toEqual({ drawCalls: 1, triangles: 12 })
+  })
+})
+
+describe("parts that are models (spec 5.3: a model stands in for the primitives, which stay as the fallback)", () => {
+  const grove = (): Place => {
+    const home = place('home')
+    return { ...home, rooms: [{ ...home.rooms[0]!, parts: [{ part: 'tree-round', at: [1, 0, 2], rot: 0 }] }] }
+  }
+  const land = createLand(1, fixture.places.map(toLandPlace))
+  const heightAt = (x: number, z: number) => land.heightAt(x, z)
+  const draw = (models: string[]) => sceneInstances([grove()], kit, { heightAt, interiors: new Set(['home']), models: new Set(models) })
+
+  it('is drawn from its primitives until its model has loaded (and if it never does)', () => {
+    const scene = draw([])
+    expect(scene.models).toEqual({})
+    expect(scene.sphere.count).toBeGreaterThan(0)
+  })
+
+  it("is one model instance, at the part's place and the kit's scale, once its model is there, and its primitives are not drawn", () => {
+    const before = draw([])
+    const after = draw(['tree_default.glb'])
+    const matrices = after.models['tree_default.glb']!
+    expect(matrices).toHaveLength(16)
+    const [px, pz] = placeCentre(toLandPlace(place('home')))
+    expect(matrices[12]).toBeCloseTo(px + 1, 4)
+    expect(matrices[14]).toBeCloseTo(pz + 2, 4)
+    expect(matrices[13]).toBeCloseTo(heightAt(px, pz), 4)
+    const scale = kit.parts.find((p) => p.id === 'tree-round')!.model!.scale
+    expect(Math.hypot(matrices[0]!, matrices[1]!, matrices[2]!)).toBeCloseTo(scale, 4)
+    expect(Math.hypot(matrices[4]!, matrices[5]!, matrices[6]!)).toBeCloseTo(scale, 4)
+    expect(after.sphere.count).toBeLessThan(before.sphere.count)
+  })
+
+  it('turns with the part', () => {
+    const turned: Place = { ...grove(), rooms: [{ ...grove().rooms[0]!, parts: [{ part: 'tree-round', at: [0, 0, 0], rot: Math.PI / 2 }] }] }
+    const scene = sceneInstances([turned], kit, { heightAt, interiors: new Set(['home']), models: new Set(['tree_default.glb']) })
+    const m = scene.models['tree_default.glb']!
+    const scale = kit.parts.find((p) => p.id === 'tree-round')!.model!.scale
+    // Turned a quarter about y, the x axis points along -z.
+    expect(m[0]).toBeCloseTo(0, 5)
+    expect(m[2]).toBeCloseTo(-scale, 5)
+  })
+
+  it('uses only the models that have loaded: another file is still primitives', () => {
+    const scene = draw(['tree_pineTallA.glb'])
+    expect(scene.models).toEqual({})
+  })
+
+  it('lists the model files the kit uses, once each, so they can be loaded', () => {
+    expect(modelFiles(kit)).toEqual(['rock_largeA.glb', 'rock_smallA.glb', 'tree_default.glb', 'tree_pineDefaultA.glb', 'tree_pineTallA.glb'])
+  })
+
+  it('counts models in the render budget, at the most a model can cost (the folder test holds every file to it)', () => {
+    expect(MODEL_LIMITS).toEqual({ meshes: 2, triangles: 2000 })
+    const base = renderBudget(draw([]))
+    const withModel = renderBudget(draw(['tree_default.glb']))
+    expect(withModel.drawCalls - base.drawCalls).toBeGreaterThanOrEqual(-4)
+    const modelOnly = renderBudget({ ...draw([]), box: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, sphere: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, cylinder: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, cone: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, models: { 'a.glb': new Float32Array(32), 'b.glb': new Float32Array(16) } })
+    expect(modelOnly).toEqual({ drawCalls: 2 * MODEL_LIMITS.meshes, triangles: 3 * MODEL_LIMITS.triangles })
   })
 })
