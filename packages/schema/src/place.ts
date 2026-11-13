@@ -83,6 +83,8 @@ export const Place = z
     /** Where its middle is from its chunk's middle. Only the founding clearing, which holds Home and the Workshop side by side, uses it (spec 4.1). */
     offset: z.tuple([z.number().finite(), z.number().finite()]).default([0, 0]),
     related: z.array(PlaceId).max(10).default([]),
+    /** Paths an expand added from this place to another (spec 4.3). The ones founding makes are worked out from the places, so they are not stored. W6 draws these. */
+    paths: z.array(z.object({ to: PlaceId, at: DateOnly }).strict()).max(20).default([]),
     exterior: z
       .object({
         style: PartId,
