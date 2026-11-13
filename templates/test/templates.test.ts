@@ -54,8 +54,15 @@ for (const template of ['forkling-world', 'merge']) {
       expect(paths).toContain('memory/stream/.gitkeep')
     })
 
+    it('has a place for build requests and wishes (spec 10.3), empty', () => {
+      if (!paths.includes('souvenirs/.gitkeep')) return
+      expect(paths).toContain('requests/.gitkeep')
+      expect(paths).toContain('wishes/.gitkeep')
+      expect(paths.filter((p) => p.startsWith('requests/') || p.startsWith('wishes/'))).toHaveLength(2)
+    })
+
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|requests\/.+|wishes\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
