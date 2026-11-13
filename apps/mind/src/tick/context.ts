@@ -13,6 +13,7 @@ import type {
   MindState,
   NowJson,
   PlanStep,
+  Place,
   SpeciesPack,
   TickCall,
   TimelineEntry,
@@ -21,7 +22,7 @@ import type {
   WorkMeta,
   WorldObject,
 } from '@forkling/schema'
-import type { MoodEvent, Trigger, sleepWindow, startPlayback, worldWithObjects } from '@forkling/sim'
+import type { BodyWorld, MoodEvent, Trigger, sleepWindow, startPlayback } from '@forkling/sim'
 import type { ModelId, rollLedger } from '../budget.ts'
 import type { Decision } from '../decision.ts'
 import type { WorkChecker } from '../builds/browser-check.ts'
@@ -111,7 +112,9 @@ export interface Tick {
   window: ReturnType<typeof sleepWindow>
   budget: ReturnType<typeof rollLedger>
 
-  world: ReturnType<typeof worldWithObjects>
+  world: BodyWorld
+  /** The places in the world (`places/*.json`), in id order. Empty in a world that has none yet. */
+  places: Place[]
   body: ReturnType<typeof startPlayback>['state']
   events: VisitorEvent[]
 

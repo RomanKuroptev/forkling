@@ -1,11 +1,10 @@
 import type { Forkling, Goals, MicroBehavior, SpeciesPack } from '@forkling/schema'
+import type { BodyWorld } from './body-world.ts'
 import { createForkling, STEP, stepForkling, type Focus, type ForklingState, type StepContext } from './forkling.ts'
 import { nearestWalkable, type Point2 } from './nav.ts'
 import { isAsleepAt } from './sleep.ts'
 import { sunDirection } from './sky.ts'
-import type { StarterWorld } from './starter.ts'
 import { STRONG_NEED } from './surprise.ts'
-import { collectSpots } from './world.ts'
 
 /**
  * Playback length in seconds. When the repo's intention is older than the current epoch, the body restarts from the
@@ -17,7 +16,7 @@ export interface PlaybackInput {
   forkling: Forkling
   pack: SpeciesPack
   behaviors: MicroBehavior[]
-  world: StarterWorld
+  world: BodyWorld
   /** `mind/goals.json`. The current step of today's plan is what the body favours while it lasts. */
   goals?: Goals
   /** Unix seconds when the repo state was written (its commit time). Edits then take effect from that moment. */
@@ -157,14 +156,14 @@ function asleepAt(pb: Playback, sec: number): boolean {
 }
 
 function stepOnce(pb: Playback, visitor: Point2 | null): void {
-  const { pack, world } = pb.input
+  const { world } = pb.input
   const t = pb.anchor.time + (pb.steps + 1) * STEP
   pb.ctx.timeOfDay = hourAt(pb, t)
   pb.ctx.asleep = asleepAt(pb, t)
   const minute = Math.floor(t / 60)
   if (minute !== pb.spotMinute) {
     pb.spotMinute = minute
-    pb.ctx.spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(pb.ctx.timeOfDay), world.objects)
+    pb.ctx.spots = world.spots(sunDirection(pb.ctx.timeOfDay))
   }
   pb.ctx.visitor = visitor
   stepForkling(pb.state, STEP, pb.ctx)
@@ -200,7 +199,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
   // When the write is older than this epoch, the body is carried to the epoch's start before it is played on from there.
   const carried = anchor.source === 'epoch' ? carryForward(input, anchor.time) : null
   const [x, , z] = carried?.position ?? forkling.position
-  const start = nearestWalkable(world.nav.grid, { x, z }, 25) ?? { x: world.spawn.x, z: world.spawn.z }
+  const start = nearestWalkable(world.grid, { x, z }, 25) ?? { x: world.spawn.x, z: world.spawn.z }
   const state = createForkling(pack, behaviors, anchor.seed, start, {
     time: anchor.time,
     firstAction: carried?.action ?? forkling.intention.type,
@@ -215,7 +214,7 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
     state,
     steps: 0,
     local: false,
-    ctx: { grid: world.nav.grid, visitor: null, timeOfDay: 0, spots: {} },
+    ctx: { grid: world.grid, visitor: null, timeOfDay: 0, spots: {} },
     spotMinute: -1,
     hourCache: { minute: -1, hour: 0 },
     asleepCache: { minute: -1, asleep: false },
