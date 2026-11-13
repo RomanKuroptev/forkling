@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import { DebugOverlay } from './forkling/DebugOverlay.tsx'
 import { Forkling } from './forkling/Forkling.tsx'
 import { Player } from './player/Player.tsx'
+import { ExhibitPanel } from './ui/ExhibitPanel.tsx'
 import { HoverLabel } from './ui/HoverLabel.tsx'
 import { touchUi } from './touch.ts'
 import { useWorld } from './world/WorldContext.tsx'
@@ -73,6 +74,7 @@ export function App() {
       <Loading />
       <DebugOverlay />
       {land && <HoverLabel />}
+      {land && <ExhibitPanel />}
       {touchUi && <TouchControls />}
       {touchUi ? (
         <div className="hud hud-touch">Left stick to walk · push to the edge to run · drag to look · pinch to zoom</div>

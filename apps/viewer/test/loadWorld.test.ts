@@ -212,3 +212,10 @@ describe('loadWorld places (W5)', () => {
     expect(result.ok && result.world.places).toHaveLength(64)
   })
 })
+
+describe('loadWorld works (W5)', () => {
+  it('lists the ids of the works in the repo, in name order, without reading them', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'works/b/meta.json': {}, 'works/a/meta.json': {}, 'works/a/index.html': 'x', 'works/c/thumb.png': 'x', 'notes/works/z/meta.json': {} }))
+    expect(result.ok && result.world.workIds).toEqual(['a', 'b'])
+  })
+})
