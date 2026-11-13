@@ -8,6 +8,7 @@ import { esc, markdown } from './md.ts'
 import { defaultGitLog, parseChanges } from './changes.ts'
 import { renderFeed, type FeedItem } from './feed.ts'
 import { SINCE_SCRIPT } from './since.ts'
+import { loadPlaces, placeChangeLookup, placeFeedItems, renderPlaces } from './places.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
 
 /** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
@@ -140,6 +141,8 @@ export interface RenderOptions {
   baseUrl?: string | undefined
   /** The world's history for `changes.json` (see `defaultGitLog`). Injected by a test; a world with no history gives an empty list. */
   gitLog?: () => string
+  /** The moment the neglect of places is measured from. The build uses the clock; a test fixes it. The feed and the pages otherwise do not depend on it. */
+  now?: Date
 }
 
 export function renderSite(world: string, out: string, opts: RenderOptions = {}): { pages: string[] } {
@@ -190,7 +193,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     }),
   )
   const sourceStats = readJson(world, 'mind/sources.json', SourceStats) ?? SourceStats.parse({})
-  const nav: [string, string][] = [...NAV, ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
+  const places = loadPlaces(world)
+  const nav: [string, string][] = [...NAV, ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
   const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, ...input }))
 
   // Home: who it is, what it wants, what it is doing and why.
@@ -347,12 +351,23 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   // The workshop is always there (spec 8): an empty shelf says so. A work is shown only through its own page, in its sandbox.
   const works = loadWorks(world)
   renderWorkshop({ works, tz, goals, add })
+  renderPlaces({
+    places,
+    works,
+    nowMs: (opts.now ?? new Date()).getTime(),
+    tz,
+    souvenirHtml,
+    readText: (rel) => readText(world, rel),
+    readSouvenir: (id) => souvenirs.get(id) ?? null,
+    add,
+  })
 
   // The feed (works shelved, diary entries) and the list of changes the home page panel reads (spec 8).
   const heading = (text: string) => /^# (.+)$/m.exec(text)?.[1]?.trim()
   const summary = (text: string) => text.split(/\r?\n/).filter((l) => l.trim() && !l.startsWith('#') && !/^\*[^*]+\*$/.test(l.trim())).join(' ').replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 300)
   const feedItems: FeedItem[] = [
     ...works.filter((w) => w.meta.status === 'shelf').map((w) => ({ title: `Shelved: ${w.meta.title}`, path: `workshop/${w.meta.id}.html`, at: w.meta.made, description: w.meta.about })),
+    ...placeFeedItems(places),
     ...journal.map((j) => ({ title: heading(j.text) ?? j.date, path: `journal/${j.date}.html`, at: `${j.date}T12:00:00Z`, description: summary(j.text) })),
   ]
   const titles = new Map(works.map((w) => [w.meta.id, w.meta.title]))
@@ -362,7 +377,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   } catch {
     log = ''
   }
-  const changes = parseChanges(log, { titleOf: (id) => titles.get(id) })
+  const changes = parseChanges(log, { titleOf: (id) => titles.get(id), placeAt: placeChangeLookup(places) })
   const home = pages.get('index.html')
   const panel = ['<aside id="since" hidden><h2>Since your last visit</h2><ul></ul></aside>', '<script src="since.js" data-root=""></script>', '</main>'].join('\n')
   if (home) pages.set('index.html', home.replace('</main>', () => panel))
