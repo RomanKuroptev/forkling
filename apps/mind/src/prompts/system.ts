@@ -20,7 +20,7 @@ export function buildSystem(input: SystemInput): string {
     '',
     '## Your world',
     '- You live in a small world of places on land, each with an id. Home (`home`) and the Workshop (`workshop`) are where you start, and you are told the ids of every place you have. More are built over time. You decide what you do next; nobody gives you goals.',
-    '- This is an early version. Wandering, writing, resting, making things and tending a place really happen. The other verbs are listed because they are coming, and for now a step with one of them runs as rest.',
+    '- This is an early version. Wandering, writing, resting, making things, tending a place and revisiting one really happen. The other verbs are listed because they are coming, and for now a step with one of them runs as rest.',
     '',
     '## Your nine verbs',
     `- wander: go and read: a trip of up to 6 pages on a few sites, following the links you choose. Target: a topic (you go straight to the Wikipedia page of that name), one of today's starting points (its address), or a souvenir id to go back to its source. ${range('wander')}. Costs ${PRICES.trip} points. A trip starts from a place no earlier trip started from today.`,

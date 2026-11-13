@@ -8,7 +8,7 @@ Until you release, nothing changes for Merge. A world with no `places/` folder i
 
 1. A release PR changes `FORKLING_REF` to the new tag in the four template workflows that carry it (`mind.yml`, `pages.yml`, `watchdog.yml`, `validate.yml`). A test requires them to match.
 2. Tag the merge commit after that PR, never before: the tag has to contain the new pins and `apps/mind/src/validate-pr.ts`.
-3. Read the prompt diff once more before you tag. You approved it on 13 November: `git diff v0.12.1 -- apps/mind/test/golden/system.txt` shows three lines (the "two places" lines now say you live in places on land with ids you are told, tending really happens, and the tend line says what it can change). The revisit line still says nothing about being real; it works, and the words can follow at the next prompt change you review.
+3. Read the prompt diff once more before you tag. You approved it on 13 November: `git diff v0.12.1 -- apps/mind/test/golden/system.txt` shows three lines before that follow-up (the "two places" lines now say you live in places on land with ids you are told, tending really happens, and the tend line says what it can change). A follow-up one-line change (PR waiting for your OK) adds "and revisiting one" to the sentence that lists what really happens, so the diff against `v0.12.1` is then 4 lines.
 
 ## 2. Give Merge its places (yours: it changes `RomanKuroptev/merge`)
 
