@@ -20,7 +20,8 @@ describe('the fixture world (?world=local&fixture=10)', () => {
     expect(Number.isFinite(Date.parse(world.forkling.lastTickAt))).toBe(true)
   })
   it('is the same every time, and bounded by what a world may have', () => {
-    expect(JSON.stringify(loadFixtureWorld(10, pack).places)).toBe(JSON.stringify(loadFixtureWorld(10, pack).places))
+    const at = Date.parse('2026-12-20T12:00:00Z')
+    expect(JSON.stringify(loadFixtureWorld(10, pack, at).places)).toBe(JSON.stringify(loadFixtureWorld(10, pack, at).places))
     expect(loadFixtureWorld(500, pack).places).toHaveLength(64)
     expect(loadFixtureWorld(0, pack).places.length).toBeGreaterThanOrEqual(2)
   })

@@ -39,6 +39,14 @@ describe('the fixture world (10 places and their paths, for the viewer, the site
     for (const p of world.places.slice(0, 2)) expect(neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded }, now)).toBeLessThanOrEqual(1)
   })
 
+  it('measures care from the "now" it is given, so a viewer on any date still sees every level of neglect', () => {
+    const later = '2027-03-05T09:00:00Z'
+    const w = makeFixtureWorld(1, 10, later)
+    expect(w.now).toBe(later)
+    const levels = new Set(w.places.map((p) => neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded }, Date.parse(later))))
+    expect([...levels].sort()).toEqual([0, 1, 2, 3])
+  })
+
   it('differs by seed and is the same every time for one seed', () => {
     expect(JSON.stringify(makeFixtureWorld(1, 10))).toBe(JSON.stringify(world))
     const other = makeFixtureWorld(2, 10)

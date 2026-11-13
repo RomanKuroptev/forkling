@@ -1,11 +1,13 @@
 import { kit } from '@forkling/schema/kit'
-import { createLand, placeCentre, toLandPlace } from '@forkling/sim'
+import { createLand, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { visitor } from '../visitor.ts'
+import { exhibitSpots, signSpot } from './exhibitGeometry.ts'
+import { hoverStore } from './hoverStore.ts'
 import { kitModelUrl } from './kitModels.ts'
 import { restyleMaterial } from './modelStyle.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
@@ -75,8 +77,14 @@ function ModelPart({ part, matrices, count }: { part: LoadedModel['parts'][numbe
  * instanced mesh per shape. The walls have colliders with the same door gap as the cat's own world has.
  */
 export function Places() {
-  const { world } = useWorld()
+  const { world, clock } = useWorld()
   const land = useMemo(() => createLand(world.forkling.seed, world.places.map(toLandPlace)), [world])
+  // The clock decides how neglected each place looks (spec 4.4); a minute is fine-grained enough, days are what matter.
+  const [nowMs, setNowMs] = useState(() => clock.now())
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(clock.now()), 60_000)
+    return () => clearInterval(id)
+  }, [clock])
   const [interiors, setInteriors] = useState<ReadonlySet<string>>(() => interiorsToLoad(world.places, visitor.position))
   const key = useRef('')
   useFrame(() => {
@@ -119,7 +127,7 @@ export function Places() {
     if (new URLSearchParams(location.search).has('debug')) Object.assign(window, { __forklingModels: () => [...loadedFiles].sort() })
   }, [loadedFiles])
 
-  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles }), [world, land, interiors, loadedFiles])
+  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs }), [world, land, interiors, loadedFiles, nowMs])
   const walls = useMemo(
     () =>
       world.places.flatMap((place) => {
@@ -133,8 +141,44 @@ export function Places() {
     [world, land],
   )
 
+  // Invisible targets over each exhibit in the places that are loaded, and over every sign, so the visitor can point at them.
+  const targets = useMemo(() => {
+    const baseOf = (p: (typeof world.places)[number]) => {
+      const [x, z] = placeCentre(toLandPlace(p))
+      return land.heightAt(x, z)
+    }
+    return {
+      exhibits: world.places.filter((p) => interiors.has(p.id)).flatMap((p) => exhibitSpots(p, kit, baseOf(p)).map((s) => ({ key: `${p.id}/${s.exhibit.id}`, position: s.position, rotY: s.rotY, title: p.name, text: s.exhibit.label }))),
+      signs: world.places.map((p) => ({ key: p.id, position: signSpot(p, baseOf(p)).position, title: p.exterior.sign || p.name, text: `${p.name}: ${p.purpose}` })),
+    }
+  }, [world, land, interiors])
+
+  // `?debug` lets a browser test find places to look at.
+  useEffect(() => {
+    if (!new URLSearchParams(location.search).has('debug')) return
+    Object.assign(window, {
+      __forklingPlaces: () =>
+        world.places.map((p) => {
+          const [x, z] = placeCentre(toLandPlace(p))
+          return { id: p.id, name: p.name, x, z, level: neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded }, nowMs), exhibits: p.exhibits.length }
+        }),
+    })
+  }, [world, nowMs])
+
   return (
     <>
+      {targets.exhibits.map((t) => (
+        <mesh key={t.key} position={t.position} rotation={[0, t.rotY, 0]} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
+          <boxGeometry args={[0.7, 0.55, 0.45]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      ))}
+      {targets.signs.map((t) => (
+        <mesh key={t.key} position={[t.position[0], t.position[1] + 1, t.position[2]]} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
+          <boxGeometry args={[0.8, 2, 0.8]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      ))}
       <Shapes shape="box" data={scene.box} />
       <Shapes shape="sphere" data={scene.sphere} />
       <Shapes shape="cylinder" data={scene.cylinder} />
