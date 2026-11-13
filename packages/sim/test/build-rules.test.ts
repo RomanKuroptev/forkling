@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { Place } from '@forkling/schema'
+import { MAX_OPEN_WISHES, Place } from '@forkling/schema'
 import {
   FOUND_STREAK_DAYS,
   WAKE_TOP_MIN,
+  addWishes,
   expandCheck,
   foundCheck,
   foundsInWeek,
@@ -10,6 +11,7 @@ import {
   openPlaceRequests,
   openWishes,
   recordWake,
+  wishId,
   type WakeSnapshot,
 } from '../src/build-rules.ts'
 import { base } from './helpers/place-fixture.ts'
@@ -184,5 +186,62 @@ describe('what is open, and the founds of the week', () => {
     const now = Date.parse('2026-11-13T12:00:00Z')
     expect(foundsInWeek(['2026-11-05T12:00:00Z', '2026-11-07T12:00:01Z', '2026-11-12T08:00:00Z'], now)).toBe(2)
     expect(foundsInWeek([], now)).toBe(0)
+  })
+})
+
+describe('addWishes (spec 5.3, 10.3: wishing the same part again adds to its count; 5 open at most)', () => {
+  const NOW = '2026-11-14T12:00:00Z'
+  const draft = (name: string, forPlace: string | null = 'house-of-lights') => ({ name, description: `A ${name.toLowerCase()}.`, forPlace })
+  const wish = (name: string, over: Record<string, unknown> = {}) => ({ id: wishId(name), name, description: `A ${name.toLowerCase()}.`, forPlace: null, count: 1, written: '2026-11-01T10:00:00Z', status: 'open' as const, statusAt: null, note: null, ...over })
+
+  it('slugs a name into an id', () => {
+    expect(wishId('Spiral staircase')).toBe('spiral-staircase')
+    expect(wishId('  A Lamp -- for the HALL!  ')).toBe('a-lamp-for-the-hall')
+    expect(wishId('!!!')).toBe('wish')
+    expect(wishId('x'.repeat(60)).length).toBeLessThanOrEqual(40)
+  })
+
+  it('writes a new wish: count 1, open, dated, with the place it is for', () => {
+    const r = addWishes([], [draft('Spiral staircase')], NOW)
+    expect(r.wishes).toEqual([{ id: 'spiral-staircase', name: 'Spiral staircase', description: 'A spiral staircase.', forPlace: 'house-of-lights', count: 1, written: NOW, status: 'open', statusAt: null, note: null }])
+    expect(r.dropped).toEqual([])
+  })
+
+  it('adds to the count when the same part is wished again, open or building, and keeps the rest of the wish', () => {
+    const r = addWishes([wish('Spiral staircase', { count: 2, status: 'building', statusAt: '2026-11-05T10:00:00Z' })], [draft('spiral STAIRCASE')], NOW)
+    expect(r.wishes).toHaveLength(1)
+    expect(r.wishes[0]).toMatchObject({ id: 'spiral-staircase', count: 3, status: 'building', written: '2026-11-01T10:00:00Z', description: 'A spiral staircase.' })
+  })
+
+  it('counts a part wished twice in one call', () => {
+    expect(addWishes([], [draft('Lamp'), draft('Lamp')], NOW).wishes).toEqual([expect.objectContaining({ id: 'lamp', count: 2 })])
+  })
+
+  it('files a new wish when the old one with that name is closed, under an id that is free', () => {
+    const closed = [wish('Lamp', { status: 'built', statusAt: '2026-11-05T10:00:00Z' }), wish('Lamp', { id: 'lamp-2', status: 'unanswered', statusAt: '2026-11-06T10:00:00Z' })]
+    const r = addWishes(closed, [draft('Lamp')], NOW)
+    expect(r.wishes).toEqual([expect.objectContaining({ id: 'lamp-3', count: 1, status: 'open' })])
+  })
+
+  it('at 5 open, a new name is dropped but a wish that is already open still counts up', () => {
+    expect(MAX_OPEN_WISHES).toBe(5)
+    const five = ['A', 'B', 'C', 'D', 'E'].map((n) => wish(`Part ${n}`))
+    const r = addWishes(five, [draft('Part C'), draft('Something new')], NOW)
+    expect(r.wishes).toEqual([expect.objectContaining({ id: 'part-c', count: 2 })])
+    expect(r.dropped).toEqual(['Something new'])
+  })
+
+  it('counts the wishes it adds in the same call against the 5', () => {
+    const four = ['A', 'B', 'C', 'D'].map((n) => wish(`Part ${n}`))
+    const r = addWishes(four, [draft('One'), draft('Two')], NOW)
+    expect(r.wishes.map((w) => w.id)).toEqual(['one'])
+    expect(r.dropped).toEqual(['Two'])
+  })
+
+  it('does not change what it was given', () => {
+    const existing = [wish('Lamp')]
+    const copy = JSON.stringify(existing)
+    addWishes(existing, [draft('Lamp')], NOW)
+    expect(JSON.stringify(existing)).toBe(copy)
   })
 })

@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import { Timestamp } from './intention.ts'
+import { WorkConstraint } from './constraint.ts'
 import { BudgetCall } from './mind.ts'
+import { PlaceId } from './place.ts'
+import { ExpandPatch } from './place-patch.ts'
+import { WishDraft } from './request.ts'
 
 /** A job id is a plain slug, so it is safe as part of a file name. */
 export const JobId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,60}$/, 'lowercase words with dashes')
@@ -31,6 +35,15 @@ export const JobResult = z.object({
   title: z.string().max(40).optional(),
   workStatus: z.enum(['shelf', 'scrap']).optional(),
   prUrl: z.url().max(300).optional(),
+  /**
+   * For an expand (spec 10.2): the place, the change the worker checked, the wishes it made, the constraint it was offered and
+   * what Merge did with it, and the two souvenirs offered. The loop checks the patch again and writes the place; the worker does not.
+   */
+  placeId: PlaceId.optional(),
+  patch: ExpandPatch.optional(),
+  wishes: z.array(WishDraft).max(2).optional(),
+  constraint: WorkConstraint.nullable().optional(),
+  collision: z.array(z.string().min(1).max(80)).length(2).nullable().optional(),
   /** What the worker spent, for the mind to book once. The worker never writes the ledger. */
   calls: z.array(BudgetCall).default([]),
   at: Timestamp,
@@ -46,3 +59,11 @@ export const TinkerJob = JobRequest.extend({
   remixOf: JobId.nullable().default(null),
 })
 export type TinkerJob = z.infer<typeof TinkerJob>
+
+/** An expand the mind asks the worker for (spec 2.4, 10.2): the place and the reason are Merge's own words. */
+export const ExpandJob = JobRequest.extend({
+  kind: z.literal('expand'),
+  placeId: PlaceId,
+  reason: z.string().min(1).max(200),
+})
+export type ExpandJob = z.infer<typeof ExpandJob>

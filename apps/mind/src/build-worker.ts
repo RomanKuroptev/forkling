@@ -14,10 +14,13 @@ export interface BuildHandlerOutcome {
   /** `later` means it could not start (no key, no browser): no result is written and the job is tried again. */
   status: 'done' | 'failed' | 'later'
   reason?: string
-  /** For a work: which one, whether it is on the shelf or in the scrap bin, its pull request, and what the calls cost. */
-  extra?: Partial<Pick<JobResult, 'workId' | 'title' | 'workStatus' | 'prUrl' | 'calls'>>
+  /**
+   * For a work: which one, whether it is on the shelf or in the scrap bin, its pull request, and what the calls cost. For an expand:
+   * the place, the checked patch, the wishes, the constraint and collision, and what the calls cost.
+   */
+  extra?: Partial<Pick<JobResult, 'workId' | 'title' | 'workStatus' | 'prUrl' | 'calls' | 'placeId' | 'patch' | 'wishes' | 'constraint' | 'collision'>>
 }
-/** What runs one kind of job. W4 adds `tinker`, W6 adds `expand` and `found`; W3 has none. */
+/** What runs one kind of job. W4 adds `tinker`, W6 adds `expand` (and the fallback `found`); W3 has none. */
 export type BuildHandler = (job: JobRequest, ctx: { dir: string; nowMs: number }) => Promise<BuildHandlerOutcome>
 export type BuildHandlers = Record<string, BuildHandler>
 

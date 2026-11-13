@@ -1,4 +1,4 @@
-import { MAX_OPEN_PLACE_REQUESTS, isOpenRequest, isOpenWish, type Place, type RequestStatus, type WakeSnapshot, type WishStatus } from '@forkling/schema'
+import { MAX_OPEN_PLACE_REQUESTS, MAX_OPEN_WISHES, isOpenRequest, isOpenWish, type Place, type RequestStatus, type WakeSnapshot, type Wish, type WishDraft, type WishStatus } from '@forkling/schema'
 import { MAX_PLACES } from './land.ts'
 import { addDays } from './sleep.ts'
 
@@ -117,3 +117,45 @@ export function foundCheck(i: FoundInput): FoundResult {
 }
 
 const lowerKeys = (topics: Readonly<Record<string, number>>) => Object.fromEntries(Object.keys(topics).map((k) => [lower(k), true]))
+
+/** A wish's id: its name as a slug, up to 40 characters. */
+export function wishId(name: string): string {
+  const slug = name
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/-+$/g, '')
+  return slug || 'wish'
+}
+
+/**
+ * What a call's wishes do to `wishes/` (spec 5.3, 10.3): wishing a part that is already open (or being built) adds to its count; a
+ * new part is a new wish, unless 5 are open, when it is dropped (the name comes back in `dropped`). A closed wish with the same name
+ * does not take the new one: the new wish gets the next free id. Returns only the wishes to write, and changes nothing it was given.
+ */
+export function addWishes(existing: readonly Wish[], drafts: readonly WishDraft[], nowIso: string): { wishes: Wish[]; dropped: string[] } {
+  const all = new Map(existing.map((w) => [w.id, w]))
+  const touched = new Set<string>()
+  const dropped: string[] = []
+  for (const d of drafts) {
+    const id = wishId(d.name)
+    const open = all.get(id)
+    if (open && isOpenWish(open)) {
+      all.set(id, { ...open, count: Math.min(open.count + 1, 999) })
+      touched.add(id)
+      continue
+    }
+    if ([...all.values()].filter(isOpenWish).length >= MAX_OPEN_WISHES) {
+      dropped.push(d.name)
+      continue
+    }
+    let fresh = id
+    for (let n = 2; all.has(fresh); n++) fresh = `${id.slice(0, 36)}-${n}`
+    all.set(fresh, { id: fresh, name: d.name, description: d.description, forPlace: d.forPlace, count: 1, written: nowIso, status: 'open', statusAt: null, note: null })
+    touched.add(fresh)
+  }
+  return { wishes: [...touched].map((id) => all.get(id)!), dropped }
+}

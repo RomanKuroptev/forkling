@@ -98,7 +98,7 @@ function memeSection(m: MemeSeeds | undefined): string[] {
 }
 
 /** The constraint drawn for the call: offered, never ordered, and a rule of form. */
-function constraintSection(constraint: string | undefined): string[] {
+export function constraintSection(constraint: string | undefined): string[] {
   if (!constraint) return []
   return [
     '',
@@ -109,7 +109,7 @@ function constraintSection(constraint: string | undefined): string[] {
 }
 
 /** Two souvenirs to put side by side. Their text came from pages, so it sits in a data block. */
-function collisionSection(c: TinkerCollision | undefined): string[] {
+export function collisionSection(c: TinkerCollision | undefined): string[] {
   if (!c) return []
   const line = (x: TinkerCollision['a']) => `${x.souvenir.id} | ${x.souvenir.kind} | "${clampText(x.souvenir.content, SOUVENIR_CHARS)}" | ${x.souvenir.source.title} (${x.souvenir.source.url}) | from ${x.from}`
   return [
