@@ -1,14 +1,16 @@
 import type { Kit, KitColor, KitPalette, KitPart, Place } from '@forkling/schema'
-import { DOOR_HALF, WALL, chunkAt, placeCentre, toLandPlace } from '@forkling/sim'
+import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
+import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
+import { SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
+
+export { SHAPES, floorHeight, type Instance, type Shape }
 
 /**
  * A world of places as shapes (spec 5.3, 4.6), worked out in plain arrays so it can be tested without a renderer. Every part is a
  * handful of boxes, spheres, cylinders and cones; the whole world is drawn as one instanced mesh per shape, each instance with its
  * own matrix and colour, so the number of draw calls does not grow with the number of places.
  */
-export const SHAPES = ['box', 'sphere', 'cylinder', 'cone'] as const
-export type Shape = (typeof SHAPES)[number]
 
 /** Segments of the unit shapes the components draw. The triangle counts below follow from these, and the budget from them. */
 export const SPHERE_SEGMENTS = [8, 6] as const
@@ -29,13 +31,6 @@ export const MODEL_LIMITS = { meshes: 2, triangles: 2000 } as const
 /** The model files the kit's parts use, once each, in name order: what the viewer loads. */
 export const modelFiles = (kit: Kit): string[] => [...new Set(kit.parts.flatMap((p) => (p.model ? [p.model.file] : [])))].sort()
 
-export interface Instance {
-  shape: Shape
-  matrix: Mat4
-  /** A hex colour, already looked up in the palette. */
-  color: string
-}
-
 export function resolveColor(color: KitColor, palette: KitPalette): string {
   return color.startsWith('#') ? color : palette.colors[color as keyof KitPalette['colors']]
 }
@@ -52,9 +47,6 @@ export function partInstances(part: KitPart, at: readonly [number, number, numbe
     color: resolveColor(p.color, palette),
   }))
 }
-
-/** How tall one floor of a place is: its tallest room (the 12 meter limit of 5.2 is floors times this). */
-export const floorHeight = (place: Place): number => Math.max(2.4, ...place.rooms.map((r) => r.size[2]))
 
 /** How far inside the footprint's edge a wall's middle stands, so it lies within the 0.8 m the body cannot walk on. */
 const INSET = 0.4
@@ -114,6 +106,9 @@ export function exteriorInstances(place: Place, kit: Kit, baseY: number): Instan
 
   // The roof, a little wider than the walls.
   out.push(...partInstances(roof, [px, baseY + floors * height, pz], 0, palette, [(fw + 1.2) / roof.size[0], 1, (fd + 1.2) / roof.size[2]]))
+  // The sign by the door, where the place's history is opened from (spec 4.6).
+  const sign = kit.parts.find((p) => p.id === 'sign-post')
+  if (sign) out.push(...partInstances(sign, signSpot(place, baseY).position, 0, palette))
   return out
 }
 
@@ -127,8 +122,10 @@ export interface ModelInstance {
  * The inside: a floor for each floor of the building, and every room's furniture where the place file put it. A part with a model
  * is a model instance once its file is in `models` (it has loaded), and its primitives until then, or for good if it never loads.
  */
-export function interiorParts(place: Place, kit: Kit, baseY: number, models: ReadonlySet<string> = new Set()): { instances: Instance[]; models: ModelInstance[] } {
+export function interiorParts(place: Place, kit: Kit, baseY: number, models: ReadonlySet<string> = new Set(), opts: { lampsOn?: boolean } = {}): { instances: Instance[]; models: ModelInstance[] } {
   const { palette } = look(place, kit)
+  // Lamps that are off are dark: the glow of their palette is replaced by a dull grey.
+  const dark: KitPalette = { ...palette, colors: { ...palette.colors, glow: '#4a4a4a' } }
   const [px, pz] = placeCentre(toLandPlace(place))
   const [fw, fd] = place.exterior.footprint
   const height = floorHeight(place)
@@ -146,7 +143,7 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
         const s = part.model.scale
         modelOut.push({ file: part.model.file, matrix: compose(at, [0, placed.rot, 0], [s, s, s]) })
       } else {
-        out.push(...partInstances(part, at, placed.rot, palette))
+        out.push(...partInstances(part, at, placed.rot, part.category === 'light' && opts.lampsOn === false ? dark : palette))
       }
     }
   }
@@ -213,17 +210,24 @@ export type SceneInstances = Record<Shape, ShapeInstances> & {
  * Every place's shapes, grouped by shape: its outside always, its inside only when `interiors` has it. Each stands on the ground
  * under it. `models` are the model files that have loaded: a part that has one is drawn from it, the others from their primitives.
  */
-export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string> }): SceneInstances {
+export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number }): SceneInstances {
   const lists: Record<Shape, Instance[]> = { box: [], sphere: [], cylinder: [], cone: [] }
   const modelLists: Record<string, Mat4[]> = {}
   for (const place of places) {
     const [px, pz] = placeCentre(toLandPlace(place))
     const baseY = opts.heightAt(px, pz)
+    // How long since it was cared for sets how it looks (spec 4.4). Without a clock, nothing is neglected.
+    const level = opts.nowMs === undefined ? 0 : neglectFor({ id: place.id, lastCareAt: place.state.lastCareAt, founded: place.founded }, opts.nowMs)
+    const lampsOn = neglectLook(level, place.state.lamps).lampsOn
     for (const i of exteriorInstances(place, kit, baseY)) lists[i.shape].push(i)
+    for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
     if (opts.interiors.has(place.id)) {
-      const inside = interiorParts(place, kit, baseY, opts.models)
+      const inside = interiorParts(place, kit, baseY, opts.models, { lampsOn })
       for (const i of inside.instances) lists[i.shape].push(i)
       for (const m of inside.models) (modelLists[m.file] ??= []).push(m.matrix)
+      const { palette } = look(place, kit)
+      for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) lists[i.shape].push(i)
+      for (const i of neglectInstances(place, kit, baseY, level, 'interior')) lists[i.shape].push(i)
     }
   }
   const models: Record<string, Float32Array> = {}

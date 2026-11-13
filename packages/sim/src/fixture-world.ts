@@ -30,7 +30,7 @@ export interface FixtureWorld {
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
-export function makeFixtureWorld(seed = 1, count = 10): FixtureWorld {
+export function makeFixtureWorld(seed = 1, count = 10, now: string = FIXTURE_NOW): FixtureWorld {
   const prng = createPrng(seed)
   const places: Place[] = [Place.parse(homeFile), Place.parse(workshopFile)]
   const souvenirs: Record<string, SouvenirKindName> = {}
@@ -73,7 +73,7 @@ export function makeFixtureWorld(seed = 1, count = 10): FixtureWorld {
     add(11, 'fact', 'main/3/0')
     add(12, 'quote', 'main/4/0')
 
-    const lastCare = new Date(Date.parse(FIXTURE_NOW) - DAYS_SINCE_CARE[i % DAYS_SINCE_CARE.length]! * DAY_MS).toISOString()
+    const lastCare = new Date(Date.parse(now) - DAYS_SINCE_CARE[i % DAYS_SINCE_CARE.length]! * DAY_MS).toISOString()
     places.push(
       Place.parse({
         id,
@@ -92,5 +92,5 @@ export function makeFixtureWorld(seed = 1, count = 10): FixtureWorld {
     )
   }
 
-  return { seed, now: FIXTURE_NOW, places, paths: derivePaths(places.map(toLandPlace)), souvenirs }
+  return { seed, now, places, paths: derivePaths(places.map(toLandPlace)), souvenirs }
 }

@@ -11,7 +11,7 @@ import type { LoadedWorld } from './loadWorld.ts'
  * and to measure how fast it draws.
  */
 export function loadFixtureWorld(count: number, pack: SpeciesPack, nowMs: number = Date.now()): LoadedWorld {
-  const world = makeFixtureWorld(1, Math.min(64, Math.max(2, Math.floor(count))))
+  const world = makeFixtureWorld(1, Math.min(64, Math.max(2, Math.floor(count))), new Date(nowMs).toISOString())
   const home = world.places.find((p) => p.id === 'home')!
   const [hx, hz] = placeCentre(toLandPlace(home))
   const now = new Date(nowMs).toISOString()
