@@ -27,6 +27,10 @@ export function landMindStep(t: Tick, step: PlanStep, index: number): void {
     t.pendingWork = { step, index }
     return
   }
+  if (step.verb === 'tend' && t.places.some((p) => p.id === step.targetId)) {
+    t.pendingTend = { step, index }
+    return
+  }
   if (step.verb !== 'rest') {
     const text = `${step.verb} is not built yet, so it rested instead.`
     t.remember.push({ at: t.nowIso, kind: 'event', text, verb: step.verb })

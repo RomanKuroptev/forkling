@@ -12,6 +12,7 @@ import { buildNow } from './tick/now.ts'
 import { settleJobs } from './tick/jobs.ts'
 import { thoughtTick } from './tick/thought.ts'
 import { workStep } from './tick/work.ts'
+import { tendStep } from './tick/tend.ts'
 import { noteStep } from './tick/mind-step.ts'
 import { route } from './tick/route.ts'
 import { logTick } from './ticklog.ts'
@@ -35,6 +36,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   await tripStep(t)
   await noteStep(t)
   await workStep(t)
+  await tendStep(t)
   // The loop's own thought tick (spec 2.2); the Actions tick has none. It writes only to the stream.
   if (deps.thoughts && thoughtDue({ timezone: t.tz, nowMs: t.nowMs, asleep: t.asleep, paceAhead: paceAhead(t.budget, t.today), thought: t.mind.thought })) await thoughtTick(t)
   await think(t)

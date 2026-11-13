@@ -4,7 +4,7 @@ import { buildUser } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { readRecentPast } from '../past.ts'
 import { moodWords, PRICES } from '@forkling/sim'
-import { checkPlan, STARTING_PLACES } from './plan.ts'
+import { checkPlan, placeIds } from './plan.ts'
 import { clock, weekday } from './util.ts'
 
 /** The morning plan, the weekly review or a decision: one call, and one more if the body cannot carry out the plan. */
@@ -17,7 +17,7 @@ export async function think(t: Tick): Promise<void> {
     forkling: t.forkling,
     goals: t.goals,
     mindState: t.mind,
-    places: [...STARTING_PLACES],
+    places: placeIds(t),
     triggers: t.triggers,
     events: t.events,
     localTime: `${weekday(tz, nowMs)} ${t.today} ${clock(tz, nowMs)}`,
