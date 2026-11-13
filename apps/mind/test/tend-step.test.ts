@@ -195,3 +195,55 @@ describe('a tend step (spec 2.4, 5.4)', () => {
     expect(result.written).not.toContain('places/home.json')
   })
 })
+
+describe('a revisit step (spec 2.4)', () => {
+  const revisitStep = () => step('revisit', 'home', 20, 'I have not been there in a while.')
+  const revisitAnswer = { summary: 'Sat by the shelf a while.', thought: 'The shelf is dusty and I like it.' }
+  function fakeRevisit(plan: unknown, out: unknown) {
+    const calls: LlmRequest[] = []
+    let planned = false
+    const llm: LlmClient = {
+      ...noBatch,
+      async complete<T>(req: LlmRequest<T>) {
+        calls.push(req)
+        const usage = { input: 800, cacheRead: 0, cacheWrite: 0, output: 200 }
+        if (req.kind === 'revisit') return { parsed: (out as T | null) ?? null, stopReason: out ? 'end_turn' : 'refusal', usage }
+        const parsed = planned ? keep : plan
+        planned = true
+        return { parsed: parsed as T, stopReason: 'end_turn', usage }
+      },
+    }
+    return { llm, calls }
+  }
+  const old = () => putPlace('home', { founded: '2026-10-01' })
+
+  it('asks once on Haiku at low effort and changes only the care time and a history line', async () => {
+    old()
+    const before = placeOf('home')
+    const fake = fakeRevisit(planFor(revisitStep()), revisitAnswer)
+    const result = await landOn(fake)
+    expect(fake.calls.filter((c) => c.kind === 'revisit')).toHaveLength(1)
+    expect(fake.calls.find((c) => c.kind === 'revisit')).toMatchObject({ model: 'claude-haiku-5-5', effort: 'low' })
+    const after = placeOf('home')
+    expect(after.exhibits).toEqual(before.exhibits)
+    expect(after.rooms).toEqual(before.rooms)
+    expect(after.state).toMatchObject({ lastCareAt: '2026-11-03T09:31:00.000Z', neglect: 0 })
+    expect(after.history.at(-1)).toEqual({ at: '2026-11-03T09:31:00.000Z', verb: 'revisit', summary: 'Sat by the shelf a while.' })
+    expect(result.summary).toMatch(/revisited Home/)
+    expect(streamText()).toContain('The shelf is dusty and I like it.')
+  })
+
+  it('writes nothing, and says why, when the words claim to be human', async () => {
+    old()
+    const result = await landOn(fakeRevisit(planFor(revisitStep()), { summary: 'I am a human.', thought: 'x' }))
+    expect(result.written).not.toContain('places/home.json')
+    expect(result.notes.join(' ')).toMatch(/human/i)
+  })
+
+  it('writes nothing when the model gives no usable answer', async () => {
+    old()
+    const result = await landOn(fakeRevisit(planFor(revisitStep()), null))
+    expect(result.written).not.toContain('places/home.json')
+    expect(result.notes.join(' ')).toMatch(/no usable/i)
+  })
+})
