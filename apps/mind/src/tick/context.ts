@@ -126,6 +126,12 @@ export interface Tick {
   pendingNote: { step: PlanStep; index: number } | null
   /** Set when a sketch step finishes: the sketch is made after the step is applied. */
   pendingWork: { step: PlanStep; index: number } | null
+  /** Set when a tend step finishes: the place is changed after the step is applied. */
+  pendingTend: { step: PlanStep; index: number } | null
+  /** Places whose file changed this tick (a tend), written to `places/<id>.json`. */
+  placeUpdates: Place[]
+  /** Souvenirs whose `placedIn` changed this tick, written to `souvenirs/<id>.json`. */
+  souvenirUpdates: Souvenir[]
   touched: Set<string>
   gone: Set<string>
   /** What happened this tick that moves mood and energy (spec 3.2), applied by `feel`. */

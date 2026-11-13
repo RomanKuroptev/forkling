@@ -3,7 +3,10 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { Forkling, Goals, Interests, MindState } from '@forkling/schema'
+import { Place } from '@forkling/schema'
+import { kit } from '@forkling/schema/kit'
 import { PRICES } from '@forkling/sim'
+import { buildTendUser } from '../src/builds/tend.ts'
 import { buildSystem, buildUser, type ThinkKind, type UserInput } from '../src/prompts.ts'
 import { DEFAULT_SEED } from '../src/seed.ts'
 
@@ -59,5 +62,17 @@ describe('prompt golden files', () => {
   it('replan user prompt', async () => {
     const replan = { ...input('decide'), triggers: [{ kind: 'replan' as const, score: 0.45, detail: 'there is no step in progress and nothing planned next' }] }
     await expect(buildUser(replan)).toMatchFileSnapshot('golden/user-replan.txt')
+  })
+  it('tend user prompt', async () => {
+    const home = Place.parse(JSON.parse(readFileSync(join(templates, '../forkling-world/places/home.json'), 'utf8')))
+    const user = buildTendUser({
+      place: home,
+      kit,
+      reason: 'I want the shelf to hold the fog.',
+      daysSinceCare: 9,
+      pile: [{ id: '2026-11-02-fog', kind: 'quote', content: 'fog, fog, fog', why: 'it repeats' }],
+      works: [{ id: 'signal-clock', title: 'Signal clock' }],
+    })
+    await expect(user).toMatchFileSnapshot('golden/user-tend.txt')
   })
 })

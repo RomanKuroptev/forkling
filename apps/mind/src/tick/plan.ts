@@ -1,5 +1,5 @@
 import type { PlanStep } from '@forkling/schema'
-import { MIND_VERBS, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
+import { MIND_VERBS, daysSinceCare, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
@@ -28,6 +28,9 @@ const mindStepOf = (s: PlanStep): MindStep => ({
   ...(s.size ? { size: s.size } : {}),
 })
 
+/** The ids of the places the plan may name: the place files, or Home and the Workshop in a world that has none yet. */
+export const placeIds = (t: Pick<Tick, 'places'>): string[] => (t.places.length > 0 ? t.places.map((p) => p.id) : [...STARTING_PLACES])
+
 /** What the plan check needs to know that is not in the plan: the day, the mood, the points in hand, what exists. */
 export function planContext(t: Tick): MindPlanContext {
   return {
@@ -35,9 +38,9 @@ export function planContext(t: Tick): MindPlanContext {
     bedMs: t.window.bedMs,
     mood: { mood: t.mood, energy: t.energy },
     pointsInHand: t.mind.allowance?.points ?? 0,
-    places: new Set(STARTING_PLACES),
-    // Care of places, growth, founding and notes arrive with places (W5), requests (W6) and notes (W7).
-    revisitable: new Set(),
+    places: new Set(placeIds(t)),
+    // Revisiting a place not cared for in 7 days; growth, founding and notes arrive with requests (W6) and notes (W7).
+    revisitable: new Set(t.places.filter((p) => daysSinceCare({ lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) >= 7).map((p) => p.id)),
     expandable: new Set(),
     canFound: false,
     notes: new Set(),
