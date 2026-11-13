@@ -175,3 +175,38 @@ describe('the body playing on the new land', () => {
     expect(a.steps).toBe(b.steps)
   })
 })
+
+describe('a plan step takes the body where the engine says (spec 2.7)', () => {
+  // The made-up blob pack has no idea what Home or a desk is. It only says which of its own actions shows a verb.
+  const pack = SpeciesPack.parse({
+    ...blobJson,
+    actions: [...blobJson.actions, { id: 'visit', durationSec: [30, 60], target: { type: 'spot', kind: 'home' }, slot: 'walk', reason: 'Went there.' }],
+    mindPoses: { wander: 'visit', tend: 'visit' },
+  })
+  const START = Date.parse('2026-12-20T11:00:00.000Z')
+  const stepGoals = (verb: string, targetId: string | undefined) => ({
+    today: { date: '2026-12-20', steps: [{ verb, ...(targetId ? { targetId } : {}), reason: 'Went to it.', minutes: 30 }], reason: 'A plan.' },
+    now: { index: 0, startedAt: new Date(START).toISOString(), until: new Date(START + 1800_000).toISOString() },
+  })
+  const play = (verb: string, targetId: string | undefined, from: string) => {
+    const [x, z] = centre(from)
+    const forkling = { name: 'Blobby', species: 'blob', position: [x, 0, z], mood: 0.2, energy: 0.3, intention: { type: 'visit', startedAt: new Date(START).toISOString(), seed: 5, reason: 'x' }, lastTickAt: new Date(START).toISOString(), timezone: 'Europe/Stockholm', seed: 7, asleep: false, schemaVersion: 1 }
+    return startPlayback({ forkling, pack, behaviors: [], world, goals: stepGoals(verb, targetId) } as never, START + 150_000)
+  }
+  const near = (pb: ReturnType<typeof play>, spot: { x: number; z: number }) => Math.hypot(pb.state.pos.x - spot.x, pb.state.pos.z - spot.z)
+
+  it('walks to the desk at Home for a wander step, from the other side of the village', () => {
+    const desk = world.spots(sun).desk![0]!
+    expect(near(play('wander', 'lidar finds of lost Maya sites', 'place-04'), desk)).toBeLessThan(3)
+  })
+
+  it('walks to the place a tend names', () => {
+    const target = world.spots(sun)['place-02']![0]!
+    expect(near(play('tend', 'place-02', 'workshop'), target)).toBeLessThan(3)
+  })
+
+  it('keeps the focus on the step: the body is not doing something else when its time is not up', () => {
+    const pb = play('tend', 'place-02', 'workshop')
+    expect(pb.state.focus).toMatchObject({ action: 'visit', targetId: 'place-02' })
+  })
+})

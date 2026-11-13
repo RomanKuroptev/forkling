@@ -19,8 +19,13 @@ export function loadFixtureWorld(count: number, pack: SpeciesPack, nowMs: number
     ...templateForkling,
     name: 'Fixture',
     position: [hx, 0, hz],
-    intention: { ...templateForkling.intention, startedAt: now },
+    intention: { ...templateForkling.intention, type: pack.mindPoses.wander ?? 'sit', startedAt: now },
     lastTickAt: now,
   })
-  return { ref: LOCAL_REF, sha: 'fixture', committedAt: now, forkling, pack, objects: [], places: world.places, workIds: [], goals: {} }
+  // A wander step is in progress for an hour, so the cat is shown reading at the desk at Home.
+  const goals = {
+    today: { date: now.slice(0, 10), steps: [{ verb: 'wander', reason: 'Reading at my desk.', minutes: 60 }], reason: 'A plan for looking at the fixture.' },
+    now: { index: 0, startedAt: now, until: new Date(nowMs + 3_600_000).toISOString() },
+  }
+  return { ref: LOCAL_REF, sha: 'fixture', committedAt: now, forkling, pack, objects: [], places: world.places, workIds: [], goals }
 }
