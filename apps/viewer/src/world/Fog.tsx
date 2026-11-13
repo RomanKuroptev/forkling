@@ -42,7 +42,7 @@ export function Fog() {
     })
     const geometry = planes.length > 0 ? mergeGeometries(planes) : new THREE.BufferGeometry()
     for (const g of planes) g.dispose()
-    const material = new THREE.MeshBasicMaterial({ color: '#bcd7e6', alphaMap: gradient(), transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false })
+    const material = new THREE.MeshBasicMaterial({ color: '#bcd7e6', alphaMap: gradient(), opacity: 0.34, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false })
     return { geometry, material }
   }, [world])
 
