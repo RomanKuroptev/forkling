@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_OPEN_PLACE_REQUESTS, MAX_OPEN_WISHES, PlaceRequest, Wish, formatRequest, isOpenRequest, isOpenWish, parseRequest } from '../src/index.ts'
+import { MAX_OPEN_PLACE_REQUESTS, MAX_OPEN_WISHES, PlaceRequest, Wish, WishDraft, formatRequest, isOpenRequest, isOpenWish, parseRequest } from '../src/index.ts'
 
 const request = {
   id: 'house-of-lights',
@@ -133,5 +133,14 @@ describe('what is open', () => {
   it('the limits are 2 place requests and 5 wishes', () => {
     expect(MAX_OPEN_PLACE_REQUESTS).toBe(2)
     expect(MAX_OPEN_WISHES).toBe(5)
+  })
+})
+
+describe('WishDraft (what a call may wish for, spec 5.3: up to 2 per call)', () => {
+  it('is a name, a description of up to 200 characters, and the place it is for or none', () => {
+    expect(WishDraft.parse({ name: 'Spiral staircase', description: 'A staircase that turns.', forPlace: 'house-of-lights' })).toMatchObject({ name: 'Spiral staircase' })
+    expect(WishDraft.safeParse({ name: 'x', description: 'x'.repeat(201), forPlace: null }).success).toBe(false)
+    expect(WishDraft.safeParse({ name: '', description: 'x', forPlace: null }).success).toBe(false)
+    expect(WishDraft.safeParse({ name: 'x'.repeat(41), description: 'x', forPlace: null }).success).toBe(false)
   })
 })

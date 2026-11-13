@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { JobRequest, JobResult, MindState, TinkerJob } from '../src/index.ts'
+import { ExpandJob, JobRequest, JobResult, MindState, TinkerJob } from '../src/index.ts'
 
 describe('JobRequest (a file the build worker finds in mind/builds/)', () => {
   it('needs an id, a kind and when it was asked for, and keeps any other fields for the handler', () => {
@@ -55,5 +55,46 @@ describe('MindState.jobs (results seen, and results the mind has not answered ye
   it('is absent in an older file and fills its defaults when there', () => {
     expect(MindState.parse({}).jobs).toBeUndefined()
     expect(MindState.parse({ jobs: {} }).jobs).toEqual({ seen: [], pending: [] })
+  })
+})
+
+describe('ExpandJob (an expand the mind asks the worker for, spec 10.2)', () => {
+  const job = { id: 'expand-20261114-1031', kind: 'expand', requestedAt: '2026-11-14T10:31:00Z', placeId: 'house-of-lights', reason: 'The signals keep coming and the hall is full.' }
+  it('is a job of kind expand, naming the place and the reason in its own words', () => {
+    expect(ExpandJob.parse(job)).toMatchObject({ kind: 'expand', placeId: 'house-of-lights' })
+    expect(ExpandJob.safeParse({ ...job, kind: 'tinker' }).success).toBe(false)
+    expect(ExpandJob.safeParse({ ...job, placeId: '../x' }).success).toBe(false)
+    expect(ExpandJob.safeParse({ ...job, reason: '' }).success).toBe(false)
+    expect(ExpandJob.safeParse({ ...job, reason: 'x'.repeat(201) }).success).toBe(false)
+  })
+})
+
+describe('JobResult of an expand (spec 10.2: the worker returns the validated change, the loop writes the place)', () => {
+  const base = { id: 'expand-20261114-1031', kind: 'expand', status: 'done', at: '2026-11-14T12:00:00Z' }
+  const patch = { verb: 'expand', change: { kind: 'path', to: 'workshop' }, summary: 'A path to the Workshop.' }
+
+  it('carries the place, the patch, the wishes, the constraint and the collision', () => {
+    const r = JobResult.parse({
+      ...base,
+      placeId: 'house-of-lights',
+      patch,
+      wishes: [{ name: 'Spiral staircase', description: 'A staircase that turns.', forPlace: 'house-of-lights' }],
+      constraint: { text: 'Use only two colours.', refused: true, reason: 'The hall needs a third.' },
+      collision: ['s1', 's2'],
+    })
+    expect(r.patch).toMatchObject({ verb: 'expand' })
+    expect(r.wishes).toHaveLength(1)
+    expect(r.constraint).toMatchObject({ refused: true })
+  })
+
+  it('refuses a patch that is not an expand, more than 2 wishes, and a collision that is not a pair', () => {
+    expect(JobResult.safeParse({ ...base, patch: { verb: 'tend', summary: 'x' } }).success).toBe(false)
+    const wish = { name: 'A', description: 'a', forPlace: null }
+    expect(JobResult.safeParse({ ...base, wishes: [wish, wish, wish] }).success).toBe(false)
+    expect(JobResult.safeParse({ ...base, collision: ['only-one'] }).success).toBe(false)
+  })
+
+  it('stays valid with none of them (a work or an old result)', () => {
+    expect(JobResult.safeParse(base).success).toBe(true)
   })
 })

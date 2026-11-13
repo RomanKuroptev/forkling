@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { Timestamp } from './intention.ts'
+import { WorkConstraint } from './constraint.ts'
 import { JobId } from './job.ts'
 
 /** `index.html` is at most 150 KB (spec 7.1), and a sketch at most 4 KB (7.6). */
@@ -23,16 +24,6 @@ export type WorkLibrary = z.infer<typeof WorkLibrary>
 /** What a meme is drawn from (spec 7.7): a page whose picture it looked at, and a Wikipedia page it read about the format (often the same page). Both are pages on its trails. */
 export const WorkSource = z.object({ role: z.enum(['looked', 'read']), url: z.url().max(500) })
 export type WorkSource = z.infer<typeof WorkSource>
-
-/** The constraint a call was offered (spec 12.4, item 4) and what Merge did with it. A refusal says why, and only a refusal does. */
-export const WorkConstraint = z
-  .object({ text: z.string().min(1).max(200), refused: z.boolean(), reason: z.string().min(1).max(200).nullable() })
-  .strict()
-  .superRefine((c, ctx) => {
-    if (c.refused && !c.reason) ctx.addIssue({ code: 'custom', path: ['reason'], message: 'a refusal says why' })
-    if (!c.refused && c.reason) ctx.addIssue({ code: 'custom', path: ['reason'], message: 'only a refusal has a reason' })
-  })
-export type WorkConstraint = z.infer<typeof WorkConstraint>
 
 /**
  * `works/<id>/meta.json` (spec 7.1). The model writes the title, kind, about, interest, libraries and sources; code sets the

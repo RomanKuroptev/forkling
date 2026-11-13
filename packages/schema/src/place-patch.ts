@@ -52,6 +52,7 @@ export const ExpandChange = z.discriminatedUnion('kind', [
 export type ExpandChange = z.infer<typeof ExpandChange>
 
 export const ExpandPatch = z.object({ verb: z.literal('expand'), change: ExpandChange, summary: Summary }).strict()
+export type ExpandPatch = z.infer<typeof ExpandPatch>
 
 export const RenamePatch = z.object({ verb: z.literal('rename'), name: z.string().max(200), summary: Summary }).strict()
 

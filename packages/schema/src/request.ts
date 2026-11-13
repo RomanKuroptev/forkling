@@ -112,3 +112,14 @@ export const Wish = z
   .strict()
   .superRefine(checkStatus)
 export type Wish = z.infer<typeof Wish>
+
+/** A wish as a call proposes it (spec 5.3: up to 2 a call). Code gives it an id, the date, a count and a status. */
+export const WishDraft = z
+  .object({
+    name: z.string().min(1).max(40),
+    description: z.string().min(1).max(200),
+    /** The place it is for, or null for the world at large. */
+    forPlace: PlaceId.nullable(),
+  })
+  .strict()
+export type WishDraft = z.infer<typeof WishDraft>

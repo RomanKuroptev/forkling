@@ -1,19 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { BudgetLedger, Interests, TinkerJob, type BudgetCall } from '@forkling/schema'
-import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger } from '../budget.ts'
+import { Interests, TinkerJob } from '@forkling/schema'
 import { clampText } from '../decision.ts'
-import { effortFor, thinkingFor, type LlmClient } from '../llm.ts'
-import { buildSystem } from '../prompts.ts'
-import { DEFAULT_SEED } from '../seed.ts'
+import type { LlmClient } from '../llm.ts'
 import type { BuildHandler } from '../build-worker.ts'
 import { createFetcher, type FetcherOptions } from '../web/fetch.ts'
 import { manualPagesFor } from '../web/sources/manuals.ts'
 import type { WorkChecker } from './browser-check.ts'
 import type { GithubClient, GithubFile } from './github.ts'
+import { createWorkerComplete } from './complete.ts'
 import { drawForBuild } from './draw.ts'
 import { memeSeeds } from './memes.ts'
-import { runTinker, type Complete, type TinkerInput } from './tinker.ts'
+import { runTinker, type TinkerInput } from './tinker.ts'
 import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from './works.ts'
 
 export interface TinkerHandlerOptions {
@@ -52,28 +50,7 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
     if (!o.llm || !(await o.checker.available())) return { status: 'later' }
 
     const nowMs = o.now()
-    const nowIso = new Date(nowMs).toISOString()
-    const llm = o.llm
-    const seed = existsSync(join(o.dir, 'self/seed.md')) ? readFileSync(join(o.dir, 'self/seed.md'), 'utf8') : DEFAULT_SEED
-    const system = buildSystem({ seed })
-
-    const timezone = (readJson(o.dir, 'forkling.json') as { timezone?: string } | null)?.timezone ?? 'Europe/Stockholm'
-    const stored = BudgetLedger.safeParse(readJson(o.dir, 'brain/budget.json'))
-    let ledger = rollLedger(stored.success ? stored.data : BudgetLedger.parse({ month: monthOf(timezone, nowMs) }), monthOf(timezone, nowMs))
-    const calls: BudgetCall[] = []
-
-    /** One call, with the guards the tick's `ask` has: prompt size and the month's budget. Nothing is booked here. */
-    const complete: Complete = async (kind, model, user, schema, maxTokens) => {
-      const tokens = estimateTokens(system) + estimateTokens(user)
-      if (tokens > MAX_PROMPT_TOKENS || !canSpend(ledger, estimateCallUsd(model, tokens, maxTokens))) return null
-      const effort = effortFor(kind)
-      const thinking = thinkingFor(model, effort)
-      const result = await llm.complete({ kind, model, system, user, maxTokens, effort, ...(thinking ? { thinking } : {}), schema })
-      const call: BudgetCall = { at: nowIso, kind, model, ...result.usage, usd: costUsd(model, result.usage) }
-      calls.push(call)
-      ledger = recordCall(ledger, call)
-      return result
-    }
+    const { complete, calls, nowIso } = createWorkerComplete({ dir: o.dir, llm: o.llm, nowMs })
 
     const works = readWorks(o.dir)
     const untried = untriedLibraries(works)

@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util'
 import { createBuildWorker } from './build-worker.ts'
 import { createBrowserChecker } from './builds/browser-check.ts'
 import { createGithubClient, repoFromUrl } from './builds/github.ts'
+import { createExpandHandler } from './builds/expand-job.ts'
 import { createTinkerHandler } from './builds/tinker-job.ts'
 import { hasCredentials } from './credentials.ts'
 import { buildHealthResponse } from './health-response.ts'
@@ -76,8 +77,8 @@ async function main(): Promise<void> {
   // A full work needs a key (the call), a browser (the check) and the GitHub token (the pull request); without them it waits.
   const repo = env.FORKLING_GITHUB_REPO ?? repoFromUrl(values.repo ?? env.FORKLING_REPO_URL ?? '')
   const github = env.GITHUB_TOKEN && repo ? createGithubClient({ token: env.GITHUB_TOKEN, repo }) : null
-  if (!github) console.log('the build worker has no jobs: it needs GITHUB_TOKEN and the world repository (FORKLING_REPO_URL or FORKLING_GITHUB_REPO)')
-  const worker = createBuildWorker({ dir, now: Date.now, handlers: github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now, web }) } : {} })
+  if (!github) console.log('full works wait: they need GITHUB_TOKEN and the world repository (FORKLING_REPO_URL or FORKLING_GITHUB_REPO)')
+  const worker = createBuildWorker({ dir, now: Date.now, handlers: { expand: createExpandHandler({ dir, llm, now: Date.now }), ...(github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now, web }) } : {}) } })
 
   const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now()), pagesOrigin })
   await new Promise<void>((ready, fail) => {
