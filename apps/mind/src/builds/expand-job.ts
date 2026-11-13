@@ -57,7 +57,8 @@ export function createExpandHandler(o: ExpandHandlerOptions): BuildHandler {
     const job = parsed.data
     const llm = o.llm
     if (!llm) return { status: 'later' }
-    const fail = (reason: string, calls?: ReturnType<typeof createWorkerComplete>['calls']) => ({ status: 'failed' as const, reason, ...(calls ? { extra: { calls } } : {}) })
+    // A failure still names the place, so the mind can say which expansion it was.
+    const fail = (reason: string, calls?: ReturnType<typeof createWorkerComplete>['calls']) => ({ status: 'failed' as const, reason, extra: { placeId: job.placeId, ...(calls ? { calls } : {}) } })
 
     const nowMs = o.now()
     const places = readPlaces(o.dir)

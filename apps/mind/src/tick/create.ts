@@ -98,6 +98,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     pendingWork: null,
     pendingTend: null,
     pendingRevisit: null,
+    pendingExpand: null,
     placeUpdates: [],
     souvenirUpdates: [],
     touched: new Set(),
@@ -136,6 +137,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     newSouvenirs: [],
     newWorks: [],
     newJobs: [],
+    wishUpdates: [],
     workUpdates: [],
     arts: mind.arts?.date === today ? mind.arts : { date: today, count: 0 },
 

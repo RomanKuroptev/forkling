@@ -14,6 +14,8 @@ export interface UserInput {
   mindState: MindState
   /** The ids of the places that exist. */
   places: readonly string[]
+  /** The places that have earned an expand now (spec 2.5), as `id (tag)`. */
+  growable?: readonly string[]
   triggers: readonly Trigger[]
   events: readonly VisitorEvent[]
   /** Local time like `Tuesday 2026-11-03 10:00`. */
@@ -114,6 +116,7 @@ export function buildUser(i: UserInput): string {
     '<places>',
     i.places.join(', ') || 'none',
     '</places>',
+    ...((i.growable ?? []).length > 0 ? ['', '<growable>', 'These places have earned an expand now (the interest that earned it):', ...i.growable!.map((g) => `- ${g}`), '</growable>'] : []),
     '',
     '<recent>',
     json({ steps: i.mindState.recent.slice(-8), rejectedPlans: i.mindState.rejections.slice(-3) }),

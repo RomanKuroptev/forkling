@@ -4,6 +4,7 @@ import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { dropRepeatedStarts } from '../web/rails.ts'
+import { expandablePlaces } from './expand.ts'
 import { intentionSeed } from './util.ts'
 
 const MAX_RECENT = 20
@@ -39,15 +40,15 @@ export function planContext(t: Tick): MindPlanContext {
     mood: { mood: t.mood, energy: t.energy },
     pointsInHand: t.mind.allowance?.points ?? 0,
     places: new Set(placeIds(t)),
-    // Revisiting a place not cared for in 7 days; growth, founding and notes arrive with requests (W6) and notes (W7).
+    // Revisiting a place not cared for in 7 days; growth is the conditions of spec 2.5; founding arrives with requests (W6, slice 6) and notes with W7.
     revisitable: new Set(t.places.filter((p) => daysSinceCare({ lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) >= 7).map((p) => p.id)),
-    expandable: new Set(),
+    expandable: new Set(expandablePlaces(t).map((e) => e.id)),
     canFound: false,
     notes: new Set(),
     wants: [],
     recent: t.mind.recent,
     used: { repliesToday: 0, sketchesToday: t.mind.sketches?.date === t.today ? t.mind.sketches.count : 0, foundThisWeek: 0 },
-    lastExpandedPlace: null,
+    lastExpandedPlace: t.mind.lastExpandedPlace ?? null,
   }
 }
 

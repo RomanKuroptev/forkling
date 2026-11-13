@@ -4,6 +4,7 @@ import { buildUser } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { readRecentPast } from '../past.ts'
 import { moodWords, PRICES } from '@forkling/sim'
+import { expandablePlaces } from './expand.ts'
 import { checkPlan, placeIds } from './plan.ts'
 import { clock, weekday } from './util.ts'
 
@@ -18,6 +19,7 @@ export async function think(t: Tick): Promise<void> {
     goals: t.goals,
     mindState: t.mind,
     places: placeIds(t),
+    growable: expandablePlaces(t).map((e) => `${e.id} (${e.tag})`),
     triggers: t.triggers,
     events: t.events,
     localTime: `${weekday(tz, nowMs)} ${t.today} ${clock(tz, nowMs)}`,
