@@ -3,9 +3,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { MindState, Souvenir, WorkMeta } from '@forkling/schema'
+import { Interests, MindState, Souvenir, WorkMeta } from '@forkling/schema'
 import type { WorkCheckResult, WorkChecker } from '../src/builds/browser-check.ts'
 import { hasPolicy } from '../src/builds/sandbox.ts'
+import { drawConstraint } from '../src/prompts/constraints.ts'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
 import { loadSpecies } from '../src/species.ts'
 import { runTick } from '../src/tick.ts'
@@ -232,5 +233,55 @@ describe('the manuals offered to a sketch (spec 6.1: for tinker only; 12.4: untr
     const fake = fakeLlm(planWith())
     await sketchHour(fake, checkerOf({}))
     expect(fake.calls.find((c) => c.kind === 'sketch')!.user).not.toContain('manuals')
+  })
+})
+
+describe('the constraint and the collision (spec 12.4)', () => {
+  const seed = () => (JSON.parse(readFileSync(file('forkling.json'), 'utf8')) as { seed: number }).seed
+  const keep1 = (id: string, topic: string) => {
+    mkdirSync(file('souvenirs'), { recursive: true })
+    const s = Souvenir.parse({ kind: 'quote', id, why: 'it stuck', content: `words about ${id}`, topics: [topic], source: { url: 'https://en.wikipedia.org/wiki/Tide', title: id, fetchedAt: NOW } })
+    writeFileSync(file(`souvenirs/2026-11-02-${id}.json`), JSON.stringify(s))
+  }
+  const interests = (...topics: string[]) => {
+    mkdirSync(file('brain'), { recursive: true })
+    writeFileSync(file('brain/interests.json'), JSON.stringify(Interests.parse({ version: 2, topics: Object.fromEntries(topics.map((t) => [t, { weight: 40, firstSeen: NOW, lastFed: NOW, sources: [] }])) })))
+  }
+  const sketchMeta = () => WorkMeta.parse(JSON.parse(readFileSync(file('works/humming-lamp/meta.json'), 'utf8')))
+
+  it('offers the constraint drawn for that step, and keeps it with the work', async () => {
+    const fake = fakeLlm(planWith())
+    await sketchHour(fake, checkerOf({}))
+    const expected = drawConstraint(seed(), 'sketch:2026-11-03:0')
+    const prompt = fake.calls.find((c) => c.kind === 'sketch')!.user
+    expect(prompt).toContain('## A constraint for this one')
+    expect(prompt).toContain(expected)
+    expect(sketchMeta().constraint).toEqual({ text: expected, refused: false, reason: null })
+  })
+
+  it('keeps a refusal, with the reason Merge gave', async () => {
+    const fake = fakeLlm(planWith(), { ...sketchOutput(), constraintRefusal: 'It would not read at that size.' })
+    await sketchHour(fake, checkerOf({}))
+    expect(sketchMeta().constraint).toMatchObject({ refused: true, reason: 'It would not read at that size.' })
+  })
+
+  it('offers two souvenirs from interests that share no place, as data, and keeps their ids', async () => {
+    interests('maps', 'tides')
+    keep1('s1', 'maps')
+    keep1('s2', 'tides')
+    const fake = fakeLlm(planWith())
+    await sketchHour(fake, checkerOf({}))
+    const prompt = fake.calls.find((c) => c.kind === 'sketch')!.user
+    expect(prompt).toContain('## Two things side by side')
+    expect(prompt).toContain('words about s1')
+    expect(prompt).toContain('words about s2')
+    expect(sketchMeta().collision?.slice().sort()).toEqual(['s1', 's2'])
+  })
+
+  it('offers no collision when there is nothing to put together, and still offers the constraint', async () => {
+    const fake = fakeLlm(planWith())
+    await sketchHour(fake, checkerOf({}))
+    expect(fake.calls.find((c) => c.kind === 'sketch')!.user).not.toContain('Two things side by side')
+    expect(sketchMeta().collision).toBeNull()
   })
 })

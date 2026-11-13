@@ -23,3 +23,20 @@ export function createPrng(seed: number): Prng {
     int: (n) => Math.floor(next() * n),
   }
 }
+
+/** FNV-1a over the UTF-16 units of a string: a stable 32-bit number for a key. */
+export function hashString(text: string): number {
+  let h = 0x811c9dc5
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return h >>> 0
+}
+
+/** The generator for one draw: fixed by the forkling's seed and a key that names the draw (`tinker:<id>`), so a draw can be repeated. */
+export function drawPrng(seed: number, key: string): Prng {
+  const rng = createPrng((Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b) ^ hashString(key)) >>> 0)
+  rng.next()
+  return rng
+}

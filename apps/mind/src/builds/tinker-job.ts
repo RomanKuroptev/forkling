@@ -11,6 +11,7 @@ import { createFetcher, type FetcherOptions } from '../web/fetch.ts'
 import { manualPagesFor } from '../web/sources/manuals.ts'
 import type { WorkChecker } from './browser-check.ts'
 import type { GithubClient, GithubFile } from './github.ts'
+import { drawForBuild } from './draw.ts'
 import { memeSeeds } from './memes.ts'
 import { runTinker, type Complete, type TinkerInput } from './tinker.ts'
 import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from './works.ts'
@@ -78,6 +79,8 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
     const untried = untriedLibraries(works)
     const manuals = o.web && untried.length > 0 ? await manualPagesFor(createFetcher({ ...o.web, verb: 'tinker' }), untried) : []
     const interests = Interests.safeParse(readJson(o.dir, 'brain/interests.json'))
+    const seedNumber = (readJson(o.dir, 'forkling.json') as { seed?: number } | null)?.seed ?? 0
+    const draw = drawForBuild(o.dir, { seed: seedNumber, key: `tinker:${job.id}`, interests: interests.success ? interests.data : Interests.parse({}) })
     const input: TinkerInput = {
       idea: job.idea,
       reason: job.reason,
@@ -89,6 +92,8 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
       recentTitles: recentWorkTitles(works),
       manuals,
       memeSeeds: memeSeeds(o.dir),
+      constraint: draw.constraint,
+      collision: draw.collision ?? undefined,
     }
     const outcome = await runTinker({ complete, checker: o.checker, nowIso, existingIds: new Set(existingWorkIds(o.dir)) }, input)
 
