@@ -1,4 +1,5 @@
-import type { NowJson } from '@forkling/schema'
+import type { NowJson, Place } from '@forkling/schema'
+import { placesRev } from '@forkling/sim'
 import { runTick } from '../tick.ts'
 import type { TickDeps, TickOutcome } from './context.ts'
 import { commitAndPush, type GitRunner } from './git.ts'
@@ -43,6 +44,8 @@ export interface Loop {
   nextDelayMs(): number
   /** `now.json` as the last tick left it, or null before the first. Held in memory and never committed. */
   now(): NowJson | null
+  /** The places as the last tick left them, with their `placesRev`, or null before the first tick. */
+  places(): { rev: string; places: Place[] } | null
   /** The last push failed 3 times. */
   readonly pushFailing: boolean
   run(opts: RunOptions): Promise<void>
@@ -59,12 +62,14 @@ export function createLoop(opts: LoopOptions): Loop {
   let lastCommitMs = opts.clock()
   let pushFailing = false
   let latest: NowJson | null = null
+  let latestPlaces: { rev: string; places: Place[] } | null = null
   let queue: Promise<unknown> = Promise.resolve()
 
   async function tick(): Promise<TickOutcome> {
     const nowMs = opts.clock()
     const outcome = await runTick(opts.dir, { ...opts.deps, now: new Date(nowMs), thoughts: true, logEveryMs, pushFailing })
     latest = outcome.now
+    latestPlaces = { rev: outcome.now.placesRev ?? placesRev(outcome.places), places: outcome.places }
     if (opts.git && (isProduct(outcome.written) || nowMs - lastCommitMs >= commitEveryMs)) {
       const message = `${outcome.changed ? 'chore(mind)' : 'tick'}: ${outcome.summary || 'sync'}`
       pushFailing = (await commitAndPush(opts.git, message, { retryPush: pushFailing })) === 'push-failed'
@@ -81,6 +86,7 @@ export function createLoop(opts: LoopOptions): Loop {
     },
     nextDelayMs: () => (latest?.asleep ? REFLEX_ASLEEP_MS : REFLEX_AWAKE_MS),
     now: () => latest,
+    places: () => latestPlaces,
     get pushFailing() {
       return pushFailing
     },

@@ -123,6 +123,17 @@ describe('a tend step (spec 2.4, 5.4)', () => {
     expect(streamText()).toMatch(/tended Home/i)
   })
 
+  it('changes placesRev in now.json when a tend changes a place, and keeps it when nothing changes', async () => {
+    const fake = fakeLlm(planFor(tendStep()), answer())
+    const first = await runTick(dir, deps(fake.llm, NOW))
+    const landed = await runTick(dir, deps(fake.llm, minutesAfter(31)))
+    expect(first.now.placesRev).toMatch(/^[0-9a-f]{8}$/)
+    expect(landed.now.placesRev).not.toBe(first.now.placesRev)
+    expect(landed.places.find((p) => p.id === 'home')?.exhibits.some((e) => e.id === 'fog')).toBe(true)
+    const quiet = await runTick(dir, deps(fake.llm, minutesAfter(32)))
+    expect(quiet.now.placesRev).toBe(landed.now.placesRev)
+  })
+
   it('sends a souvenir back to the pile when its exhibit is removed', async () => {
     const placed = { ...placeOf('home'), exhibits: [{ id: 'fog', kind: 'souvenir', ref: 'souvenirs/2026-11-02-fog', slot: 'main/3/0', label: 'Fog.', added: '2026-11-01' }] }
     writeFileSync(file('places/home.json'), JSON.stringify(placed))

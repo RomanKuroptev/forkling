@@ -50,5 +50,5 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   advance(t)
   feel(t)
   const result = logTick(t, writeWorld(t))
-  return { ...result, now: buildNow(t) }
+  return { ...result, now: buildNow(t), places: t.places }
 }

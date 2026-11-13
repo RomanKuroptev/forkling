@@ -11,5 +11,7 @@ export const NowJson = z.object({
   step: z.object({ verb: z.string().max(40), target: z.string().max(120).nullable(), reason: z.string().max(200), until: Timestamp }).nullable(),
   thought: z.string().max(140).nullable(),
   mood: z.string().max(60),
+  /** A short fingerprint of the places as the last tick left them (`placesRev` in sim). The viewer fetches `/places.json` when it changes. */
+  placesRev: z.string().max(16).optional(),
 })
 export type NowJson = z.infer<typeof NowJson>
