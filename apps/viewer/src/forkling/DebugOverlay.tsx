@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
+import { debugEnabled } from '../debugEnabled.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { debugOpen } from './debugOpen.ts'
 import { live } from './live.ts'
@@ -9,7 +10,7 @@ const formatHour = (h: number) =>
 const formatTime = (sec: number, timezone: string) =>
   new Date(sec * 1000).toLocaleTimeString('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit' })
 
-/** Needs, mood and current intention for the forkling, and where its state came from. Toggle with F3. */
+/** Needs, mood and current intention for the forkling, and where its state came from. A debug tool: `?debug` only, toggled with F3. */
 export function DebugOverlay() {
   const { world, species, clock } = useWorld()
   const open = useSyncExternalStore(debugOpen.subscribe, debugOpen.get)
@@ -17,7 +18,7 @@ export function DebugOverlay() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'F3') return
+      if (!debugEnabled(location.search) || e.key !== 'F3') return
       e.preventDefault()
       debugOpen.toggle()
     }
