@@ -152,6 +152,25 @@ describe('a place that lands in the world (spec 4.5, 10.3)', () => {
     expect(requestFiles()).toEqual([])
   })
 
+  // Found live on Merge (14 Nov): its first tick on v0.13.0 saw no places, noted an empty list, and the migration's Home and
+  // Workshop then counted as places Roman had just built (construction, "A gift from Roman.", two gift requests).
+  it('does not take places that arrive by the migration, in a world that had none, for places Roman built', async () => {
+    rmSync(file('places'), { recursive: true, force: true })
+    const fake = fakeLlm()
+    await runTick(dir, deps(fake.llm, NOW))
+    mkdirSync(file('places'))
+    copyFileSync(join(world, 'places/home.json'), file('places/home.json'))
+    copyFileSync(join(world, 'places/workshop.json'), file('places/workshop.json'))
+    await runTick(dir, deps(fake.llm, minutesAfter(10)))
+    for (const id of ['home', 'workshop']) {
+      expect(placeOf(id).state.construction).toBeNull()
+      expect(placeOf(id).history.map((h) => h.summary).join(' ')).not.toMatch(/gift from Roman/i)
+    }
+    expect(requestFiles()).toEqual([])
+    expect(stateOf().placesSeen?.sort()).toEqual(['home', 'workshop'])
+    expect(decidePrompts(fake).join('\n')).not.toMatch(/Roman built/)
+  })
+
   it('answers the open request on its chunk: the place starts 6 waking hours of construction, the request becomes built, and the history says who had the idea', async () => {
     putRequest()
     const at = minutesAfter(10)
