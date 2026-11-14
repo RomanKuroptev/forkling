@@ -9,6 +9,15 @@ Exported from `spec.md` (v3.3) at the start of W6, so a coding session reads onl
 - **Expand and the fallback build land through the loop, not a data PR.** Spec 10.2 says a data PR that `validate.yml` merges. The loop also writes `places/<id>.json` on every tend and install, so a PR on the same file could conflict and stall. Instead the build worker makes the Sonnet call and puts the validated result in `mind/builds/<id>.result.json`; the loop checks it again (`validatePlacePatch` or `validatePlace`) and writes `places/`. One writer of `places/`. `validate.yml` still checks any place or wish in a pull request (Roman's builds) against its schema.
 - **Plain Sonnet calls, no Batch API in W6.** Spec 13 prices expand and found as batch calls. W6 uses a normal Sonnet call at low effort in the worker, about $1.10 a month more than the table (5 expands a week), which keeps the model total under the cap. Batch can come with W7's sleep rewrite.
 
+## Decisions made for W6 (Roman, 14 November 2026)
+
+Approved from [`w6-threshold-proposal.md`](w6-threshold-proposal.md), which has the data behind them. **Roman edits spec 2.5 in the Claude doc; until he does, these win over `spec.md`.**
+
+- **Expand needs weight 30, not 50.** A topic fed about 2.6 points a day (a page a day) holds it.
+- **Found needs weight 40 on 3 mornings in a row, not 70.**
+- **A place's candidate tags for expand include the topics of the souvenirs shown in it.** Home's and the Workshop's tags are never fed by reading, so without this they could never grow. The 3 souvenirs must still be on that exact topic and kept since the place last changed size.
+- **Found does not use this: "no place carries that interest as a tag" means its formal tags only** (my reading, for Roman to veto). If what a place shows counted there too, every interest Merge puts on Home's shelves would block a found for good.
+
 ## Slices
 
 1. Spec export and the request and wish schemas (`requests/<id>.md`, `wishes/<id>.json`, `validate-pr`). 2. Pure rules in sim (the 2.5 conditions, waking time). 3. Constraint draw and collisions. 4. Expand for real. 5. Construction and expand paths in the viewer. 6. Found writes a request. 7. Request lifecycle and the fallback. 8. The staked plot in the world. 9. Site `/requests/` and honesty lines. 10. Place nudges, logged only. 11. The 30-day sim. 12. Runbook.
@@ -24,8 +33,8 @@ Exported from `spec.md` (v3.3) at the start of W6, so a coding session reads onl
 
 ### 2.5 Conditions on expand and found
 
-- Expand is allowed on a place only if one of its tags has weight 50 or more and at least 3 souvenirs with that tag were kept since the place last changed size.
-- Found is allowed only if an interest has had weight 70 or more at wake on 3 days in a row and no place carries that interest as a tag. Since version 3.2 a found writes a build request to Roman (10.3) and needs fewer than 2 place requests open.
+- Expand is allowed on a place only if one of its tags **or a topic of a souvenir shown in it** has weight **30** or more and at least 3 souvenirs with that topic were kept since the place last changed size. *(Spec 2.5 in the Claude doc says tag, 50; Roman changed both on 14 November, see below.)*
+- Found is allowed only if an interest has had weight **40** or more at wake on 3 days in a row and no place carries that interest as a tag (its formal tags only, not what it shows). *(Spec said 70; Roman changed it on 14 November.)* Since version 3.2 a found writes a build request to Roman (10.3) and needs fewer than 2 place requests open.
 - Both need the place's land to be free of construction.
 
 ### 4.2 Where a new place goes

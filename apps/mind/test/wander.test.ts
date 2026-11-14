@@ -356,8 +356,8 @@ describe('interests across days', () => {
     expect(llm.calls[0]!.user).not.toContain('obsessed with')
   })
 
-  it('notes the interests at 70 or more at wake (after the fade), for the 3-day rule of a found (spec 2.5)', async () => {
-    writeJson('brain/interests.json', Interests.parse({ topics: { 'logic gates': { weight: 0.95, firstSeen: src.at, lastFed: src.at, sources: [src] }, moon: { weight: 0.6, firstSeen: src.at, lastFed: src.at, sources: [src] } } }))
+  it('notes the interests at 40 or more at wake (after the fade), for the 3-day rule of a found (spec 2.5)', async () => {
+    writeJson('brain/interests.json', Interests.parse({ topics: { 'logic gates': { weight: 0.95, firstSeen: src.at, lastFed: src.at, sources: [src] }, moon: { weight: 0.3, firstSeen: src.at, lastFed: src.at, sources: [src] } } }))
     await tick(MORNING, fake(wanderPlan), { web: undefined })
     const wakeTop = MindState.parse(readJson('mind/state.json')).wakeTop!
     expect(wakeTop).toHaveLength(1)

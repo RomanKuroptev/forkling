@@ -69,7 +69,7 @@ export const ThoughtState = z.object({
 })
 export type ThoughtState = z.infer<typeof ThoughtState>
 
-/** The interests at 70 or more when Merge woke on a local date (spec 2.5: found needs 3 days in a row). */
+/** The interests at 40 or more when Merge woke on a local date (spec 2.5: found needs 3 days in a row). */
 export const WakeSnapshot = z.object({ date: z.iso.date(), topics: z.record(z.string().max(60), z.number()) })
 export type WakeSnapshot = z.infer<typeof WakeSnapshot>
 

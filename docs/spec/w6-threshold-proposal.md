@@ -1,6 +1,6 @@
 # W6 proposal: the expand and found thresholds (for Roman's review)
 
-**Status: a proposal. Nothing in the code has changed.** Spec 2.5 gives the numbers (a tag at weight 50 for expand, an interest at 70 on 3 mornings in a row for found), and where the spec gives a number, the number is the rule, so only Roman changes them. This page is for deciding that before slice 6 (found) builds on them.
+**Status: approved by Roman on 14 November (the full recommendation: expand 30, found 40 on 3 mornings in a row, and the topics of what a place shows count as its tags for expand). Built as slice 5b.** Spec 2.5 gives the numbers (a tag at weight 50 for expand, an interest at 70 on 3 mornings in a row for found), and where the spec gives a number, the number is the rule, so only Roman changes them. This page is for deciding that before slice 6 (found) builds on them.
 
 ## What the live data says (Merge's repo, 14 November, one day of trips)
 
