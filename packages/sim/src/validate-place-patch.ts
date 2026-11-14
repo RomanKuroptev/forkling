@@ -1,4 +1,5 @@
 import { Place, PlacePatch } from '@forkling/schema'
+import { capHistory } from './place-history.ts'
 import { PLACE_LIMITS, validatePlace, type PlaceContext } from './validate-place.ts'
 
 /** The limits of spec 5.4 that are about one change rather than the whole file. */
@@ -117,7 +118,7 @@ export function validatePlacePatch(before: unknown, patch: unknown, ctx: PatchCo
   }
 
   // The history keeps the last 50 entries; older ones stay in git (spec 5.1).
-  if (place.history.length > PLACE_LIMITS.historyMax) place.history = place.history.slice(-PLACE_LIMITS.historyMax)
+  place.history = capHistory(place.history, PLACE_LIMITS.historyMax)
 
   if (reasons.length > 0) return { ok: false, reasons }
   const rest = validatePlace(place, ctx)

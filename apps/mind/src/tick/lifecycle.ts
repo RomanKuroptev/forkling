@@ -1,4 +1,5 @@
 import { PlaceRequest, isOpenRequest, type Place, type Wish } from '@forkling/schema'
+import { capHistory } from '@forkling/sim'
 import { readRequests } from '../requests.ts'
 import { readWishes } from '../wishes.ts'
 import { requestId } from '../builds/found.ts'
@@ -61,7 +62,7 @@ export function lifecycleStep(t: Tick): void {
     const asked = match?.kind === 'place'
     const history = { at: t.nowIso, verb: 'found' as const, summary: asked ? 'Asked for by Merge, built by Roman with Claude Code.' : 'A gift from Roman.' }
     const construction = place.state.construction ?? { kind: 'found' as const, finishesAt: constructionEnd(t, FOUND_CONSTRUCTION_MS) }
-    const landed: Place = { ...place, state: { ...place.state, construction }, history: [...place.history, history].slice(-50) }
+    const landed: Place = { ...place, state: { ...place.state, construction }, history: capHistory([...place.history, history], 50) }
     t.placeUpdates.push(landed)
     t.places = t.places.map((p) => (p.id === landed.id ? landed : p))
 
