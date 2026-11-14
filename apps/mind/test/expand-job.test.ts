@@ -115,6 +115,16 @@ describe('the expand handler (spec 10.2)', () => {
     expect(prompt).toContain(expected)
   })
 
+  it('works on a place whose own tag is never fed, when it shows a souvenir on an interest that is, and says that interest (Roman, 14 November)', async () => {
+    stock()
+    put('places/house-of-lights.json', lights({ tags: ['harbour'] }))
+    put('souvenirs/2026-11-13-s1.json', { ...JSON.parse(readFileSync(file('souvenirs/2026-11-13-s1.json'), 'utf8')), placedIn: 'house-of-lights' })
+    const { llm, calls } = fakeLlm([roomAnswer()])
+    const out = await run(handler(llm))
+    expect(out.status).toBe('done')
+    expect(calls[0]!.user).toContain('The interest behind it: signals.')
+  })
+
   it('keeps the constraint it was given, and what Merge did with it, in the result', async () => {
     stock()
     const kept = await run(handler(fakeLlm([roomAnswer()]).llm))
@@ -201,12 +211,12 @@ describe('the expand handler (spec 10.2)', () => {
   })
 
   it('checks the conditions of 2.5 again, and makes no call when they no longer hold', async () => {
-    stock(40, 3)
+    stock(25, 3)
     const { llm, calls } = fakeLlm([roomAnswer()])
     const out = await run(handler(llm))
     expect(calls).toHaveLength(0)
     expect(out.status).toBe('failed')
-    expect(out.reason).toMatch(/weight 50/)
+    expect(out.reason).toMatch(/weight 30/)
     stock(60, 2)
     expect((await run(handler(fakeLlm([roomAnswer()]).llm))).reason).toMatch(/3 souvenirs/)
   })

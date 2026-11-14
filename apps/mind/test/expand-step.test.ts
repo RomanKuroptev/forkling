@@ -100,13 +100,30 @@ describe('the plan offers an expand only where spec 2.5 allows it', () => {
     expect(fake.calls[0]!.user).toMatch(/<growable>[\s\S]*house-of-lights \(signals\)[\s\S]*<\/growable>/)
   })
 
+  it('offers a place whose own tag is never fed when it shows a souvenir on an interest that is (Roman, 14 November)', async () => {
+    put('places/house-of-lights.json', lights({ tags: ['harbour'] }))
+    kept(4)
+    put('souvenirs/2026-11-02-s4.json', { ...read('souvenirs/2026-11-02-s4.json'), placedIn: 'house-of-lights' })
+    const fake = fakeLlm(planFor(expandStep()))
+    await runTick(dir, deps(fake.llm, NOW))
+    expect(fake.calls[0]!.user).toMatch(/<growable>[\s\S]*house-of-lights \(signals\)[\s\S]*<\/growable>/)
+    expect(read('mind/goals.json').today.steps[0]).toMatchObject({ verb: 'expand', targetId: 'house-of-lights' })
+  })
+
+  it('does not, when nothing it shows is on a fed interest', async () => {
+    put('places/house-of-lights.json', lights({ tags: ['harbour'] }))
+    const fake = fakeLlm(planFor(step('rest', null, 30, 'Rest.')))
+    await runTick(dir, deps(fake.llm, NOW))
+    expect(fake.calls[0]!.user).not.toContain('<growable>')
+  })
+
   it('takes an expand of such a place', async () => {
     await runTick(dir, deps(fakeLlm(planFor(expandStep())).llm, NOW))
     expect(read('mind/goals.json').today.steps[0]).toMatchObject({ verb: 'expand', targetId: 'house-of-lights' })
   })
 
-  it('turns down an expand of a place whose tag is under weight 50 or has fewer than 3 souvenirs', async () => {
-    interests(40)
+  it('turns down an expand of a place whose tag is under weight 30 or has fewer than 3 souvenirs', async () => {
+    interests(30) // fades to about 28 by the morning
     await runTick(dir, deps(fakeLlm(planFor(expandStep()), true).llm, NOW))
     expect(stateOf().rejections.at(-1)!.reasons.join(' ')).toMatch(/not ready to grow/)
   })
@@ -124,7 +141,7 @@ describe('the plan offers an expand only where spec 2.5 allows it', () => {
   })
 
   it('does not list a place that has not earned one', async () => {
-    interests(40)
+    interests(30)
     const fake = fakeLlm(planFor(step('rest', null, 30, 'Rest.')))
     await runTick(dir, deps(fake.llm, NOW))
     expect(fake.calls[0]!.user).not.toContain('<growable>')

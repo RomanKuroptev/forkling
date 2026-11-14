@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_OPEN_WISHES, Place } from '@forkling/schema'
 import {
+  EXPAND_MIN_WEIGHT,
   FOUND_STREAK_DAYS,
   WAKE_TOP_MIN,
   addWishes,
@@ -40,14 +41,15 @@ describe('expandCheck (spec 2.5)', () => {
   const p = place()
   const fresh = since('2026-11-20T17:10:00Z', 3)
 
-  it('allows an expand when a tag has weight 50 and 3 souvenirs on it were kept since', () => {
-    expect(expandCheck(p, { lighthouses: 50 }, fresh)).toEqual({ ok: true, tag: 'lighthouses', reasons: [] })
+  it('allows an expand when a tag has weight 30 and 3 souvenirs on it were kept since (Roman, 14 November: it was 50)', () => {
+    expect(EXPAND_MIN_WEIGHT).toBe(30)
+    expect(expandCheck(p, { lighthouses: 30 }, fresh)).toEqual({ ok: true, tag: 'lighthouses', reasons: [] })
   })
 
-  it('refuses a tag under 50', () => {
-    const r = expandCheck(p, { lighthouses: 49, signals: 10 }, fresh)
+  it('refuses a tag under 30', () => {
+    const r = expandCheck(p, { lighthouses: 29.9, signals: 10 }, fresh)
     expect(r.ok).toBe(false)
-    expect(r.reasons.join(' ')).toMatch(/weight 50/)
+    expect(r.reasons.join(' ')).toMatch(/weight 30/)
   })
 
   it('refuses with only 2 souvenirs, and ignores souvenirs kept before the last change in size', () => {
@@ -85,6 +87,50 @@ describe('expandCheck (spec 2.5)', () => {
     expect(r.reasons.join(' ')).toMatch(/construction/)
   })
 
+  describe('the topics of what a place shows count as its tags (Roman, 14 November)', () => {
+    // A place whose tag is never fed (like Home's) can still grow on what it holds.
+    const home = place({ tags: ['home'] })
+    const shown = (topics: string[], placedIn: string | null = 'house-of-lights') => ({ topics, placedIn, source: { fetchedAt: '2026-11-19T10:00:00Z' } })
+    const piled = (n: number, topic: string) => since('2026-11-20T17:10:00Z', n, [topic])
+
+    it('lets a place grow on a topic of something shown in it, when that topic has the weight and 3 souvenirs since', () => {
+      const fresh = { ...shown(['lidar']), source: { fetchedAt: '2026-11-21T10:00:00Z' } }
+      const r = expandCheck(home, { home: 0, lidar: 40 }, [fresh, ...piled(2, 'lidar')])
+      expect(r).toEqual({ ok: true, tag: 'lidar', reasons: [] })
+    })
+
+    it('does not count a topic of a souvenir that is in the pile or in another place', () => {
+      const r = expandCheck(home, { lidar: 90 }, [shown(['lidar'], null), shown(['lidar'], 'workshop'), ...piled(3, 'lidar')])
+      expect(r.ok).toBe(false)
+    })
+
+    it('counts the 3 souvenirs on the topic wherever they are, since the place last changed size', () => {
+      expect(expandCheck(home, { lidar: 40 }, [...piled(3, 'lidar'), shown(['lidar'], 'house-of-lights')]).ok).toBe(true)
+      expect(expandCheck(home, { lidar: 40 }, [shown(['lidar']), ...piled(1, 'lidar')]).ok).toBe(false)
+    })
+
+    it('makes a shown topic a candidate even when the souvenir that shows it is older than the last size change', () => {
+      const old = { topics: ['lidar'], placedIn: 'house-of-lights', source: { fetchedAt: '2026-11-01T10:00:00Z' } }
+      expect(expandCheck(home, { lidar: 40 }, [old, ...piled(3, 'lidar')]).ok).toBe(true)
+    })
+
+    it('is the same topic however it is spelled, and a tag and a shown topic are one candidate', () => {
+      const r = expandCheck(place({ tags: ['Signals'] }), { signals: 35 }, [shown(['signals']), ...piled(3, 'SIGNALS')])
+      expect(r).toMatchObject({ ok: true })
+    })
+
+    it('still takes the heaviest candidate, tags and shown topics together, and the first by name on a tie', () => {
+      const souvenirs = [shown(['lidar']), ...piled(3, 'lidar'), ...piled(3, 'lighthouses')]
+      expect(expandCheck(place({ tags: ['lighthouses'] }), { lighthouses: 40, lidar: 60 }, souvenirs).tag).toBe('lidar')
+      expect(expandCheck(place({ tags: ['lighthouses'] }), { lighthouses: 50, lidar: 50 }, souvenirs).tag).toBe('lidar')
+    })
+
+    it('says in the reason that shown topics count', () => {
+      const r = expandCheck(home, {}, [shown(['lidar'])])
+      expect(r.reasons.join(' ')).toMatch(/topics of what it shows/)
+    })
+  })
+
   it('says every reason at once', () => {
     const r = expandCheck(place({ state: { construction: { kind: 'found', finishesAt: '2026-12-01T10:00:00Z' }, lastCareAt: null, neglect: 0 } }), {}, [])
     expect(r.reasons.length).toBeGreaterThanOrEqual(2)
@@ -92,9 +138,9 @@ describe('expandCheck (spec 2.5)', () => {
 })
 
 describe('recordWake (the weights at wake that the 3-day rule reads)', () => {
-  it('keeps only the interests at 70 or more', () => {
-    expect(WAKE_TOP_MIN).toBe(70)
-    expect(recordWake([], '2026-11-13', { 'maya lidar': 82, tides: 69, knots: 70 })).toEqual([{ date: '2026-11-13', topics: { 'maya lidar': 82, knots: 70 } }])
+  it('keeps only the interests at 40 or more (Roman, 14 November: it was 70)', () => {
+    expect(WAKE_TOP_MIN).toBe(40)
+    expect(recordWake([], '2026-11-13', { 'maya lidar': 82, tides: 39.9, knots: 40 })).toEqual([{ date: '2026-11-13', topics: { 'maya lidar': 82, knots: 40 } }])
   })
 
   it('replaces the same date, so a second morning tick changes nothing new', () => {
@@ -115,7 +161,7 @@ describe('recordWake (the weights at wake that the 3-day rule reads)', () => {
 
 describe('foundCheck (spec 2.5, 10.3)', () => {
   const days = (topic: string, weights: [number, number, number]): WakeSnapshot[] =>
-    [['2026-11-11', weights[0]], ['2026-11-12', weights[1]], ['2026-11-13', weights[2]]].map(([date, w]) => ({ date: date as string, topics: (w as number) >= 70 ? { [topic]: w as number } : {} }))
+    [['2026-11-11', weights[0]], ['2026-11-12', weights[1]], ['2026-11-13', weights[2]]].map(([date, w]) => ({ date: date as string, topics: (w as number) >= WAKE_TOP_MIN ? { [topic]: w as number } : {} }))
   const input = (over: Record<string, unknown> = {}) => ({
     today: '2026-11-13',
     wakeTop: days('maya lidar', [75, 80, 82]),
@@ -124,13 +170,13 @@ describe('foundCheck (spec 2.5, 10.3)', () => {
     ...over,
   })
 
-  it('allows a found for an interest at 70 or more on 3 days in a row that no place carries', () => {
+  it('allows a found for an interest at 40 or more on 3 days in a row that no place carries as a tag', () => {
     expect(FOUND_STREAK_DAYS).toBe(3)
     expect(foundCheck(input())).toEqual({ ok: true, interest: 'maya lidar', reasons: [] })
   })
 
   it('wants every one of the 3 days: a dip, a gap or only 2 days refuses', () => {
-    expect(foundCheck(input({ wakeTop: days('maya lidar', [75, 60, 82]) })).ok).toBe(false)
+    expect(foundCheck(input({ wakeTop: days('maya lidar', [75, 30, 82]) })).ok).toBe(false)
     expect(foundCheck(input({ wakeTop: days('maya lidar', [75, 80, 82]).slice(1) })).ok).toBe(false)
     const gap = [{ date: '2026-11-10', topics: { 'maya lidar': 80 } }, ...days('maya lidar', [75, 80, 82]).slice(1)]
     expect(foundCheck(input({ wakeTop: gap })).ok).toBe(false)
@@ -163,7 +209,7 @@ describe('foundCheck (spec 2.5, 10.3)', () => {
   })
 
   it('says why, in plain words', () => {
-    expect(foundCheck(input({ wakeTop: [] })).reasons.join(' ')).toMatch(/70 or more on 3 days in a row/)
+    expect(foundCheck(input({ wakeTop: [] })).reasons.join(' ')).toMatch(/40 or more on 3 days in a row/)
   })
 })
 

@@ -52,7 +52,7 @@ export interface MindPlanContext {
   places: ReadonlySet<string>
   /** Places that have had no care for 7 or more days. */
   revisitable: ReadonlySet<string>
-  /** Places that may grow: a tag at weight 50 or more with 3 souvenirs kept since, and no construction (spec 2.5). */
+  /** Places that may grow: a tag, or a topic of what is shown in it, at weight 30 or more with 3 souvenirs kept since, and no construction (spec 2.5). */
   expandable: ReadonlySet<string>
   /** Whether an interest has earned a new place and fewer than 2 place requests are open (spec 2.5). */
   canFound: boolean
