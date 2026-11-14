@@ -1,6 +1,6 @@
 import type { Place } from '@forkling/schema'
 import { DOOR_HALF, isBuilding, placeCentre, toLandPlace } from '@forkling/sim'
-import { signSpot } from './exhibitGeometry.ts'
+import { SIGN_W, signSpot } from './exhibitGeometry.ts'
 import { floorHeight, type Instance } from './kitBase.ts'
 import { compose } from './matrix.ts'
 
@@ -45,8 +45,8 @@ export function constructionInstances(place: Place, baseY: number, nowMs?: numbe
   const pole = (x: number, z: number) => piece('cylinder', [x, baseY + poleHeight / 2, z], [0.14, poleHeight, 0.14], POLE)
   // The gap in the front side, from the left of the door or sign to the right of it, relative to the middle of the building.
   const signX = signSpot(place, baseY).position[0] - px
-  const gapL = Math.min(-DOOR_HALF, signX) - FRONT_MARGIN
-  const gapR = Math.max(DOOR_HALF, signX) + FRONT_MARGIN
+  const gapL = Math.min(-DOOR_HALF, signX - SIGN_W / 2) - FRONT_MARGIN
+  const gapR = Math.max(DOOR_HALF, signX + SIGN_W / 2) + FRONT_MARGIN
   /** What is left of a stretch along the front once the gap is cut out of it. */
   const frontParts = (a: number, b: number): [number, number][] =>
     ([[a, Math.min(b, gapL)], [Math.max(a, gapR), b]] as [number, number][]).filter(([from, to]) => to - from > 0.3)

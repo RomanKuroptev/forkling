@@ -128,7 +128,13 @@ export function neglectInstances(place: Place, _kit: Kit, baseY: number, level: 
   return out
 }
 
-/** Where a place's sign stands: by the door, on the front (+z) side. The text on it is the place's `exterior.sign`. */
+/** The board of a sign, in meters: wide and tall enough to read the place's name from the path (its post carries this board). */
+export const SIGN_W = 2.6
+export const SIGN_H = 1.2
+/** How high the board's lower edge is above the ground. */
+export const SIGN_BOTTOM = 0.9
+
+/** Where a place's sign stands: by the door, on the front (+z) side, its board facing the path. It shows the place's name and its `exterior.sign` text. */
 export function signSpot(place: Place, baseY: number): { position: [number, number, number] } {
   const [px, pz] = placeCentre(toLandPlace(place))
   return { position: [px + 3.2, baseY, pz + place.exterior.footprint[1] / 2 + 1.2] }
