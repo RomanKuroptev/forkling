@@ -55,7 +55,8 @@ Roman walked the W5 fixture world (`?world=local&fixture=10&debug`) with Playwri
 - [x] **Debug panel gate:** `debugEnabled(search)` (`apps/viewer/src/debugEnabled.ts`), F3, the touch "Mind" button and the F3 hint work only with `?debug`; the pet-era "E near a contraption" hint is gone (`ui/hint.ts` `desktopHint`). Tests: `apps/viewer/test/debugGate.test.ts`.
 - [x] **Gable ends closed:** the `roof-gable` kit part gained 18 stepped wall-coloured boxes (9 at each end, under the roof boards, 21 primitives in all). Test: `kitGeometry.test.ts` samples points inside the triangle at both ends.
 - [x] **Scaffold out of the way:** the front of a scaffold has a gap from the door to past the sign (no pole, rail or board across it), and rails and boards hang at `SCAFFOLD_HEAD` (2 m) or higher, above a visitor's head. Tests in `constructionGeometry.test.ts` for five footprints. (The poles are straight; they only looked tilted from perspective.)
-- [ ] Camera indoors and outdoors, [ ] signs, [ ] fog, [ ] paths to doors, [ ] night windows and path.
+- [x] **Paths end at doors:** `routePath(path, places)` in `packages/sim/src/paths.ts` (pure): from the door of one place (middle of its front +z wall, `doorOf`) straight out 3 m, then the shortest way round every footprint grown by `ROUTE_MARGIN` (3 m), bending only at corners, to the other door. It never goes through a building, keeps 1.5 m clear of every wall except at its own door, and falls back to the chunk-centre line if a place is missing. The viewer draws it (`Paths.tsx`), and `pathRibbon` closes the wedge at each bend. Tests: `packages/sim/test/path-route.test.ts` over four fixture worlds (10, 10, 64, 40 places). **The site map (`/places/`) still draws its schematic chunk-centre lines.**
+- [ ] Camera indoors and outdoors, [ ] signs, [ ] fog, [ ] night windows and path.
 
 ## W6 progress (expand and found; building on `main`, nothing released, nothing deployed)
 

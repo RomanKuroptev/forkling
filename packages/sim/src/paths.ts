@@ -1,4 +1,4 @@
-import { chunkCentre, chunkKey, pullOf, type Chunk, type LandPlace } from './land.ts'
+import { chunkCentre, chunkKey, placeCentre, pullOf, type Chunk, type LandPlace } from './land.ts'
 
 /** A path is drawn as a track this wide (spec 4.3). */
 export const PATH_WIDTH = 3
@@ -125,4 +125,98 @@ export function allPaths(places: readonly PathPlace[]): WorldPath[] {
     added.push({ from: e.from, to: e.to, chunks: route, kind: 'expand' })
   }
   return [...founding, ...added]
+}
+
+/** The middle of a place's door, on the front (+z) wall, as a world `[x, z]`. */
+export const doorOf = (place: LandPlace): [number, number] => {
+  const [x, z] = placeCentre(place)
+  return [x, z + place.footprint[1] / 2]
+}
+
+/** How far a route keeps from every wall it passes: half the track, and as much again, so the track never touches one. */
+export const ROUTE_MARGIN = PATH_WIDTH / 2 + 1.5
+
+type Pt = [number, number]
+interface Box {
+  x0: number
+  x1: number
+  z0: number
+  z1: number
+}
+
+/** Whether the segment `a` to `b` passes through the inside of the box (running along its edge, or touching a corner, does not count). */
+function crosses(a: Pt, b: Pt, box: Box): boolean {
+  const eps = 1e-6
+  let t0 = 0
+  let t1 = 1
+  for (const [from, to, lo, hi] of [[a[0], b[0], box.x0 + eps, box.x1 - eps], [a[1], b[1], box.z0 + eps, box.z1 - eps]] as const) {
+    const d = to - from
+    if (Math.abs(d) < 1e-12) {
+      if (from <= lo || from >= hi) return false
+      continue
+    }
+    let near = (lo - from) / d
+    let far = (hi - from) / d
+    if (near > far) [near, far] = [far, near]
+    t0 = Math.max(t0, near)
+    t1 = Math.min(t1, far)
+    if (t1 - t0 <= 1e-9) return false
+  }
+  return true
+}
+
+/**
+ * The line a path is drawn along, from the door of the place it comes from to the door of the place it goes to (spec 4.3). It
+ * leaves each door straight out along the door's axis, then takes the shortest way round the buildings (their footprints grown
+ * by `ROUTE_MARGIN`), bending only at their corners, so it never goes through a building, whichever one, and never touches a
+ * wall except at its own door. Nothing is random: the same places always give the same line. If a place of the path is not
+ * there, or no way is open, the line through the chunk centres (`pathPolyline`) is used instead.
+ */
+export function routePath(path: WorldPath, places: readonly LandPlace[]): Pt[] {
+  const [from, to] = [places.find((p) => p.id === path.from), places.find((p) => p.id === path.to)]
+  if (!from || !to) return pathPolyline(path.chunks)
+  const boxes: Box[] = places.map((p) => {
+    const [x, z] = placeCentre(p)
+    const [w, d] = p.footprint
+    return { x0: x - w / 2 - ROUTE_MARGIN, x1: x + w / 2 + ROUTE_MARGIN, z0: z - d / 2 - ROUTE_MARGIN, z1: z + d / 2 + ROUTE_MARGIN }
+  })
+  const [start, end] = [doorOf(from), doorOf(to)]
+  const [a, b]: [Pt, Pt] = [[start[0], start[1] + ROUTE_MARGIN], [end[0], end[1] + ROUTE_MARGIN]]
+  const inside = (p: Pt) => boxes.some((box) => p[0] > box.x0 + 1e-6 && p[0] < box.x1 - 1e-6 && p[1] > box.z0 + 1e-6 && p[1] < box.z1 - 1e-6)
+
+  // The nodes: the two points in front of the doors, then the corners of the buildings near the way between them.
+  const reach = 40
+  const area: Box = { x0: Math.min(a[0], b[0]) - reach, x1: Math.max(a[0], b[0]) + reach, z0: Math.min(a[1], b[1]) - reach, z1: Math.max(a[1], b[1]) + reach }
+  const nodes: Pt[] = [a, b]
+  for (const box of boxes) {
+    if (box.x1 < area.x0 || box.x0 > area.x1 || box.z1 < area.z0 || box.z0 > area.z1) continue
+    for (const corner of [[box.x0, box.z0], [box.x1, box.z0], [box.x0, box.z1], [box.x1, box.z1]] as Pt[]) if (!inside(corner)) nodes.push(corner)
+  }
+
+  // Dijkstra over the nodes that can see each other; ties go to the lower index, so the route is always the same.
+  const dist = nodes.map(() => Infinity)
+  const prev = nodes.map(() => -1)
+  const done = nodes.map(() => false)
+  dist[0] = 0
+  for (;;) {
+    let u = -1
+    for (let i = 0; i < nodes.length; i++) if (!done[i] && dist[i]! < Infinity && (u < 0 || dist[i]! < dist[u]! - 1e-12)) u = i
+    if (u < 0 || u === 1) break
+    done[u] = true
+    for (let v = 0; v < nodes.length; v++) {
+      if (done[v]) continue
+      const length = Math.hypot(nodes[v]![0] - nodes[u]![0], nodes[v]![1] - nodes[u]![1])
+      if (dist[u]! + length >= dist[v]! - 1e-12) continue
+      if (boxes.some((box) => crosses(nodes[u]!, nodes[v]!, box))) continue
+      dist[v] = dist[u]! + length
+      prev[v] = u
+    }
+  }
+  if (!done[0] || dist[1] === Infinity) return pathPolyline(path.chunks)
+  const inner: Pt[] = []
+  for (let n = 1; n >= 0; n = prev[n]!) {
+    inner.unshift(nodes[n]!)
+    if (n === 0) break
+  }
+  return [start, ...inner, end]
 }

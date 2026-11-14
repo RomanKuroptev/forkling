@@ -161,5 +161,14 @@ export function pathRibbon(points: readonly (readonly [number, number])[], heigh
       idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2)
     }
   }
+  // A bend leaves a wedge open on its outside. A square of the track's width on the bend closes it (any wedge is within half a width of the corner).
+  for (let s = 1; s + 1 < points.length; s++) {
+    const [cx, cz] = points[s]!
+    if (skip?.(cx, cz)) continue
+    const base = verts.length / 3
+    for (const [x, z] of [[cx - half, cz - half], [cx + half, cz - half], [cx - half, cz + half], [cx + half, cz + half]] as const) verts.push(x, heightAt(x, z) + lift, z)
+    // Wound like the strips (face up) whichever way the path turns.
+    idx.push(base, base + 2, base + 1, base + 1, base + 2, base + 3)
+  }
   return { positions: new Float32Array(verts), indices: new Uint32Array(idx) }
 }
