@@ -1,63 +1,100 @@
-import { worldLand } from './worldLand.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { fogWalls } from './landGeometry.ts'
+import { MIST_FADE_FAR, MIST_FADE_NEAR, mistColor, mistPuffs } from './mistGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
+import { worldLand } from './worldLand.ts'
 
-const HEIGHT = 34
-/** How far below the ground the wall starts, so it never shows a gap at the foot. */
-const SINK = 3
-
-/** Opaque at the foot and clear at the top, as a texture the material reads as its alpha. */
-function gradient(): THREE.CanvasTexture {
+/** A soft cloud: a few blurred blobs on top of each other, so no two puffs look like a disc, and nothing has an edge. */
+function cloudTexture(): THREE.CanvasTexture {
+  const size = 128
   const canvas = document.createElement('canvas')
-  canvas.width = 4
-  canvas.height = 64
+  canvas.width = size
+  canvas.height = size
   const g = canvas.getContext('2d')!
-  const fill = g.createLinearGradient(0, 0, 0, 64)
-  fill.addColorStop(0, '#000000')
-  fill.addColorStop(0.55, '#7f7f7f')
-  fill.addColorStop(1, '#ffffff')
-  g.fillStyle = fill
-  g.fillRect(0, 0, 4, 64)
+  // Fixed blobs (x, y, radius, strength) as shares of the canvas; nothing is random.
+  for (const [x, y, r, a] of [[0.5, 0.5, 0.42, 0.55], [0.36, 0.55, 0.3, 0.45], [0.64, 0.46, 0.3, 0.45], [0.5, 0.36, 0.26, 0.35], [0.46, 0.68, 0.24, 0.3]] as const) {
+    const fill = g.createRadialGradient(x * size, y * size, 0, x * size, y * size, r * size)
+    fill.addColorStop(0, `rgba(255,255,255,${a})`)
+    fill.addColorStop(1, 'rgba(255,255,255,0)')
+    g.fillStyle = fill
+    g.fillRect(0, 0, size, size)
+  }
   return new THREE.CanvasTexture(canvas)
 }
 
+const vertexShader = /* glsl */ `
+  attribute vec3 aOffset;
+  attribute vec2 aShape;
+  uniform float uNear;
+  uniform float uFar;
+  varying vec2 vUv;
+  varying float vAlpha;
+  void main() {
+    vUv = uv;
+    vec4 view = modelViewMatrix * vec4(aOffset, 1.0);
+    // Gone at the camera and whole by uFar (the same smoothstep as mistFade), so a puff close by never fills the screen.
+    vAlpha = aShape.y * smoothstep(uNear, uFar, length(view.xyz));
+    // Always faces the camera: the corner is moved in the view's own plane.
+    view.xy += position.xy * aShape.x;
+    gl_Position = projectionMatrix * view;
+  }
+`
+
+const fragmentShader = /* glsl */ `
+  uniform sampler2D uMap;
+  uniform vec3 uColor;
+  varying vec2 vUv;
+  varying float vAlpha;
+  void main() {
+    float a = texture2D(uMap, vUv).a * vAlpha;
+    if (a < 0.003) discard;
+    gl_FragColor = vec4(uColor, a);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }
+`
+
 /**
- * The world ends in fog (spec 4.1): a bank of mist on every side of the land that faces unowned ground, in the colour of the
- * scene's fog, so the edge of the world is a soft wall and never a cliff.
+ * The world ends in mist (spec 4.1): soft, overlapping puffs along every side of the land that faces unowned ground, one draw call
+ * (`mistPuffs` places them, deterministically). They are not the sky's colour, so the bank shows at night as well as by day
+ * (`mistColor`), and a puff close to the camera fades away instead of covering the view.
  */
 export function Fog() {
   const { world } = useWorld()
   const { scene } = useThree()
   const { geometry, material } = useMemo(() => {
-    const land = worldLand(world)
-    const planes = fogWalls(land).map((wall) => {
-      const g = new THREE.PlaneGeometry(wall.length, HEIGHT)
-      g.rotateY(wall.rotY)
-      g.translate(wall.x, land.heightAt(wall.x, wall.z) - SINK + HEIGHT / 2, wall.z)
-      return g
+    const puffs = mistPuffs(worldLand(world))
+    const quad = new THREE.PlaneGeometry(1, 1)
+    const geometry = new THREE.InstancedBufferGeometry()
+    geometry.index = quad.index
+    geometry.setAttribute('position', quad.getAttribute('position'))
+    geometry.setAttribute('uv', quad.getAttribute('uv'))
+    geometry.setAttribute('aOffset', new THREE.InstancedBufferAttribute(new Float32Array(puffs.flatMap((p) => [p.x, p.y, p.z])), 3))
+    geometry.setAttribute('aShape', new THREE.InstancedBufferAttribute(new Float32Array(puffs.flatMap((p) => [p.size, p.alpha])), 2))
+    geometry.instanceCount = puffs.length
+    const material = new THREE.ShaderMaterial({
+      uniforms: { uMap: { value: cloudTexture() }, uColor: { value: new THREE.Color('#d7e6f0') }, uNear: { value: MIST_FADE_NEAR }, uFar: { value: MIST_FADE_FAR } },
+      vertexShader,
+      fragmentShader,
+      transparent: true,
+      depthWrite: false,
     })
-    const geometry = planes.length > 0 ? mergeGeometries(planes) : new THREE.BufferGeometry()
-    for (const g of planes) g.dispose()
-    const material = new THREE.MeshBasicMaterial({ color: '#bcd7e6', alphaMap: gradient(), opacity: 0.34, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false })
     return { geometry, material }
   }, [world])
 
   useEffect(
     () => () => {
       geometry.dispose()
-      material.alphaMap?.dispose()
+      ;(material.uniforms.uMap!.value as THREE.Texture).dispose()
       material.dispose()
     },
     [geometry, material],
   )
-  // The same colour as the sky's horizon at this hour, which the environment sets on the scene's fog.
+  // The mist follows the sky: its colour comes from the fog colour the environment sets for this hour.
   useFrame(() => {
-    if (scene.fog) material.color.copy(scene.fog.color)
+    if (scene.fog) material.uniforms.uColor!.value.set(mistColor(`#${scene.fog.color.getHexString()}`))
   })
 
-  return <mesh geometry={geometry} material={material} renderOrder={2} />
+  return <mesh geometry={geometry} material={material} renderOrder={2} frustumCulled={false} raycast={() => null} />
 }
