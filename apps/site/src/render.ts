@@ -9,6 +9,7 @@ import { defaultGitLog, parseChanges } from './changes.ts'
 import { renderFeed, type FeedItem } from './feed.ts'
 import { SINCE_SCRIPT } from './since.ts'
 import { loadPlaces, placeChangeLookup, placeFeedItems, renderPlaces } from './places.ts'
+import { loadRequests, loadWishes, renderRequests } from './requests.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
 
 /** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
@@ -194,7 +195,9 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   )
   const sourceStats = readJson(world, 'mind/sources.json', SourceStats) ?? SourceStats.parse({})
   const places = loadPlaces(world)
-  const nav: [string, string][] = [...NAV, ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
+  const requests = loadRequests(world)
+  const wishes = loadWishes(world)
+  const nav: [string, string][] = [...NAV, ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
   const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, ...input }))
 
   // Home: who it is, what it wants, what it is doing and why.
@@ -361,6 +364,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     readSouvenir: (id) => souvenirs.get(id) ?? null,
     add,
   })
+  renderRequests({ requests, wishes, places, add })
 
   // The feed (works shelved, diary entries) and the list of changes the home page panel reads (spec 8).
   const heading = (text: string) => /^# (.+)$/m.exec(text)?.[1]?.trim()
