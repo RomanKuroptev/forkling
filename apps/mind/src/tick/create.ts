@@ -99,6 +99,8 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     pendingTend: null,
     pendingRevisit: null,
     pendingExpand: null,
+    pendingFound: null,
+    newRequests: [],
     placeUpdates: [],
     souvenirUpdates: [],
     touched: new Set(),

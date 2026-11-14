@@ -167,10 +167,12 @@ export function toExpandPatch(a: ExpandAnswer): ExpandConversion {
 
 const cut = (text: string, max: number) => text.trim().slice(0, max)
 
-/** The wishes of an answer (spec 5.3): the first 2 with a name and a description, each for a place that exists or for none. */
-export function toWishDrafts(a: ExpandAnswer, placeIds: ReadonlySet<string>): WishDraft[] {
-  return a.wishes
+/** The wishes of a call (spec 5.3): the first 2 with a name and a description, each for a place that exists or for none. */
+export function cleanWishes(wishes: readonly { name: string; description: string; forPlace: string | null }[], placeIds: ReadonlySet<string>): WishDraft[] {
+  return wishes
     .map((w) => ({ name: cut(w.name, 40), description: cut(w.description, 200), forPlace: w.forPlace !== null && placeIds.has(w.forPlace) ? w.forPlace : null }))
     .filter((w) => w.name !== '' && w.description !== '')
     .slice(0, EXPAND_LIMITS.wishes)
 }
+
+export const toWishDrafts = (a: ExpandAnswer, placeIds: ReadonlySet<string>): WishDraft[] => cleanWishes(a.wishes, placeIds)
