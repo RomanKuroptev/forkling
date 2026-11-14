@@ -128,3 +128,29 @@ describe("a part's model (spec 5.3: a part may be a CC0 model file, and always h
     expect(kit.parts.some((p) => p.model === undefined)).toBe(true)
   })
 })
+
+describe('what lights up at night (windows)', () => {
+  it('lets a primitive be marked to glow, and rejects anything but a boolean', () => {
+    expect(KitPart.safeParse({ ...part, primitives: [{ ...box, glow: true }] }).success).toBe(true)
+    expect(KitPart.safeParse({ ...part, primitives: [{ ...box, glow: false }] }).success).toBe(true)
+    expect(KitPart.safeParse({ ...part, primitives: [{ ...box, glow: 'yes' }] }).success).toBe(false)
+    expect(KitPart.safeParse({ ...part, primitives: [box] }).success).toBe(true)
+  })
+
+  it('marks the glass of every window part to glow, and nothing else in a window', () => {
+    const windows = kit.parts.filter((p) => p.id.startsWith('window-'))
+    expect(windows.length).toBeGreaterThanOrEqual(3)
+    for (const w of windows) {
+      const glass = w.primitives.filter((p) => p.glow)
+      expect(glass.length, w.id).toBeGreaterThanOrEqual(1)
+      for (const p of glass) expect(p.color, `${w.id} glass`).toBe('#bfe3f0')
+      for (const p of w.primitives.filter((q) => q.color !== '#bfe3f0')) expect(p.glow ?? false, `${w.id} frame`).toBe(false)
+    }
+  })
+
+  it('marks no wall, door or roof to glow', () => {
+    for (const p of kit.parts.filter((q) => q.category === 'structure' && !q.id.startsWith('window-'))) {
+      for (const prim of p.primitives) expect(prim.glow ?? false, p.id).toBe(false)
+    }
+  })
+})

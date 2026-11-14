@@ -1,16 +1,26 @@
 import { allPaths, createLand, placeCentre, routePath, toLandPlace } from '@forkling/sim'
-import { useEffect, useMemo } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { pathRibbon, type IndexedMesh } from './landGeometry.ts'
+import { nightFactor } from './night.ts'
 import { useWorld } from './WorldContext.tsx'
 import { stakedChunks } from './worldLand.ts'
+
+/** How brightly a path glows at night, as the share of its own colour it adds. */
+const PATH_NIGHT_GLOW = 0.55
 
 /**
  * The paths between places (spec 4.3): founding paths and the ones an expand made, worked out from the places themselves, as 3 meter
  * tracks along the ground. Each runs from the door of one place to the door of the other and goes round every building (`routePath`).
  */
 export function Paths() {
-  const { world } = useWorld()
+  const { world, clock } = useWorld()
+  const material = useRef<THREE.MeshStandardMaterial>(null)
+  // At night the track glows a little in its own colour, so it can be seen and followed in the dark (the moon alone leaves it grey on dark green).
+  useFrame(() => {
+    if (material.current) material.current.emissiveIntensity = PATH_NIGHT_GLOW * nightFactor(clock.hour())
+  })
   const geometry = useMemo(() => {
     const places = world.places.map(toLandPlace)
     const land = createLand(world.forkling.seed, places, stakedChunks(world.requests))
@@ -42,7 +52,7 @@ export function Paths() {
 
   return (
     <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial color="#c9b588" roughness={1} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
+      <meshStandardMaterial ref={material} color="#c9b588" emissive="#c9b588" emissiveIntensity={0} roughness={1} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
     </mesh>
   )
 }

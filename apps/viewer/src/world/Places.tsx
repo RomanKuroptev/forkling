@@ -12,6 +12,7 @@ import { panelStore } from './panelStore.ts'
 import { plotSign } from './plotGeometry.ts'
 import { kitModelUrl } from './kitModels.ts'
 import { restyleMaterial } from './modelStyle.ts'
+import { nightFactor } from './night.ts'
 import { Signs } from './Signs.tsx'
 import { signBoards } from './signGeometry.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
@@ -26,9 +27,42 @@ const GEOMETRIES: Record<Shape, THREE.BufferGeometry> = {
   cone: new THREE.ConeGeometry(0.5, 1, ROUND_SEGMENTS),
 }
 
-/** One draw call for all the instances of a shape, each with its own matrix and colour. */
+/** How night it is, shared by every shape's material: windows and lamps glow in proportion to it. */
+const nightUniform = { value: 0 }
+
+/** A matte standard material that adds a warm glow to the instances marked to glow (a window's glass, a lamp that is on), at night. */
+function glowMaterial(): THREE.MeshStandardMaterial {
+  const material = new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.9 })
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uNight = nightUniform
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float aGlow;\nvarying float vGlow;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = aGlow;')
+    // The warm glow is added to the light the surface gives off, so it shows in the dark and is lost in daylight.
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(1.0, 0.78, 0.4) * vGlow * uNight * 1.4;')
+  }
+  return material
+}
+
+/** One draw call for all the instances of a shape, each with its own matrix, colour and glow. */
 function Shapes({ shape, data }: { shape: Shape; data: ShapeInstances }) {
   const mesh = useRef<THREE.InstancedMesh>(null)
+  // Its own copy of the unit shape, because the glow of each instance is an attribute of the geometry.
+  const geometry = useMemo(() => {
+    const g = GEOMETRIES[shape].clone()
+    g.setAttribute('aGlow', new THREE.InstancedBufferAttribute(data.glow, 1))
+    return g
+  }, [shape, data])
+  const material = useMemo(glowMaterial, [])
+  useEffect(
+    () => () => {
+      geometry.dispose()
+    },
+    [geometry],
+  )
+  useEffect(() => () => material.dispose(), [material])
   useLayoutEffect(() => {
     const m = mesh.current
     if (!m) return
@@ -39,9 +73,7 @@ function Shapes({ shape, data }: { shape: Shape; data: ShapeInstances }) {
   if (data.count === 0) return null
   // The capacity is fixed when the mesh is made, so a different number of instances is a new mesh.
   return (
-    <instancedMesh key={data.count} ref={mesh} args={[GEOMETRIES[shape], undefined, data.count]} castShadow receiveShadow frustumCulled={false}>
-      <meshStandardMaterial flatShading roughness={0.9} />
-    </instancedMesh>
+    <instancedMesh key={data.count} ref={mesh} args={[geometry, material, data.count]} castShadow receiveShadow frustumCulled={false} />
   )
 }
 
@@ -91,6 +123,10 @@ export function Places() {
     const id = setInterval(() => setNowMs(clock.now()), 60_000)
     return () => clearInterval(id)
   }, [clock])
+  // The night comes on with the sun going down.
+  useFrame(() => {
+    nightUniform.value = nightFactor(clock.hour())
+  })
   const [interiors, setInteriors] = useState<ReadonlySet<string>>(() => interiorsToLoad(world.places, visitor.position))
   const key = useRef('')
   useFrame(() => {

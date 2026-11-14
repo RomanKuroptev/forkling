@@ -27,6 +27,8 @@ export const KitPrimitive = z
     at: Vec3,
     rotation: Vec3.optional(),
     color: KitColor,
+    /** Lit at night while the place's lamps are on (a window's glass). A lamp's own `glow` colour lights the same way. */
+    glow: z.boolean().optional(),
   })
   .strict()
 export type KitPrimitive = z.infer<typeof KitPrimitive>

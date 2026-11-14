@@ -10,6 +10,8 @@ export interface Instance {
   matrix: Mat4
   /** A hex colour, already looked up in the palette. */
   color: string
+  /** Lights up at night (a window's glass, a lamp): the draw adds a warm glow to it while it is dark. */
+  glow?: boolean
 }
 
 /** How tall one floor of a place is: its tallest room (the 12 meter limit of 5.2 is floors times this). */
