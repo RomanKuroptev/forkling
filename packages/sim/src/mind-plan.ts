@@ -71,7 +71,7 @@ const MIN_STEPS = 3
 const MAX_STEPS = 8
 const MAX_REASON = 140
 /** The wants list is allowed to start empty: until it holds this many, a step need not point at one. */
-const COLD_START_WANTS = 3
+export const COLD_START_WANTS = 3
 const NO_NEW_STEP_BEFORE_BED_MS = 45 * 60_000
 const MAX_REPLIES_PER_DAY = 5
 const MAX_SKETCHES_PER_DAY = 3
