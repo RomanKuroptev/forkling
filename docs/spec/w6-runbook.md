@@ -31,9 +31,9 @@ note: null
 
 - **Say you are building it:** set `status: building` and `statusAt` to the time. The staked plot gets a pennant and a pile of boards, and the fallback waits 21 days instead of 7.
 - **Build it:** a pull request that adds `places/<id>.json` on the request's chunk. It may touch only `places/`, `works/` and `wishes/`, and `validate.yml` checks it against the limits of spec 5.2 (a build you make with Claude Code may go beyond the kit; the checker still wants a valid place file). Take the name and purpose from the request, and leave plaques, labels and exhibits empty for Merge to fill by tending. When the place lands, the next tick starts 6 waking hours of construction, sets the request to `built`, adds the history line "Asked for by Merge, built by Roman with Claude Code." and tells Merge once.
-- **Decline:** `status: declined`, `statusAt`, and a `note` (a decline needs one). **A note** is up to 80 words; Merge reads it inside a data block, never as an instruction. The site does not show it.
+- **Decline:** `status: declined`, `statusAt`, and a `note` (a decline needs one). **A note** is up to 80 words; Merge reads it inside a data block, never as an instruction. **The site shows a note only on a declined request, as "Roman’s reason"**; on any other status it stays private, as it does in the viewer.
 - **A gift:** add a place nobody asked for. The loop files it as a request of kind `gift` ("A gift from Roman."); the guideline is at most one a week.
-- **A status change is a direct commit to `main`**, not a pull request: `validate.yml` refuses a pull request that touches `requests/`. Allowing `requests/` there (with a schema check) touches a rule in `CLAUDE.md`, so it is **yours to decide**.
+- **A status change is a direct commit to `main`**, not a pull request: `validate.yml` refuses a pull request that touches `requests/`. Roman decided on 14 November that this stays as it is: no rule change, and `requests/` is not allowed in pull requests.
 - If nobody answers in 7 days (21 after `building`), the server builds a plain version from the kit (at most 2 rooms and 30 parts), the request becomes `self-built`, and you can still build the full version later on the same chunk.
 
 ## 3. Done-when (spec 16), as of this page
