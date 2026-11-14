@@ -3,13 +3,14 @@ import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { pathRibbon, type IndexedMesh } from './landGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
+import { stakedChunks } from './worldLand.ts'
 
 /** The paths between places (spec 4.3): founding paths and the ones an expand made, worked out from the places themselves, as 3 meter tracks along the ground. */
 export function Paths() {
   const { world } = useWorld()
   const geometry = useMemo(() => {
     const places = world.places.map(toLandPlace)
-    const land = createLand(world.forkling.seed, places)
+    const land = createLand(world.forkling.seed, places, stakedChunks(world.requests))
     const inside = (x: number, z: number) =>
       places.some((p) => {
         const [px, pz] = placeCentre(p)

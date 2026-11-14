@@ -1,6 +1,7 @@
-import type { Kit, KitColor, KitPalette, KitPart, Place } from '@forkling/schema'
+import type { Kit, KitColor, KitPalette, KitPart, Place, PlaceRequest } from '@forkling/schema'
 import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
 import { constructionInstances } from './constructionGeometry.ts'
+import { plotInstances } from './plotGeometry.ts'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
 import { SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
@@ -211,7 +212,7 @@ export type SceneInstances = Record<Shape, ShapeInstances> & {
  * Every place's shapes, grouped by shape: its outside always (with scaffolding while it is being built), its inside only when `interiors` has it. Each stands on the ground
  * under it. `models` are the model files that have loaded: a part that has one is drawn from it, the others from their primitives.
  */
-export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number }): SceneInstances {
+export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number; plots?: readonly PlaceRequest[] }): SceneInstances {
   const lists: Record<Shape, Instance[]> = { box: [], sphere: [], cylinder: [], cone: [] }
   const modelLists: Record<string, Mat4[]> = {}
   for (const place of places) {
@@ -233,6 +234,8 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
       for (const i of neglectInstances(place, kit, baseY, level, 'interior')) lists[i.shape].push(i)
     }
   }
+  // The plots staked by open requests (spec 10.3), each on its own ground.
+  for (const request of opts.plots ?? []) for (const i of plotInstances(request, opts.heightAt)) lists[i.shape].push(i)
   const models: Record<string, Float32Array> = {}
   for (const [file, list] of Object.entries(modelLists)) {
     const packed = new Float32Array(list.length * 16)

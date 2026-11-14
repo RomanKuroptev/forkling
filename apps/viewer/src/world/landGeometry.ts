@@ -17,8 +17,10 @@ export interface VisibleChunk {
 /** The chunks that are drawn: the owned ones and the edge chunks around them. Never the fog. In a fixed order. */
 export function visibleChunks(land: Land): VisibleChunk[] {
   if (land.places.length === 0) return []
-  const xs = land.places.map((p) => p.chunk[0])
-  const zs = land.places.map((p) => p.chunk[1])
+  // A staked plot may touch only another plot, so it counts when looking for the edges of what is drawn.
+  const known = [...land.places.map((p) => p.chunk), ...land.staked]
+  const xs = known.map((c) => c[0])
+  const zs = known.map((c) => c[1])
   const out: VisibleChunk[] = []
   for (let cz = Math.min(...zs) - 1; cz <= Math.max(...zs) + 1; cz++) {
     for (let cx = Math.min(...xs) - 1; cx <= Math.max(...xs) + 1; cx++) {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { PlaceRequest } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { createLand } from '../src/land.ts'
 import { FIXTURE_NOW, makeFixtureWorld } from '../src/fixture-world.ts'
@@ -97,5 +98,32 @@ describe('the fixture world shows construction and a path an expand made (W6)', 
     const w = makeFixtureWorld(1, 10, later)
     const b = w.places.find((p) => p.state.construction)!
     expect(Date.parse(b.state.construction!.finishesAt)).toBeGreaterThan(Date.parse(later))
+  })
+})
+
+describe('the fixture world has a place request staked on a chunk (W6, spec 10.3)', () => {
+  const world = makeFixtureWorld(1, 10)
+
+  it('has two place requests, one open and one Roman says he is building, valid request files', () => {
+    expect(world.requests).toHaveLength(2)
+    for (const r of world.requests) expect(PlaceRequest.safeParse(r).success).toBe(true)
+    expect(world.requests.map((r) => r.status).sort()).toEqual(['building', 'open'])
+    expect(world.requests.every((r) => r.kind === 'place')).toBe(true)
+  })
+
+  it('stakes chunks that no place has and no other request has, and that touch a place', () => {
+    const taken = new Set(world.places.map((p) => p.chunk.join(',')))
+    const staked = world.requests.map((r) => r.chunk.join(','))
+    expect(new Set(staked).size).toBe(staked.length)
+    for (const c of world.requests.map((r) => r.chunk)) {
+      expect(taken.has(c.join(','))).toBe(false)
+      const touches = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => taken.has(`${c[0]! + dx!},${c[1]! + dz!}`))
+      expect(touches, c.join(',')).toBe(true)
+    }
+  })
+
+  it('is the same every time, and does not change the places, the paths or the souvenirs', () => {
+    expect(JSON.stringify(makeFixtureWorld(1, 10))).toBe(JSON.stringify(world))
+    expect(world.places).toHaveLength(10)
   })
 })

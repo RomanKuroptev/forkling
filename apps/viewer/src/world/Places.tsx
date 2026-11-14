@@ -1,5 +1,5 @@
 import { kit } from '@forkling/schema/kit'
-import { createLand, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
+import { neglectFor, openPlaceRequests, placeCentre, toLandPlace } from '@forkling/sim'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -9,10 +9,12 @@ import { visitor } from '../visitor.ts'
 import { exhibitSpots, signSpot } from './exhibitGeometry.ts'
 import { hoverStore } from './hoverStore.ts'
 import { panelStore } from './panelStore.ts'
+import { plotSign } from './plotGeometry.ts'
 import { kitModelUrl } from './kitModels.ts'
 import { restyleMaterial } from './modelStyle.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
+import { worldLand } from './worldLand.ts'
 
 /** The unit shapes every part is made of; an instance scales them to its primitive's size. */
 const GEOMETRIES: Record<Shape, THREE.BufferGeometry> = {
@@ -79,7 +81,8 @@ function ModelPart({ part, matrices, count }: { part: LoadedModel['parts'][numbe
  */
 export function Places() {
   const { world, clock } = useWorld()
-  const land = useMemo(() => createLand(world.forkling.seed, world.places.map(toLandPlace)), [world])
+  const land = useMemo(() => worldLand(world), [world])
+  const plots = useMemo(() => openPlaceRequests(world.requests), [world])
   // The clock decides how neglected each place looks (spec 4.4); a minute is fine-grained enough, days are what matter.
   const [nowMs, setNowMs] = useState(() => clock.now())
   useEffect(() => {
@@ -128,7 +131,7 @@ export function Places() {
     if (new URLSearchParams(location.search).has('debug')) Object.assign(window, { __forklingModels: () => [...loadedFiles].sort() })
   }, [loadedFiles])
 
-  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs }), [world, land, interiors, loadedFiles, nowMs])
+  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots }), [world, land, interiors, loadedFiles, nowMs, plots])
   const walls = useMemo(
     () =>
       world.places.flatMap((place) => {
@@ -150,9 +153,16 @@ export function Places() {
     }
     return {
       exhibits: world.places.filter((p) => interiors.has(p.id)).flatMap((p) => exhibitSpots(p, kit, baseOf(p)).map((s) => ({ key: `${p.id}/${s.exhibit.id}`, position: s.position, rotY: s.rotY, title: p.name, text: s.exhibit.label, open: () => void panelStore.open({ kind: 'exhibit', place: p, exhibit: s.exhibit }, world) }))),
+      plots: plots.map((r) => ({ key: r.id, position: plotSign(r, (x, z) => land.heightAt(x, z)).position, title: r.name, text: `${r.name}: ${r.status === 'building' ? 'Roman says he is building it' : 'waiting for Roman'}. ${r.purpose}`, open: () => void panelStore.open({ kind: 'plot', request: r }, world) })),
       signs: world.places.map((p) => ({ key: p.id, position: signSpot(p, baseOf(p)).position, title: p.exterior.sign || p.name, text: `${p.name}: ${p.purpose}`, open: () => void panelStore.open({ kind: 'sign', place: p }, world) })),
     }
-  }, [world, land, interiors])
+  }, [world, land, interiors, plots])
+
+  // `?debug` lets a browser test find the staked plots too.
+  useEffect(() => {
+    if (!new URLSearchParams(location.search).has('debug')) return
+    Object.assign(window, { __forklingPlots: () => plots.map((r) => ({ id: r.id, name: r.name, status: r.status, chunk: r.chunk, x: plotSign(r, 0).position[0], z: plotSign(r, 0).position[2] })) })
+  }, [plots])
 
   // `?debug` lets a browser test find places to look at.
   useEffect(() => {
@@ -171,6 +181,12 @@ export function Places() {
       {targets.exhibits.map((t) => (
         <mesh key={t.key} position={t.position} rotation={[0, t.rotY, 0]} onClick={t.open} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
           <boxGeometry args={[0.7, 0.55, 0.45]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      ))}
+      {targets.plots.map((t) => (
+        <mesh key={t.key} position={[t.position[0], t.position[1] + 1.2, t.position[2]]} onClick={t.open} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
+          <boxGeometry args={[2.6, 2.4, 0.8]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}

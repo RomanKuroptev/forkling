@@ -87,6 +87,17 @@ function Body({ content }: { content: PanelContent }) {
           {content.pageUrl && <p>{link(content.pageUrl, 'Its page on the site')}</p>}
         </>
       )
+    case 'plot':
+      return (
+        <>
+          <p>{content.status}</p>
+          <p>{content.purpose}</p>
+          <p style={{ whiteSpace: 'pre-wrap' }}>{content.body}</p>
+          <p>
+            Asked on {content.written}. {content.tags.length > 0 && `About ${content.tags.join(', ')}.`} {content.souvenirs > 0 && `${content.souvenirs} souvenir${content.souvenirs === 1 ? '' : 's'} behind it.`}
+          </p>
+        </>
+      )
     case 'note':
       return <p>{content.text}</p>
   }

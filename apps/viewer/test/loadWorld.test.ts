@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SpeciesPack } from '@forkling/schema'
+import { PlaceRequest, SpeciesPack, formatRequest } from '@forkling/schema'
 import catSpecies from '@forkling/species-cat/species.json'
 import { loadWorld, type LoadDeps } from '../src/world/loadWorld.ts'
 import homeFile from '../../../templates/forkling-world/places/home.json'
@@ -217,5 +217,35 @@ describe('loadWorld works (W5)', () => {
   it('lists the ids of the works in the repo, in name order, without reading them', async () => {
     const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'works/b/meta.json': {}, 'works/a/meta.json': {}, 'works/a/index.html': 'x', 'works/c/thumb.png': 'x', 'notes/works/z/meta.json': {} }))
     expect(result.ok && result.world.workIds).toEqual(['a', 'b'])
+  })
+})
+
+describe('loadWorld requests (W6 slice 8)', () => {
+  const request = (over: Record<string, unknown> = {}) =>
+    formatRequest(PlaceRequest.parse({ id: 'lantern-hall', kind: 'place', name: 'Lantern Hall', purpose: 'Where the lidar finds hold up.', tags: ['maya lidar'], chunk: [1, 0], related: [], souvenirs: [], written: '2026-11-14T10:00:00Z', status: 'open', statusAt: null, note: null, body: 'I want a lamp over each find.', ...over }))
+
+  it('reads requests/<id>.md, in id order, and keeps their status', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'requests/lantern-hall.md': request(), 'requests/a-first.md': request({ id: 'a-first', name: 'A First', chunk: [0, 1], status: 'building', statusAt: '2026-11-15T10:00:00Z' }) }))
+    expect(result.ok && result.world.requests.map((r) => [r.id, r.status])).toEqual([['a-first', 'building'], ['lantern-hall', 'open']])
+  })
+
+  it('has none for a world with no requests', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling }))
+    expect(result.ok && result.world.requests).toEqual([])
+  })
+
+  it('leaves out a file that does not fit, one whose id is not its name, and anything not directly in requests/ or not markdown, never an error', async () => {
+    const result = await loadWorld(
+      ref,
+      deps({ 'forkling.json': forkling, 'requests/lantern-hall.md': request(), 'requests/junk.md': 'just words', 'requests/wrong.md': request({ id: 'other' }), 'requests/old/x.md': request({ id: 'x' }), 'requests/notes.txt': request({ id: 'notes' }) }),
+    )
+    expect(result.ok && result.world.requests.map((r) => r.id)).toEqual(['lantern-hall'])
+  })
+
+  it('reads at most 24', async () => {
+    const many: Record<string, unknown> = { 'forkling.json': forkling }
+    for (let i = 0; i < 30; i++) many[`requests/r${String(i).padStart(2, '0')}.md`] = request({ id: `r${String(i).padStart(2, '0')}`, name: `Place ${i}` })
+    const result = await loadWorld(ref, deps(many))
+    expect(result.ok && result.world.requests).toHaveLength(24)
   })
 })

@@ -181,3 +181,29 @@ describe('where a place request goes (spec 4.2, 10.3: a staked plot is taken bef
     expect(chooseRequestChunk(many, [staked([100, 100])], { tags: [], related: [] }, 1)).toBeNull()
   })
 })
+
+describe('a staked plot is land the visitor can see and stand on (spec 10.3: while a request is open its chunk shows a plot)', () => {
+  const staked: [number, number][] = [[1, 0]]
+
+  it('is edge land, like the empty chunks round a place, and never fog', () => {
+    const land = createLand(7, [home, workshop], staked)
+    expect(land.classify([1, 0])).toBe('edge')
+    expect(createLand(7, [home, workshop]).classify([1, 0])).toBe('edge') // it touches the clearing anyway
+    const far = createLand(7, [home, workshop], [[4, 4]])
+    expect(far.classify([4, 4])).toBe('edge')
+    expect(createLand(7, [home, workshop]).classify([4, 4])).toBe('fog')
+  })
+
+  it('does not turn the chunks round it into land, or take a chunk that holds a place', () => {
+    const far = createLand(7, [home, workshop], [[4, 4]])
+    expect(far.classify([5, 4])).toBe('fog')
+    expect(far.classify([3, 3])).toBe('fog')
+    expect(createLand(7, [home, workshop, signals], [[1, 0]]).classify([1, 0])).toBe('owned')
+  })
+
+  it('does not change the ground: the height is the same with or without a plot', () => {
+    const a = createLand(7, [home, workshop])
+    const b = createLand(7, [home, workshop], [[4, 4], [1, 0]])
+    for (const [x, z] of [[10, 10], [60, 20], [140, 140], [-20, 40]]) expect(b.heightAt(x!, z!)).toBe(a.heightAt(x!, z!))
+  })
+})

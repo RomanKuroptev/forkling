@@ -64,14 +64,24 @@ export type ChunkClass = 'owned' | 'edge' | 'fog'
 export interface Land {
   seed: number
   places: readonly LandPlace[]
-  /** Owned: it holds a place. Edge: empty, next to an owned chunk (8 neighbours); it shows plain terrain fading into fog. Fog: the rest. */
+  /** The chunks open place requests have staked (spec 10.3). */
+  staked: readonly Chunk[]
+  /**
+   * Owned: it holds a place. Edge: empty, next to an owned chunk (8 neighbours), or staked by an open request (spec 10.3); it shows plain
+   * terrain fading into fog. Fog: the rest.
+   */
   classify(chunk: Chunk): ChunkClass
   placesIn(chunk: Chunk): LandPlace[]
   /** Ground height at a world point: the noise, flattened under each place's footprint and blended back over `BLEND` meters. */
   heightAt(x: number, z: number): number
 }
 
-export function createLand(seed: number, places: readonly LandPlace[]): Land {
+/**
+ * The land of a world. `staked` are the chunks open place requests have staked (spec 10.3): each is edge land, so a visitor can see and
+ * stand on the plot, and nothing else about the land changes (the ground is the same with or without them).
+ */
+export function createLand(seed: number, places: readonly LandPlace[], staked: readonly Chunk[] = []): Land {
+  const stakedKeys = new Set(staked.map(chunkKey))
   const byChunk = new Map<string, LandPlace[]>()
   for (const p of places) {
     const k = chunkKey(p.chunk)
@@ -92,9 +102,11 @@ export function createLand(seed: number, places: readonly LandPlace[]): Land {
   return {
     seed,
     places,
+    staked,
     placesIn,
     classify(c) {
       if (byChunk.has(chunkKey(c))) return 'owned'
+      if (stakedKeys.has(chunkKey(c))) return 'edge'
       return NEIGHBOURS_8.some(([dx, dz]) => byChunk.has(chunkKey([c[0] + dx, c[1] + dz]))) ? 'edge' : 'fog'
     },
     heightAt(x, z) {

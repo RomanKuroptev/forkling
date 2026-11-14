@@ -1,4 +1,4 @@
-import { createLand, toLandPlace } from '@forkling/sim'
+import { worldLand } from './worldLand.ts'
 import { RigidBody, TrimeshCollider } from '@react-three/rapier'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
@@ -15,7 +15,7 @@ const SEGMENTS = 16
 export function Land() {
   const { world } = useWorld()
   const { geometry, vertices, indices } = useMemo(() => {
-    const land = createLand(world.forkling.seed, world.places.map(toLandPlace))
+    const land = worldLand(world)
     const mesh = landMesh(land, SEGMENTS)
     const indexed = new THREE.BufferGeometry()
     indexed.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3))
@@ -44,7 +44,7 @@ export function Land() {
   // `?debug` lets a browser test know how far the land reaches, to go and look at its edge.
   useEffect(() => {
     if (!new URLSearchParams(location.search).has('debug')) return
-    const chunks = visibleChunks(createLand(world.forkling.seed, world.places.map(toLandPlace)))
+    const chunks = visibleChunks(worldLand(world))
     Object.assign(window, {
       __forklingLand: () => ({
         minX: Math.min(...chunks.map((c) => c.chunk[0])) * 32,

@@ -1,4 +1,4 @@
-import { createLand, toLandPlace } from '@forkling/sim'
+import { worldLand } from './worldLand.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
@@ -33,7 +33,7 @@ export function Fog() {
   const { world } = useWorld()
   const { scene } = useThree()
   const { geometry, material } = useMemo(() => {
-    const land = createLand(world.forkling.seed, world.places.map(toLandPlace))
+    const land = worldLand(world)
     const planes = fogWalls(land).map((wall) => {
       const g = new THREE.PlaneGeometry(wall.length, HEIGHT)
       g.rotateY(wall.rotY)
