@@ -35,6 +35,9 @@ h1 { font-size: 1.8rem; margin: 1.2rem 0 0.4rem; }
 h2 { font-size: 1.2rem; margin: 1.6rem 0 0.4rem; }
 h3 { margin: 0 0 0.2rem; }
 .quiet { color: var(--quiet); font-size: 0.9rem; }
+.provenance { color: var(--quiet); font-style: italic; margin-top: -0.4rem; }
+.requests { list-style: none; padding: 0; }
+.requests li { border-top: 1px solid var(--line); padding: 0.8rem 0; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
 .card h1, .card h2 { font-size: 1.2rem; margin-top: 0; }
 .photo { margin: 0; }

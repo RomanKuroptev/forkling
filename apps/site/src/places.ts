@@ -5,6 +5,7 @@ import { kit } from '@forkling/schema/kit'
 import { allPaths, isBuilding, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
 import { esc, markdown } from './md.ts'
 import type { FeedItem } from './feed.ts'
+import { provenanceOf } from './requests.ts'
 import type { SiteWork } from './workshop.ts'
 
 /** The places in `places/`, in id order. A file that does not fit the schema is left out, never guessed at. */
@@ -183,6 +184,7 @@ export function renderPlaces(i: PlacesInput): void {
         '<p class="quiet"><a href="../">All places</a></p>',
         `<h1>${esc(p.name)}</h1>`,
         `<p>${esc(p.purpose)}</p>`,
+        `<p class="provenance">${esc(provenanceOf(p))}</p>`,
         `<p class="quiet">${esc(p.tags.join(', '))}. Founded ${esc(p.founded)}. ${capital(NEGLECT_WORDS[level(p)]!)}.${p.state.lamps ? ' The lamps are on.' : ' The lamps are off.'}</p>`,
         ...(isBuilding(p.state, i.nowMs) ? [`<p class="quiet">Under construction until ${esc(stampTime(p.state.construction!.finishesAt, i.tz))}.</p>`] : []),
         ...(related.length > 0 ? [`<p>Related: ${related.join(', ')}.</p>`] : []),

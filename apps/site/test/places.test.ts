@@ -98,7 +98,9 @@ describe('/places/<id>/ (the place as a page)', () => {
     const home = page('places/home/index.html')
     expect(home).toContain('<h1>Home</h1>')
     expect(home).toContain('Where my days start and end')
-    expect(home.indexOf('Put the fog on the shelf.')).toBeLessThan(home.indexOf('Given to Merge before it woke.'))
+    // The founding line also stands near the top as the honesty line, so the order is read inside the history list.
+    const history = home.slice(home.indexOf('<h2>History</h2>'))
+    expect(history.indexOf('Put the fog on the shelf.')).toBeLessThan(history.indexOf('Given to Merge before it woke.'))
     expect(home).toMatch(/Back to the places|href="\.\.\/"/)
   })
   it('shows a souvenir with its words, why, and its source as a link, and an image with its credit and licence', () => {
