@@ -13,8 +13,8 @@ export const NO_CALL_REASONS: ReadonlySet<string> = new Set(['prompt too long', 
 export function makeAsk(t: Tick): Ask {
   return async (kind, model, user, schema, maxTokens = MAX_OUTPUT_TOKENS) => {
     const { deps, system, notes } = t
-    // A thought tick runs on its own clock: its failures and times must not hold back or restart the decide cool-down.
-    const decides = kind !== 'thought'
+    // A thought tick and a reflection run on their own clocks: their failures and times must not hold back or restart the decide cool-down.
+    const decides = kind !== 'thought' && kind !== 'reflection'
     const tried = (ok: boolean, error?: string, usd = 0, stop?: 'refusal' | 'cut_off') =>
       t.attempts.push({ kind, model, usd, ok, ...(error ? { error: clampText(error, 200) } : {}), ...(stop ? { stop } : {}) })
     const tokens = estimateTokens(system) + estimateTokens(user)

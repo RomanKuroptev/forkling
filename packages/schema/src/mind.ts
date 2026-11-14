@@ -102,8 +102,12 @@ export const MindState = z.object({
    */
   sparked: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), pending: z.object({ topic: z.string().max(60), gain: z.number() }).nullable() }).optional(),
   thought: ThoughtState.optional(),
-  /** Spec 9.3: the importance added up since the last reflection, when it was, and the reflections made on `date`. */
-  reflect: z.object({ sum: z.number().nonnegative().default(0), lastAt: Timestamp.nullable().default(null), date: z.string().default(''), today: z.number().int().nonnegative().default(0) }).optional(),
+  /**
+   * Spec 9.3: the importance added up since the last reflection, when it was, and the reflections made on `date`. `pending` is a
+   * reflection that changed the wants or said the plan no longer fits, waiting for a decide call to answer it (spec 2.3, `reflected`);
+   * `questions` are the ones it asked itself, shown to the next reflection.
+   */
+  reflect: z.object({ sum: z.number().nonnegative().default(0), lastAt: Timestamp.nullable().default(null), date: z.string().default(''), today: z.number().int().nonnegative().default(0), pending: z.object({ reason: z.string().max(240) }).nullable().default(null), questions: z.array(z.string().max(140)).max(3).default([]) }).optional(),
   /** The want each open build was asked for (job id to want id), so a failed build counts against it (spec 9.4). Cleared when the result is booked. */
   jobWants: z.record(z.string().max(80), z.string().max(40)).optional(),
   /** When Merge put works away in the last 7 days (spec 9.9: at most 2 a week). */

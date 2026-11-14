@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { StreamEntry, TimelineEntry } from '@forkling/schema'
+import { addDays } from '@forkling/sim'
 import { clampText } from './decision.ts'
 
 /** Raw observations are kept this many days; what mattered has been reflected into beliefs and memory by then. */
@@ -94,4 +95,14 @@ export function prune(dir: string, today: string): string[] {
     }
   }
   return removed
+}
+
+/**
+ * The newest `limit` entries across the days the stream is kept, oldest first (spec 9.3: a reflection reads the 60 most recent
+ * stream items). The ids carry their day, so an insight can cite an entry from yesterday.
+ */
+export function recentStream(dir: string, today: string, limit: number): StreamEntry[] {
+  const found: StreamEntry[] = []
+  for (let back = 0; back < STREAM_KEEP_DAYS && found.length < limit; back++) found.unshift(...readStream(dir, addDays(today, -back)))
+  return found.slice(-limit)
 }
