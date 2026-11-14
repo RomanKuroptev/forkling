@@ -110,6 +110,13 @@ export const MindState = z.object({
   wakeTop: z.array(WakeSnapshot).max(3).optional(),
   /** The place the last expand was for, so the same place is never expanded twice in a row (spec 2.4). */
   lastExpandedPlace: z.string().max(80).nullable().optional(),
+  /** The status the mind last saw on each place request and wish, so a change Roman makes is told once (spec 10.3). */
+  requestSeen: z.record(z.string(), z.string()).optional(),
+  wishSeen: z.record(z.string(), z.string()).optional(),
+  /** The ids of the places the mind has seen, so a place that lands (Roman's build, spec 10.3) is noticed once. */
+  placesSeen: z.array(z.string()).optional(),
+  /** Roman's words about what he built or answered, as `name | status | note`, for the next decide call to read as data and then forget. */
+  fromRoman: z.array(z.object({ id: z.string().max(120), text: z.string().max(700) })).max(8).optional(),
   /** When Merge last wrote a found request, for the 1 a week rail (spec 2.4). */
   founds: z.array(Timestamp).max(10).optional(),
   /** Sketches made on `date` (spec 9.8: at most 3 a day), counted when one is shelved or scrapped. */

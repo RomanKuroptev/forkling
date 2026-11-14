@@ -22,6 +22,7 @@ export async function think(t: Tick): Promise<void> {
     places: placeIds(t),
     growable: expandablePlaces(t).map((e) => `${e.id} (${e.tag})`),
     foundable: foundableInterest(t),
+    fromRoman: (t.mind.fromRoman ?? []).map((x) => x.text),
     requests: openPlaceRequests(foundGate(t).requests).map((r) => ({ name: r.name, status: r.status })),
     triggers: t.triggers,
     events: t.events,

@@ -91,6 +91,8 @@ export function applyDecision(t: Tick): void {
   }
   // Build results the call was told about are answered once, whatever it decided (a failed call never gets here).
   if (mind.jobs && mind.jobs.pending.length > 0) mind.jobs.pending = []
+  // What Roman said has been shown to the call once, and is forgotten.
+  if (mind.fromRoman && mind.fromRoman.length > 0) mind.fromRoman = []
   // A replan a thought asked for is answered by this call, whatever it decided (a failed call never gets here).
   if (mind.thought?.replanRequest) delete mind.thought.replanRequest
 }
