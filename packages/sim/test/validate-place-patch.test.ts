@@ -104,6 +104,20 @@ describe('tend (spec 5.4: up to 3 exhibit changes, up to 2 labels, the sign, the
       expect(r.place.history.at(-1)!.verb).toBe('tend')
     }
   })
+
+  // Found by the 30-day sim: a busy place lost the line that says who had the idea and who built it, and its page then said "not written down".
+  it('keeps the founding line when the older entries are cut', () => {
+    const full = base()
+    const founding = { at: '2026-11-01T09:00:00+01:00', verb: 'found', summary: 'Asked for by Merge, built by Roman with Claude Code.' }
+    full.history = [founding, ...Array.from({ length: 55 }, (_, i) => ({ at: `2026-11-20T18:${String(i).padStart(2, '0')}:00+01:00`, verb: 'tend', summary: `entry ${i}` }))] as never
+    const r = validatePlacePatch(full, tend({ lamps: false }), pctx)
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect(r.place.history).toHaveLength(50)
+      expect(r.place.history[0]).toEqual(founding)
+      expect(r.place.history.at(-1)!.verb).toBe('tend')
+    }
+  })
 })
 
 describe('revisit (spec 5.4: no change except lastCareAt and a history line)', () => {
