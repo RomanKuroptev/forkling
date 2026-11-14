@@ -6,12 +6,14 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { visitor } from '../visitor.ts'
-import { exhibitSpots, signSpot } from './exhibitGeometry.ts'
+import { SIGN_W, exhibitSpots, signSpot } from './exhibitGeometry.ts'
 import { hoverStore } from './hoverStore.ts'
 import { panelStore } from './panelStore.ts'
 import { plotSign } from './plotGeometry.ts'
 import { kitModelUrl } from './kitModels.ts'
 import { restyleMaterial } from './modelStyle.ts'
+import { Signs } from './Signs.tsx'
+import { signBoards } from './signGeometry.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
 import { worldLand } from './worldLand.ts'
@@ -132,6 +134,8 @@ export function Places() {
   }, [loadedFiles])
 
   const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots }), [world, land, interiors, loadedFiles, nowMs, plots])
+  // The board of each place's sign: its name and its sign text, painted on one texture.
+  const boards = useMemo(() => signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit), [world, land])
   const walls = useMemo(
     () =>
       world.places.flatMap((place) => {
@@ -191,11 +195,12 @@ export function Places() {
         </mesh>
       ))}
       {targets.signs.map((t) => (
-        <mesh key={t.key} position={[t.position[0], t.position[1] + 1, t.position[2]]} onClick={t.open} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
-          <boxGeometry args={[0.8, 2, 0.8]} />
+        <mesh key={t.key} position={[t.position[0], t.position[1] + 1.15, t.position[2]]} onClick={t.open} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
+          <boxGeometry args={[SIGN_W, 2.3, 0.7]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}
+      <Signs boards={boards} />
       <Shapes shape="box" data={scene.box} />
       <Shapes shape="sphere" data={scene.sphere} />
       <Shapes shape="cylinder" data={scene.cylinder} />

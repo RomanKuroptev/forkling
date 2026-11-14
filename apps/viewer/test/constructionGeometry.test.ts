@@ -4,7 +4,7 @@ import { kit } from '@forkling/schema/kit'
 import { DOOR_HALF, createLand, placeCentre, toLandPlace } from '@forkling/sim'
 import { FIXTURE_NOW, makeFixtureWorld } from '@forkling/sim/fixture'
 import { constructionInstances, SCAFFOLD_HEAD, SCAFFOLD_REACH } from '../src/world/constructionGeometry.ts'
-import { signSpot } from '../src/world/exhibitGeometry.ts'
+import { SIGN_W, signSpot } from '../src/world/exhibitGeometry.ts'
 import { floorHeight } from '../src/world/kitBase.ts'
 import { renderBudget, sceneInstances, interiorsToLoad } from '../src/world/kitGeometry.ts'
 
@@ -65,7 +65,7 @@ describe('the scaffolding of a place being built (spec 4.5)', () => {
       const place: Place = { ...building, exterior: { ...building.exterior, footprint: [fw, fd] } }
       const [px, pz] = placeCentre(toLandPlace(place))
       const signX = signSpot(place, 0).position[0]
-      const corridor = { x0: Math.min(px - DOOR_HALF, signX) - 0.4, x1: Math.max(px + DOOR_HALF, signX) + 0.4, z0: pz + fd / 2 - 0.2, z1: pz + fd / 2 + 3 }
+      const corridor = { x0: Math.min(px - DOOR_HALF, signX - SIGN_W / 2) - 0.4, x1: Math.max(px + DOOR_HALF, signX + SIGN_W / 2) + 0.4, z0: pz + fd / 2 - 0.2, z1: pz + fd / 2 + 3 }
       for (const inst of constructionInstances(place, 0, NOW)) {
         const e = extent(inst)
         const overlaps = e.x1 > corridor.x0 && e.x0 < corridor.x1 && e.z1 > corridor.z0 && e.z0 < corridor.z1
