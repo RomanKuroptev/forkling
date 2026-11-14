@@ -107,10 +107,30 @@ describe('/requests/ (spec 10.3: place requests and wishes, with their status)',
     expect(item).toMatch(/Filed 2026-11-18/)
   })
 
-  it("does not show Roman's note (the viewer keeps it back too)", () => {
-    putRequest({ status: 'building', statusAt: '2026-11-19T10:00:00Z', note: 'Two rooms, lamps in the windows.' })
+  it("does not show Roman's note on a request that is not declined (the viewer keeps it back too)", () => {
+    putRequest({ id: 'a-building', name: 'Place A', status: 'building', statusAt: '2026-11-19T10:00:00Z', note: 'Two rooms, lamps in the windows.' })
+    putRequest({ id: 'b-built', name: 'Place B', status: 'built', statusAt: '2026-11-19T10:00:00Z', note: 'Built with a stone hall.' })
     render()
-    expect(page('requests/index.html')).not.toContain('Two rooms, lamps')
+    const html = page('requests/index.html')
+    expect(html).not.toContain('Two rooms, lamps')
+    expect(html).not.toContain('stone hall')
+    expect(html).not.toContain('Roman’s reason')
+  })
+
+  it("shows Roman's reason on a declined request, and only there", () => {
+    putRequest({ id: 'no-thanks', name: 'No Thanks', status: 'declined', statusAt: '2026-11-19T10:00:00Z', note: 'Too close to the Workshop; ask again further out.' })
+    render()
+    const item = /<li[^>]*data-request="no-thanks"[\s\S]*?<\/li>/.exec(page('requests/index.html'))![0]
+    expect(item).toMatch(/Roman declined/)
+    expect(item).toMatch(/Roman’s reason:[\s\S]*Too close to the Workshop; ask again further out\./)
+  })
+
+  it("escapes Roman's reason", () => {
+    putRequest({ id: 'no-thanks', name: 'No Thanks', status: 'declined', statusAt: '2026-11-19T10:00:00Z', note: '<script>alert(1)</script> no.' })
+    render()
+    const html = page('requests/index.html')
+    expect(html).not.toContain('<script>alert')
+    expect(html).toContain('&lt;script&gt;')
   })
 
   it('links a built request to its place when one stands on its chunk', () => {

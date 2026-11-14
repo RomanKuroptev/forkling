@@ -99,6 +99,7 @@ export function renderRequests(i: RequestsInput): void {
       `<li class="request" data-request="${esc(r.id)}" data-status="${esc(r.status)}">`,
       `<strong>${esc(r.name)}</strong> <span class="quiet">${esc(r.tags.join(', '))}</span>`,
       `<p><em>${esc(requestStatusWords(r))}</em>${place ? ` <a href="../places/${esc(place.id)}/">See the place.</a>` : ''}</p>`,
+      ...(r.status === 'declined' && r.note ? [`<p class="reason"><strong>Roman’s reason:</strong> ${esc(r.note)}</p>`] : []),
       `<p>${esc(r.purpose)}</p>`,
       paragraphs(r.body),
       r.kind === 'gift'
