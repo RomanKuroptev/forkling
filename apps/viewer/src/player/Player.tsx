@@ -1,10 +1,14 @@
 import { CameraControls, CameraControlsImpl, useKeyboardControls } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
+import { kit } from '@forkling/schema/kit'
 import { Ecctrl, type EcctrlHandle } from 'ecctrl'
 import { useButtonStore, useJoystickStore } from 'ecctrl/input'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import * as THREE from 'three'
 import { parseStand } from '../world/at.ts'
+import { clampCamera, easeCamera, nearSolids, worldSolids, type Vec3 } from '../world/cameraClamp.ts'
 import { useWorld } from '../world/WorldContext.tsx'
+import { worldLand } from '../world/worldLand.ts'
 import { touchUi } from '../touch.ts'
 import { visitor } from '../visitor.ts'
 import { mergeMovement } from './touchInput.ts'
@@ -19,7 +23,16 @@ const clipMode = new URLSearchParams(location.search).has('clip')
 
 /** The visitor: a simple capsule avatar driven by ecctrl, with an orbiting follow camera. */
 export function Player() {
-  const { simWorld } = useWorld()
+  const { simWorld, world } = useWorld()
+  // What the camera may not go into: the walls, floors and roofs of the places (none in the pet-era island), and the ground.
+  const ground = useMemo(() => {
+    if (world.places.length === 0) return simWorld.heightAt
+    const land = worldLand(world)
+    return (x: number, z: number) => land.heightAt(x, z)
+  }, [world, simWorld])
+  const solids = useMemo(() => (world.places.length === 0 ? [] : worldSolids(world.places, kit, ground)), [world, ground])
+  const shown = useRef<Vec3 | null>(null)
+  const lookAt = useRef(new THREE.Vector3())
   // `?stand=x,z,yaw` starts the visitor somewhere else, to look at a part of the world.
   const at = parseStand(location.search)
   const spawn = at ? { x: at.x, z: at.z, y: simWorld.heightAt(at.x, at.z), yaw: at.yaw } : simWorld.visitorSpawn
@@ -61,7 +74,7 @@ export function Player() {
     )
   }, [])
 
-  useFrame(() => {
+  useFrame((state, delta) => {
     const b = body.current
     const c = camera.current
     if (!b || !c) return
@@ -70,7 +83,20 @@ export function Player() {
     b.setMovement(mergeMovement(getKeys(), stick, { jump: useButtonStore.getState().buttons.jump }))
     const p = b.currPos
     visitor.position = { x: p.x, z: p.z }
-    if (!clipMode) c.moveTo(p.x, p.y + EYE_OFFSET, p.z, true)
+    if (clipMode) return
+    c.moveTo(p.x, p.y + EYE_OFFSET, p.z, true)
+    // The controls have just put the camera where the visitor's own orbit wants it (they run first). Work out where it may really
+    // stand: in front of any wall, floor or roof between it and the visitor, under the ceiling indoors, above the ground.
+    const target = c.getTarget(lookAt.current)
+    const here: Vec3 = [target.x, target.y, target.z]
+    const [d, polar, azimuth] = [c.distance, c.polarAngle, c.azimuthAngle]
+    const wanted: Vec3 = [here[0] + d * Math.sin(polar) * Math.sin(azimuth), here[1] + d * Math.cos(polar), here[2] + d * Math.sin(polar) * Math.cos(azimuth)]
+    const near = nearSolids(solids, here, 45)
+    const clamped = clampCamera(here, wanted, near, { ground })
+    const next = easeCamera({ shown: shown.current ?? clamped, target: here, wanted: clamped, solids: near, dt: delta, ground })
+    shown.current = next
+    state.camera.position.set(next[0], next[1], next[2])
+    state.camera.lookAt(target)
   })
 
   return (
