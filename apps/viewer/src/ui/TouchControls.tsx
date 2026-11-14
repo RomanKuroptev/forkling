@@ -1,6 +1,7 @@
 import { Joystick, VirtualButton } from 'ecctrl/input'
 import { useSyncExternalStore } from 'react'
 import { bubbleHidden } from '../forkling/bubbleHidden.ts'
+import { debugEnabled } from '../debugEnabled.ts'
 import { debugOpen } from '../forkling/debugOpen.ts'
 import { JOYSTICK_RADIUS } from '../touch.ts'
 import { contraptionNear, interactPress } from '../world/interact.ts'
@@ -55,18 +56,20 @@ export function TouchControls() {
       >
         {textHidden ? 'Show text' : 'Hide text'}
       </button>
-      <button
-        type="button"
-        className="touch-mind"
-        aria-pressed={mindOpen}
-        style={{ right: inset('right', 12), top: inset('top', 12) }}
-        onPointerDown={(e) => {
-          e.stopPropagation()
-          debugOpen.toggle()
-        }}
-      >
-        {mindOpen ? 'Close' : 'Mind'}
-      </button>
+      {debugEnabled(location.search) && (
+        <button
+          type="button"
+          className="touch-mind"
+          aria-pressed={mindOpen}
+          style={{ right: inset('right', 12), top: inset('top', 12) }}
+          onPointerDown={(e) => {
+            e.stopPropagation()
+            debugOpen.toggle()
+          }}
+        >
+          {mindOpen ? 'Close' : 'Mind'}
+        </button>
+      )}
     </div>
   )
 }

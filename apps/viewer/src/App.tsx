@@ -2,11 +2,13 @@ import { KeyboardControls, Stats, useProgress, type KeyboardControlsEntry } from
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { Suspense } from 'react'
+import { debugEnabled } from './debugEnabled.ts'
 import { DebugOverlay } from './forkling/DebugOverlay.tsx'
 import { Forkling } from './forkling/Forkling.tsx'
 import { Player } from './player/Player.tsx'
 import { ExhibitPanel } from './ui/ExhibitPanel.tsx'
 import { HoverLabel } from './ui/HoverLabel.tsx'
+import { desktopHint } from './ui/hint.ts'
 import { touchUi } from './touch.ts'
 import { useWorld } from './world/WorldContext.tsx'
 import { TouchControls } from './ui/TouchControls.tsx'
@@ -85,12 +87,8 @@ export function App() {
   )
 }
 
-/** The key hints. F3 opens the mind of whichever forkling is being watched. */
+/** The key hints. With `?debug`, F3 opens the mind of whichever forkling is being watched. */
 function DesktopHud() {
   const { world } = useWorld()
-  return (
-    <div className="hud">
-      WASD / arrows to walk · hold Shift to run · Space to jump · drag to look · scroll to zoom · E near a contraption sets it off · B hides the thought bubble · F3 for {world.forkling.name}’s mind
-    </div>
-  )
+  return <div className="hud">{desktopHint(world.forkling.name, debugEnabled(location.search))}</div>
 }
