@@ -54,7 +54,8 @@ Roman walked the W5 fixture world (`?world=local&fixture=10&debug`) with Playwri
 
 - [x] **Debug panel gate:** `debugEnabled(search)` (`apps/viewer/src/debugEnabled.ts`), F3, the touch "Mind" button and the F3 hint work only with `?debug`; the pet-era "E near a contraption" hint is gone (`ui/hint.ts` `desktopHint`). Tests: `apps/viewer/test/debugGate.test.ts`.
 - [x] **Gable ends closed:** the `roof-gable` kit part gained 18 stepped wall-coloured boxes (9 at each end, under the roof boards, 21 primitives in all). Test: `kitGeometry.test.ts` samples points inside the triangle at both ends.
-- [ ] Camera indoors and outdoors, [ ] signs, [ ] fog, [ ] paths to doors, [ ] scaffold, [ ] night windows and path.
+- [x] **Scaffold out of the way:** the front of a scaffold has a gap from the door to past the sign (no pole, rail or board across it), and rails and boards hang at `SCAFFOLD_HEAD` (2 m) or higher, above a visitor's head. Tests in `constructionGeometry.test.ts` for five footprints. (The poles are straight; they only looked tilted from perspective.)
+- [ ] Camera indoors and outdoors, [ ] signs, [ ] fog, [ ] paths to doors, [ ] night windows and path.
 
 ## W6 progress (expand and found; building on `main`, nothing released, nothing deployed)
 
