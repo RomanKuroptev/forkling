@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { DOOR_HALF, WALL, createLand, placeCentre, toLandPlace } from '@forkling/sim'
-import { makeFixtureWorld } from '@forkling/sim/fixture'
+import { FIXTURE_NOW, makeFixtureWorld } from '@forkling/sim/fixture'
 import { compose, multiply } from '../src/world/matrix.ts'
 import { MODEL_LIMITS, SHAPES, SHAPE_TRIANGLES, exteriorInstances, floorHeight, interiorInstances, interiorsToLoad, modelFiles, partInstances, renderBudget, resolveColor, sceneInstances, wallBoxes } from '../src/world/kitGeometry.ts'
 
@@ -247,7 +247,7 @@ describe('the whole scene as instanced shapes (a draw call per shape, however ma
 
   it('counts a triangle budget from the shapes\' own triangles', () => {
     expect(SHAPE_TRIANGLES.box).toBe(12)
-    const one = renderBudget({ box: { matrices: new Float32Array(16), colors: new Float32Array(3), count: 1 }, sphere: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, cylinder: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, cone: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 } })
+    const one = renderBudget({ box: { matrices: new Float32Array(16), colors: new Float32Array(3), glow: new Float32Array(0), count: 1 }, sphere: { matrices: new Float32Array(0), colors: new Float32Array(0), glow: new Float32Array(0), count: 0 }, cylinder: { matrices: new Float32Array(0), colors: new Float32Array(0), glow: new Float32Array(0), count: 0 }, cone: { matrices: new Float32Array(0), colors: new Float32Array(0), glow: new Float32Array(0), count: 0 } })
     expect(one).toEqual({ drawCalls: 1, triangles: 12 })
   })
 })
@@ -306,7 +306,76 @@ describe("parts that are models (spec 5.3: a model stands in for the primitives,
     const base = renderBudget(draw([]))
     const withModel = renderBudget(draw(['tree_default.glb']))
     expect(withModel.drawCalls - base.drawCalls).toBeGreaterThanOrEqual(-4)
-    const modelOnly = renderBudget({ ...draw([]), box: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, sphere: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, cylinder: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, cone: { matrices: new Float32Array(0), colors: new Float32Array(0), count: 0 }, models: { 'a.glb': new Float32Array(32), 'b.glb': new Float32Array(16) } })
+    const modelOnly = renderBudget({ ...draw([]), box: { matrices: new Float32Array(0), colors: new Float32Array(0), glow: new Float32Array(0), count: 0 }, sphere: { matrices: new Float32Array(0), colors: new Float32Array(0), glow: new Float32Array(0), count: 0 }, cylinder: { matrices: new Float32Array(0), colors: new Float32Array(0), glow: new Float32Array(0), count: 0 }, cone: { matrices: new Float32Array(0), colors: new Float32Array(0), glow: new Float32Array(0), count: 0 }, models: { 'a.glb': new Float32Array(32), 'b.glb': new Float32Array(16) } })
     expect(modelOnly).toEqual({ drawCalls: 2 * MODEL_LIMITS.meshes, triangles: 3 * MODEL_LIMITS.triangles })
+  })
+})
+
+describe('windows and lamps that light at night', () => {
+  const home = place('home')
+  const GLASS = '#bfe3f0'
+  const withLamps = (p: Place, lamps: boolean): Place => ({ ...p, state: { ...p.state, lamps } })
+  const glowing = (p: Place, opts: { nowMs?: number; interiors?: ReadonlySet<string> } = {}) => {
+    const scene = sceneInstances([p], kit, { heightAt: () => 0, interiors: opts.interiors ?? new Set(), nowMs: opts.nowMs })
+    return SHAPES.reduce((n, shape) => n + [...scene[shape].glow].filter((g) => g === 1).length, 0)
+  }
+
+  it('marks the glass of every window of a place to glow, and nothing else on the outside', () => {
+    const outside = exteriorInstances(home, kit, 0)
+    const glass = outside.filter((i) => i.color === GLASS)
+    expect(glass.length).toBeGreaterThan(2)
+    for (const i of outside) expect(i.glow ?? false, i.color).toBe(i.color === GLASS)
+  })
+
+  it('sticks out of the wall on both faces for every style, so the glass is seen from the path and from inside (and can light up)', () => {
+    for (const style of kit.styles) {
+      const wall = part(style.wall).size[2]
+      const glass = exteriorInstances(withStyle(home, style.id), kit, 0).filter((i) => i.glow)
+      expect(glass.length, style.id).toBeGreaterThan(0)
+      for (const i of glass) {
+        // How deep the glass is, across the wall: the smaller of its reach along x and along z (a window in a front, back or side wall).
+        const along = (row: number) => 0.5 * (Math.abs(i.matrix[row]!) + Math.abs(i.matrix[row + 4]!) + Math.abs(i.matrix[row + 8]!))
+        expect(Math.min(along(0), along(2)), `${style.id} glass`).toBeGreaterThanOrEqual(wall / 2 + 0.03)
+      }
+    }
+  })
+
+  it('is a round window with its glass standing up in the wall, not a disc on the floor', () => {
+    const round = part('window-round')
+    const glass = round.primitives.find((p) => p.glow)!
+    expect(glass.at[1], 'the middle of the window').toBeGreaterThan(0.3)
+    expect(glass.rotation?.[0] ?? 0, 'turned to face along z').toBeCloseTo(Math.PI / 2, 4)
+    for (const p of round.primitives) expect(p.at[1], 'inside the height of the part').toBeGreaterThan(0.3)
+  })
+
+  it('packs a glow of 0 or 1 for every instance of every shape', () => {
+    const scene = sceneInstances(fixture.places, kit, { heightAt: () => 0, interiors: new Set(fixture.places.map((p) => p.id)) })
+    for (const shape of SHAPES) {
+      expect(scene[shape].glow.length).toBe(scene[shape].count)
+      for (const g of scene[shape].glow) expect([0, 1]).toContain(g)
+    }
+  })
+
+  it('lights every window of a place that is cared for and has its lamps on', () => {
+    const glass = exteriorInstances(home, kit, 0).filter((i) => i.color === GLASS).length
+    expect(glowing(withLamps(home, true))).toBe(glass)
+  })
+
+  it('leaves the windows dark when the place has turned its lamps off', () => {
+    expect(glowing(withLamps(home, false))).toBe(0)
+  })
+
+  it('leaves the windows dark when the place is neglected, as its lamps go out (spec 4.4)', () => {
+    const far = place('place-03')
+    const later = Date.parse(FIXTURE_NOW) + 100 * 86_400_000
+    expect(glowing(withLamps(far, true), { nowMs: later })).toBe(0)
+    expect(glowing(withLamps(far, true))).toBeGreaterThan(0)
+  })
+
+  it('lights the lamps inside, from the glow of the palette, only while the lamps are on', () => {
+    const inside = new Set([home.id])
+    const lampsOn = glowing(withLamps(home, true), { interiors: inside }) - glowing(withLamps(home, true))
+    expect(lampsOn).toBeGreaterThan(0)
+    expect(glowing(withLamps(home, false), { interiors: inside })).toBe(0)
   })
 })

@@ -47,6 +47,8 @@ export function partInstances(part: KitPart, at: readonly [number, number, numbe
     shape: p.shape,
     matrix: multiply(base, compose(p.at, p.rotation ?? [0, 0, 0], p.size)),
     color: resolveColor(p.color, palette),
+    // A window's glass is marked in the kit; a lamp's own glow colour lights the same way.
+    glow: p.glow === true || p.color === 'glow',
   }))
 }
 
@@ -84,7 +86,8 @@ export function exteriorInstances(place: Place, kit: Kit, baseY: number): Instan
       const at: [number, number, number] = alongZ ? [fixed, y, c] : [c, y, fixed]
       const rot = alongZ ? Math.PI / 2 : 0
       out.push(...partInstances(wall, at, rot, palette, [tile / wallW, sy, 1]))
-      if (tile >= window.size[0] + 0.4) out.push(...partInstances(window, [at[0], y + 1.0, at[2]], rot, palette))
+      // A window is as deep as its wall and a little more, so its glass shows on both faces (the walls are 0.1 to 0.4 m thick).
+      if (tile >= window.size[0] + 0.4) out.push(...partInstances(window, [at[0], y + 1.0, at[2]], rot, palette, [1, 1, (wall.size[2] + 0.16) / window.size[2]]))
     }
   }
 
@@ -145,7 +148,9 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
         const s = part.model.scale
         modelOut.push({ file: part.model.file, matrix: compose(at, [0, placed.rot, 0], [s, s, s]) })
       } else {
-        out.push(...partInstances(part, at, placed.rot, part.category === 'light' && opts.lampsOn === false ? dark : palette))
+        const off = part.category === 'light' && opts.lampsOn === false
+        // A lamp that is off is dark: it does not glow either.
+        out.push(...partInstances(part, at, placed.rot, off ? dark : palette).map((i) => (off ? { ...i, glow: false } : i)))
       }
     }
   }
@@ -193,6 +198,8 @@ export interface ShapeInstances {
   matrices: Float32Array
   /** Linear RGB, three floats each, as an instanced mesh keeps them. */
   colors: Float32Array
+  /** 1 for an instance that lights up at night (a window's glass, a lamp that is on), else 0. */
+  glow: Float32Array
   count: number
 }
 
@@ -221,7 +228,8 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     // How long since it was cared for sets how it looks (spec 4.4). Without a clock, nothing is neglected.
     const level = opts.nowMs === undefined ? 0 : neglectFor({ id: place.id, lastCareAt: place.state.lastCareAt, founded: place.founded }, opts.nowMs)
     const lampsOn = neglectLook(level, place.state.lamps).lampsOn
-    for (const i of exteriorInstances(place, kit, baseY)) lists[i.shape].push(i)
+    // A place whose lamps are on (or that is cared for, spec 4.4) has lit windows; one with its lamps off, or neglected, is dark.
+    for (const i of exteriorInstances(place, kit, baseY)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
     for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
     // A place that is being built is wrapped in scaffolding until its finish time (spec 4.5).
     for (const i of constructionInstances(place, baseY, opts.nowMs)) lists[i.shape].push(i)
@@ -245,11 +253,13 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
   const pack = (list: Instance[]): ShapeInstances => {
     const matrices = new Float32Array(list.length * 16)
     const colors = new Float32Array(list.length * 3)
+    const glow = new Float32Array(list.length)
     list.forEach((inst, k) => {
       matrices.set(inst.matrix, k * 16)
       colors.set(rgb(inst.color), k * 3)
+      glow[k] = inst.glow ? 1 : 0
     })
-    return { matrices, colors, count: list.length }
+    return { matrices, colors, glow, count: list.length }
   }
   return { box: pack(lists.box), sphere: pack(lists.sphere), cylinder: pack(lists.cylinder), cone: pack(lists.cone), models }
 }
