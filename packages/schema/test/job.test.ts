@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ExpandJob, JobRequest, JobResult, MindState, TinkerJob } from '../src/index.ts'
+import { ExpandJob, FoundJob, JobRequest, JobResult, MindState, TinkerJob } from '../src/index.ts'
 
 describe('JobRequest (a file the build worker finds in mind/builds/)', () => {
   it('needs an id, a kind and when it was asked for, and keeps any other fields for the handler', () => {
@@ -96,5 +96,36 @@ describe('JobResult of an expand (spec 10.2: the worker returns the validated ch
 
   it('stays valid with none of them (a work or an old result)', () => {
     expect(JobResult.safeParse(base).success).toBe(true)
+  })
+})
+
+describe('FoundJob (the fallback build of a place request nobody answered, spec 10.3)', () => {
+  const job = { id: 'found-20261110-1000', kind: 'found', requestedAt: '2026-11-10T10:00:00Z', requestId: 'lantern-hall' }
+  it('is a job of kind found, naming the request', () => {
+    expect(FoundJob.parse(job)).toMatchObject({ kind: 'found', requestId: 'lantern-hall' })
+    expect(FoundJob.safeParse({ ...job, kind: 'expand' }).success).toBe(false)
+    expect(FoundJob.safeParse({ ...job, requestId: '../x' }).success).toBe(false)
+    expect(FoundJob.safeParse({ ...job, requestId: undefined }).success).toBe(false)
+  })
+
+  it('comes back as a result that carries the request and the whole new place', () => {
+    const place = {
+      id: 'lantern-hall',
+      name: 'Lantern Hall',
+      purpose: 'Where the lidar finds hold up.',
+      tags: ['maya lidar'],
+      founded: '2026-11-10',
+      chunk: [1, 0],
+      related: [],
+      exterior: { style: 'timber', footprint: [10, 8], floors: 1, palette: 'meadow', sign: 'LANTERN HALL' },
+      rooms: [{ id: 'main', name: 'Main room', size: [8, 6, 3], parts: [{ part: 'shelf-low', at: [0, 0, 2], rot: 0 }] }],
+      exhibits: [],
+      state: { construction: null, lastCareAt: null, neglect: 0, lamps: true },
+      history: [{ at: '2026-11-10T10:05:00Z', verb: 'found', summary: 'Built by Merge from the kit.' }],
+    }
+    const r = JobResult.parse({ id: job.id, kind: 'found', status: 'done', requestId: 'lantern-hall', place, at: '2026-11-10T10:05:00Z' })
+    expect(r.place).toMatchObject({ id: 'lantern-hall', chunk: [1, 0] })
+    expect(r.requestId).toBe('lantern-hall')
+    expect(JobResult.safeParse({ id: job.id, kind: 'found', status: 'done', place: { id: 'x' }, at: '2026-11-10T10:05:00Z' }).success).toBe(false)
   })
 })

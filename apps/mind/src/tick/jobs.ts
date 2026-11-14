@@ -4,6 +4,7 @@ import { recordCall } from '../budget.ts'
 import { clampText } from '../decision.ts'
 import type { Tick } from './context.ts'
 import { applyExpandResult } from './expand.ts'
+import { applyFoundResult } from './fallback.ts'
 
 const MAX_SEEN = 100
 const MAX_PENDING = 10
@@ -33,10 +34,10 @@ export function settleJobs(t: Tick): void {
       t.calls.push(call)
     }
     // An expand is applied here, by the loop, which is the one writer of `places/`; a work arrives as a pull request.
-    const expanded = r.kind === 'expand' ? applyExpandResult(t, r) : null
-    t.moodEvents.push(expanded ? (expanded.ok ? 'buildAccepted' : 'buildFailed') : r.status === 'done' && r.workStatus === 'shelf' ? 'buildAccepted' : 'buildFailed')
-    const text = expanded ? expanded.text : describeResult(r)
-    t.remember.push({ at: t.nowIso, kind: 'event', text: clampText(text, 300), verb: expanded ? 'expand' : 'tinker' })
+    const applied = r.kind === 'expand' ? applyExpandResult(t, r) : r.kind === 'found' ? applyFoundResult(t, r) : null
+    t.moodEvents.push(applied ? (applied.ok ? 'buildAccepted' : 'buildFailed') : r.status === 'done' && r.workStatus === 'shelf' ? 'buildAccepted' : 'buildFailed')
+    const text = applied ? applied.text : describeResult(r)
+    t.remember.push({ at: t.nowIso, kind: 'event', text: clampText(text, 300), verb: r.kind === 'expand' ? 'expand' : r.kind === 'found' ? 'found' : 'tinker' })
     jobs.seen.push(r.id)
     jobs.pending.push({ id: r.id, text: clampText(text, 300) })
   }

@@ -11,10 +11,10 @@ import { recordWishes } from './expand.ts'
 
 const KEPT_SHOWN = 8
 
-/** Every place request there is: those on disk and those written earlier in this tick. */
+/** Every place request there is: those written or changed earlier in this tick take the place of the files on disk. */
 function allRequests(t: Tick): PlaceRequest[] {
   const seen = new Set<string>()
-  return [...readRequests(t.dir), ...t.newRequests].filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
+  return [...t.newRequests, ...readRequests(t.dir)].filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
 }
 
 /**

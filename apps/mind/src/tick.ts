@@ -14,6 +14,7 @@ import { thoughtTick } from './tick/thought.ts'
 import { workStep } from './tick/work.ts'
 import { installStep } from './tick/install.ts'
 import { expandStep, finishConstruction } from './tick/expand.ts'
+import { fallbackStep } from './tick/fallback.ts'
 import { foundStep } from './tick/found.ts'
 import { lifecycleStep } from './tick/lifecycle.ts'
 import { revisitStep } from './tick/revisit.ts'
@@ -37,6 +38,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   finishConstruction(t)
   lifecycleStep(t)
   settleJobs(t)
+  fallbackStep(t)
   finishStep(t)
   route(t)
   await morningStep(t)

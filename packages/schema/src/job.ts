@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { Timestamp } from './intention.ts'
 import { WorkConstraint } from './constraint.ts'
 import { BudgetCall } from './mind.ts'
-import { PlaceId } from './place.ts'
+import { Place, PlaceId } from './place.ts'
 import { ExpandPatch } from './place-patch.ts'
 import { WishDraft } from './request.ts'
 
@@ -40,6 +40,9 @@ export const JobResult = z.object({
    * what Merge did with it, and the two souvenirs offered. The loop checks the patch again and writes the place; the worker does not.
    */
   placeId: PlaceId.optional(),
+  /** For the fallback build of a place request (spec 10.3): which request, and the whole new place the worker checked. The loop writes it. */
+  requestId: z.string().regex(/^[a-z0-9][a-z0-9-]{0,40}$/).optional(),
+  place: Place.optional(),
   patch: ExpandPatch.optional(),
   wishes: z.array(WishDraft).max(2).optional(),
   constraint: WorkConstraint.nullable().optional(),
@@ -67,3 +70,10 @@ export const ExpandJob = JobRequest.extend({
   reason: z.string().min(1).max(200),
 })
 export type ExpandJob = z.infer<typeof ExpandJob>
+
+/** The fallback build of a place request nobody answered in 7 days (spec 10.3): the worker builds a plain kit place for it. */
+export const FoundJob = JobRequest.extend({
+  kind: z.literal('found'),
+  requestId: z.string().regex(/^[a-z0-9][a-z0-9-]{0,40}$/, 'lowercase words with dashes'),
+})
+export type FoundJob = z.infer<typeof FoundJob>
