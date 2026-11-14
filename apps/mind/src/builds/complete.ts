@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { BudgetLedger, type BudgetCall } from '@forkling/schema'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger } from '../budget.ts'
-import { effortFor, thinkingFor, type LlmClient } from '../llm.ts'
+import { effortFor, stopFailure, thinkingFor, type LlmClient, type LlmResult } from '../llm.ts'
 import { buildSystem } from '../prompts.ts'
 import { DEFAULT_SEED } from '../seed.ts'
 import type { Complete } from './tinker.ts'
@@ -41,4 +41,14 @@ export function createWorkerComplete(o: { dir: string; llm: LlmClient; nowMs: nu
     return result
   }
   return { complete, calls, nowIso }
+}
+
+/** A worker call's answer, or why there is none: no call made, a refusal, an answer cut off at the output limit, or nothing usable. */
+export function unpackResult<T>(result: LlmResult<T> | null): { ok: true; answer: T } | { ok: false; reason: string } {
+  if (!result) return { ok: false, reason: 'no call was made (no key, the budget, or a prompt that was too long)' }
+  const failure = stopFailure(result.stopReason, result.parsed)
+  if (failure === 'refusal') return { ok: false, reason: 'the model refused' }
+  if (failure === 'cut_off') return { ok: false, reason: 'the answer was cut off at the output limit' }
+  if (!result.parsed) return { ok: false, reason: 'the model gave no usable answer' }
+  return { ok: true, answer: result.parsed }
 }

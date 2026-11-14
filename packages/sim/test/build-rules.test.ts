@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_OPEN_WISHES, Place } from '@forkling/schema'
 import {
+  BUILDING_HOLD_DAYS,
   EXPAND_MIN_WEIGHT,
+  FALLBACK_DAYS,
   FOUND_STREAK_DAYS,
   WAKE_TOP_MIN,
   addWishes,
   expandCheck,
+  fallbackDue,
   foundCheck,
   foundsInWeek,
   lastSizeChange,
@@ -289,5 +292,30 @@ describe('addWishes (spec 5.3, 10.3: wishing the same part again adds to its cou
     const copy = JSON.stringify(existing)
     addWishes(existing, [draft('Lamp')], NOW)
     expect(JSON.stringify(existing)).toBe(copy)
+  })
+})
+
+describe('fallbackDue (spec 10.3: 7 days with no status, and building holds it off for 14 more)', () => {
+  const written = '2026-11-01T10:00:00Z'
+  const at = (days: number, extra = 0) => Date.parse(written) + days * 86_400_000 + extra
+  const req = (status: 'open' | 'building' | 'built' | 'declined' | 'self-built' | 'withdrawn', kind: 'place' | 'gift' = 'place') => ({ kind, status, written })
+
+  it('is due 7 days after an open place request was written, not a moment before', () => {
+    expect(FALLBACK_DAYS).toBe(7)
+    expect(fallbackDue(req('open'), at(7, -1))).toBe(false)
+    expect(fallbackDue(req('open'), at(7))).toBe(true)
+    expect(fallbackDue(req('open'), at(30))).toBe(true)
+  })
+
+  it('is held off 14 more days while Roman says he is building it', () => {
+    expect(BUILDING_HOLD_DAYS).toBe(14)
+    expect(fallbackDue(req('building'), at(7))).toBe(false)
+    expect(fallbackDue(req('building'), at(20, 86_399_000))).toBe(false)
+    expect(fallbackDue(req('building'), at(21))).toBe(true)
+  })
+
+  it('is never due for an answered, declined, withdrawn or self-built request, or for a gift', () => {
+    for (const s of ['built', 'declined', 'self-built', 'withdrawn'] as const) expect(fallbackDue(req(s), at(60)), s).toBe(false)
+    expect(fallbackDue(req('open', 'gift'), at(60))).toBe(false)
   })
 })

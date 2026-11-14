@@ -6,10 +6,10 @@ import { expandCheck, lastSizeChange, validatePlacePatch } from '@forkling/sim'
 import type { BuildHandler } from '../build-worker.ts'
 import { clampText } from '../decision.ts'
 import { claimsHuman } from '../honesty.ts'
-import { stopFailure, type LlmResult, type LlmClient } from '../llm.ts'
+import type { LlmClient } from '../llm.ts'
 import { readPlaces } from '../places.ts'
 import { readWishes } from '../wishes.ts'
-import { createWorkerComplete } from './complete.ts'
+import { createWorkerComplete, unpackResult } from './complete.ts'
 import { drawForBuild } from './draw.ts'
 import { EXPAND_MAX_TOKENS, ExpandAnswer, buildExpandRepairUser, buildExpandUser, toExpandPatch, toWishDrafts } from './expand.ts'
 import { refFile } from './tend.ts'
@@ -32,15 +32,6 @@ const readJson = (dir: string, rel: string): unknown => {
   } catch {
     return null
   }
-}
-
-function unpack(result: LlmResult<ExpandAnswer> | null): { ok: true; answer: ExpandAnswer } | { ok: false; reason: string } {
-  if (!result) return { ok: false, reason: 'no call was made (no key, the budget, or a prompt that was too long)' }
-  const failure = stopFailure(result.stopReason, result.parsed)
-  if (failure === 'refusal') return { ok: false, reason: 'the model refused' }
-  if (failure === 'cut_off') return { ok: false, reason: 'the answer was cut off at the output limit' }
-  if (!result.parsed) return { ok: false, reason: 'the model gave no usable answer' }
-  return { ok: true, answer: result.parsed }
 }
 
 /**
@@ -116,12 +107,12 @@ export function createExpandHandler(o: ExpandHandlerOptions): BuildHandler {
       return checked.ok ? { ok: true as const, patch: converted.patch } : { ok: false as const, reasons: checked.reasons }
     }
 
-    const first = unpack(await complete('expand', SONNET, user, ExpandAnswer, EXPAND_MAX_TOKENS))
+    const first = unpackResult(await complete('expand', SONNET, user, ExpandAnswer, EXPAND_MAX_TOKENS))
     if (!first.ok) return fail(first.reason, calls)
     let answer = first.answer
     let verdict = judge(answer)
     if (!verdict.ok) {
-      const second = unpack(await complete('repair', SONNET, buildExpandRepairUser({ reasons: verdict.reasons, previous: answer, user }), ExpandAnswer, EXPAND_MAX_TOKENS))
+      const second = unpackResult(await complete('repair', SONNET, buildExpandRepairUser({ reasons: verdict.reasons, previous: answer, user }), ExpandAnswer, EXPAND_MAX_TOKENS))
       if (!second.ok) return fail(clampText(`${verdict.reasons.join('; ')} (and the second try gave nothing: ${second.reason})`, 300), calls)
       answer = second.answer
       verdict = judge(answer)

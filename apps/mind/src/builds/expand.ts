@@ -17,7 +17,8 @@ const Part = z.object({
   rot: z.number().describe('Turn about the vertical axis, in radians. 0 for none.'),
 })
 
-const NewRoom = z.object({
+/** A room as the model proposes it: plain numbers for its size and where its middle is, and its parts (shared by an expand and the fallback build). */
+export const RoomDraft = z.object({
   id: z.string().min(1).max(40).describe('A short id: lowercase words with dashes, not used in this place.'),
   name: z.string().min(1).max(60),
   width: z.number(),
@@ -47,7 +48,7 @@ const Enlarge = z.object({
 export const ExpandAnswer = z.object({
   summary: z.string().min(1).max(300).describe('One line in your voice about what you built, up to 140 characters. It becomes the history of the place.'),
   change: z.enum(['room', 'enlarge', 'path']),
-  room: NewRoom.nullable().describe('For a new room; null otherwise.'),
+  room: RoomDraft.nullable().describe('For a new room; null otherwise.'),
   enlarge: Enlarge.nullable().describe('For an enlarged room; null otherwise.'),
   path: z.object({ to: z.string().min(1).max(60) }).nullable().describe('For a path: the id of the place it leads to; null otherwise.'),
   wishes: z.array(z.object({ name: z.string().max(80), description: z.string().max(400), forPlace: z.string().max(60).nullable() })).max(3).describe('Up to 2 parts the kit lacks that you wish you had.'),

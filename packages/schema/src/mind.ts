@@ -117,6 +117,8 @@ export const MindState = z.object({
   placesSeen: z.array(z.string()).optional(),
   /** Roman's words about what he built or answered, as `name | status | note`, for the next decide call to read as data and then forget. */
   fromRoman: z.array(z.object({ id: z.string().max(120), text: z.string().max(700) })).max(8).optional(),
+  /** How many times the fallback build has been asked for each place request, and when it may be asked again (spec 10.3). */
+  fallbackTries: z.record(z.string(), z.object({ tries: z.number().int().nonnegative(), next: Timestamp })).optional(),
   /** When Merge last wrote a found request, for the 1 a week rail (spec 2.4). */
   founds: z.array(Timestamp).max(10).optional(),
   /** Sketches made on `date` (spec 9.8: at most 3 a day), counted when one is shelved or scrapped. */

@@ -89,6 +89,21 @@ export function foundsInWeek(founds: readonly string[], nowMs: number): number {
   return founds.filter((f) => nowMs - Date.parse(f) < 7 * DAY_MS).length
 }
 
+/** Spec 10.3: a place request nobody has answered 7 days after it was written is built by the build worker as a plain kit place. */
+export const FALLBACK_DAYS = 7
+/** Spec 10.3: Roman's status `building` holds the fallback off for 14 more days. */
+export const BUILDING_HOLD_DAYS = 14
+
+/**
+ * Whether the fallback build is due for a request at a moment: an open place request is due 7 days after it was written, one Roman has
+ * marked `building` 14 days after that. An answered, declined, withdrawn or self-built request is never due, and neither is a gift.
+ */
+export function fallbackDue(request: { kind: 'place' | 'gift'; status: RequestStatus; written: string }, nowMs: number): boolean {
+  if (request.kind !== 'place') return false
+  const days = request.status === 'open' ? FALLBACK_DAYS : request.status === 'building' ? FALLBACK_DAYS + BUILDING_HOLD_DAYS : null
+  return days !== null && nowMs >= Date.parse(request.written) + days * DAY_MS
+}
+
 export interface FoundInput {
   /** The local date of this wake. */
   today: string
