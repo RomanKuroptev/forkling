@@ -1,6 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import { StreamEntry, type TimelineEntry } from '@forkling/schema'
+import { StreamEntry, TimelineEntry } from '@forkling/schema'
 import { clampText } from './decision.ts'
 
 /** Raw observations are kept this many days; what mattered has been reflected into beliefs and memory by then. */
@@ -55,6 +55,24 @@ export function readStream(dir: string, date: string): StreamEntry[] {
 /** One line per step it started, kept for good: the "why?" timeline must reach back further than the stream does. */
 export function appendTimeline(dir: string, date: string, entry: TimelineEntry): void {
   append(dir, timelinePath(date), [entry])
+}
+
+/** The steps it started on the last `days` days up to `today` (the forkling's own date), oldest first. A line that does not fit is skipped. */
+export function readTimelineSince(dir: string, today: string, days: number): TimelineEntry[] {
+  const out: TimelineEntry[] = []
+  for (let back = days - 1; back >= 0; back--) {
+    const full = join(dir, timelinePath(daysBefore(today, back)))
+    if (!existsSync(full)) continue
+    for (const line of readFileSync(full, 'utf8').split('\n').filter(Boolean)) {
+      try {
+        const parsed = TimelineEntry.safeParse(JSON.parse(line))
+        if (parsed.success) out.push(parsed.data)
+      } catch {
+        // a line that is not JSON is skipped, never fatal
+      }
+    }
+  }
+  return out
 }
 
 function daysBefore(date: string, days: number): string {

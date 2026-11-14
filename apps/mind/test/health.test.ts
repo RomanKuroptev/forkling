@@ -215,3 +215,31 @@ describe('the work numbers in health (spec 12.6, 12.3: repeated work is measured
     expect(buildHealth(null, line(0), ctx(0, { works })).warnings.join(' ')).not.toMatch(/work|repeat/i)
   })
 })
+
+describe('the place numbers in health (spec 12.3, 12.6: repeated place, stuck in one place and weekend revisit are measured, never enforced)', () => {
+  const p = (id: string, name: string, purpose: string, founded: string, lastCareAt: string | null) => ({ id, name, purpose, founded, lastCareAt })
+  const home = p('home', 'Home', 'Where my days start and end: a desk to read and write at, a bed, a shelf.', '2026-10-01', '2026-11-02T10:00:00Z')
+  const hall = p('lantern-hall', 'Lantern Hall', 'Where I keep the lidar finds, each under its own lamp', '2026-10-05', '2026-10-20T10:00:00Z')
+  const copy = p('lantern-hall-2', 'Lantern Hall', 'A tower for the tide gauge readings', '2026-11-01', '2026-11-02T10:00:00Z')
+  const steps = ['01', '02', '03', '04'].map((h) => ({ at: `2026-11-02T${h}:00:00Z`, verb: 'tend', targetId: 'lantern-hall' }))
+
+  it('gives what each place nudge would have named in the last 7 days', () => {
+    const h = buildHealth(null, line(0), ctx(0, { placeNudges: { places: [home, hall, copy], requests: [], steps } }))
+    // Home was cared for yesterday, the hall 14 days ago (neglect), the copy repeats a name, the hall had 4 steps in a day.
+    expect(h.novelty?.places).toEqual({ wouldFire: 3, repeatedPlace: 1, stuckInOnePlace: 1, weekendRevisit: 1 })
+  })
+
+  it('is all zeros for a world with no places', () => {
+    expect(buildHealth(null, line(0), ctx(0)).novelty?.places).toEqual({ wouldFire: 0, repeatedPlace: 0, stuckInOnePlace: 0, weekendRevisit: 0 })
+  })
+
+  it('never turns a nudge into a warning', () => {
+    const h = buildHealth(null, line(0), ctx(0, { placeNudges: { places: [home, hall, copy], requests: [], steps } }))
+    expect(h.warnings.join(' ')).not.toMatch(/place|stuck|neglect|repeat/i)
+  })
+
+  it('leaves the work numbers where they were', () => {
+    const h = buildHealth(null, line(0), ctx(0, { placeNudges: { places: [home], requests: [], steps: [] } }))
+    expect(h.novelty?.works).toEqual({ made: 0, wouldFire: 0, byKind: {} })
+  })
+})
