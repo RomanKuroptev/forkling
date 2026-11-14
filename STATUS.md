@@ -84,7 +84,8 @@ Plan approved by Roman on 14 November (14 slices, one PR each; the plan is in th
 
 - **The pre-step was already done:** `/requests/` shows "Roman's reason" on declined requests only (#136, `apps/site/src/requests.ts`).
 - **Slice 1 done:** the spec export and `packages/schema/src/self.ts` (`Want`, `Wants` with 12 at most, `Note` with its status rules, `NotesHidden`, `SelfRequest`), and the stream kinds `reflection` and `note`. Tests: `packages/schema/test/self.test.ts`. Nothing uses them yet.
-- **Next: slice 2**, the pure rules in `packages/sim` (importance sums, `reflectDue`, wants edits and the 4-failure drop, the about and page limits, the finding rules).
+- **Slice 2 done:** the pure rules in `packages/sim` (53 tests, tests first): `importance.ts` (fixed scores, surprise from 7, `importanceSum`, `reflectDue` at 60 or 30 with fewer than 3 wants, 2 a day, 2 h apart, never asleep), `wants.ts` (`applyWantEdits` with 4 edits and 12 entries, `recordWantAttempt`, `dropFailedWants` at 4, `rewriteWants` at most half), `self-text.ts` (`checkAbout`: 300 words, 8 traits, 30% of lines; `checkPage`: 300 words, no links or HTML, one change a day), `notes-find.ts` (`findReason`, `visibleNotes`, `noteTriggerDue`). Nothing uses them yet. **Two readings for Roman to veto** (decisions 8 and 9 in `w7-self.md`): the first `about.md` is exempt from the 30% limit, and the sleep rewrite of wants has no limit while the list has fewer than 3.
+- **Next: slice 3**, the thought tick and importance wired in (top 5 wants into the thought prompt, scores summed in `MindState`, `notice` finds notes, `plan.ts` passes the real wants, attempts count and the 4-failure drop).
 
 ## W6 progress (expand and found; building on `main`, nothing released, nothing deployed)
 

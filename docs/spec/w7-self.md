@@ -13,6 +13,8 @@ Exported from `spec.md` (v3.3) at the start of W7, so a coding session reads onl
 5. **The diary claim check:** every paragraph must cite stream ids that exist and are not only thoughts. Uncited paragraphs are dropped, with one retry, as `checkReflection` does today. `claimsHuman` also runs on the diary.
 6. **Out of scope:** the Sunday re-pricing of the allowance (9.8). Prices stay as they are.
 7. **Health (Roman's addition):** `mind/health.json` shows the day's model spend for reflection and for the sleep rewrite (the batch and the late fallback booked separately), and warns when W7's calls would push the month over $20 with the server's price.
+8. **The first `about.md` is exempt from the 30% limit** (my reading, for Roman to veto). With no file there is nothing to compare, and any first text is a 100% change, so the done-when "the first weekly change stays within 30%" is read as: the first version is written freely (300 words, 8 traits), and the limit starts with the second. `checkAbout` in `packages/sim/src/self-text.ts`.
+9. **A sleep rewrite of the wants list has no limit while the list has fewer than 3 entries**, so it can fill from empty (spec 9.4 cold start). Above that, at most half change (`rewriteWants`).
 
 ## Slices
 
