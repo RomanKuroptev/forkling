@@ -53,7 +53,8 @@ Roman said to build W2 while W1's 3 live days run (they end 14 November). Nothin
 Roman walked the W5 fixture world (`?world=local&fixture=10&debug`) with Playwright and asked for eight fixes, one small PR each, tests first, merged on green CI (he allowed merging although `main` deploys the viewer). Nothing released or tagged, nothing in `RomanKuroptev/merge`. The floating capsule is skipped on purpose. Scratch scripts and screenshots stay outside the repo.
 
 - [x] **Debug panel gate:** `debugEnabled(search)` (`apps/viewer/src/debugEnabled.ts`), F3, the touch "Mind" button and the F3 hint work only with `?debug`; the pet-era "E near a contraption" hint is gone (`ui/hint.ts` `desktopHint`). Tests: `apps/viewer/test/debugGate.test.ts`.
-- [ ] Camera indoors and outdoors, [ ] signs, [ ] fog, [ ] paths to doors, [ ] gable ends, [ ] scaffold, [ ] night windows and path.
+- [x] **Gable ends closed:** the `roof-gable` kit part gained 18 stepped wall-coloured boxes (9 at each end, under the roof boards, 21 primitives in all). Test: `kitGeometry.test.ts` samples points inside the triangle at both ends.
+- [ ] Camera indoors and outdoors, [ ] signs, [ ] fog, [ ] paths to doors, [ ] scaffold, [ ] night windows and path.
 
 ## W6 progress (expand and found; building on `main`, nothing released, nothing deployed)
 

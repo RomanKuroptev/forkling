@@ -97,6 +97,33 @@ describe('the outside of a building (spec 5.3: a style is a set of wall, window 
     expect(Math.max(...instances.map((i) => pos(i.matrix)[1]!))).toBeGreaterThan(height)
   })
 
+  it('closes both ends of a gable roof: nothing but sky shows through the triangle above the end walls', () => {
+    const home = place('home')
+    expect(part('roof-gable')).toBeDefined()
+    const [px, pz] = at(home)
+    const [fw, fd] = home.exterior.footprint
+    const wallTop = floorHeight(home)
+    const scaleX = (fw + 1.2) / 4
+    const boxes = exteriorInstances(home, kit, 0)
+      .filter((i) => i.shape === 'box' && Math.abs(i.matrix[1]!) < 1e-6 && Math.abs(i.matrix[2]!) < 1e-6 && Math.abs(i.matrix[4]!) < 1e-6)
+      .map((i) => {
+        const [x, y, z] = pos(i.matrix)
+        return { x, y, z, hx: i.matrix[0]! / 2, hy: i.matrix[5]! / 2, hz: i.matrix[10]! / 2 }
+      })
+    for (const side of [1, -1]) {
+      const endZ = pz + (side * fd) / 2
+      // The underside of the slopes, in the part's own units: 1.844 m half-width at the eaves, none at 1.4 m.
+      for (let y = 0.1; y <= 1.2; y += 0.1) {
+        const half = scaleX * (1.844 - 1.4007 * (y - 0.08)) * 0.92
+        for (const fx of [-1, -0.5, 0, 0.5, 1]) {
+          const x = px + half * fx
+          const covered = boxes.some((b) => Math.abs(b.z - endZ) < 1.3 && Math.abs(x - b.x) <= b.hx && Math.abs(wallTop + y - b.y) <= b.hy)
+          expect(covered, `end ${side} at y=${y.toFixed(1)} x=${(half * fx).toFixed(2)}`).toBe(true)
+        }
+      }
+    }
+  })
+
   it('looks different for each of the five styles', () => {
     const counts = kit.styles.map((s) => exteriorInstances(withStyle(home, s.id), kit, 0).length)
     expect(new Set(counts).size).toBeGreaterThan(2)
