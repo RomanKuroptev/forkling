@@ -4,7 +4,9 @@ import { App } from './App.tsx'
 import { speciesPacks } from './species/registry.ts'
 import { ASSETS } from './world/assets.ts'
 import { mindUrlFrom, startLiveSync } from './world/liveSync.ts'
+import { createWorldClock } from './clock.ts'
 import { loadFixtureWorld } from './world/fixtureWorld.ts'
+import templateForkling from '../../../templates/forkling-world/forkling.json'
 import { loadWorld, type LoadedWorld, type LoadResult, type WorldError } from './world/loadWorld.ts'
 import { LOCAL_REF, localFetch } from './world/localWorld.ts'
 import { parseRoute, type WorldRef } from './world/route.ts'
@@ -44,7 +46,9 @@ export function Root() {
     const local = query.get('world') === 'local'
     // `?world=local&fixture=10` is a made-up world of that many places, built here, for looking at the land.
     if (local && query.has('fixture')) {
-      setState({ status: 'ready', world: loadFixtureWorld(Number(query.get('fixture')) || 10, speciesPacks.cat!) })
+      // Built at the world's moment, so `?time=` and `?at=` show the neglect and the construction of that moment, not of the real clock.
+      const nowMs = createWorldClock(templateForkling.timezone, location.search).now()
+      setState({ status: 'ready', world: loadFixtureWorld(Number(query.get('fixture')) || 10, speciesPacks.cat!, nowMs) })
       return
     }
     let route: ReturnType<typeof parseRoute> = local ? { kind: 'world', ref: LOCAL_REF } : parseRoute(location.pathname, base, location.search)

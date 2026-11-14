@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ExpandJob, type JobResult, type Souvenir } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import { addWakingMs, addWishes, expandCheck, validatePlacePatch } from '@forkling/sim'
+import { addWakingMs, addWishes, expandCheck, finishedBuildings, validatePlacePatch } from '@forkling/sim'
 import { pendingJobs } from '../build-worker.ts'
 import { paceAhead } from '../budget.ts'
 import { refFile } from '../builds/tend.ts'
@@ -31,6 +31,22 @@ export function expandablePlaces(t: Tick): { id: string; tag: string }[] {
     const check = expandCheck(p, weights, souvenirs)
     return check.ok && check.tag !== null ? [{ id: p.id, tag: check.tag }] : []
   })
+}
+
+/**
+ * A construction whose finish time has come ends (spec 4.5): it is cleared from the place file, and the place can be expanded
+ * again. The finish time was worked out in waking time when it began, so the clock can be compared with it as it is. Runs
+ * before the builders' results are taken in, so a result that arrives as a build ends is not turned away.
+ */
+export function finishConstruction(t: Tick): void {
+  for (const place of finishedBuildings(t.places, t.nowMs)) {
+    const done = { ...place, state: { ...place.state, construction: null } }
+    t.placeUpdates.push(done)
+    t.places = t.places.map((p) => (p.id === done.id ? done : p))
+    const text = `${place.name} is finished: the building is done.`
+    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: place.state.construction?.kind ?? 'expand' })
+    t.parts.push(`${place.name} is finished`)
+  }
 }
 
 /**

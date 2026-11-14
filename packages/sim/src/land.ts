@@ -32,8 +32,8 @@ export interface LandPlace {
 }
 
 /** What the land needs from a place file, plus the date it was founded (paths are made in that order). */
-export function toLandPlace(place: Place): LandPlace & { founded: string } {
-  return { id: place.id, chunk: place.chunk, offset: place.offset, footprint: place.exterior.footprint, tags: place.tags, related: place.related, founded: place.founded }
+export function toLandPlace(place: Place): LandPlace & { founded: string; paths: readonly { to: string; at: string }[] } {
+  return { id: place.id, chunk: place.chunk, offset: place.offset, footprint: place.exterior.footprint, tags: place.tags, related: place.related, founded: place.founded, paths: place.paths }
 }
 
 export const chunkKey = (c: Chunk) => `${c[0]},${c[1]}`

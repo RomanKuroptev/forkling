@@ -61,7 +61,12 @@ export interface WorldPath {
   from: string
   to: string
   chunks: Chunk[]
+  /** Where it came from: a founding (always one) or an expand (spec 4.3). `derivePaths` leaves it out, `allPaths` fills it in. */
+  kind?: 'founding' | 'expand'
 }
+
+/** A place as the paths need it: the land's view of it, its founding date, and the paths its expands added (spec 5.4). */
+export type PathPlace = LandPlace & { founded: string; paths?: readonly { to: string; at: string }[] }
 
 const FIRST = ['home', 'workshop']
 
@@ -69,7 +74,7 @@ const FIRST = ['home', 'workshop']
  * The paths a world has, worked out from its places alone (spec 4: the world can always be rebuilt from the repo). Founding
  * makes one path, from the new place to the best-scoring place that was there before it, or to Home when nothing is related, so
  * the world stays connected. Places are taken in the order they were founded (Home and the Workshop first, then by date, then by
- * id); a tie goes to the place founded first. Paths are never deleted. (Paths that an expand adds arrive with W6.)
+ * id); a tie goes to the place founded first. Paths are never deleted. (`allPaths` adds the ones an expand made.)
  */
 export function derivePaths(places: readonly (LandPlace & { founded: string })[]): WorldPath[] {
   const rank = (p: LandPlace) => (FIRST.includes(p.id) ? FIRST.indexOf(p.id) : FIRST.length)
@@ -93,4 +98,31 @@ export function derivePaths(places: readonly (LandPlace & { founded: string })[]
     if (route) paths.push({ from: place.id, to: target.id, chunks: route })
   }
   return paths
+}
+
+/**
+ * Every path a world has (spec 4.3): the founding paths of `derivePaths`, then each path an expand added (`place.paths`, spec
+ * 5.4), routed by A* over the owned chunks like the others. A path to a place that is not there, or with no way through the
+ * owned chunks, is left out; a pair of places has one path however many times it was made, and a pair founding already joined
+ * is not drawn twice. Expands are taken in the order they were made, so the same world gives the same paths.
+ */
+export function allPaths(places: readonly PathPlace[]): WorldPath[] {
+  const founding: WorldPath[] = derivePaths(places).map((p) => ({ ...p, kind: 'founding' as const }))
+  const pair = (a: string, b: string) => [a, b].sort().join('|')
+  const seen = new Set(founding.map((p) => pair(p.from, p.to)))
+  const byId = new Map(places.map((p) => [p.id, p]))
+  const owned = new Set(places.map((p) => chunkKey(p.chunk)))
+  const made = places
+    .flatMap((p) => (p.paths ?? []).map((e) => ({ from: p.id, to: e.to, at: e.at })))
+    .sort((a, b) => a.at.localeCompare(b.at) || a.from.localeCompare(b.from) || a.to.localeCompare(b.to))
+  const added: WorldPath[] = []
+  for (const e of made) {
+    const [source, target] = [byId.get(e.from), byId.get(e.to)]
+    if (!source || !target || seen.has(pair(e.from, e.to))) continue
+    const route = findChunkPath(source.chunk, target.chunk, owned)
+    if (!route) continue
+    seen.add(pair(e.from, e.to))
+    added.push({ from: e.from, to: e.to, chunks: route, kind: 'expand' })
+  }
+  return [...founding, ...added]
 }

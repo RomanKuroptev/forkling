@@ -1,10 +1,10 @@
-import { createLand, derivePaths, pathPolyline, placeCentre, toLandPlace } from '@forkling/sim'
+import { allPaths, createLand, pathPolyline, placeCentre, toLandPlace } from '@forkling/sim'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { pathRibbon, type IndexedMesh } from './landGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
 
-/** The paths between places (spec 4.3), worked out from the places themselves, as 3 meter tracks along the ground. */
+/** The paths between places (spec 4.3): founding paths and the ones an expand made, worked out from the places themselves, as 3 meter tracks along the ground. */
 export function Paths() {
   const { world } = useWorld()
   const geometry = useMemo(() => {
@@ -15,7 +15,7 @@ export function Paths() {
         const [px, pz] = placeCentre(p)
         return Math.abs(x - px) <= p.footprint[0] / 2 && Math.abs(z - pz) <= p.footprint[1] / 2
       })
-    const meshes: IndexedMesh[] = derivePaths(world.places.map(toLandPlace)).map((path) => pathRibbon(pathPolyline(path.chunks), (x, z) => land.heightAt(x, z), { skip: inside }))
+    const meshes: IndexedMesh[] = allPaths(world.places.map(toLandPlace)).map((path) => pathRibbon(pathPolyline(path.chunks), (x, z) => land.heightAt(x, z), { skip: inside }))
     const positions = new Float32Array(meshes.reduce((n, m) => n + m.positions.length, 0))
     const indices = new Uint32Array(meshes.reduce((n, m) => n + m.indices.length, 0))
     let v = 0

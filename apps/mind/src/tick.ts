@@ -13,7 +13,7 @@ import { settleJobs } from './tick/jobs.ts'
 import { thoughtTick } from './tick/thought.ts'
 import { workStep } from './tick/work.ts'
 import { installStep } from './tick/install.ts'
-import { expandStep } from './tick/expand.ts'
+import { expandStep, finishConstruction } from './tick/expand.ts'
 import { revisitStep } from './tick/revisit.ts'
 import { tendStep } from './tick/tend.ts'
 import { noteStep } from './tick/mind-step.ts'
@@ -32,6 +32,7 @@ export type { TickDeps, TickOutcome, TickResult }
  */
 export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome> {
   const t = createTick(dir, deps)
+  finishConstruction(t)
   settleJobs(t)
   finishStep(t)
   route(t)

@@ -27,8 +27,9 @@ describe('the fixture world (10 places and their paths, for the viewer, the site
   })
 
   it('joins every place but the clearing\'s to the rest by a path', () => {
-    expect(world.paths).toHaveLength(8)
-    const from = new Set(world.paths.map((p) => p.from))
+    const founding = world.paths.filter((p) => p.kind === 'founding')
+    expect(founding).toHaveLength(8)
+    const from = new Set(founding.map((p) => p.from))
     for (const place of world.places.slice(2)) expect(from.has(place.id), place.id).toBe(true)
   })
 
@@ -64,5 +65,37 @@ describe('the fixture world (10 places and their paths, for the viewer, the site
     expect(full.places).toHaveLength(MAX_PLACES)
     expect(layoutProblems(full.places.map(toLandPlace))).toEqual([])
     for (const place of full.places) expect(validatePlace(place, ctxOf(full)), place.id).toEqual([])
+  })
+})
+
+describe('the fixture world shows construction and a path an expand made (W6)', () => {
+  const world = makeFixtureWorld(1, 10)
+  const now = Date.parse(FIXTURE_NOW)
+
+  it('has one place under construction, finishing in the future, so the scaffolding can be seen', () => {
+    const building = world.places.filter((p) => p.state.construction !== null)
+    expect(building).toHaveLength(1)
+    expect(building[0]!.state.construction!.kind).toBe('expand')
+    expect(Date.parse(building[0]!.state.construction!.finishesAt)).toBeGreaterThan(now)
+    expect(['home', 'workshop']).not.toContain(building[0]!.id)
+  })
+
+  it('has a path an expand made, between two places founding did not join, and draws it among the paths', () => {
+    const expand = world.paths.filter((p) => p.kind === 'expand')
+    expect(expand).toHaveLength(1)
+    expect(world.paths.filter((p) => p.kind === 'founding')).toHaveLength(8)
+    const from = world.places.find((p) => p.id === expand[0]!.from)!
+    expect(from.paths.map((e) => e.to)).toContain(expand[0]!.to)
+  })
+
+  it('keeps every place a valid file', () => {
+    for (const place of world.places) expect(validatePlace(place, { kit, exists: (path: string) => path in world.souvenirs, souvenirKind: (path: string) => world.souvenirs[path] }), place.id).toEqual([])
+  })
+
+  it('measures the construction from the "now" it is given', () => {
+    const later = '2027-03-05T09:00:00Z'
+    const w = makeFixtureWorld(1, 10, later)
+    const b = w.places.find((p) => p.state.construction)!
+    expect(Date.parse(b.state.construction!.finishesAt)).toBeGreaterThan(Date.parse(later))
   })
 })

@@ -170,3 +170,44 @@ describe('the fixture world of ten places renders every page', () => {
     for (const place of fixture.places) expect(existsSync(join(out, 'places', place.id, 'index.html')), place.id).toBe(true)
   })
 })
+
+describe('construction and expand paths on the site (spec 4.3, 4.5)', () => {
+  const lights = (over: Record<string, unknown> = {}) => ({ name: 'House of Lights', chunk: [1, 0], offset: [0, 0], state: { construction: null, lastCareAt: '2026-11-19T10:00:00Z', neglect: 0, lamps: true }, ...over })
+  beforeEach(() => {
+    putPlace('home', { state: { construction: null, lastCareAt: '2026-11-19T10:00:00Z', neglect: 0, lamps: true } })
+    putPlace('workshop', { state: { construction: null, lastCareAt: '2026-11-19T10:00:00Z', neglect: 0, lamps: true } })
+    putPlace('house-of-lights', lights())
+    putPlace('bell-tower', { name: 'Bell Tower', chunk: [2, 0], offset: [0, 0], tags: ['bells'], founded: '2026-11-18', related: ['house-of-lights'] })
+    putPlace('knot-shed', { name: 'Knot Shed', chunk: [1, 1], offset: [0, 0], tags: ['knots'], founded: '2026-11-19', related: ['house-of-lights'] })
+  })
+
+  it('draws a path an expand made as its own track, marked, besides the founding paths', () => {
+    render()
+    const before = page('places/index.html')
+    expect((before.match(/<polyline/g) ?? []).length).toBe(3)
+    expect(before).not.toContain('data-kind="expand"')
+    putPlace('knot-shed', { name: 'Knot Shed', chunk: [1, 1], offset: [0, 0], tags: ['knots'], founded: '2026-11-19', related: ['house-of-lights'], paths: [{ to: 'bell-tower', at: '2026-11-20' }] })
+    render()
+    const after = page('places/index.html')
+    expect((after.match(/<polyline/g) ?? []).length).toBe(4)
+    expect((after.match(/<polyline[^>]*data-kind="expand"/g) ?? []).length).toBe(1)
+  })
+
+  it('says a place is under construction on the map, in the list and on its page, until the finish time', () => {
+    putPlace('house-of-lights', lights({ state: { construction: { kind: 'expand', finishesAt: '2026-11-20T18:00:00Z' }, lastCareAt: '2026-11-19T10:00:00Z', neglect: 0, lamps: true } }))
+    render()
+    const index = page('places/index.html')
+    expect(index).toMatch(/data-place="house-of-lights"[^>]*data-building="true"/)
+    expect(index).toMatch(/House of Lights[^<]*under construction/i)
+    expect(index).not.toMatch(/data-place="home"[^>]*data-building/)
+    expect(page('places/house-of-lights/index.html')).toMatch(/Under construction until \d{4}-\d{2}-\d{2} \d{2}:\d{2}/)
+    expect(page('places/home/index.html')).not.toMatch(/under construction/i)
+  })
+
+  it('stops saying so once the finish time has passed, even if the mind has not yet cleared the file', () => {
+    putPlace('house-of-lights', lights({ state: { construction: { kind: 'expand', finishesAt: '2026-11-20T11:00:00Z' }, lastCareAt: '2026-11-19T10:00:00Z', neglect: 0, lamps: true } }))
+    render()
+    expect(page('places/index.html')).not.toMatch(/data-building/)
+    expect(page('places/house-of-lights/index.html')).not.toMatch(/under construction/i)
+  })
+})
