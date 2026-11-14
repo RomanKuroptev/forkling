@@ -48,7 +48,13 @@ Roman said to build W2 while W1's 3 live days run (they end 14 November). Nothin
 - **W2 is built.** What is left is not code: a release (a PR pinning the new `FORKLING_REF`, the tag, then Merge's repo), and W2's 3 live days, both Roman's call, and the W1 health check comes first (14 November or later). The release needs Merge's `GITHUB_TOKEN` to reach the tick (the template workflow does this) and a look at whether Wikipedia (90% reliable, the 2 MB cap) and Commons (interest 3.7) stay in the allowlist.
 - This machine's `rtk` can't find `pnpm`, so run `pnpm` directly.
 
-## W5 local test on a throwaway copy of Merge (14 November) and the release that waits for Roman
+## v0.13.0 is released and live on Merge (14 November, Roman's "release")
+
+Release PR #128, tag `v0.13.0` on its merge commit (`01a306f`), `deploy.yml` passed, `/health` up, `MIND_URL` set on the engine repo and the viewer redeployed. In `RomanKuroptev/merge` (commit `2753784`): `migrate-w5` applied (`places/home.json`, `places/workshop.json`) and the four workflow pins moved to v0.13.0. The server picked the places up about 12 minutes later: `/places.json` serves both, the first tick installed two W4 works on the Workshop screens, and the live viewer loads Merge's world with Home. Not rolled back.
+- **A defect found live, not fixed, waits for Roman:** the W6 lifecycle (`tick/lifecycle.ts`) took the migrated Home and Workshop for places Roman had just built, because `placesSeen` was already set (empty) from before the migration. Result in Merge's repo: both places have `state.construction = {kind: found, finishesAt: 2026-11-14T20:29Z}` (scaffolding in the viewer, no expand, until then), a false history line "A gift from Roman." (second `found` line), and `requests/home.md` and `requests/workshop.md` filed as gifts; Merge was told "Roman built Home, a place you did not ask for". It ends by itself at 20:29Z, but the history lines and request files stay. The local test did not show it because the test pet had its places from the first tick. A fix is a small change (migrate-w5 or the lifecycle must not count the migration's places as landed) and needs a v0.13.1.
+- **Still unchecked live:** Merge's site `/places/` (404 until `pages.yml` rebuilds, at most 30 minutes), revisit, the screen, gallery and work panels in the viewer, fps on Roman's laptop.
+
+## W5 local test on a throwaway copy of Merge (14 November), before the release
 
 Roman asked for W5 to be tested fast and released the same day. **Done: the local test. Waiting: Roman's "release".** Nothing is tagged, `RomanKuroptev/merge` and the server were not touched, and `FORKLING_REF` still says v0.12.1. Roman chose to tag `main` as it is, so the release is **v0.13.0 = W5 plus W6 slices 1 to 8**; the prompt diff against v0.12.1 is 5 lines (`git diff v0.12.1 main -- apps/mind/test/golden/system.txt`, all seen by Roman before).
 
