@@ -27,6 +27,11 @@ export function recordWishes(t: Tick, drafts: readonly WishDraft[], label: strin
   if (added.dropped.length > 0) t.notes.push(`${label}: ${added.dropped.length} wish(es) dropped, 5 are already open: ${added.dropped.join(', ')}`)
 }
 
+/** When a construction that starts now ends: `ms` of waking time from now, the night not counted (spec 4.5). */
+export function constructionEnd(t: Tick, ms: number): string {
+  return new Date(addWakingMs(t.nowMs, ms, { seed: t.forkling.seed, timezone: t.tz, ...(t.forkling.lateNight ? { lateNight: t.forkling.lateNight } : {}) })).toISOString()
+}
+
 /** The interest weights as they are now, for the conditions of spec 2.5. */
 const weightsOf = (t: Tick): Record<string, number> => Object.fromEntries(Object.entries(t.interests.topics).map(([topic, v]) => [topic, v.weight]))
 
@@ -131,7 +136,7 @@ export function applyExpandResult(t: Tick, r: JobResult): { ok: boolean; text: s
   })
   if (!checked.ok) return drop(checked.reasons.join('; '))
 
-  const finishesAt = new Date(addWakingMs(t.nowMs, EXPAND_CONSTRUCTION_MS, { seed: t.forkling.seed, timezone: t.tz, ...(t.forkling.lateNight ? { lateNight: t.forkling.lateNight } : {}) })).toISOString()
+  const finishesAt = constructionEnd(t, EXPAND_CONSTRUCTION_MS)
   const built = { ...checked.place, state: { ...checked.place.state, construction: { kind: 'expand' as const, finishesAt } } }
   t.placeUpdates.push(built)
   t.places = t.places.map((p) => (p.id === built.id ? built : p))
