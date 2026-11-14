@@ -11,6 +11,7 @@ import { clampText } from '../decision.ts'
 import { createFetcher } from '../web/fetch.ts'
 import { manualPagesFor } from '../web/sources/manuals.ts'
 import type { Tick } from './context.ts'
+import { rememberJobWant } from './wants.ts'
 
 /**
  * A full work is not made in the tick: the step asks the build worker for it with a job file (spec 2.4, 10.2), and the result
@@ -33,6 +34,7 @@ function askForWork(t: Tick, step: PlanStep, index: number, o: { idea: string; r
   let id = base
   for (let n = 2; existsSync(join(t.dir, 'mind/builds', `${id}.json`)) || existsSync(join(t.dir, 'mind/builds', `${id}.result.json`)); n++) id = `${base}-${n}`
   t.newJobs.push(TinkerJob.parse({ id, kind: 'tinker', requestedAt: t.nowIso, idea, reason: clampText(step.reason, 200), remixOf: o.remixOf }))
+  rememberJobWant(t, id, step.wantId)
   t.remember.push({ at: t.nowIso, kind: 'made', text: `Asked the workshop to build "${idea}".`, verb: 'tinker', goalRef: `today:${index}` })
   t.parts.push('asked for a work')
 }

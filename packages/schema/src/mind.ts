@@ -102,6 +102,10 @@ export const MindState = z.object({
    */
   sparked: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), pending: z.object({ topic: z.string().max(60), gain: z.number() }).nullable() }).optional(),
   thought: ThoughtState.optional(),
+  /** Spec 9.3: the importance added up since the last reflection, when it was, and the reflections made on `date`. */
+  reflect: z.object({ sum: z.number().nonnegative().default(0), lastAt: Timestamp.nullable().default(null), date: z.string().default(''), today: z.number().int().nonnegative().default(0) }).optional(),
+  /** The want each open build was asked for (job id to want id), so a failed build counts against it (spec 9.4). Cleared when the result is booked. */
+  jobWants: z.record(z.string().max(80), z.string().max(40)).optional(),
   /** When Merge put works away in the last 7 days (spec 9.9: at most 2 a week). */
   retirements: z.array(Timestamp).max(10).optional(),
   /** Results of the build worker the mind has booked (`seen`), and the ones it has not yet answered with a decide call (`pending`, spec 2.3). */

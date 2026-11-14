@@ -24,6 +24,8 @@ export const StreamEntry = z.object({
   beliefRefs: z.array(z.string()).optional(),
   /** On a thought entry: the importance (1 to 10) it gave to earlier entries (spec 9.3). Append-only, so earlier lines are never rewritten. */
   scored: z.array(z.object({ id: StreamId, importance: z.number().int().min(1).max(10) })).max(20).optional(),
+  /** Set by code at the moment of writing for the events whose importance is fixed (spec 9.3: a build failed 6, landed 5, a note found 4, a souvenir kept 3). The thought tick scores the rest. */
+  importance: z.number().int().min(1).max(10).optional(),
   /** On a thought entry: how surprising the current step is, 0 to 10. */
   surprise: z.number().int().min(0).max(10).optional(),
 })

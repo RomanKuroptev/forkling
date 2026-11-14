@@ -1,5 +1,5 @@
 import { THOUGHT_MAX_CHARS, ThoughtAnswer } from '@forkling/schema'
-import { afterThought, requestReplan, type ThoughtOutcome } from '@forkling/sim'
+import { afterThought, requestReplan, surpriseImportance, type ThoughtOutcome } from '@forkling/sim'
 import { clampText } from '../decision.ts'
 import { claimsHuman } from '../honesty.ts'
 import { stopFailure } from '../llm.ts'
@@ -7,12 +7,15 @@ import { buildThoughtUser } from '../prompts/thought.ts'
 import { readStream } from '../stream.ts'
 import { NO_CALL_REASONS } from './ask.ts'
 import type { Tick } from './context.ts'
+import { addImportance } from './importance.ts'
 import { clock } from './util.ts'
 
 /** A thought line and a few scores: a short answer, with room for the model to think first. */
 export const THOUGHT_MAX_TOKENS = 600
 /** The most events a thought tick is shown. */
 const MAX_EVENTS = 20
+/** The wants a thought tick is shown: the head of the list (spec 2.2). */
+const TOP_WANTS = 5
 
 /**
  * One thought tick (spec 2.2): Haiku at low effort reads the step, the new events and its last five lines, and answers
@@ -31,7 +34,7 @@ export async function thoughtTick(t: Tick): Promise<void> {
     step: stepOf && goals.now ? { verb: stepOf.verb, target: stepOf.targetId ?? null, reason: stepOf.reason, until: clock(t.tz, Date.parse(goals.now.until)) } : null,
     events: events.map((e) => ({ id: e.id, text: e.text })),
     recent: mind.thought?.recent ?? [],
-    wants: [],
+    wants: t.wants.slice(0, TOP_WANTS).map((w) => w.text),
   })
 
   const before = t.attempts.length
@@ -54,8 +57,10 @@ export async function thoughtTick(t: Tick): Promise<void> {
     return done({ ok: false })
   }
 
-  const shown = new Set(events.map((e) => e.id))
+  // Only what code has not already scored (spec 9.3 sets a few events' importance itself).
+  const shown = new Set(events.filter((e) => e.importance === undefined).map((e) => e.id))
   const scored = answer.scores.filter((s) => shown.has(s.id)).slice(0, 20)
+  addImportance(t, scored.reduce((n, s) => n + s.importance, 0) + surpriseImportance(answer.surprise))
   t.remember.push({ at: t.nowIso, kind: 'thought', text: line, ...(scored.length > 0 ? { scored } : {}), surprise: answer.surprise })
   done({ ok: true, line })
 

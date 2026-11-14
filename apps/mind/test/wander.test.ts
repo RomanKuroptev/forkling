@@ -190,6 +190,12 @@ describe('a wander step', () => {
     expect(Trail.parse(readJson(`trails/${DAY}-1.json`)).pages[0]!.souvenirId).toBe(souvenir.id)
   })
 
+  it('scores a kept souvenir 3 for the reflection, on its stream line (spec 9.3)', async () => {
+    await wander()
+    expect(MindState.parse(readJson('mind/state.json')).reflect?.sum).toBe(3)
+    expect(readFileSync(file(`memory/stream/${DAY}.jsonl`), 'utf8')).toMatch(/Kept a souvenir[^\n]*"importance":3/)
+  })
+
   it('does not keep a souvenir the page does not hold', async () => {
     await wander({}, (url) => ({ ...defaultReader(url), souvenir: { kind: 'quote', content: 'Never said on that page.', evidence: '', why: 'x', picture: null } }))
     expect(existsSync(file('souvenirs'))).toBe(false)

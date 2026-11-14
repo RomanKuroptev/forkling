@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, SourceStats, VisitorEvent, WorldObject } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, SourceStats, VisitorEvent, Wants, WorldObject } from '@forkling/schema'
 import { DEFAULT_SEED } from './seed.ts'
 
 /** Most inbox events one tick will look at. Newer ones win; the rest are dropped with the rest of the inbox. */
@@ -31,6 +31,8 @@ export interface WorldFiles {
   seed: string
   /** `memory/beliefs.json`: everything it has believed, dropped ones included. */
   beliefs: Beliefs
+  /** `mind/wants.json` (spec 9.4): the wants list, or an empty one. */
+  wants: Wants
   /** `memory/summary.md`: its long-term memory, or empty. */
   summary: string
   /** `brain/interests.json`: what it is into, and its obsessions. */
@@ -109,6 +111,7 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
     persona: existsSync(personaPath) ? readFileSync(personaPath, 'utf8') : '',
     seed: existsSync(join(dir, 'self/seed.md')) ? readFileSync(join(dir, 'self/seed.md'), 'utf8') : DEFAULT_SEED,
     beliefs: readJson(dir, 'memory/beliefs.json', Beliefs, []),
+    wants: readJson(dir, 'mind/wants.json', Wants, {}),
     summary: existsSync(summaryPath) ? readFileSync(summaryPath, 'utf8') : '',
     interests: readJson(dir, 'brain/interests.json', Interests, {}),
     art: listJson(dir, 'art').flatMap((rel) => {

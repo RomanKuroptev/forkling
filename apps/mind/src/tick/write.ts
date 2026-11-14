@@ -33,6 +33,7 @@ export function writeWorld(t: Tick): TickResult {
   const budgetChanged = !same(budget, w.budget)
   const beliefsChanged = !same(beliefs, w.beliefs)
   const interestsChanged = !same(interests, w.interests)
+  const wantsChanged = !same(t.wants, w.wants.wants)
   const sourcesChanged = !same(t.sources, w.sources)
   const writeBody =
     t.started !== null ||
@@ -90,6 +91,7 @@ export function writeWorld(t: Tick): TickResult {
     if (budgetChanged && writeJson(dir, 'brain/budget.json', budget)) written.push('brain/budget.json')
     if (beliefsChanged && writeJson(dir, 'memory/beliefs.json', beliefs)) written.push('memory/beliefs.json')
     if (interestsChanged && writeJson(dir, 'brain/interests.json', interests)) written.push('brain/interests.json')
+    if (wantsChanged && writeJson(dir, 'mind/wants.json', { wants: t.wants })) written.push('mind/wants.json')
     if (sourcesChanged && writeJson(dir, 'mind/sources.json', t.sources)) written.push('mind/sources.json')
     for (const trail of t.newTrails) if (writeJson(dir, `trails/${trail.id}.json`, trail)) written.push(`trails/${trail.id}.json`)
     for (const souvenir of t.newSouvenirs) if (writeJson(dir, `souvenirs/${souvenir.id}.json`, souvenir)) written.push(`souvenirs/${souvenir.id}.json`)

@@ -45,6 +45,7 @@ function tickWith(reply: LlmResult<unknown> | null, mind: Record<string, unknown
     attempts: [] as Tick['attempts'],
     calls: [] as Tick['calls'],
     remember: [] as Tick['remember'],
+    wants: [] as Tick['wants'],
     prompt: undefined,
     budget: BudgetLedger.parse({ month: '2026-11' }),
     mind: MindState.parse(mind),

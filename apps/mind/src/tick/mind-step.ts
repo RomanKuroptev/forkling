@@ -6,6 +6,7 @@ import { MIND_VERBS } from '@forkling/sim'
 import { clampText } from '../decision.ts'
 import { claimsHuman, wordCount } from '../honesty.ts'
 import type { Tick } from './context.ts'
+import { failWant } from './wants.ts'
 
 export const isMindVerb = (verb: string): boolean => (MIND_VERBS as readonly string[]).includes(verb)
 
@@ -56,6 +57,7 @@ export function leaveMindStep(t: Tick, step: PlanStep): void {
   t.remember.push({ at: t.nowIso, kind: 'event', text, verb: step.verb })
   t.justNow.push(text)
   t.parts.push(`left ${step.verb}`)
+  failWant(t, step.wantId)
 }
 
 export const MAX_NOTE_WORDS = 300

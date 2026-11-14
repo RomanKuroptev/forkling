@@ -10,6 +10,7 @@ import { frontPageLinks, imgflipTopLinks, readUrl } from '../web/sources/index.t
 import { resolveStart } from '../web/start.ts'
 import { MAX_READS_PER_DAY, runTrip } from '../web/trip.ts'
 import type { Tick } from './context.ts'
+import { rememberScored } from './importance.ts'
 
 const HAIKU = 'claude-haiku-5-5' as const
 /** The front pages offer these many links to the morning, most from Wikipedia. */
@@ -141,7 +142,7 @@ export async function tripStep(t: Tick): Promise<void> {
   const summary = `${result.trail.pages.length} page${result.trail.pages.length === 1 ? '' : 's'}${kept > 0 ? `, kept ${kept} souvenir${kept === 1 ? '' : 's'}` : ''}`
   notes.push(...result.notes.slice(0, 10))
   remember.push({ at: nowIso, kind: 'reading', text: `Wandered from ${start.value}: ${summary}.`, verb: 'wander', goalRef: `today:${pending.index}` })
-  for (const s of result.souvenirs) remember.push({ at: nowIso, kind: 'made', text: `Kept a souvenir from ${s.source.title}: "${s.content}"`, verb: 'wander', goalRef: `today:${pending.index}` })
+  for (const s of result.souvenirs) rememberScored(t, { at: nowIso, kind: 'made', text: `Kept a souvenir from ${s.source.title}: "${s.content}"`, verb: 'wander', goalRef: `today:${pending.index}` }, 'souvenirKept')
   justNow.push(`wandered from ${start.value}: ${summary}`)
   parts.push(`wandered from ${start.value}`)
 }
