@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { ExpandJob, type JobResult, type Souvenir } from '@forkling/schema'
+import { ExpandJob, type JobResult, type Souvenir, type WishDraft } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { addWakingMs, addWishes, expandCheck, finishedBuildings, validatePlacePatch } from '@forkling/sim'
 import { pendingJobs } from '../build-worker.ts'
@@ -13,6 +13,19 @@ import type { Tick } from './context.ts'
 
 /** Spec 4.5: an accepted expand starts a construction of 3 hours of waking time. */
 export const EXPAND_CONSTRUCTION_MS = 3 * 3_600_000
+
+/**
+ * A call's wishes (spec 5.3, 10.3): wishing a part that is open adds to its count, a new part is a new wish, and with 5 open a new
+ * one is dropped and noted. Written to `wishes/` with the tick.
+ */
+export function recordWishes(t: Tick, drafts: readonly WishDraft[], label: string): void {
+  if (drafts.length === 0) return
+  const known = new Map(readWishes(t.dir).map((w) => [w.id, w]))
+  for (const w of t.wishUpdates) known.set(w.id, w)
+  const added = addWishes([...known.values()], drafts, t.nowIso)
+  for (const w of added.wishes) t.wishUpdates = [...t.wishUpdates.filter((x) => x.id !== w.id), w]
+  if (added.dropped.length > 0) t.notes.push(`${label}: ${added.dropped.length} wish(es) dropped, 5 are already open: ${added.dropped.join(', ')}`)
+}
 
 /** The interest weights as they are now, for the conditions of spec 2.5. */
 const weightsOf = (t: Tick): Record<string, number> => Object.fromEntries(Object.entries(t.interests.topics).map(([topic, v]) => [topic, v.weight]))
@@ -123,13 +136,7 @@ export function applyExpandResult(t: Tick, r: JobResult): { ok: boolean; text: s
   t.placeUpdates.push(built)
   t.places = t.places.map((p) => (p.id === built.id ? built : p))
 
-  if (r.wishes && r.wishes.length > 0) {
-    const known = new Map(readWishes(t.dir).map((w) => [w.id, w]))
-    for (const w of t.wishUpdates) known.set(w.id, w)
-    const added = addWishes([...known.values()], r.wishes, t.nowIso)
-    for (const w of added.wishes) t.wishUpdates = [...t.wishUpdates.filter((x) => x.id !== w.id), w]
-    if (added.dropped.length > 0) t.notes.push(`expand ${place.id}: ${added.dropped.length} wish(es) dropped, 5 are already open: ${added.dropped.join(', ')}`)
-  }
+  recordWishes(t, r.wishes ?? [], `expand ${place.id}`)
   if (r.constraint?.refused) {
     t.remember.push({ at: t.nowIso, kind: 'event', text: clampText(`I refused the constraint "${r.constraint.text}" for ${name}: ${r.constraint.reason ?? ''}`, 300), verb: 'expand' })
   }

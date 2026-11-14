@@ -175,6 +175,15 @@ export function choosePlacement(places: readonly LandPlace[], incoming: Incoming
   return tied[prng.int(tied.length)]!
 }
 
+/**
+ * Where a place request goes (spec 4.2, 10.3): the same rule, but a chunk another open request has staked is taken, and a staked plot
+ * counts as ground a new request may touch, so related requests cluster. Null when the world, staked plots included, has 64 places.
+ */
+export function chooseRequestChunk(places: readonly LandPlace[], staked: readonly { chunk: Chunk; tags: readonly string[] }[], incoming: Incoming, seed: number): Chunk | null {
+  const standIns: LandPlace[] = staked.map((s, i) => ({ id: `staked-${i}`, chunk: s.chunk, footprint: [1, 1], tags: s.tags }))
+  return choosePlacement([...places, ...standIns], incoming, seed)
+}
+
 /** The founding clearing: chunk (0, 0) holds Home and the Workshop side by side (spec 4.1); every other chunk holds exactly one place. */
 const CLEARING: Chunk = [0, 0]
 const CLEARING_PLACES = ['home', 'workshop']

@@ -75,7 +75,7 @@ const COLD_START_WANTS = 3
 const NO_NEW_STEP_BEFORE_BED_MS = 45 * 60_000
 const MAX_REPLIES_PER_DAY = 5
 const MAX_SKETCHES_PER_DAY = 3
-const MAX_FOUND_PER_WEEK = 1
+export const MAX_FOUND_PER_WEEK = 1
 const CARE_VERBS = new Set<MindVerb>(['tend', 'revisit', 'expand'])
 const BUILD_VERBS = new Set<MindVerb>(['expand', 'found', 'tinker'])
 const isVerb = (v: unknown): v is MindVerb => (MIND_VERBS as readonly unknown[]).includes(v)

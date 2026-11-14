@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CHUNK_SIZE, MAX_PLACES, chunkAt, chunkCentre, choosePlacement, createLand, layoutProblems, placementCandidates, rawHeight, toLandPlace, type LandPlace } from '../src/land.ts'
+import { CHUNK_SIZE, MAX_PLACES, chunkAt, chunkCentre, choosePlacement, chooseRequestChunk, createLand, layoutProblems, placementCandidates, rawHeight, toLandPlace, type LandPlace } from '../src/land.ts'
 
 const home: LandPlace = { id: 'home', chunk: [0, 0], offset: [-8, 0], footprint: [12, 10], tags: ['home'] }
 const workshop: LandPlace = { id: 'workshop', chunk: [0, 0], offset: [8, 0], footprint: [12, 10], tags: ['making'] }
@@ -149,5 +149,35 @@ describe('a place file on the land', () => {
   it('gives the land its chunk, offset, footprint, tags and related places, and the date for ordering paths', () => {
     const file = { id: 'house-of-lights', name: 'House of Lights', purpose: 'p', tags: ['signals'], founded: '2026-11-20', chunk: [1, 0], offset: [0, 0], related: ['workshop'], exterior: { style: 'stone', footprint: [16, 12], floors: 1, palette: 'harbour', sign: 'S' }, rooms: [], exhibits: [], state: { construction: null, lastCareAt: null, neglect: 0, lamps: true }, history: [] }
     expect(toLandPlace(file as never)).toEqual({ id: 'house-of-lights', chunk: [1, 0], offset: [0, 0], footprint: [16, 12], tags: ['signals'], related: ['workshop'], founded: '2026-11-20' })
+  })
+})
+
+describe('where a place request goes (spec 4.2, 10.3: a staked plot is taken before it is built)', () => {
+  const staked = (chunk: [number, number], tags: string[] = []) => ({ chunk, tags })
+
+  it('is the chunk the rule of 4.2 picks when nothing is staked', () => {
+    const incoming = { tags: ['signals'], related: [] }
+    expect(chooseRequestChunk([home, workshop, signals], [], incoming, 1)).toEqual(choosePlacement([home, workshop, signals], incoming, 1))
+  })
+
+  it('never picks a chunk that another request has staked', () => {
+    for (let seed = 1; seed < 30; seed++) {
+      const c = chooseRequestChunk([home, workshop], [staked([1, 0]), staked([0, 1])], { tags: [], related: [] }, seed)!
+      expect(['1,0', '0,1']).not.toContain(c.join(','))
+      expect(c.join(',')).not.toBe('0,0')
+    }
+  })
+
+  it('counts a staked plot as ground a new request may touch, so requests can cluster', () => {
+    // Only (1,0) is staked beside the clearing; a related request is pulled next to it.
+    const picked = chooseRequestChunk([home, workshop], [staked([1, 0], ['lighthouses'])], { tags: ['lighthouses'], related: [] }, 1)!
+    expect([[2, 0], [1, 1], [1, -1]].map((c) => c.join(','))).toContain(picked.join(','))
+  })
+
+  it('is the same every time for one seed, and null when the world is full', () => {
+    const args = [[home, workshop], [staked([1, 0])], { tags: ['x'], related: [] }, 7] as const
+    expect(chooseRequestChunk(...args)).toEqual(chooseRequestChunk(...args))
+    const many: LandPlace[] = Array.from({ length: MAX_PLACES - 1 }, (_, i) => ({ id: `p${i}`, chunk: [i, 0], footprint: [10, 10], tags: [] }))
+    expect(chooseRequestChunk(many, [staked([100, 100])], { tags: [], related: [] }, 1)).toBeNull()
   })
 })

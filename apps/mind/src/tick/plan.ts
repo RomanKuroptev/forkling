@@ -1,10 +1,11 @@
 import type { PlanStep } from '@forkling/schema'
-import { MIND_VERBS, daysSinceCare, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
+import { MIND_VERBS, daysSinceCare, foundsInWeek, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { dropRepeatedStarts } from '../web/rails.ts'
 import { expandablePlaces } from './expand.ts'
+import { foundGate } from './found.ts'
 import { intentionSeed } from './util.ts'
 
 const MAX_RECENT = 20
@@ -43,11 +44,11 @@ export function planContext(t: Tick): MindPlanContext {
     // Revisiting a place not cared for in 7 days; growth is the conditions of spec 2.5; founding arrives with requests (W6, slice 6) and notes with W7.
     revisitable: new Set(t.places.filter((p) => daysSinceCare({ lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) >= 7).map((p) => p.id)),
     expandable: new Set(expandablePlaces(t).map((e) => e.id)),
-    canFound: false,
+    canFound: foundGate(t).check.ok,
     notes: new Set(),
     wants: [],
     recent: t.mind.recent,
-    used: { repliesToday: 0, sketchesToday: t.mind.sketches?.date === t.today ? t.mind.sketches.count : 0, foundThisWeek: 0 },
+    used: { repliesToday: 0, sketchesToday: t.mind.sketches?.date === t.today ? t.mind.sketches.count : 0, foundThisWeek: foundsInWeek(t.mind.founds ?? [], t.nowMs) },
     lastExpandedPlace: t.mind.lastExpandedPlace ?? null,
   }
 }

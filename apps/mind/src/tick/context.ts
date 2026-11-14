@@ -19,6 +19,7 @@ import type {
   TimelineEntry,
   TinkerJob,
   ExpandJob,
+  PlaceRequest,
   VisitorEvent,
   Wish,
   WorkMeta,
@@ -134,6 +135,10 @@ export interface Tick {
   pendingRevisit: { step: PlanStep; index: number } | null
   /** Set when an expand step finishes: the builders are asked for it after the step is applied (spec 2.4). */
   pendingExpand: { step: PlanStep; index: number } | null
+  /** Set when a found step finishes: the request is written after the step is applied (spec 2.4, 10.3). */
+  pendingFound: { step: PlanStep; index: number } | null
+  /** Place requests written this tick, written to `requests/<id>.md` (spec 10.3). */
+  newRequests: PlaceRequest[]
   /** Places whose file changed this tick (a tend, an expand), written to `places/<id>.json`. */
   placeUpdates: Place[]
   /** Souvenirs whose `placedIn` changed this tick, written to `souvenirs/<id>.json`. */

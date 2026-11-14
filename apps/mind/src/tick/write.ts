@@ -1,4 +1,4 @@
-import { Forkling, type Goals, type Intention, type MindState } from '@forkling/schema'
+import { Forkling, formatRequest, type Goals, type Intention, type MindState } from '@forkling/schema'
 import { toRepoIntention } from '@forkling/sim'
 import { renderPlan } from '../plan-page.ts'
 import { appendStream, appendTimeline, prune } from '../stream.ts'
@@ -103,6 +103,7 @@ export function writeWorld(t: Tick): TickResult {
     for (const s of t.souvenirUpdates) if (writeJson(dir, `souvenirs/${s.id}.json`, s)) written.push(`souvenirs/${s.id}.json`)
     for (const meta of t.workUpdates) if (writeJson(dir, `works/${meta.id}/meta.json`, meta)) written.push(`works/${meta.id}/meta.json`)
     for (const job of t.newJobs) if (writeJson(dir, `mind/builds/${job.id}.json`, job)) written.push(`mind/builds/${job.id}.json`)
+    for (const request of t.newRequests) if (writeText(dir, `requests/${request.id}.md`, formatRequest(request))) written.push(`requests/${request.id}.md`)
     for (const wish of t.wishUpdates) if (writeJson(dir, `wishes/${wish.id}.json`, wish)) written.push(`wishes/${wish.id}.json`)
     if (t.planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)
     for (const page of t.notebook) if (writeText(dir, page.path, page.text)) written.push(page.path)
