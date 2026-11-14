@@ -47,7 +47,9 @@ export function lifecycleStep(t: Tick): void {
   // 1. Places that land.
   const placeIds = t.places.map((p) => p.id)
   if (mind.placesSeen === undefined) {
-    mind.placesSeen = placeIds
+    // A world with no places has nothing to compare with: leave it unset, so the places that first appear (the migration's Home
+    // and Workshop) are only noted. Found live on Merge: an empty list made them look like places Roman had just built.
+    if (placeIds.length > 0) mind.placesSeen = placeIds
   } else {
     const seen = new Set(mind.placesSeen)
     for (const place of t.places.filter((p) => !seen.has(p.id))) landPlace(place)
