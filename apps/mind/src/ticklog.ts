@@ -70,11 +70,11 @@ export function readHealth(dir: string): Health | null {
 }
 
 /** The step in progress, if there is one. */
-function stepOf(goals: Goals): TickStep | null {
+export function stepOf(goals: Goals): TickStep | null {
   const now = goals.now
   const step = now ? goals.today?.steps[now.index] : undefined
   if (!now || !step) return null
-  return { index: now.index, verb: step.verb, ...(step.targetId ? { targetId: step.targetId } : {}), startedAt: now.startedAt, until: now.until }
+  return { index: now.index, verb: step.verb, ...(step.targetId ? { targetId: clampText(step.targetId, 60) } : {}), startedAt: now.startedAt, until: now.until }
 }
 
 /** FNV-1a, enough to tell one plan from another. */
