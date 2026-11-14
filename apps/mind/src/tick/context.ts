@@ -22,6 +22,7 @@ import type {
   FoundJob,
   PlaceRequest,
   VisitorEvent,
+  Want,
   Wish,
   WorkMeta,
   WorldObject,
@@ -168,6 +169,8 @@ export interface Tick {
   thinkKind: ThinkKind | 'bedtime' | null
 
   beliefs: World['beliefs']
+  /** `mind/wants.json`, as the tick leaves it: attempts counted, a want that failed 4 times dropped (spec 9.4). */
+  wants: Want[]
   /** The live beliefs a plan may cite. Taken before bedtime changes them. */
   beliefIds: Set<string>
   /** The cached part of the prompt, built once. */

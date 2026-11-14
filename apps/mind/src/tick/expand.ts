@@ -10,6 +10,7 @@ import { readAllSouvenirs } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
 import { readWishes } from '../wishes.ts'
 import type { Tick } from './context.ts'
+import { rememberJobWant } from './wants.ts'
 
 /** Spec 4.5: an accepted expand starts a construction of 3 hours of waking time. */
 export const EXPAND_CONSTRUCTION_MS = 3 * 3_600_000
@@ -95,6 +96,7 @@ export function expandStep(t: Tick): void {
   for (let n = 2; existsSync(join(t.dir, 'mind/builds', `${id}.json`)) || existsSync(join(t.dir, 'mind/builds', `${id}.result.json`)); n++) id = `${base}-${n}`
   t.newJobs.push(ExpandJob.parse({ id, kind: 'expand', requestedAt: t.nowIso, placeId: place.id, reason: clampText(step.reason, 200) }))
   t.mind.lastExpandedPlace = place.id
+  rememberJobWant(t, id, step.wantId)
   t.remember.push({ at: t.nowIso, kind: 'made', text: `Asked the builders to expand ${place.name}.`, verb: 'expand', goalRef: `today:${index}` })
   t.parts.push(`asked for an expansion of ${place.name}`)
 }

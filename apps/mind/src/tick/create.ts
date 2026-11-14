@@ -123,6 +123,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     thinkKind: null,
 
     beliefs: w.beliefs,
+    wants: structuredClone(w.wants.wants),
     beliefIds: new Set(liveBeliefs(w.beliefs).map((b) => b.id)),
     system: buildSystem({ seed: w.seed }),
     prompt: undefined,

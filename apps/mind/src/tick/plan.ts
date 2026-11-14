@@ -41,12 +41,12 @@ export function planContext(t: Tick): MindPlanContext {
     mood: { mood: t.mood, energy: t.energy },
     pointsInHand: t.mind.allowance?.points ?? 0,
     places: new Set(placeIds(t)),
-    // Revisiting a place not cared for in 7 days; growth is the conditions of spec 2.5; founding arrives with requests (W6, slice 6) and notes with W7.
+    // Revisiting a place not cared for in 7 days; growth is the conditions of spec 2.5; founding arrives with requests (W6, slice 6) and notes with W7 (slice 9).
     revisitable: new Set(t.places.filter((p) => daysSinceCare({ lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) >= 7).map((p) => p.id)),
     expandable: new Set(expandablePlaces(t).map((e) => e.id)),
     canFound: foundGate(t).check.ok,
     notes: new Set(),
-    wants: [],
+    wants: t.wants,
     recent: t.mind.recent,
     used: { repliesToday: 0, sketchesToday: t.mind.sketches?.date === t.today ? t.mind.sketches.count : 0, foundThisWeek: foundsInWeek(t.mind.founds ?? [], t.nowMs) },
     lastExpandedPlace: t.mind.lastExpandedPlace ?? null,

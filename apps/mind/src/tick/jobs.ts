@@ -5,6 +5,8 @@ import { clampText } from '../decision.ts'
 import type { Tick } from './context.ts'
 import { applyExpandResult } from './expand.ts'
 import { applyFoundResult } from './fallback.ts'
+import { rememberScored } from './importance.ts'
+import { failWant } from './wants.ts'
 
 const MAX_SEEN = 100
 const MAX_PENDING = 10
@@ -35,9 +37,13 @@ export function settleJobs(t: Tick): void {
     }
     // An expand is applied here, by the loop, which is the one writer of `places/`; a work arrives as a pull request.
     const applied = r.kind === 'expand' ? applyExpandResult(t, r) : r.kind === 'found' ? applyFoundResult(t, r) : null
-    t.moodEvents.push(applied ? (applied.ok ? 'buildAccepted' : 'buildFailed') : r.status === 'done' && r.workStatus === 'shelf' ? 'buildAccepted' : 'buildFailed')
+    const ok = applied ? applied.ok : r.status === 'done' && r.workStatus === 'shelf'
+    t.moodEvents.push(ok ? 'buildAccepted' : 'buildFailed')
     const text = applied ? applied.text : describeResult(r)
-    t.remember.push({ at: t.nowIso, kind: 'event', text: clampText(text, 300), verb: r.kind === 'expand' ? 'expand' : r.kind === 'found' ? 'found' : 'tinker' })
+    rememberScored(t, { at: t.nowIso, kind: 'event', text: clampText(text, 300), verb: r.kind === 'expand' ? 'expand' : r.kind === 'found' ? 'found' : 'tinker' }, ok ? 'buildLanded' : 'buildFailed')
+    // A build that failed counts against the want of the step that asked for it (spec 9.4); either way the note of which want it was is done with.
+    if (!ok) failWant(t, t.mind.jobWants?.[r.id])
+    if (t.mind.jobWants && r.id in t.mind.jobWants) delete t.mind.jobWants[r.id]
     jobs.seen.push(r.id)
     jobs.pending.push({ id: r.id, text: clampText(text, 300) })
   }
