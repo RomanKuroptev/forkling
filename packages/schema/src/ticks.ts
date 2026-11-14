@@ -115,7 +115,13 @@ export const Health = z.object({
   spend: z.object({ monthUsd: z.number(), capUsd: z.number(), paceUsd: z.number() }),
   openBuild: z.object({ id: z.string(), kind: z.string(), ageHours: z.number().nonnegative() }).nullable(),
   /** What is measured about sameness, and never enforced (spec 12.3, 12.6). Only the work numbers so far; W7 adds the rest. */
-  novelty: z.object({ works: z.object({ made: z.number().int().nonnegative(), wouldFire: z.number().int().nonnegative(), byKind: z.record(z.string(), z.number().int().nonnegative()) }) }).optional(),
+  novelty: z
+    .object({
+      works: z.object({ made: z.number().int().nonnegative(), wouldFire: z.number().int().nonnegative(), byKind: z.record(z.string(), z.number().int().nonnegative()) }),
+      /** What the place nudges (spec 12.3) would have named in the last 7 days: repeated place, stuck in one place, weekend revisit. */
+      places: z.object({ wouldFire: z.number().int().nonnegative(), repeatedPlace: z.number().int().nonnegative(), stuckInOnePlace: z.number().int().nonnegative(), weekendRevisit: z.number().int().nonnegative() }).optional(),
+    })
+    .optional(),
   /** What looks wrong, in plain words. Empty means nothing does. */
   warnings: z.array(z.string().max(200)).max(20),
 })

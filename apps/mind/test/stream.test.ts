@@ -1,9 +1,9 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { StreamEntry, TimelineEntry } from '@forkling/schema'
-import { appendStream, appendTimeline, prune, readStream, STREAM_KEEP_DAYS } from '../src/stream.ts'
+import { appendStream, appendTimeline, prune, readStream, readTimelineSince, STREAM_KEEP_DAYS } from '../src/stream.ts'
 
 let dir: string
 beforeEach(() => {
@@ -88,5 +88,31 @@ describe('prune', () => {
 
   it('does nothing when there is no stream yet', () => {
     expect(prune(dir, '2026-11-03')).toEqual([])
+  })
+})
+
+describe('readTimelineSince: the steps it started in the last days, for the place nudges', () => {
+  it('reads the days from `since` to today, in order, and skips a line that does not fit', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'timeline-'))
+    try {
+      appendTimeline(dir, '2026-11-01', { at: '2026-11-01T09:00:00Z', verb: 'tend', targetId: 'home', reason: 'Old.' })
+      appendTimeline(dir, '2026-11-18', { at: '2026-11-18T09:00:00Z', verb: 'tend', targetId: 'workshop', reason: 'A.' })
+      appendTimeline(dir, '2026-11-19', { at: '2026-11-19T09:00:00Z', verb: 'wander', reason: 'B.' })
+      appendFileSync(join(dir, 'memory/timeline/2026-11-19.jsonl'), 'not json\n{"at":"x"}\n')
+      const steps = readTimelineSince(dir, '2026-11-19', 7)
+      expect(steps.map((s) => `${s.verb}:${s.targetId ?? '-'}`)).toEqual(['tend:workshop', 'wander:-'])
+      expect(readTimelineSince(dir, '2026-11-19', 30).map((s) => s.verb)).toEqual(['tend', 'tend', 'wander'])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('gives nothing for a world with no timeline', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'timeline-'))
+    try {
+      expect(readTimelineSince(dir, '2026-11-19', 7)).toEqual([])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

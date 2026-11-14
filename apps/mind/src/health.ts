@@ -1,5 +1,5 @@
 import { SourceStats, type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
-import { MAX_POINTS_IN_HAND, workNovelty, type WorkLike } from '@forkling/sim'
+import { MAX_POINTS_IN_HAND, placeNovelty, workNovelty, type PlaceNudgeLike, type PlaceNudgeRequest, type PlaceNudgeStep, type WorkLike } from '@forkling/sim'
 import { paceAhead, paceUsd } from './budget.ts'
 import { topHostShare } from './web/stats.ts'
 import { MAX_READS_PER_DAY } from './web/trip.ts'
@@ -18,6 +18,8 @@ export interface HealthContext {
   pushFailing?: boolean
   /** The works in `works/`, for the week's work numbers. */
   works?: readonly WorkLike[]
+  /** The places, requests and steps of the last days, for the place nudges (spec 12.3). `dayOf` gives the forkling's own day. */
+  placeNudges?: { places: readonly PlaceNudgeLike[]; requests: readonly PlaceNudgeRequest[]; steps: readonly PlaceNudgeStep[]; dayOf?: (iso: string) => string }
 }
 
 /** A need under 15, an idle spell or a wait this long (in minutes) is worth a warning. */
@@ -124,7 +126,10 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     needsCritical: {},
     spend,
     openBuild,
-    novelty: { works: workNovelty(ctx.works ?? [], { sinceMs: ctx.nowMs - 7 * 86_400_000 }) },
+    novelty: {
+      works: workNovelty(ctx.works ?? [], { sinceMs: ctx.nowMs - 7 * 86_400_000 }),
+      places: placeNovelty({ places: ctx.placeNudges?.places ?? [], requests: ctx.placeNudges?.requests ?? [], steps: ctx.placeNudges?.steps ?? [], nowMs: ctx.nowMs, sinceMs: ctx.nowMs - 7 * 86_400_000, ...(ctx.placeNudges?.dayOf ? { dayOf: ctx.placeNudges.dayOf } : {}) }),
+    },
     warnings,
   }
 }

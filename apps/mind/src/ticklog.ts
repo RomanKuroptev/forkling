@@ -1,9 +1,11 @@
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { Health, TICK_KEEP_DAYS, TickLine, type Goals, type TickStep } from '@forkling/schema'
-import { moodWords } from '@forkling/sim'
+import { localDate, moodWords } from '@forkling/sim'
 import { clampText } from './decision.ts'
 import { readWorks } from './builds/works.ts'
+import { readRequests } from './requests.ts'
+import { readTimelineSince } from './stream.ts'
 import { buildHealth } from './health.ts'
 import type { Tick, TickResult } from './tick/context.ts'
 import { round } from './tick/util.ts'
@@ -117,6 +119,17 @@ function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine
  * Every tick leaves one line in `mind/ticks/` and refreshes `mind/health.json`, even a tick that changed nothing in the
  * world. These are the only files a quiet tick writes. A dry run writes nothing.
  */
+/** The places, requests and last week's steps the place nudges are measured from (spec 12.3). Read-only: nothing here changes a place. */
+function placeNudgeInputs(t: Tick) {
+  const tz = t.sleepOpts.timezone
+  return {
+    places: t.places.map((p) => ({ id: p.id, name: p.name, purpose: p.purpose, founded: p.founded, lastCareAt: p.state.lastCareAt })),
+    requests: readRequests(t.dir).map((r) => ({ id: r.id, kind: r.kind, name: r.name, purpose: r.purpose, written: r.written })),
+    steps: readTimelineSince(t.dir, t.today, 7).map((s) => ({ at: s.at, verb: s.verb, ...(s.targetId ? { targetId: s.targetId } : {}) })),
+    dayOf: (iso: string) => localDate(tz, Date.parse(iso)),
+  }
+}
+
 export function logTick(t: Tick, result: TickResult): TickResult {
   if (t.deps.dryRun) return result
   const previous = readHealth(t.dir)
@@ -127,6 +140,6 @@ export function logTick(t: Tick, result: TickResult): TickResult {
   const line = lineFor(t, result, previous)
   appendTick(t.dir, t.today, line)
   pruneTicks(t.dir, t.today)
-  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir) }))
+  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir), placeNudges: placeNudgeInputs(t) }))
   return { ...result, logged: true }
 }
