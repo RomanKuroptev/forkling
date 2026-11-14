@@ -1,4 +1,4 @@
-import { Forkling, forklingPackIssues, Goals, objectIdFromPath, Place, WorldObject, type SpeciesPack } from '@forkling/schema'
+import { Forkling, forklingPackIssues, Goals, objectIdFromPath, parseRequest, Place, WorldObject, type PlaceRequest, type SpeciesPack } from '@forkling/schema'
 import type { WorldRef } from './route.ts'
 
 export interface LoadedWorld {
@@ -12,6 +12,8 @@ export interface LoadedWorld {
   objects: WorldObject[]
   /** `places/*.json`, in id order. Empty for a world that has none yet, which then keeps the pet-era island. */
   places: Place[]
+  /** `requests/*.md` (spec 10.3), in id order: the place requests Merge has made, whatever their status. The open ones are staked plots. */
+  requests: PlaceRequest[]
   /** The ids of the works in the repo (`works/<id>/meta.json`), in name order: what the Workshop's terminal lists. Their files are read when it opens. */
   workIds: string[]
   /** `mind/goals.json`, or empty for a world whose forkling has no mind yet. */
@@ -45,6 +47,8 @@ export interface LoadDeps {
 const MAX_OBJECTS = 300
 /** The most places a world may have (spec 4.1). */
 const MAX_PLACES = 64
+/** The most requests read; the open ones are at most 2, so this is a ceiling, not a limit anyone meets. */
+const MAX_REQUESTS = 24
 
 class LoadFailure extends Error {
   constructor(readonly error: WorldError) {
@@ -88,6 +92,12 @@ async function api<T>(deps: LoadDeps, ref: WorldRef, path: string): Promise<T> {
     throw new LoadFailure({ kind: 'network', title: 'GitHub had a problem', message: `It answered ${res.status}. Refresh to try again.`, problems: [] })
   }
   return (await res.json()) as T
+}
+
+async function rawText(deps: LoadDeps, ref: WorldRef, sha: string, path: string): Promise<string> {
+  const res = await deps.fetch(`https://raw.githubusercontent.com/${ref.owner}/${ref.repo}/${sha}/${path}`)
+  if (!res.ok) throw new Error(`could not be downloaded (${res.status})`)
+  return res.text()
 }
 
 async function raw(deps: LoadDeps, ref: WorldRef, sha: string, path: string): Promise<unknown> {
@@ -175,6 +185,23 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
       .filter((p): p is Place => p !== null)
       .sort((a, b) => a.id.localeCompare(b.id))
 
+    // Requests are read like places: one that does not fit, or whose id is not its file name, is left out and never an error.
+    const requestPaths = paths.filter((p) => /^requests\/[^/]+\.md$/.test(p)).slice(0, MAX_REQUESTS)
+    const requests = (
+      await Promise.all(
+        requestPaths.map(async (path) => {
+          try {
+            const request = parseRequest(await rawText(deps, ref, commit.sha, path))
+            return request && `${request.id}.md` === path.slice('requests/'.length) ? request : null
+          } catch {
+            return null
+          }
+        }),
+      )
+    )
+      .filter((r): r is PlaceRequest => r !== null)
+      .sort((a, b) => a.id.localeCompare(b.id))
+
     if (problems.length > 0 || !forkling) {
       problems.sort((a, b) => (a.file === 'forkling.json' ? -1 : b.file === 'forkling.json' ? 1 : a.file.localeCompare(b.file)))
       return fail({
@@ -195,6 +222,7 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         pack: forkling.pack,
         objects: objects.filter((o): o is WorldObject => o !== null),
         places,
+        requests,
         workIds: paths.flatMap((p) => /^works\/([^/]+)\/meta\.json$/.exec(p)?.[1] ?? []).sort(),
         goals: goals ?? {},
       },

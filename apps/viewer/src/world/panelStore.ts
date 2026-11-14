@@ -27,7 +27,7 @@ export const panelStore = {
   /** Opens the panel for a click: shows that it is loading, then what was read. A slower earlier click never overwrites a later one. */
   async open(target: PanelTarget, world: LoadedWorld): Promise<void> {
     const mine = ++ticket
-    set({ status: 'loading', heading: target.kind === 'sign' ? target.place.exterior.sign || target.place.name : target.exhibit.label })
+    set({ status: 'loading', heading: target.kind === 'sign' ? target.place.exterior.sign || target.place.name : target.kind === 'plot' ? target.request.name : target.exhibit.label })
     const content = await loadPanel(target, { world, files: worldFiles(world) })
     if (mine === ticket) set({ status: 'open', content })
   },

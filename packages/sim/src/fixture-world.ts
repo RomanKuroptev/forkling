@@ -1,8 +1,8 @@
-import { Place, type SouvenirKindName } from '@forkling/schema'
+import { Place, PlaceRequest, type SouvenirKindName } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import homeFile from '../../../templates/forkling-world/places/home.json'
 import workshopFile from '../../../templates/forkling-world/places/workshop.json'
-import { choosePlacement, toLandPlace } from './land.ts'
+import { choosePlacement, chooseRequestChunk, toLandPlace } from './land.ts'
 import { allPaths, derivePaths, type WorldPath } from './paths.ts'
 import { createPrng } from './prng.ts'
 
@@ -24,6 +24,8 @@ export interface FixtureWorld {
   now: string
   places: Place[]
   paths: WorldPath[]
+  /** Two place requests staked on chunks (spec 10.3), one open and one Roman says he is building, so the plots can be seen. */
+  requests: PlaceRequest[]
   /** The souvenir files the exhibits point at, and their kinds. */
   souvenirs: Record<string, SouvenirKindName>
 }
@@ -103,5 +105,15 @@ export function makeFixtureWorld(seed = 1, count = 10, now: string = FIXTURE_NOW
     }
   }
 
-  return { seed, now, places, paths: allPaths(places.map(toLandPlace)), souvenirs }
+  // Two requests are staked, so a plot can be seen: one waiting for Roman and one he says he is building.
+  const requests: PlaceRequest[] = []
+  const stake = (id: string, name: string, status: 'open' | 'building', tags: string[]) => {
+    const chunk = chooseRequestChunk(places.map(toLandPlace), requests.map((r) => ({ chunk: r.chunk, tags: r.tags })), { tags, related: [] }, seed * 7 + requests.length)
+    if (!chunk) return
+    requests.push(PlaceRequest.parse({ id, kind: 'place', name, purpose: `A fixture place about ${tags[0]}.`, tags, chunk: [...chunk], related: [], souvenirs: [], written: now, status, statusAt: status === 'open' ? null : now, note: null, body: 'A request made up for the fixture.' }))
+  }
+  stake('lantern-hall', 'Lantern Hall', 'open', ['signals'])
+  stake('bell-tower', 'Bell Tower', 'building', ['bells'])
+
+  return { seed, now, places, paths: allPaths(places.map(toLandPlace)), requests, souvenirs }
 }

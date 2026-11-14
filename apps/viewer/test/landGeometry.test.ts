@@ -135,3 +135,22 @@ describe('a path drawn on the ground (spec 4.3: a 3 meter track)', () => {
     expect(pathRibbon([], flat).indices.length).toBe(0)
   })
 })
+
+describe('a staked plot is drawn as land (W6 slice 8)', () => {
+  it('is among the visible chunks, as edge land, when a request has staked it', () => {
+    const home = { id: 'home', chunk: [0, 0] as [number, number], footprint: [12, 10] as [number, number], tags: ['home'] }
+    const plain = visibleChunks(createLand(1, [home]))
+    const withPlot = visibleChunks(createLand(1, [home], [[5, 5]]))
+    expect(plain.some((v) => v.chunk[0] === 5 && v.chunk[1] === 5)).toBe(false)
+    const plot = withPlot.find((v) => v.chunk[0] === 5 && v.chunk[1] === 5)
+    expect(plot).toBeDefined()
+    expect(plot!.owned).toBe(false)
+    expect(withPlot.length).toBe(plain.length + 1)
+  })
+
+  it('is found even when it touches only another plot, outside the box round the places', () => {
+    const home = { id: 'home', chunk: [0, 0] as [number, number], footprint: [12, 10] as [number, number], tags: ['home'] }
+    const chain = visibleChunks(createLand(1, [home], [[1, 0], [2, 0], [3, 0]]))
+    expect(chain.some((v) => v.chunk[0] === 3 && v.chunk[1] === 0)).toBe(true)
+  })
+})

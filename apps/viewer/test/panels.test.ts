@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { Place, Souvenir, WorkMeta } from '@forkling/schema'
+import { Place, PlaceRequest, Souvenir, WorkMeta } from '@forkling/schema'
 import { makeFixtureWorld } from '@forkling/sim/fixture'
-import { galleryPanel, noteOnly, plaquePanel, safeUrl, signPanel, siteBase, souvenirPanel, workPanel } from '../src/world/panelContent.ts'
+import { galleryPanel, noteOnly, plaquePanel, plotPanel, safeUrl, signPanel, siteBase, souvenirPanel, workPanel } from '../src/world/panelContent.ts'
 import { loadPanel, worldFiles, type WorldFiles } from '../src/world/worldData.ts'
 import { LOCAL_REF } from '../src/world/localWorld.ts'
 
@@ -144,5 +144,22 @@ describe('opening a panel loads one file at the world\'s commit, and fails softl
     const failing = worldFiles({ ref, sha: 'abc123' }, async () => new Response('x', { status: 404 }))
     expect(await failing.json('x.json')).toBeNull()
     expect(await failing.text('x.md')).toBeNull()
+  })
+})
+
+describe('the panel of a staked plot (W6 slice 8, spec 10.3: visitors see what Merge is waiting for)', () => {
+  const req = (over: Record<string, unknown> = {}) =>
+    PlaceRequest.parse({ id: 'lantern-hall', kind: 'place', name: 'Lantern Hall', purpose: 'Where the lidar finds hold up.', tags: ['maya lidar', 'sand'], chunk: [1, 0], related: ['home'], souvenirs: ['s1', 's2'], written: '2026-11-14T10:00:00Z', status: 'open', statusAt: null, note: null, body: 'I want a lamp over each find.', ...over })
+
+  it('says what Merge asked for, in its own words, and that it is waiting for Roman', () => {
+    const p = plotPanel(req())
+    expect(p).toMatchObject({ kind: 'plot', heading: 'Lantern Hall', purpose: 'Where the lidar finds hold up.', tags: ['maya lidar', 'sand'], body: 'I want a lamp over each find.', souvenirs: 2, written: '2026-11-14' })
+    expect(p.kind === 'plot' && p.status).toMatch(/waiting for Roman/i)
+  })
+
+  it('says when Roman has said he is building it, and does not show his note (it is not for the visitor to see as the plot\'s words)', () => {
+    const p = plotPanel(req({ status: 'building', statusAt: '2026-11-15T10:00:00Z', note: 'Two rooms.' }))
+    expect(p.kind === 'plot' && p.status).toMatch(/building/i)
+    expect(JSON.stringify(p)).not.toContain('Two rooms.')
   })
 })

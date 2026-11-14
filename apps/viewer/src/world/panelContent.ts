@@ -1,4 +1,4 @@
-import { workFrame, type Place, type Souvenir, type WorkMeta } from '@forkling/schema'
+import { workFrame, type Place, type PlaceRequest, type Souvenir, type WorkMeta } from '@forkling/schema'
 import { LOCAL_REF } from './localWorld.ts'
 import type { WorldRef } from './route.ts'
 
@@ -13,6 +13,7 @@ export type PanelContent =
   | { kind: 'trail'; heading: string; url: string | null }
   | { kind: 'gallery'; heading: string; works: { id: string; title: string; about: string; kind: string; url: string | null }[] }
   | { kind: 'sign'; heading: string; purpose: string; founded: string; tags: string[]; related: string[]; history: { at: string; verb: string; summary: string }[]; pageUrl: string | null }
+  | { kind: 'plot'; heading: string; purpose: string; tags: string[]; body: string; souvenirs: number; written: string; status: string }
   | { kind: 'note'; heading: string; text: string }
 
 /** An address a visitor may be sent to or shown a picture from: https only. Anything else (a script, a data URL, a bare path) is nothing. */
@@ -69,6 +70,23 @@ export function signPanel(place: Place, base: string | null): PanelContent {
     related: place.related,
     history: [...place.history].sort((a, b) => b.at.localeCompare(a.at)).map((h) => ({ at: h.at, verb: h.verb, summary: h.summary })),
     pageUrl: base ? `${base}places/${place.id}/` : null,
+  }
+}
+
+/**
+ * A staked plot (spec 10.3): what Merge asked Roman for, in its own words, and whether Roman has said he is building it. Roman's note is
+ * not shown: it reaches Merge, not the plot.
+ */
+export function plotPanel(request: PlaceRequest): PanelContent {
+  return {
+    kind: 'plot',
+    heading: request.name,
+    purpose: request.purpose,
+    tags: request.tags,
+    body: request.body,
+    souvenirs: request.souvenirs.length,
+    written: request.written.slice(0, 10),
+    status: request.status === 'building' ? 'Roman says he is building it.' : 'Waiting for Roman to answer.',
   }
 }
 

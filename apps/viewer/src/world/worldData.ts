@@ -1,7 +1,7 @@
-import { Souvenir, WorkMeta, type Place } from '@forkling/schema'
+import { Souvenir, WorkMeta, type Place, type PlaceRequest } from '@forkling/schema'
 import type { LoadedWorld } from './loadWorld.ts'
 import { LOCAL_REF } from './localWorld.ts'
-import { galleryPanel, noteOnly, plaquePanel, safeUrl, signPanel, siteBase, souvenirPanel, workPanel, type PanelContent } from './panelContent.ts'
+import { galleryPanel, noteOnly, plaquePanel, plotPanel, safeUrl, signPanel, siteBase, souvenirPanel, workPanel, type PanelContent } from './panelContent.ts'
 
 /** Reads one file of a world at its commit. Null when it is not there, would not load, or the world has no network to read from. */
 export interface WorldFiles {
@@ -40,7 +40,7 @@ export function worldFiles(world: Pick<LoadedWorld, 'ref' | 'sha'>, fetchImpl: t
   }
 }
 
-export type PanelTarget = { kind: 'exhibit'; place: Place; exhibit: Place['exhibits'][number] } | { kind: 'sign'; place: Place }
+export type PanelTarget = { kind: 'exhibit'; place: Place; exhibit: Place['exhibits'][number] } | { kind: 'sign'; place: Place } | { kind: 'plot'; request: PlaceRequest }
 
 const MAX_GALLERY = 60
 
@@ -52,6 +52,7 @@ export async function loadPanel(target: PanelTarget, ctx: { world: Pick<LoadedWo
   const base = siteBase(ctx.world.ref)
   const local = base === null
   if (target.kind === 'sign') return signPanel(target.place, base)
+  if (target.kind === 'plot') return plotPanel(target.request)
   const { exhibit } = target
   const ref = exhibit.ref
   switch (exhibit.kind) {
