@@ -1,4 +1,4 @@
-import rawKit from '../../../kit/parts.json'
+import rawKit from '../../../kit/parts.json' with { type: 'json' }
 import { Kit } from './kit.ts'
 
 /**
