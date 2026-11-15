@@ -228,6 +228,11 @@ describe('a wander step', () => {
     expect(stats.weeks['2026-W45']).toEqual({ 'en.wikipedia.org': { reads: 2, souvenirs: 1, placed: 0, boring: 0, failures: 0 } })
   })
 
+  it('counts the trip for the stranger doors share of the week: a topic outside the top 5 interests is one (spec 12.3)', async () => {
+    await wander()
+    expect(MindState.parse(readJson('mind/state.json')).doorDays).toEqual([{ date: DAY, trips: 1, strangers: 1 }])
+  })
+
   it('books each read call in the budget ledger as it happens, and in the tick log', async () => {
     const { result } = await wander()
     const ledger = BudgetLedger.parse(readJson('brain/budget.json'))

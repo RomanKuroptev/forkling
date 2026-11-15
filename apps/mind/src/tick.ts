@@ -19,6 +19,7 @@ import { revisitStep } from './tick/revisit.ts'
 import { tendStep } from './tick/tend.ts'
 import { noteStep } from './tick/mind-step.ts'
 import { route } from './tick/route.ts'
+import { boredomStep } from './tick/boredom.ts'
 import { logTick } from './ticklog.ts'
 import { findNotes, replyStep } from './tick/notes.ts'
 import { reflectionStep } from './tick/reflection.ts'
@@ -66,6 +67,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   applyDecision(t)
   advance(t)
   feel(t)
+  boredomStep(t)
   const result = logTick(t, writeWorld(t))
   return { ...result, now: buildNow(t), places: t.places }
 }

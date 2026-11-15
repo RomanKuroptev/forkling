@@ -123,6 +123,14 @@ export const Health = z.object({
       works: z.object({ made: z.number().int().nonnegative(), wouldFire: z.number().int().nonnegative(), byKind: z.record(z.string(), z.number().int().nonnegative()) }),
       /** What the place nudges (spec 12.3) would have named in the last 7 days: repeated place, stuck in one place, weekend revisit. */
       places: z.object({ wouldFire: z.number().int().nonnegative(), repeatedPlace: z.number().int().nonnegative(), stuckInOnePlace: z.number().int().nonnegative(), weekendRevisit: z.number().int().nonnegative() }).optional(),
+      /** The week's written texts (writings and diary entries): the average highest similarity, and how many tripped the repeated-writing and repeated-diary nudges. */
+      texts: z.object({ texts: z.number().int().nonnegative(), meanMaxSimilarity: z.number().min(0).max(1), repeatedWriting: z.number().int().nonnegative(), repeatedDiary: z.number().int().nonnegative() }).optional(),
+      /** Trips through a stranger's door (spec 12.3): the share of the week's trips, and the finished days with trips and no such start. */
+      doors: z.object({ trips: z.number().int().nonnegative(), strangers: z.number().int().nonnegative(), share: z.number().min(0).max(1), noDoorDays: z.number().int().nonnegative() }).optional(),
+      /** The host that gave most of the week's reads, and whether it was over 60%. Null before there are enough reads. */
+      oneHost: z.object({ host: z.string(), share: z.number(), wouldFire: z.boolean() }).nullable().optional(),
+      /** The week's works that were offered a collision, were offered a constraint, and refused it (spec 12.4, 12.6). */
+      draws: z.object({ collisionsUsed: z.number().int().nonnegative(), constraintsOffered: z.number().int().nonnegative(), constraintsRefused: z.number().int().nonnegative() }).optional(),
     })
     .optional(),
   /** What looks wrong, in plain words. Empty means nothing does. */

@@ -161,6 +161,10 @@ export const MindState = z.object({
    * so the trip-start rail can drop a wander that starts where one already did today.
    */
   trips: z.object({ date: z.iso.date(), reads: z.number().int().nonnegative(), trips: z.number().int().nonnegative(), looks: z.number().int().nonnegative().default(0), starts: z.array(z.string().max(300)).max(60) }).optional(),
+  /** Trips by day and how many started through a stranger's door, the last 7 days (spec 12.3, 12.6). */
+  doorDays: z.array(z.object({ date: z.iso.date(), trips: z.number().int().nonnegative(), strangers: z.number().int().nonnegative() })).max(7).default([]),
+  /** The day the boredom event was last written (spec 12.4 item 8), so it comes at most once a day. */
+  boredom: z.object({ date: z.iso.date() }).optional(),
   /** Things made so far on a local date, for the daily limit. */
   arts: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   /** Eye-cam frames taken so far on a local date, for the daily limit, and the shots waiting to be rendered. */
