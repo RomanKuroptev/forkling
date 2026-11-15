@@ -31,6 +31,8 @@ jobs:
           VITE_BASE: /${{ github.event.repository.name }}/
           # The mind server's address, so the viewer can keep the places current. Empty until Roman sets the MIND_URL variable.
           VITE_MIND_URL: ${{ vars.MIND_URL }}
+          # The public Turnstile site key for the note form. Empty until Roman sets the TURNSTILE_SITE_KEY variable; without it there is no button.
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
       # Serve index.html for unknown paths, so /<owner>/<repo> routes work from M3 on.
       - run: cp apps/viewer/dist/index.html apps/viewer/dist/404.html
       - uses: actions/upload-pages-artifact@v3

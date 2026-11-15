@@ -313,3 +313,47 @@ html[data-input='touch'] .hud {
     display: none;
   }
 }
+
+/* The note form, the note panel and the Leave a note button: dark, to match the other panels. */
+.note-ui input,
+.note-ui textarea {
+  padding: 6px 8px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 10%);
+  color: white;
+  font: inherit;
+}
+.note-ui input::placeholder,
+.note-ui textarea::placeholder {
+  color: rgb(255 255 255 / 55%);
+}
+.note-ui input:focus,
+.note-ui textarea:focus {
+  outline: 2px solid rgb(159 208 255 / 80%);
+  outline-offset: 1px;
+}
+.note-ui a {
+  color: #9fd0ff;
+}
+.note-ui button,
+.note-btn {
+  padding: 4px 12px;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 12%);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+.note-btn {
+  background: rgb(20 24 20 / 80%);
+}
+.note-ui button:hover:not(:disabled),
+.note-btn:hover {
+  background: rgb(255 255 255 / 26%);
+}
+.note-ui button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

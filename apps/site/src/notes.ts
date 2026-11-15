@@ -1,33 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Note, NotesHidden, type Place } from '@forkling/schema'
-import { NOTE_DISCLOSURE, noteFate } from '@forkling/sim'
+import { NOTE_DISCLOSURE, noteFate, notesEndpoint, validSiteKey } from '@forkling/sim'
+
+export { notesEndpoint, validSiteKey }
 import { esc } from './md.ts'
-
-/**
- * The address of `POST /notes` from the server's address (the `MIND_URL` repository variable), or null if it will not do: it must be
- * https (or a local try-out), the bare address with no user, path or query. The check keeps a wrong setting out of a page.
- */
-export function notesEndpoint(mindUrl: string | undefined): string | null {
-  const raw = mindUrl?.trim()
-  if (!raw) return null
-  let url: URL
-  try {
-    url = new URL(raw)
-  } catch {
-    return null
-  }
-  const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
-  if (!(url.protocol === 'https:' || (url.protocol === 'http:' && local))) return null
-  if (url.username || url.password || url.search || url.hash || (url.pathname !== '/' && url.pathname !== '')) return null
-  return `${url.origin}/notes`
-}
-
-/** A Turnstile site key (the `TURNSTILE_SITE_KEY` repository variable): letters, digits, dash and underscore, so nothing can break out of an attribute. */
-export function validSiteKey(key: string | undefined): string | null {
-  const k = key?.trim()
-  return k && /^[0-9A-Za-z_-]{16,64}$/.test(k) ? k : null
-}
 
 /** The notes visitors left (`notes/*.json`) that fit their schema, newest first, without the ones Roman hid (`mind/notes-hidden.json`). */
 export function loadNotes(world: string): Note[] {

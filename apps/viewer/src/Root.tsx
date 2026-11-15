@@ -3,7 +3,10 @@ import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
 import { App } from './App.tsx'
 import { speciesPacks } from './species/registry.ts'
 import { ASSETS } from './world/assets.ts'
+import { fixtureNotes } from './world/fixtureNotes.ts'
 import { mindUrlFrom, startLiveSync } from './world/liveSync.ts'
+import { startNotesSync } from './world/notesClient.ts'
+import { notesStore } from './world/notesStore.ts'
 import { createWorldClock } from './clock.ts'
 import { loadFixtureWorld } from './world/fixtureWorld.ts'
 import templateForkling from '../../../templates/forkling-world/forkling.json'
@@ -99,6 +102,25 @@ export function Root() {
       onPlaces: (places) => setState((s) => (s.status === 'ready' ? { status: 'ready', world: { ...s.world, places } } : s)),
     })
   }, [live])
+
+  // The paper notes (spec 10.1): read from the server's /notes.json when there is a server, or made up in a fixture world.
+  const notesReady = state.status === 'ready'
+  useEffect(() => {
+    const first = shown.current
+    if (!notesReady || !first) return
+    if (new URLSearchParams(location.search).has('fixture')) {
+      notesStore.set(fixtureNotes(first.places))
+      return
+    }
+    return startNotesSync({
+      mindUrl: mindUrlFrom(new URLSearchParams(location.search).get('mind'), import.meta.env.VITE_MIND_URL as string | undefined),
+      intervalMs: 60_000,
+      fetch: (input, init) => fetch(input, init),
+      setTimer: (run, ms) => setTimeout(run, ms),
+      clearTimer: (id) => clearTimeout(id as ReturnType<typeof setTimeout>),
+      onNotes: (notes) => notesStore.set(notes),
+    })
+  }, [notesReady])
 
   if (state.status === 'loading') return <div className="loading">Finding the world…</div>
   if (state.status === 'error') return <WorldErrorPanel error={state.error} worldRef={state.ref} />

@@ -7,6 +7,8 @@ import { DebugOverlay } from './forkling/DebugOverlay.tsx'
 import { Forkling } from './forkling/Forkling.tsx'
 import { Player } from './player/Player.tsx'
 import { ExhibitPanel } from './ui/ExhibitPanel.tsx'
+import { NoteButton } from './ui/NoteForm.tsx'
+import { NotePanel } from './ui/NotePanel.tsx'
 import { HoverLabel } from './ui/HoverLabel.tsx'
 import { desktopHint } from './ui/hint.ts'
 import { touchUi } from './touch.ts'
@@ -15,6 +17,7 @@ import { TouchControls } from './ui/TouchControls.tsx'
 import { Environment } from './world/Environment.tsx'
 import { Fog } from './world/Fog.tsx'
 import { Land } from './world/Land.tsx'
+import { Notes } from './world/Notes.tsx'
 import { Objects } from './world/Objects.tsx'
 import { Paths } from './world/Paths.tsx'
 import { Places } from './world/Places.tsx'
@@ -56,6 +59,7 @@ export function App() {
                   <Land />
                   <Paths />
                   <Places />
+                  <Notes />
                   <Fog />
                 </>
               ) : (
@@ -77,6 +81,8 @@ export function App() {
       <DebugOverlay />
       {land && <HoverLabel />}
       {land && <ExhibitPanel />}
+      {land && <NotePanel />}
+      {land && <NoteButton />}
       {touchUi && <TouchControls />}
       {touchUi ? (
         <div className="hud hud-touch">Left stick to walk · push to the edge to run · drag to look · pinch to zoom</div>
