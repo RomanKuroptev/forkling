@@ -144,6 +144,11 @@ export const MindState = z.object({
   /** Local date the page last changed, so it changes at most once a day and the prompt cache stays warm (spec 9.7). */
   pageChangedOn: z.iso.date().optional(),
   /** Local date of the last usable weekly review, and when one last gave nothing usable (spec 9.5). */
+  /** The notes found and not yet shown to a decide call, and when the `note` trigger last fired: at most once every 30 minutes (spec 2.3, 10.1). */
+  notesWaiting: z.array(z.string().max(60)).max(20).optional(),
+  lastNoteTriggerAt: Timestamp.optional(),
+  /** Replies (answers, declines and keeps) made on `date`, for the 5 a day (spec 9.8). */
+  replies: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   lastWeeklyDate: z.iso.date().optional(),
   /** The mood at wake on the last 3 mornings, for the spiral warning of the weekly health check (spec 9.6). */
   wakeMoods: z.array(z.object({ date: z.iso.date(), mood: z.number() })).max(3).optional(),

@@ -1,7 +1,8 @@
 import type { Forkling, Goals, MindState, VisitorEvent, WorldObject } from '@forkling/schema'
+import { noteTriggerDue } from './notes-find.ts'
 import { localDate, sleepWindow } from './sleep.ts'
 
-export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'buildResult' | 'reflected'
+export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'buildResult' | 'reflected' | 'note'
 
 /** A reason to wake the LLM. Anything the sim can tell on its own stays with the utility AI. */
 export interface Trigger {
@@ -76,6 +77,11 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
   // The build worker finished something (spec 2.3). One trigger however many, until a decide call has seen them.
   const pendingResults = mindState.jobs?.pending ?? []
   if (pendingResults.length > 0) found.push({ kind: 'buildResult', score: 0.65, detail: pendingResults.map((r) => r.text).join(' | ') })
+  // Notes were found and no decide call has seen them (spec 2.3): once every 30 minutes. The detail is a count, never a word a visitor wrote.
+  const waiting = mindState.notesWaiting ?? []
+  if (noteTriggerDue({ foundCount: waiting.length, lastMs: mindState.lastNoteTriggerAt ? Date.parse(mindState.lastNoteTriggerAt) : null, nowMs })) {
+    found.push({ kind: 'note', score: 0.6, detail: waiting.length === 1 ? 'a new note was found' : `${waiting.length} new notes were found` })
+  }
   // A reflection changed the wants list or said the plan no longer fits (spec 2.3). Each reflection once: a decide call answers it.
   const reflected = mindState.reflect?.pending
   if (reflected) found.push({ kind: 'reflected', score: 0.55, detail: reflected.reason })

@@ -8,6 +8,7 @@ import { readStream } from '../stream.ts'
 import { NO_CALL_REASONS } from './ask.ts'
 import type { Tick } from './context.ts'
 import { addImportance } from './importance.ts'
+import { findNotes } from './notes.ts'
 import { clock } from './util.ts'
 
 /** A thought line and a few scores: a short answer, with room for the model to think first. */
@@ -25,6 +26,8 @@ const TOP_WANTS = 5
  */
 export async function thoughtTick(t: Tick): Promise<void> {
   const { mind, notes, goals } = t
+  // A thought tick in the same place as a note finds it (spec 10.1); code only.
+  findNotes(t, { thought: true })
   const since = mind.thought?.lastAt ? Date.parse(mind.thought.lastAt) : -Infinity
   const events = readStream(t.dir, t.today)
     .filter((e) => e.kind !== 'thought' && Date.parse(e.at) > since)
@@ -35,6 +38,7 @@ export async function thoughtTick(t: Tick): Promise<void> {
     events: events.map((e) => ({ id: e.id, text: e.text })),
     recent: mind.thought?.recent ?? [],
     wants: t.wants.slice(0, TOP_WANTS).map((w) => w.text),
+    notes: t.visitorNotes.filter((n) => n.status === 'found').slice(0, 5).map((n) => ({ id: n.id, place: n.placeId, message: n.message })),
   })
 
   const before = t.attempts.length
