@@ -104,6 +104,11 @@ export function exteriorInstances(place: Place, kit: Kit, baseY: number): Instan
       out.push(...partInstances(door, [px, y, frontZ], 0, palette, [DOOR_WIDTH / door.size[0], DOOR_HEIGHT / door.size[1], 1.5]))
       const lintel = height - DOOR_HEIGHT
       if (lintel > 0.05) out.push({ shape: 'box', matrix: compose([px, y + DOOR_HEIGHT + lintel / 2, frontZ], [0, 0, 0], [DOOR_HALF * 2, lintel, 0.3]), color: palette.colors.wall })
+      // A closed place (spec 9.9) has its door boarded: planks nailed across the gap, a little crooked, in front of the door.
+      if (place.state.closed) {
+        const planks: [number, number][] = [[0.55, 0.05], [1.1, -0.06], [1.65, 0.04]]
+        for (const [h, tilt] of planks) out.push({ shape: 'box', matrix: compose([px, y + h, frontZ + 0.22], [0, 0, tilt], [DOOR_HALF * 2 + 0.5, 0.26, 0.07]), color: palette.colors.wood })
+      }
     } else {
       line(px - fw / 2, px + fw / 2, frontZ, false, y)
     }
@@ -184,6 +189,8 @@ export function wallBoxes(place: Place): WallBox[] {
     { x0: x1 - WALL, x1, z0, z1, height },
     { x0, x1: px - DOOR_HALF, z0: z1 - WALL, z1, height },
     { x0: px + DOOR_HALF, x1, z0: z1 - WALL, z1, height },
+    // A boarded door (spec 9.9) cannot be walked through.
+    ...(place.state.closed ? [{ x0: px - DOOR_HALF, x1: px + DOOR_HALF, z0: z1 - WALL, z1, height }] : []),
   ]
 }
 
@@ -226,7 +233,7 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     const [px, pz] = placeCentre(toLandPlace(place))
     const baseY = opts.heightAt(px, pz)
     // How long since it was cared for sets how it looks (spec 4.4). Without a clock, nothing is neglected.
-    const level = opts.nowMs === undefined ? 0 : neglectFor({ id: place.id, lastCareAt: place.state.lastCareAt, founded: place.founded }, opts.nowMs)
+    const level = opts.nowMs === undefined ? 0 : neglectFor({ id: place.id, lastCareAt: place.state.lastCareAt, founded: place.founded, closed: place.state.closed !== null }, opts.nowMs)
     const lampsOn = neglectLook(level, place.state.lamps).lampsOn
     // A place whose lamps are on (or that is cared for, spec 4.4) has lit windows; one with its lamps off, or neglected, is dark.
     for (const i of exteriorInstances(place, kit, baseY)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })

@@ -72,6 +72,11 @@ function Body({ content }: { content: PanelContent }) {
     case 'sign':
       return (
         <>
+          {content.closed && (
+            <p>
+              <strong>Closed</strong> since {content.closed.on}: {content.closed.reason}
+            </p>
+          )}
           <p>{content.purpose}</p>
           <p>
             Founded {content.founded}. {content.tags.length > 0 && `About ${content.tags.join(', ')}.`}

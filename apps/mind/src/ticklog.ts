@@ -124,7 +124,7 @@ function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine
 function placeNudgeInputs(t: Tick) {
   const tz = t.sleepOpts.timezone
   return {
-    places: t.places.map((p) => ({ id: p.id, name: p.name, purpose: p.purpose, founded: p.founded, lastCareAt: p.state.lastCareAt })),
+    places: t.places.map((p) => ({ id: p.id, name: p.name, purpose: p.purpose, founded: p.founded, lastCareAt: p.state.lastCareAt, closed: p.state.closed !== null })),
     requests: readRequests(t.dir).map((r) => ({ id: r.id, kind: r.kind, name: r.name, purpose: r.purpose, written: r.written })),
     steps: readTimelineSince(t.dir, t.today, 7).map((s) => ({ at: s.at, verb: s.verb, ...(s.targetId ? { targetId: s.targetId } : {}) })),
     dayOf: (iso: string) => localDate(tz, Date.parse(iso)),

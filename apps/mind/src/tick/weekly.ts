@@ -48,7 +48,7 @@ function weeklyInput(t: Tick): WeeklyInput {
     timeZone: t.tz,
     verbs: [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([verb, count]) => ({ verb, count })),
     steps: steps.slice(-MAX_STEP_LINES).map((s) => `${s.at.slice(0, 10)} ${s.verb}${s.targetId ? ` ${s.targetId}` : ''}: ${s.reason}`),
-    places: t.places.map((p) => ({ id: p.id, name: p.name, tags: p.tags, neglect: neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) })),
+    places: t.places.map((p) => ({ id: p.id, name: p.name, tags: p.tags, neglect: neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded, closed: p.state.closed !== null }, t.nowMs) })),
     interests: Object.entries(t.interests.topics)
       .sort((a, b) => b[1].weight - a[1].weight)
       .slice(0, 10)

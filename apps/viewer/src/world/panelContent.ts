@@ -12,7 +12,7 @@ export type PanelContent =
   | { kind: 'plaque'; heading: string; text: string }
   | { kind: 'trail'; heading: string; url: string | null }
   | { kind: 'gallery'; heading: string; works: { id: string; title: string; about: string; kind: string; url: string | null }[] }
-  | { kind: 'sign'; heading: string; purpose: string; founded: string; tags: string[]; related: string[]; history: { at: string; verb: string; summary: string }[]; pageUrl: string | null }
+  | { kind: 'sign'; heading: string; purpose: string; founded: string; tags: string[]; related: string[]; history: { at: string; verb: string; summary: string }[]; pageUrl: string | null; closed: { on: string; reason: string } | null }
   | { kind: 'plot'; heading: string; purpose: string; tags: string[]; body: string; souvenirs: number; written: string; status: string }
   | { kind: 'note'; heading: string; text: string }
 
@@ -70,7 +70,13 @@ export function signPanel(place: Place, base: string | null): PanelContent {
     related: place.related,
     history: [...place.history].sort((a, b) => b.at.localeCompare(a.at)).map((h) => ({ at: h.at, verb: h.verb, summary: h.summary })),
     pageUrl: base ? `${base}places/${place.id}/` : null,
+    closed: place.state.closed ? { on: place.state.closed.at.slice(0, 10), reason: place.state.closed.reason } : null,
   }
+}
+
+/** The words shown when the visitor points at a place's sign: what the place is for, or that it is closed and why. */
+export function signHoverText(place: Place): string {
+  return place.state.closed ? `${place.name} is closed: ${place.state.closed.reason}` : `${place.name}: ${place.purpose}`
 }
 
 /**

@@ -43,11 +43,12 @@ export type FoundResult = { ok: boolean; interest: string | null; reasons: strin
  * changed size, and the land is free of construction. A place's own tags are fixed when it is founded and Home's and the Workshop's
  * are never fed by reading, so what a place holds is what lets it grow. `weights` are the interest weights now. Gives the topic that
  * qualifies (the heaviest, the first by name on a tie) or every reason it does not, in plain words. (Closed places, spec 9.9, are not
- * offered for expand either; nothing closes a place yet.)
+ * offered for expand either.)
  */
 export function expandCheck(place: Pick<Place, 'id' | 'tags' | 'founded' | 'history' | 'state'>, weights: Readonly<Record<string, number>>, souvenirs: readonly Kept[]): ExpandResult {
   const reasons: string[] = []
   if (place.state.construction !== null) reasons.push('the place is under construction')
+  if (place.state.closed) reasons.push('the place is closed, so it is not offered for expand')
 
   const weightOf = new Map(Object.entries(weights).map(([k, v]) => [lower(k), v]))
   const since = lastSizeChange(place)

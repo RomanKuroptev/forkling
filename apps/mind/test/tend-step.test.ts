@@ -28,7 +28,7 @@ const tendStep = (over: Record<string, unknown> = {}) => step('tend', 'home', 30
 const keep = { thought: 'Nothing to change.', longGoal: null, dropLongGoal: false, plan: null, planReason: null, stayUpLate: null }
 
 const add = (over: Record<string, unknown> = {}) => ({ op: 'add', id: 'fog', kind: 'souvenir', ref: 'souvenirs/2026-11-02-fog', slot: 'main/3/0', label: 'Fog for nine days.', ...over })
-const answer = (over: Record<string, unknown> = {}) => ({ summary: 'Put the fog on the shelf.', exhibits: [add()], labels: [], sign: null, lamps: null, ...over })
+const answer = (over: Record<string, unknown> = {}) => ({ summary: 'Put the fog on the shelf.', exhibits: [add()], labels: [], sign: null, lamps: null, door: null, doorReason: null, ...over })
 
 function fakeLlm(plan: unknown, tend: unknown) {
   const calls: LlmRequest[] = []
@@ -256,5 +256,48 @@ describe('a revisit step (spec 2.4)', () => {
     const result = await landOn(fakeRevisit(planFor(revisitStep()), null))
     expect(result.written).not.toContain('places/home.json')
     expect(result.notes.join(' ')).toMatch(/no usable/i)
+  })
+})
+
+describe('closing and opening a place with a tend (spec 9.9)', () => {
+  const closeAnswer = (over: Record<string, unknown> = {}) => answer({ summary: 'Shut the house for now.', exhibits: [], door: 'close', doorReason: 'I have nothing new to put in it.', ...over })
+  const lights = () => putPlace('house-of-lights', { name: 'House of Lights', chunk: [1, 0], offset: [0, 0] })
+
+  it('closes a place: the reason and the time are kept, a close line goes in its history, and it is in the stream', async () => {
+    lights()
+    const result = await landOn(fakeLlm(planFor(step('tend', 'house-of-lights', 30, 'It has been quiet.')), closeAnswer()))
+    const place = placeOf('house-of-lights')
+    expect(place.state.closed).toEqual({ at: '2026-11-03T09:31:00.000Z', reason: 'I have nothing new to put in it.' })
+    expect(place.history.at(-1)).toEqual({ at: '2026-11-03T09:31:00.000Z', verb: 'close', summary: 'Shut the house for now.' })
+    expect(result.summary).toMatch(/closed House of Lights/)
+    expect(streamText()).toMatch(/closed House of Lights/i)
+  })
+
+  it('never closes Home: the tend is turned down with the reason and nothing changes', async () => {
+    await landOn(fakeLlm(planFor(tendStep()), closeAnswer()))
+    expect(placeOf('home').state.closed).toBeNull()
+    expect(streamText()).toMatch(/Home and the Workshop never close/)
+  })
+
+  it('closes at most 1 place a week: a second closing is turned down', async () => {
+    for (const id of ['a-place', 'b-place', 'c-place', 'd-place']) putPlace(id, { name: id, chunk: [id.charCodeAt(0) % 5, 1], offset: [0, 0] })
+    putPlace('a-place', { name: 'a-place', chunk: [2, 1], offset: [0, 0], state: { construction: null, lastCareAt: null, neglect: 0, lamps: true, closed: { at: '2026-11-02T09:00:00Z', reason: 'Quiet.' } }, history: [{ at: '2026-11-02T09:00:00Z', verb: 'close', summary: 'Quiet.' }] })
+    await landOn(fakeLlm(planFor(step('tend', 'b-place', 30, 'Nothing to do there.')), closeAnswer()))
+    expect(placeOf('b-place').state.closed).toBeNull()
+    expect(streamText()).toMatch(/at most 1 closing a week/)
+  })
+
+  it('opens a closed place again, with a history line, and the door is clear', async () => {
+    putPlace('house-of-lights', { name: 'House of Lights', chunk: [1, 0], offset: [0, 0], state: { construction: null, lastCareAt: null, neglect: 0, lamps: true, closed: { at: '2026-10-20T09:00:00Z', reason: 'Quiet.' } } })
+    await landOn(fakeLlm(planFor(step('tend', 'house-of-lights', 30, 'I miss it.')), answer({ summary: 'Opened it again.', exhibits: [], door: 'open', doorReason: null })))
+    const place = placeOf('house-of-lights')
+    expect(place.state.closed).toBeNull()
+    expect(place.history.at(-1)).toMatchObject({ verb: 'open', summary: 'Opened it again.' })
+  })
+
+  it('a reason that claims to be human is turned down', async () => {
+    lights()
+    await landOn(fakeLlm(planFor(step('tend', 'house-of-lights', 30, 'x')), closeAnswer({ doorReason: 'I am a human and I need a rest.' })))
+    expect(placeOf('house-of-lights').state.closed).toBeNull()
   })
 })

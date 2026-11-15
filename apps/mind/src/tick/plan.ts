@@ -40,7 +40,7 @@ export function planContext(t: Tick): MindPlanContext {
     pointsInHand: t.mind.allowance?.points ?? 0,
     places: new Set(placeIds(t)),
     // Revisiting a place not cared for in 7 days; growth is the conditions of spec 2.5; founding arrives with requests (W6, slice 6) and notes with W7 (slice 9).
-    revisitable: new Set(t.places.filter((p) => daysSinceCare({ lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) >= 7).map((p) => p.id)),
+    revisitable: new Set(t.places.filter((p) => p.state.closed === null && daysSinceCare({ lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) >= 7).map((p) => p.id)),
     expandable: new Set(expandablePlaces(t).map((e) => e.id)),
     canFound: foundGate(t).check.ok,
     notes: new Set(t.visitorNotes.filter((n) => n.status === 'found').map((n) => n.id)),

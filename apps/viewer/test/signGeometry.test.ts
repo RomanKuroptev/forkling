@@ -184,3 +184,25 @@ describe('the atlas every sign is painted on (one texture, so one draw call)', (
     expect(atlasLayout(0).width).toBeGreaterThan(0)
   })
 })
+
+describe('the sign of a closed place says it is closed and why (spec 9.9)', () => {
+  const open = makeFixtureWorld(1, 5).places[2]!
+  const closed: Place = { ...open, state: { ...open.state, closed: { at: '2026-11-18T10:00:00Z', reason: 'I have nothing new to put in it.' } } }
+
+  it('keeps the name, and puts "Closed:" and the reason where the sign text was', () => {
+    const { name, text } = signLayout(closed)
+    expect(name.join(' ')).toBe(norm(open.name))
+    expect(text.join(' ')).toMatch(/^Closed: I have nothing/)
+  })
+
+  it('cuts a long reason with a dot to fit the board, never overflowing it', () => {
+    const long: Place = { ...closed, state: { ...closed.state, closed: { at: '2026-11-18T10:00:00Z', reason: 'word '.repeat(28).trim() } } }
+    const { text, ops } = signLayout(long)
+    expect(text.length).toBeLessThanOrEqual(2)
+    for (const op of ops) expect(textWidth(op.text, op.px)).toBeLessThanOrEqual(SIGN_CELL.w - 2 * PAD + 1)
+  })
+
+  it('leaves an open place with the sign text a tend wrote', () => {
+    expect(signLayout({ ...open, state: { ...open.state, closed: null } })).toEqual(signLayout(open))
+  })
+})

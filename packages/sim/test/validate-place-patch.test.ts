@@ -227,3 +227,88 @@ describe('a patch that is not a patch', () => {
     expect(reasons('tend the place')).not.toBe('')
   })
 })
+
+describe('closing and opening a place (spec 9.9: a reason of up to 140 characters; not Home or the Workshop; 1 a week; never more than a third closed)', () => {
+  const close = (over: Record<string, unknown> = {}) => ({ verb: 'tend', summary: 'Closed the house for a while.', door: { op: 'close', reason: 'I have nothing new to put in it.' }, ...over })
+  const roomy: PatchContext = { ...pctx, placeCount: 6, closedPlaces: 0, closingsThisWeek: 0 }
+  const closedBefore = () => {
+    const p = Place.parse(base())
+    p.state.closed = { at: '2026-11-20T10:00:00+01:00', reason: 'Quiet now.' }
+    return p
+  }
+
+  it('closes a place with its reason and the date, writes a close line in its history, and counts as care', () => {
+    const p = placeAfter(close(), roomy)
+    expect(p.state.closed).toEqual({ at: NOW, reason: 'I have nothing new to put in it.' })
+    expect(p.history.at(-1)).toEqual({ at: NOW, verb: 'close', summary: 'Closed the house for a while.' })
+    expect(p.state.lastCareAt).toBe(NOW)
+  })
+
+  it('needs a reason, and no more than 140 characters of it', () => {
+    expect(reasons(close({ door: { op: 'close', reason: '' } }), roomy)).toMatch(/reason/)
+    expect(reasons(close({ door: { op: 'close', reason: 'x'.repeat(141) } }), roomy)).toMatch(/reason/)
+    expect(reasons(close({ door: { op: 'close', reason: 'x'.repeat(140) } }), roomy)).toBe('')
+  })
+
+  it('never closes Home or the Workshop', () => {
+    for (const id of ['home', 'workshop']) {
+      const before = { ...base(), id }
+      const r = validatePlacePatch(before, close(), roomy)
+      expect(r.ok ? '' : r.reasons.join(' | ')).toMatch(/Home and the Workshop never close/)
+    }
+  })
+
+  it('closes at most 1 place a week', () => {
+    expect(reasons(close(), { ...roomy, closingsThisWeek: 1 })).toMatch(/at most 1 closing a week/)
+  })
+
+  it('never lets more than a third of all places be closed', () => {
+    expect(reasons(close(), { ...roomy, placeCount: 6, closedPlaces: 2 })).toMatch(/third/)
+    expect(reasons(close(), { ...roomy, placeCount: 9, closedPlaces: 3 })).toMatch(/third/)
+    expect(reasons(close(), { ...roomy, placeCount: 6, closedPlaces: 1 })).toBe('')
+    expect(reasons(close(), { ...roomy, placeCount: 3, closedPlaces: 0 })).toBe('')
+    expect(reasons(close(), { ...roomy, placeCount: 2, closedPlaces: 0 })).toMatch(/third/)
+  })
+
+  it('cannot close without knowing how many places there are', () => {
+    expect(reasons(close(), pctx)).toMatch(/third/)
+  })
+
+  it('is a closing and nothing else: no exhibit, label, sign or lamp changes beside it', () => {
+    expect(reasons(close({ sign: 'Shut' }), roomy)).toMatch(/closing carries no other change/)
+    expect(reasons(close({ lamps: false }), roomy)).toMatch(/closing carries no other change/)
+  })
+
+  it('cannot close what is closed already', () => {
+    const r = validatePlacePatch(closedBefore(), close(), roomy)
+    expect(r.ok ? '' : r.reasons.join(' | ')).toMatch(/already closed/)
+  })
+
+  it('opens a closed place: the door is cleared, an open line is written, and it counts as care', () => {
+    const r = validatePlacePatch(closedBefore(), tend({ door: { op: 'open' }, summary: 'Opened it again.' }), pctx)
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect(r.place.state.closed).toBeNull()
+      expect(r.place.history.at(-1)).toEqual({ at: NOW, verb: 'open', summary: 'Opened it again.' })
+      expect(r.place.state.lastCareAt).toBe(NOW)
+    }
+  })
+
+  it('cannot open a place that is not closed', () => {
+    expect(reasons(tend({ door: { op: 'open' } }))).toMatch(/is not closed/)
+  })
+
+  it('an open can carry the usual tend changes, and a closed place takes no tend, revisit or expand without opening first', () => {
+    const r = validatePlacePatch(closedBefore(), tend({ door: { op: 'open' }, exhibits: [add('a-fact', 'hall/0/1')] }), pctx)
+    expect(r.ok).toBe(true)
+    for (const patch of [tend({ sign: 'Hi' }), { verb: 'revisit', summary: 'Looked in.' }, { verb: 'expand', change: { kind: 'path', to: 'workshop' }, summary: 'A path.' }]) {
+      const out = validatePlacePatch(closedBefore(), patch, pctx)
+      expect(out.ok ? '' : out.reasons.join(' | '), JSON.stringify(patch).slice(0, 30)).toMatch(/is closed/)
+    }
+  })
+
+  it('a closed place can still be renamed (a rename is not care)', () => {
+    const out = validatePlacePatch(closedBefore(), { verb: 'rename', name: 'The Quiet House', summary: 'A better name.' }, pctx)
+    expect(out.ok).toBe(true)
+  })
+})

@@ -12,6 +12,9 @@ import type { LoadedWorld } from './loadWorld.ts'
  */
 export function loadFixtureWorld(count: number, pack: SpeciesPack, nowMs: number = Date.now()): LoadedWorld {
   const world = makeFixtureWorld(1, Math.min(64, Math.max(2, Math.floor(count))), new Date(nowMs).toISOString())
+  // One place beyond Home and the Workshop is closed, so a boarded door and its sign can be looked at (spec 9.9).
+  const toClose = world.places.find((p) => p.id !== 'home' && p.id !== 'workshop')
+  if (toClose && world.places.length > 2) toClose.state = { ...toClose.state, closed: { at: new Date(nowMs - 3 * 86_400_000).toISOString(), reason: 'I have nothing new to put in it for now.' } }
   const home = world.places.find((p) => p.id === 'home')!
   const [hx, hz] = placeCentre(toLandPlace(home))
   const now = new Date(nowMs).toISOString()

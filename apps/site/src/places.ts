@@ -26,7 +26,7 @@ export function loadPlaces(world: string): Place[] {
 }
 
 /** What each thing done to a place is called in the feed and in `changes.json`. An install is code tidying the screens, so it is not news. */
-const PAST: Partial<Record<PlaceVerb, string>> = { found: 'founded', expand: 'expanded', tend: 'tended', revisit: 'revisited', rename: 'renamed' }
+const PAST: Partial<Record<PlaceVerb, string>> = { found: 'founded', expand: 'expanded', tend: 'tended', revisit: 'revisited', rename: 'renamed', close: 'closed', open: 'opened' }
 const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** Feed entries for what was done to places: one for each history line that is news. */
@@ -116,9 +116,9 @@ function mapSvg(places: readonly Place[], nowMs: number): string {
     const [x, z] = placeCentre(land[i]!)
     const w = (p.exterior.footprint[0] * CELL) / 32
     const d = (p.exterior.footprint[1] * CELL) / 32
-    const level = neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded }, nowMs)
+    const level = neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded, closed: p.state.closed !== null }, nowMs)
     const building = isBuilding(p.state, nowMs)
-    return `<a href="${esc(p.id)}/"><rect data-place="${esc(p.id)}" data-neglect="${level}"${building ? ' data-building="true"' : ''} x="${(toX(x) - w / 2).toFixed(1)}" y="${(toZ(z) - d / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${d.toFixed(1)}" fill="${NEGLECT_FILL[level]}" stroke="currentColor"><title>${esc(p.name)}: ${NEGLECT_WORDS[level]}${building ? ', under construction' : ''}</title></rect></a>`
+    return `<a href="${esc(p.id)}/"><rect data-place="${esc(p.id)}" data-neglect="${level}"${building ? ' data-building="true"' : ''} x="${(toX(x) - w / 2).toFixed(1)}" y="${(toZ(z) - d / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${d.toFixed(1)}" fill="${NEGLECT_FILL[level]}" stroke="currentColor"><title>${esc(p.name)}: ${p.state.closed ? 'closed' : NEGLECT_WORDS[level]}${building ? ', under construction' : ''}</title></rect></a>`
   })
   return `<svg role="img" aria-label="Top-down map of the places" viewBox="0 0 ${cols * CELL} ${rows * CELL}" width="${Math.min(cols * CELL, 640)}" style="max-width:100%;height:auto">${[...squares, ...tracks, ...houses].join('')}</svg>`
 }
@@ -151,7 +151,7 @@ function exhibitHtml(place: Place, ex: Place['exhibits'][number], i: PlacesInput
 export function renderPlaces(i: PlacesInput): void {
   if (i.places.length === 0) return
   const works = new Map(i.works.map((w) => [w.meta.id, w]))
-  const level = (p: Place) => neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded }, i.nowMs)
+  const level = (p: Place) => neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded, closed: p.state.closed !== null }, i.nowMs)
 
   i.add('places/index.html', {
     title: 'Places',
@@ -163,7 +163,7 @@ export function renderPlaces(i: PlacesInput): void {
       '<ul class="places">',
       ...i.places.map((p) => {
         const last = lastChange(p)
-        return `<li><strong><a href="${esc(p.id)}/">${esc(p.name)}</a></strong> <span class="quiet">${esc(p.tags.join(', '))}; ${NEGLECT_WORDS[level(p)]}${isBuilding(p.state, i.nowMs) ? '; under construction' : ''}</span><p>${esc(p.purpose)}</p>${last ? `<p class="quiet">Last change, ${esc(stamp(last.at, i.tz))}: ${esc(last.summary)}</p>` : ''}</li>`
+        return `<li><strong><a href="${esc(p.id)}/">${esc(p.name)}</a></strong> <span class="quiet">${esc(p.tags.join(', '))}; ${p.state.closed ? 'closed' : NEGLECT_WORDS[level(p)]}${isBuilding(p.state, i.nowMs) ? '; under construction' : ''}</span><p>${esc(p.purpose)}</p>${last ? `<p class="quiet">Last change, ${esc(stamp(last.at, i.tz))}: ${esc(last.summary)}</p>` : ''}</li>`
       }),
       '</ul>',
     ].join('\n'),
@@ -185,7 +185,8 @@ export function renderPlaces(i: PlacesInput): void {
         `<h1>${esc(p.name)}</h1>`,
         `<p>${esc(p.purpose)}</p>`,
         `<p class="provenance">${esc(provenanceOf(p))}</p>`,
-        `<p class="quiet">${esc(p.tags.join(', '))}. Founded ${esc(p.founded)}. ${capital(NEGLECT_WORDS[level(p)]!)}.${p.state.lamps ? ' The lamps are on.' : ' The lamps are off.'}</p>`,
+        `<p class="quiet">${esc(p.tags.join(', '))}. Founded ${esc(p.founded)}. ${p.state.closed ? 'Closed.' : `${capital(NEGLECT_WORDS[level(p)]!)}.`}${p.state.lamps ? ' The lamps are on.' : ' The lamps are off.'}</p>`,
+        ...(p.state.closed ? [`<p class="closed"><strong>Closed.</strong> Merge closed this place on ${esc(p.state.closed.at.slice(0, 10))} and said: &ldquo;${esc(p.state.closed.reason)}&rdquo; A later visit may open it again.</p>`] : []),
         ...(isBuilding(p.state, i.nowMs) ? [`<p class="quiet">Under construction until ${esc(stampTime(p.state.construction!.finishesAt, i.tz))}.</p>`] : []),
         ...(related.length > 0 ? [`<p>Related: ${related.join(', ')}.</p>`] : []),
         '<h2>What is in it</h2>',

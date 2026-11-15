@@ -7,6 +7,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { visitor } from '../visitor.ts'
 import { SIGN_W, exhibitSpots, signSpot } from './exhibitGeometry.ts'
+import { signHoverText } from './panelContent.ts'
 import { hoverStore } from './hoverStore.ts'
 import { panelStore } from './panelStore.ts'
 import { plotSign } from './plotGeometry.ts'
@@ -194,7 +195,7 @@ export function Places() {
     return {
       exhibits: world.places.filter((p) => interiors.has(p.id)).flatMap((p) => exhibitSpots(p, kit, baseOf(p)).map((s) => ({ key: `${p.id}/${s.exhibit.id}`, position: s.position, rotY: s.rotY, title: p.name, text: s.exhibit.label, open: () => void panelStore.open({ kind: 'exhibit', place: p, exhibit: s.exhibit }, world) }))),
       plots: plots.map((r) => ({ key: r.id, position: plotSign(r, (x, z) => land.heightAt(x, z)).position, title: r.name, text: `${r.name}: ${r.status === 'building' ? 'Roman says he is building it' : 'waiting for Roman'}. ${r.purpose}`, open: () => void panelStore.open({ kind: 'plot', request: r }, world) })),
-      signs: world.places.map((p) => ({ key: p.id, position: signSpot(p, baseOf(p)).position, title: p.exterior.sign || p.name, text: `${p.name}: ${p.purpose}`, open: () => void panelStore.open({ kind: 'sign', place: p }, world) })),
+      signs: world.places.map((p) => ({ key: p.id, position: signSpot(p, baseOf(p)).position, title: p.exterior.sign || p.name, text: signHoverText(p), open: () => void panelStore.open({ kind: 'sign', place: p }, world) })),
     }
   }, [world, land, interiors, plots])
 
@@ -211,7 +212,7 @@ export function Places() {
       __forklingPlaces: () =>
         world.places.map((p) => {
           const [x, z] = placeCentre(toLandPlace(p))
-          return { id: p.id, name: p.name, x, z, level: neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded }, nowMs), exhibits: p.exhibits.length }
+          return { id: p.id, name: p.name, x, z, level: neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded, closed: p.state.closed !== null }, nowMs), exhibits: p.exhibits.length }
         }),
     })
   }, [world, nowMs])
