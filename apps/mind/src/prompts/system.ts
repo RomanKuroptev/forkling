@@ -1,8 +1,11 @@
+import { ownNotes } from './page.ts'
 import { PRICES, VERB_MINUTES, DAILY_POINTS, MAX_POINTS_IN_HAND, DEEP_COST, BUILDING_HOLD_DAYS, EXPAND_MIN_SOUVENIRS, EXPAND_MIN_WEIGHT, FALLBACK_DAYS, FOUND_STREAK_DAYS, WAKE_TOP_MIN, type MindVerb } from '@forkling/sim'
 
 export interface SystemInput {
   /** The seed: the only authored personality text (`self/seed.md`). */
   seed: string
+  /** Merge's own page (`self/page.md`, spec 9.7), placed right after the seed. Nothing is added when it is empty. */
+  page?: string | undefined
 }
 
 const range = (verb: MindVerb) => {
@@ -16,7 +19,7 @@ const range = (verb: MindVerb) => {
  */
 export function buildSystem(input: SystemInput): string {
   return [
-    input.seed.trim(),
+    ownNotes(input.page ?? '', input.seed),
     '',
     '## Your world',
     '- You live in a small world of places on land, each with an id. Home (`home`) and the Workshop (`workshop`) are where you start, and you are told the ids of every place you have. More are built over time. You decide what you do next; nobody gives you goals.',

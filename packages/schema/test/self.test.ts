@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_WANTS, Note, NotesHidden, SelfRequest, StreamKind, Want, Wants } from '../src/index.ts'
+import { MAX_WANTS, MindState, Note, NotesHidden, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants } from '../src/index.ts'
 
 const want = {
   id: 'w1',
@@ -117,6 +117,27 @@ describe('SelfRequest (spec 9.5)', () => {
 
   it('is named by a date', () => {
     expect(SelfRequest.safeParse({ ...req, date: 'tomorrow' }).success).toBe(false)
+  })
+})
+
+describe('Merge\'s own page in the answers (spec 9.7)', () => {
+  const reflection = { questions: [], insights: [], beliefOps: [], wants: [], planNoLongerFits: null }
+  const sleep = { diary: { title: 't', paragraphs: [] }, slots: [], beliefOps: [], wants: [] }
+
+  it('a reflection and a sleep rewrite each carry the whole new page, or null to leave it', () => {
+    expect(ReflectionAnswer.safeParse({ ...reflection, page: null }).success).toBe(true)
+    expect(ReflectionAnswer.safeParse({ ...reflection, page: 'Rest when the fog comes in.' }).success).toBe(true)
+    expect(SleepRewriteAnswer.safeParse({ ...sleep, page: null }).success).toBe(true)
+    expect(SleepRewriteAnswer.safeParse({ ...sleep, page: 'Rest when the fog comes in.' }).success).toBe(true)
+  })
+  it('a structured answer always says it: a missing page is not an answer', () => {
+    expect(ReflectionAnswer.safeParse(reflection).success).toBe(false)
+    expect(SleepRewriteAnswer.safeParse(sleep).success).toBe(false)
+  })
+  it('the mind remembers the day the page last changed', () => {
+    expect(MindState.parse({}).pageChangedOn).toBeUndefined()
+    expect(MindState.parse({ pageChangedOn: '2026-11-15' }).pageChangedOn).toBe('2026-11-15')
+    expect(MindState.safeParse({ pageChangedOn: 'yesterday' }).success).toBe(false)
   })
 })
 

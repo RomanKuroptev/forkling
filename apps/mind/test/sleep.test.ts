@@ -25,6 +25,7 @@ const rewrite = (over: Partial<SleepRewriteAnswer> = {}): SleepRewriteAnswer => 
   slots: [{ title: 'Running jokes', text: 'The fog is my landlord.' }],
   beliefOps: [],
   wants: [row(want('w1')), row(want('w2')), row(want('w3'))],
+  page: null,
   ...over,
 })
 
@@ -99,6 +100,8 @@ function tick(f: Fake | null, over: Record<string, unknown> = {}, mind: Record<s
     mind: MindState.parse(mind),
     beliefs: [] as Belief[],
     wants: [want('w1'), want('w2'), want('w3')],
+    page: 'Old note.',
+    pageWrite: null,
     w: { summary: 'Old memory.' },
     journal: undefined,
     summaryNext: undefined,
@@ -141,6 +144,14 @@ describe('buildSleepUser (spec 9.4)', () => {
     expect(text).toMatch(/12 slots/)
     expect(text).toMatch(/Running jokes/)
     expect(text).toMatch(/at most half/)
+  })
+  it('tells it how to change its own page, once a day, or to leave it null', () => {
+    const text = buildSleepUser(base)
+    expect(text).toMatch(/page/)
+    expect(text).toMatch(/300 words/)
+    expect(text).toMatch(/once a day/)
+    expect(text).not.toMatch(/already changed your page today/)
+    expect(buildSleepUser({ ...base, pageChangedToday: true })).toMatch(/already changed your page today/)
   })
   it('copes with an empty memory, no beliefs and no wants', () => {
     const text = buildSleepUser({ ...base, summary: '', beliefs: [], wants: [] })
@@ -299,6 +310,18 @@ describe('collecting it', () => {
     const t = tick(fake({ fetch: done(rewrite({ wants: [row(want('w1')), row(want('w2'))].map((r) => ({ ...r, id: null })) })) }), { wants: [] }, pendingBatch())
     await sleepRewriteStep(t)
     expect(t.wants.map((w) => w.text)).toEqual(['want w1', 'want w2'])
+  })
+
+  it('takes a new page from the rewrite, once a day, counted on the day it lands', async () => {
+    const t = tick(fake({ fetch: done(rewrite({ page: 'Rest when the fog comes in.' })) }), {}, pendingBatch())
+    await sleepRewriteStep(t)
+    expect(t.page).toBe('Rest when the fog comes in.')
+    expect(t.pageWrite?.text).toBe('Rest when the fog comes in.')
+    expect(t.mind.pageChangedOn).toBe(DAY)
+    const spent = tick(fake({ fetch: done(rewrite({ page: 'A second one.' })) }), {}, { ...pendingBatch(), pageChangedOn: DAY })
+    await sleepRewriteStep(spent)
+    expect(spent.page).toBe('Old note.')
+    expect(spent.notes.join(' ')).toMatch(/at most one change a day/)
   })
 
   it('keeps everything old when the batch failed or answered badly, and is done for the night', async () => {

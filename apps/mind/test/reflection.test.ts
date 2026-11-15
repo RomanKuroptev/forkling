@@ -19,7 +19,7 @@ const T = '2026-11-12T11:00:00Z'
 const TODAY = '2026-11-12'
 const usage = { input: 3000, cacheRead: 0, cacheWrite: 0, output: 900 }
 const want = (id: string, over: Partial<Want> = {}): Want => ({ id, kind: 'question', text: `want ${id}`, why: 'because', since: T, attempts: 0, lastTouched: T, ...over })
-const answer = (over: Partial<ReflectionAnswer> = {}): ReflectionAnswer => ({ questions: [], insights: [], beliefOps: [], wants: [], planNoLongerFits: null, ...over })
+const answer = (over: Partial<ReflectionAnswer> = {}): ReflectionAnswer => ({ questions: [], insights: [], beliefOps: [], wants: [], planNoLongerFits: null, page: null, ...over })
 
 let dir: string
 beforeEach(() => {
@@ -54,6 +54,8 @@ function tick(reply: ReflectionAnswer | null | 'throw', over: Record<string, unk
     mind: MindState.parse(mind),
     goals: Goals.parse({ today: { date: TODAY, steps: [{ verb: 'wander', targetId: 'fog', reason: 'It returns.', minutes: 30 }], reason: 'A day.' } }),
     wants: [want('w1'), want('w2'), want('w3'), want('w4')],
+    page: 'Old note.',
+    pageWrite: null,
     beliefs: [] as Tick['beliefs'],
     mood: 0.2,
     energy: 0.5,
@@ -105,6 +107,15 @@ describe('buildReflectUser (spec 9.3)', () => {
     expect(text).toMatch(/not written anything about yourself/i)
     expect(text).toMatch(/no wants yet/i)
     expect(text).toMatch(/no plan/i)
+  })
+  it('tells it how to change its own page, once a day, or to leave it null', () => {
+    const text = buildReflectUser(base)
+    expect(text).toMatch(/page/)
+    expect(text).toMatch(/300 words/)
+    expect(text).toMatch(/no links/)
+    expect(text).toMatch(/once a day/)
+    expect(text).not.toMatch(/already changed your page today/)
+    expect(buildReflectUser({ ...base, pageChangedToday: true })).toMatch(/already changed your page today/)
   })
   it('asks for up to 3 questions, 5 insights that cite ids, belief changes, up to 4 want edits and an honest plan check', () => {
     const text = buildReflectUser(base)
@@ -207,6 +218,28 @@ describe('reflectionStep: what it keeps', () => {
     expect(t.wants.map((w) => w.id)).toEqual(['w2', 'w3', 'w4', 'w5'])
     expect(t.notes.join(' ')).toMatch(/nope/)
   })
+  it('takes a new page it wrote, as its own notes to itself, and uses up the day for it', async () => {
+    const { t } = tick(answer({ page: 'Rest when the fog comes in.' }))
+    await reflectionStep(t)
+    expect(t.page).toBe('Rest when the fog comes in.')
+    expect(t.pageWrite?.text).toBe('Rest when the fog comes in.')
+    expect(t.mind.pageChangedOn).toBe(TODAY)
+  })
+  it('leaves the page alone when it answers null, and turns down a second change the same day', async () => {
+    const same = tick(answer({ page: null }))
+    await reflectionStep(same.t)
+    expect(same.t.pageWrite).toBeNull()
+    const twice = tick(answer({ page: 'Another.' }), {}, { pageChangedOn: TODAY, reflect: { sum: 60, lastAt: null, date: '', today: 0, pending: null } })
+    await reflectionStep(twice.t)
+    expect(twice.t.page).toBe('Old note.')
+    expect(twice.t.notes.join(' ')).toMatch(/at most one change a day/)
+  })
+  it('shows it its page is spent when it changed it already today, so it does not try', async () => {
+    const { t, seen } = tick(answer(), {}, { pageChangedOn: TODAY, reflect: { sum: 60, lastAt: null, date: '', today: 0, pending: null } })
+    await reflectionStep(t)
+    expect(seen[0]!.user).toMatch(/already changed your page today/)
+  })
+
   it('keeps up to 3 of its questions, to show them to the next reflection, and does not write them to the stream', async () => {
     const { t } = tick(answer({ questions: ['a?', 'b?', 'c?', 'd?'] }))
     await reflectionStep(t)
