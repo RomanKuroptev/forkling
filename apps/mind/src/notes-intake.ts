@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
-import { Note, PlaceId, type BudgetCall, type BudgetLedger } from '@forkling/schema'
+import { Note, NotePosition, PlaceId, type BudgetCall, type BudgetLedger } from '@forkling/schema'
 import { cleanNoteText, localDate, NOTE_MESSAGE_MAX, NOTE_NAME_MAX } from '@forkling/sim'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens } from './budget.ts'
 import { stopFailure, thinkingFor, type LlmClient } from './llm.ts'
@@ -43,7 +43,7 @@ export function buildScreenUser(i: { name: string; message: string }): string {
   return ['<data source="note">', defang(`name: ${i.name || '(none)'}`), 'message:', defang(i.message), '</data>', 'Label the note and list its topics.'].join('\n')
 }
 
-const Submission = z.object({ name: z.string().max(2000).optional(), message: z.string().max(5000), placeId: z.string().max(100).optional(), token: z.string().min(1).max(4096) })
+const Submission = z.object({ name: z.string().max(2000).optional(), message: z.string().max(5000), placeId: z.string().max(100).optional(), position: z.unknown().optional(), token: z.string().min(1).max(4096) })
 
 export interface IntakeDeps {
   /** The world repo: accepted notes are written to `notes/<id>.json` and go out with the loop's next commit. */
@@ -68,6 +68,12 @@ export interface IntakeDeps {
 export interface IntakeResult {
   status: number
   body: { ok: boolean; [key: string]: unknown }
+}
+
+/** Where the visitor stood, as two numbers in meters to the centimetre; anything that is not that (or is out of the world) is none, and the note is kept all the same. */
+function positionOf(raw: unknown): [number, number] | null {
+  const parsed = NotePosition.safeParse(raw)
+  return parsed.success ? [Math.round(parsed.data[0] * 100) / 100, Math.round(parsed.data[1] * 100) / 100] : null
 }
 
 const closed = (reason = 'The mailbox is closed.'): IntakeResult => ({ status: 503, body: { ok: false, error: reason } })
@@ -196,7 +202,7 @@ export function createNotesIntake(deps: IntakeDeps) {
     const placeId = asked && PlaceId.safeParse(asked).success && deps.placeIds().includes(asked) ? asked : 'home'
     let id = `n-${today}-${deps.suffix?.() ?? randomBytes(3).toString('hex')}`
     for (let tries = 0; existsSync(join(deps.dir, 'notes', `${id}.json`)) && tries < 8; tries++) id = `n-${today}-${randomBytes(3).toString('hex')}`
-    const note = Note.parse({ id, name, message, placeId, at: new Date(nowMs).toISOString(), topics: topicsOf(answer.topics), status: 'new' })
+    const note = Note.parse({ id, name, message, placeId, position: positionOf(shape.data.position), at: new Date(nowMs).toISOString(), topics: topicsOf(answer.topics), status: 'new' })
     writeJson(deps.dir, `notes/${note.id}.json`, note)
     return { status: 202, body: { ok: true, id: note.id } }
   }

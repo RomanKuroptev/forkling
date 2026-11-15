@@ -124,6 +124,25 @@ describe('POST /notes (spec 10.1, 11.2)', () => {
   })
 })
 
+describe('GET /notes.json (spec 10.1: the notes the world shows)', () => {
+  const body = { notes: [{ id: 'n-1', name: '', message: 'Hi', placeId: 'home', at: '2026-11-16T09:00:00.000Z', topics: [], status: 'new', foundAt: null, reply: null, declineReason: null, position: null }] }
+  it("gives the notes, never cached, to Merge's own site", async () => {
+    const { call } = await start({ publicNotes: () => body as never })
+    const res = await call('/notes.json', { origin: PAGES })
+    expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe('no-store')
+    expect(res.headers.get('access-control-allow-origin')).toBe(PAGES)
+    expect(await res.json()).toEqual(body)
+  })
+  it('says it is not ready with no mailbox to read, refuses other origins, and takes only GET', async () => {
+    const none = await start()
+    expect((await none.call('/notes.json')).status).toBe(503)
+    const { call } = await start({ publicNotes: () => body as never })
+    expect((await call('/notes.json', { origin: 'https://evil.example' })).status).toBe(403)
+    expect((await call('/notes.json', { method: 'POST' })).status).toBe(405)
+  })
+})
+
 describe('GET /places.json (W5: so a tend shows in the viewer within a minute, without GitHub)', () => {
   const places = { rev: 'abc123', places: [{ id: 'home' }] as unknown as Place[] }
   it('gives the places as the last tick left them, never cached', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_WANTS, MindState, Note, NotesHidden, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants, WeeklyReview, WorkMeta, formatSelfRequest, parseSelfRequest } from '../src/index.ts'
+import { MAX_WANTS, MindState, Note, NotesHidden, NotesResponse, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants, WeeklyReview, WorkMeta, formatSelfRequest, parseSelfRequest } from '../src/index.ts'
 
 const want = {
   id: 'w1',
@@ -93,6 +93,28 @@ describe('Note (spec 10.1)', () => {
     const base = { ...note, foundAt: '2026-11-16T13:00:00+01:00', status: 'replied' }
     expect(Note.safeParse({ ...base, reply: 'x'.repeat(600) }).success).toBe(true)
     expect(Note.safeParse({ ...base, reply: 'x'.repeat(601) }).success).toBe(false)
+  })
+})
+
+describe('where a note was written (spec 10.1)', () => {
+  const base = { id: 'n-2026-11-16-aaaaaa', name: '', message: 'Hi', placeId: 'home', at: '2026-11-16T12:00:00+01:00', topics: [], status: 'new' }
+  it('has no position by default, so a note written on the notes page has none', () => {
+    expect(Note.parse(base).position).toBeNull()
+  })
+  it('may hold where the visitor stood: x and z in meters, finite and within 5000', () => {
+    expect(Note.parse({ ...base, position: [12.5, -3.25] }).position).toEqual([12.5, -3.25])
+    for (const position of [[Number.NaN, 0], [0, Number.POSITIVE_INFINITY], [5001, 0], [0, -5001], [1], [1, 2, 3], 'here']) {
+      expect(Note.safeParse({ ...base, position }).success, JSON.stringify(position)).toBe(false)
+    }
+  })
+})
+
+describe('NotesResponse (what GET /notes.json says)', () => {
+  it('is up to 100 notes', () => {
+    const note = { id: 'n-1', name: '', message: 'Hi', placeId: 'home', at: '2026-11-16T12:00:00+01:00', topics: [], status: 'new' }
+    expect(NotesResponse.safeParse({ notes: [note] }).success).toBe(true)
+    expect(NotesResponse.safeParse({ notes: Array.from({ length: 101 }, (_, i) => ({ ...note, id: `n-${i}` })) }).success).toBe(false)
+    expect(NotesResponse.safeParse({}).success).toBe(false)
   })
 })
 

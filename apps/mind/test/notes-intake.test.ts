@@ -126,6 +126,26 @@ describe('what is accepted into the request (spec 10.1)', () => {
     expect(fakes.turnstile).toHaveLength(0)
   })
 
+  it('keeps where the visitor stood when the note says so, and none for a note from the notes page', async () => {
+    const { intake, setSuffix } = make()
+    let n = 0
+    setSuffix(() => `p000${n++}`)
+    await intake.submit(note({ position: [12.345678, -3.25] }), '1.1.1.1')
+    await intake.submit(note(), '2.2.2.2')
+    const saved = files().map((f) => Note.parse(JSON.parse(readFileSync(join(dir, 'notes', f), 'utf8'))))
+    expect(saved.find((x) => x.id.endsWith('p0000'))!.position).toEqual([12.35, -3.25])
+    expect(saved.find((x) => x.id.endsWith('p0001'))!.position).toBeNull()
+  })
+
+  it('ignores a position that is not two finite numbers within the world, rather than turning the note down', async () => {
+    const { intake, setSuffix } = make()
+    let n = 0
+    setSuffix(() => `q000${n++}`)
+    const bad = [[1], [1, 2, 3], ['a', 'b'], [1e9, 0], [Number.NaN, 0], 'here', { x: 1 }]
+    for (const [i, position] of bad.entries()) expect((await intake.submit(note({ position }), `9.9.9.${i}`)).status).toBe(202)
+    for (const f of files()) expect(Note.parse(JSON.parse(readFileSync(join(dir, 'notes', f), 'utf8'))).position).toBeNull()
+  })
+
   it('takes an optional name, and uses an empty one when none is given', async () => {
     const { intake } = make()
     expect((await intake.submit(note({ name: undefined }), '1.1.1.1')).status).toBe(202)

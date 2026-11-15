@@ -9,7 +9,7 @@ const window = sleepWindow(day, opts.seed, opts.timezone)
 const wake = window.wakeMs
 const HOUR = 3_600_000
 
-const note = (over: Partial<Note> = {}): Note => ({ id: 'n1', name: '', message: 'hello', placeId: 'workshop', at: new Date(wake + HOUR).toISOString(), topics: [], status: 'new', foundAt: null, reply: null, declineReason: null, ...over })
+const note = (over: Partial<Note> = {}): Note => ({ id: 'n1', name: '', message: 'hello', placeId: 'workshop', at: new Date(wake + HOUR).toISOString(), topics: [], status: 'new', foundAt: null, reply: null, declineReason: null, position: null, ...over })
 const ctx = (over: object = {}) => ({ nowMs: wake + 2 * HOUR, stepPlaceId: null, thoughtPlaceId: null, justWoke: false, sleep: opts, ...over })
 
 describe('findReason (spec 10.1, decision 1: within 10 m is the same place)', () => {

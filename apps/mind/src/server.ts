@@ -8,6 +8,8 @@ export interface MindServerOptions {
   health: () => HealthResponse
   /** The places as the last tick left them, with their fingerprint, or null before the first tick. */
   places?: () => { rev: string; places: Place[] } | null
+  /** The notes the world shows, for `GET /notes.json` (spec 10.1), or none while there is no mailbox to read. */
+  publicNotes?: () => unknown
   /** The mailbox behind `POST /notes` (spec 10.1). Without it the server says the mailbox is closed. */
   notes?: { submit(body: unknown, ip: string): Promise<{ status: number; body: unknown }> }
   /** The only origin that may call the server from a browser: Merge's Pages address (spec 11.2). */
@@ -20,8 +22,8 @@ export const MAX_BODY_BYTES = 8 * 1024
 /** The loopback port Caddy forwards to. The unit file and the Caddyfile name the same one, and a test holds them together. */
 export const DEFAULT_PORT = 8787
 
-/** The server exposes only these four (spec 11.2; `/places.json` is the W5 addition, read-only like `/now.json`). */
-const ROUTES: Record<string, string> = { '/now.json': 'GET', '/health': 'GET', '/places.json': 'GET', '/notes': 'POST' }
+/** The server exposes only these (spec 11.2; `/places.json` is the W5 addition and `/notes.json` the W7 one, read-only like `/now.json`). */
+const ROUTES: Record<string, string> = { '/now.json': 'GET', '/health': 'GET', '/places.json': 'GET', '/notes': 'POST', '/notes.json': 'GET' }
 
 function send(res: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}): void {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers })
@@ -58,6 +60,10 @@ export function createMindServer(opts: MindServerOptions): Server {
       if (path === '/places.json') {
         const places = opts.places?.() ?? null
         return places ? send(res, 200, places, cors) : send(res, 503, { error: 'not ready yet' }, cors)
+      }
+      if (path === '/notes.json') {
+        const notes = opts.publicNotes?.() ?? null
+        return notes ? send(res, 200, notes, cors) : send(res, 503, { error: 'not ready yet' }, cors)
       }
       if (path === '/health') return send(res, 200, opts.health(), cors)
       // /notes: a body is read only if there is a mailbox to give it to, and only up to the limit.
