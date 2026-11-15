@@ -108,6 +108,24 @@ describe('what is accepted into the request (spec 10.1)', () => {
     expect(saved.message).not.toMatch(/https?:|<script|evil/)
     expect(fakes.llmCalls[0]!.user).not.toMatch(/evil|<script/)
   })
+  it('takes email addresses and phone numbers out of the name and the message before the model or the repo sees them', async () => {
+    const { intake, fakes } = make()
+    const r = await intake.submit(note({ name: 'Ann ann@example.org', message: 'Write to me@example.org or call 070-123 45 67 or +46 70 123 45 67 about the lamp.' }), '1.1.1.1')
+    expect(r.status).toBe(202)
+    const raw = readFileSync(join(dir, 'notes', files()[0]!), 'utf8')
+    expect(raw).not.toMatch(/@|070|123 45 67|\+46/)
+    expect(Note.parse(JSON.parse(raw))).toMatchObject({ name: 'Ann', message: 'Write to or call or about the lamp.' })
+    expect(fakes.llmCalls[0]!.user).not.toMatch(/@|070|123 45 67|\+46/)
+  })
+
+  it('a note that was only an address or a number is turned down as empty, and nothing is paid for', async () => {
+    const { intake, fakes } = make()
+    const r = await intake.submit(note({ message: 'me@example.org 070-123 45 67' }), '1.1.1.1')
+    expect(r.status).toBe(422)
+    expect(fakes.llmCalls).toHaveLength(0)
+    expect(fakes.turnstile).toHaveLength(0)
+  })
+
   it('takes an optional name, and uses an empty one when none is given', async () => {
     const { intake } = make()
     expect((await intake.submit(note({ name: undefined }), '1.1.1.1')).status).toBe(202)

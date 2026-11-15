@@ -24,6 +24,45 @@ describe('cleanNoteText (spec 10.1: code strips links and HTML and cuts to the l
     }
   })
 
+  describe('email addresses and phone numbers (ok notes go to a public repo)', () => {
+    it('strips email addresses of every shape, keeping the words around them', () => {
+      for (const email of ['me@example.org', 'first.last@sub.example.co.uk', 'name+tag@gmail.com', 'UPPER.Case@Example.COM', 'a_b-c@d-e.io', 'x@y.se']) {
+        expect(cleanNoteText(`write to ${email} soon`, 500), email).toBe('write to soon')
+        expect(cleanNoteText(`(${email}), or ${email}.`, 500), email).not.toContain('@')
+      }
+    })
+
+    it('strips phone numbers written the usual ways', () => {
+      for (const phone of ['070-123 45 67', '0701234567', '+46 70 123 45 67', '+46701234567', '(555) 123-4567', '555-123-4567', '555.123.4567', '+1 555 123 4567', '+44 20 7946 0958', '08-123 456 78', '070 123 45 67']) {
+        const out = cleanNoteText(`call me on ${phone} after five`, 500)
+        expect(out, phone).toBe('call me on after five')
+      }
+    })
+
+    it('strips a number at the start or the end of a note, and several in one note', () => {
+      expect(cleanNoteText('070-123 45 67 is mine', 500)).toBe('is mine')
+      expect(cleanNoteText('mine is +46 70 123 45 67', 500)).toBe('mine is')
+      expect(cleanNoteText('070-123 45 67 or 08-765 43 21', 500)).toBe('or')
+    })
+
+    it('keeps the numbers a note is allowed to have: dates, times, years, counts, versions and short numbers', () => {
+      for (const text of ['on 2026-11-16 I saw fog', 'it was 11/16/2026 then', 'at 10:30 sharp', 'in 1999 it began', 'I have 3 cats and 12 hens', 'page 123 says so', 'about 1,000 of them', 'version 1.2.3 is out', 'a score of 123456', 'room 204', '16.11.2026 was cold', 'between 9-17 on weekdays']) {
+        expect(cleanNoteText(text, 500), text).toBe(text)
+      }
+    })
+
+    it('strips them from the name too, and a note that was only an email or a phone number becomes empty', () => {
+      expect(cleanNoteText('Ann 070-123 45 67', 40)).toBe('Ann')
+      expect(cleanNoteText('me@example.org', 500)).toBe('')
+      expect(cleanNoteText('+46 70 123 45 67', 500)).toBe('')
+    })
+
+    it('cannot be got round by hiding characters inside the number or the address', () => {
+      expect(cleanNoteText('0​70-123‮ 45 67 ok', 500)).toBe('ok')
+      expect(cleanNoteText('me​@exam​ple.org ok', 500)).toBe('ok')
+    })
+  })
+
   it('keeps the label of a markdown link', () => {
     expect(cleanNoteText('see [the lighthouse page](https://x.y/z) now', 500)).toBe('see the lighthouse page now')
   })
