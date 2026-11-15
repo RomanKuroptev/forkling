@@ -8,9 +8,14 @@ export interface MindServerOptions {
   health: () => HealthResponse
   /** The places as the last tick left them, with their fingerprint, or null before the first tick. */
   places?: () => { rev: string; places: Place[] } | null
+  /** The mailbox behind `POST /notes` (spec 10.1). Without it the server says the mailbox is closed. */
+  notes?: { submit(body: unknown, ip: string): Promise<{ status: number; body: unknown }> }
   /** The only origin that may call the server from a browser: Merge's Pages address (spec 11.2). */
   pagesOrigin: string
 }
+
+/** A note is up to 500 characters of text; this leaves room for the name, the token and the JSON around them. */
+export const MAX_BODY_BYTES = 8 * 1024
 
 /** The loopback port Caddy forwards to. The unit file and the Caddyfile name the same one, and a test holds them together. */
 export const DEFAULT_PORT = 8787
@@ -26,8 +31,8 @@ function send(res: ServerResponse, status: number, body: unknown, headers: Recor
 /**
  * The server on the box (spec 2.2, 11.2): `GET /now.json`, `GET /places.json`, `GET /health` and `POST /notes`, and nothing else. It binds to
  * the loopback address, behind Caddy, which does the HTTPS. A browser call from any origin but Merge's own Pages address is
- * refused; a request with no origin (the watchdog, curl) is not a cross-origin one and is served. `POST /notes` says the
- * mailbox is closed until W7 builds it.
+ * refused; a request with no origin (the watchdog, curl) is not a cross-origin one and is served. `POST /notes` hands a JSON body of
+ * at most 8 KB, and the visitor's address as Caddy saw it, to the mailbox (`notes`); with no mailbox it says the mailbox is closed.
  */
 export function createMindServer(opts: MindServerOptions): Server {
   return createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -55,13 +60,53 @@ export function createMindServer(opts: MindServerOptions): Server {
         return places ? send(res, 200, places, cors) : send(res, 503, { error: 'not ready yet' }, cors)
       }
       if (path === '/health') return send(res, 200, opts.health(), cors)
-      // /notes: nobody reads a note until W7, so the body is thrown away unread.
-      req.resume()
-      return send(res, 503, { error: 'the mailbox is closed' }, cors)
+      // /notes: a body is read only if there is a mailbox to give it to, and only up to the limit.
+      if (!opts.notes) {
+        req.resume()
+        return send(res, 503, { ok: false, error: 'The mailbox is closed.' }, cors)
+      }
+      return void takeNote(req, res, opts.notes, cors)
     } catch {
       // The reason stays in the server's own log, never in what a stranger is told.
       if (!res.headersSent) send(res, 500, { error: 'internal error' })
       else res.end()
     }
   })
+}
+
+/** The address of the visitor: the last in `X-Forwarded-For`, which is the one Caddy added, not one the visitor wrote. */
+function visitorAddress(req: IncomingMessage): string {
+  const forwarded = req.headers['x-forwarded-for']
+  const list = (Array.isArray(forwarded) ? forwarded.join(',') : (forwarded ?? '')).split(',').map((a) => a.trim()).filter(Boolean)
+  return list.at(-1) ?? req.socket.remoteAddress ?? 'unknown'
+}
+
+async function takeNote(req: IncomingMessage, res: ServerResponse, notes: NonNullable<MindServerOptions['notes']>, cors: Record<string, string>): Promise<void> {
+  try {
+    if (!/^application\/json\b/i.test(req.headers['content-type'] ?? '')) {
+      req.resume()
+      return send(res, 415, { ok: false, error: 'A note is sent as JSON.' }, cors)
+    }
+    const chunks: Buffer[] = []
+    let size = 0
+    let tooBig = false
+    for await (const chunk of req) {
+      size += (chunk as Buffer).length
+      if (size > MAX_BODY_BYTES) tooBig = true
+      else chunks.push(chunk as Buffer)
+    }
+    if (tooBig) return send(res, 413, { ok: false, error: 'That is too long for a note.' }, cors)
+    let body: unknown
+    try {
+      body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    } catch {
+      return send(res, 400, { ok: false, error: 'That is not a note.' }, cors)
+    }
+    const answer = await notes.submit(body, visitorAddress(req))
+    send(res, answer.status, answer.body, cors)
+  } catch {
+    // The reason stays in the server's own log, never in what a stranger is told.
+    if (!res.headersSent) send(res, 500, { ok: false, error: 'internal error' }, cors)
+    else res.end()
+  }
 }

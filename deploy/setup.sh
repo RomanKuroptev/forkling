@@ -101,6 +101,7 @@ if [ ! -f /etc/forkling/mind.env ]; then
   cat > /etc/forkling/mind.env <<'EOF'
 ANTHROPIC_API_KEY=
 GITHUB_TOKEN=
+TURNSTILE_SECRET=
 FORKLING_PAGES_ORIGIN=https://romankuroptev.github.io
 FORKLING_REPO_URL=
 FORKLING_REF=

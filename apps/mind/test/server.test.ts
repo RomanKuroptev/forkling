@@ -51,12 +51,76 @@ describe('GET /health', () => {
   })
 })
 
-describe('POST /notes (closed until W7)', () => {
-  it('says the mailbox is closed', async () => {
+describe('POST /notes (spec 10.1, 11.2)', () => {
+  const post = (call: Awaited<ReturnType<typeof start>>['call'], body: string, headers: Record<string, string> = { 'Content-Type': 'application/json' }, origin?: string) =>
+    call('/notes', { method: 'POST', body, headers, ...(origin ? { origin } : {}) })
+
+  it('says the mailbox is closed when the server has no way to take notes (no Turnstile secret)', async () => {
     const { call } = await start()
-    const res = await call('/notes', { method: 'POST', body: '{"text":"hello"}' })
+    const res = await post(call, '{"message":"hello"}')
     expect(res.status).toBe(503)
     expect(await res.json()).toMatchObject({ error: expect.stringMatching(/mailbox is closed/i) })
+  })
+
+  it('hands the parsed body and the visitor\'s address to the mailbox and passes its answer back, never cached', async () => {
+    const seen: { body: unknown; ip: string }[] = []
+    const { call } = await start({ notes: { submit: async (body, ip) => (seen.push({ body, ip }), { status: 202, body: { ok: true, id: 'n-1' } }) } })
+    const res = await post(call, '{"message":"hello","token":"t"}', { 'Content-Type': 'application/json', 'X-Forwarded-For': '203.0.113.9' }, PAGES)
+    expect(res.status).toBe(202)
+    expect(await res.json()).toEqual({ ok: true, id: 'n-1' })
+    expect(res.headers.get('cache-control')).toBe('no-store')
+    expect(res.headers.get('access-control-allow-origin')).toBe(PAGES)
+    expect(seen).toEqual([{ body: { message: 'hello', token: 't' }, ip: '203.0.113.9' }])
+  })
+
+  it('takes the address Caddy added (the last in X-Forwarded-For), not one the visitor wrote', async () => {
+    const seen: string[] = []
+    const { call } = await start({ notes: { submit: async (_b, ip) => (seen.push(ip), { status: 202, body: { ok: true } }) } })
+    await post(call, '{}', { 'Content-Type': 'application/json', 'X-Forwarded-For': '6.6.6.6, 198.51.100.7' })
+    expect(seen).toEqual(['198.51.100.7'])
+  })
+
+  it('falls back to the connection\'s own address when there is no header (a local try-out)', async () => {
+    const seen: string[] = []
+    const { call } = await start({ notes: { submit: async (_b, ip) => (seen.push(ip), { status: 202, body: { ok: true } }) } })
+    await post(call, '{}')
+    expect(seen[0]).toMatch(/127\.0\.0\.1|::1/)
+  })
+
+  it('turns down a body that is too big (8 KB) without reading on, and never hands it over', async () => {
+    let called = 0
+    const { call } = await start({ notes: { submit: async () => (called++, { status: 202, body: { ok: true } }) } })
+    const res = await post(call, JSON.stringify({ message: 'x'.repeat(9000) }))
+    expect(res.status).toBe(413)
+    expect(called).toBe(0)
+  })
+
+  it('turns down text that is not JSON (400) and a body that is not declared as JSON (415)', async () => {
+    let called = 0
+    const { call } = await start({ notes: { submit: async () => (called++, { status: 202, body: { ok: true } }) } })
+    expect((await post(call, 'not json')).status).toBe(400)
+    expect((await post(call, '{"message":"x"}', { 'Content-Type': 'text/plain' })).status).toBe(415)
+    expect(called).toBe(0)
+  })
+
+  it('tells a stranger nothing about why when the mailbox itself breaks', async () => {
+    const { call } = await start({ notes: { submit: async () => { throw new Error('secret detail: /var/lib/forkling') } } })
+    const res = await post(call, '{}')
+    expect(res.status).toBe(500)
+    expect(JSON.stringify(await res.json())).not.toMatch(/secret|forkling/)
+  })
+
+  it('refuses any browser origin but Merge\'s own, even for a note', async () => {
+    const { call } = await start({ notes: { submit: async () => ({ status: 202, body: { ok: true } }) } })
+    expect((await post(call, '{}', { 'Content-Type': 'application/json' }, 'https://evil.example')).status).toBe(403)
+  })
+
+  it('answers the browser\'s preflight for POST with a JSON body from Merge\'s own address', async () => {
+    const { call } = await start({ notes: { submit: async () => ({ status: 202, body: { ok: true } }) } })
+    const res = await call('/notes', { method: 'OPTIONS', origin: PAGES })
+    expect(res.status).toBe(204)
+    expect(res.headers.get('access-control-allow-methods')).toMatch(/POST/)
+    expect(res.headers.get('access-control-allow-headers')).toMatch(/Content-Type/i)
   })
 })
 

@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, objectIdFromPath, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
+import { Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, NotesHidden, objectIdFromPath, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
 import { collectSpots, isWalkable, matchesTarget, starterWorld, sunDirection, worldWithObjects } from '@forkling/sim'
 import catSpecies from '@forkling/species-cat/species.json'
 
@@ -61,8 +61,15 @@ for (const template of ['forkling-world', 'merge']) {
       expect(paths.filter((p) => p.startsWith('requests/') || p.startsWith('wishes/'))).toHaveLength(2)
     })
 
+    it('has a place for visitor notes (spec 10.1), empty, and the list Roman hides notes with', () => {
+      if (!paths.includes('souvenirs/.gitkeep')) return
+      expect(paths).toContain('notes/.gitkeep')
+      expect(paths.filter((p) => p.startsWith('notes/'))).toHaveLength(1)
+      expect(NotesHidden.parse(read(join(dir, 'mind/notes-hidden.json')))).toEqual({ hidden: [] })
+    })
+
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|requests\/.+|wishes\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|requests\/.+|wishes\/.+|notes\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
