@@ -36,6 +36,12 @@ h2 { font-size: 1.2rem; margin: 1.6rem 0 0.4rem; }
 h3 { margin: 0 0 0.2rem; }
 .quiet { color: var(--quiet); font-size: 0.9rem; }
 .provenance { color: var(--quiet); font-style: italic; margin-top: -0.4rem; }
+.notes-disclosure ul { margin: 0.2rem 0; padding-left: 1.2rem; }
+#note-form input, #note-form textarea { width: 100%; max-width: 30rem; font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+#note-form label { font-family: system-ui, sans-serif; font-size: 0.9rem; color: var(--quiet); }
+.note-ok { color: var(--text); }
+.note-error { color: var(--accent); font-weight: 600; }
+.notes blockquote { margin: 0.4rem 0; padding-left: 12px; border-left: 3px solid var(--line); }
 .requests { list-style: none; padding: 0; }
 .requests li { border-top: 1px solid var(--line); padding: 0.8rem 0; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 12px 0; }

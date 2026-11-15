@@ -45,6 +45,8 @@ export interface PageInput {
   page: MergePage
   /** How a moment is written on the site, in Merge's time zone. */
   stamp: (iso: string) => string
+  /** The zone in words, like `Stockholm time`: said once on the page. */
+  zone: string
   add: (rel: string, input: { title: string; active: string; body: string }) => void
 }
 
@@ -67,6 +69,7 @@ export function renderPage(i: PageInput): void {
       ...(history.length > 0
         ? [
             '<h2>Earlier versions</h2>',
+            `<p class="quiet">Times are ${esc(i.zone)}.</p>`,
             history.map((v) => `<details class="version"><summary>${esc(i.stamp(v.at))}</summary>${v.text ? paragraphs(v.text) : '<p class="quiet">Empty.</p>'}</details>`).join('\n'),
           ]
         : []),

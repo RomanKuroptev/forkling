@@ -50,7 +50,9 @@ describe('/page/ (spec 9.7)', () => {
     renderSite(world, out)
     const html = page('page/index.html')
     // The file names are UTC; the page shows Merge's own time (Stockholm, an hour ahead in November).
-    expect(html).toContain('2026-11-14 10:30 (Europe/Stockholm)')
+    expect(html).toContain('2026-11-14 10:30')
+    expect(html).not.toContain('(Europe/Stockholm)')
+    expect(html.match(/Times are Stockholm time\./g)).toHaveLength(1)
     expect(html.indexOf('2026-11-14 10:30')).toBeLessThan(html.indexOf('2026-11-13 10:00'))
     expect(html).not.toContain('2026-11-15 11:00')
     expect(html.match(/Newest note\./g)).toHaveLength(1)

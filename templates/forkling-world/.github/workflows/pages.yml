@@ -88,6 +88,10 @@ jobs:
 
       - name: Build the site
         working-directory: engine
+        # The notes form opens only when both are set (spec 10.1); they reach the builder as environment, never in the command line.
+        env:
+          MIND_URL: ${{ vars.MIND_URL }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
         run: pnpm --filter @forkling/site build --world "$GITHUB_WORKSPACE/world" --out "$GITHUB_WORKSPACE/_site" --base-url "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
 
       - uses: actions/configure-pages@v5
