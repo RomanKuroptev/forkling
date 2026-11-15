@@ -28,7 +28,7 @@ const tendStep = (over: Record<string, unknown> = {}) => step('tend', 'home', 30
 const keep = { thought: 'Nothing to change.', longGoal: null, dropLongGoal: false, plan: null, planReason: null, stayUpLate: null }
 
 const add = (over: Record<string, unknown> = {}) => ({ op: 'add', id: 'fog', kind: 'souvenir', ref: 'souvenirs/2026-11-02-fog', slot: 'main/3/0', label: 'Fog for nine days.', ...over })
-const answer = (over: Record<string, unknown> = {}) => ({ summary: 'Put the fog on the shelf.', exhibits: [add()], labels: [], sign: null, lamps: null, door: null, doorReason: null, ...over })
+const answer = (over: Record<string, unknown> = {}) => ({ summary: 'Put the fog on the shelf.', exhibits: [add()], labels: [], sign: null, lamps: null, door: null, doorReason: null, putAwayId: null, putAwayReason: null, ...over })
 
 function fakeLlm(plan: unknown, tend: unknown) {
   const calls: LlmRequest[] = []
@@ -299,5 +299,25 @@ describe('closing and opening a place with a tend (spec 9.9)', () => {
     lights()
     await landOn(fakeLlm(planFor(step('tend', 'house-of-lights', 30, 'x')), closeAnswer({ doorReason: 'I am a human and I need a rest.' })))
     expect(placeOf('house-of-lights').state.closed).toBeNull()
+  })
+})
+
+describe('putting an object away with a tend (spec 9.9)', () => {
+  const placed = () => {
+    writeFileSync(file('places/home.json'), JSON.stringify({ ...placeOf('home'), exhibits: [{ id: 'fog', kind: 'souvenir', ref: 'souvenirs/2026-11-02-fog', slot: 'main/3/0', label: 'Fog.', added: '2026-11-01' }] }))
+    writeFileSync(file('souvenirs/2026-11-02-fog.json'), JSON.stringify({ ...fog, placedIn: 'home' }))
+  }
+  it('takes the exhibit off show, records why, and the souvenir goes back to the pile (nothing is deleted)', async () => {
+    placed()
+    await landOn(fakeLlm(planFor(tendStep()), answer({ summary: 'Cleared the shelf.', exhibits: [], putAwayId: 'fog', putAwayReason: 'It said what it had to say.' })))
+    const home = placeOf('home')
+    expect(home.exhibits.find((e) => e.id === 'fog')).toBeUndefined()
+    expect(home.away.at(-1)).toMatchObject({ id: 'fog', reason: 'It said what it had to say.', kind: 'souvenir' })
+    expect(souvenirOf('2026-11-02-fog').placedIn).toBeNull()
+  })
+  it('turns down a reason that claims to be human, and changes nothing', async () => {
+    placed()
+    await landOn(fakeLlm(planFor(tendStep()), answer({ exhibits: [], putAwayId: 'fog', putAwayReason: 'I am a human and I am tired of it.' })))
+    expect(placeOf('home').exhibits.some((e) => e.id === 'fog')).toBe(true)
   })
 })

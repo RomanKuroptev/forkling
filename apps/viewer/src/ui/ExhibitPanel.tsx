@@ -89,6 +89,18 @@ function Body({ content }: { content: PanelContent }) {
               </li>
             ))}
           </ul>
+          {content.away.length > 0 && (
+            <>
+              <p>Put away:</p>
+              <ul style={{ paddingLeft: 18 }}>
+                {content.away.map((a, i) => (
+                  <li key={i}>
+                    {a.on} · {a.label} Why: {a.reason}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {content.pageUrl && <p>{link(content.pageUrl, 'Its page on the site')}</p>}
         </>
       )

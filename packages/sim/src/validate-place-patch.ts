@@ -83,7 +83,18 @@ export function validatePlacePatch(before: unknown, patch: unknown, ctx: PatchCo
         if (!place.state.closed) no(`${place.id} is not closed, so there is nothing to open`)
         place.state.closed = null
       }
-      if (change.exhibits.length > PATCH_LIMITS.tendExhibitChanges) no(`a tend makes at most ${PATCH_LIMITS.tendExhibitChanges} exhibit changes (it makes ${change.exhibits.length})`)
+      const changes = change.exhibits.length + (change.putAway ? 1 : 0)
+      if (changes > PATCH_LIMITS.tendExhibitChanges) no(`a tend makes at most ${PATCH_LIMITS.tendExhibitChanges} exhibit changes (it makes ${changes})`)
+      if (change.putAway) {
+        const gone = change.putAway.id
+        const ex = place.exhibits.find((e) => e.id === gone)
+        if (!ex) no(`exhibit "${gone}" does not exist in ${place.id}, so it cannot be put away`)
+        else if (change.exhibits.some((o) => o.op !== 'add' && o.id === gone) || change.labels.some((l) => l.id === gone)) no(`exhibit "${gone}" is put away, so the same tend cannot also move, remove or relabel it`)
+        else {
+          place.away = [...place.away, { id: ex.id, kind: ex.kind, label: ex.label, at: today, reason: change.putAway.reason }].slice(-20)
+          place.exhibits = place.exhibits.filter((e) => e.id !== gone)
+        }
+      }
       if (change.labels.length > PATCH_LIMITS.tendLabels) no(`a tend rewrites at most ${PATCH_LIMITS.tendLabels} labels (it rewrites ${change.labels.length})`)
       for (const op of change.exhibits) {
         if (op.op === 'add') place.exhibits.push({ ...op.exhibit, added: today })

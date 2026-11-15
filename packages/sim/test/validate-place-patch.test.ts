@@ -312,3 +312,42 @@ describe('closing and opening a place (spec 9.9: a reason of up to 140 character
     expect(out.ok).toBe(true)
   })
 })
+
+describe('putting one object away (spec 9.9: one exhibit taken off show, with a reason of up to 140 characters)', () => {
+  const away = (id: string, reason = 'It no longer fits the room.') => tend({ putAway: { id, reason }, summary: 'Cleared a space.' })
+
+  it('takes the exhibit off show, keeps a record of it with the reason and the day, and counts as care', () => {
+    const p = placeAfter(away('beacon'))
+    expect(p.exhibits.find((e) => e.id === 'beacon')).toBeUndefined()
+    expect(p.away).toHaveLength(1)
+    expect(p.away[0]).toMatchObject({ id: 'beacon', reason: 'It no longer fits the room.', at: '2026-11-25' })
+    expect(typeof p.away[0]!.label).toBe('string')
+    expect(p.state.lastCareAt).toBe(NOW)
+    expect(p.history.at(-1)).toEqual({ at: NOW, verb: 'tend', summary: 'Cleared a space.' })
+  })
+
+  it('needs a reason, up to 140 characters, and an exhibit that is there', () => {
+    expect(reasons(away('beacon', ''))).toMatch(/reason/)
+    expect(reasons(away('beacon', 'x'.repeat(141)))).toMatch(/reason/)
+    expect(reasons(away('beacon', 'x'.repeat(140)))).toBe('')
+    expect(reasons(away('nothing'))).toMatch(/nothing/)
+  })
+
+  it('is one of the 3 exhibit changes of a tend, and cannot name an exhibit the same tend also moves, removes or relabels', () => {
+    expect(reasons(tend({ putAway: { id: 'beacon', reason: 'Gone.' }, exhibits: [add('f1', 'hall/0/1'), add('f2', 'hall/0/2'), add('f3', 'hall/0/3')] }))).toMatch(/at most 3 exhibit changes/)
+    expect(reasons(tend({ putAway: { id: 'beacon', reason: 'Gone.' }, exhibits: [{ op: 'remove', id: 'beacon' }] }))).toMatch(/beacon/)
+    expect(reasons(tend({ putAway: { id: 'beacon', reason: 'Gone.' }, labels: [{ id: 'beacon', label: 'x' }] }))).toMatch(/beacon/)
+  })
+
+  it('keeps only the last 20 records, newest last', () => {
+    const before = Place.parse(base())
+    before.away = Array.from({ length: 20 }, (_, i) => ({ id: `old-${i}`, kind: 'plaque' as const, label: 'Old.', at: '2026-10-01', reason: 'Old.' }))
+    const r = validatePlacePatch(before, away('beacon'), pctx)
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect(r.place.away).toHaveLength(20)
+      expect(r.place.away.at(-1)!.id).toBe('beacon')
+      expect(r.place.away[0]!.id).toBe('old-1')
+    }
+  })
+})

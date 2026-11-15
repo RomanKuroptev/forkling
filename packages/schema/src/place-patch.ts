@@ -29,6 +29,8 @@ export const TendPatch = z
     sign: z.string().max(200).optional(),
     lamps: z.boolean().optional(),
     /** Close the place with a reason, or open it again (spec 9.9). `validatePlacePatch` checks the rules. */
+    /** Put one exhibit away: it leaves the show, with a reason that the place keeps (spec 9.9). */
+    putAway: z.object({ id: PartId, reason: z.string().min(1).max(140) }).strict().optional(),
     door: z.discriminatedUnion('op', [z.object({ op: z.literal('close'), reason: z.string().min(1).max(140) }).strict(), z.object({ op: z.literal('open') }).strict()]).optional(),
     summary: Summary,
   })

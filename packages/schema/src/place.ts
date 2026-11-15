@@ -99,6 +99,8 @@ export const Place = z
     rooms: z.array(Room).max(30),
     exhibits: z.array(Exhibit).max(200),
     state: PlaceState.default({ construction: null, lastCareAt: null, neglect: 0, lamps: true, closed: null }),
+    /** Exhibits Merge put away (spec 9.9), the last 20: what it was, when, and why. The thing itself is kept; only its place on show goes. */
+    away: z.array(z.object({ id: PartId, kind: ExhibitKind, label: z.string().max(1000), at: DateOnly, reason: z.string().min(1).max(140) }).strict()).max(20).default([]),
     history: z.array(PlaceHistoryEntry).max(1000),
   })
   .strict()
