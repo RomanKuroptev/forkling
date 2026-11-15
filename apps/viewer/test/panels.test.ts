@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Place, PlaceRequest, Souvenir, WorkMeta } from '@forkling/schema'
 import { makeFixtureWorld } from '@forkling/sim/fixture'
-import { galleryPanel, noteOnly, plaquePanel, plotPanel, safeUrl, signPanel, siteBase, souvenirPanel, workPanel } from '../src/world/panelContent.ts'
+import { galleryPanel, noteOnly, plaquePanel, plotPanel, safeUrl, signHoverText, signPanel, siteBase, souvenirPanel, workPanel } from '../src/world/panelContent.ts'
 import { loadPanel, worldFiles, type WorldFiles } from '../src/world/worldData.ts'
 import { LOCAL_REF } from '../src/world/localWorld.ts'
 
@@ -161,5 +161,18 @@ describe('the panel of a staked plot (W6 slice 8, spec 10.3: visitors see what M
     const p = plotPanel(req({ status: 'building', statusAt: '2026-11-15T10:00:00Z', note: 'Two rooms.' }))
     expect(p.kind === 'plot' && p.status).toMatch(/building/i)
     expect(JSON.stringify(p)).not.toContain('Two rooms.')
+  })
+})
+
+describe('a closed place in the panels (spec 9.9)', () => {
+  const open = makeFixtureWorld(1, 5).places[2]!
+  const closed = { ...open, state: { ...open.state, closed: { at: '2026-11-18T10:00:00Z', reason: 'I have nothing new to put in it.' } } }
+  it('the sign panel says it is closed, with the day and the reason; an open place says nothing of it', () => {
+    expect(signPanel(closed, null)).toMatchObject({ kind: 'sign', closed: { on: '2026-11-18', reason: 'I have nothing new to put in it.' } })
+    expect(signPanel(open, null)).toMatchObject({ closed: null })
+  })
+  it('the words shown when pointing at the sign say it is closed, and why', () => {
+    expect(signHoverText(closed)).toBe(`${open.name} is closed: I have nothing new to put in it.`)
+    expect(signHoverText(open)).toBe(`${open.name}: ${open.purpose}`)
   })
 })

@@ -23,7 +23,9 @@ export function daysSinceCare(place: { lastCareAt: string | null; founded: strin
   return Math.max(0, Math.floor((nowMs - since) / DAY_MS))
 }
 
-export function neglectFor(place: { id: string; lastCareAt: string | null; founded: string }, nowMs: number): NeglectLevel {
+/** A closed place (spec 9.9) collects no neglect: it stays at 0 until it is opened, which counts as care. */
+export function neglectFor(place: { id: string; lastCareAt: string | null; founded: string; closed?: boolean }, nowMs: number): NeglectLevel {
+  if (place.closed) return 0
   const level = neglectLevel(daysSinceCare(place, nowMs))
   return (NEVER_NEGLECTED as readonly string[]).includes(place.id) ? (Math.min(level, 1) as NeglectLevel) : level
 }

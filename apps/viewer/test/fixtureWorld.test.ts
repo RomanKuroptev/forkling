@@ -14,6 +14,13 @@ describe('the fixture world (?world=local&fixture=10)', () => {
     expect(world.pack).toBe(pack)
     expect(world.objects).toEqual([])
   })
+  it('has one place closed, a third one (never Home or the Workshop), so the boarded door can be seen', () => {
+    const closed = loadFixtureWorld(10, pack).places.filter((p) => p.state.closed)
+    expect(closed).toHaveLength(1)
+    expect(['home', 'workshop']).not.toContain(closed[0]!.id)
+    expect(closed[0]!.state.closed!.reason.length).toBeGreaterThan(0)
+    expect(loadFixtureWorld(2, pack).places.some((p) => p.state.closed)).toBe(false)
+  })
   it("gives the cat a wander step in progress, so it is reading at Home's desk, on the fixture's own clock", () => {
     const at = Date.parse('2026-12-20T12:00:00Z')
     const world = loadFixtureWorld(10, pack, at)

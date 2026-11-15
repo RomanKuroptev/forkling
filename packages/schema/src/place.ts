@@ -61,11 +61,13 @@ export const PlaceState = z
     neglect: z.number().int().min(0).max(3).default(0),
     /** Tend may turn the lamps off and on (spec 5.4). */
     lamps: z.boolean().default(true),
+    /** Merge closed this place (spec 9.9): a boarded door and a sign with the reason. Null while it is open. */
+    closed: z.object({ at: Timestamp, reason: z.string().min(1).max(140) }).strict().nullable().default(null),
   })
   .strict()
 export type PlaceState = z.infer<typeof PlaceState>
 
-export const PlaceVerb = z.enum(['found', 'expand', 'tend', 'revisit', 'rename', 'install'])
+export const PlaceVerb = z.enum(['found', 'expand', 'tend', 'revisit', 'rename', 'install', 'close', 'open'])
 export type PlaceVerb = z.infer<typeof PlaceVerb>
 
 export const PlaceHistoryEntry = z.object({ at: Timestamp, verb: PlaceVerb, summary: z.string().max(1000) }).strict()
@@ -96,7 +98,7 @@ export const Place = z
       .strict(),
     rooms: z.array(Room).max(30),
     exhibits: z.array(Exhibit).max(200),
-    state: PlaceState.default({ construction: null, lastCareAt: null, neglect: 0, lamps: true }),
+    state: PlaceState.default({ construction: null, lastCareAt: null, neglect: 0, lamps: true, closed: null }),
     history: z.array(PlaceHistoryEntry).max(1000),
   })
   .strict()

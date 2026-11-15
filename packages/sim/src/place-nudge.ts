@@ -8,6 +8,7 @@ export interface PlaceNudgeLike {
   purpose: string
   founded: string
   lastCareAt: string | null
+  closed?: boolean
 }
 
 /** What the repeated-place nudge needs of a request: a gift is Roman's choice of name, so it is left alone. */

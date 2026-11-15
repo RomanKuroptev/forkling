@@ -6,7 +6,7 @@ import { clampText } from '../decision.ts'
 import { dataBlock } from '../web/read.ts'
 
 /** The limits of a tend (spec 5.4), said to the model and held by `validatePlacePatch`. */
-export const TEND_LIMITS = { exhibitChanges: 3, labels: 2, sign: 24, label: 120, summary: 140 } as const
+export const TEND_LIMITS = { exhibitChanges: 3, labels: 2, sign: 24, label: 120, summary: 140, reason: 140 } as const
 export const TEND_MAX_TOKENS = 1500
 
 const Op = z.object({
@@ -29,6 +29,8 @@ export const TendAnswer = z.object({
   labels: z.array(z.object({ id: z.string().min(1).max(60), label: z.string().max(300) })).max(6).describe('At most 2 exhibits whose label you rewrite, up to 120 characters each.'),
   sign: z.string().max(100).nullable().describe('New text for the sign, up to 24 characters, or null to leave it.'),
   lamps: z.boolean().nullable().describe('true to turn the lamps on, false to turn them off, null to leave them.'),
+  door: z.enum(['close', 'open']).nullable().describe('close to close this place (a boarded door and a sign with your reason), open to open a closed place again, null to leave the door as it is. A closing carries no other change.'),
+  doorReason: z.string().max(300).nullable().describe('For a close only: why, in your voice, up to 140 characters. Null otherwise.'),
 })
 export type TendAnswer = z.infer<typeof TendAnswer>
 
@@ -78,6 +80,7 @@ export function buildTendUser(i: TendPromptInput): string {
     `Its purpose: ${clampText(place.purpose, 200)}`,
     `Its sign says: ${clampText(place.exterior.sign, 40)}. The lamps are ${place.state.lamps ? 'on' : 'off'}. You last cared for it ${i.daysSinceCare} days ago.`,
     `Why you chose to: ${clampText(i.reason, 200)}`,
+    ...(place.state.closed ? [`This place is closed: ${clampText(place.state.closed.reason, 140)}. You can open it again (door: open) and change things as you open it; until then nothing in it can change.`] : []),
     '',
     'What is in it now (each exhibit with its id, kind, slot and the words beside it):',
     dataBlock('data', place.exhibits.map((e) => `${e.id} | ${e.kind} | ${e.slot} | ${clampText(e.label, 130)}`).join('\n') || 'nothing yet', { source: 'exhibits' }),
@@ -98,6 +101,9 @@ export function buildTendUser(i: TendPromptInput): string {
     '- You cannot add or take away parts of the building. Only exhibits, labels, the sign and the lamps.',
     '- One exhibit to a slot, and only a kind the slot takes. A new exhibit needs an id nothing in this place uses yet.',
     `- Say in one line, up to ${TEND_LIMITS.summary} characters and in your own voice, what you did. It becomes the place's history.`,
+    ...(!place.state.closed && place.id !== 'home' && place.id !== 'workshop'
+      ? [`- You may close this place instead (door: close): it gets a boarded door and a sign with your reason, up to ${TEND_LIMITS.reason} characters. At most 1 closing a week, and never more than a third of your places closed. A closing carries no other change. A closed place collects no dust, is not offered for expand, and you can open it again later.`]
+      : []),
     'Change only what you want to. An empty tend is fine too.',
   ].join('\n')
 }
@@ -106,6 +112,15 @@ export type PatchConversion = { ok: true; patch: z.infer<typeof TendPatch> } | {
 
 /** The model's flat answer as a strict patch, or why it cannot be one (an add with no slot, a move with nowhere to go). */
 export function toTendPatch(answer: TendAnswer): PatchConversion {
+  let door: { op: 'close'; reason: string } | { op: 'open' } | undefined
+  if (answer.door === 'close') {
+    const reason = (answer.doorReason ?? '').trim()
+    if (!reason) return { ok: false, reason: 'closing a place needs a reason' }
+    if (reason.length > TEND_LIMITS.reason) return { ok: false, reason: `the reason for closing is up to ${TEND_LIMITS.reason} characters (it is ${reason.length})` }
+    door = { op: 'close', reason }
+  } else if (answer.door === 'open') {
+    door = { op: 'open' }
+  }
   const exhibits: unknown[] = []
   for (const e of answer.exhibits) {
     if (e.op === 'remove') {
@@ -128,6 +143,7 @@ export function toTendPatch(answer: TendAnswer): PatchConversion {
     summary: answer.summary.trim(),
     ...(answer.sign !== null ? { sign: answer.sign } : {}),
     ...(answer.lamps !== null ? { lamps: answer.lamps } : {}),
+    ...(door ? { door } : {}),
   })
   return parsed.success ? { ok: true, patch: parsed.data } : { ok: false, reason: `the answer is not a tend: ${parsed.error.issues[0]?.path.join('.') ?? ''} ${parsed.error.issues[0]?.message ?? ''}`.trim() }
 }

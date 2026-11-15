@@ -320,6 +320,15 @@ describe('windows and lamps that light at night', () => {
     return SHAPES.reduce((n, shape) => n + [...scene[shape].glow].filter((g) => g === 1).length, 0)
   }
 
+  it('turns the lamps off in a closed place: no glowing windows outside, and no lit lamps inside', () => {
+    const closed: Place = { ...home, state: { ...home.state, lamps: true, closed: { at: '2026-11-18T10:00:00Z', reason: 'Quiet.' } } }
+    expect(glowing(withLamps(home, true), {})).toBeGreaterThan(0)
+    expect(glowing(closed, {})).toBe(0)
+    expect(glowing(closed, { interiors: new Set([home.id]) })).toBe(0)
+    // Opened again (a tend clears `closed`), the lamps are as they were.
+    expect(glowing({ ...closed, state: { ...closed.state, closed: null } }, {})).toBe(glowing(withLamps(home, true), {}))
+  })
+
   it('marks the glass of every window of a place to glow, and nothing else on the outside', () => {
     const outside = exteriorInstances(home, kit, 0)
     const glass = outside.filter((i) => i.color === GLASS)
@@ -377,5 +386,39 @@ describe('windows and lamps that light at night', () => {
     const lampsOn = glowing(withLamps(home, true), { interiors: inside }) - glowing(withLamps(home, true))
     expect(lampsOn).toBeGreaterThan(0)
     expect(glowing(withLamps(home, false), { interiors: inside })).toBe(0)
+  })
+})
+
+describe('a closed place has a boarded door (spec 9.9)', () => {
+  const open = place('home')
+  const closed: Place = { ...open, state: { ...open.state, closed: { at: '2026-11-18T10:00:00Z', reason: 'Quiet for now.' } } }
+  const [px] = placeCentre(toLandPlace(open))
+
+  it('has boards across the door gap, in front of it, that an open place does not have', () => {
+    const before = exteriorInstances(open, kit, 0)
+    const after = exteriorInstances(closed, kit, 0)
+    const key = (i: { shape: string; matrix: number[] }) => `${i.shape}:${i.matrix.map((n) => n.toFixed(3)).join(',')}`
+    const had = new Set(before.map(key))
+    const boards = after.filter((i) => !had.has(key(i)))
+    expect(boards.length).toBeGreaterThanOrEqual(3)
+    for (const b of boards) {
+      const [x, y] = pos(b.matrix)
+      expect(b.shape).toBe('box')
+      expect(Math.abs(x - px)).toBeLessThanOrEqual(DOOR_HALF + 0.3)
+      expect(y).toBeGreaterThan(0.2)
+      expect(y).toBeLessThan(2.4)
+    }
+    // Nothing that was there is taken away.
+    expect(after.length).toBe(before.length + boards.length)
+  })
+
+  it('cannot be walked into: a box fills the door gap, and an open place keeps the gap', () => {
+    const gap = (p: Place) => wallBoxes(p).some((b) => b.z1 - b.z0 <= 1 && b.z0 > placeCentre(toLandPlace(p))[1] && b.x0 <= px - DOOR_HALF + 1e-9 && b.x1 >= px + DOOR_HALF - 1e-9)
+    expect(gap(closed)).toBe(true)
+    expect(gap(open)).toBe(false)
+  })
+
+  it('is drawn the same as before for a place that is open', () => {
+    expect(exteriorInstances({ ...open, state: { ...open.state, closed: null } }, kit, 0)).toEqual(exteriorInstances(open, kit, 0))
   })
 })

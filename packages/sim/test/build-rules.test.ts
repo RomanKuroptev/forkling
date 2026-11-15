@@ -49,6 +49,13 @@ describe('expandCheck (spec 2.5)', () => {
     expect(expandCheck(p, { lighthouses: 30 }, fresh)).toEqual({ ok: true, tag: 'lighthouses', reasons: [] })
   })
 
+  it('is not offered for a closed place (spec 9.9)', () => {
+    const closed = place({ state: { ...base().state, closed: { at: '2026-11-21T10:00:00Z', reason: 'Quiet.' } } })
+    const r = expandCheck(closed, { lighthouses: 90 }, fresh)
+    expect(r.ok).toBe(false)
+    expect(r.reasons.join(' ')).toMatch(/closed/)
+  })
+
   it('refuses a tag under 30', () => {
     const r = expandCheck(p, { lighthouses: 29.9, signals: 10 }, fresh)
     expect(r.ok).toBe(false)

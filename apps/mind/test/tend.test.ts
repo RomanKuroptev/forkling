@@ -8,7 +8,7 @@ import { TendAnswer, TEND_LIMITS, buildTendUser, freeSlots, toTendPatch } from '
 const home = Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL('../../../templates/forkling-world/places/home.json', import.meta.url)), 'utf8')))
 const workshop = Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL('../../../templates/forkling-world/places/workshop.json', import.meta.url)), 'utf8')))
 
-const answer = (over: Record<string, unknown> = {}) => TendAnswer.parse({ summary: 'Put the fog on the shelf.', exhibits: [], labels: [], sign: null, lamps: null, ...over })
+const answer = (over: Record<string, unknown> = {}) => TendAnswer.parse({ summary: 'Put the fog on the shelf.', exhibits: [], labels: [], sign: null, lamps: null, door: null, doorReason: null, ...over })
 const add = (over: Record<string, unknown> = {}) => ({ op: 'add', id: 'fog', kind: 'souvenir', ref: 'souvenirs/2026-11-02-fog', slot: 'main/3/0', label: 'Fog for nine days.', ...over })
 
 describe('the free slots of a place (what a tend may put something in)', () => {
@@ -91,8 +91,46 @@ describe('turning the answer into a patch', () => {
     expect(toTendPatch(answer({ exhibits: [add({ ref: null })] })).ok).toBe(false)
   })
   it('still reads an answer with too many changes, so the check can say exactly why (the limit is enforced by validatePlacePatch, with a reason)', () => {
-    expect(TendAnswer.safeParse({ summary: 's', exhibits: [add(), add(), add(), add()], labels: [], sign: null, lamps: null }).success).toBe(true)
-    expect(TendAnswer.safeParse({ summary: 's', exhibits: [], labels: [{ id: 'a', label: 'x' }, { id: 'b', label: 'y' }, { id: 'c', label: 'z' }], sign: null, lamps: null }).success).toBe(true)
-    expect(TendAnswer.safeParse({ summary: 's', exhibits: Array.from({ length: 30 }, () => add()), labels: [], sign: null, lamps: null }).success).toBe(false)
+    expect(TendAnswer.safeParse({ summary: 's', exhibits: [add(), add(), add(), add()], labels: [], sign: null, lamps: null, door: null, doorReason: null }).success).toBe(true)
+    expect(TendAnswer.safeParse({ summary: 's', exhibits: [], labels: [{ id: 'a', label: 'x' }, { id: 'b', label: 'y' }, { id: 'c', label: 'z' }], sign: null, lamps: null, door: null, doorReason: null }).success).toBe(true)
+    expect(TendAnswer.safeParse({ summary: 's', exhibits: Array.from({ length: 30 }, () => add()), labels: [], sign: null, lamps: null, door: null, doorReason: null }).success).toBe(false)
+  })
+})
+
+describe('closing and opening a place from a tend (spec 9.9)', () => {
+  it('turns a close with its reason into a door patch, and an open into one with no reason', () => {
+    const closed = toTendPatch(answer({ door: 'close', doorReason: 'I have nothing new to put in it.' }))
+    expect(closed.ok && closed.patch.door).toEqual({ op: 'close', reason: 'I have nothing new to put in it.' })
+    const opened = toTendPatch(answer({ door: 'open', doorReason: null }))
+    expect(opened.ok && opened.patch.door).toEqual({ op: 'open' })
+    const none = toTendPatch(answer())
+    expect(none.ok && 'door' in none.patch).toBe(false)
+  })
+  it('refuses a close with no reason or one over 140 characters, in words Merge can read', () => {
+    for (const doorReason of [null, '   ', 'x'.repeat(141)]) {
+      const r = toTendPatch(answer({ door: 'close', doorReason }))
+      expect(r.ok).toBe(false)
+      expect(!r.ok && r.reason).toMatch(/reason/)
+    }
+  })
+  it('tells the model it may close a place (and the limits), or, for a closed place, that it can only open it', () => {
+    const input = { kit, reason: 'x', daysSinceCare: 3, pile: [], works: [] }
+    const lab = { ...workshop, id: 'lab', name: 'The Lab' }
+    const open = buildTendUser({ ...input, place: lab })
+    expect(open).toMatch(/close this place/)
+    expect(open).toMatch(/140/)
+    expect(open).toMatch(/1 closing a week/)
+    expect(open).toMatch(/third/)
+    const closed = buildTendUser({ ...input, place: { ...lab, state: { ...lab.state, closed: { at: '2026-11-01T10:00:00Z', reason: 'Quiet for now.' } } } })
+    expect(closed).toContain('This place is closed: Quiet for now.')
+    expect(closed).toMatch(/open it again/)
+    expect(closed).not.toMatch(/close this place/)
+  })
+  it('does not offer to close Home or the Workshop', () => {
+    for (const place of [home, workshop]) expect(buildTendUser({ place, kit, reason: 'x', daysSinceCare: 3, pile: [], works: [] })).not.toMatch(/close this place/)
+  })
+  it('shows the reason as data, since it is words Merge wrote earlier but passes through the same wrapper as the rest', () => {
+    const lab = { ...workshop, id: 'lab', state: { ...workshop.state, closed: { at: '2026-11-01T10:00:00Z', reason: 'Quiet.' } } }
+    expect(buildTendUser({ place: lab, kit, reason: 'x', daysSinceCare: 3, pile: [], works: [] })).toContain('Quiet.')
   })
 })

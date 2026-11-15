@@ -47,7 +47,7 @@ export async function tendStep(t: Tick): Promise<void> {
     t.remember.push({ at: t.nowIso, kind: 'event', text: `My tend of ${name} gave nothing usable, so nothing changed.`, verb: 'tend' })
     return
   }
-  const words = [answer.data.summary, answer.data.sign ?? '', ...answer.data.labels.map((l) => l.label), ...answer.data.exhibits.map((e) => e.label ?? '')]
+  const words = [answer.data.summary, answer.data.sign ?? '', answer.data.doorReason ?? '', ...answer.data.labels.map((l) => l.label), ...answer.data.exhibits.map((e) => e.label ?? '')]
   if (words.some((w) => claimsHuman(w))) return fail('the words claimed to be human')
   const converted = toTendPatch(answer.data)
   if (!converted.ok) return fail(converted.reason)
@@ -55,6 +55,9 @@ export async function tendStep(t: Tick): Promise<void> {
     kit,
     nowIso: t.nowIso,
     placeIds: new Set(t.places.map((p) => p.id)),
+    placeCount: t.places.length,
+    closedPlaces: t.places.filter((p) => p.state.closed !== null).length,
+    closingsThisWeek: t.places.reduce((n, p) => n + p.history.filter((h) => h.verb === 'close' && t.nowMs - Date.parse(h.at) < 7 * 86_400_000).length, 0),
     exists: (ref) => {
       const f = refFile(ref)
       return f !== null && existsSync(join(t.dir, f))
@@ -71,8 +74,10 @@ export async function tendStep(t: Tick): Promise<void> {
 
   t.placeUpdates.push(checked.place)
   t.places = t.places.map((p) => (p.id === place.id ? checked.place : p))
-  t.remember.push({ at: t.nowIso, kind: 'made', text: `tended ${name}: ${clampText(converted.patch.summary, 140)}`, verb: 'tend', goalRef: `today:${pending.index}` })
-  t.parts.push(`tended ${name}`)
+  const door = converted.patch.door
+  const did = door?.op === 'close' ? 'closed' : door?.op === 'open' ? 'opened' : 'tended'
+  t.remember.push({ at: t.nowIso, kind: 'made', text: `${did} ${name}: ${clampText(converted.patch.summary, 140)}`, verb: 'tend', goalRef: `today:${pending.index}` })
+  t.parts.push(`${did} ${name}`)
 }
 
 function setPlaced(t: Tick, id: string, placeId: string | null): void {

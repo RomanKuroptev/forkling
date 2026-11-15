@@ -28,6 +28,8 @@ export const TendPatch = z
     labels: z.array(z.object({ id: PartId, label: z.string().max(1000) }).strict()).max(10).default([]),
     sign: z.string().max(200).optional(),
     lamps: z.boolean().optional(),
+    /** Close the place with a reason, or open it again (spec 9.9). `validatePlacePatch` checks the rules. */
+    door: z.discriminatedUnion('op', [z.object({ op: z.literal('close'), reason: z.string().min(1).max(140) }).strict(), z.object({ op: z.literal('open') }).strict()]).optional(),
     summary: Summary,
   })
   .strict()

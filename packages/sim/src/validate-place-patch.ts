@@ -8,6 +8,8 @@ export const PATCH_LIMITS = {
   tendLabels: 2,
   expandParts: 15,
   renamesPerWeek: 2,
+  closingsPerWeek: 1,
+  reasonMax: 140,
   summaryMax: PLACE_LIMITS.summaryMax,
 } as const
 
@@ -18,6 +20,10 @@ export interface PatchContext extends PlaceContext {
   placeIds?: ReadonlySet<string>
   /** How many places were renamed in the last 7 days. */
   renamesThisWeek?: number
+  /** How many places there are, how many are closed now, and how many were closed in the last 7 days (spec 9.9). */
+  placeCount?: number
+  closedPlaces?: number
+  closingsThisWeek?: number
 }
 
 export type PatchResult = { ok: true; place: Place } | { ok: false; reasons: string[] }
@@ -51,6 +57,32 @@ export function validatePlacePatch(before: unknown, patch: unknown, ctx: PatchCo
 
   switch (change.verb) {
     case 'tend': {
+      const door = change.door
+      if (place.state.closed && door?.op === 'close') {
+        no(`${place.id} is already closed`)
+        break
+      }
+      if (place.state.closed && door?.op !== 'open') {
+        no(`${place.id} is closed, so it takes no tend until it is opened (a tend with the door opened first)`)
+        break
+      }
+      if (door?.op === 'close') {
+        const other = change.exhibits.length > 0 || change.labels.length > 0 || change.sign !== undefined || change.lamps !== undefined
+        if (other) no('a closing carries no other change: no exhibits, labels, sign or lamps')
+        if (place.id === 'home' || place.id === 'workshop') no('Home and the Workshop never close')
+        if ((ctx.closingsThisWeek ?? 0) >= PATCH_LIMITS.closingsPerWeek) no(`at most ${PATCH_LIMITS.closingsPerWeek} closing a week, and a place was already closed in the last 7 days`)
+        const total = ctx.placeCount ?? 0
+        const closedAfter = (ctx.closedPlaces ?? 0) + 1
+        if (total === 0 || closedAfter * 3 > total) no(`never more than a third of the places closed (${closedAfter} of ${total} would be)`)
+        place.state.closed = { at: ctx.nowIso, reason: door.reason }
+        care()
+        place.history.push({ at: ctx.nowIso, verb: 'close', summary: change.summary })
+        break
+      }
+      if (door?.op === 'open') {
+        if (!place.state.closed) no(`${place.id} is not closed, so there is nothing to open`)
+        place.state.closed = null
+      }
       if (change.exhibits.length > PATCH_LIMITS.tendExhibitChanges) no(`a tend makes at most ${PATCH_LIMITS.tendExhibitChanges} exhibit changes (it makes ${change.exhibits.length})`)
       if (change.labels.length > PATCH_LIMITS.tendLabels) no(`a tend rewrites at most ${PATCH_LIMITS.tendLabels} labels (it rewrites ${change.labels.length})`)
       for (const op of change.exhibits) {
@@ -70,15 +102,17 @@ export function validatePlacePatch(before: unknown, patch: unknown, ctx: PatchCo
       if (change.sign !== undefined) place.exterior.sign = change.sign
       if (change.lamps !== undefined) place.state.lamps = change.lamps
       care()
-      place.history.push({ at: ctx.nowIso, verb: 'tend', summary: change.summary })
+      place.history.push({ at: ctx.nowIso, verb: door?.op === 'open' ? 'open' : 'tend', summary: change.summary })
       break
     }
     case 'revisit': {
+      if (place.state.closed) no(`${place.id} is closed, so it cannot be revisited until it is opened`)
       care()
       place.history.push({ at: ctx.nowIso, verb: 'revisit', summary: change.summary })
       break
     }
     case 'expand': {
+      if (place.state.closed) no(`${place.id} is closed, so it cannot be expanded`)
       if (place.state.construction !== null) no(`${place.id} is under construction, so it cannot be expanded`)
       const c = change.change
       if (c.kind === 'room') {

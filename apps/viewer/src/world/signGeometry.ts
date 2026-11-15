@@ -73,7 +73,7 @@ const cut = (lines: string[], max: number): string[] => (lines.length <= 2 ? lin
  */
 export function signLayout(place: Place): SignLayout {
   const nameText = squash(place.name)
-  const signText = squash(place.exterior.sign)
+  const signText = place.state.closed ? squash(`Closed: ${place.state.closed.reason}`) : squash(place.exterior.sign)
   const room = SIGN_CELL.h - 2 * VERTICAL_PAD
   let chosen: { namePx: number; name: string[]; textPx: number; text: string[] } | undefined
   for (const namePx of NAME_SIZES) {

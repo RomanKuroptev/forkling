@@ -213,3 +213,55 @@ describe('construction and expand paths on the site (spec 4.3, 4.5)', () => {
     expect(page('places/house-of-lights/index.html')).not.toMatch(/under construction/i)
   })
 })
+
+describe('a closed place (spec 9.9: a closed line with the reason; no neglect)', () => {
+  const closed = { at: '2026-11-18T10:00:00Z', reason: 'I have nothing new to put in it.' }
+  beforeEach(() => {
+    putPlace('home', { state: { construction: null, lastCareAt: '2026-11-19T10:00:00Z', neglect: 0, lamps: true } })
+    putPlace('workshop', { state: { construction: null, lastCareAt: '2026-11-19T10:00:00Z', neglect: 0, lamps: true } })
+    putPlace('house-of-lights', {
+      name: 'House of Lights',
+      chunk: [1, 0],
+      offset: [0, 0],
+      state: { construction: null, lastCareAt: '2026-09-01T10:00:00Z', neglect: 0, lamps: true, closed },
+      history: [{ at: '2026-11-18T10:00:00Z', verb: 'close', summary: 'Shut the house for now.' }],
+    })
+  })
+
+  it('says on its page that it is closed, since when, and why in Merge\'s words, and says nothing of dust', () => {
+    render()
+    const p = page('places/house-of-lights/index.html')
+    expect(p).toMatch(/Closed/)
+    expect(p).toContain('I have nothing new to put in it.')
+    expect(p).toContain('2026-11-18')
+    expect(p).not.toMatch(/dusty|overgrown|cobweb/)
+    // Said once, in its own line, not again in the meta line.
+    expect(p.match(/Closed\./g)).toHaveLength(1)
+  })
+
+  it('has its lamps off on the page, whatever its own switch says (the switch is on in this world)', () => {
+    render()
+    const p = page('places/house-of-lights/index.html')
+    expect(p).toContain('The lamps are off.')
+    expect(p).not.toContain('The lamps are on.')
+  })
+
+  it('marks it closed in the list and on the map, and its history shows the closing', () => {
+    render()
+    const index = page('places/index.html')
+    expect(index).toMatch(/House of Lights<\/a><\/strong> <span class="quiet">[^<]*closed/)
+    expect(index).toMatch(/data-place="house-of-lights" data-neglect="0"/)
+    expect(page('places/house-of-lights/index.html')).toContain('Shut the house for now.')
+  })
+
+  it('escapes the reason', () => {
+    putPlace('house-of-lights', { name: 'House of Lights', chunk: [1, 0], offset: [0, 0], state: { construction: null, lastCareAt: null, neglect: 0, lamps: true, closed: { at: '2026-11-18T10:00:00Z', reason: '<script>alert(1)</script>' } } })
+    render()
+    expect(page('places/house-of-lights/index.html')).not.toContain('<script>alert(1)</script>')
+  })
+
+  it('puts the closing in the feed as news, and an opening too', () => {
+    render()
+    expect(page('feed.xml') + page('index.html')).toMatch(/Closed House of Lights/)
+  })
+})

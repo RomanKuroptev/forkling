@@ -41,3 +41,12 @@ describe('the neglect of a place', () => {
     expect(neglectFor({ id: 'home', lastCareAt: '2026-11-11T00:00:00Z', founded: '2026-08-01' }, now)).toBe(0)
   })
 })
+
+describe('a closed place collects no neglect (spec 9.9)', () => {
+  it('stays at 0 however long ago it was cared for, and starts counting again once it is open', () => {
+    const place = { id: 'lab', lastCareAt: '2026-10-01T10:00:00Z', founded: '2026-09-01' }
+    expect(neglectFor(place, at('2026-11-20T10:00:00Z'))).toBe(3)
+    expect(neglectFor({ ...place, closed: true }, at('2026-11-20T10:00:00Z'))).toBe(0)
+    expect(neglectFor({ ...place, closed: false }, at('2026-11-20T10:00:00Z'))).toBe(3)
+  })
+})
