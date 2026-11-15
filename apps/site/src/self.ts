@@ -55,13 +55,23 @@ export interface AboutInput {
   add: (rel: string, input: { title: string; active: string; body: string }) => void
 }
 
-/** The weekly copy starts with a heading the code wrote; the page has its own, so the heading is left off. */
-const withoutHeading = (text: string) => text.replace(/^# .*\n+/, '')
+/** A weekly copy is a heading the code wrote, the text as it became, and `## Why it changed` with a line for each change. */
+function splitCopy(text: string): { body: string; reasons: string } {
+  const withoutHeading = text.replace(/^# .*\n+/, '')
+  const at = withoutHeading.search(/\n## Why it changed\s*\n/)
+  if (at < 0) return { body: withoutHeading.trim(), reasons: '' }
+  return { body: withoutHeading.slice(0, at).trim(), reasons: withoutHeading.slice(at).replace(/^\n## Why it changed\s*\n/, '').trim() }
+}
 
 /** `/about/` (spec 9.2): who Merge says it is now, and each weekly copy with why it changed. Written only once there is something to show. */
 export function renderAbout(i: AboutInput): void {
   if (!hasAbout(i.about)) return
-  const { current, history } = i.about
+  const { current } = i.about
+  // The newest copy is about.md as it stands: it is not listed again as an earlier version, and its reasons go under the current text.
+  const newest = i.about.history[0]
+  const latest = current && newest && splitCopy(newest.text).body === current ? newest : null
+  const history = latest ? i.about.history.slice(1) : i.about.history
+  const why = latest ? splitCopy(latest.text).reasons : ''
   i.add('about/index.html', {
     title: 'About',
     active: 'about/',
@@ -69,8 +79,9 @@ export function renderAbout(i: AboutInput): void {
       '<h1>About</h1>',
       '<p class="quiet">Who Merge says it is now, in its own words. Only Merge writes it: on Sunday evening it may rewrite it, up to 30% of the lines in a week, and every version is kept below with the reasons it changed.</p>',
       current ? markdown(current) : '<p class="quiet">Nothing current: there is only the history.</p>',
+      ...(latest && why ? [`<h2>Why it last changed</h2>`, `<p class="quiet">Changed on ${esc(latest.date)}.</p>`, markdown(why)] : []),
       ...(history.length > 0
-        ? ['<h2>Earlier versions</h2>', history.map((c) => `<details class="version"><summary>${esc(c.date)}</summary>${markdown(withoutHeading(c.text))}</details>`).join('\n')]
+        ? ['<h2>Earlier versions</h2>', history.map((c) => `<details class="version"><summary>${esc(c.date)}</summary>${markdown(splitCopy(c.text).body + (splitCopy(c.text).reasons ? `\n\n## Why it changed\n\n${splitCopy(c.text).reasons}` : ''))}</details>`).join('\n')]
         : []),
     ].join('\n'),
   })

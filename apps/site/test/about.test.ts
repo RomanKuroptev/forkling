@@ -79,4 +79,56 @@ describe('/about/ (spec 9.2: who Merge says it is, and how that changed)', () =>
     expect(html).toContain('Real one.')
     expect(html).not.toContain('Stray file.')
   })
+
+  describe('the current version is not repeated as an earlier one', () => {
+    const current = 'I am patient.\n\n- patient\n- fond of fog'
+    const setup = () => {
+      put('self/about.md', `${current}\n`)
+      put('self/history/2026-11-08.md', copy('2026-11-08', 'First version.', [['wrote the first version', 'The week showed me what I keep doing.']]))
+      put('self/history/2026-11-15.md', copy('2026-11-15', current, [['added fond of fog', 'I waited out three foggy days.']]))
+    }
+
+    it('leaves the newest copy out of the earlier versions when it is the same text as about.md', () => {
+      setup()
+      renderSite(world, out)
+      const html = page('about/index.html')
+      expect(html.match(/I am patient\./g)).toHaveLength(1)
+      expect(html).toContain('First version.')
+      expect(html.match(/<details/g)).toHaveLength(1)
+    })
+
+    it('shows why the current version changed, under it, from that copy', () => {
+      setup()
+      renderSite(world, out)
+      const html = page('about/index.html')
+      expect(html).toContain('added fond of fog: I waited out three foggy days.')
+      expect(html.indexOf('added fond of fog')).toBeLessThan(html.indexOf('Earlier versions'))
+      expect(html).toMatch(/2026-11-15/)
+    })
+
+    it('keeps the earlier versions collapsed', () => {
+      setup()
+      renderSite(world, out)
+      expect(page('about/index.html')).not.toMatch(/<details[^>]*\bopen\b/)
+    })
+
+    it('has no "Earlier versions" heading when the current version is the only copy', () => {
+      put('self/about.md', `${current}\n`)
+      put('self/history/2026-11-15.md', copy('2026-11-15', current, [['wrote it', 'First time.']]))
+      renderSite(world, out)
+      const html = page('about/index.html')
+      expect(html).not.toContain('Earlier versions')
+      expect(html).toContain('wrote it: First time.')
+    })
+
+    it('keeps a newest copy that differs from about.md, and shows no reasons for a text it does not match', () => {
+      put('self/about.md', 'Edited by hand.\n')
+      put('self/history/2026-11-15.md', copy('2026-11-15', 'Newer copy.', [['x', 'y']]))
+      renderSite(world, out)
+      const html = page('about/index.html')
+      expect(html).toContain('Newer copy.')
+      expect(html).not.toContain('Why it last changed')
+    })
+  })
 })
+

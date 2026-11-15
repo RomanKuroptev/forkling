@@ -100,14 +100,14 @@ export function renderRequests(i: RequestsInput): void {
     const place = placeFor(r)
     return [
       `<li class="request" data-request="${esc(r.id)}" data-status="${esc(r.status)}">`,
-      `<strong>${esc(r.name)}</strong> <span class="quiet">${esc(r.tags.join(', '))}</span>`,
+      `<strong>${esc(r.name)}</strong> <span class="quiet">${r.tags.length === 1 ? 'Topic' : 'Topics'}: ${esc(r.tags.join(', '))}</span>`,
       `<p><em>${esc(requestStatusWords(r))}</em>${place ? ` <a href="../places/${esc(place.id)}/">See the place.</a>` : ''}</p>`,
       ...(r.status === 'declined' && r.note ? [`<p class="reason"><strong>Roman’s reason:</strong> ${esc(r.note)}</p>`] : []),
       `<p>${esc(r.purpose)}</p>`,
       paragraphs(r.body),
       r.kind === 'gift'
         ? `<p class="quiet">Filed ${esc(day(r.written))}.</p>`
-        : `<p class="quiet">Asked on ${esc(day(r.written))}${r.statusAt ? `; answered ${esc(day(r.statusAt))}` : ''}. Behind it: ${r.souvenirs.length} ${r.souvenirs.length === 1 ? 'souvenir' : 'souvenirs'}.</p>`,
+        : `<p class="quiet">Asked on ${esc(day(r.written))}${r.statusAt ? `; answered ${esc(day(r.statusAt))}` : ''}.${r.souvenirs.length > 0 ? ` Based on ${r.souvenirs.length} ${r.souvenirs.length === 1 ? 'thing' : 'things'} it kept while reading.` : ''}</p>`,
       '</li>',
     ].join('')
   }

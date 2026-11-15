@@ -59,7 +59,7 @@ describe('/requests/ (spec 10.3: place requests and wishes, with their status)',
     expect(page('places/index.html')).toMatch(/href="..\/requests\/"/)
   })
 
-  it("shows a request in Merge's own words: name, purpose, tags, when it asked, the souvenirs behind it, and what it imagines", () => {
+  it("shows a request in Merge's own words: name, purpose, its topic, when it asked, what it was based on, and what it imagines", () => {
     putRequest()
     render()
     const html = page('requests/index.html')
@@ -67,9 +67,32 @@ describe('/requests/ (spec 10.3: place requests and wishes, with their status)',
     expect(html).toContain('Where I keep the lidar finds.')
     expect(html).toContain('maya lidar')
     expect(html).toContain('2026-11-18')
-    expect(html).toMatch(/2 souvenirs/)
+    expect(html).toMatch(/Based on 2 things it kept while reading\./)
+    expect(html).not.toMatch(/souvenir/i)
+    expect(html).not.toMatch(/Behind it/)
     expect(html).toContain('I want a place with a lamp over each find.')
     expect(html).toContain('It would be quiet.')
+  })
+
+  it('labels the tag next to the title: "Topic:" for one, "Topics:" for several', () => {
+    putRequest()
+    putRequest({ id: 'two-tags', name: 'Two Tags', tags: ['fog', 'moss'], written: '2026-11-19T10:00:00Z' })
+    render()
+    const html = page('requests/index.html')
+    expect(html).toMatch(/<strong>Lantern Hall<\/strong> <span class="quiet">Topic: maya lidar<\/span>/)
+    expect(html).toMatch(/<strong>Two Tags<\/strong> <span class="quiet">Topics: fog, moss<\/span>/)
+  })
+
+  it('says one thing in the singular, and says nothing about what it was based on when that is none', () => {
+    putRequest({ id: 'one-thing', name: 'One Thing', souvenirs: ['2026-11-02-fog'], written: '2026-11-19T10:00:00Z' })
+    putRequest({ id: 'no-things', name: 'No Things', souvenirs: [], written: '2026-11-20T10:00:00Z' })
+    render()
+    const html = page('requests/index.html')
+    const one = /<li[^>]*data-request="one-thing"[\s\S]*?<\/li>/.exec(html)![0]
+    const none = /<li[^>]*data-request="no-things"[\s\S]*?<\/li>/.exec(html)![0]
+    expect(one).toMatch(/Based on 1 thing it kept while reading\./)
+    expect(none).toMatch(/Asked on 2026-11-20/)
+    expect(none).not.toMatch(/Based on|souvenir|kept while reading/i)
   })
 
   it('says in plain words what each status means, and which ones are still waiting', () => {
