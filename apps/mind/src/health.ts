@@ -1,6 +1,6 @@
-import { SourceStats, type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
-import { MAX_POINTS_IN_HAND, placeNovelty, workNovelty, type PlaceNudgeLike, type PlaceNudgeRequest, type PlaceNudgeStep, type WorkLike } from '@forkling/sim'
-import { paceAhead, paceUsd } from './budget.ts'
+import { SourceStats, TOTAL_CAP_USD, type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
+import { MAX_POINTS_IN_HAND, placeNovelty, weeklyHealthWarnings, workNovelty, type PlaceNudgeLike, type PlaceNudgeRequest, type PlaceNudgeStep, type WorkLike } from '@forkling/sim'
+import { daysInMonth, paceAhead, paceUsd } from './budget.ts'
 import { topHostShare } from './web/stats.ts'
 import { MAX_READS_PER_DAY } from './web/trip.ts'
 
@@ -18,6 +18,8 @@ export interface HealthContext {
   pushFailing?: boolean
   /** The works in `works/`, for the week's work numbers. */
   works?: readonly WorkLike[]
+  /** The last 7 days for the weekly health check (spec 9.6): the steps started and the build attempts. Absent means no check. */
+  week?: { steps: readonly { verb: string; at: string }[]; builds: { total: number; failed: number } }
   /** The places, requests and steps of the last days, for the place nudges (spec 12.3). `dayOf` gives the forkling's own day. */
   placeNudges?: { places: readonly PlaceNudgeLike[]; requests: readonly PlaceNudgeRequest[]; steps: readonly PlaceNudgeStep[]; dayOf?: (iso: string) => string }
 }
@@ -35,6 +37,25 @@ const WARN_BUILD_HOURS = 48
 const MAX_COUNTED_GAP = 180
 
 const DECIDE_KINDS = new Set(['morning', 'decide'])
+/** The calls W7 added, watched against the $20 cap: reflection, the sleep rewrite (batch and late call) and the weekly review. */
+export const W7_KINDS: readonly string[] = ['reflection', 'sleep', 'sleeplate', 'weekly']
+/** A projection from the first two days of a month means nothing. */
+const MIN_DAYS_TO_PROJECT = 3
+
+/**
+ * Roman's warning: would W7's calls push the month over $20? The month's spend so far is spread over the days gone, projected to
+ * the whole month, and the server's price added. It warns only when that passes the cap and W7's calls are part of the spend; a
+ * month that is ahead for other reasons is the pace warning's business. Pure.
+ */
+export function w7SpendWarning(budget: BudgetLedger, today: string): string | null {
+  const day = Number(today.slice(8, 10))
+  if (day < MIN_DAYS_TO_PROJECT) return null
+  const w7 = W7_KINDS.reduce((sum, kind) => sum + (budget.byKind[kind]?.usd ?? 0), 0)
+  if (w7 <= 0) return null
+  const projected = (budget.spentUsd / day) * daysInMonth(today) + budget.serverUsd
+  if (projected <= TOTAL_CAP_USD + 1e-9) return null
+  return `W7 spend would pass $${TOTAL_CAP_USD}: the month projects to $${projected.toFixed(2)} with the server ($${budget.serverUsd.toFixed(2)}); reflection, the sleep rewrite and the weekly review are $${w7.toFixed(2)} of the $${budget.spentUsd.toFixed(2)} spent so far`
+}
 const bump = (record: Record<string, number>, key: string, by = 1) => ({ ...record, [key]: (record[key] ?? 0) + by })
 const minutesBetween = (fromIso: string, toIso: string) => Math.max(0, Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 60_000))
 
@@ -51,6 +72,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
 
   // The day's counters.
   let callsByKind = before?.callsByKind ?? {}
+  let spendByKind = before?.spendByKind ?? {}
   let triggersByKind = before?.triggersByKind ?? {}
   let stepsStarted = before?.stepsStarted ?? {}
   let decideCalls = before?.decideCalls ?? 0
@@ -59,6 +81,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   let refusals = before?.refusals ?? 0
   let cutOff = before?.cutOff ?? 0
   for (const c of line.calls) {
+    if (c.usd > 0) spendByKind = bump(spendByKind, c.kind, c.usd)
     if (!c.ok) {
       failures++
       if (c.stop === 'refusal') refusals++
@@ -110,6 +133,9 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   if (longestGapMinutes > WARN_GAP_MINUTES) warnings.push(`longest wait between ticks today was ${longestGapMinutes} minutes (they should come every 10)`)
   if (paceAhead(budget, ctx.today)) warnings.push(`spent $${spend.monthUsd.toFixed(2)} of $${spend.capUsd}, ahead of the pace ($${spend.paceUsd.toFixed(2)} by today)`)
   for (const [host, until] of Object.entries(pausedHosts)) warnings.push(`${host} is paused until ${until.slice(0, 16)}Z (it answered 429 or 403)`)
+  const w7Warning = w7SpendWarning(budget, ctx.today)
+  if (w7Warning) warnings.push(w7Warning)
+  if (ctx.week) warnings.push(...weeklyHealthWarnings({ steps: ctx.week.steps, nowMs: ctx.nowMs, wakeMoods: (mind.wakeMoods ?? []).map((m) => m.mood), builds: ctx.week.builds }))
   if (openBuild && openBuild.ageHours > WARN_BUILD_HOURS) warnings.push(`build ${openBuild.id} has been open for ${openBuild.ageHours} hours`)
 
   return {
@@ -118,7 +144,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     date: ctx.today,
     lastTick: { at: line.at, asleep: line.asleep, summary: line.summary, think: line.think, triggers: line.triggers.map((t) => t.kind), callsFailed: line.calls.filter((c) => !c.ok).length },
     plan,
-    today: { ticks: (before?.ticks ?? 0) + 1, decideCalls, callsByKind, triggersByKind, failures, rejections, refusals, cutOff, stepsStarted, longestGapMinutes },
+    today: { ticks: (before?.ticks ?? 0) + 1, decideCalls, callsByKind, spendByKind, triggersByKind, failures, rejections, refusals, cutOff, stepsStarted, longestGapMinutes },
     quotas,
     web,
     allowance: { points: Math.round(mind.allowance?.points ?? 0), max: MAX_POINTS_IN_HAND },

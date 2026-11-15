@@ -126,6 +126,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     wants: structuredClone(w.wants.wants),
     about: w.about,
     aboutWrite: null,
+    selfRequest: null,
     page: w.page,
     pageWrite: null,
     beliefIds: new Set(liveBeliefs(w.beliefs).map((b) => b.id)),

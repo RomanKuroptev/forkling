@@ -93,6 +93,8 @@ export const Health = z.object({
     ticks: z.number().int().nonnegative(),
     decideCalls: z.number().int().nonnegative(),
     callsByKind: z.record(z.string(), z.number().int().nonnegative()),
+    /** What each kind of call cost today in dollars, failed calls included (a refusal is billed): reflection, the sleep rewrite and its late call are watched (W7). */
+    spendByKind: z.record(z.string(), z.number().nonnegative()).default({}),
     triggersByKind: z.record(z.string(), z.number().int().nonnegative()),
     failures: z.number().int().nonnegative(),
     rejections: z.number().int().nonnegative(),

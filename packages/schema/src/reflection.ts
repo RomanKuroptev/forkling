@@ -62,5 +62,7 @@ export const WeeklyReview = z.object({
   aboutChanges: z.array(z.object({ what: z.string(), why: z.string() })),
   longGoal: z.object({ action: z.enum(['continue', 'finish', 'drop', 'change']), text: z.string().nullable(), reason: z.string() }),
   renames: z.array(z.object({ kind: z.enum(['place', 'work']), id: z.string(), name: z.string(), reason: z.string() })),
+  /** One optional request to Roman, up to 120 words (spec 9.5), or null. Nothing changes because of it. */
+  request: z.string().nullable(),
 })
 export type WeeklyReview = z.infer<typeof WeeklyReview>

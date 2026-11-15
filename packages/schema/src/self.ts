@@ -90,3 +90,18 @@ export const SelfRequest = z
   .strict()
   .refine((r) => words(r.body) <= 120, { path: ['body'], message: 'a request is up to 120 words' })
 export type SelfRequest = z.infer<typeof SelfRequest>
+
+/** The request as a file: Merge's words, and if Roman answered, a line that starts `Roman:` (spec 9.5). */
+export function formatSelfRequest(r: { body: string; answer?: string | null }): string {
+  return `${r.body.trim()}\n${r.answer ? `\nRoman: ${r.answer.trim()}\n` : ''}`
+}
+
+/** `self/requests/<date>.md` read back: everything before the line that starts `Roman:` is the request, what follows is his answer. A file that is not a request is null. */
+export function parseSelfRequest(date: string, text: string): SelfRequest | null {
+  const lines = text.split(/\r?\n/)
+  const at = lines.findIndex((l) => l.startsWith('Roman:'))
+  const body = (at < 0 ? lines : lines.slice(0, at)).join('\n').trim()
+  const answer = at < 0 ? null : ([lines[at]!.slice('Roman:'.length), ...lines.slice(at + 1)].join('\n').trim() || null)
+  const parsed = SelfRequest.safeParse({ date, body, answer })
+  return parsed.success ? parsed.data : null
+}

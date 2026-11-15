@@ -1,3 +1,4 @@
+import { readResults } from './build-worker.ts'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { Health, TICK_KEEP_DAYS, TickLine, type Goals, type TickStep } from '@forkling/schema'
@@ -130,6 +131,16 @@ function placeNudgeInputs(t: Tick) {
   }
 }
 
+/** The steps and build attempts of the last 7 days, for the weekly health check (spec 9.6). A build counts as failed if it failed or ended in the scrap bin. */
+function weekInputs(t: Tick) {
+  const since = t.nowMs - 7 * 86_400_000
+  const results = readResults(t.dir).filter((r) => Date.parse(r.at) > since)
+  return {
+    steps: readTimelineSince(t.dir, t.today, 7).map((s) => ({ verb: s.verb, at: s.at })),
+    builds: { total: results.length, failed: results.filter((r) => r.status === 'failed' || r.workStatus === 'scrap').length },
+  }
+}
+
 export function logTick(t: Tick, result: TickResult): TickResult {
   if (t.deps.dryRun) return result
   const previous = readHealth(t.dir)
@@ -140,6 +151,6 @@ export function logTick(t: Tick, result: TickResult): TickResult {
   const line = lineFor(t, result, previous)
   appendTick(t.dir, t.today, line)
   pruneTicks(t.dir, t.today)
-  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir), placeNudges: placeNudgeInputs(t) }))
+  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir), placeNudges: placeNudgeInputs(t), week: weekInputs(t) }))
   return { ...result, logged: true }
 }

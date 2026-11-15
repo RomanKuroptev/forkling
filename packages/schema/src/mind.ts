@@ -145,6 +145,8 @@ export const MindState = z.object({
   pageChangedOn: z.iso.date().optional(),
   /** Local date of the last usable weekly review, and when one last gave nothing usable (spec 9.5). */
   lastWeeklyDate: z.iso.date().optional(),
+  /** The mood at wake on the last 3 mornings, for the spiral warning of the weekly health check (spec 9.6). */
+  wakeMoods: z.array(z.object({ date: z.iso.date(), mood: z.number() })).max(3).optional(),
   weeklyTriedAt: Timestamp.optional(),
   sleepRewrite: z.object({ id: z.string().min(1).nullable(), date: z.iso.date(), submittedAt: Timestamp, polledAt: Timestamp.optional(), triedAt: Timestamp.optional() }).nullable().default(null),
   /** Reading sessions so far on a local date, for the daily limit; and whether the morning skim of the feeds is done. */

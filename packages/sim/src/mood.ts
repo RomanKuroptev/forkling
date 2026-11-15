@@ -77,3 +77,8 @@ export function inSpiral(wakeMoods: readonly number[]): boolean {
   const last = wakeMoods.slice(-SPIRAL_DAYS)
   return last.length === SPIRAL_DAYS && last.every((m) => m < SPIRAL_BELOW)
 }
+
+/** The mood at wake on the last mornings, one a day, oldest first, kept for the spiral warning (spec 9.6). The same morning twice changes only the number. */
+export function recordWakeMood(prev: readonly { date: string; mood: number }[], date: string, mood: number): { date: string; mood: number }[] {
+  return [...prev.filter((m) => m.date !== date), { date, mood }].sort((a, b) => a.date.localeCompare(b.date)).slice(-SPIRAL_DAYS)
+}

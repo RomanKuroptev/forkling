@@ -1,13 +1,14 @@
 import { kit } from '@forkling/schema/kit'
 import { Health, WeeklyReview, WorkMeta } from '@forkling/schema'
 import { checkAbout, MAX_REVIEW_RENAMES, neglectFor, validatePlacePatch, weeklyDue, WEEKLY_RETRY_MS } from '@forkling/sim'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { readWorks } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
-import { claimsHuman } from '../honesty.ts'
+import { claimsHuman, wordCount } from '../honesty.ts'
 import { stopFailure } from '../llm.ts'
 import { buildWeeklyUser, type WeeklyInput } from '../prompts/weekly.ts'
+import { readSelfRequests } from '../self-requests.ts'
 import { readTimelineSince } from '../stream.ts'
 import { readWishes } from '../wishes.ts'
 import type { Tick } from './context.ts'
@@ -17,6 +18,9 @@ import { clock, weekday } from './util.ts'
 const WEEKLY_OUTPUT_TOKENS = 6000
 const MAX_STEP_LINES = 20
 const MAX_NAME_CHARS = 40
+/** Spec 9.5: a request to Roman is up to 120 words. */
+const MAX_REQUEST_WORDS = 120
+const MAX_ASKED = 3
 /** Every version of about.md is kept as a copy named by the Sunday it changed (spec 9.2). */
 export const aboutHistoryPath = (date: string): string => `self/history/${date}.md`
 
@@ -60,6 +64,7 @@ function weeklyInput(t: Tick): WeeklyInput {
     warnings,
     longGoal: t.goals.long ? { text: t.goals.long.text, reason: t.goals.long.reason, since: t.goals.long.setAt.slice(0, 10) } : null,
     about: t.about,
+    asked: readSelfRequests(t.dir).slice(0, MAX_ASKED).map((r) => ({ date: r.date, body: r.body, answer: r.answer })),
   }
 }
 
@@ -85,10 +90,23 @@ export async function weeklyStep(t: Tick): Promise<void> {
   applyAbout(t, review)
   applyLongGoal(t, review.longGoal)
   applyRenames(t, review.renames)
+  applyRequest(t, review.request)
 
   mind.lastWeeklyDate = t.today
   delete mind.weeklyTriedAt
   t.parts.push('weekly review')
+}
+
+/** The one optional request to Roman (spec 9.5): up to 120 words in Merge's voice. It is kept as a file and shown on `/requests/`; nothing changes because of it. */
+function applyRequest(t: Tick, request: string | null): void {
+  const body = request?.trim()
+  if (!body) return
+  if (wordCount(body) > MAX_REQUEST_WORDS) return void t.notes.push(`the request to Roman was turned down: it is over ${MAX_REQUEST_WORDS} words`)
+  if (claimsHuman(body)) return void t.notes.push('claim dropped, request to Roman: it claimed to be human')
+  if (existsSync(join(t.dir, `self/requests/${t.today}.md`))) return void t.notes.push('the request to Roman was not kept: there is already one for today')
+  t.selfRequest = { date: t.today, body }
+  t.remember.push({ at: t.nowIso, kind: 'event', text: 'I asked Roman for something.' })
+  t.parts.push('asked Roman for something')
 }
 
 function applyAbout(t: Tick, review: WeeklyReview): void {

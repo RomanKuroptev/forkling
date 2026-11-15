@@ -356,7 +356,7 @@ describe('the late path (spec 9.4: cancel and rerun as a normal call 1 hour afte
     await sleepRewriteStep(t)
     expect(f.cancelled).toEqual(['batch-1'])
     expect(f.completed).toHaveLength(1)
-    expect(f.completed[0]).toMatchObject({ kind: 'sleep', model: 'claude-sonnet-5-5', effort: 'low' })
+    expect(f.completed[0]).toMatchObject({ kind: 'sleeplate', model: 'claude-sonnet-5-5', effort: 'low' })
     expect(f.completed[0]!.user).toContain(`${DAY}#1 | made | Kept a souvenir about fog.`)
     expect(t.journal?.date).toBe(DAY)
     expect(t.calls[0]!.usd).toBeCloseTo(costUsd('claude-sonnet-5-5', usage))

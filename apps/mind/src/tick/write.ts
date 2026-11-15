@@ -1,4 +1,4 @@
-import { Forkling, formatRequest, type Goals, type Intention, type MindState } from '@forkling/schema'
+import { Forkling, formatRequest, formatSelfRequest, type Goals, type Intention, type MindState } from '@forkling/schema'
 import { toRepoIntention } from '@forkling/sim'
 import { renderPlan } from '../plan-page.ts'
 import { appendStream, appendTimeline, prune } from '../stream.ts'
@@ -115,6 +115,10 @@ export function writeWorld(t: Tick): TickResult {
       if (writeText(dir, 'self/about.md', `${t.aboutWrite.text}\n`)) written.push('self/about.md')
       const history = aboutHistoryPath(today)
       if (writeText(dir, history, renderAboutHistory(today, t.aboutWrite))) written.push(history)
+    }
+    if (t.selfRequest) {
+      const request = `self/requests/${t.selfRequest.date}.md`
+      if (writeText(dir, request, formatSelfRequest({ body: t.selfRequest.body }))) written.push(request)
     }
     if (t.pageWrite) {
       const body = `${t.pageWrite.text}\n`
