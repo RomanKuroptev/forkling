@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Forkling, Goals, MindState, WorldObject, type VisitorEvent } from '@forkling/schema'
+import { Forkling, Goals, MindState } from '@forkling/schema'
 import { scoreSurprise, type SurpriseInput } from '../src/surprise.ts'
 import { sleepWindow } from '../src/sleep.ts'
 
@@ -17,16 +17,6 @@ const forkling = Forkling.parse({
   timezone: 'Europe/Stockholm',
 })
 
-const rock = WorldObject.parse({
-  id: 'sunny-rock',
-  kind: 'rock',
-  name: 'The sunny rock',
-  position: [5, 0, 22],
-  model: { asset: 'nature/rock_largeA' },
-  affordances: ['perch'],
-  reason: 'Warm.',
-})
-
 const planned = Goals.parse({
   long: { text: 'Own the sunny rock.', reason: 'It is warm.', setAt: '2026-11-02T06:00:00Z', reviewedAt: '2026-11-02T06:00:00Z' },
   today: { date: '2026-11-03', steps: [{ verb: 'perch', targetId: 'sunny-rock', reason: 'The view.', minutes: 30 }], reason: 'Start high.' },
@@ -37,12 +27,9 @@ const planned = Goals.parse({
 const calm: SurpriseInput = {
   forkling,
   goals: planned,
-  mindState: MindState.parse({ knownObjects: ['sunny-rock'], lastPlanDate: '2026-11-03' }),
-  objects: [rock],
-  events: [],
+  mindState: MindState.parse({ lastPlanDate: '2026-11-03' }),
   nowMs: now,
   asleep: false,
-  spotKinds: new Set(['sunny-rock', 'perch', 'food']),
 }
 
 const kinds = (input: SurpriseInput) => scoreSurprise(input).map((t) => t.kind)
@@ -53,13 +40,7 @@ describe('scoreSurprise', () => {
   })
 
   it('never wakes the mind while asleep', () => {
-    expect(kinds({ ...calm, asleep: true, goals: {}, objects: [rock, { ...rock, id: 'new' }] })).toEqual([])
-  })
-
-  it('does not wake for a new object or a new kind of visitor event any more', () => {
-    const fresh = { ...rock, id: 'red-ball', name: 'A red ball' }
-    const bell: VisitorEvent = { type: 'bell', payload: {}, visitorId: 'v_abc', createdAt: '2026-11-03T09:59:00Z' }
-    expect(kinds({ ...calm, objects: [rock, fresh], events: [bell] })).toEqual([])
+    expect(kinds({ ...calm, asleep: true, goals: {} })).toEqual([])
   })
 
   it('wakes for a trip that raised an interest by 15 or more, twice a day at most (spec 2.3)', () => {
@@ -78,7 +59,7 @@ describe('scoreSurprise', () => {
   })
 
   it('asks for a morning plan once awake on a day with no plan', () => {
-    const t = kinds({ ...calm, goals: { long: planned.long }, mindState: MindState.parse({ knownObjects: ['sunny-rock'], lastPlanDate: '2026-11-02' }) })
+    const t = kinds({ ...calm, goals: { long: planned.long }, mindState: MindState.parse({ lastPlanDate: '2026-11-02' }) })
     expect(t).toEqual(['newDay'])
   })
 
@@ -168,7 +149,7 @@ describe('scoreSurprise', () => {
 
 describe('a replan asked for by a thought tick (spec 2.3)', () => {
   it('fires the replan trigger with the reason, though the plan has not run out', () => {
-    const asked = { ...calm, mindState: MindState.parse({ knownObjects: ['sunny-rock'], lastPlanDate: '2026-11-03', thought: { replanRequest: { reason: 'the lamp is not where I thought', at: '2026-11-03T09:58:00Z' } } }) }
+    const asked = { ...calm, mindState: MindState.parse({ lastPlanDate: '2026-11-03', thought: { replanRequest: { reason: 'the lamp is not where I thought', at: '2026-11-03T09:58:00Z' } } }) }
     const found = scoreSurprise(asked).find((t) => t.kind === 'replan')
     expect(found?.detail).toContain('the lamp is not where I thought')
     expect(kinds(calm)).not.toContain('replan')
@@ -177,14 +158,14 @@ describe('a replan asked for by a thought tick (spec 2.3)', () => {
 
 describe('a build that finished (spec 2.3: buildResult, each result once)', () => {
   it('fires with what happened, while the mind has not answered it', () => {
-    const done = { ...calm, mindState: MindState.parse({ knownObjects: ['sunny-rock'], lastPlanDate: '2026-11-03', jobs: { seen: ['a'], pending: [{ id: 'a', text: 'the workshop finished "A lamp": it passed its check' }] } }) }
+    const done = { ...calm, mindState: MindState.parse({ lastPlanDate: '2026-11-03', jobs: { seen: ['a'], pending: [{ id: 'a', text: 'the workshop finished "A lamp": it passed its check' }] } }) }
     const found = scoreSurprise(done).find((t) => t.kind === 'buildResult')
     expect(found?.detail).toContain('the workshop finished "A lamp"')
     expect(kinds(calm)).not.toContain('buildResult')
   })
 
   it('fires once for several results, and the detail lists each', () => {
-    const two = { ...calm, mindState: MindState.parse({ knownObjects: ['sunny-rock'], lastPlanDate: '2026-11-03', jobs: { seen: ['a', 'b'], pending: [{ id: 'a', text: 'first thing' }, { id: 'b', text: 'second thing' }] } }) }
+    const two = { ...calm, mindState: MindState.parse({ lastPlanDate: '2026-11-03', jobs: { seen: ['a', 'b'], pending: [{ id: 'a', text: 'first thing' }, { id: 'b', text: 'second thing' }] } }) }
     const found = scoreSurprise(two).filter((t) => t.kind === 'buildResult')
     expect(found).toHaveLength(1)
     expect(found[0]!.detail).toMatch(/first thing[\s\S]*second thing/)

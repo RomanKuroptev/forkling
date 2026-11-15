@@ -34,7 +34,6 @@ export async function think(t: Tick): Promise<void> {
     fromRoman: (t.mind.fromRoman ?? []).map((x) => x.text),
     requests: openPlaceRequests(foundGate(t).requests).map((r) => ({ name: r.name, status: r.status })),
     triggers: t.triggers,
-    events: t.events,
     localTime: `${weekday(tz, nowMs)} ${t.today} ${clock(tz, nowMs)}`,
     wakeTime: clock(tz, window.wakeMs),
     bedTime: clock(tz, window.bedMs),

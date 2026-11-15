@@ -9,7 +9,7 @@ import { landMindStep, leaveMindStep } from './mind-step.ts'
  */
 export function finishStep(t: Tick): void {
   const { forkling, goals, mind, nowMs, asleep } = t
-  t.triggers = scoreSurprise({ forkling, goals, mindState: mind, objects: t.objects, events: t.events, nowMs, asleep, spotKinds: t.spotKeys })
+  t.triggers = scoreSurprise({ forkling, goals, mindState: mind, nowMs, asleep })
 
   const finishing = goals.now ? goals.today?.steps[goals.now.index] : undefined
   if (finishing && goals.now && t.triggers.some((x) => x.kind === 'stepDone') && mind.appliedStepAt !== goals.now.startedAt && !asleep) {

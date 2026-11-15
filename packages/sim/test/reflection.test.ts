@@ -98,7 +98,7 @@ describe('the reflected trigger (spec 2.3)', () => {
     today: { date: '2026-11-03', steps: [{ verb: 'rest', reason: 'Rest.', minutes: 30 }], reason: 'A day.' },
     now: { index: 0, startedAt: '2026-11-03T09:40:00Z', until: '2026-11-03T10:10:00Z' },
   })
-  const calm: SurpriseInput = { forkling, goals: planned, mindState: MindState.parse({ lastPlanDate: '2026-11-03' }), objects: [], events: [], nowMs: Date.parse('2026-11-03T10:00:00Z'), asleep: false, spotKinds: new Set() }
+  const calm: SurpriseInput = { forkling, goals: planned, mindState: MindState.parse({ lastPlanDate: '2026-11-03' }), nowMs: Date.parse('2026-11-03T10:00:00Z'), asleep: false }
   const withPending = (reason: string): SurpriseInput => ({ ...calm, mindState: MindState.parse({ lastPlanDate: '2026-11-03', reflect: { sum: 0, lastAt: null, date: '', today: 0, pending: { reason } } }) })
 
   it('is quiet with nothing pending', () => expect(scoreSurprise(calm)).toEqual([]))
@@ -119,7 +119,7 @@ describe('the note trigger (spec 2.3: a note found, once every 30 minutes)', () 
     now: { index: 0, startedAt: '2026-11-03T09:40:00Z', until: '2026-11-03T10:10:00Z' },
   })
   const NOW = Date.parse('2026-11-03T10:00:00Z')
-  const input = (mind: Record<string, unknown>, over: Partial<SurpriseInput> = {}): SurpriseInput => ({ forkling, goals: planned, mindState: MindState.parse({ lastPlanDate: '2026-11-03', ...mind }), objects: [], events: [], nowMs: NOW, asleep: false, spotKinds: new Set(), ...over })
+  const input = (mind: Record<string, unknown>, over: Partial<SurpriseInput> = {}): SurpriseInput => ({ forkling, goals: planned, mindState: MindState.parse({ lastPlanDate: '2026-11-03', ...mind }), nowMs: NOW, asleep: false, ...over })
 
   it('is quiet with no note waiting', () => expect(scoreSurprise(input({}))).toEqual([]))
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Forkling, SpeciesPack, VisitorEvent, WorldObject, forklingPackIssues, objectIdFromPath } from '../src/index.ts'
+import { Forkling, SpeciesPack, WorldObject, forklingPackIssues, objectIdFromPath } from '../src/index.ts'
 
 const forkling = {
   name: 'Merge',
@@ -102,20 +102,6 @@ describe('objectIdFromPath', () => {
     expect(objectIdFromPath('objects/sunny-rock.json')).toBe('sunny-rock')
     expect(objectIdFromPath('objects/nested/x.json')).toBeNull()
     expect(objectIdFromPath('journal/2026-10-30.md')).toBeNull()
-  })
-})
-
-describe('VisitorEvent', () => {
-  const gift = { type: 'gift', visitorId: 'v_3f9a', payload: { item: 'fish' }, createdAt: '2026-10-30T12:00:00Z' }
-
-  it('parses visitor actions', () => {
-    expect(VisitorEvent.parse(gift).type).toBe('gift')
-  })
-
-  it('rejects unknown types and over-long messages', () => {
-    expect(VisitorEvent.safeParse({ ...gift, type: 'hack' }).success).toBe(false)
-    expect(VisitorEvent.safeParse({ ...gift, type: 'message', payload: { text: 'x'.repeat(281) } }).success).toBe(false)
-    expect(VisitorEvent.safeParse({ ...gift, type: 'message', payload: { text: 'hi Merge' } }).success).toBe(true)
   })
 })
 

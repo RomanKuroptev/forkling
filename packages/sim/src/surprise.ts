@@ -1,8 +1,8 @@
-import type { Forkling, Goals, MindState, VisitorEvent, WorldObject } from '@forkling/schema'
+import type { Forkling, Goals, MindState } from '@forkling/schema'
 import { noteTriggerDue } from './notes-find.ts'
 import { localDate, sleepWindow } from './sleep.ts'
 
-export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'buildResult' | 'reflected' | 'note'
+export type TriggerKind = 'sparked' | 'stepDone' | 'replan' | 'newDay' | 'buildResult' | 'reflected' | 'note'
 
 /** A reason to wake the LLM. Anything the sim can tell on its own stays with the utility AI. */
 export interface Trigger {
@@ -17,13 +17,8 @@ export interface SurpriseInput {
   forkling: Forkling
   goals: Goals
   mindState: MindState
-  objects: readonly WorldObject[]
-  /** Visitor events waiting in the inbox. */
-  events: readonly VisitorEvent[]
   nowMs: number
   asleep: boolean
-  /** Ids and kinds the world can currently offer as a target (see `collectSpots`). */
-  spotKinds: ReadonlySet<string>
 }
 
 function previousDate(date: string): string {
@@ -46,7 +41,7 @@ export const MAX_SPARKS_PER_DAY = 2
 export const REPLAN_BEFORE_BED_MS = 45 * 60_000
 
 /**
- * What, if anything, is surprising right now: new things, a blocked step, a step that ran out, a new
+ * What, if anything, is surprising right now: a step that ran out, a new
  * day, bedtime, a long goal due for review. Pure and deterministic. Empty means no LLM call. Never wakes the mind in bed.
  */
 export function scoreSurprise(input: SurpriseInput): Trigger[] {

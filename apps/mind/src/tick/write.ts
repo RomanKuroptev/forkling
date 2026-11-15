@@ -27,7 +27,6 @@ const withoutBrokenOff = (m: MindState): Omit<MindState, 'brokenOff'> => {
 export function writeWorld(t: Tick): TickResult {
   const { dir, deps, w, forkling, goals, mind, budget, beliefs, interests, asleep, nowMs, nowIso, today, parts } = t
   if (asleep !== forkling.asleep) parts.push(asleep ? 'went to bed' : 'woke up')
-  const inboxConsumed = t.thought && w.inbox.length > 0
   const goalsChanged = !same(withoutWorked(goals), withoutWorked(w.goals))
   const mindChanged = !same(withoutBrokenOff(mind), withoutBrokenOff(w.mindState))
   const workedChanged = goals.now?.workedSec !== w.goals.now?.workedSec
@@ -43,7 +42,6 @@ export function writeWorld(t: Tick): TickResult {
     t.gone.size > 0 ||
     goalsChanged ||
     mindChanged ||
-    inboxConsumed ||
     asleep !== forkling.asleep ||
     t.mood !== forkling.mood ||
     t.energy !== forkling.energy ||
@@ -139,12 +137,6 @@ export function writeWorld(t: Tick): TickResult {
     }
     // A new morning clears out streams past their keeping time.
     if (!asleep && forkling.asleep) written.push(...prune(dir, today))
-    if (inboxConsumed) {
-      for (const item of w.inbox) {
-        deleteFile(dir, item.path)
-        written.push(item.path)
-      }
-    }
   }
 
   const summary = parts.length > 0 ? parts.join(', ') : written.length > 0 ? 'sync' : ''

@@ -5,6 +5,7 @@ import { Health, TICK_KEEP_DAYS, TickLine, type Goals, type TickStep } from '@fo
 import { localDate, moodWords } from '@forkling/sim'
 import { clampText } from './decision.ts'
 import { readWorks } from './builds/works.ts'
+import { readDiaries, readWritings } from './novelty-inputs.ts'
 import { readRequests } from './requests.ts'
 import { readTimelineSince } from './stream.ts'
 import { buildHealth } from './health.ts'
@@ -121,7 +122,7 @@ function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine
  * world. These are the only files a quiet tick writes. A dry run writes nothing.
  */
 /** The places, requests and last week's steps the place nudges are measured from (spec 12.3). Read-only: nothing here changes a place. */
-function placeNudgeInputs(t: Tick) {
+export function placeNudgeInputs(t: Tick) {
   const tz = t.sleepOpts.timezone
   return {
     places: t.places.map((p) => ({ id: p.id, name: p.name, purpose: p.purpose, founded: p.founded, lastCareAt: p.state.lastCareAt, closed: p.state.closed !== null })),
@@ -151,6 +152,6 @@ export function logTick(t: Tick, result: TickResult): TickResult {
   const line = lineFor(t, result, previous)
   appendTick(t.dir, t.today, line)
   pruneTicks(t.dir, t.today)
-  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir), placeNudges: placeNudgeInputs(t), week: weekInputs(t) }))
+  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir), texts: { writings: readWritings(t.dir), diaries: readDiaries(t.dir) }, doorDays: t.mind.doorDays ?? [], placeNudges: placeNudgeInputs(t), week: weekInputs(t) }))
   return { ...result, logged: true }
 }

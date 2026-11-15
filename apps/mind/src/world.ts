@@ -1,20 +1,9 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, SourceStats, VisitorEvent, Wants, WorldObject, type Note, type NotesHidden } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, SourceStats, Wants, WorldObject, type Note, type NotesHidden } from '@forkling/schema'
 import { readNotes, readNotesHidden } from './notes.ts'
 import { DEFAULT_SEED } from './seed.ts'
-
-/** Most inbox events one tick will look at. Newer ones win; the rest are dropped with the rest of the inbox. */
-export const MAX_INBOX_EVENTS = 20
-
-export interface InboxItem {
-  /** Path relative to the world root, e.g. `events/inbox/1730000000-v_ab12.json`. */
-  path: string
-  /** The validated event, or null when the file isn't a valid one. */
-  event: VisitorEvent | null
-  problem?: string
-}
 
 /** Everything a tick reads from a world repo, validated. */
 export interface WorldFiles {
@@ -47,7 +36,6 @@ export interface WorldFiles {
   interests: Interests
   /** Everything in `art/`. */
   art: Artifact[]
-  inbox: InboxItem[]
 }
 
 class WorldFileError extends Error {
@@ -97,17 +85,6 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
   const personaPath = join(dir, 'brain/persona.md')
   const summaryPath = join(dir, 'memory/summary.md')
 
-  const inbox = listJson(dir, 'events/inbox')
-    .slice(-MAX_INBOX_EVENTS * 5)
-    .map((path): InboxItem => {
-      try {
-        const parsed = VisitorEvent.safeParse(JSON.parse(readFileSync(join(dir, path), 'utf8')))
-        return parsed.success ? { path, event: parsed.data } : { path, event: null, problem: lines(parsed.error).join('; ') }
-      } catch (e) {
-        return { path, event: null, problem: `isn't valid JSON: ${(e as Error).message}` }
-      }
-    })
-
   return {
     dir,
     forkling,
@@ -134,7 +111,6 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
         return []
       }
     }),
-    inbox,
   }
 }
 

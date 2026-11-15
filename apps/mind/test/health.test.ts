@@ -72,9 +72,9 @@ describe('buildHealth', () => {
   it('counts triggers and calls by kind, and the decide calls, for the day', () => {
     const h = run([
       { min: 0, line: { triggers: [{ kind: 'newDay', score: 1 }], think: 'morning', calls: [okCall('morning')] } },
-      { min: 10, line: { triggers: [{ kind: 'need', score: 0.6 }], think: 'decide', calls: [okCall('decide'), failedCall('art')] } },
+      { min: 10, line: { triggers: [{ kind: 'sparked', score: 0.6 }], think: 'decide', calls: [okCall('decide'), failedCall('art')] } },
     ])
-    expect(h.today.triggersByKind).toEqual({ newDay: 1, need: 1 })
+    expect(h.today.triggersByKind).toEqual({ newDay: 1, sparked: 1 })
     expect(h.today.callsByKind).toEqual({ morning: 1, decide: 1 })
     expect(h.today.decideCalls).toBe(2)
     expect(h.today.failures).toBe(1)
@@ -306,3 +306,45 @@ describe('the weekly health check in health (spec 9.6)', () => {
   })
 })
 
+
+describe('the rest of the novelty block (spec 12.6): texts, doors, the one host, collisions and constraints', () => {
+  const fog = 'the fog came in over the harbour and the lamps went out one by one'
+  const texts = {
+    writings: [{ id: 'a', at: '2026-10-30T10:00:00Z', text: fog }, { id: 'b', at: '2026-11-02T10:00:00Z', text: `${fog} tonight` }],
+    diaries: [{ date: '2026-11-01', text: 'Today was quiet and grey. I read about moss.' }, { date: '2026-11-02', text: 'Today was quiet and grey. A lamp went out.' }],
+  }
+
+  it('gives the average highest similarity of the week\'s texts and how many tripped the writing and diary nudges', () => {
+    const n = buildHealth(null, line(0), ctx(0, { texts })).novelty
+    expect(n?.texts?.texts).toBe(4)
+    expect(n?.texts?.meanMaxSimilarity).toBeGreaterThan(0.3)
+    expect(n?.texts).toMatchObject({ repeatedWriting: 1, repeatedDiary: 1 })
+  })
+
+  it('gives the share of the week\'s trips through a stranger\'s door, and the days without one', () => {
+    const doorDays = [{ date: '2026-11-01', trips: 2, strangers: 0 }, { date: '2026-11-02', trips: 2, strangers: 1 }, { date: '2026-11-03', trips: 1, strangers: 0 }]
+    expect(buildHealth(null, line(0), ctx(0, { doorDays })).novelty?.doors).toEqual({ trips: 5, strangers: 1, share: 0.2, noDoorDays: 1 })
+  })
+
+  it('says whether one host gave more than 60% of the week\'s reads', () => {
+    const sources = { weeks: { '2026-W45': { 'en.wikipedia.org': { reads: 7, souvenirs: 0, placed: 0, boring: 0, failures: 0 }, 'www.gutenberg.org': { reads: 3, souvenirs: 0, placed: 0, boring: 0, failures: 0 } } } }
+    const h = buildHealth(null, line(0), ctx(0, { sources: sources as never }))
+    expect(h.novelty?.oneHost).toMatchObject({ host: 'en.wikipedia.org', wouldFire: true })
+    expect(buildHealth(null, line(0), ctx(0)).novelty?.oneHost).toBeNull()
+  })
+
+  it('counts the week\'s collisions used and constraints offered and refused', () => {
+    const w = (id: string, over: Record<string, unknown>) => WorkMeta.parse({ id, title: id, kind: 'art', about: `about ${id}`, interest: null, made: '2026-11-02T10:00:00Z', status: 'shelf', size: 'full', ...over })
+    const works = [w('a', { collision: ['x', 'y'], constraint: { text: 'two colours', refused: false, reason: null } }), w('b', { constraint: { text: 'tiny', refused: true, reason: 'no' } })]
+    expect(buildHealth(null, line(0), ctx(0, { works })).novelty?.draws).toEqual({ collisionsUsed: 1, constraintsOffered: 2, constraintsRefused: 1 })
+  })
+
+  it('is all zeros for a world with none of it, and never a warning', () => {
+    const n = buildHealth(null, line(0), ctx(0)).novelty
+    expect(n?.texts).toEqual({ texts: 0, meanMaxSimilarity: 0, repeatedWriting: 0, repeatedDiary: 0 })
+    expect(n?.doors).toEqual({ trips: 0, strangers: 0, share: 0, noDoorDays: 0 })
+    expect(n?.draws).toEqual({ collisionsUsed: 0, constraintsOffered: 0, constraintsRefused: 0 })
+    const busy = buildHealth(null, line(0), ctx(0, { texts, doorDays: [{ date: '2026-11-02', trips: 2, strangers: 0 }] }))
+    expect(busy.warnings.join(' ')).not.toMatch(/repeat|door|similar|diary|writing/i)
+  })
+})

@@ -93,7 +93,6 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     world,
     places,
     body,
-    events: w.inbox.flatMap((item) => (item.event ? [item.event] : [])),
 
     objects,
     objectIds: new Set(objects.map((o) => o.id)),

@@ -11,7 +11,7 @@ export const REPLAN_COOLDOWN_MS = 60 * 60_000
 
 /** What the mind decided becomes true: goals, a design request, a late night, and the plan if the body can carry it out. */
 export function applyDecision(t: Tick): void {
-  const { decision, thinkKind, goals, mind, parts, notes, remember, nowIso, nowMs, today, tz, asleep, triggers, events, w } = t
+  const { decision, thinkKind, goals, mind, parts, notes, remember, nowIso, nowMs, today, tz, asleep, triggers, w } = t
   if (!decision) return
   parts.push(thinkKind === 'morning' ? 'morning plan' : `thought about ${triggers[0]!.kind}`)
 
@@ -43,9 +43,8 @@ export function applyDecision(t: Tick): void {
 
   // What the mind took in and thought, for the day's stream.
   for (const x of triggers) {
-    if (x.kind === 'sparked' || x.kind === 'blocked' || x.kind === 'need') remember.push({ at: nowIso, kind: 'trigger', text: x.detail })
+    if (x.kind === 'sparked') remember.push({ at: nowIso, kind: 'trigger', text: x.detail })
   }
-  for (const e of events) remember.push({ at: nowIso, kind: 'visitor', text: `A visitor left a ${e.type}.` })
   if (decision.thought.trim()) remember.push({ at: nowIso, kind: 'thought', text: decision.thought.trim() })
 
   if (thinkKind === 'morning') mind.lastPlanDate = today
@@ -60,11 +59,6 @@ export function applyDecision(t: Tick): void {
   if ((thinkKind === 'morning' || thinkKind === 'decide') && mind.reflect?.pending) mind.reflect = { ...mind.reflect, pending: null }
   // The mind has been told what broke its steps off; the count starts again.
   mind.brokenOff = []
-  // A weekly review looks at the long goal, not at the beach, so what is new stays new until it is looked at.
-  if (thinkKind === 'morning' || thinkKind === 'decide') {
-    mind.knownObjects = [...new Set([...mind.knownObjects, ...t.objects.map((o) => o.id)])]
-    mind.seenEventTypes = [...new Set([...mind.seenEventTypes, ...events.map((e) => e.type)])]
-  }
   const replanAfter = new Date(nowMs + REPLAN_COOLDOWN_MS).toISOString()
 
   if (planned) {

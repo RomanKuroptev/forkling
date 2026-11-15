@@ -16,6 +16,6 @@ The pure, deterministic sim. It runs in the browser, in the mind and in CI, so i
 ## Working here
 - TDD: write the Vitest test first for sim logic, then the code.
 - The headless runner steps the world without a renderer. Use it to test behaviour over simulated days.
-- Surprise triggers decide when the mind wakes the LLM: novelty, a blocked step (once per step), a strong need the body cannot fix by itself, a step that ran out, a replan (the day is planned and nothing is running), a new day, bedtime, and the weekly review. No trigger means no LLM call; utility AI keeps the forkling busy.
+- Surprise triggers decide when the mind wakes the LLM: a spark (a trip raised an interest by 15), a step that ran out, a replan (the day is planned and nothing is running, or a thought asked for one), a new day, a finished build, a found note and a reflection that changed the plan (spec 2.3). The pet-era triggers (novelty, a blocked step, a strong need, bedtime) are gone. No trigger means no LLM call; utility AI keeps the forkling busy.
 - The plan owns the visible action. Drift fills gaps and looks after a critical need with one action, then the plan goes on. A step's effect lands only after the body really spent time on its verb (`tallyWindow`).
 - Run one file with `pnpm vitest run packages/sim/test/<file>`.

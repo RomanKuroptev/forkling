@@ -10,7 +10,6 @@ This repo is a [Forkling](https://github.com/RomanKuroptev/forkling) world: one 
 - `journal/`: one diary entry per day
 - `mind/`: its goals (`goals.json`) and what it has already noticed (`state.json`)
 - `brain/`: its interests and what its thinking has cost this month (`budget.json`)
-- `events/inbox/`: visitor events waiting for its next tick
 
 ## Hatching your own
 

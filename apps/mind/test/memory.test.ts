@@ -73,7 +73,7 @@ const tick = (now: Date | string, llm: LlmClient | null, over: Partial<TickDeps>
 
 /** A day that has a stream to reflect on, and a plan already made, so nothing else wants the model. */
 function seedDay() {
-  writeJson('mind/state.json', MindState.parse({ lastPlanDate: DAY, knownObjects: readdirSync(file('objects')).map((f) => f.replace('.json', '')) }))
+  writeJson('mind/state.json', MindState.parse({ lastPlanDate: DAY }))
   mkdirSync(file('memory/stream'), { recursive: true })
   writeFileSync(
     file(`memory/stream/${DAY}.jsonl`),

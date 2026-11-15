@@ -1,5 +1,5 @@
 import { SourceStats, TOTAL_CAP_USD, type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
-import { MAX_POINTS_IN_HAND, placeNovelty, weeklyHealthWarnings, workNovelty, type PlaceNudgeLike, type PlaceNudgeRequest, type PlaceNudgeStep, type WorkLike } from '@forkling/sim'
+import { MAX_POINTS_IN_HAND, doorStats, drawStats, placeNovelty, textNovelty, weeklyHealthWarnings, workNovelty, type DiaryLike, type DoorDay, type PlaceNudgeLike, type PlaceNudgeRequest, type PlaceNudgeStep, type TextLike, type WorkLike } from '@forkling/sim'
 import { daysInMonth, paceAhead, paceUsd } from './budget.ts'
 import { topHostShare } from './web/stats.ts'
 import { MAX_READS_PER_DAY } from './web/trip.ts'
@@ -17,7 +17,11 @@ export interface HealthContext {
   /** The loop could not push after 3 tries (spec 2.2). */
   pushFailing?: boolean
   /** The works in `works/`, for the week's work numbers. */
-  works?: readonly WorkLike[]
+  works?: readonly (WorkLike & { constraint?: { refused: boolean } | null; collision?: readonly string[] | null })[]
+  /** What Merge has written (notebook) and its diary, for the text numbers of the week (spec 12.6). */
+  texts?: { writings: readonly TextLike[]; diaries: readonly DiaryLike[] }
+  /** Trips by day and how many started through a stranger's door, the last 7 days. */
+  doorDays?: readonly DoorDay[]
   /** The last 7 days for the weekly health check (spec 9.6): the steps started and the build attempts. Absent means no check. */
   week?: { steps: readonly { verb: string; at: string }[]; builds: { total: number; failed: number } }
   /** The places, requests and steps of the last days, for the place nudges (spec 12.3). `dayOf` gives the forkling's own day. */
@@ -154,6 +158,10 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     openBuild,
     novelty: {
       works: workNovelty(ctx.works ?? [], { sinceMs: ctx.nowMs - 7 * 86_400_000 }),
+      texts: textNovelty({ writings: ctx.texts?.writings ?? [], diaries: ctx.texts?.diaries ?? [], sinceMs: ctx.nowMs - 7 * 86_400_000 }),
+      doors: doorStats(ctx.doorDays ?? [], ctx.today),
+      oneHost: web.topHost ? { host: web.topHost.host, share: web.topHost.share, wouldFire: web.topHost.share > 0.6 } : null,
+      draws: drawStats((ctx.works ?? []).map((w) => ({ made: w.made, status: w.status, constraint: w.constraint ?? null, collision: w.collision ?? null })), { sinceMs: ctx.nowMs - 7 * 86_400_000 }),
       places: placeNovelty({ places: ctx.placeNudges?.places ?? [], requests: ctx.placeNudges?.requests ?? [], steps: ctx.placeNudges?.steps ?? [], nowMs: ctx.nowMs, sinceMs: ctx.nowMs - 7 * 86_400_000, ...(ctx.placeNudges?.dayOf ? { dayOf: ctx.placeNudges.dayOf } : {}) }),
     },
     warnings,

@@ -1,5 +1,5 @@
 import type { BudgetCall, InterestSource } from '@forkling/schema'
-import { createPrng, fadeInterests, feedTopic, recordWake, recordWakeMood, SPARK_GAIN, updatePhases } from '@forkling/sim'
+import { createPrng, fadeInterests, feedTopic, isStrangerStart, recordWake, recordWakeMood, SPARK_GAIN, updatePhases } from '@forkling/sim'
 import { canSpend, recordCall, type Usage } from '../budget.ts'
 import { pickDoors } from '../web/doors.ts'
 import { addStats } from '../web/stats.ts'
@@ -136,6 +136,11 @@ export async function tripStep(t: Tick): Promise<void> {
   }
   t.mind.trips = { date: today, reads: t.trips.reads + result.reads, trips: t.trips.trips + 1, looks: t.trips.looks + result.looks, starts: [...t.trips.starts, startKey(start.value)].slice(-60) }
   t.trips = t.mind.trips
+  // Where the trip started, for the week's share of trips through a stranger's door (spec 12.3): measured, never enforced.
+  const top = Object.entries(before.topics).sort((a, b) => b[1].weight - a[1].weight).slice(0, 5).map(([topic]) => topic)
+  const stranger = isStrangerStart(start, t.startingPoints.filter((p) => p.door).map((p) => p.url), top)
+  const day = t.mind.doorDays?.find((d) => d.date === today)
+  t.mind.doorDays = [...(t.mind.doorDays ?? []).filter((d) => d.date !== today), { date: today, trips: (day?.trips ?? 0) + 1, strangers: (day?.strangers ?? 0) + (stranger ? 1 : 0) }].sort((a, b) => a.date.localeCompare(b.date)).slice(-7)
   t.sources = addStats(t.sources, today, result.stats)
   t.mind.pausedHosts = fetcher.pausedHosts()
   for (const _ of result.souvenirs) t.moodEvents.push('souvenirKept')

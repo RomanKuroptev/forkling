@@ -22,7 +22,6 @@ function input(kind: ThinkKind): UserInput {
     mindState: MindState.parse({}),
     places: ['home', 'workshop'],
     triggers: [{ kind: 'newDay', score: 1, detail: 'a new day' }],
-    events: [],
     localTime: 'Tuesday 2026-11-03 10:00',
     wakeTime: '07:10',
     bedTime: '23:05',
