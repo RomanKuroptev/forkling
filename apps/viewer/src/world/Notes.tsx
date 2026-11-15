@@ -15,13 +15,18 @@ export function Notes() {
     <>
       {marks.map((m) => (
         <group key={m.id} position={m.position} rotation={[0, m.rotY, 0]}>
-          <mesh castShadow>
-            <boxGeometry args={[0.5, 0.02, 0.65]} />
-            <meshStandardMaterial color={m.color} />
+          {/* A dark edge under a bright, glowing sheet, so a paper stands out from the grass at a distance. */}
+          <mesh position={[0, -0.005, 0]}>
+            <boxGeometry args={[0.98, 0.02, 1.26]} />
+            <meshStandardMaterial color="#3a3224" />
+          </mesh>
+          <mesh position={[0, 0.012, 0]} castShadow>
+            <boxGeometry args={[0.86, 0.03, 1.14]} />
+            <meshStandardMaterial color={m.color} emissive={m.color} emissiveIntensity={0.55} />
           </mesh>
           {/* A roomy invisible target, so a small paper is easy to point at and to click. */}
           <mesh position={[0, 0.2, 0]} onClick={() => notesStore.open(m.id)} onPointerOver={() => hoverStore.set({ title: m.title, text: m.text })} onPointerOut={() => hoverStore.set(null)}>
-            <boxGeometry args={[0.9, 0.5, 0.9]} />
+            <boxGeometry args={[1.4, 0.6, 1.4]} />
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
         </group>

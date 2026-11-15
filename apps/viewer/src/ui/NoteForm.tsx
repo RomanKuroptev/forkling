@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NOTE_DISCLOSURE, NOTE_MESSAGE_MAX, NOTE_NAME_MAX, placeAt } from '@forkling/sim'
 import { visitor } from '../visitor.ts'
 import { checkNoteInput, noteConfig, sendNote } from '../world/notesClient.ts'
+import { siteBase } from '../world/panelContent.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { mountTurnstile } from './turnstile.ts'
 
@@ -14,7 +15,7 @@ export function NoteButton() {
   return open ? (
     <NoteForm endpoint={config.endpoint} siteKey={config.siteKey} onClose={() => setOpen(false)} />
   ) : (
-    <button className="hud" style={{ left: 'auto', right: 16, bottom: 16, cursor: 'pointer', pointerEvents: 'auto' }} onClick={() => setOpen(true)}>
+    <button className="hud note-btn" style={{ left: 'auto', right: 16, bottom: 16, pointerEvents: 'auto' }} onClick={() => setOpen(true)}>
       Leave a note
     </button>
   )
@@ -22,6 +23,8 @@ export function NoteButton() {
 
 function NoteForm({ endpoint, siteKey, onClose }: { endpoint: string; siteKey: string; onClose: () => void }) {
   const { world } = useWorld()
+  const base = siteBase(world.ref)
+  const notesPage = base ? `${base}notes/` : null
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
   const [token, setToken] = useState('')
@@ -46,13 +49,24 @@ function NoteForm({ endpoint, siteKey, onClose }: { endpoint: string; siteKey: s
   // Typing must not walk the avatar: keep keys inside the form.
   const keep = (e: { stopPropagation: () => void }) => e.stopPropagation()
   return (
-    <div className="hud" role="dialog" aria-label="Leave a note" onKeyDown={keep} onKeyUp={keep} style={{ top: 16, bottom: 'auto', left: '50%', transform: 'translateX(-50%)', width: 'min(520px, 94vw)', maxHeight: '88vh', overflow: 'auto', pointerEvents: 'auto', zIndex: 20, background: 'rgb(20 24 20 / 88%)' }}>
+    <div className="hud note-ui" role="dialog" aria-label="Leave a note" onKeyDown={keep} onKeyUp={keep} style={{ top: 16, bottom: 'auto', left: '50%', transform: 'translateX(-50%)', width: 'min(520px, 94vw)', maxHeight: '88vh', overflow: 'auto', pointerEvents: 'auto', zIndex: 20, background: 'rgb(20 24 20 / 88%)' }}>
       <button onClick={onClose} style={{ float: 'right' }} aria-label="Close">
         ×
       </button>
       <h3 style={{ margin: '0 0 8px' }}>Leave a note for Merge</h3>
       <ul style={{ paddingLeft: 18, margin: '0 0 8px' }}>
-        {NOTE_DISCLOSURE.map((line) => (
+        <li>
+          Notes are public. Anyone can read them on{' '}
+          {notesPage ? (
+            <a href={notesPage} target="_blank" rel="noopener noreferrer">
+              Merge&apos;s notes page
+            </a>
+          ) : (
+            "Merge's notes page"
+          )}
+          .
+        </li>
+        {NOTE_DISCLOSURE.slice(1).map((line) => (
           <li key={line}>{line}</li>
         ))}
       </ul>

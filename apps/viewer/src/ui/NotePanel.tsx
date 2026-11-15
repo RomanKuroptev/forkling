@@ -14,7 +14,7 @@ export function NotePanel() {
   if (!note) return null
   const fate = noteFate(note, note.foundAt?.slice(0, 10) ?? '')
   return (
-    <div className="hud" role="dialog" aria-label="A note" style={{ top: 16, bottom: 'auto', left: '50%', transform: 'translateX(-50%)', width: 'min(560px, 94vw)', maxHeight: '84vh', overflow: 'auto', pointerEvents: 'auto', zIndex: 20, background: 'rgb(20 24 20 / 88%)' }}>
+    <div className="hud note-ui" role="dialog" aria-label="A note" style={{ top: 16, bottom: 'auto', left: '50%', transform: 'translateX(-50%)', width: 'min(560px, 94vw)', maxHeight: '84vh', overflow: 'auto', pointerEvents: 'auto', zIndex: 20, background: 'rgb(20 24 20 / 88%)' }}>
       <button onClick={() => notesStore.close()} style={{ float: 'right' }} aria-label="Close">
         ×
       </button>

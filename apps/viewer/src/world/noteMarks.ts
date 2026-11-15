@@ -4,7 +4,7 @@ import { noteSpot } from '@forkling/sim'
 /** Only the newest notes are drawn as paper, so a busy mailbox cannot slow the world down. */
 export const NOTE_MARK_LIMIT = 60
 
-export const PAPER_COLORS = { new: '#f4efe0', found: '#e8d9a8', replied: '#a8d8a0', kept: '#a8c4e8', declined: '#d8a8a8' } as const
+export const PAPER_COLORS = { new: '#fff7d6', found: '#ffc94a', replied: '#ff8fc0', kept: '#7fc4ff', declined: '#ff7a6b' } as const
 
 export interface NoteMark {
   id: string
