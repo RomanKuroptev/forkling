@@ -11,6 +11,7 @@ import { BudgetLedger } from '@forkling/schema'
 import { monthOf, rollLedger } from './budget.ts'
 import { hasCredentials } from './credentials.ts'
 import { createNotesIntake, type NotesIntake } from './notes-intake.ts'
+import { createPublicNotes } from './notes.ts'
 import { buildHealthResponse } from './health-response.ts'
 import { anthropicClient } from './llm.ts'
 import { createMindServer, DEFAULT_PORT } from './server.ts'
@@ -112,7 +113,7 @@ async function main(): Promise<void> {
     console.log('the mailbox is open: notes are screened before Merge reads them')
   } else console.log(`the mailbox is closed: ${env.TURNSTILE_SECRET ? 'no model to screen with' : 'no TURNSTILE_SECRET'}`)
 
-  const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now()), ...(intake ? { notes: { submit: (body, ip) => intake!.submit(body, ip) } } : {}), pagesOrigin })
+  const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now()), ...(intake ? { notes: { submit: (body, ip) => intake!.submit(body, ip) } } : {}), publicNotes: createPublicNotes(dir, Date.now), pagesOrigin })
   await new Promise<void>((ready, fail) => {
     server.once('error', fail)
     server.listen(port, '127.0.0.1', ready)

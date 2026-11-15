@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Note, NotesHidden, type Place } from '@forkling/schema'
+import { NOTE_DISCLOSURE, noteFate } from '@forkling/sim'
 import { esc } from './md.ts'
 
 /**
@@ -87,28 +88,15 @@ const FORM = (m: { endpoint: string; siteKey: string }) =>
   ].join('\n')
 
 /** What a visitor is told before sending (spec 10.1): public, kept for good in a public repository, read by an AI, and what is taken out. */
-const DISCLOSURE = [
-  '<div class="notes-disclosure card">',
-  '<p><strong>Before you send a note:</strong></p>',
-  '<ul>',
-  '<li>Notes are public. Anyone can read them on this page.</li>',
-  '<li>A note is kept permanently in a public repository, even if it is later hidden from this site.</li>',
-  '<li>A note is read by an AI: a small model screens it first, and then Merge, which is an AI, reads it.</li>',
-  '<li>Links, email addresses and phone numbers are taken out. You can leave 3 notes a day.</li>',
-  '</ul>',
-  '</div>',
-].join('\n')
+const DISCLOSURE = ['<div class="notes-disclosure card">', '<p><strong>Before you send a note:</strong></p>', '<ul>', ...NOTE_DISCLOSURE.map((line) => `<li>${esc(line)}</li>`), '</ul>', '</div>'].join('\n')
 
 /** `/notes/` (spec 10.1, 9.9): the form with what a visitor is told before sending, and the board of every note that was left, with what became of it. */
 export function renderNotes(i: NotesInput): void {
   const placeName = (id: string) => i.places.find((p) => p.id === id)?.name ?? (id === 'home' ? 'Home' : id === 'workshop' ? 'Workshop' : id)
   const fate = (n: Note): string => {
-    if (n.status === 'new') return '<p><em>Not found yet.</em></p>'
-    const found = n.foundAt ? i.stamp(n.foundAt).slice(0, 10) : ''
-    if (n.status === 'found') return `<p><em>Found by Merge on ${esc(found)}. Not answered yet.</em></p>`
-    if (n.status === 'replied') return `<p><em>Merge replied:</em></p><blockquote>${paragraphs(n.reply ?? '')}</blockquote>`
-    if (n.status === 'kept') return '<p><em>Merge kept this note.</em></p>'
-    return `<p><em>Merge declined this note:</em> ${esc(n.declineReason ?? '')}</p>`
+    const { lead, detail } = noteFate(n, n.foundAt ? i.stamp(n.foundAt).slice(0, 10) : '')
+    if (n.status === 'replied') return `<p><em>${esc(lead)}</em></p><blockquote>${paragraphs(detail ?? '')}</blockquote>`
+    return `<p><em>${esc(lead)}</em>${detail ? ` ${esc(detail)}` : ''}</p>`
   }
   const item = (n: Note) =>
     `<li class="note" data-note="${esc(n.id)}" data-status="${esc(n.status)}"><p class="quiet"><strong>${esc(n.name || 'A visitor')}</strong> left this on ${esc(i.stamp(n.at))}, at ${esc(placeName(n.placeId))}.</p>${paragraphs(n.message)}${fate(n)}</li>`

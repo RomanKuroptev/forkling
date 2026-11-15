@@ -35,6 +35,9 @@ export type Wants = z.infer<typeof Wants>
  * `notes/<id>.json` (spec 10.1): a visitor's note, public. It holds no address and no token. Merge's side of it (when it was found,
  * its reply or its reason for declining) is written by the loop, never by the visitor. The text is data and is never an instruction.
  */
+/** Where in the world a visitor stood: `[x, z]` in meters, finite and within 5000. */
+export const NotePosition = z.tuple([z.number().min(-5000).max(5000), z.number().min(-5000).max(5000)])
+
 export const NoteStatus = z.enum(['new', 'found', 'replied', 'kept', 'declined'])
 export type NoteStatus = z.infer<typeof NoteStatus>
 
@@ -53,6 +56,8 @@ export const Note = z
     foundAt: Timestamp.nullable().default(null),
     /** One reply a note, up to 600 characters; the visitor cannot answer it. */
     reply: z.string().min(1).max(600).nullable().default(null),
+    /** Where the visitor stood when they wrote it, `[x, z]` in meters, so the paper note lies there; none for a note written on the notes page (it lies by Home's door). */
+    position: NotePosition.nullable().default(null),
     /** Why Merge declined it, up to 80 characters, shown on the board (spec 9.9). */
     declineReason: z.string().min(1).max(80).nullable().default(null),
   })
@@ -105,3 +110,7 @@ export function parseSelfRequest(date: string, text: string): SelfRequest | null
   const parsed = SelfRequest.safeParse({ date, body, answer })
   return parsed.success ? parsed.data : null
 }
+
+/** What `GET /notes.json` says (spec 10.1): the notes that are not hidden, newest first, up to 100. They are public already: the board shows them. */
+export const NotesResponse = z.object({ notes: z.array(Note).max(100) }).strict()
+export type NotesResponse = z.infer<typeof NotesResponse>

@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { Note, NotesHidden } from '@forkling/schema'
+import { Note, NotesHidden, type NotesResponse } from '@forkling/schema'
+import { visibleNotes } from '@forkling/sim'
 
 /** Every note in `notes/` that fits its schema, oldest first. A file that is not a note, or is not JSON, is left out (spec 10.1). */
 export function readNotes(dir: string): Note[] {
@@ -26,5 +27,24 @@ export function readNotesHidden(dir: string): NotesHidden {
     return parsed.success ? parsed.data : { hidden: [] }
   } catch {
     return { hidden: [] }
+  }
+}
+
+const PUBLIC_NOTES_TTL_MS = 10_000
+const PUBLIC_NOTES_MAX = 100
+
+/**
+ * The notes `GET /notes.json` gives the viewer (spec 10.1): every note that fits its schema and is not hidden, newest first, up to
+ * 100. The folder is read at most once every 10 seconds, however many visitors ask. They are public already: the site's board shows them.
+ */
+export function createPublicNotes(dir: string, now: () => number): () => NotesResponse {
+  let at = Number.NEGATIVE_INFINITY
+  let cached: NotesResponse = { notes: [] }
+  return () => {
+    if (now() - at >= PUBLIC_NOTES_TTL_MS) {
+      at = now()
+      cached = { notes: visibleNotes(readNotes(dir), readNotesHidden(dir)).reverse().slice(0, PUBLIC_NOTES_MAX) }
+    }
+    return cached
   }
 }
