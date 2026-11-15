@@ -9,6 +9,15 @@ import { foundGate, foundableInterest } from './found.ts'
 import { checkPlan, placeIds } from './plan.ts'
 import { clock, weekday } from './util.ts'
 
+const MAX_SHOWN_FOUND = 10
+const MAX_SHOWN_KEPT = 5
+
+/** The notes shown to a decide call: those found and not answered (oldest first, so none waits for ever) and the latest it kept, to quote or build from. */
+function noteLines(t: Tick) {
+  const line = (n: Tick['visitorNotes'][number]) => ({ id: n.id, status: n.status === 'found' ? 'found' : n.status, place: n.placeId, name: n.name, message: n.message })
+  return [...t.visitorNotes.filter((n) => n.status === 'found').slice(0, MAX_SHOWN_FOUND).map(line), ...t.visitorNotes.filter((n) => n.status === 'kept').slice(-MAX_SHOWN_KEPT).map(line)]
+}
+
 /** The morning plan or a decision: one call, and one more if the body cannot carry out the plan. */
 export async function think(t: Tick): Promise<void> {
   const { thinkKind, tz, nowMs, notes, window } = t
@@ -38,6 +47,7 @@ export async function think(t: Tick): Promise<void> {
     interests: t.interests,
     past: readRecentPast(t.dir, t.today, t.w.art),
     startingPoints: t.startingPoints,
+    notes: noteLines(t),
   })
   let asking = user
   // A plan the body cannot carry out gets one more chance, with the reasons, before the body falls back on itself.

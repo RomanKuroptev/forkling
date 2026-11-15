@@ -17,6 +17,7 @@ import type { WorldObject } from '@forkling/schema'
 import { monthOf, recordCall, rollLedger } from '../budget.ts'
 import { buildSystem } from '../prompts.ts'
 import { readWorld } from '../world.ts'
+import { visibleNotes } from '@forkling/sim'
 import { createFetcher } from '../web/fetch.ts'
 import { readPlaces } from '../places.ts'
 import { readWanderState } from '../web/wander-state.ts'
@@ -127,6 +128,9 @@ export function createTick(dir: string, deps: TickDeps): Tick {
 
     beliefs: w.beliefs,
     wants: structuredClone(w.wants.wants),
+    visitorNotes: visibleNotes(w.notes, w.notesHidden),
+    noteUpdates: [],
+    pendingReply: null,
     about: w.about,
     aboutWrite: null,
     selfRequest: null,

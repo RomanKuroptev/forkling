@@ -51,6 +51,11 @@ export function applyDecision(t: Tick): void {
   if (thinkKind === 'morning') mind.lastPlanDate = today
   // Any decide call answers a spark that was waiting.
   if ((thinkKind === 'morning' || thinkKind === 'decide') && mind.sparked?.pending) mind.sparked = { date: today, count: (mind.sparked.date === today ? mind.sparked.count : 0) + 1, pending: null }
+  // A decide call is shown every note found so far, so none is announced again; the trigger waits 30 minutes (spec 2.3).
+  if (thinkKind === 'morning' || thinkKind === 'decide') {
+    if (triggers.some((x) => x.kind === 'note')) mind.lastNoteTriggerAt = nowIso
+    mind.notesWaiting = []
+  }
   // Any decide call answers a reflection that was waiting (spec 2.3: each reflection once).
   if ((thinkKind === 'morning' || thinkKind === 'decide') && mind.reflect?.pending) mind.reflect = { ...mind.reflect, pending: null }
   // The mind has been told what broke its steps off; the count starts again.

@@ -111,3 +111,32 @@ describe('the reflected trigger (spec 2.3)', () => {
     expect(scoreSurprise({ ...withPending('x'), asleep: true })).toEqual([])
   })
 })
+
+describe('the note trigger (spec 2.3: a note found, once every 30 minutes)', () => {
+  const forkling = Forkling.parse({ name: 'Merge', species: 'cat', seed: 5, needs: { hunger: 70, energy: 80, curiosity: 60 }, position: [0, 0, 0], mood: 'content', intention: { type: 'lounge', startedAt: '2026-11-03T09:50:00Z', seed: 1, reason: 'Resting.' }, lastTickAt: '2026-11-03T09:50:00Z', timezone: 'Europe/Stockholm' })
+  const planned = Goals.parse({
+    today: { date: '2026-11-03', steps: [{ verb: 'rest', reason: 'Rest.', minutes: 30 }], reason: 'A day.' },
+    now: { index: 0, startedAt: '2026-11-03T09:40:00Z', until: '2026-11-03T10:10:00Z' },
+  })
+  const NOW = Date.parse('2026-11-03T10:00:00Z')
+  const input = (mind: Record<string, unknown>, over: Partial<SurpriseInput> = {}): SurpriseInput => ({ forkling, goals: planned, mindState: MindState.parse({ lastPlanDate: '2026-11-03', ...mind }), objects: [], events: [], nowMs: NOW, asleep: false, spotKinds: new Set(), ...over })
+
+  it('is quiet with no note waiting', () => expect(scoreSurprise(input({}))).toEqual([]))
+
+  it('fires for notes that were found and not yet seen by a decide call, saying how many and nothing a visitor wrote', () => {
+    const t = scoreSurprise(input({ notesWaiting: ['n-2026-11-03-aaaaaa', 'n-2026-11-03-bbbbbb'] }))
+    expect(t.map((x) => x.kind)).toEqual(['note'])
+    expect(t[0]!.detail).toBe('2 new notes were found')
+    expect(scoreSurprise(input({ notesWaiting: ['n-1'] }))[0]!.detail).toBe('a new note was found')
+  })
+
+  it('waits 30 minutes after the last time it fired', () => {
+    const at = (min: number) => new Date(NOW - min * 60_000).toISOString()
+    expect(scoreSurprise(input({ notesWaiting: ['n-1'], lastNoteTriggerAt: at(29) }))).toEqual([])
+    expect(scoreSurprise(input({ notesWaiting: ['n-1'], lastNoteTriggerAt: at(30) })).map((x) => x.kind)).toEqual(['note'])
+  })
+
+  it('never wakes the mind while asleep', () => {
+    expect(scoreSurprise(input({ notesWaiting: ['n-1'] }, { asleep: true }))).toEqual([])
+  })
+})

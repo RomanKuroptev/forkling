@@ -116,6 +116,7 @@ export function writeWorld(t: Tick): TickResult {
       const history = aboutHistoryPath(today)
       if (writeText(dir, history, renderAboutHistory(today, t.aboutWrite))) written.push(history)
     }
+    for (const n of t.noteUpdates) if (writeJson(dir, `notes/${n.id}.json`, n)) written.push(`notes/${n.id}.json`)
     if (t.selfRequest) {
       const request = `self/requests/${t.selfRequest.date}.md`
       if (writeText(dir, request, formatSelfRequest({ body: t.selfRequest.body }))) written.push(request)

@@ -36,6 +36,7 @@ function fakeTick(over: Record<string, unknown> = {}) {
     budget: BudgetLedger.parse({ month: '2026-11' }),
     mind: MindState.parse({}),
     wants: [] as Want[],
+    visitorNotes: [] as Tick['visitorNotes'],
     deps: { llm: null },
     system: 'the seed',
     goals: Goals.parse({}),

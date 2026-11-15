@@ -20,6 +20,7 @@ import { tendStep } from './tick/tend.ts'
 import { noteStep } from './tick/mind-step.ts'
 import { route } from './tick/route.ts'
 import { logTick } from './ticklog.ts'
+import { findNotes, replyStep } from './tick/notes.ts'
 import { reflectionStep } from './tick/reflection.ts'
 import { weeklyStep } from './tick/weekly.ts'
 import { sleepRewriteStep } from './tick/sleep.ts'
@@ -39,6 +40,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   finishConstruction(t)
   lifecycleStep(t)
   settleJobs(t)
+  // Notes the world has gained are found as Merge comes upon them (spec 2.2, step 3; 10.1). Code only.
+  findNotes(t)
   fallbackStep(t)
   finishStep(t)
   route(t)
@@ -50,6 +53,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   await revisitStep(t)
   expandStep(t)
   await foundStep(t)
+  await replyStep(t)
   installStep(t)
   // The loop's own thought tick (spec 2.2); the Actions tick has none. It writes only to the stream.
   if (deps.thoughts && thoughtDue({ timezone: t.tz, nowMs: t.nowMs, asleep: t.asleep, paceAhead: paceAhead(t.budget, t.today), thought: t.mind.thought })) await thoughtTick(t)

@@ -6,6 +6,7 @@ import type {
   BuildRequest,
   Goals,
   Intention,
+  Note,
   Souvenir,
   SourceStats,
   Trail,
@@ -177,6 +178,12 @@ export interface Tick {
   about: string
   /** Set when the weekly review rewrote about.md: written to `self/about.md` and copied, with the reasons, to `self/history/<date>.md`. */
   aboutWrite: { text: string; changes: { what: string; why: string }[]; at: string } | null
+  /** The notes visitors left that Roman has not hidden (spec 10.1), as the tick leaves them. */
+  visitorNotes: Note[]
+  /** Notes that changed this tick (found, replied, declined, kept): written to `notes/<id>.json`. */
+  noteUpdates: Note[]
+  /** Set when a reply step finishes: the note is answered after the step is applied (spec 10.1). */
+  pendingReply: { step: PlanStep; index: number } | null
   /** Set when the weekly review made a request to Roman: written to `self/requests/<date>.md` (spec 9.5). */
   selfRequest: { date: string; body: string } | null
   /** `self/page.md` as the tick leaves it (spec 9.7). */
