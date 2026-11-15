@@ -31,6 +31,8 @@ export const TendAnswer = z.object({
   lamps: z.boolean().nullable().describe('true to turn the lamps on, false to turn them off, null to leave them.'),
   door: z.enum(['close', 'open']).nullable().describe('close to close this place (a boarded door and a sign with your reason), open to open a closed place again, null to leave the door as it is. A closing carries no other change.'),
   doorReason: z.string().max(300).nullable().describe('For a close only: why, in your voice, up to 140 characters. Null otherwise.'),
+  putAwayId: z.string().max(60).nullable().describe('The id of one exhibit to put away (it leaves the show, and the place keeps a record with your reason), or null. It counts as one of the 3 exhibit changes.'),
+  putAwayReason: z.string().max(300).nullable().describe('For a put away only: why, in your voice, up to 140 characters. Null otherwise.'),
 })
 export type TendAnswer = z.infer<typeof TendAnswer>
 
@@ -104,6 +106,7 @@ export function buildTendUser(i: TendPromptInput): string {
     ...(!place.state.closed && place.id !== 'home' && place.id !== 'workshop'
       ? [`- You may close this place instead (door: close): it gets a boarded door and a sign with your reason, up to ${TEND_LIMITS.reason} characters. At most 1 closing a week, and never more than a third of your places closed. A closing carries no other change. A closed place collects no dust, is not offered for expand, and you can open it again later.`]
       : []),
+    '- You may put one exhibit away instead of removing it (putAwayId, with a reason in putAwayReason up to 140 characters): it leaves the show, the place keeps a record of what it was and why, and a souvenir goes back to the pile. It counts as one of the exhibit changes.',
     'Change only what you want to. An empty tend is fine too.',
   ].join('\n')
 }
@@ -112,6 +115,15 @@ export type PatchConversion = { ok: true; patch: z.infer<typeof TendPatch> } | {
 
 /** The model's flat answer as a strict patch, or why it cannot be one (an add with no slot, a move with nowhere to go). */
 export function toTendPatch(answer: TendAnswer): PatchConversion {
+  let putAway: { id: string; reason: string } | undefined
+  const awayId = answer.putAwayId?.trim() ?? ''
+  const awayReason = (answer.putAwayReason ?? '').trim()
+  if (awayId || awayReason) {
+    if (!awayId) return { ok: false, reason: 'a reason to put something away needs the id of the exhibit' }
+    if (!awayReason) return { ok: false, reason: `putting "${awayId}" away needs a reason` }
+    if (awayReason.length > TEND_LIMITS.reason) return { ok: false, reason: `the reason for putting something away is up to ${TEND_LIMITS.reason} characters (it is ${awayReason.length})` }
+    putAway = { id: awayId, reason: awayReason }
+  }
   let door: { op: 'close'; reason: string } | { op: 'open' } | undefined
   if (answer.door === 'close') {
     const reason = (answer.doorReason ?? '').trim()
@@ -144,6 +156,7 @@ export function toTendPatch(answer: TendAnswer): PatchConversion {
     ...(answer.sign !== null ? { sign: answer.sign } : {}),
     ...(answer.lamps !== null ? { lamps: answer.lamps } : {}),
     ...(door ? { door } : {}),
+    ...(putAway ? { putAway } : {}),
   })
   return parsed.success ? { ok: true, patch: parsed.data } : { ok: false, reason: `the answer is not a tend: ${parsed.error.issues[0]?.path.join('.') ?? ''} ${parsed.error.issues[0]?.message ?? ''}`.trim() }
 }

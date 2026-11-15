@@ -265,3 +265,18 @@ describe('a closed place (spec 9.9: a closed line with the reason; no neglect)',
     expect(page('feed.xml') + page('index.html')).toMatch(/Closed House of Lights/)
   })
 })
+
+describe('exhibits Merge put away (spec 9.9)', () => {
+  it('lists them on the place page with the day and the reason, escaped, and says nothing when there are none', () => {
+    putPlace('home', { state: { construction: null, lastCareAt: '2026-11-19T10:00:00Z', neglect: 0, lamps: true }, away: [{ id: 'old-fog', kind: 'souvenir', label: 'Fog for nine days.', at: '2026-11-18', reason: 'It said what it had to say. <b>x</b>' }] })
+    putPlace('workshop', { state: { construction: null, lastCareAt: '2026-11-19T10:00:00Z', neglect: 0, lamps: true } })
+    render()
+    const home = page('places/home/index.html')
+    expect(home).toMatch(/Put away/)
+    expect(home).toContain('Fog for nine days.')
+    expect(home).toContain('2026-11-18')
+    expect(home).toContain('It said what it had to say.')
+    expect(home).not.toContain('<b>x</b>')
+    expect(page('places/workshop/index.html')).not.toMatch(/Put away/)
+  })
+})

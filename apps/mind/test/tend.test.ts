@@ -8,7 +8,7 @@ import { TendAnswer, TEND_LIMITS, buildTendUser, freeSlots, toTendPatch } from '
 const home = Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL('../../../templates/forkling-world/places/home.json', import.meta.url)), 'utf8')))
 const workshop = Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL('../../../templates/forkling-world/places/workshop.json', import.meta.url)), 'utf8')))
 
-const answer = (over: Record<string, unknown> = {}) => TendAnswer.parse({ summary: 'Put the fog on the shelf.', exhibits: [], labels: [], sign: null, lamps: null, door: null, doorReason: null, ...over })
+const answer = (over: Record<string, unknown> = {}) => TendAnswer.parse({ summary: 'Put the fog on the shelf.', exhibits: [], labels: [], sign: null, lamps: null, door: null, doorReason: null, putAwayId: null, putAwayReason: null, ...over })
 const add = (over: Record<string, unknown> = {}) => ({ op: 'add', id: 'fog', kind: 'souvenir', ref: 'souvenirs/2026-11-02-fog', slot: 'main/3/0', label: 'Fog for nine days.', ...over })
 
 describe('the free slots of a place (what a tend may put something in)', () => {
@@ -91,9 +91,9 @@ describe('turning the answer into a patch', () => {
     expect(toTendPatch(answer({ exhibits: [add({ ref: null })] })).ok).toBe(false)
   })
   it('still reads an answer with too many changes, so the check can say exactly why (the limit is enforced by validatePlacePatch, with a reason)', () => {
-    expect(TendAnswer.safeParse({ summary: 's', exhibits: [add(), add(), add(), add()], labels: [], sign: null, lamps: null, door: null, doorReason: null }).success).toBe(true)
-    expect(TendAnswer.safeParse({ summary: 's', exhibits: [], labels: [{ id: 'a', label: 'x' }, { id: 'b', label: 'y' }, { id: 'c', label: 'z' }], sign: null, lamps: null, door: null, doorReason: null }).success).toBe(true)
-    expect(TendAnswer.safeParse({ summary: 's', exhibits: Array.from({ length: 30 }, () => add()), labels: [], sign: null, lamps: null, door: null, doorReason: null }).success).toBe(false)
+    expect(TendAnswer.safeParse({ summary: 's', exhibits: [add(), add(), add(), add()], labels: [], sign: null, lamps: null, door: null, doorReason: null, putAwayId: null, putAwayReason: null }).success).toBe(true)
+    expect(TendAnswer.safeParse({ summary: 's', exhibits: [], labels: [{ id: 'a', label: 'x' }, { id: 'b', label: 'y' }, { id: 'c', label: 'z' }], sign: null, lamps: null, door: null, doorReason: null, putAwayId: null, putAwayReason: null }).success).toBe(true)
+    expect(TendAnswer.safeParse({ summary: 's', exhibits: Array.from({ length: 30 }, () => add()), labels: [], sign: null, lamps: null, door: null, doorReason: null, putAwayId: null, putAwayReason: null }).success).toBe(false)
   })
 })
 
@@ -132,5 +132,24 @@ describe('closing and opening a place from a tend (spec 9.9)', () => {
   it('shows the reason as data, since it is words Merge wrote earlier but passes through the same wrapper as the rest', () => {
     const lab = { ...workshop, id: 'lab', state: { ...workshop.state, closed: { at: '2026-11-01T10:00:00Z', reason: 'Quiet.' } } }
     expect(buildTendUser({ place: lab, kit, reason: 'x', daysSinceCare: 3, pile: [], works: [] })).toContain('Quiet.')
+  })
+})
+
+describe('putting an object away from a tend (spec 9.9)', () => {
+  it('turns an id and a reason into a putAway patch, and leaves it out when there is none', () => {
+    const r = toTendPatch(answer({ putAwayId: 'fog', putAwayReason: 'It no longer fits.' }))
+    expect(r.ok && r.patch.putAway).toEqual({ id: 'fog', reason: 'It no longer fits.' })
+    const none = toTendPatch(answer())
+    expect(none.ok && 'putAway' in none.patch).toBe(false)
+  })
+  it('refuses an id with no reason, a reason with no id, and a reason over 140 characters', () => {
+    for (const over of [{ putAwayId: 'fog', putAwayReason: null }, { putAwayId: 'fog', putAwayReason: '  ' }, { putAwayId: null, putAwayReason: 'Why.' }, { putAwayId: 'fog', putAwayReason: 'x'.repeat(141) }]) {
+      const r = toTendPatch(answer(over))
+      expect(r.ok, JSON.stringify(over)).toBe(false)
+      expect(!r.ok && r.reason).toMatch(/put away|reason/)
+    }
+  })
+  it('tells the model it may put one exhibit away, with a reason', () => {
+    expect(buildTendUser({ place: workshop, kit, reason: 'x', daysSinceCare: 3, pile: [], works: [] })).toMatch(/put one exhibit away/)
   })
 })

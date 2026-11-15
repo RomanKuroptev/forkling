@@ -12,7 +12,7 @@ export type PanelContent =
   | { kind: 'plaque'; heading: string; text: string }
   | { kind: 'trail'; heading: string; url: string | null }
   | { kind: 'gallery'; heading: string; works: { id: string; title: string; about: string; kind: string; url: string | null }[] }
-  | { kind: 'sign'; heading: string; purpose: string; founded: string; tags: string[]; related: string[]; history: { at: string; verb: string; summary: string }[]; pageUrl: string | null; closed: { on: string; reason: string } | null }
+  | { kind: 'sign'; heading: string; purpose: string; founded: string; tags: string[]; related: string[]; history: { at: string; verb: string; summary: string }[]; pageUrl: string | null; closed: { on: string; reason: string } | null; away: { on: string; label: string; reason: string }[] }
   | { kind: 'plot'; heading: string; purpose: string; tags: string[]; body: string; souvenirs: number; written: string; status: string }
   | { kind: 'note'; heading: string; text: string }
 
@@ -70,6 +70,7 @@ export function signPanel(place: Place, base: string | null): PanelContent {
     related: place.related,
     history: [...place.history].sort((a, b) => b.at.localeCompare(a.at)).map((h) => ({ at: h.at, verb: h.verb, summary: h.summary })),
     pageUrl: base ? `${base}places/${place.id}/` : null,
+    away: [...place.away].reverse().map((a) => ({ on: a.at, label: a.label, reason: a.reason })),
     closed: place.state.closed ? { on: place.state.closed.at.slice(0, 10), reason: place.state.closed.reason } : null,
   }
 }

@@ -47,7 +47,7 @@ export async function tendStep(t: Tick): Promise<void> {
     t.remember.push({ at: t.nowIso, kind: 'event', text: `My tend of ${name} gave nothing usable, so nothing changed.`, verb: 'tend' })
     return
   }
-  const words = [answer.data.summary, answer.data.sign ?? '', answer.data.doorReason ?? '', ...answer.data.labels.map((l) => l.label), ...answer.data.exhibits.map((e) => e.label ?? '')]
+  const words = [answer.data.summary, answer.data.sign ?? '', answer.data.doorReason ?? '', answer.data.putAwayReason ?? '', ...answer.data.labels.map((l) => l.label), ...answer.data.exhibits.map((e) => e.label ?? '')]
   if (words.some((w) => claimsHuman(w))) return fail('the words claimed to be human')
   const converted = toTendPatch(answer.data)
   if (!converted.ok) return fail(converted.reason)

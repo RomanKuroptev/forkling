@@ -191,6 +191,7 @@ export function renderPlaces(i: PlacesInput): void {
         ...(related.length > 0 ? [`<p>Related: ${related.join(', ')}.</p>`] : []),
         '<h2>What is in it</h2>',
         p.exhibits.length > 0 ? p.exhibits.map((ex) => `<section class="exhibit">${exhibitHtml(p, ex, i, works)}</section>`).join('\n') : '<p class="quiet">Nothing on show yet.</p>',
+        ...(p.away.length > 0 ? ['<h2>Put away</h2>', `<ul>${[...p.away].reverse().map((a) => `<li><strong>${esc(a.at)}</strong> <em>${esc(a.label)}</em> Why: ${esc(a.reason)}</li>`).join('')}</ul>`] : []),
         '<h2>History</h2>',
         history.length > 0 ? `<ul>${history.map((h) => `<li><strong>${esc(stamp(h.at, i.tz))}</strong> <span class="quiet">${esc(h.verb)}</span>: ${esc(h.summary)}</li>`).join('')}</ul>` : '<p class="quiet">No history yet.</p>',
         '</div>',

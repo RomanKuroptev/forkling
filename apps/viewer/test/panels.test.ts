@@ -176,3 +176,12 @@ describe('a closed place in the panels (spec 9.9)', () => {
     expect(signHoverText(open)).toBe(`${open.name}: ${open.purpose}`)
   })
 })
+
+describe('exhibits put away, in the sign panel (spec 9.9)', () => {
+  const open = makeFixtureWorld(1, 5).places[2]!
+  it('lists what was put away, newest first, with the day and the reason; none for a place with nothing put away', () => {
+    const p = { ...open, away: [{ id: 'a', kind: 'souvenir' as const, label: 'Old fog.', at: '2026-11-10', reason: 'Enough.' }, { id: 'b', kind: 'plaque' as const, label: 'A plaque.', at: '2026-11-18', reason: 'Wrong room.' }] }
+    expect(signPanel(p, null)).toMatchObject({ away: [{ on: '2026-11-18', label: 'A plaque.', reason: 'Wrong room.' }, { on: '2026-11-10', label: 'Old fog.', reason: 'Enough.' }] })
+    expect(signPanel(open, null)).toMatchObject({ away: [] })
+  })
+})
