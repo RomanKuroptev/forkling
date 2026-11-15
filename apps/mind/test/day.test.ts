@@ -71,7 +71,7 @@ function fakeModel() {
     async complete<T>(req: LlmRequest<T>) {
       calls.push({ req, at: clockNow })
       let parsed: unknown = null
-      if (req.kind === 'morning' || req.kind === 'decide' || req.kind === 'weekly') parsed = decide(req)
+      if (req.kind === 'morning' || req.kind === 'decide') parsed = decide(req)
       else if (req.kind === 'art') parsed = { title: 'A plaque', text: 'The lamp is on. I am still here.' }
       return { parsed: parsed as T | null, stopReason: parsed ? 'end_turn' : 'refusal', usage: { input: 800, cacheRead: 0, cacheWrite: 3000, output: 400 } }
     },

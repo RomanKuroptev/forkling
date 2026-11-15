@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_WANTS, MindState, Note, NotesHidden, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants } from '../src/index.ts'
+import { MAX_WANTS, MindState, Note, NotesHidden, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants, WeeklyReview, WorkMeta } from '../src/index.ts'
 
 const want = {
   id: 'w1',
@@ -138,6 +138,46 @@ describe('Merge\'s own page in the answers (spec 9.7)', () => {
     expect(MindState.parse({}).pageChangedOn).toBeUndefined()
     expect(MindState.parse({ pageChangedOn: '2026-11-15' }).pageChangedOn).toBe('2026-11-15')
     expect(MindState.safeParse({ pageChangedOn: 'yesterday' }).success).toBe(false)
+  })
+})
+
+describe('WeeklyReview (spec 9.5)', () => {
+  const review = {
+    about: null,
+    aboutChanges: [],
+    longGoal: { action: 'continue', text: null, reason: 'Still what I want.' },
+    renames: [],
+  }
+  it('parses a quiet review: nothing to change', () => {
+    expect(WeeklyReview.safeParse(review).success).toBe(true)
+  })
+  it('carries the whole new about.md with a reason for each change', () => {
+    expect(WeeklyReview.safeParse({ ...review, about: 'I like fog.\n- patient', aboutChanges: [{ what: 'added patient', why: 'I waited out three foggy days.' }] }).success).toBe(true)
+  })
+  it('says what happens to the long goal: continue, finish, drop or change', () => {
+    for (const action of ['continue', 'finish', 'drop', 'change']) expect(WeeklyReview.safeParse({ ...review, longGoal: { action, text: action === 'change' ? 'A new aim.' : null, reason: 'x' } }).success).toBe(true)
+    expect(WeeklyReview.safeParse({ ...review, longGoal: { action: 'abandon', text: null, reason: 'x' } }).success).toBe(false)
+  })
+  it('renames a place or a work, with a reason', () => {
+    expect(WeeklyReview.safeParse({ ...review, renames: [{ kind: 'place', id: 'place-02', name: 'The Fog House', reason: 'It is what I call it.' }] }).success).toBe(true)
+    expect(WeeklyReview.safeParse({ ...review, renames: [{ kind: 'person', id: 'x', name: 'y', reason: 'z' }] }).success).toBe(false)
+  })
+  it('a structured answer always says everything: a missing part is not an answer', () => {
+    const { renames: _renames, ...missing } = review
+    expect(WeeklyReview.safeParse(missing).success).toBe(false)
+  })
+})
+
+describe('a work\'s earlier titles (spec 9.5: a rename leaves a history line)', () => {
+  const work = { id: 'tide-pool-clock', title: 'Tide pool clock', kind: 'art', about: 'A clock.', interest: null, made: '2026-11-14T10:00:00Z', status: 'shelf', size: 'full' }
+  it('starts with none, so every work from before still parses', () => {
+    expect(WorkMeta.parse(work).titleHistory).toEqual([])
+  })
+  it('keeps the title it had, when it changed and why', () => {
+    const entry = { at: '2026-11-15T19:30:00Z', from: 'Tide pool clock', reason: 'It is a tide, not a pool.' }
+    expect(WorkMeta.parse({ ...work, title: 'Tide clock', titleHistory: [entry] }).titleHistory).toEqual([entry])
+    expect(WorkMeta.safeParse({ ...work, titleHistory: [{ ...entry, from: 'x'.repeat(41) }] }).success).toBe(false)
+    expect(WorkMeta.safeParse({ ...work, titleHistory: Array(11).fill(entry) }).success).toBe(false)
   })
 })
 

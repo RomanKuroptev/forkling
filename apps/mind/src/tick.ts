@@ -21,6 +21,7 @@ import { noteStep } from './tick/mind-step.ts'
 import { route } from './tick/route.ts'
 import { logTick } from './ticklog.ts'
 import { reflectionStep } from './tick/reflection.ts'
+import { weeklyStep } from './tick/weekly.ts'
 import { sleepRewriteStep } from './tick/sleep.ts'
 import { think } from './tick/think.ts'
 import { morningStep, tripStep } from './tick/wander.ts'
@@ -54,6 +55,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   if (deps.thoughts && thoughtDue({ timezone: t.tz, nowMs: t.nowMs, asleep: t.asleep, paceAhead: paceAhead(t.budget, t.today), thought: t.mind.thought })) await thoughtTick(t)
   // Reflection (spec 9.3) runs on its own clock, after the thought tick has added its scores; it too is the loop's alone.
   await reflectionStep(t)
+  // The weekly review (spec 9.5) is on Sunday at 20:00, by its own clock.
+  await weeklyStep(t)
   await think(t)
   await sleepRewriteStep(t)
   applyDecision(t)

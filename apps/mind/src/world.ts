@@ -31,6 +31,8 @@ export interface WorldFiles {
   seed: string
   /** `memory/beliefs.json`: everything it has believed, dropped ones included. */
   beliefs: Beliefs
+  /** `self/about.md` (spec 9.2): who Merge says it is now, or empty before its first weekly review. */
+  about: string
   /** `self/page.md` (spec 9.7): Merge's own notes to itself, or empty. */
   page: string
   /** `mind/wants.json` (spec 9.4): the wants list, or an empty one. */
@@ -114,6 +116,7 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
     seed: existsSync(join(dir, 'self/seed.md')) ? readFileSync(join(dir, 'self/seed.md'), 'utf8') : DEFAULT_SEED,
     beliefs: readJson(dir, 'memory/beliefs.json', Beliefs, []),
     wants: readJson(dir, 'mind/wants.json', Wants, {}),
+    about: existsSync(join(dir, 'self/about.md')) ? readFileSync(join(dir, 'self/about.md'), 'utf8').trim() : '',
     page: existsSync(join(dir, 'self/page.md')) ? readFileSync(join(dir, 'self/page.md'), 'utf8').trim() : '',
     summary: existsSync(summaryPath) ? readFileSync(summaryPath, 'utf8') : '',
     interests: readJson(dir, 'brain/interests.json', Interests, {}),

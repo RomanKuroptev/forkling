@@ -51,6 +51,8 @@ export const WorkMeta = z
     installedIn: z.string().max(80).nullable().default(null),
     libraries: z.array(WorkLibrary).max(3).default([]),
     sources: z.array(WorkSource).max(6).default([]),
+    /** The titles it had before a weekly review renamed it, with when and why (spec 9.5), oldest first. */
+    titleHistory: z.array(z.object({ at: Timestamp, from: z.string().min(1).max(40), reason: z.string().min(1).max(140) })).max(10).default([]),
   })
   .superRefine((meta, ctx) => {
     if (RESERVED_WORK_IDS.includes(meta.id)) ctx.addIssue({ code: 'custom', path: ['id'], message: `"${meta.id}" is a name the workshop keeps for itself` })

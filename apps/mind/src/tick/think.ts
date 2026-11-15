@@ -9,11 +9,11 @@ import { foundGate, foundableInterest } from './found.ts'
 import { checkPlan, placeIds } from './plan.ts'
 import { clock, weekday } from './util.ts'
 
-/** The morning plan, the weekly review or a decision: one call, and one more if the body cannot carry out the plan. */
+/** The morning plan or a decision: one call, and one more if the body cannot carry out the plan. */
 export async function think(t: Tick): Promise<void> {
   const { thinkKind, tz, nowMs, notes, window } = t
   if (!thinkKind) return
-  const model: ModelId = thinkKind === 'weekly' ? 'claude-sonnet-5-5' : 'claude-haiku-5-5'
+  const model: ModelId = 'claude-haiku-5-5'
   const user = buildUser({
     kind: thinkKind,
     forkling: t.forkling,

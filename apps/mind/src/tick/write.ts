@@ -5,6 +5,7 @@ import { appendStream, appendTimeline, prune } from '../stream.ts'
 import { deleteFile, writeBytes, writeJson, writeText } from '../world.ts'
 import type { Tick, TickResult } from './context.ts'
 import { pageHistoryPath } from './page.ts'
+import { aboutHistoryPath, renderAboutHistory } from './weekly.ts'
 import { epochOf, round, same } from './util.ts'
 
 /**
@@ -110,6 +111,11 @@ export function writeWorld(t: Tick): TickResult {
     for (const wish of t.wishUpdates) if (writeJson(dir, `wishes/${wish.id}.json`, wish)) written.push(`wishes/${wish.id}.json`)
     if (t.planPage && writeText(dir, `notebook/plans/${today}.md`, renderPlan(today, goals))) written.push(`notebook/plans/${today}.md`)
     for (const page of t.notebook) if (writeText(dir, page.path, page.text)) written.push(page.path)
+    if (t.aboutWrite) {
+      if (writeText(dir, 'self/about.md', `${t.aboutWrite.text}\n`)) written.push('self/about.md')
+      const history = aboutHistoryPath(today)
+      if (writeText(dir, history, renderAboutHistory(today, t.aboutWrite))) written.push(history)
+    }
     if (t.pageWrite) {
       const body = `${t.pageWrite.text}\n`
       if (writeText(dir, 'self/page.md', body)) written.push('self/page.md')

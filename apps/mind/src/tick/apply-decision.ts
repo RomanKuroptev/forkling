@@ -13,7 +13,7 @@ export const REPLAN_COOLDOWN_MS = 60 * 60_000
 export function applyDecision(t: Tick): void {
   const { decision, thinkKind, goals, mind, parts, notes, remember, nowIso, nowMs, today, tz, asleep, triggers, events, w } = t
   if (!decision) return
-  parts.push(thinkKind === 'morning' ? 'morning plan' : thinkKind === 'weekly' ? 'weekly review' : `thought about ${triggers[0]!.kind}`)
+  parts.push(thinkKind === 'morning' ? 'morning plan' : `thought about ${triggers[0]!.kind}`)
 
   if (decision.dropLongGoal && goals.long) {
     delete goals.long
@@ -27,12 +27,10 @@ export function applyDecision(t: Tick): void {
       text,
       reason: clampText(newGoal.reason.trim() || 'It is what I want now.', 200),
       setAt: same ? goals.long!.setAt : nowIso,
-      // Saying the same goal again is not a review: only the weekly review, or a goal that changed, moves the date.
-      reviewedAt: same && thinkKind !== 'weekly' ? goals.long!.reviewedAt : nowIso,
+      // Saying the same goal again is not a review: only the weekly review (spec 9.5), or a goal that changed, moves the date.
+      reviewedAt: same ? goals.long!.reviewedAt : nowIso,
     }
     if (w.goals.long?.text !== text) parts.push('new long goal')
-  } else if (thinkKind === 'weekly' && goals.long) {
-    goals.long = { ...goals.long, reviewedAt: nowIso }
   }
 
   const planned = decision.plan && decision.plan.length > 0 ? checkPlan(t, decision.plan) : null

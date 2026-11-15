@@ -54,6 +54,7 @@ function tick(reply: ReflectionAnswer | null | 'throw', over: Record<string, unk
     mind: MindState.parse(mind),
     goals: Goals.parse({ today: { date: TODAY, steps: [{ verb: 'wander', targetId: 'fog', reason: 'It returns.', minutes: 30 }], reason: 'A day.' } }),
     wants: [want('w1'), want('w2'), want('w3'), want('w4')],
+    about: '',
     page: 'Old note.',
     pageWrite: null,
     beliefs: [] as Tick['beliefs'],

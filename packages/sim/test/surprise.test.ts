@@ -142,9 +142,9 @@ describe('scoreSurprise', () => {
     })
   })
 
-  it('asks for a weekly review of the long goal', () => {
-    const old = Goals.parse({ ...planned, long: { ...planned.long, reviewedAt: '2026-10-26T06:00:00Z' } })
-    expect(kinds({ ...calm, goals: old })).toEqual(['weekly'])
+  it('no longer asks for a review of the long goal: the weekly review has its own clock (spec 9.5)', () => {
+    const old = Goals.parse({ ...planned, long: { ...planned.long, reviewedAt: '2026-10-20T06:00:00Z' } })
+    expect(kinds({ ...calm, goals: old })).toEqual([])
   })
 
   it('ranks the most pressing first', () => {

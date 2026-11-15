@@ -42,7 +42,7 @@ describe('prompt golden files', () => {
     const system = buildSystem({ seed: DEFAULT_SEED })
     await expect(system).toMatchFileSnapshot('golden/system.txt')
   })
-  for (const kind of ['morning', 'decide', 'weekly'] as const) {
+  for (const kind of ['morning', 'decide'] as const) {
     it(`${kind} user prompt`, async () => {
       await expect(buildUser(input(kind))).toMatchFileSnapshot(`golden/user-${kind}.txt`)
     })

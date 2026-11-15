@@ -77,7 +77,7 @@ function fakeModel() {
       counts[req.kind] = (counts[req.kind] ?? 0) + 1
       const usage = { input: 800, cacheRead: 0, cacheWrite: 0, output: 300 }
       let parsed: unknown = null
-      if (req.kind === 'morning' || req.kind === 'decide' || req.kind === 'weekly') parsed = decide(req)
+      if (req.kind === 'morning' || req.kind === 'decide') parsed = decide(req)
       else if (req.kind === 'art') parsed = { title: 'A plaque', text: 'The lamp is on. I am still here.' }
       else if (req.kind === ('tend' as never)) parsed = { summary: `Looked after the shelves (${counts.tend}).`, exhibits: [], labels: [], sign: null, lamps: null }
       else if (req.kind === ('revisit' as never)) parsed = { summary: 'Sat there a while.', thought: 'It is quiet.' }
