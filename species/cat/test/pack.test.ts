@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { AnimationMap, AnimationSlot, SpeciesPack, WorldObject, type PoseBone } from '@forkling/schema'
-import { runHeadless, worldWithObjects, starterWorld } from '@forkling/sim'
+import { AnimationMap, AnimationSlot, SpeciesPack, type PoseBone } from '@forkling/schema'
+import { runHeadless } from '@forkling/sim'
 import animationsJson from '../animations.json'
 import speciesJson from '../species.json'
 import { behaviors, moodPose } from '../src/behaviors.ts'
@@ -232,7 +232,7 @@ describe('cat in the headless sim', () => {
     expect(again.trace).toEqual(day.trace)
   })
 
-  it('sleeps at night and does not wander the island', () => {
+  it('sleeps at night and does not wander', () => {
     const night = runHeadless({ pack, behaviors, seed: 3, startHour: 23, seconds: 600 })
     expect(night.intentionTypes.has('sleep')).toBe(true)
     expect(night.intentionTypes.has('explore')).toBe(false)
@@ -257,24 +257,8 @@ describe('cat in the headless sim', () => {
     for (const id of ['knead', 'stretch']) expect(night.includes(id), id).toBe(true)
   })
 
-  it('watches from high ground', () => {
-    const runs = [21, 22, 23].map((seed) => runHeadless({ pack, behaviors, seed, startHour: 11, seconds: 900 }))
-    const types = new Set(runs.flatMap((r) => [...r.intentionTypes]))
-    expect(types.has('watch')).toBe(true)
-  })
-
   it('never chooses by itself what would change the world', () => {
-    const bowl = WorldObject.parse({
-      id: 'bowl',
-      kind: 'bowl',
-      name: 'The bowl',
-      position: [starterWorld().spawn.x + 3, 0, starterWorld().spawn.z - 3],
-      model: { parts: [{ shape: 'cylinder', size: [0.3, 0.1, 0.3], at: [0, 0.05, 0], color: '#c2703d' }] },
-      properties: { edible: true, size: 0.3 },
-      reason: 'Dinner.',
-    })
-    const world = worldWithObjects([bowl])
-    const runs = [1, 2, 3, 4].map((seed) => runHeadless({ pack, behaviors, world, seed, startHour: 12, seconds: 900 }))
+    const runs = [1, 2, 3, 4].map((seed) => runHeadless({ pack, behaviors, seed, startHour: 12, seconds: 900 }))
     const worldChanging = new Set(pack.actions.filter((a) => a.effect !== 'none' && a.effect !== 'hide').map((a) => a.id))
     for (const r of runs) for (const type of r.intentionTypes) expect(worldChanging.has(type), type).toBe(false)
   })
@@ -282,22 +266,6 @@ describe('cat in the headless sim', () => {
   it('has no verb that waits for a visit that cannot come: give returns with the visit gateway', () => {
     expect(pack.actions.some((a) => a.id === 'give')).toBe(false)
     expect(pack.actions.filter((a) => a.target.type === 'visitor').map((a) => a.id)).toEqual(['follow'])
-  })
-
-  it('hides for its own reasons: hide changes nothing in the world, so the body may choose it', () => {
-    expect(byId('hide').effect).toBe('none')
-    const den = WorldObject.parse({
-      id: 'den',
-      kind: 'den',
-      name: 'A den',
-      position: [starterWorld().spawn.x + 4, 0, starterWorld().spawn.z + 2],
-      model: { parts: [{ shape: 'box', size: [1.4, 1, 1.4], at: [0, 0.5, 0], color: '#8a6a4a' }] },
-      properties: { canHide: true, size: 1.4 },
-      reason: 'A place to disappear.',
-    })
-    const world = worldWithObjects([den])
-    const hid = [9, 10, 11, 12, 13].some((seed) => runHeadless({ pack, behaviors, world, seed, startHour: 12, seconds: 3600 }).targets.some((t) => t.startsWith('hide:')))
-    expect(hid).toBe(true)
   })
 })
 

@@ -1,10 +1,16 @@
-import type { Place, SpeciesPack, WorldObject } from '@forkling/schema'
-import { heightAt as islandHeight, type Spawn } from './island.ts'
+import type { Place } from '@forkling/schema'
 import { CHUNK_SIZE, chunkAt, createLand, placeCentre, toLandPlace, type Chunk } from './land.ts'
 import { createNavGrid, nearestWalkable, type NavGrid, type Point2 } from './nav.ts'
 import type { Vec3Tuple } from './sky.ts'
-import { worldWithObjects, type StarterWorld } from './starter.ts'
-import { collectSpots } from './world.ts'
+import { starterPlaces } from './starter-places.ts'
+
+/** Where something stands: a point on the ground, the height there and the way it faces (radians). */
+export interface Spawn {
+  x: number
+  y: number
+  z: number
+  yaw: number
+}
 
 /**
  * What the body walks on and where it can go (spec 2.7). The body is the same code in the mind and in every viewer, so both
@@ -94,22 +100,11 @@ export function buildBodyWorld(seed: number, places: readonly Place[]): BodyWorl
   return { grid, spawn: { x: sx, y: heightAt(sx, sz), z: sz, yaw: 0 }, visitorSpawn, heightAt, spots: () => spots }
 }
 
-/** The pet-era starter island as a body world, so playback runs on one kind of world until the island is retired. */
-export function bodyWorldFromStarter(world: StarterWorld, pack: SpeciesPack): BodyWorld {
-  return {
-    grid: world.nav.grid,
-    spawn: world.spawn,
-    visitorSpawn: world.spawn,
-    heightAt: (x, z) => islandHeight(x, z, world.cfg),
-    spots: (sun) => collectSpots(pack, world.cfg, world.nav, world.spawn, sun, world.objects),
-  }
-}
-
 /**
- * What the body walks on, for the mind, the replay and the viewer. A world with places gets the new land (chunks, buildings,
- * doors). A world without any keeps the pet-era island exactly as it was, so a world that has not been migrated does not change
- * under anyone. Everyone makes this choice from the same files with this one function, which keeps playback identical.
+ * What the body walks on, for the mind, the replay and the viewer: the land with its buildings and doors. A world with no
+ * places is walked as Home and the Workshop (`starterPlaces`), so there is always somewhere to stand and the same spots to
+ * go to. Everyone makes this choice from the same files with this one function, which keeps playback identical.
  */
-export function bodyWorldFor(o: { seed: number; pack: SpeciesPack; places: readonly Place[]; objects: readonly WorldObject[] }): BodyWorld {
-  return o.places.length > 0 ? buildBodyWorld(o.seed, o.places) : bodyWorldFromStarter(worldWithObjects(o.objects), o.pack)
+export function bodyWorldFor(o: { seed: number; places: readonly Place[] }): BodyWorld {
+  return buildBodyWorld(o.seed, o.places.length > 0 ? o.places : starterPlaces())
 }

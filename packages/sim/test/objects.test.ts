@@ -12,8 +12,6 @@ import {
   offersSpot,
 } from '../src/objects.ts'
 import { sunDirection } from '../src/sky.ts'
-import { starterWorld, worldWithObjects } from '../src/starter.ts'
-import { collectSpots } from '../src/world.ts'
 
 const T0 = '2026-10-30T12:00:00Z'
 const at = (hours: number) => Date.parse(T0) + hours * 3_600_000
@@ -210,101 +208,5 @@ describe('matchesTarget', () => {
 
   it('matches anything when the filter is empty', () => {
     expect(matchesTarget({ type: 'object', where: {}, unlocked: false }, 'inspect', obj())).toBe(true)
-  })
-})
-
-describe('spots from properties and unlocks', () => {
-  const pack = SpeciesPack.parse({
-    id: 'test',
-    displayName: 'Test',
-    needs: { energy: { initial: 80, decayPerHour: 5 } },
-    perception: { noticeRadius: 5, eyeHeight: 0.3 },
-    locomotion: { walkSpeed: 1, runSpeed: 3 },
-    bodyPlans: { upright: ['body', 'hands', 'making'] },
-    actions: [
-      { id: 'rest', satisfies: {}, durationSec: [1, 2], target: { type: 'none' }, slot: 'sit', reason: 'Resting.' },
-      {
-        id: 'pick_up',
-        group: 'hands',
-        effect: 'pickUp',
-        satisfies: {},
-        durationSec: [1, 2],
-        target: { type: 'object', where: { carryable: true } },
-        slot: 'work',
-        reason: 'Mine.',
-      },
-      {
-        id: 'build',
-        group: 'making',
-        effect: 'make',
-        satisfies: {},
-        durationSec: [1, 2],
-        target: { type: 'object', unlocked: true },
-        slot: 'work',
-        reason: 'Making.',
-      },
-    ],
-  })
-  const bench = obj({ id: 'workbench', position: [2, 0, 20], unlocks: ['build'] })
-  const stick = obj({ id: 'stick', position: [8, 0, 22], properties: { carryable: true, weightKg: 0.4 } })
-  const world = worldWithObjects([bench, stick])
-  const spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(12), world.objects)
-
-  it('offers each verb the objects its target matches', () => {
-    expect(spots['for:build']).toHaveLength(1)
-    expect(spots['for:pick_up']).toHaveLength(1)
-  })
-
-  it('still offers every object by its own id', () => {
-    expect(spots.workbench).toHaveLength(1)
-    expect(spots.stick).toHaveLength(1)
-  })
-
-  it('offers nothing for a verb no object matches', () => {
-    const none = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(12), [stick])
-    expect(none['for:build']).toBeUndefined()
-  })
-})
-
-describe('object footprints follow size', () => {
-  const blocked = (objects: WorldObject[]) => {
-    const nav = worldWithObjects(objects).nav.grid
-    let n = 0
-    for (let x = -2; x <= 6; x += 0.5) for (let z = 18; z <= 22; z += 0.5) if (!isWalkable(nav, x, z)) n++
-    return n
-  }
-  const part = { shape: 'box', size: [0.2, 0.2, 0.2], at: [0, 0.1, 0], color: '#a67c52' }
-  const made = (size: number) => obj({ id: `made-${size}`.replace('.', '-'), model: { parts: [part] }, properties: { size } })
-
-  it('blocks more ground for a big made thing than a small one', () => {
-    const none = blocked([])
-    const small = blocked([made(0.2)])
-    const big = blocked([made(3)])
-    expect(small).toBeGreaterThanOrEqual(none)
-    expect(big).toBeGreaterThan(small)
-  })
-
-  it('still sees a placed object where the island has none', () => {
-    expect(worldWithObjects([made(1)]).placements.length).toBe(starterWorld().placements.length + 1)
-  })
-})
-
-describe('offersSpot', () => {
-  it('counts a high object as a perch, and an old affordance as itself', () => {
-    expect(offersSpot(obj({ properties: { high: true } }), 'perch')).toBe(true)
-    expect(offersSpot(obj({ affordances: ['perch'] }), 'perch')).toBe(true)
-    expect(offersSpot(obj(), 'perch')).toBe(false)
-    expect(offersSpot(obj({ properties: { high: true } }), 'sunbeam')).toBe(false)
-  })
-
-  it('gives a high object one perch spot, not two, even if it also says perch the old way', () => {
-    const rock = obj({ id: 'tall', affordances: ['perch'], properties: { high: true } })
-    const world = worldWithObjects([rock])
-    const spots = collectSpots(
-      SpeciesPack.parse({ id: 'x', displayName: 'X', needs: { energy: { initial: 50, decayPerHour: 1 } }, perception: { noticeRadius: 3, eyeHeight: 0.3 }, locomotion: { walkSpeed: 1, runSpeed: 2 }, actions: [{ id: 'sit', satisfies: {}, durationSec: [1, 2], target: { type: 'none' }, slot: 'sit', reason: 'Sitting.' }] }),
-      world.cfg, world.nav, world.spawn, sunDirection(12), world.objects,
-    )
-    const own = spots.perch!.filter((p) => Math.hypot(p.x - 2, p.z - 20) < 5)
-    expect(own).toHaveLength(1)
   })
 })

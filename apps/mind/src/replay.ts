@@ -57,7 +57,7 @@ export function replay(states: readonly ReplayState[], opts: ReplayOptions): Rep
     if (!state) continue
     let world = worlds.get(state)
     if (!world) {
-      world = bodyWorldFor({ seed: state.forkling.seed, pack: opts.pack, places: state.places ?? [], objects: state.objects })
+      world = bodyWorldFor({ seed: state.forkling.seed, places: state.places ?? [] })
       worlds.set(state, world)
     }
     const { forkling, goals } = state

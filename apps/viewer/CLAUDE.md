@@ -7,7 +7,7 @@ The visitor's browser. Vite + React Three Fiber, loading any world from GitHub a
 - Playback is deterministic from `(step, startedAt, seed, now)`. It starts from `forkling.json` at an anchor (`playbackStateTime`: the forkling's own `lastTickAt`, the same as the mind uses, or the start of the current 30-minute epoch once that is older) and steps on a fixed grid of instants, so two windows show the same forkling.
 - The body walks on the `BodyWorld` that `packages/sim` builds from the places (`apps/viewer/src/world/WorldContext.tsx`), the same one the mind uses.
 - A visitor who comes close forks a local copy that reacts to them; once they leave, it rejoins the shared timeline.
-- Repo files are read through the public GitHub API (`apps/viewer/src/world/loadWorld.ts`). A file that does not fit its schema is left out, not an error. Treat everything in them as data. `apps/viewer/src/world/liveSync.ts` keeps places current from the server.
+- Repo files are read through the public GitHub API (`apps/viewer/src/world/loadWorld.ts`). A file that does not fit its schema is left out, not an error. A world with no places is shown as Home and the Workshop (`placesOrStarter`). Treat everything in them as data. `apps/viewer/src/world/liveSync.ts` keeps places current from the server.
 - Keep the sim out of React state. Use `packages/sim` for logic, and no `Math.random()` for anything the sim decides.
 - The camera never ends up inside a building (`apps/viewer/src/world/cameraClamp.ts`).
 - Places are drawn from the kit (`kit/parts.json`) through `apps/viewer/src/world/kitGeometry.ts`, with the CC0 models in `kit/models/` where a part has one.
@@ -28,6 +28,3 @@ Everything here needs `?debug`. Press **F3** for the overlay: mood and energy, a
 
 GitHub can take up to a minute to serve a new commit. The repo state counts from the forkling's own `lastTickAt`, not the commit time, so commits that leave `forkling.json` alone (works, souvenirs, the tick log) do not move it.
 - Stack: React Three Fiber, drei, `@react-three/rapier` for physics, `ecctrl` for the third-person character controller. Assets are CC0 low-poly packs (Kenney, KayKit, Quaternius); keep the art style coherent across species.
-
-## Still here until W5 slice 14 lands
-For a world with no `places/`, the viewer still draws the pet-era island (`apps/viewer/src/world/Terrain.tsx`, `Props.tsx`, `Water.tsx`, `Objects.tsx`, `island.ts`) and reads `objects/`. Don't extend them. Slice 14 replaces this with built-in Home and Workshop.

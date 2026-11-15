@@ -2,8 +2,9 @@ import { Intention, type MicroBehavior, type SpeciesPack } from '@forkling/schem
 import { createForkling, setFocus, stepForkling, STEP, toRepoIntention, type Focus, type StepContext } from './forkling.ts'
 import { isWalkable, nearestWalkable, type Point2 } from './nav.ts'
 import { sunDirection } from './sky.ts'
-import { starterWorld, worldWithObjects, type StarterWorld } from './starter.ts'
-import { collectSpots } from './world.ts'
+import { isNight } from './time.ts'
+import { buildBodyWorld, type BodyWorld } from './body-world.ts'
+import { starterPlaces } from './starter-places.ts'
 
 export interface HeadlessOptions {
   pack: SpeciesPack
@@ -14,7 +15,7 @@ export interface HeadlessOptions {
   seconds: number
   /** A visitor that stalks the forkling from `arrive` seconds, stops near it, and leaves at `leave`. */
   visitor?: { arrive: number; leave: number }
-  world?: StarterWorld
+  world?: BodyWorld
   /** Favour this action and target until `until` seconds into the run. */
   focus?: Focus
   /** Start with full paws. */
@@ -42,13 +43,13 @@ export interface HeadlessRun {
 }
 
 /**
- * Run a forkling for a while with no renderer, against the starter island, checking the sim's invariants as it
+ * Run a forkling for a while with no renderer, against Home and the Workshop (or the world given), checking the sim's invariants as it
  * goes. Used by the sim and species-pack tests, and the same run is what a world repo's CI will do.
  */
 export function runHeadless(opts: HeadlessOptions): HeadlessRun {
   const { pack, behaviors = [] } = opts
-  const world = opts.world ?? starterWorld()
-  const start = nearestWalkable(world.nav.grid, { x: 0, z: 0 })!
+  const world = opts.world ?? buildBodyWorld(opts.seed, starterPlaces())
+  const start = nearestWalkable(world.grid, { x: world.spawn.x, z: world.spawn.z })!
   const state = createForkling(pack, behaviors, opts.seed, start, {
     ...(opts.focus ? { focus: opts.focus } : {}),
     ...(opts.holding ? { holding: true } : {}),
@@ -79,7 +80,7 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
     // Sunbeams are refreshed once a simulated minute, like the viewer does.
     if (Math.floor(t / 60) !== lastMinute) {
       lastMinute = Math.floor(t / 60)
-      spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(hour), world.objects)
+      spots = world.spots(sunDirection(hour))
     }
 
     if (opts.visitor && t >= opts.visitor.arrive && t < opts.visitor.leave) {
@@ -98,13 +99,14 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
     }
 
     const posBefore = { ...state.pos }
-    const ctx: StepContext = { grid: world.nav.grid, visitor, timeOfDay: hour, spots }
+    // Bed hours stand in for the sleep schedule, so only what is for the night is on offer, as in a real tick.
+    const ctx: StepContext = { grid: world.grid, visitor, timeOfDay: hour, asleep: isNight(hour), spots }
     const wasNoticed = visitor !== null && Math.hypot(posBefore.x - visitor.x, posBefore.z - visitor.z) <= radius
     stepForkling(state, STEP, ctx)
 
     if (wasNoticed && !run.noticeStep) run.noticeStep = { time: state.time, startedAt: state.intention.startedAt }
 
-    if (!isWalkable(world.nav.grid, state.pos.x, state.pos.z)) run.offGrid++
+    if (!isWalkable(world.grid, state.pos.x, state.pos.z)) run.offGrid++
     if (state.phase === 'moving') {
       stuck = Math.hypot(state.pos.x - posBefore.x, state.pos.z - posBefore.z) < 1e-6 ? stuck + 1 : 0
       run.maxStuckSteps = Math.max(run.maxStuckSteps, stuck)

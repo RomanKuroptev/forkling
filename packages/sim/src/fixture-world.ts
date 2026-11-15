@@ -1,10 +1,9 @@
 import { Place, PlaceRequest, type SouvenirKindName } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import homeFile from '../../../templates/forkling-world/places/home.json'
-import workshopFile from '../../../templates/forkling-world/places/workshop.json'
 import { choosePlacement, chooseRequestChunk, toLandPlace } from './land.ts'
 import { allPaths, derivePaths, type WorldPath } from './paths.ts'
 import { createPrng } from './prng.ts'
+import { starterPlaces } from './starter-places.ts'
 
 /**
  * A made-up world for looking at: a seeded set of places on the land, with their paths, built from the real Home and Workshop
@@ -34,7 +33,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
 
 export function makeFixtureWorld(seed = 1, count = 10, now: string = FIXTURE_NOW): FixtureWorld {
   const prng = createPrng(seed)
-  const places: Place[] = [Place.parse(homeFile), Place.parse(workshopFile)]
+  const places: Place[] = starterPlaces()
   const souvenirs: Record<string, SouvenirKindName> = {}
 
   for (let i = 2; i < count; i++) {

@@ -37,5 +37,5 @@ The mind of one world repo. Today it runs as the Actions tick (`src/cli.ts`, `mi
 - Every LLM decision goes through the validate step in code before it is used; on rejection fall back to the sim's utility AI and log why.
 - Uses `@anthropic-ai/sdk` for calls. Merge's engine is pinned by tag in each world's workflows (`FORKLING_REF`).
 
-## Still here until W5 slice 14 lands
-`src/world.ts` still reads a world's `objects/`, and `apps/mind/src/tick/create.ts` builds spots from them for a world with no places. Nothing new should use them.
+## Still here until W5 slice 14 part B lands
+`src/world.ts` still reads a world's `objects/`. Nothing uses them. Don't extend them.

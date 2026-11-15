@@ -1,70 +1,56 @@
 import { describe, expect, it } from 'vitest'
-import { SpeciesPack, WorldObject } from '@forkling/schema'
+import { SpeciesPack } from '@forkling/schema'
 import blobJson from './fixtures/blob.species.json'
+import { buildBodyWorld } from '../src/body-world.ts'
 import { runHeadless, type HeadlessOptions } from '../src/headless.ts'
-import { isWalkable, nearestWalkable } from '../src/nav.ts'
-import { starterWorld, worldWithObjects } from '../src/starter.ts'
-import { collectSpots } from '../src/world.ts'
-import { sunDirection } from '../src/sky.ts'
+import { nearestWalkable } from '../src/nav.ts'
+import { starterPlaces } from '../src/starter-places.ts'
 
-/** The blob plus one action that goes to a perch, so objects with the `perch` affordance can be targeted. */
+/** The blob plus one action that goes to a named spot, so a place can be targeted by its id. */
 const pack = SpeciesPack.parse({
   ...blobJson,
   actions: [
     ...blobJson.actions,
-    { id: 'perch', satisfies: { fun: 10 }, durationSec: [4, 6], target: { type: 'spot', kind: 'perch' }, slot: 'sit', reason: 'Up high.' },
+    { id: 'visit', satisfies: { fun: 10 }, durationSec: [4, 6], target: { type: 'spot', kind: 'workshop' }, slot: 'sit', reason: 'Over there.' },
   ],
+  // Rarely chosen on its own, so a visit in the results is the focus at work.
+  weights: { ...blobJson.weights, visit: 0.02 },
 })
 
-const start = starterWorld().spawn
-const rock = WorldObject.parse({
-  id: 'lookout-rock',
-  kind: 'rock',
-  name: 'The lookout rock',
-  position: [start.x + 9, 0, start.z + 3],
-  model: { asset: 'nature/rock_largeA' },
-  affordances: ['perch'],
-  reason: 'Good view.',
-})
-const world = worldWithObjects([rock])
+const world = buildBodyWorld(1, starterPlaces())
+const start = world.spawn
 
-describe('objects as spots', () => {
-  it('offers an object by its affordance and by its id, on walkable ground', () => {
-    const spots = collectSpots(pack, world.cfg, world.nav, world.spawn, sunDirection(12), world.objects)
-    expect(spots['lookout-rock']).toHaveLength(1)
-    expect(spots.perch!.length).toBeGreaterThan(1)
-    const p = spots['lookout-rock']![0]!
-    expect(isWalkable(world.nav.grid, p.x, p.z)).toBe(true)
-    expect(Math.hypot(p.x - rock.position[0], p.z - rock.position[2])).toBeLessThan(4)
-  })
-
-  it('keeps the world free of object spots when there are no objects', () => {
-    const plain = starterWorld()
-    const spots = collectSpots(pack, plain.cfg, plain.nav, plain.spawn, sunDirection(12), plain.objects)
-    expect(Object.keys(spots)).not.toContain('lookout-rock')
+describe('places as spots', () => {
+  it('offers each place by its id, on walkable ground', () => {
+    const spots = world.spots([0.3, 0.8, 0.3])
+    expect(spots.home).toHaveLength(1)
+    expect(spots.workshop).toHaveLength(1)
   })
 })
 
 describe('focus', () => {
   const run = (opts: Partial<HeadlessOptions> & { seconds: number }) => runHeadless({ pack, world, startHour: 12, seed: 3, ...opts })
-  const perches = (r: ReturnType<typeof runHeadless>) => r.targets.filter((t) => t.startsWith('perch:'))
+  const visits = (r: ReturnType<typeof runHeadless>) => r.targets.filter((t) => t.startsWith('visit:'))
 
   it('keeps returning to the focused action and target while the focus lasts', () => {
-    const focused = run({ seconds: 900, focus: { action: 'perch', targetId: 'lookout-rock', until: 900 } })
+    const focused = run({ seconds: 900, focus: { action: 'visit', targetId: 'workshop', until: 900 } })
     const free = run({ seconds: 900 })
-    expect(perches(focused).length).toBeGreaterThanOrEqual(3)
-    expect(perches(focused).every((t) => t === 'perch:lookout-rock')).toBe(true)
-    expect(perches(focused).length).toBeGreaterThan(perches(free).length * 2)
+    expect(visits(focused).length).toBeGreaterThanOrEqual(3)
+    expect(visits(focused).every((t) => t === 'visit:workshop')).toBe(true)
+    expect(visits(focused).length).toBeGreaterThan(visits(free).length * 2)
   })
 
   it('lets go once it has expired', () => {
-    const r = run({ seconds: 1800, focus: { action: 'perch', targetId: 'lookout-rock', until: 300 } })
-    const later = r.targets.slice(r.targets.length >> 1)
-    expect(later.filter((t) => t === 'perch:lookout-rock').length).toBeLessThanOrEqual(2)
+    const r = run({ seconds: 1800, focus: { action: 'visit', targetId: 'workshop', until: 300 } })
+    const free = run({ seconds: 1800 })
+    const laterVisits = (x: ReturnType<typeof runHeadless>) => x.targets.slice(x.targets.length >> 1).filter((t) => t === 'visit:workshop').length
+    // After the focus is gone the body chooses for itself again, no more often than it would have anyway.
+    expect(laterVisits(r)).toBeLessThanOrEqual(laterVisits(free) + 2)
+    expect(r.targets.filter((t) => t === 'visit:workshop').length).toBeGreaterThan(laterVisits(r))
   })
 
   it('goes to a position when the focus names one', () => {
-    const target = nearestWalkable(world.nav.grid, { x: start.x - 12, z: start.z + 6 }, 8)!
+    const target = nearestWalkable(world.grid, { x: start.x - 4, z: start.z + 3 }, 8)!
     const r = run({ seconds: 300, focus: { action: 'roam', position: target, until: 300 } })
     expect(r.trace.some((t) => t.startsWith('roam@'))).toBe(true)
     const nearTarget = r.positions.some((p) => Math.hypot(p.x - target.x, p.z - target.z) < 3)

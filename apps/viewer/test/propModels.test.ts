@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs'
 import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
-import { rules } from '../src/island.ts'
 import { bakePropModel, PROP_MODELS, restyleMaterial } from '../src/world/propModels.ts'
 
 function box(w: number, h: number, d: number, material: THREE.Material, x = 0, y = 0, z = 0) {
@@ -68,12 +67,6 @@ describe('bakePropModel', () => {
 })
 
 describe('PROP_MODELS', () => {
-  it('has one model per variant for every scattered kind', () => {
-    for (const rule of rules) {
-      expect(PROP_MODELS[rule.kind], rule.kind).toHaveLength(rule.variants)
-    }
-  })
-
   it('points at model files that ship with the viewer', () => {
     for (const source of Object.values(PROP_MODELS).flat()) {
       expect(existsSync(new URL(`../public/models/nature/${source.file}`, import.meta.url)), source.file).toBe(true)

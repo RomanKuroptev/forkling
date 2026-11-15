@@ -18,12 +18,8 @@ import { Environment } from './world/Environment.tsx'
 import { Fog } from './world/Fog.tsx'
 import { Land } from './world/Land.tsx'
 import { Notes } from './world/Notes.tsx'
-import { Objects } from './world/Objects.tsx'
 import { Paths } from './world/Paths.tsx'
 import { Places } from './world/Places.tsx'
-import { Props } from './world/Props.tsx'
-import { Terrain } from './world/Terrain.tsx'
-import { Water } from './world/Water.tsx'
 
 const keyboardMap: KeyboardControlsEntry[] = [
   { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
@@ -40,13 +36,11 @@ const physicsDebug = params.get('debug') === 'physics'
 
 function Loading() {
   const { active, progress } = useProgress()
-  return active ? <div className="loading">Loading island… {Math.round(progress)}%</div> : null
+  return active ? <div className="loading">Loading… {Math.round(progress)}%</div> : null
 }
 
 export function App() {
-  // A world with places is drawn as land (chunks, fog, paths); one without any keeps the pet-era island until it is migrated.
-  const { world } = useWorld()
-  const land = world.places.length > 0
+  // The land with its places, paths and fog. A world with no places is shown as Home and the Workshop (`loadWorld`).
   return (
     <>
       <KeyboardControls map={keyboardMap}>
@@ -54,22 +48,11 @@ export function App() {
           <Suspense fallback={null}>
             <Environment />
             <Physics debug={physicsDebug}>
-              {land ? (
-                <>
-                  <Land />
-                  <Paths />
-                  <Places />
-                  <Notes />
-                  <Fog />
-                </>
-              ) : (
-                <>
-                  <Terrain />
-                  <Props />
-                  <Objects />
-                  <Water />
-                </>
-              )}
+              <Land />
+              <Paths />
+              <Places />
+              <Notes />
+              <Fog />
               <Forkling />
               <Player />
             </Physics>
@@ -79,10 +62,10 @@ export function App() {
       </KeyboardControls>
       <Loading />
       <DebugOverlay />
-      {land && <HoverLabel />}
-      {land && <ExhibitPanel />}
-      {land && <NotePanel />}
-      {land && <NoteButton />}
+      <HoverLabel />
+      <ExhibitPanel />
+      <NotePanel />
+      <NoteButton />
       {touchUi && <TouchControls />}
       {touchUi ? (
         <div className="hud hud-touch">Left stick to walk · push to the edge to run · drag to look · pinch to zoom</div>

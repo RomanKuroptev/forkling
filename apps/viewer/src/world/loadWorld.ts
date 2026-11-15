@@ -1,4 +1,5 @@
 import { Forkling, forklingPackIssues, Goals, objectIdFromPath, parseRequest, Place, WorldObject, type PlaceRequest, type SpeciesPack } from '@forkling/schema'
+import { starterPlaces } from '@forkling/sim'
 import type { WorldRef } from './route.ts'
 
 export interface LoadedWorld {
@@ -10,7 +11,7 @@ export interface LoadedWorld {
   forkling: Forkling
   pack: SpeciesPack
   objects: WorldObject[]
-  /** `places/*.json`, in id order. Empty for a world that has none yet, which then keeps the pet-era island. */
+  /** `places/*.json`, in id order. Home and the Workshop when the world has none yet. */
   places: Place[]
   /** `requests/*.md` (spec 10.3), in id order: the place requests Merge has made, whatever their status. The open ones are staked plots. */
   requests: PlaceRequest[]
@@ -45,6 +46,11 @@ export interface LoadDeps {
 }
 
 const MAX_OBJECTS = 300
+
+/** A world with no places is shown as Home and the Workshop, as the body walks it (`bodyWorldFor`); one with places is left alone. */
+export function placesOrStarter(places: Place[]): Place[] {
+  return places.length > 0 ? places : starterPlaces()
+}
 /** The most places a world may have (spec 4.1). */
 const MAX_PLACES = 64
 /** The most requests read; the open ones are at most 2, so this is a ceiling, not a limit anyone meets. */
@@ -221,7 +227,7 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         forkling: forkling.forkling,
         pack: forkling.pack,
         objects: objects.filter((o): o is WorldObject => o !== null),
-        places,
+        places: placesOrStarter(places),
         requests,
         workIds: paths.flatMap((p) => /^works\/([^/]+)\/meta\.json$/.exec(p)?.[1] ?? []).sort(),
         goals: goals ?? {},

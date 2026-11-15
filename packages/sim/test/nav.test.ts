@@ -1,15 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { IslandConfig } from '@forkling/schema'
-import { heightAt, scatterProps, type PropRule } from '../src/island.ts'
 import {
-  buildNavGrid,
   createNavGrid,
   findPath,
   isWalkable,
   lineOfSight,
   nearestWalkable,
   type NavGrid,
-  type Obstacle,
 } from '../src/nav.ts'
 
 /** A grid from ASCII art: `#` blocked, anything else open. One character per 1 m cell, centred on the origin. */
@@ -93,61 +89,5 @@ describe('nearestWalkable', () => {
   it('returns null when nothing is within range', () => {
     const grid = ascii(['####'])
     expect(nearestWalkable(grid, at(1, 0), 5)).toBeNull()
-  })
-})
-
-describe('buildNavGrid on the island', () => {
-  const cfg = IslandConfig.parse({ seed: 1234 })
-  const rules: PropRule[] = [
-    { kind: 'tree', variants: 3, count: 70, minSpacing: 3.5, minHeight: cfg.waterLevel + 1.2, maxHeight: cfg.maxHeight * 0.75 },
-    { kind: 'rock', variants: 3, count: 35, minSpacing: 2.5, minHeight: cfg.waterLevel + 0.2, maxHeight: cfg.maxHeight },
-  ]
-  const obstacles: Obstacle[] = scatterProps(cfg, rules).map((p) => ({
-    x: p.position[0],
-    z: p.position[2],
-    radius: (p.kind === 'tree' ? 0.4 : 0.9) * p.scale,
-  }))
-  const grid = buildNavGrid(cfg, obstacles)
-
-  it('covers the whole island', () => {
-    expect(grid.cols).toBe(cfg.size)
-    expect(grid.rows).toBe(cfg.size)
-  })
-
-  it('has walkable land in the middle and blocked sea at the edge', () => {
-    expect(isWalkable(grid, 0, 0)).toBe(true)
-    expect(isWalkable(grid, cfg.size / 2 - 0.5, 0.5)).toBe(false)
-    expect(isWalkable(grid, 1000, 0)).toBe(false)
-  })
-
-  it('blocks cells that are below the waterline margin', () => {
-    for (let x = -49.5; x < 50; x += 3) {
-      for (let z = -49.5; z < 50; z += 3) {
-        if (isWalkable(grid, x, z)) expect(heightAt(x, z, cfg)).toBeGreaterThan(cfg.waterLevel + 0.2)
-      }
-    }
-  })
-
-  it('blocks cells inside obstacles', () => {
-    for (const o of obstacles) expect(isWalkable(grid, o.x, o.z)).toBe(false)
-  })
-
-  it('leaves most of the island walkable', () => {
-    const land = Array.from(grid.walkable).filter(Boolean).length
-    expect(land).toBeGreaterThan(1200)
-  })
-
-  it('finds paths between distant walkable points that stay on walkable ground', () => {
-    const from = nearestWalkable(grid, { x: -30, z: -20 })!
-    const to = nearestWalkable(grid, { x: 25, z: 28 })!
-    const path = findPath(grid, from, to)!
-    expect(path).not.toBeNull()
-    let prev = from
-    for (const p of path) {
-      expect(isWalkable(grid, p.x, p.z)).toBe(true)
-      expect(lineOfSight(grid, prev, p)).toBe(true)
-      prev = p
-    }
-    expect(path[path.length - 1]).toEqual(to)
   })
 })
