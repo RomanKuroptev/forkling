@@ -3,11 +3,9 @@ import { paceAhead } from './budget.ts'
 import { advance } from './tick/advance.ts'
 import { applyDecision } from './tick/apply-decision.ts'
 import { finishStep } from './tick/apply-step.ts'
-import { bedtime } from './tick/bedtime.ts'
 import type { TickDeps, TickOutcome, TickResult } from './tick/context.ts'
 import { createTick } from './tick/create.ts'
 import { feel } from './tick/feel.ts'
-import { memoryStep } from './tick/memory.ts'
 import { buildNow } from './tick/now.ts'
 import { settleJobs } from './tick/jobs.ts'
 import { thoughtTick } from './tick/thought.ts'
@@ -23,6 +21,7 @@ import { noteStep } from './tick/mind-step.ts'
 import { route } from './tick/route.ts'
 import { logTick } from './ticklog.ts'
 import { reflectionStep } from './tick/reflection.ts'
+import { sleepRewriteStep } from './tick/sleep.ts'
 import { think } from './tick/think.ts'
 import { morningStep, tripStep } from './tick/wander.ts'
 import { writeWorld } from './tick/write.ts'
@@ -56,8 +55,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   // Reflection (spec 9.3) runs on its own clock, after the thought tick has added its scores; it too is the loop's alone.
   await reflectionStep(t)
   await think(t)
-  await bedtime(t)
-  await memoryStep(t)
+  await sleepRewriteStep(t)
   applyDecision(t)
   advance(t)
   feel(t)

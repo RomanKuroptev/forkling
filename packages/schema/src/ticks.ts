@@ -41,6 +41,7 @@ export const TickLine = z.object({
   asleep: z.boolean(),
   triggers: z.array(z.object({ kind: z.string().max(20), score: z.number() })).max(12),
   /** The kind of thought this tick had, or null when nothing was asked. */
+  // `bedtime` is no longer made (the sleep rewrite replaced it, W7); it stays so tick logs from before still parse.
   think: z.enum(['morning', 'decide', 'weekly', 'bedtime']).nullable(),
   calls: z.array(TickCall).max(20),
   notes: z.array(z.string().max(300)).max(30),

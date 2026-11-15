@@ -1,7 +1,7 @@
 import type { Forkling, Goals, MindState, VisitorEvent, WorldObject } from '@forkling/schema'
 import { localDate, sleepWindow } from './sleep.ts'
 
-export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'weekly' | 'bedtime' | 'buildResult' | 'reflected'
+export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'weekly' | 'buildResult' | 'reflected'
 
 /** A reason to wake the LLM. Anything the sim can tell on its own stays with the utility AI. */
 export interface Trigger {
@@ -42,10 +42,8 @@ export const STRONG_NEED = 15
 export const SPARK_GAIN = 15
 export const MAX_SPARKS_PER_DAY = 2
 const WEEK_MS = 7 * 24 * 3_600_000
-/** No new plan is asked for this close to bed: the evening is for winding down, and the reflection comes next. */
+/** No new plan is asked for this close to bed: the evening is for winding down, and the sleep rewrite comes at bedtime. */
 export const REPLAN_BEFORE_BED_MS = 45 * 60_000
-/** The day is reflected on this long before bed, which is a few ticks of room even if GitHub's cron runs late. */
-export const REFLECT_BEFORE_BED_MS = 30 * 60_000
 
 /**
  * What, if anything, is surprising right now: new things, a blocked step, a step that ran out, a new
@@ -93,9 +91,6 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
     found.push({ kind: 'newDay', score: 1, detail: `it is ${today} and no plan has been made for it` })
   }
 
-  if (mindState.lastReflectDate !== evening && nowMs >= bedMs - REFLECT_BEFORE_BED_MS && nowMs < bedMs) {
-    found.push({ kind: 'bedtime', score: 0.95, detail: `bedtime is near and ${evening} has not been reflected on` })
-  }
 
   if (goals.long && nowMs - Date.parse(goals.long.reviewedAt) >= WEEK_MS) {
     found.push({ kind: 'weekly', score: 0.6, detail: `the long goal was last reviewed ${goals.long.reviewedAt.slice(0, 10)}` })

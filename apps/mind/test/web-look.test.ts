@@ -64,6 +64,7 @@ function llmWith(parsed: unknown | Error) {
     },
     submitBatch: async () => 'b',
     fetchBatch: async () => ({ status: 'pending' }),
+    cancelBatch: async () => {},
   }
   return { llm, seen }
 }

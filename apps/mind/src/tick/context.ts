@@ -101,7 +101,7 @@ export interface Tick {
   forkling: World['forkling']
   tz: string
   today: string
-  /** The evening whose day a bedtime reflection and the memory rewrite are about. */
+  /** The evening whose day the sleep rewrite is about (spec 9.4). */
   evening: string
   notes: string[]
   parts: string[]
@@ -166,7 +166,7 @@ export interface Tick {
   /** Taken before any step is started, and not refreshed: the decision step reuses them. */
   nextIndex: number
   moreSteps: boolean
-  thinkKind: ThinkKind | 'bedtime' | null
+  thinkKind: ThinkKind | null
 
   beliefs: World['beliefs']
   /** `mind/wants.json`, as the tick leaves it: attempts counted, a want that failed 4 times dropped (spec 9.4). */

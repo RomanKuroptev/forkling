@@ -4,7 +4,7 @@ import type { z } from 'zod'
 import type { ModelId, Usage } from './budget.ts'
 
 /** What a call is for. Goes into the ledger, and lets a test fake answer each kind in turn. */
-export type CallKind = 'morning' | 'weekly' | 'decide' | 'bedtime' | 'memory' | 'read' | 'art' | 'vision' | 'design' | 'voice' | 'thought' | 'tinker' | 'repair' | 'sketch' | 'rework' | 'tend' | 'revisit' | 'expand' | 'found' | 'foundbuild' | 'reflection'
+export type CallKind = 'morning' | 'weekly' | 'decide' | 'sleep' | 'read' | 'art' | 'vision' | 'design' | 'voice' | 'thought' | 'tinker' | 'repair' | 'sketch' | 'rework' | 'tend' | 'revisit' | 'expand' | 'found' | 'foundbuild' | 'reflection'
 
 /** A picture for the model to look at: the eye-cam frame. */
 export interface LlmImage {
@@ -33,7 +33,7 @@ export interface LlmRequest<T = unknown> {
 }
 
 /** Effort per call kind (spec 13). The calls that decide, reflect or review think at medium; the rest are low. */
-const MEDIUM_KINDS: ReadonlySet<CallKind> = new Set(['morning', 'decide', 'bedtime', 'weekly', 'tinker', 'repair', 'sketch', 'tend', 'found', 'reflection'])
+const MEDIUM_KINDS: ReadonlySet<CallKind> = new Set(['morning', 'decide', 'weekly', 'tinker', 'repair', 'sketch', 'tend', 'found', 'reflection'])
 export const effortFor = (kind: CallKind): 'low' | 'medium' => (MEDIUM_KINDS.has(kind) ? 'medium' : 'low')
 
 /** Haiku 5.5 thinks by default and accepts `disabled` at effort `high` or below, so low-effort Haiku rows run without it (spec 13). */
@@ -65,6 +65,8 @@ export interface LlmClient {
   /** Queues one request on the Batch API (half price, answered within a day) and returns its id. */
   submitBatch(request: LlmRequest): Promise<string>
   fetchBatch(id: string, schema: z.ZodType): Promise<BatchOutcome>
+  /** Cancels a batch that is still running, so a request that has gone late can be run as a normal call without being paid for twice. */
+  cancelBatch(id: string): Promise<void>
 }
 
 const BATCH_REQUEST_ID = 'request'
@@ -106,6 +108,9 @@ export function anthropicClient(): LlmClient {
     async submitBatch(request) {
       const batch = await client.messages.batches.create({ requests: [{ custom_id: BATCH_REQUEST_ID, params: params(request) }] })
       return batch.id
+    },
+    async cancelBatch(id) {
+      await client.messages.batches.cancel(id)
     },
     async fetchBatch(id, schema) {
       const batch = await client.messages.batches.retrieve(id)
