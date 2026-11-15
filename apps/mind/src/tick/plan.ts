@@ -13,9 +13,8 @@ const MAX_RECENT = 20
 /** Home and the Workshop are the two places Merge starts with. They become place files in W5. */
 export const STARTING_PLACES = ['home', 'workshop'] as const
 
-export function thinkKindFor(triggers: readonly Trigger[]): ThinkKind | 'bedtime' {
+export function thinkKindFor(triggers: readonly Trigger[]): ThinkKind {
   if (triggers.some((t) => t.kind === 'newDay')) return 'morning'
-  if (triggers.some((t) => t.kind === 'bedtime')) return 'bedtime'
   if (triggers.some((t) => t.kind === 'weekly')) return 'weekly'
   return 'decide'
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Want } from '@forkling/schema'
-import { MAX_WANT_ATTEMPTS, MAX_WANT_EDITS, applyWantEdits, dropFailedWants, recordWantAttempt, rewriteWants } from '../src/wants.ts'
+import { MAX_WANT_ATTEMPTS, MAX_WANT_EDITS, applyWantEdits, dropFailedWants, recordWantAttempt, rewriteWants, wantsFromRewrite } from '../src/wants.ts'
 
 const T0 = '2026-11-15T10:00:00+01:00'
 const T1 = '2026-11-16T10:00:00+01:00'
@@ -103,5 +103,33 @@ describe('rewriteWants (the sleep rewrite changes at most half, spec 9.4)', () =
   it('refuses a list over 12', () => {
     const big = Array.from({ length: 13 }, (_, i) => w(`w${i + 1}`))
     expect(rewriteWants(big.slice(0, 12), big).ok).toBe(false)
+  })
+})
+
+describe('wantsFromRewrite (the sleep rewrite hands back the whole list)', () => {
+  const prev = [w('w1', { attempts: 2, since: T0 }), w('w2'), w('w3')]
+  const row = (id: string | null, text: string, over: object = {}) => ({ id, kind: 'question' as const, text, why: 'because', ...over })
+  it('keeps what a kept want already has (since, attempts), and says when it was touched if its text changed', () => {
+    const r = wantsFromRewrite(prev, [row('w1', 'text w1'), row('w2', 'a new wording')], T1)
+    expect(r.wants[0]).toMatchObject({ id: 'w1', attempts: 2, since: T0, lastTouched: T0 })
+    expect(r.wants[1]).toMatchObject({ id: 'w2', text: 'a new wording', since: T0, lastTouched: T1 })
+  })
+  it('gives a new want a fresh id after the highest ever seen, today as since, and no attempts', () => {
+    const r = wantsFromRewrite(prev, [row('w1', 'text w1'), row(null, 'Something new'), row('w9', 'An id it made up')], T1)
+    expect(r.wants.map((x) => x.id)).toEqual(['w1', 'w4', 'w5'])
+    expect(r.wants[1]).toMatchObject({ since: T1, lastTouched: T1, attempts: 0 })
+  })
+  it('keeps the order it gave, drops a repeated id, cuts text to 140 and the reason to 200, and takes at most 12', () => {
+    const many = Array.from({ length: 14 }, (_, i) => row(null, `want ${i}`))
+    expect(wantsFromRewrite([], many, T1).wants).toHaveLength(12)
+    const r = wantsFromRewrite(prev, [row('w2', 'x'.repeat(300), { why: 'y'.repeat(300) }), row('w2', 'again')], T1)
+    expect(r.wants).toHaveLength(1)
+    expect(r.wants[0]!.text).toHaveLength(140)
+    expect(r.wants[0]!.why).toHaveLength(200)
+  })
+  it('turns down a row with no text or no reason', () => {
+    const r = wantsFromRewrite(prev, [row('w1', '   '), row('w2', 'fine', { why: '' })], T1)
+    expect(r.wants).toEqual([])
+    expect(r.rejected).toHaveLength(2)
   })
 })

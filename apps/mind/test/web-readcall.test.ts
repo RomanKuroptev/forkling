@@ -22,6 +22,7 @@ function fakeLlm(answer: ReadAnswer | null | Error) {
     },
     submitBatch: async () => 'b',
     fetchBatch: async () => ({ status: 'pending' }),
+    cancelBatch: async () => {},
   }
   return { llm, seen }
 }

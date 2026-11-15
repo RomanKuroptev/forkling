@@ -79,10 +79,7 @@ function fakeModel() {
       let parsed: unknown = null
       if (req.kind === 'morning' || req.kind === 'decide' || req.kind === 'weekly') parsed = decide(req)
       else if (req.kind === 'art') parsed = { title: 'A plaque', text: 'The lamp is on. I am still here.' }
-      else if (req.kind === 'bedtime') {
-        const ref = /\d{4}-\d{2}-\d{2}#\d+/.exec(req.user)?.[0]
-        parsed = { journal: { title: 'A day', paragraphs: ref ? [{ text: 'I spent the day looking after the places.', refs: [ref] }] : [] }, beliefOps: [] }
-      } else if (req.kind === ('tend' as never)) parsed = { summary: `Looked after the shelves (${counts.tend}).`, exhibits: [], labels: [], sign: null, lamps: null }
+      else if (req.kind === ('tend' as never)) parsed = { summary: `Looked after the shelves (${counts.tend}).`, exhibits: [], labels: [], sign: null, lamps: null }
       else if (req.kind === ('revisit' as never)) parsed = { summary: 'Sat there a while.', thought: 'It is quiet.' }
       else if (req.kind === ('found' as never)) {
         parsed = { purpose: 'A place for what keeps pulling at me, held up under a lamp.', tags: ['anything'], related: [], souvenirs: [], body: 'I keep coming back to this. I want a place where it can sit under a lamp and be looked at slowly.', wishes: [], constraintRefusal: null }

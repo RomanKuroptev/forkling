@@ -40,10 +40,10 @@ describe('makeAsk: effort and thinking by call kind', () => {
     expect(seen.every((r) => r.thinking === undefined)).toBe(true)
   })
 
-  it('asks a Haiku read at low effort with thinking off, and a Sonnet bedtime at medium with thinking untouched', async () => {
+  it('asks a Haiku read at low effort with thinking off, and a Sonnet reflection at medium with thinking untouched', async () => {
     const { t, seen } = stubTick({ parsed: { a: 'x' }, usage, stopReason: 'end_turn' })
     await makeAsk(t)('read', 'claude-haiku-5-5', 'u', Answer)
-    await makeAsk(t)('bedtime', 'claude-sonnet-5-5', 'u', Answer)
+    await makeAsk(t)('reflection', 'claude-sonnet-5-5', 'u', Answer)
     expect(seen[0]).toMatchObject({ effort: 'low', thinking: 'off' })
     expect(seen[1]).toMatchObject({ effort: 'medium' })
     expect(seen[1]!.thinking).toBeUndefined()

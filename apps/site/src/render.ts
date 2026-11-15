@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { z } from 'zod'
-import { Beliefs, Forkling, Goals, Interests, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
+import { Beliefs, Forkling, Goals, Interests, MindState, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
 import { moodWords } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { esc, markdown } from './md.ts'
@@ -225,10 +225,12 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
 
   // Journal.
   const titleOf = (md: string) => /^# (.+)$/m.exec(md)?.[1] ?? ''
+  // The night's entry is written on the Batch API and can take a while (spec 9.4); until it lands the page says so. Only that one field of the state is read.
+  const writing = readJson(world, 'mind/state.json', MindState.pick({ sleepRewrite: true }))?.sleepRewrite ?? null
   add('journal/index.html', {
     title: 'Journal',
     active: 'journal/',
-    body: `<h1>Journal</h1>\n${journal.length > 0 ? `<ul>${journal.map((j) => `<li><a href="${esc(j.date)}.html">${esc(j.date)}</a> ${esc(titleOf(j.text))}</li>`).join('')}</ul>` : empty('It writes a diary entry at bedtime.')}`,
+    body: `<h1>Journal</h1>\n${writing ? `<p class="quiet">The entry for ${esc(writing.date)} is still being written.</p>\n` : ''}${journal.length > 0 ? `<ul>${journal.map((j) => `<li><a href="${esc(j.date)}.html">${esc(j.date)}</a> ${esc(titleOf(j.text))}</li>`).join('')}</ul>` : writing ? '' : empty('It writes a diary entry each night, while it sleeps.')}`,
   })
   journal.forEach((j, n) => {
     const newer = journal[n - 1]

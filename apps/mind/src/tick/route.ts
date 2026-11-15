@@ -18,7 +18,7 @@ export function route(t: Tick): void {
   t.thinkKind = null
 
   const failedRecently = !!mind.thinkFailedAt && nowMs - Date.parse(mind.thinkFailedAt) < FAILED_COOLDOWN_MS
-  const wake = failedRecently ? triggers.filter((x) => x.kind === 'newDay' || x.kind === 'bedtime' || x.kind === 'stepDone') : triggers
+  const wake = failedRecently ? triggers.filter((x) => x.kind === 'newDay' || x.kind === 'stepDone') : triggers
   const reasons = wake.filter((x) => x.kind !== 'stepDone')
   const stepDone = wake.length > reasons.length
   const canThink = !!t.deps.dryRun || (!!t.deps.llm && canSpend(t.budget, SMALLEST_CALL_USD))

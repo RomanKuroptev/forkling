@@ -133,12 +133,15 @@ export const MindState = z.object({
   sketches: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   /** Local date interests last faded, so they fade once a day. */
   interestsFadedOn: z.iso.date().optional(),
-  /** Local date of the last bedtime reflection, so it happens once a day. */
-  lastReflectDate: z.iso.date().optional(),
-  /** Local date of the last nightly memory rewrite that was sent, so it is sent once a night. */
-  lastMemoryDate: z.iso.date().optional(),
-  /** The nightly memory rewrite waiting on the Batch API. */
-  memoryBatch: z.object({ id: z.string().min(1), date: z.iso.date() }).nullable().default(null),
+  /** Local date of the last sleep rewrite that was sent (or skipped for a day with nothing in it), so it happens once a night (spec 9.4). */
+  lastRewriteDate: z.iso.date().optional(),
+  /**
+   * The sleep rewrite for the day `date`, not yet written (spec 9.4). `id` is its batch on the Batch API; null means the batch
+   * is cancelled or failed and the same request is to be run as a normal call once Merge is up. `polledAt` keeps the batch from
+   * being asked about more than every 5 minutes; `triedAt` keeps a failed normal call from being repeated within 30 minutes.
+   * Until it lands Merge runs on yesterday's summary and wants, and the site says the entry is still being written.
+   */
+  sleepRewrite: z.object({ id: z.string().min(1).nullable(), date: z.iso.date(), submittedAt: Timestamp, polledAt: Timestamp.optional(), triedAt: Timestamp.optional() }).nullable().default(null),
   /** Reading sessions so far on a local date, for the daily limit; and whether the morning skim of the feeds is done. */
   readings: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), skimmed: z.boolean().default(false) }).optional(),
   /**

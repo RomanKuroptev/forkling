@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -96,6 +96,53 @@ describe('renderSite', () => {
     const index = page('journal/index.html')
     expect(index.indexOf('2026-11-03')).toBeLessThan(index.indexOf('2026-11-02'))
     expect(page('journal/2026-11-02.html')).toContain('I watched the rock.')
+  })
+
+  describe('an entry still being written (spec 9.4)', () => {
+    const pending = (date: string, id: string | null = 'batch-1') => put('mind/state.json', { sleepRewrite: { id, date, submittedAt: `${date}T22:30:00Z` } })
+
+    it('says on the journal page that the entry for that day is still being written, above the list', () => {
+      pending('2026-11-03')
+      renderSite(world, out)
+      const index = page('journal/index.html')
+      expect(index).toContain('The entry for 2026-11-03 is still being written.')
+      expect(index.indexOf('still being written')).toBeLessThan(index.indexOf('2026-11-02.html'))
+    })
+
+    it('says it when the batch is cancelled and a normal call is waiting too', () => {
+      pending('2026-11-03', null)
+      renderSite(world, out)
+      expect(page('journal/index.html')).toContain('The entry for 2026-11-03 is still being written.')
+    })
+
+    it('says nothing when nothing is waiting, or when the entry is already there', () => {
+      renderSite(world, out)
+      expect(page('journal/index.html')).not.toContain('still being written')
+      put('mind/state.json', { sleepRewrite: null })
+      renderSite(world, out)
+      expect(page('journal/index.html')).not.toContain('still being written')
+    })
+
+    it('does not trust the date: a state file that is not a date shows nothing, and nothing in it becomes markup', () => {
+      put('mind/state.json', { sleepRewrite: { id: 'b', date: '<script>alert(1)</script>', submittedAt: '2026-11-03T22:30:00Z' } })
+      renderSite(world, out)
+      const index = page('journal/index.html')
+      expect(index).not.toContain('<script>alert(1)</script>')
+      expect(index).not.toContain('still being written')
+    })
+
+    it('shows it too when there is no entry at all yet, instead of the empty text', () => {
+      rmSync(join(world, 'journal'), { recursive: true, force: true })
+      pending('2026-11-03')
+      renderSite(world, out)
+      expect(page('journal/index.html')).toContain('The entry for 2026-11-03 is still being written.')
+    })
+
+    it('the empty text no longer says it writes at bedtime', () => {
+      rmSync(join(world, 'journal'), { recursive: true, force: true })
+      renderSite(world, out)
+      expect(page('journal/index.html')).not.toMatch(/bedtime/i)
+    })
   })
 
   it('shows beliefs with their confidence, and how it changed its mind', () => {

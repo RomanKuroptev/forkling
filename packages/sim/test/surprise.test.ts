@@ -157,33 +157,11 @@ describe('scoreSurprise', () => {
     const scores = t.map((x) => x.score)
     expect(scores).toEqual([...scores].sort((a, b) => b - a))
   })
-  describe('bedtime', () => {
+  describe('no bedtime trigger (the sleep rewrite is sent at sleep time, not asked for by a trigger)', () => {
     const bedMs = sleepWindow('2026-11-03', 5, 'Europe/Stockholm').bedMs
-    const evening = { ...calm, goals: {}, nowMs: bedMs - 20 * 60_000 }
 
-    it('asks for the day to be reflected on in the half hour before bed', () => {
-      const t = scoreSurprise(evening)
-      expect(t.map((x) => x.kind)).toEqual(['bedtime'])
-      expect(t[0]!.detail).toContain('2026-11-03')
-    })
-
-    it('waits until that half hour', () => {
-      expect(kinds({ ...evening, nowMs: bedMs - 60 * 60_000 })).not.toContain('bedtime')
-    })
-
-    it('happens once a day', () => {
-      expect(kinds({ ...evening, mindState: MindState.parse({ ...calm.mindState, lastReflectDate: '2026-11-03' }) })).toEqual([])
-    })
-
-    it('follows a late night: the reflection moves with bedtime', () => {
-      const late = { ...evening, forkling: { ...forkling, lateNight: '2026-11-03' } }
-      expect(kinds(late)).not.toContain('bedtime')
-      const lateBed = sleepWindow('2026-11-03', 5, 'Europe/Stockholm', true).bedMs
-      expect(kinds({ ...late, nowMs: lateBed - 10 * 60_000 })).toEqual(['bedtime'])
-    })
-
-    it('is not asked in bed', () => {
-      expect(kinds({ ...evening, asleep: true })).toEqual([])
+    it('asks for nothing in the half hour before bed, however the day went', () => {
+      expect(kinds({ ...calm, goals: {}, nowMs: bedMs - 20 * 60_000 })).toEqual([])
     })
   })
 })

@@ -28,37 +28,26 @@ const plan = (): Decision => ({
   stayUpLate: null,
 })
 
-const reflection = (over: Partial<Reflection> = {}): Reflection => ({
-  journal: { title: 'A calm day', paragraphs: [{ text: 'I watched the sunny rock all morning.', refs: [`${DAY}#1`] }] },
-  beliefOps: [{ op: 'new', beliefId: null, statement: 'The sunny rock is warm in the morning.', confidence: 0.6, evidence: [`${DAY}#1`], why: 'I felt it.' }],
-  ...over,
-})
-
 interface Fake extends LlmClient {
   calls: LlmRequest[]
-  batches: LlmRequest[]
 }
 
-function fake(answers: { decision?: Decision | null; reflections?: (Reflection | null)[]; batch?: BatchOutcome } = {}): Fake {
+function fake(answers: { decision?: Decision | null } = {}): Fake {
   const calls: LlmRequest[] = []
-  const batches: LlmRequest[] = []
-  const reflections = [...(answers.reflections ?? [reflection()])]
   const usage = { input: 800, cacheRead: 0, cacheWrite: 3000, output: 400 }
   return {
     calls,
-    batches,
     async complete<T>(req: LlmRequest<T>) {
       calls.push(req)
-      const parsed = req.kind === 'bedtime' ? (reflections.length > 1 ? reflections.shift()! : (reflections[0] ?? null)) : (answers.decision ?? null)
-      return { parsed: parsed as T | null, stopReason: 'end_turn', usage }
+      return { parsed: (answers.decision ?? null) as T | null, stopReason: 'end_turn', usage }
     },
-    async submitBatch(req) {
-      batches.push(req)
-      return 'batch_1'
+    async submitBatch() {
+      throw new Error('this test does not expect a batch')
     },
     async fetchBatch(): Promise<BatchOutcome> {
-      return answers.batch ?? { status: 'pending' }
+      return { status: 'pending' }
     },
+    async cancelBatch() {},
   }
 }
 
@@ -133,184 +122,6 @@ describe('the memory stream', () => {
   it('does not write memory in a dry run', async () => {
     await tick(MORNING, fake({ decision: plan() }), { dryRun: true })
     expect(existsSync(file('memory'))).toBe(false)
-  })
-})
-
-describe('the bedtime reflection', () => {
-  beforeEach(seedDay)
-
-  it('is one Sonnet call in the half hour before bed, and writes the journal and a belief with its evidence', async () => {
-    const llm = fake()
-    const result = await tick(beforeBed(20), llm)
-    expect(llm.calls).toHaveLength(1)
-    expect(llm.calls[0]).toMatchObject({ kind: 'bedtime', model: 'claude-sonnet-5-5' })
-    expect(llm.calls[0]!.user).toContain(`${DAY}#1`)
-
-    expect(readFileSync(file(`journal/${DAY}.md`), 'utf8')).toContain('I watched the sunny rock all morning.')
-    const beliefs = Beliefs.parse(readJson('memory/beliefs.json'))
-    expect(beliefs).toHaveLength(1)
-    expect(beliefs[0]).toMatchObject({ id: 'b1', statement: 'The sunny rock is warm in the morning.', evidence: [`${DAY}#1`], status: 'active' })
-    expect(MindState.parse(readJson('mind/state.json')).lastReflectDate).toBe(DAY)
-    expect(result.written).toEqual(expect.arrayContaining([`journal/${DAY}.md`, 'memory/beliefs.json']))
-    expect(result.summary).toMatch(/journal/)
-  })
-
-  it('records the call in the ledger under its own kind', async () => {
-    await tick(beforeBed(20), fake())
-    const ledger = BudgetLedger.parse(readJson('brain/budget.json'))
-    expect(ledger.calls.map((c) => c.kind)).toEqual(['bedtime'])
-  })
-
-  it('happens once a day', async () => {
-    await tick(beforeBed(20), fake())
-    const again = fake()
-    await tick(beforeBed(10), again)
-    expect(again.calls).toHaveLength(0)
-  })
-
-  it('waits until the half hour before bed', async () => {
-    const llm = fake()
-    await tick(beforeBed(90), llm)
-    expect(llm.calls.filter((c) => c.kind === 'bedtime')).toHaveLength(0)
-  })
-
-  it('throws out journal claims that point at nothing, and beliefs with no evidence', async () => {
-    const llm = fake({
-      reflections: [
-        reflection({
-          journal: {
-            title: 'A day',
-            paragraphs: [
-              { text: 'I watched the sunny rock all morning.', refs: [`${DAY}#1`] },
-              { text: 'A fox gave me a medal.', refs: [] },
-            ],
-          },
-          beliefOps: [{ op: 'new', beliefId: null, statement: 'Foxes give medals.', confidence: 0.9, evidence: [`${DAY}#40`], why: 'x' }],
-        }),
-      ],
-    })
-    const result = await tick(beforeBed(20), llm)
-    const journal = readFileSync(file(`journal/${DAY}.md`), 'utf8')
-    expect(journal).toContain('sunny rock')
-    expect(journal).not.toContain('medal')
-    expect(existsSync(file('memory/beliefs.json'))).toBe(false)
-    expect(result.notes.join('\n')).toMatch(/medal|cites nothing/)
-  })
-
-  it('asks once more when most of the journal was made up, and says why', async () => {
-    const bogus = reflection({ journal: { title: 'x', paragraphs: [{ text: 'I flew to the moon.', refs: [] }, { text: 'I met a king.', refs: ['2026-11-03#77'] }] }, beliefOps: [] })
-    const llm = fake({ reflections: [bogus, reflection()] })
-    await tick(beforeBed(20), llm)
-    expect(llm.calls).toHaveLength(2)
-    expect(llm.calls[1]!.user).toContain('turned down')
-    expect(llm.calls[1]!.user).toContain('I flew to the moon')
-    expect(readFileSync(file(`journal/${DAY}.md`), 'utf8')).toContain('sunny rock')
-  })
-
-  it('lets a belief be weakened and dropped when the day contradicts it', async () => {
-    writeJson('memory/beliefs.json', [
-      { id: 'b1', statement: 'The pond is where good things happen.', confidence: 0.15, evidence: ['2026-11-02#3'], formedAt: '2026-11-02T20:00:00Z', status: 'active', history: [] },
-    ])
-    const llm = fake({ reflections: [reflection({ beliefOps: [{ op: 'weaken', beliefId: 'b1', statement: null, confidence: null, evidence: [], why: 'The pond was empty today.' }] })] })
-    await tick(beforeBed(20), llm)
-    expect(llm.calls[0]!.user).toContain('b1 (0.15): The pond is where good things happen.')
-    const b = Beliefs.parse(readJson('memory/beliefs.json'))[0]!
-    expect(b.status).toBe('dropped')
-    expect(b.history[0]!.why).toBe('The pond was empty today.')
-  })
-
-  it('skips the model when the day left nothing to reflect on', async () => {
-    mkdirSync(file('memory/stream'), { recursive: true })
-    writeFileSync(file(`memory/stream/${DAY}.jsonl`), '')
-    const llm = fake()
-    const result = await tick(beforeBed(20), llm)
-    expect(llm.calls).toHaveLength(0)
-    expect(MindState.parse(readJson('mind/state.json')).lastReflectDate).toBe(DAY)
-    expect(result.notes.join('\n')).toMatch(/nothing to reflect on/i)
-  })
-
-  it('does not spend past the monthly cap', async () => {
-    writeJson('brain/budget.json', BudgetLedger.parse({ month: '2026-11', capUsd: 10, spentUsd: 9.999 }))
-    const llm = fake()
-    const result = await tick(beforeBed(20), llm)
-    expect(llm.calls).toHaveLength(0)
-    expect(result.notes.join('\n')).toMatch(/budget/)
-  })
-
-  it('shows the prompt in a dry run without calling or writing', async () => {
-    const llm = fake()
-    const result = await tick(beforeBed(20), llm, { dryRun: true })
-    expect(llm.calls).toHaveLength(0)
-    expect(result.prompt).toMatchObject({ kind: 'bedtime', model: 'claude-sonnet-5-5' })
-    expect(existsSync(file(`journal/${DAY}.md`))).toBe(false)
-  })
-})
-
-describe('the nightly memory rewrite', () => {
-  const slots: MemorySlots = { slots: [{ title: 'Running jokes', text: 'The tall rock is my enemy.' }, { title: 'The sunny rock', text: 'Warm in the morning.' }] }
-  const done: BatchOutcome = { status: 'done', parsed: slots, usage: { input: 2000, cacheRead: 0, cacheWrite: 0, output: 300 } }
-
-  beforeEach(() => {
-    seedDay()
-    writeJson('mind/state.json', MindState.parse({ ...readJson('mind/state.json'), lastReflectDate: DAY }))
-    writeFileSync(file('memory/summary.md'), 'Nothing has happened yet.\n')
-    mkdirSync(file('journal'), { recursive: true })
-    writeFileSync(file(`journal/${DAY}.md`), '# A calm day\n\n*2026-11-03*\n\nI watched the sunny rock.\n')
-  })
-
-  it('is sent once to the Batch API after the forkling is asleep, with the journal and the old memory', async () => {
-    const llm = fake()
-    await tick(afterBed(30), llm)
-    expect(llm.calls).toHaveLength(0)
-    expect(llm.batches).toHaveLength(1)
-    expect(llm.batches[0]).toMatchObject({ kind: 'memory', model: 'claude-haiku-5-5' })
-    expect(llm.batches[0]!.user).toContain('I watched the sunny rock.')
-    expect(llm.batches[0]!.user).toContain('Nothing has happened yet.')
-    expect(MindState.parse(readJson('mind/state.json')).memoryBatch).toEqual({ id: 'batch_1', date: DAY })
-  })
-
-  it('waits while the batch is still running, without sending it again', async () => {
-    await tick(afterBed(30), fake())
-    const llm = fake({ batch: { status: 'pending' } })
-    await tick(afterBed(90), llm)
-    expect(llm.batches).toHaveLength(0)
-    expect(MindState.parse(readJson('mind/state.json')).memoryBatch?.id).toBe('batch_1')
-  })
-
-  it('writes the twelve-slot memory when the batch is done, at half price, and does not send another tonight', async () => {
-    await tick(afterBed(30), fake())
-    const llm = fake({ batch: done })
-    const result = await tick(afterBed(120), llm)
-    expect(readFileSync(file('memory/summary.md'), 'utf8')).toBe('## Running jokes\nThe tall rock is my enemy.\n\n## The sunny rock\nWarm in the morning.\n')
-    expect(MindState.parse(readJson('mind/state.json')).memoryBatch).toBeNull()
-    expect(result.written).toContain('memory/summary.md')
-    const call = BudgetLedger.parse(readJson('brain/budget.json')).calls.find((c) => c.kind === 'memory')!
-    expect(call.usd).toBeCloseTo((2000 * 0.1 + 300 * 0.5) / 1e6 / 2, 10)
-
-    const later = fake()
-    await tick(afterBed(180), later)
-    expect(later.batches).toHaveLength(0)
-  })
-
-  it('keeps the old memory when the batch fails or answers badly', async () => {
-    await tick(afterBed(30), fake())
-    const result = await tick(afterBed(120), fake({ batch: { status: 'failed', reason: 'expired' } }))
-    expect(readFileSync(file('memory/summary.md'), 'utf8')).toBe('Nothing has happened yet.\n')
-    expect(MindState.parse(readJson('mind/state.json')).memoryBatch).toBeNull()
-    expect(result.notes.join('\n')).toMatch(/expired/)
-  })
-
-  it('is not sent when it was never reflected on tonight', async () => {
-    writeJson('mind/state.json', MindState.parse({ ...readJson('mind/state.json'), lastReflectDate: '2026-11-02' }))
-    const llm = fake()
-    await tick(afterBed(30), llm)
-    expect(llm.batches).toHaveLength(0)
-  })
-
-  it('is not sent without credentials', async () => {
-    const result = await tick(afterBed(30), null)
-    expect(MindState.parse(readJson('mind/state.json')).memoryBatch).toBeNull()
-    expect(result.notes.join('\n')).toMatch(/no credentials/)
   })
 })
 

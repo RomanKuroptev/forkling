@@ -73,10 +73,6 @@ function fakeModel() {
       let parsed: unknown = null
       if (req.kind === 'morning' || req.kind === 'decide' || req.kind === 'weekly') parsed = decide(req)
       else if (req.kind === 'art') parsed = { title: 'A plaque', text: 'The lamp is on. I am still here.' }
-      else if (req.kind === 'bedtime') {
-        const ref = /\d{4}-\d{2}-\d{2}#\d+/.exec(req.user)?.[0]
-        parsed = { journal: { title: 'A day', paragraphs: ref ? [{ text: 'I spent the day on the beach.', refs: [ref] }] : [] }, beliefOps: [] }
-      }
       return { parsed: parsed as T | null, stopReason: parsed ? 'end_turn' : 'refusal', usage: { input: 800, cacheRead: 0, cacheWrite: 3000, output: 400 } }
     },
   }
@@ -114,7 +110,7 @@ async function liveADay(): Promise<Day> {
     const w = readWorld(dir, () => '2026-11')
     const asleep = isAsleepAt(nowMs, { seed: w.forkling.seed, timezone: w.forkling.timezone, lateNight: w.forkling.lateNight })
     const made = model.calls.slice(callsBefore)
-    if (asleep) out.callsWhileAsleep += made.filter((c) => c.req.kind !== 'memory').length
+    if (asleep) out.callsWhileAsleep += made.length
     if (asleep) continue
 
     out.awakeTicks++

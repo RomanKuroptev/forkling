@@ -78,3 +78,48 @@ export function rewriteWants(prev: readonly Want[], next: readonly Want[]): { ok
   const allowed = Math.floor(prev.length / 2)
   return changed > allowed ? { ok: false, reason: `${changed} of ${prev.length} wants changed; the rewrite may change at most half (${allowed})` } : { ok: true }
 }
+
+export interface RewriteRow {
+  id: string | null
+  kind: Want['kind']
+  text: string
+  why: string
+}
+
+/**
+ * The whole wants list as the sleep rewrite hands it back (spec 9.4), as wants. A row with the id of a want it already has keeps
+ * that want's `since` and attempts, and is touched now only if its words changed; any other row is a new want with a fresh id,
+ * one past the highest ever seen in the list. The order is the order given. A row with no text or no reason is turned down; so is
+ * a repeated id, and rows past 12.
+ */
+export function wantsFromRewrite(prev: readonly Want[], rows: readonly RewriteRow[], nowIso: string): { wants: Want[]; rejected: string[] } {
+  const byId = new Map(prev.map((w) => [w.id, w]))
+  const wants: Want[] = []
+  const rejected: string[] = []
+  const used = new Set<string>()
+  let top = Math.max(0, ...prev.map((w) => idNumber(w.id)))
+  for (const r of rows) {
+    const text = cut(r.text, 140)
+    const why = cut(r.why, 200)
+    if (!text || !why) {
+      rejected.push('a want needs text and a reason')
+      continue
+    }
+    if (wants.length >= MAX_WANTS) {
+      rejected.push(`the list holds ${MAX_WANTS}`)
+      continue
+    }
+    const old = r.id ? byId.get(r.id) : undefined
+    if (old) {
+      if (used.has(old.id)) {
+        rejected.push(`${old.id} is listed twice`)
+        continue
+      }
+      used.add(old.id)
+      wants.push({ ...old, kind: r.kind, text, why, lastTouched: text === old.text ? old.lastTouched : nowIso })
+    } else {
+      wants.push({ id: `w${++top}`, kind: r.kind, text, why, since: nowIso, attempts: 0, lastTouched: nowIso })
+    }
+  }
+  return { wants, rejected }
+}

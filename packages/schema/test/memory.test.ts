@@ -61,10 +61,20 @@ describe('Reflection and MemorySlots', () => {
   })
 })
 
-describe('MindState memory fields', () => {
-  it('defaults to no pending batch and no reflection yet', () => {
+describe('MindState memory fields (spec 9.4)', () => {
+  it('defaults to no sleep rewrite waiting and none sent yet', () => {
     const state = MindState.parse({})
-    expect(state.memoryBatch).toBeNull()
-    expect(state.lastReflectDate).toBeUndefined()
+    expect(state.sleepRewrite).toBeNull()
+    expect(state.lastRewriteDate).toBeUndefined()
+  })
+  it('holds a batch that is waiting, and one that is cancelled and waits for a normal call', () => {
+    const waiting = { id: 'batch-1', date: '2026-11-12', submittedAt: '2026-11-12T22:30:00Z', polledAt: '2026-11-12T22:35:00Z' }
+    expect(MindState.parse({ sleepRewrite: waiting }).sleepRewrite).toEqual(waiting)
+    expect(MindState.parse({ sleepRewrite: { ...waiting, id: null, triedAt: '2026-11-13T07:05:00Z' } }).sleepRewrite?.id).toBeNull()
+  })
+  it('still reads a state file from before: the pet-era batch fields are ignored, not an error', () => {
+    const old = MindState.parse({ memoryBatch: { id: 'x', date: '2026-11-03' }, lastReflectDate: '2026-11-03', lastMemoryDate: '2026-11-03' })
+    expect(old).not.toHaveProperty('memoryBatch')
+    expect(old).not.toHaveProperty('lastReflectDate')
   })
 })

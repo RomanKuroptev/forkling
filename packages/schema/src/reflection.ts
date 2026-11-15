@@ -31,3 +31,19 @@ export const ReflectionAnswer = z.object({
   planNoLongerFits: z.string().nullable(),
 })
 export type ReflectionAnswer = z.infer<typeof ReflectionAnswer>
+
+/**
+ * What the sleep rewrite returns (spec 9.4), at sleep time on the Batch API or, if it is late, as a normal call. Plain strings,
+ * nulls and arrays, like the reflection: the limits (250 words, 12 slots, 12 wants, at most half of the wants changed) are applied
+ * in code. `wants` is the whole list as Merge now wants it: a kept want keeps its id, a new one has a null id.
+ */
+export const SleepRewriteAnswer = z.object({
+  diary: z.object({
+    title: z.string(),
+    paragraphs: z.array(z.object({ text: z.string(), refs: z.array(z.string()) })),
+  }),
+  slots: z.array(z.object({ title: z.string(), text: z.string() })),
+  beliefOps: z.array(BeliefOp),
+  wants: z.array(z.object({ id: z.string().nullable(), kind: z.enum(['question', 'obsession', 'project']), text: z.string(), why: z.string() })),
+})
+export type SleepRewriteAnswer = z.infer<typeof SleepRewriteAnswer>
