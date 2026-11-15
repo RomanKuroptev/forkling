@@ -29,6 +29,8 @@ export const ReflectionAnswer = z.object({
   wants: z.array(ReflectionWantEdit),
   /** A reason, if the plan for today no longer fits what Merge now wants; null otherwise. */
   planNoLongerFits: z.string().nullable(),
+  /** Merge's own page (spec 9.7): the whole new `self/page.md`, up to 300 words of plain text, or null to leave it as it is. Code keeps it only if it fits the limits and the day's one change is unused. */
+  page: z.string().nullable(),
 })
 export type ReflectionAnswer = z.infer<typeof ReflectionAnswer>
 
@@ -45,5 +47,7 @@ export const SleepRewriteAnswer = z.object({
   slots: z.array(z.object({ title: z.string(), text: z.string() })),
   beliefOps: z.array(BeliefOp),
   wants: z.array(z.object({ id: z.string().nullable(), kind: z.enum(['question', 'obsession', 'project']), text: z.string(), why: z.string() })),
+  /** Merge's own page (spec 9.7): the whole new `self/page.md`, up to 300 words of plain text, or null to leave it as it is. Code keeps it only if it fits the limits and the day's one change is unused. */
+  page: z.string().nullable(),
 })
 export type SleepRewriteAnswer = z.infer<typeof SleepRewriteAnswer>

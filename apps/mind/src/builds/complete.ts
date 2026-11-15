@@ -23,7 +23,8 @@ const readJson = (dir: string, rel: string): unknown => {
 export function createWorkerComplete(o: { dir: string; llm: LlmClient; nowMs: number }): { complete: Complete; calls: BudgetCall[]; nowIso: string } {
   const nowIso = new Date(o.nowMs).toISOString()
   const seed = existsSync(join(o.dir, 'self/seed.md')) ? readFileSync(join(o.dir, 'self/seed.md'), 'utf8') : DEFAULT_SEED
-  const system = buildSystem({ seed })
+  const page = existsSync(join(o.dir, 'self/page.md')) ? readFileSync(join(o.dir, 'self/page.md'), 'utf8') : ''
+  const system = buildSystem({ seed, page })
   const timezone = (readJson(o.dir, 'forkling.json') as { timezone?: string } | null)?.timezone ?? 'Europe/Stockholm'
   const stored = BudgetLedger.safeParse(readJson(o.dir, 'brain/budget.json'))
   let ledger = rollLedger(stored.success ? stored.data : BudgetLedger.parse({ month: monthOf(timezone, o.nowMs) }), monthOf(timezone, o.nowMs))

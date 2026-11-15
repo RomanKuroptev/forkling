@@ -124,8 +124,10 @@ export function createTick(dir: string, deps: TickDeps): Tick {
 
     beliefs: w.beliefs,
     wants: structuredClone(w.wants.wants),
+    page: w.page,
+    pageWrite: null,
     beliefIds: new Set(liveBeliefs(w.beliefs).map((b) => b.id)),
-    system: buildSystem({ seed: w.seed }),
+    system: buildSystem({ seed: w.seed, page: w.page }),
     prompt: undefined,
     ask: undefined as never,
 

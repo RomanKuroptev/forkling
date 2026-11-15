@@ -7,6 +7,7 @@ import { buildReflectUser } from '../prompts/reflection.ts'
 import { recentStream } from '../stream.ts'
 import type { Tick } from './context.ts'
 import { reflectState } from './importance.ts'
+import { applyPage } from './page.ts'
 import { clock, same, weekday } from './util.ts'
 
 /** The insights, belief changes and want edits take more room than a thought. Sonnet's thinking counts too, so the limit is generous. */
@@ -37,6 +38,7 @@ export async function reflectionStep(t: Tick): Promise<void> {
     beliefs: t.beliefs.filter((b) => b.status !== 'dropped'),
     wants: t.wants,
     about: '',
+    pageChangedToday: t.mind.pageChangedOn === t.today,
     plan: t.goals.today ? { reason: t.goals.today.reason, steps: t.goals.today.steps.map((s) => ({ verb: s.verb, target: s.targetId ?? null, reason: s.reason })) } : null,
     questions: state.questions,
   })
@@ -69,6 +71,8 @@ export async function reflectionStep(t: Tick): Promise<void> {
   t.notes.push(...[...asked.rejected, ...edited.rejected].map((r) => `reflection: want edit turned down, ${r}`))
   const wantsChanged = !same(edited.wants, t.wants)
   t.wants = edited.wants
+
+  applyPage(t, answer.page)
 
   const fits = answer.planNoLongerFits?.trim()
   const pending = fits && !claimsHuman(fits) ? { reason: `the plan no longer fits: ${clampText(fits, 200)}` } : wantsChanged ? { reason: 'a reflection changed your wants list' } : null

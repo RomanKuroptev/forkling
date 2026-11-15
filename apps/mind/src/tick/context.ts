@@ -171,6 +171,10 @@ export interface Tick {
   beliefs: World['beliefs']
   /** `mind/wants.json`, as the tick leaves it: attempts counted, a want that failed 4 times dropped (spec 9.4). */
   wants: Want[]
+  /** `self/page.md` as the tick leaves it (spec 9.7). */
+  page: string
+  /** Set when the page changed this tick: written to `self/page.md` and kept in `self/page-history/`. */
+  pageWrite: { text: string; at: string } | null
   /** The live beliefs a plan may cite. Taken before bedtime changes them. */
   beliefIds: Set<string>
   /** The cached part of the prompt, built once. */

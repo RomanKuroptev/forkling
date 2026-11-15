@@ -44,12 +44,14 @@ const answer: SleepRewriteAnswer = {
   slots: [{ title: 'Running jokes', text: 'The fog is my landlord.' }],
   beliefOps: [],
   wants: [{ id: null, kind: 'question', text: 'Why does the fog come back?', why: 'It keeps showing up.' }],
+  page: null,
 }
 
 function client(outcome: () => BatchOutcome) {
-  const log = { submitted: [] as LlmRequest[], completed: 0, cancelled: 0 }
+  const log = { submitted: [] as LlmRequest[], completed: 0, cancelled: 0, systems: [] as string[] }
   const llm: LlmClient = {
-    async complete<T>() {
+    async complete<T>(req: LlmRequest<T>) {
+      log.systems.push(req.system)
       log.completed++
       return { parsed: null as T | null, stopReason: 'refusal', usage }
     },
@@ -114,5 +116,24 @@ describe('the sleep rewrite through a tick (spec 9.4)', () => {
     for (let i = 0; i < 3; i++) await runTick(dir, deps(llm, night + i * 10 * 60_000))
     expect(log.completed).toBe(0)
     expect(existsSync(file(`journal/${DAY}.md`))).toBe(false)
+  })
+
+  it('its page is written to self/page.md and kept in self/page-history, the day is used up, and the next call carries it in its system prompt', async () => {
+    let outcome: BatchOutcome = { status: 'pending' }
+    const { llm, log } = client(() => outcome)
+    const night = window().bedMs + 10 * 60_000
+    await runTick(dir, deps(llm, night))
+    outcome = { status: 'done', parsed: { ...answer, page: 'Rest when the fog comes in.' }, usage }
+    await runTick(dir, deps(llm, night + 6 * 60_000))
+    expect(readFileSync(file('self/page.md'), 'utf8')).toBe('Rest when the fog comes in.\n')
+    const history = readdirSync(file('self/page-history'))
+    expect(history).toHaveLength(1)
+    expect(history[0]).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z\.md$/)
+    expect(readFileSync(file(`self/page-history/${history[0]}`), 'utf8')).toBe('Rest when the fog comes in.\n')
+    expect(MindState.parse(json('mind/state.json')).pageChangedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    // The next morning's first model call reads it as part of who it is.
+    await runTick(dir, deps(llm, nextWake() + 5 * 60_000))
+    expect(log.systems.length).toBeGreaterThan(0)
+    expect(log.systems.every((s) => s.includes('Rest when the fog comes in.') && s.includes('## Your own notes to yourself'))).toBe(true)
   })
 })

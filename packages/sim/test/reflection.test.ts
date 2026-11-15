@@ -76,10 +76,10 @@ describe('wantEditsFrom (the flat answer shape becomes edits)', () => {
 
 describe('the reflection answer shape', () => {
   it('parses an answer with nothing to say', () => {
-    expect(ReflectionAnswer.safeParse({ questions: [], insights: [], beliefOps: [], wants: [], planNoLongerFits: null }).success).toBe(true)
+    expect(ReflectionAnswer.safeParse({ questions: [], insights: [], beliefOps: [], wants: [], planNoLongerFits: null, page: null }).success).toBe(true)
   })
   it('has no field Merge could use to name its own importance or its own trigger', () => {
-    expect(Object.keys(ReflectionAnswer.shape).sort()).toEqual(['beliefOps', 'insights', 'planNoLongerFits', 'questions', 'wants'])
+    expect(Object.keys(ReflectionAnswer.shape).sort()).toEqual(['beliefOps', 'insights', 'page', 'planNoLongerFits', 'questions', 'wants'])
   })
 })
 

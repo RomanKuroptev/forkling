@@ -141,6 +141,8 @@ export const MindState = z.object({
    * being asked about more than every 5 minutes; `triedAt` keeps a failed normal call from being repeated within 30 minutes.
    * Until it lands Merge runs on yesterday's summary and wants, and the site says the entry is still being written.
    */
+  /** Local date the page last changed, so it changes at most once a day and the prompt cache stays warm (spec 9.7). */
+  pageChangedOn: z.iso.date().optional(),
   sleepRewrite: z.object({ id: z.string().min(1).nullable(), date: z.iso.date(), submittedAt: Timestamp, polledAt: Timestamp.optional(), triedAt: Timestamp.optional() }).nullable().default(null),
   /** Reading sessions so far on a local date, for the daily limit; and whether the morning skim of the feeds is done. */
   readings: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), skimmed: z.boolean().default(false) }).optional(),

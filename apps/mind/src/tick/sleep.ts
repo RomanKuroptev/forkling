@@ -8,6 +8,7 @@ import { renderJournal, renderSummary } from '../reflect.ts'
 import { readStream } from '../stream.ts'
 import { wordCount } from '../honesty.ts'
 import type { Tick } from './context.ts'
+import { applyPage } from './page.ts'
 
 const MODEL = 'claude-sonnet-5-5'
 /** The diary, twelve memory slots, belief changes and the wants list. Sonnet's thinking counts too, so the limit is generous. */
@@ -49,7 +50,7 @@ export function dayLines(stream: readonly StreamEntry[]): StreamEntry[] {
 
 function prompt(t: Tick, date: string): string {
   const stream = dayLines(readStream(t.dir, date))
-  return buildSleepUser({ date, summary: t.w.summary, stream: stream.map((e) => ({ id: e.id, kind: e.kind, text: e.text })), beliefs: t.beliefs, wants: t.wants })
+  return buildSleepUser({ date, summary: t.w.summary, stream: stream.map((e) => ({ id: e.id, kind: e.kind, text: e.text })), beliefs: t.beliefs, wants: t.wants, pageChangedToday: t.mind.pageChangedOn === t.today })
 }
 
 async function send(t: Tick): Promise<void> {
@@ -186,4 +187,6 @@ function apply(t: Tick, date: string, parsed: unknown): void {
   const ok = rewriteWants(t.wants, next.wants)
   if (ok.ok) t.wants = next.wants
   else notes.push(`the rewritten wants list was turned down (${ok.reason}): keeping the old one`)
+
+  applyPage(t, a.page)
 }

@@ -10,6 +10,7 @@ import { frontPageLinks, imgflipTopLinks, readUrl } from '../web/sources/index.t
 import { resolveStart } from '../web/start.ts'
 import { MAX_READS_PER_DAY, runTrip } from '../web/trip.ts'
 import type { Tick } from './context.ts'
+import { ownNotes } from '../prompts/page.ts'
 import { rememberScored } from './importance.ts'
 
 const HAIKU = 'claude-haiku-5-5' as const
@@ -103,11 +104,11 @@ export async function tripStep(t: Tick): Promise<void> {
     {
       open: (url) => readUrl(fetcher, url),
       read: (item) =>
-        performRead({ llm, fetcher, seed: t.w.seed, purpose: step.reason, interests: t.interests, mayCall: (usd) => canSpend(t.budget, usd), readRecently: t.wander.readRecently }, item),
+        performRead({ llm, fetcher, seed: ownNotes(t.page, t.w.seed), purpose: step.reason, interests: t.interests, mayCall: (usd) => canSpend(t.budget, usd), readRecently: t.wander.readRecently }, item),
       now: () => nowIso,
       known: { souvenirs: t.wander.souvenirs, readRecently: t.wander.readRecently },
       readsLeft,
-      look: (item, picture, reaction) => performLook({ llm, fetcher, seed: t.w.seed, mayCall: (usd) => canSpend(t.budget, usd) }, item, picture, reaction),
+      look: (item, picture, reaction) => performLook({ llm, fetcher, seed: ownNotes(t.page, t.w.seed), mayCall: (usd) => canSpend(t.budget, usd) }, item, picture, reaction),
       looksLeft: MAX_LOOKS_PER_DAY - t.trips.looks,
       // Booked at once, so the guard sees the cost before the next call.
       onRead: (_item, outcome) => book('read', outcome.usage, outcome.usd, outcome.answer !== null, outcome.note),
