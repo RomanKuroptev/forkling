@@ -88,7 +88,7 @@ describe('migrating a pet-era world to W1', () => {
     expect(text('memory/beliefs.json').trim()).toBe('[]')
     expect(text('memory/summary.md')).toBe(readFileSync(join(template, 'memory/summary.md'), 'utf8'))
     expect(JSON.parse(text('mind/goals.json'))).toEqual({})
-    expect(MindState.parse(JSON.parse(text('mind/state.json'))).knownObjects).toEqual([])
+    expect(MindState.parse(JSON.parse(text('mind/state.json'))).lastPlanDate).toBeUndefined()
     expect(Interests.parse(JSON.parse(text('brain/interests.json'))).topics).toEqual({})
     expect(existsSync(join(world, 'brain/persona.md'))).toBe(false)
   })

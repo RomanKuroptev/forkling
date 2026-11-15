@@ -74,10 +74,6 @@ export const WakeSnapshot = z.object({ date: z.iso.date(), topics: z.record(z.st
 export type WakeSnapshot = z.infer<typeof WakeSnapshot>
 
 export const MindState = z.object({
-  /** Object ids the forkling has met. An id not in here is a novelty. */
-  knownObjects: z.array(z.string()).default([]),
-  /** Visitor event types it has met. */
-  seenEventTypes: z.array(z.string()).default([]),
   /** Local date of the last morning plan. */
   lastPlanDate: z.iso.date().optional(),
   /** When the step whose effect was last applied began, so a step's effect happens once however many ticks follow it. */
@@ -86,8 +82,6 @@ export const MindState = z.object({
   lastThinkAt: Timestamp.optional(),
   /** After a plan came back empty or was turned down, no new plan is asked for before this time. */
   replanAfter: Timestamp.optional(),
-  /** `startedAt` of the step the mind was last asked about because its target was gone, so each step asks once. */
-  blockedStep: Timestamp.optional(),
   /** When a call last failed or gave nothing usable, so the mind is not asked again at every tick. */
   thinkFailedAt: Timestamp.optional(),
   /** Why the mind chose to stay up late, in its own words. */

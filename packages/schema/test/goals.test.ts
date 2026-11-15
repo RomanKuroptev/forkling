@@ -84,8 +84,6 @@ describe('Forkling (M4 additions)', () => {
 describe('MindState', () => {
   it('parses an empty file with defaults', () => {
     const state = MindState.parse({})
-    expect(state.knownObjects).toEqual([])
-    expect(state.seenEventTypes).toEqual([])
     expect(state.recent).toEqual([])
     expect(state.rejections).toEqual([])
     expect(state.lastThinkAt).toBeUndefined()

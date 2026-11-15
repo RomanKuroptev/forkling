@@ -1,4 +1,4 @@
-import type { Belief, Forkling, Goals, Interests, MindState, VisitorEvent } from '@forkling/schema'
+import type { Belief, Forkling, Goals, Interests, MindState } from '@forkling/schema'
 import { liveBeliefs, type Prices, type Trigger } from '@forkling/sim'
 import type { RecentPast } from '../past.ts'
 import type { StartingPoint } from '../web/doors.ts'
@@ -22,7 +22,6 @@ export interface UserInput {
   /** What Roman said about a request or a wish, as `name | status | note`: his words, so shown as data (spec 10.3). */
   fromRoman?: readonly string[]
   triggers: readonly Trigger[]
-  events: readonly VisitorEvent[]
   /** Local time like `Tuesday 2026-11-03 10:00`. */
   localTime: string
   /** Local times like `07:10` and `23:05`. */
@@ -139,7 +138,6 @@ export function buildUser(i: UserInput): string {
     '<recent>',
     json({ steps: i.mindState.recent.slice(-8), rejectedPlans: i.mindState.rejections.slice(-3) }),
     '</recent>',
-    ...(i.events.length > 0 ? ['', '<data source="visitors">', ...i.events.map((e) => json({ type: e.type, payload: e.payload, at: e.createdAt })), '</data>'] : []),
     '',
     '<triggers>',
     ...(i.triggers.length > 0 ? i.triggers.map((t) => `- ${t.kind}: ${t.detail}`) : ['- none']),

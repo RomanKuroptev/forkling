@@ -72,9 +72,9 @@ describe('buildHealth', () => {
   it('counts triggers and calls by kind, and the decide calls, for the day', () => {
     const h = run([
       { min: 0, line: { triggers: [{ kind: 'newDay', score: 1 }], think: 'morning', calls: [okCall('morning')] } },
-      { min: 10, line: { triggers: [{ kind: 'need', score: 0.6 }], think: 'decide', calls: [okCall('decide'), failedCall('art')] } },
+      { min: 10, line: { triggers: [{ kind: 'sparked', score: 0.6 }], think: 'decide', calls: [okCall('decide'), failedCall('art')] } },
     ])
-    expect(h.today.triggersByKind).toEqual({ newDay: 1, need: 1 })
+    expect(h.today.triggersByKind).toEqual({ newDay: 1, sparked: 1 })
     expect(h.today.callsByKind).toEqual({ morning: 1, decide: 1 })
     expect(h.today.decideCalls).toBe(2)
     expect(h.today.failures).toBe(1)

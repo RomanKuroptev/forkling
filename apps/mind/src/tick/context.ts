@@ -22,7 +22,6 @@ import type {
   ExpandJob,
   FoundJob,
   PlaceRequest,
-  VisitorEvent,
   Want,
   Wish,
   WorkMeta,
@@ -124,7 +123,6 @@ export interface Tick {
   /** The places in the world (`places/*.json`), in id order. Empty in a world that has none yet. */
   places: Place[]
   body: ReturnType<typeof startPlayback>['state']
-  events: VisitorEvent[]
 
   objects: WorldObject[]
   /** The ids of `objects` once the finishing step is applied. Not refreshed after that. */

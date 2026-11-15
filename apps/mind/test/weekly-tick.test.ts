@@ -25,7 +25,7 @@ beforeEach(() => {
   for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), file(`objects/${f}`))
   mkdirSync(file('mind'), { recursive: true })
   // A plan is made for the day and a long goal exists, so nothing else wants the model.
-  writeFileSync(file('mind/state.json'), JSON.stringify(MindState.parse({ lastPlanDate: '2026-11-15', knownObjects: readdirSync(file('objects')).map((f) => f.replace('.json', '')) })))
+  writeFileSync(file('mind/state.json'), JSON.stringify(MindState.parse({ lastPlanDate: '2026-11-15' })))
   writeFileSync(file('mind/goals.json'), JSON.stringify(Goals.parse({ long: { text: 'Map the fog.', reason: 'It returns.', setAt: '2026-11-01T07:00:00Z', reviewedAt: '2026-11-08T07:00:00Z' } })))
   mkdirSync(file('works/tide-pool-clock'), { recursive: true })
   writeFileSync(file('works/tide-pool-clock/meta.json'), JSON.stringify(WorkMeta.parse({ id: 'tide-pool-clock', title: 'Tide pool clock', kind: 'art', about: 'A clock.', interest: null, made: '2026-11-14T10:00:00Z', status: 'shelf', size: 'full' })))

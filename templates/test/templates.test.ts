@@ -69,7 +69,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|requests\/.+|wishes\/.+|notes\/.+|mind\/.+|brain\/.+|events\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|requests\/.+|wishes\/.+|notes\/.+|mind\/.+|brain\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
@@ -88,13 +88,13 @@ describe('templates/forkling-world', () => {
     expect(existsSync(join(root, 'forkling-world', 'forkling.json'))).toBe(true)
   })
 
-  it('starts with no goals and no memory of objects, and no ledger: the first tick makes one for the month it is in', () => {
+  it('starts with no goals, and no ledger: the first tick makes one for the month it is in', () => {
     const dir = join(root, 'forkling-world')
     expect(Goals.parse(read(join(dir, 'mind/goals.json')))).toEqual({})
-    expect(MindState.parse(read(join(dir, 'mind/state.json'))).knownObjects).toEqual([])
+    expect(MindState.parse(read(join(dir, 'mind/state.json'))).lastPlanDate).toBeUndefined()
     // A month written into the template would be wrong the day a world is made in any other one.
     expect(existsSync(join(dir, 'brain/budget.json'))).toBe(false)
-    expect(existsSync(join(dir, 'events/inbox/.gitkeep'))).toBe(true)
+    expect(existsSync(join(dir, 'events'))).toBe(false)
     expect(existsSync(join(dir, 'brain/persona.md'))).toBe(false)
   })
 

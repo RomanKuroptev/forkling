@@ -2,7 +2,7 @@
 
 > **Pet era.** This describes the code before the world-builder pivot (spec in [`docs/spec/spec.md`](../../docs/spec/spec.md)). It stays as history until W1 rewrites this area.
 
-The Node script each world repo's workflows run. One tick = load state and species pack, apply needs decay, process `events/inbox/` (nothing writes there until the visit gateway exists), score surprise, decide whether to think, choose or keep an intention, validate, write the tick log, and commit.
+The Node script each world repo's workflows run. One tick = load state and species pack, apply needs decay, score surprise, decide whether to think, choose or keep an intention, validate, write the tick log, and commit.
 
 ## Models and calls
 - **Haiku 5.5** (`claude-haiku-5-5`) for tick decisions, the morning plan, reading sessions, creative artifacts, the nightly memory rewrite, eye-cam vision and builds.

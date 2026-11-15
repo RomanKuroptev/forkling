@@ -200,20 +200,6 @@ export function objectIdFromPath(path: string): string | null {
   return /^objects\/([a-z0-9][a-z0-9-]*)\.json$/.exec(path)?.[1] ?? null
 }
 
-/** A visitor action waiting in `events/inbox/`. Untrusted: text is length-limited and never treated as instructions. */
-export const VisitorEvent = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('gift'), payload: z.object({ item: z.string().min(1).max(40) }) }),
-  z.object({ type: z.literal('plant'), payload: z.object({ plant: z.string().min(1).max(40) }) }),
-  z.object({ type: z.literal('bell'), payload: z.object({}).default({}) }),
-  z.object({ type: z.literal('message'), payload: z.object({ text: z.string().min(1).max(280) }) }),
-]).and(
-  z.object({
-    visitorId: z.string().regex(/^v_[a-z0-9]{3,32}$/, 'an anonymous visitor id like v_3f9a'),
-    createdAt: Timestamp,
-  }),
-)
-export type VisitorEvent = z.infer<typeof VisitorEvent>
-
 /**
  * Problems with a forkling that only show up next to its species pack: a different species or an intention that isn't one of its actions. Empty when they match.
  */

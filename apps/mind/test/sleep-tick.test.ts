@@ -35,7 +35,7 @@ beforeEach(() => {
   appendStream(dir, DAY, [{ at: '2026-11-03T09:00:00Z', kind: 'made', text: 'Kept a souvenir about fog.' }])
   mkdirSync(file('mind'), { recursive: true })
   // A plan is made for the day, so nothing else wants the model tonight.
-  writeFileSync(file('mind/state.json'), JSON.stringify(MindState.parse({ lastPlanDate: DAY, knownObjects: readdirSync(file('objects')).map((f) => f.replace('.json', '')) })))
+  writeFileSync(file('mind/state.json'), JSON.stringify(MindState.parse({ lastPlanDate: DAY })))
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
