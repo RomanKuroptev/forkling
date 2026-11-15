@@ -127,7 +127,10 @@ describe('/notes/: the board', () => {
     expect(html.indexOf('Do you ever get tired of fog?')).toBeLessThan(html.indexOf('The lamp is lovely.'))
     expect(html).toContain('Ann')
     expect(html).toMatch(/A visitor/)
-    expect(html).toContain('2026-11-16 10:30 (Europe/Stockholm)')
+    expect(html).toContain('2026-11-16 10:30')
+    // The time zone is said once, not after every time.
+    expect(html).not.toContain('(Europe/Stockholm)')
+    expect(html.match(/Times are Stockholm time\./g)).toHaveLength(1)
   })
 
   it('says in plain words what became of a note: not found, found and waiting, replied, kept, declined', () => {
@@ -184,6 +187,27 @@ describe('/notes/: the board', () => {
     expect(html).toContain('Do you ever get tired of fog?')
     expect(html).toContain('I do.')
     expect(html).toMatch(/The mailbox is closed for now/)
+  })
+})
+
+describe('/notes/: the time zone', () => {
+  it('says "Times are Stockholm time." once on a page with several notes, and not on a page with none', () => {
+    render(MAILBOX)
+    expect(page('notes/index.html')).not.toMatch(/Times are/)
+    putNote(note({ id: 'n-2026-11-16-000001' }))
+    putNote(note({ id: 'n-2026-11-15-000002', at: '2026-11-15T09:30:00Z' }))
+    putNote(note({ id: 'n-2026-11-14-000003', at: '2026-11-14T09:30:00Z' }))
+    render(MAILBOX)
+    const html = page('notes/index.html')
+    expect(html.match(/Times are Stockholm time\./g)).toHaveLength(1)
+    expect(html.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/g)!.length).toBeGreaterThanOrEqual(3)
+    expect(html).not.toMatch(/\d{2}:\d{2} \(/)
+  })
+  it('says the city of Merge\'s own time zone, whatever it is', () => {
+    writeFileSync(join(world, 'forkling.json'), readFileSync(join(world, 'forkling.json'), 'utf8').replace('Europe/Stockholm', 'America/New_York'))
+    putNote(note())
+    render(MAILBOX)
+    expect(page('notes/index.html')).toMatch(/Times are New York time\./)
   })
 })
 

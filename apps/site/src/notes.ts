@@ -65,8 +65,10 @@ export interface NotesInput {
   places: readonly Place[]
   /** Where the form posts and the widget's key, or null while the mailbox is not set up. */
   mailbox: { endpoint: string; siteKey: string } | null
-  /** How a moment is written on the site, in Merge's time zone. */
+  /** How a moment is written on the site, in Merge's time zone, without the zone's name. */
   stamp: (iso: string) => string
+  /** The zone in words, like `Stockholm time`: said once on the page. */
+  zone: string
   add: (rel: string, input: { title: string; active: string; body: string }) => void
 }
 
@@ -120,6 +122,7 @@ export function renderNotes(i: NotesInput): void {
       '<h2>Leave a note</h2>',
       i.mailbox ? `${DISCLOSURE}\n${FORM(i.mailbox)}` : '<p><strong>The mailbox is closed for now.</strong> Notes cannot be left at the moment.</p>',
       '<h2>On the board</h2>',
+      ...(i.notes.length > 0 ? [`<p class="quiet">Times are ${esc(i.zone)}.</p>`] : []),
       i.notes.length > 0 ? `<ul class="requests notes">${i.notes.map(item).join('')}</ul>` : '<p class="quiet">No notes have been left yet.</p>',
     ].join('\n'),
   })

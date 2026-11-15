@@ -66,6 +66,9 @@ function anchor(label: string, href: string): string {
   return safe ? `<a href="${esc(safe)}" rel="noopener noreferrer">${esc(label)}</a>` : esc(label)
 }
 
+/** The place a time zone is named after, in words: `Europe/Stockholm` is "Stockholm time". Said once on a page that lists times, instead of after each one. */
+const zoneWords = (tz: string) => `${(tz.split('/').pop() ?? tz).replaceAll('_', ' ')} time`
+
 const day = (tz: string, iso: string) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso))
 const clock = (tz: string, iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
 
@@ -381,8 +384,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   renderAbout({ about: mergeAbout, add })
   const endpoint = notesEndpoint(opts.mindUrl)
   const siteKey = validSiteKey(opts.turnstileSiteKey)
-  renderNotes({ notes: loadNotes(world), places, mailbox: endpoint && siteKey ? { endpoint, siteKey } : null, stamp: (iso) => localStamp(iso, forkling.timezone), add })
-  renderPage({ page: mergePage, stamp: (iso) => localStamp(iso, forkling.timezone), add })
+  renderNotes({ notes: loadNotes(world), places, mailbox: endpoint && siteKey ? { endpoint, siteKey } : null, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), add })
+  renderPage({ page: mergePage, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), add })
 
   // The feed (works shelved, diary entries) and the list of changes the home page panel reads (spec 8).
   const heading = (text: string) => /^# (.+)$/m.exec(text)?.[1]?.trim()
