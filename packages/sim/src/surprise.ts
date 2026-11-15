@@ -1,7 +1,7 @@
 import type { Forkling, Goals, MindState, VisitorEvent, WorldObject } from '@forkling/schema'
 import { localDate, sleepWindow } from './sleep.ts'
 
-export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'weekly' | 'bedtime' | 'buildResult'
+export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'weekly' | 'bedtime' | 'buildResult' | 'reflected'
 
 /** A reason to wake the LLM. Anything the sim can tell on its own stays with the utility AI. */
 export interface Trigger {
@@ -79,6 +79,9 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
   // The build worker finished something (spec 2.3). One trigger however many, until a decide call has seen them.
   const pendingResults = mindState.jobs?.pending ?? []
   if (pendingResults.length > 0) found.push({ kind: 'buildResult', score: 0.65, detail: pendingResults.map((r) => r.text).join(' | ') })
+  // A reflection changed the wants list or said the plan no longer fits (spec 2.3). Each reflection once: a decide call answers it.
+  const reflected = mindState.reflect?.pending
+  if (reflected) found.push({ kind: 'reflected', score: 0.55, detail: reflected.reason })
   // A thought tick said the plan no longer fits (spec 2.3). It stays until a decide call answers it.
   const asked = mindState.thought?.replanRequest
   if (asked && !found.some((x) => x.kind === 'replan')) {

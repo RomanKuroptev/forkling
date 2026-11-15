@@ -58,7 +58,7 @@ describe('rememberScored (spec 9.3: code sets some importance)', () => {
     expect(reflectState(t.mind).sum).toBe(9)
   })
   it('starts from nothing', () => {
-    expect(reflectState(MindState.parse({}))).toEqual({ sum: 0, lastAt: null, date: '', today: 0 })
+    expect(reflectState(MindState.parse({}))).toEqual({ sum: 0, lastAt: null, date: '', today: 0, pending: null, questions: [] })
   })
 })
 
