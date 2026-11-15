@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createBuildWorker } from './build-worker.ts'
 import { createBrowserChecker } from './builds/browser-check.ts'
@@ -7,7 +7,10 @@ import { createGithubClient, repoFromUrl } from './builds/github.ts'
 import { createExpandHandler } from './builds/expand-job.ts'
 import { createFoundBuildHandler } from './builds/found-build-job.ts'
 import { createTinkerHandler } from './builds/tinker-job.ts'
+import { BudgetLedger } from '@forkling/schema'
+import { monthOf, rollLedger } from './budget.ts'
 import { hasCredentials } from './credentials.ts'
+import { createNotesIntake, type NotesIntake } from './notes-intake.ts'
 import { buildHealthResponse } from './health-response.ts'
 import { anthropicClient } from './llm.ts'
 import { createMindServer, DEFAULT_PORT } from './server.ts'
@@ -25,7 +28,7 @@ const USAGE = `usage: pnpm --filter @forkling/mind serve --world <dir> --pages-o
   --no-git        never commit or push (a local try-out)
   --no-llm        run without ever calling the model
 
-Keys come from the environment only: ANTHROPIC_API_KEY, and GITHUB_TOKEN for reading api.github.com.`
+Keys come from the environment only: ANTHROPIC_API_KEY, GITHUB_TOKEN for reading api.github.com, and TURNSTILE_SECRET to open the mailbox for visitor notes.`
 
 /** The always-on process (spec 2.2, 14.3): the loop, the build worker and the three routes, until it is told to stop. */
 async function main(): Promise<void> {
@@ -60,6 +63,8 @@ async function main(): Promise<void> {
   // Checks a sketch in a browser (spec 7.3). It starts one only when a sketch is made.
   const workCheck = createBrowserChecker()
 
+  // Visitor notes (spec 10.1): the mailbox opens only with a Turnstile secret and a model to screen with. The screening calls are booked by the loop's next tick.
+  let intake: NotesIntake | null = null
   const web = env.GITHUB_TOKEN ? { authorization: { 'api.github.com': `Bearer ${env.GITHUB_TOKEN}` } } : {}
   const loop = createLoop({
     dir,
@@ -72,6 +77,7 @@ async function main(): Promise<void> {
       speciesPersona: species.persona,
       workCheck,
       web,
+      outsideCalls: () => intake?.drainCalls() ?? [],
       engine: env.FORKLING_REF ?? 'dev',
     },
   })
@@ -81,7 +87,32 @@ async function main(): Promise<void> {
   if (!github) console.log('full works wait: they need GITHUB_TOKEN and the world repository (FORKLING_REPO_URL or FORKLING_GITHUB_REPO)')
   const worker = createBuildWorker({ dir, now: Date.now, handlers: { expand: createExpandHandler({ dir, llm, now: Date.now }), found: createFoundBuildHandler({ dir, llm, now: Date.now }), ...(github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now, web }) } : {}) } })
 
-  const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now()), pagesOrigin })
+  const timezone = (JSON.parse(readFileSync(join(dir, 'forkling.json'), 'utf8')) as { timezone?: string }).timezone ?? 'Europe/Stockholm'
+  if (env.TURNSTILE_SECRET && llm) {
+    intake = createNotesIntake({
+      dir,
+      stateDir: dirname(dir),
+      now: Date.now,
+      timezone,
+      llm,
+      turnstileSecret: env.TURNSTILE_SECRET,
+      placeIds: () => loop.places()?.places.map((p) => p.id) ?? ['home', 'workshop'],
+      ledger: () => {
+        let stored: unknown = null
+        try {
+          stored = JSON.parse(readFileSync(join(dir, 'brain/budget.json'), 'utf8'))
+        } catch {
+          // No ledger yet: an empty month.
+        }
+        const month = monthOf(timezone, Date.now())
+        const parsed = BudgetLedger.safeParse(stored)
+        return rollLedger(parsed.success ? parsed.data : BudgetLedger.parse({ month }), month)
+      },
+    })
+    console.log('the mailbox is open: notes are screened before Merge reads them')
+  } else console.log(`the mailbox is closed: ${env.TURNSTILE_SECRET ? 'no model to screen with' : 'no TURNSTILE_SECRET'}`)
+
+  const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now()), ...(intake ? { notes: { submit: (body, ip) => intake!.submit(body, ip) } } : {}), pagesOrigin })
   await new Promise<void>((ready, fail) => {
     server.once('error', fail)
     server.listen(port, '127.0.0.1', ready)

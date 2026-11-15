@@ -59,6 +59,8 @@ export interface TickDeps {
   thoughts?: boolean
   /** The loop's ticks write the tick log and health at most this often (ms) unless something happened. Absent means every tick. */
   logEveryMs?: number
+  /** The calls made outside a tick since the last one (a visitor's note screened by the server): this tick books them in the ledger (spec 2.2, 13). Not asked in a dry run. */
+  outsideCalls?: () => BudgetCall[]
   /** The loop's last push failed 3 times: health.json says `push failing` until one goes through (spec 2.2). */
   pushFailing?: boolean
 }

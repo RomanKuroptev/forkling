@@ -14,7 +14,7 @@ import {
   worldWithObjects,
 } from '@forkling/sim'
 import type { WorldObject } from '@forkling/schema'
-import { monthOf, rollLedger } from '../budget.ts'
+import { monthOf, recordCall, rollLedger } from '../budget.ts'
 import { buildSystem } from '../prompts.ts'
 import { readWorld } from '../world.ts'
 import { createFetcher } from '../web/fetch.ts'
@@ -47,7 +47,10 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   const sleepOpts = { seed: forkling.seed, timezone: tz, lateNight: forkling.lateNight }
   const asleep = isAsleepAt(nowMs, sleepOpts)
   const window = sleepWindow(today, forkling.seed, tz, forkling.lateNight === today)
-  const budget = rollLedger(w.budget, monthOf(tz, nowMs))
+  let budget = rollLedger(w.budget, monthOf(tz, nowMs))
+  // A note screened by the server since the last tick is booked here, once, so the loop is the only writer of the ledger.
+  const outside = deps.dryRun ? [] : (deps.outsideCalls?.() ?? [])
+  for (const call of outside) budget = recordCall(budget, call)
   if (asleep !== forkling.asleep) remember.push({ at: nowIso, kind: asleep ? 'sleep' : 'wake', text: asleep ? 'Went to bed.' : 'Woke up.' })
 
   // Where the body is now: exactly what a viewer would have seen since the last commit.
@@ -75,8 +78,8 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     evening: eveningOf(tz, forkling.seed, nowMs),
     notes: [],
     parts,
-    calls: [],
-    attempts: [],
+    calls: [...outside],
+    attempts: outside.map((c) => ({ kind: c.kind, model: c.model, usd: c.usd, ok: true })),
     remember,
     steps: [],
 

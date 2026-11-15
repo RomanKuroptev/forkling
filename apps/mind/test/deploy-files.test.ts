@@ -195,4 +195,10 @@ describe('the deploy scripts can be run (found on the server: a file committed o
   it('the deploy workflow starts the script with bash, whatever mode the checkout gave it', () => {
     expect(read('.github/workflows/deploy.yml')).toMatch(/"bash \/opt\/forkling\/engine\/deploy\/deploy\.sh '\$TAG'"/)
   })
+
+  it('gives the keys file a line for the Turnstile secret, empty, and keeps the secret out of the unit file and the Caddyfile (decision 3)', () => {
+    expect(read('deploy/setup.sh')).toMatch(/^TURNSTILE_SECRET=$/m)
+    for (const file of ['forkling-mind.service', 'Caddyfile']) expect(read(`deploy/${file}`)).not.toMatch(/TURNSTILE_SECRET=\S/)
+  })
 })
+
