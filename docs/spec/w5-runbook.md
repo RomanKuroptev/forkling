@@ -50,4 +50,4 @@ The viewer and the site change at the same moment: the viewer draws the land wit
 
 ## Not yet done in W5
 
-- **Slice 14, retire the pet era.** Part C (the area `CLAUDE.md` files) is done. Part A (the island, its walking grid and the viewer's island scene) is built and waits for your OK and for v0.14.0; a world with no `places/` then starts on built-in Home and Workshop. Part B (free-form objects in the schema, sim, mind, viewer, species pack and template) is not started.
+- **Slice 14, retire the pet era.** Part C (the area `CLAUDE.md` files) is done. Part A (the island, its walking grid and the viewer's island scene) is built and waits for your OK and for v0.14.0; a world with no `places/` then starts on built-in Home and Workshop. Part B (free-form objects in the schema, sim, mind, viewer, species pack and template) is built, with the check against a copy of Merge's files, and waits for the same two things.

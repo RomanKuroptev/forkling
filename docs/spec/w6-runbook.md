@@ -57,4 +57,4 @@ note: null
 - The cat's body does not know about plots (the mind and the viewer must build the same walkable grid); only the visitor can stand on one.
 - Revisit has not been seen live: Merge chooses tend for its overdue places.
 - A place that is a Roman build can hold anything; the frame-rate test from W5 is yours to run on it.
-- W5 slice 14 (retiring the pet era): part C is merged, part A is built and waits for your word, part B is not started.
+- W5 slice 14 (retiring the pet era): part C is merged, parts A and B are built and wait for your word and for v0.14.0.
