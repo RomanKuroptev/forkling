@@ -6,14 +6,17 @@ const USAGE = `usage: pnpm --filter @forkling/site build [--world <dir>] [--out 
 
   --world  the world repo to show (default: the current directory)
   --out    where to write the site (default: _site)
-  --base-url  the address of the site, for the links in the feed`
+  --base-url  the address of the site, for the links in the feed
 
-const { values } = parseArgs({ options: { world: { type: 'string' }, out: { type: 'string' }, 'base-url': { type: 'string' }, help: { type: 'boolean', short: 'h', default: false } } })
+The notes form opens when the server's address and the Turnstile site key are known: from the environment (MIND_URL and TURNSTILE_SITE_KEY, which the pages
+workflow takes from the repository variables) or from --mind-url and --turnstile-site-key. Without both, /notes/ says the mailbox is closed.`
+
+const { values } = parseArgs({ options: { world: { type: 'string' }, out: { type: 'string' }, 'base-url': { type: 'string' }, 'mind-url': { type: 'string' }, 'turnstile-site-key': { type: 'string' }, help: { type: 'boolean', short: 'h', default: false } } })
 if (values.help) {
   console.log(USAGE)
 } else {
   // `pnpm --filter` runs from apps/site; relative paths mean relative to where the user typed the command.
   const base = process.env.INIT_CWD ?? process.cwd()
-  const { pages } = buildSite(resolve(base, values.world ?? '.'), resolve(base, values.out ?? '_site'), { baseUrl: values['base-url'] })
+  const { pages } = buildSite(resolve(base, values.world ?? '.'), resolve(base, values.out ?? '_site'), { baseUrl: values['base-url'], mindUrl: values['mind-url'] || process.env.MIND_URL || undefined, turnstileSiteKey: values['turnstile-site-key'] || process.env.TURNSTILE_SITE_KEY || undefined })
   console.log(`wrote ${pages.length} files`)
 }

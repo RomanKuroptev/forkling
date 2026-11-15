@@ -11,6 +11,8 @@ import { SINCE_SCRIPT } from './since.ts'
 import { loadPlaces, placeChangeLookup, placeFeedItems, renderPlaces } from './places.ts'
 import { loadRequests, loadWishes, renderRequests } from './requests.ts'
 import { hasPage, loadPage, renderPage } from './page.ts'
+import { loadNotes, notesEndpoint, renderNotes, validSiteKey } from './notes.ts'
+import { NOTES_SCRIPT } from './notes-script.ts'
 import { hasAbout, loadAbout, loadSelfRequests, renderAbout } from './self.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
 
@@ -72,6 +74,7 @@ const NAV: [string, string][] = [
   ['Journal', 'journal/'],
   ['Notebook', 'notebook/'],
   ['Obsessions', 'obsessions/'],
+  ['Notes', 'notes/'],
   ['Workshop', 'workshop/'],
   ['Why?', 'why/'],
 ]
@@ -140,6 +143,9 @@ function trailPage(p: Trail['pages'][number], souvenir: Souvenir | undefined): s
 
 /** Renders the forkling's website from the files of its world repo. A file that doesn't fit its schema is left out. */
 export interface RenderOptions {
+  /** The server's address (the `MIND_URL` variable) and the Turnstile site key: with both, `/notes/` has a form (spec 10.1). Without them the mailbox shows as closed. */
+  mindUrl?: string | undefined
+  turnstileSiteKey?: string | undefined
   /** The address of the site, for the links in the feed, like `https://owner.github.io/merge/`. Without it the feed links are relative. */
   baseUrl?: string | undefined
   /** The world's history for `changes.json` (see `defaultGitLog`). Injected by a test; a world with no history gives an empty list. */
@@ -373,6 +379,9 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   })
   renderRequests({ requests, wishes, places, selfRequests, add })
   renderAbout({ about: mergeAbout, add })
+  const endpoint = notesEndpoint(opts.mindUrl)
+  const siteKey = validSiteKey(opts.turnstileSiteKey)
+  renderNotes({ notes: loadNotes(world), places, mailbox: endpoint && siteKey ? { endpoint, siteKey } : null, stamp: (iso) => localStamp(iso, forkling.timezone), add })
   renderPage({ page: mergePage, stamp: (iso) => localStamp(iso, forkling.timezone), add })
 
   // The feed (works shelved, diary entries) and the list of changes the home page panel reads (spec 8).
@@ -407,6 +416,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   write('changes.json', `${JSON.stringify(changes)}
 `)
   write('since.js', SINCE_SCRIPT)
+  write('notes.js', NOTES_SCRIPT)
   written.push(...publishWorks(world, out, works))
   return { pages: written }
 }

@@ -198,6 +198,14 @@ describe('templates/forkling-world website', () => {
     expect(text).toMatch(/--base-url "https:\/\/\$\{GITHUB_REPOSITORY_OWNER\}\.github\.io\/\$\{GITHUB_REPOSITORY#\*\/\}\/"/)
   })
 
+  it('gives the site builder the server address and the Turnstile site key from the repository variables, so the notes form can open (spec 10.1)', () => {
+    const text = read('pages.yml')
+    expect(text).toMatch(/MIND_URL: \$\{\{ vars\.MIND_URL \}\}/)
+    expect(text).toMatch(/TURNSTILE_SITE_KEY: \$\{\{ vars\.TURNSTILE_SITE_KEY \}\}/)
+    // Variables reach the builder as environment, never spliced into the command line.
+    expect(text).not.toMatch(/--mind-url|--turnstile-site-key/)
+  })
+
   it('pins the same engine release as the mind', () => {
     const ref = (text: string) => /FORKLING_REF: (v\d+\.\d+\.\d+)/.exec(text)?.[1]
     expect(ref(read('pages.yml'))).toBe(ref(read('mind.yml')))
