@@ -462,23 +462,6 @@ describe('what it did before comes back to it', () => {
   })
 })
 
-describe('what counts as news', () => {
-  it('is not used up by a weekly review that never looked at it', async () => {
-    await runTick(dir, at(NOW))
-    const goals = goalsOf()
-    writeJson('mind/goals.json', { ...goals, long: { ...goals.long, reviewedAt: '2026-10-26T06:00:00Z' } })
-    newObject('pebble')
-    const llm = fakeLlm(keep)
-    await runTick(dir, at(minutesAfter(5), { llm }))
-    expect(llm.calls[0]!.model).toBe('claude-sonnet-5-5')
-    expect(stateOf().sparked?.pending).toMatchObject({ topic: 'pebble' })
-    const next = fakeLlm(keep)
-    await runTick(dir, at(minutesAfter(10), { llm: next }))
-    expect(next.calls[0]!.user).toMatch(/a trip raised "pebble" by 20/)
-    expect(stateOf().sparked).toMatchObject({ count: 1, pending: null })
-  })
-})
-
 describe('the validator', () => {
   const badPlan = fishPlan
 
@@ -585,19 +568,6 @@ describe('the budget', () => {
     const result = await runTick(dir, at(NOW, { llm }))
     expect(result.notes.join(' ')).toMatch(/overloaded/)
     expect(existsSync(file('mind/goals.json'))).toBe(false)
-  })
-})
-
-describe('the weekly review', () => {
-  it('uses Sonnet and marks the long goal reviewed', async () => {
-    await runTick(dir, at(NOW))
-    const goals = Goals.parse(readJson('mind/goals.json'))
-    writeJson('mind/goals.json', { ...goals, long: { ...goals.long, reviewedAt: '2026-10-26T06:00:00Z' } })
-    const llm = fakeLlm(keep)
-    await runTick(dir, at(minutesAfter(5), { llm }))
-    expect(llm.calls).toHaveLength(1)
-    expect(llm.calls[0]!.model).toBe('claude-sonnet-5-5')
-    expect(Goals.parse(readJson('mind/goals.json')).long?.reviewedAt).toBe(minutesAfter(5))
   })
 })
 

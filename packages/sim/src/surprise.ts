@@ -1,7 +1,7 @@
 import type { Forkling, Goals, MindState, VisitorEvent, WorldObject } from '@forkling/schema'
 import { localDate, sleepWindow } from './sleep.ts'
 
-export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'weekly' | 'buildResult' | 'reflected'
+export type TriggerKind = 'sparked' | 'blocked' | 'need' | 'stepDone' | 'replan' | 'newDay' | 'buildResult' | 'reflected'
 
 /** A reason to wake the LLM. Anything the sim can tell on its own stays with the utility AI. */
 export interface Trigger {
@@ -41,7 +41,6 @@ export const STRONG_NEED = 15
 /** A trip that raises an interest by this much wakes the mind (spec 2.3). */
 export const SPARK_GAIN = 15
 export const MAX_SPARKS_PER_DAY = 2
-const WEEK_MS = 7 * 24 * 3_600_000
 /** No new plan is asked for this close to bed: the evening is for winding down, and the sleep rewrite comes at bedtime. */
 export const REPLAN_BEFORE_BED_MS = 45 * 60_000
 
@@ -92,9 +91,6 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
   }
 
 
-  if (goals.long && nowMs - Date.parse(goals.long.reviewedAt) >= WEEK_MS) {
-    found.push({ kind: 'weekly', score: 0.6, detail: `the long goal was last reviewed ${goals.long.reviewedAt.slice(0, 10)}` })
-  }
 
   return found.sort((a, b) => b.score - a.score)
 }

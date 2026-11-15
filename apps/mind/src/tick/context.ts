@@ -171,6 +171,10 @@ export interface Tick {
   beliefs: World['beliefs']
   /** `mind/wants.json`, as the tick leaves it: attempts counted, a want that failed 4 times dropped (spec 9.4). */
   wants: Want[]
+  /** `self/about.md` as the tick leaves it (spec 9.2). */
+  about: string
+  /** Set when the weekly review rewrote about.md: written to `self/about.md` and copied, with the reasons, to `self/history/<date>.md`. */
+  aboutWrite: { text: string; changes: { what: string; why: string }[]; at: string } | null
   /** `self/page.md` as the tick leaves it (spec 9.7). */
   page: string
   /** Set when the page changed this tick: written to `self/page.md` and kept in `self/page-history/`. */

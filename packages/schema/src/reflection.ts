@@ -51,3 +51,16 @@ export const SleepRewriteAnswer = z.object({
   page: z.string().nullable(),
 })
 export type SleepRewriteAnswer = z.infer<typeof SleepRewriteAnswer>
+
+/**
+ * What the weekly review returns (spec 9.5), on Sunday at 20:00. Plain strings, nulls and arrays like the other answers; the
+ * limits (300 words, 8 traits, 30% of the lines, 2 renames) are applied in code. `about` is the whole new `self/about.md`, or null
+ * to leave it; `aboutChanges` is the reason for each change, kept beside the copy in `self/history/`.
+ */
+export const WeeklyReview = z.object({
+  about: z.string().nullable(),
+  aboutChanges: z.array(z.object({ what: z.string(), why: z.string() })),
+  longGoal: z.object({ action: z.enum(['continue', 'finish', 'drop', 'change']), text: z.string().nullable(), reason: z.string() }),
+  renames: z.array(z.object({ kind: z.enum(['place', 'work']), id: z.string(), name: z.string(), reason: z.string() })),
+})
+export type WeeklyReview = z.infer<typeof WeeklyReview>

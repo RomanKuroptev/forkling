@@ -143,6 +143,9 @@ export const MindState = z.object({
    */
   /** Local date the page last changed, so it changes at most once a day and the prompt cache stays warm (spec 9.7). */
   pageChangedOn: z.iso.date().optional(),
+  /** Local date of the last usable weekly review, and when one last gave nothing usable (spec 9.5). */
+  lastWeeklyDate: z.iso.date().optional(),
+  weeklyTriedAt: Timestamp.optional(),
   sleepRewrite: z.object({ id: z.string().min(1).nullable(), date: z.iso.date(), submittedAt: Timestamp, polledAt: Timestamp.optional(), triedAt: Timestamp.optional() }).nullable().default(null),
   /** Reading sessions so far on a local date, for the daily limit; and whether the morning skim of the feeds is done. */
   readings: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), skimmed: z.boolean().default(false) }).optional(),

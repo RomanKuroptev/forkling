@@ -1,6 +1,6 @@
 import type { Belief, Interests } from '@forkling/schema'
 
-export type ThinkKind = 'morning' | 'weekly' | 'decide'
+export type ThinkKind = 'morning' | 'decide'
 
 export const json = (value: unknown) => JSON.stringify(value)
 

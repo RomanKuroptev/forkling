@@ -37,7 +37,7 @@ export async function reflectionStep(t: Tick): Promise<void> {
     stream: stream.map((e) => ({ id: e.id, kind: e.kind, text: e.text })),
     beliefs: t.beliefs.filter((b) => b.status !== 'dropped'),
     wants: t.wants,
-    about: '',
+    about: t.about,
     pageChangedToday: t.mind.pageChangedOn === t.today,
     plan: t.goals.today ? { reason: t.goals.today.reason, steps: t.goals.today.steps.map((s) => ({ verb: s.verb, target: s.targetId ?? null, reason: s.reason })) } : null,
     questions: state.questions,

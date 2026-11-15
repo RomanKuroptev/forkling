@@ -15,7 +15,6 @@ export const STARTING_PLACES = ['home', 'workshop'] as const
 
 export function thinkKindFor(triggers: readonly Trigger[]): ThinkKind {
   if (triggers.some((t) => t.kind === 'newDay')) return 'morning'
-  if (triggers.some((t) => t.kind === 'weekly')) return 'weekly'
   return 'decide'
 }
 

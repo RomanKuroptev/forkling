@@ -5,7 +5,6 @@ import type { StartingPoint } from '../web/doors.ts'
 import { decideTask } from './decide.ts'
 import { morningTask } from './morning.ts'
 import { defang, describeBelief, describeInterests, json, type ThinkKind } from './shared.ts'
-import { weeklyTask } from './weekly.ts'
 
 export interface UserInput {
   kind: ThinkKind
@@ -87,7 +86,6 @@ function describeStartingPoints(points: readonly StartingPoint[] | undefined): s
 const TASKS: Record<ThinkKind, (i: UserInput) => string> = {
   morning: morningTask,
   decide: decideTask,
-  weekly: weeklyTask,
 }
 
 /** The part of the prompt that changes every call. It goes after the cache breakpoint. */
