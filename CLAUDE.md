@@ -6,15 +6,15 @@ Forkling is an engine for autonomous AIs that grow a 3D world. Each forkling has
 
 **The spec is [`docs/spec/spec.md`](docs/spec/spec.md)** (v3.3, exported from Roman's Claude doc). Where it gives a number, the number is the rule. **Read [`STATUS.md`](STATUS.md) first. Update it before every commit and before you stop.**
 
-**The code is still the pet until W1 lands.** Needs, the bowl, temperament and objects are all still in the code, and W1 deletes them (spec 15.1). Don't extend them.
+**The pet is mostly gone.** W1 deleted needs, the bowl and temperament. The island, its walking grid and the free-form objects are still in the code for a world with no places, and W5 slice 14 deletes them. Don't extend them.
 
-The mind decides *what* and *why*: today it runs as the Actions tick, and from W3 as a loop on a server. The body (the visitor's browser) decides *how it looks moment to moment*. The build worker and the site turn the mind's choices into files.
+The mind decides *what* and *why*: it runs as the Actions tick or as a loop on a server (W3). The body (the visitor's browser) decides *how it looks moment to moment*. The build worker and the site turn the mind's choices into files.
 
 ## Autonomy rules
 
 1. **Nine mind verbs, no activity lists.** The verbs are wander, tend, revisit, expand, found, tinker, write, reply and rest. What Merge does with them comes from its own plans. The species pack gives only the body.
 2. **Plans are written by the mind.** A plan is 3 to 8 steps, each a verb, a target and a one-sentence reason in Merge's words. Code validates plans (spec 2.6) but never chooses them.
-3. **Code ticks, models think at set moments.** A reflex tick runs in code every 10 seconds. A Haiku thought tick runs every 2 to 5 minutes while awake (from W3). Decide calls happen only at the triggers in spec 2.3, and each step that produces a file gets one step call. Sonnet reflects when the importance scores add up to the threshold.
+3. **Code ticks, models think at set moments.** A reflex tick runs in code every 10 seconds. A Haiku thought tick runs every 2 to 5 minutes while awake (in the server loop). Decide calls happen only at the triggers in spec 2.3, and each step that produces a file gets one step call. Sonnet reflects when the importance scores add up to the threshold.
 4. **Memory changes behaviour.** Reflections, beliefs and the wants list feed later decisions, and they may be revised or dropped.
 5. **The mind is visible.** Every step carries a reason, and the site shows the why for everything.
 6. **Honest by construction.** Validators reject impossible plans, souvenirs that don't match their source word for word, and any text that claims to be human.
@@ -49,7 +49,7 @@ The mind decides *what* and *why*: today it runs as the Actions tick, and from W
 - Small commits, one working slice at a time. Keep `main` deployable.
 - Prefer simple over clever. This is a hobby project that should stay easy to change.
 - The body is deterministic from `(step, startedAt, seed, now)`. Units: meters, kilograms, seconds, Celsius. Time zone Europe/Stockholm.
-- Stack: TypeScript, pnpm workspaces, React Three Fiber, Zod (`packages/schema`), Vitest, GitHub Pages and Actions, and from W3 one small server (Hetzner, Caddy, systemd).
+- Stack: TypeScript, pnpm workspaces, React Three Fiber, Zod (`packages/schema`), Vitest, GitHub Pages and Actions, and one small server (Contabo, Caddy, systemd).
 
 ## Commands
 
@@ -62,7 +62,7 @@ pnpm typecheck
 pnpm build                     # builds the viewer
 pnpm --filter @forkling/mind voice-test   # W0: the voice test (needs ANTHROPIC_API_KEY; writes only a local report)
 pnpm mind:local                # one mind tick against a local copy of a world repo (--dry-run prints the prompt and token estimate)
-pnpm --filter @forkling/mind <tick|validate|feeds:check>
+pnpm --filter @forkling/mind <tick|serve|validate-pr|replay|source-trial>
 pnpm --filter @forkling/mind replay --world <clone>   # the canonical body from a world repo's history beside its plan
 pnpm --filter @forkling/site build                    # render a forkling's Pages site
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
@@ -75,4 +75,4 @@ pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 - [`docs/spec/`](docs/spec/): the spec. `spec.md` is the whole thing, and each milestone gets its own file when it starts.
 - `docs/decisions.md`: why things are the way they are. `docs/milestones-done.md`: the pet-era milestones M1 to M7.
 - Pet-era docs, kept as history until the code they describe is replaced: `docs/how-it-works.md`, `docs/architecture.md`, `docs/review-2026-11.md`, `docs/future.md`, `docs/plans/`.
-- Area rules: `packages/sim/CLAUDE.md`, `species/CLAUDE.md`, `apps/mind/CLAUDE.md`, `apps/viewer/CLAUDE.md`, and `templates/forkling-world/CLAUDE.md` (for the builder). They still describe the pet and are rewritten in the milestone that changes their area.
+- Area rules: `packages/sim/CLAUDE.md`, `species/CLAUDE.md`, `apps/mind/CLAUDE.md`, `apps/viewer/CLAUDE.md`, and `templates/forkling-world/CLAUDE.md` (for the builder). Each ends with a short note on what pet-era code is still there until W5 slice 14.

@@ -10,7 +10,7 @@ Only these folders, and only when a request asks for it:
 
 - `places/` for places (one `places/<id>.json` each)
 - `works/` for the small web works it makes (`works/<id>/`)
-- `wishes/` for the parts and objects it wished for
+- `wishes/` for the kit parts it wished for
 
 You must never touch `self/`, `brain/`, `memory/`, `mind/`, `notes/`, `forkling.json`, `.github/` or this file. CI rejects any pull request that does. `self/seed.md` is who the forkling is, and only its owner changes it. The forkling writes its own page (`self/page.md`) and nobody else does.
 
