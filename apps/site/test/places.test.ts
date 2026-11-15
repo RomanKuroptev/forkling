@@ -235,6 +235,15 @@ describe('a closed place (spec 9.9: a closed line with the reason; no neglect)',
     expect(p).toContain('I have nothing new to put in it.')
     expect(p).toContain('2026-11-18')
     expect(p).not.toMatch(/dusty|overgrown|cobweb/)
+    // Said once, in its own line, not again in the meta line.
+    expect(p.match(/Closed\./g)).toHaveLength(1)
+  })
+
+  it('has its lamps off on the page, whatever its own switch says (the switch is on in this world)', () => {
+    render()
+    const p = page('places/house-of-lights/index.html')
+    expect(p).toContain('The lamps are off.')
+    expect(p).not.toContain('The lamps are on.')
   })
 
   it('marks it closed in the list and on the map, and its history shows the closing', () => {

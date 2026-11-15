@@ -320,6 +320,15 @@ describe('windows and lamps that light at night', () => {
     return SHAPES.reduce((n, shape) => n + [...scene[shape].glow].filter((g) => g === 1).length, 0)
   }
 
+  it('turns the lamps off in a closed place: no glowing windows outside, and no lit lamps inside', () => {
+    const closed: Place = { ...home, state: { ...home.state, lamps: true, closed: { at: '2026-11-18T10:00:00Z', reason: 'Quiet.' } } }
+    expect(glowing(withLamps(home, true), {})).toBeGreaterThan(0)
+    expect(glowing(closed, {})).toBe(0)
+    expect(glowing(closed, { interiors: new Set([home.id]) })).toBe(0)
+    // Opened again (a tend clears `closed`), the lamps are as they were.
+    expect(glowing({ ...closed, state: { ...closed.state, closed: null } }, {})).toBe(glowing(withLamps(home, true), {}))
+  })
+
   it('marks the glass of every window of a place to glow, and nothing else on the outside', () => {
     const outside = exteriorInstances(home, kit, 0)
     const glass = outside.filter((i) => i.color === GLASS)

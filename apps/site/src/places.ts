@@ -185,7 +185,7 @@ export function renderPlaces(i: PlacesInput): void {
         `<h1>${esc(p.name)}</h1>`,
         `<p>${esc(p.purpose)}</p>`,
         `<p class="provenance">${esc(provenanceOf(p))}</p>`,
-        `<p class="quiet">${esc(p.tags.join(', '))}. Founded ${esc(p.founded)}. ${p.state.closed ? 'Closed.' : `${capital(NEGLECT_WORDS[level(p)]!)}.`}${p.state.lamps ? ' The lamps are on.' : ' The lamps are off.'}</p>`,
+        `<p class="quiet">${esc(p.tags.join(', '))}. Founded ${esc(p.founded)}.${p.state.closed ? '' : ` ${capital(NEGLECT_WORDS[level(p)]!)}.`}${p.state.lamps && !p.state.closed ? ' The lamps are on.' : ' The lamps are off.'}</p>`,
         ...(p.state.closed ? [`<p class="closed"><strong>Closed.</strong> Merge closed this place on ${esc(p.state.closed.at.slice(0, 10))} and said: &ldquo;${esc(p.state.closed.reason)}&rdquo; A later visit may open it again.</p>`] : []),
         ...(isBuilding(p.state, i.nowMs) ? [`<p class="quiet">Under construction until ${esc(stampTime(p.state.construction!.finishesAt, i.tz))}.</p>`] : []),
         ...(related.length > 0 ? [`<p>Related: ${related.join(', ')}.</p>`] : []),

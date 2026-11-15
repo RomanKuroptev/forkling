@@ -234,7 +234,8 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     const baseY = opts.heightAt(px, pz)
     // How long since it was cared for sets how it looks (spec 4.4). Without a clock, nothing is neglected.
     const level = opts.nowMs === undefined ? 0 : neglectFor({ id: place.id, lastCareAt: place.state.lastCareAt, founded: place.founded, closed: place.state.closed !== null }, opts.nowMs)
-    const lampsOn = neglectLook(level, place.state.lamps).lampsOn
+    // A closed place (spec 9.9) has its lamps off, whatever its own switch says.
+    const lampsOn = place.state.closed ? false : neglectLook(level, place.state.lamps).lampsOn
     // A place whose lamps are on (or that is cared for, spec 4.4) has lit windows; one with its lamps off, or neglected, is dark.
     for (const i of exteriorInstances(place, kit, baseY)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
     for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
