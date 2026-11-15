@@ -52,8 +52,7 @@ export type BodyIntention = Omit<Intention, 'startedAt'> & { startedAt: number }
 /** The repo form of a body intention. The sim clock is in seconds since the Unix epoch once playback anchors it. */
 export function toRepoIntention(intention: BodyIntention): Intention {
   const { targetId, ...rest } = intention
-  // `for:<verb>` is how the sim names "any object this verb fits": a label of its own, not something that is in the world.
-  return { ...rest, ...(targetId && !targetId.startsWith('for:') ? { targetId } : {}), startedAt: new Date(intention.startedAt * 1000).toISOString() }
+  return { ...rest, ...(targetId ? { targetId } : {}), startedAt: new Date(intention.startedAt * 1000).toISOString() }
 }
 
 /**
@@ -91,8 +90,6 @@ export interface ForklingState {
   /** An action to start with instead of choosing, e.g. the intention from `forkling.json`. Used once. */
   firstAction: string | null
   focus: Focus | null
-  /** Whether its paws are full, which changes how it walks. */
-  holding: boolean
   /** How it feels, from the repo state. Fixed for a replay, so everyone who replays it chooses the same way. */
   feelings?: Feelings
 }
@@ -103,7 +100,6 @@ export interface CreateOptions {
   /** Start with this action id if the pack has it and its target can be reached. */
   firstAction?: string
   focus?: Focus
-  holding?: boolean
   feelings?: Feelings
 }
 
@@ -116,9 +112,6 @@ const IDLE_ACTION: SpeciesAction = {
   requires: [],
   reason: 'Just looking around.',
   group: 'body',
-  effect: 'none',
-  hands: 'any',
-  accepts: [],
 }
 
 /** Used when nothing the pack offers can be reached, so a forkling always has something to do. */
@@ -157,17 +150,15 @@ export function createForkling(
     repaths: 0,
     firstAction: opts.firstAction ?? null,
     focus: opts.focus ?? null,
-    holding: opts.holding ?? false,
     ...(opts.feelings ? { feelings: opts.feelings } : {}),
   }
 }
 
 const dist = (a: Point2, b: Point2) => Math.hypot(a.x - b.x, a.z - b.z)
 
-/** How it gets about on the way to an action: running is always on four legs, a full pair of paws carries, a task is done upright. */
+/** How it gets about on the way to an action: running is always on four legs, a task is done upright. */
 function movingSlot(s: ForklingState, action: SpeciesAction): AnimationSlot {
   if (action.gait === 'run') return 'run'
-  if (s.holding) return 'carry'
   return action.body === 'upright' ? 'walkUpright' : 'walk'
 }
 
@@ -350,7 +341,6 @@ function replan(s: ForklingState, ctx: StepContext): void {
   const visitorDistance = ctx.visitor ? dist(s.pos, ctx.visitor) : null
   const scoring = {
     visitorDistance,
-    holding: s.holding,
     timeOfDay: ctx.timeOfDay,
     ...(ctx.asleep !== undefined ? { asleep: ctx.asleep } : {}),
   }
@@ -377,7 +367,7 @@ function replan(s: ForklingState, ctx: StepContext): void {
     }
   }
 
-  let candidates = scoreActions(s.pack, { ...scoring, spotKinds, ...(s.feelings ? { feelings: s.feelings } : {}), ...(focus ? { focusAction: focus.action } : {}) })
+  let candidates = scoreActions(s.pack, { ...scoring, spotKinds, ...(s.feelings ? { feelings: s.feelings } : {}) })
   if (focus) {
     candidates = candidates.map((c) => (c.action.id === focus.action ? { ...c, score: Math.max(c.score * 2, FOCUS_SCORE) } : c))
   }
@@ -449,10 +439,9 @@ function resolveTarget(s: ForklingState, action: SpeciesAction, ctx: StepContext
       return goal && path ? { path, goal, chasing: true, targetId: 'visitor' } : null
     }
 
-    // A focus on a particular object goes there; otherwise any spot of the action's kind, or object the verb works on, will do.
-    case 'spot':
-    case 'object': {
-      const fallback = target.type === 'spot' ? target.kind : `for:${action.id}`
+    // A focus on a particular place goes there; otherwise any spot of the action's kind will do.
+    case 'spot': {
+      const fallback = target.kind
       const label = focus?.targetId && (ctx.spots[focus.targetId]?.length ?? 0) > 0 ? focus.targetId : fallback
       const spots = [...(ctx.spots[label] ?? [])].sort((a, b) => dist(s.pos, a) - dist(s.pos, b) || a.x - b.x || a.z - b.z)
       const n = Math.min(spots.length, 4)

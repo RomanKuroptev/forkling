@@ -18,15 +18,6 @@ const forkling = {
   timezone: 'Europe/Stockholm',
 }
 
-const rock = {
-  id: 'sunny-rock',
-  kind: 'rock',
-  name: 'The sunny rock',
-  position: [5, 0, 22],
-  model: { asset: 'nature/rock_largeA' },
-  reason: 'Morning sun.',
-}
-
 type Files = Record<string, unknown>
 
 /** A fake GitHub: the commits and trees API plus raw file contents, with knobs for failure modes. */
@@ -55,15 +46,6 @@ function github(files: Files, opts: { status?: number; rateLimited?: boolean } =
 const deps = (files: Files, opts?: Parameters<typeof github>[1]): LoadDeps => ({
   fetch: github(files, opts),
   species: { cat: SpeciesPack.parse(catSpecies) },
-  assets: new Set(['nature/rock_largeA']),
-})
-
-describe('loadWorld objects', () => {
-  it('accepts objects the forkling made out of parts', async () => {
-    const made = { ...rock, id: 'a-shelf', model: { parts: [{ shape: 'box', size: [0.5, 0.2, 0.5], at: [0, 0.1, 0], color: '#a67c52' }] } }
-    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'objects/a-shelf.json': made }))
-    expect(result.ok && result.world.objects.map((o) => o.id)).toEqual(['a-shelf'])
-  })
 })
 
 describe('loadWorld goals', () => {
@@ -89,14 +71,13 @@ describe('loadWorld goals', () => {
 })
 
 describe('loadWorld', () => {
-  it('loads the forkling and its objects at the latest commit', async () => {
-    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'objects/sunny-rock.json': rock, 'journal/2026-10-30.md': '# hi' }))
+  it('loads the forkling at the latest commit', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'journal/2026-10-30.md': '# hi' }))
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.world.sha).toBe(SHA)
     expect(result.world.committedAt).toBe('2026-10-30T21:05:00Z')
     expect(result.world.forkling.name).toBe('Merge')
-    expect(result.world.objects.map((o) => o.id)).toEqual(['sunny-rock'])
   })
 
   it('says so when the repo does not exist', async () => {
@@ -137,19 +118,9 @@ describe('loadWorld', () => {
     expect(!flying.ok && flying.error.problems[0]!.lines.join(' ')).toMatch(/fly/)
   })
 
-  it('collects every broken object file, not just the first', async () => {
-    const result = await loadWorld(
-      ref,
-      deps({
-        'forkling.json': forkling,
-        'objects/sunny-rock.json': { ...rock, id: 'other-name' },
-        'objects/statue.json': { ...rock, id: 'statue', model: { asset: 'nature/statue' } },
-      }),
-    )
-    expect(result.ok).toBe(false)
-    if (result.ok) return
-    expect(result.error.problems.map((p) => p.file).sort()).toEqual(['objects/statue.json', 'objects/sunny-rock.json'])
-    expect(result.error.problems.find((p) => p.file === 'objects/statue.json')!.lines.join(' ')).toMatch(/nature\/statue/)
+  it('ignores a leftover objects/ folder from the pet era instead of failing on it', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'objects/old.json': { id: 'not an object' }, 'objects/bowl.json': 'not json at all' }))
+    expect(result.ok).toBe(true)
   })
 
   it('revalidates API answers so a push shows up on the next refresh', async () => {

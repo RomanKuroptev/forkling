@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -195,8 +195,6 @@ const threeWants = () => Wants.parse({ wants: [want('w1'), want('w2'), want('w3'
 describe('mind/wants.json in a tick', () => {
   beforeEach(() => {
     copyFileSync(join(templates, 'forkling.json'), file('forkling.json'))
-    mkdirSync(file('objects'))
-    for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), file(`objects/${f}`))
     mkdirSync(file('mind'), { recursive: true })
   })
 
@@ -239,8 +237,6 @@ describe('build results and importance (spec 9.3)', () => {
   }
   beforeEach(() => {
     copyFileSync(join(templates, 'forkling.json'), file('forkling.json'))
-    mkdirSync(file('objects'))
-    for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), file(`objects/${f}`))
     mkdirSync(file('mind'), { recursive: true })
     writeFileSync(file('mind/wants.json'), JSON.stringify(Wants.parse({ wants: [want('w1', { attempts: 3 })] })))
     writeFileSync(file('mind/state.json'), JSON.stringify({ jobWants: { 'tinker-20261103-0800': 'w1' } }))

@@ -117,7 +117,6 @@ describe('migrating a pet-era world to W1', () => {
     const w = readWorld(world, () => '2026-11')
     expect(w.seed.trim()).toBe(DEFAULT_SEED)
     expect(w.goals).toEqual({})
-    expect(w.objects).toEqual([])
   })
 
   it('does nothing the second time, and does not overwrite the archive', () => {

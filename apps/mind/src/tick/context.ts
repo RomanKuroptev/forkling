@@ -25,7 +25,6 @@ import type {
   Want,
   Wish,
   WorkMeta,
-  WorldObject,
 } from '@forkling/schema'
 import type { BodyWorld, MoodEvent, Trigger, sleepWindow, startPlayback } from '@forkling/sim'
 import type { ModelId, rollLedger } from '../budget.ts'
@@ -124,9 +123,6 @@ export interface Tick {
   places: Place[]
   body: ReturnType<typeof startPlayback>['state']
 
-  objects: WorldObject[]
-  /** The ids of `objects` once the finishing step is applied. Not refreshed after that. */
-  objectIds: Set<string>
   interests: World['interests']
   /** Set when a write step finishes: the words are written after the step is applied. */
   pendingNote: { step: PlanStep; index: number } | null
@@ -146,8 +142,6 @@ export interface Tick {
   placeUpdates: Place[]
   /** Souvenirs whose `placedIn` changed this tick, written to `souvenirs/<id>.json`. */
   souvenirUpdates: Souvenir[]
-  touched: Set<string>
-  gone: Set<string>
   /** What happened this tick that moves mood and energy (spec 3.2), applied by `feel`. */
   moodEvents: MoodEvent[]
   justNow: string[]

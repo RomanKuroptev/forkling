@@ -1,4 +1,4 @@
-import { advancePlayback, materialColor, playbackStateTime, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
+import { advancePlayback, playbackStateTime, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
@@ -64,29 +64,6 @@ export function Forkling() {
     }),
     [world, species, simWorld],
   )
-
-  // Whatever is in its paws is shown at the right paw, and follows the arm.
-  const holding = world.forkling.holding
-  useEffect(() => {
-    const bone = rig.bones.holdR
-    if (!bone || !holding) return
-    let prop: THREE.Group
-    if ('material' in holding) {
-      prop = partsGroup([{ shape: 'sphere', size: [0.1, 0.08, 0.1], at: [0, 0, 0], color: materialColor(holding.material) }])
-    } else {
-      const object = world.objects.find((o) => o.id === holding.objectId)
-      const parts = object && 'parts' in object.model ? object.model.parts : [{ shape: 'box' as const, size: [0.15, 0.15, 0.15] as [number, number, number], at: [0, 0.075, 0] as [number, number, number], color: '#c9b79c' }]
-      prop = partsGroup(parts)
-      // Nothing it holds is bigger than it can carry.
-      prop.scale.setScalar(Math.min(1, 0.25 / Math.max(0.01, object?.properties.size ?? 0.15)))
-    }
-    prop.position.set(0, 0.02, 0.03)
-    bone.add(prop)
-    return () => {
-      bone.remove(prop)
-      disposeParts(prop)
-    }
-  }, [holding, rig, world.objects])
 
   const view = useMemo(
     () => ({ shown: null as { x: number; z: number } | null, heading: 0, current: null as THREE.AnimationAction | null, currentSlot: '' }),

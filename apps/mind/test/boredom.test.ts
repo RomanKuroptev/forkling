@@ -43,7 +43,6 @@ const putWork = (id: string, made: string) => {
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'bored-'))
   copyFileSync(join(merge, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
   mkdirSync(file('places'))
   copyFileSync(join(world, 'places/home.json'), file('places/home.json'))
   copyFileSync(join(world, 'places/workshop.json'), file('places/workshop.json'))

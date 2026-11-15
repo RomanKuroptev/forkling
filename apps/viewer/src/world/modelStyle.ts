@@ -14,7 +14,7 @@ const PALETTE: Record<string, string> = {
   _defaultMat: '#8a867d',
 }
 
-/** A matte copy of a loaded material in the island palette. The loaded material is left untouched. */
+/** A matte copy of a loaded material in the palette. The loaded material is left untouched. */
 export function restyleMaterial(source: THREE.Material): THREE.MeshStandardMaterial {
   const base = source as THREE.MeshStandardMaterial
   const material = new THREE.MeshStandardMaterial({

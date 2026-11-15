@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Forkling, SpeciesPack, WorldObject, forklingPackIssues, objectIdFromPath } from '../src/index.ts'
+import { Forkling, SpeciesPack, forklingPackIssues } from '../src/index.ts'
 
 const forkling = {
   name: 'Merge',
@@ -59,49 +59,6 @@ describe('Forkling', () => {
 
   it('requires ISO timestamps', () => {
     expect(Forkling.safeParse({ ...forkling, lastTickAt: 'noon' }).success).toBe(false)
-  })
-})
-
-describe('WorldObject', () => {
-  const rock = {
-    id: 'sunny-rock',
-    kind: 'rock',
-    name: 'The sunny rock',
-    position: [4, 0, 20],
-    model: { asset: 'nature/rock_largeA' },
-    reason: 'It gets the morning sun first.',
-  }
-
-  it('parses and fills defaults', () => {
-    const parsed = WorldObject.parse(rock)
-    expect(parsed.rotation).toEqual([0, 0, 0])
-    expect(parsed.scale).toBe(1)
-    expect(parsed.affordances).toEqual([])
-  })
-
-  it('accepts the affordances from CLAUDE.md only', () => {
-    expect(WorldObject.safeParse({ ...rock, affordances: ['sit', 'perch', 'sleep'] }).success).toBe(true)
-    expect(WorldObject.safeParse({ ...rock, affordances: ['teleport'] }).success).toBe(false)
-  })
-
-  it('requires a slug id, a known model shape and a positive scale', () => {
-    expect(WorldObject.safeParse({ ...rock, id: 'Sunny Rock' }).success).toBe(false)
-    expect(WorldObject.safeParse({ ...rock, model: { url: 'https://example.com/x.glb' } }).success).toBe(false)
-    expect(WorldObject.safeParse({ ...rock, model: { asset: '../../secrets' } }).success).toBe(false)
-    expect(WorldObject.safeParse({ ...rock, scale: 0 }).success).toBe(false)
-  })
-
-  it('only allows behavior scripts under behaviors/', () => {
-    expect(WorldObject.safeParse({ ...rock, behavior: 'behaviors/sunny-rock.js' }).success).toBe(true)
-    expect(WorldObject.safeParse({ ...rock, behavior: '../evil.js' }).success).toBe(false)
-  })
-})
-
-describe('objectIdFromPath', () => {
-  it('takes the id from an objects/ path', () => {
-    expect(objectIdFromPath('objects/sunny-rock.json')).toBe('sunny-rock')
-    expect(objectIdFromPath('objects/nested/x.json')).toBeNull()
-    expect(objectIdFromPath('journal/2026-10-30.md')).toBeNull()
   })
 })
 

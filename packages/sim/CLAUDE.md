@@ -19,6 +19,3 @@ The pure, deterministic sim. It runs in the browser, in the mind and in CI, so i
 - `starter-places.ts` is Home and the Workshop: the places of a new world, and what a world with none is walked and drawn as (`bodyWorldFor`).
 - `fixture-world.ts` makes the 10-place test world (`?world=local&fixture=10` in the viewer).
 - Run one file with `pnpm vitest run packages/sim/test/<file>`.
-
-## Still here until W5 slice 14 part B lands
-The free-form objects (`objects.ts`) and the species-pack fields that serve them. Nothing reads a world's `objects/` for the body any more. Don't extend them.

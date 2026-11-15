@@ -9,7 +9,6 @@ import {
   sleepWindow,
   startPlayback,
 } from '@forkling/sim'
-import type { WorldObject } from '@forkling/schema'
 import { monthOf, recordCall, rollLedger } from '../budget.ts'
 import { buildSystem } from '../prompts.ts'
 import { readWorld } from '../world.ts'
@@ -50,7 +49,6 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   const playback = startPlayback(playbackInput, nowMs)
   // What the body really did on the plan step since the last write: the step's effect waits on it.
   const body = playback.state
-  const objects: WorldObject[] = [...w.objects]
   const mind = structuredClone(w.mindState)
   // The daily allowance is topped up at the first awake tick of each day: what was saved, plus 150, up to 450 (spec 9.8).
   if (!asleep && mind.allowance?.day !== today) mind.allowance = { points: pointsAtWake(mind.allowance?.points ?? 0), day: today }
@@ -83,8 +81,6 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     places,
     body,
 
-    objects,
-    objectIds: new Set(objects.map((o) => o.id)),
     interests: w.interests,
     pendingNote: null,
     pendingWork: null,
@@ -95,8 +91,6 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     newRequests: [],
     placeUpdates: [],
     souvenirUpdates: [],
-    touched: new Set(),
-    gone: new Set(),
     moodEvents: [],
     justNow: [],
 

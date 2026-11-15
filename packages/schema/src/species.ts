@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { ArtifactKind } from './art.ts'
-import { Material, PropertyFilter } from './properties.ts'
 
 /** How a body gets about: on four legs, or upright with paws free. A pack may offer both. */
 export const BodyPlan = z.enum(['quadruped', 'upright'])
@@ -9,32 +8,6 @@ export type BodyPlan = z.infer<typeof BodyPlan>
 /** Verb groups from MILESTONES.md. A body plan decides which groups it can do. */
 export const VerbGroup = z.enum(['body', 'hands', 'making', 'growing', 'mind'])
 export type VerbGroup = z.infer<typeof VerbGroup>
-
-/** What a verb does to the world when its step completes. Engine vocabulary: packs pick from it, never extend it. */
-export const VerbEffect = z.enum([
-  'none',
-  'pickUp',
-  'drop',
-  'putOn',
-  'give',
-  'open',
-  'close',
-  'hide',
-  'cut',
-  'make',
-  'paint',
-  'plant',
-  'water',
-  'harvest',
-  'cook',
-  'eat',
-  'read',
-  'study',
-  'create',
-])
-export type VerbEffect = z.infer<typeof VerbEffect>
-
-/** Shared need vocabulary. A pack declares the subset its species has. Values run 0 (empty) to 100 (satisfied). */
 
 /** Engine animation slots. A pack maps the ones it can play to clips, and missing slots fall back. */
 export const AnimationSlot = z.enum([
@@ -65,14 +38,12 @@ export type AnimationMap = z.infer<typeof AnimationMap>
 export const ActionRequirement = z.enum(['visitorNearby', 'night', 'day', 'dusk'])
 export type ActionRequirement = z.infer<typeof ActionRequirement>
 
-/** Where an action takes place. `spot` kinds (`sunbeam`, `perch`, `food`...) are resolved by the world. */
+/** Where an action takes place. `spot` kinds (a place's id, a kind of furniture) are resolved by the world. */
 export const ActionTarget = z.discriminatedUnion('type', [
   z.object({ type: z.literal('none') }),
   z.object({ type: z.literal('wander'), radius: z.number().positive().default(15) }),
   z.object({ type: z.literal('visitor') }),
   z.object({ type: z.literal('spot'), kind: z.string().min(1) }),
-  /** An object in the world: one whose properties match `where`, or (with `unlocked`) one that unlocks this verb. */
-  z.object({ type: z.literal('object'), where: PropertyFilter.default({}), unlocked: z.boolean().default(false) }),
 ])
 export type ActionTarget = z.infer<typeof ActionTarget>
 
@@ -89,14 +60,8 @@ export const SpeciesAction = z.object({
   group: VerbGroup.default('body'),
   /** The posture it is done in. Missing means the first body plan that allows its group. */
   body: BodyPlan.optional(),
-  /** What it changes in the world when a planned step of it completes. */
-  effect: VerbEffect.default('none'),
   /** The kind of thing a finished step leaves behind in `art/`: a poem, a drawing, a tune. Every creative act leaves one. */
   artifact: ArtifactKind.optional(),
-  /** Whether the paws must be empty or full to do it. */
-  hands: z.enum(['any', 'empty', 'full']).default('any'),
-  /** Materials it works with. Empty means any. */
-  accepts: z.array(Material).default([]),
 })
 export type SpeciesAction = z.infer<typeof SpeciesAction>
 
@@ -126,10 +91,6 @@ export const SpeciesPack = z
     }),
     /** Utility multipliers per action id. This is where personality lives. Missing means 1. */
     weights: z.record(z.string(), z.number().min(0)).default({}),
-    /** Placeholder spots offset from the spawn point, until objects arrive in M5. */
-    starterSpots: z
-      .array(z.object({ kind: z.string().min(1), offset: z.tuple([z.number(), z.number()]) }))
-      .default([]),
   })
   .superRefine((pack, ctx) => {
     const ids = new Set<string>()

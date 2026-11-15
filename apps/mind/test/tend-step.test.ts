@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -67,8 +67,6 @@ const putPlace = (id: string, over: Record<string, unknown> = {}) => {
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'tend-'))
   copyFileSync(join(merge, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
-  for (const f of readdirSync(join(merge, 'objects'))) copyFileSync(join(merge, 'objects', f), file(`objects/${f}`))
   mkdirSync(file('places'))
   copyFileSync(join(world, 'places/home.json'), file('places/home.json'))
   copyFileSync(join(world, 'places/workshop.json'), file('places/workshop.json'))

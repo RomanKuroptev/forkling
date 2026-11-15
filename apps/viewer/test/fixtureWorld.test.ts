@@ -12,7 +12,6 @@ describe('the fixture world (?world=local&fixture=10)', () => {
     expect(world.places.map((p) => p.id)).toContain('home')
     expect(world.forkling.species).toBe('cat')
     expect(world.pack).toBe(pack)
-    expect(world.objects).toEqual([])
   })
   it('has one place closed, a third one (never Home or the Workshop), so the boarded door can be seen', () => {
     const closed = loadFixtureWorld(10, pack).places.filter((p) => p.state.closed)
