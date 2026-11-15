@@ -42,7 +42,7 @@ describe('/page/ (spec 9.7)', () => {
     for (const rel of ['index.html', 'journal/index.html']) expect(page(rel)).toContain('page/')
   })
 
-  it('lists the earlier versions newest first, each with when it was written', () => {
+  it('lists the earlier versions newest first, each with when it was written, and not the current one again', () => {
     put('self/page.md', 'Newest note.\n')
     put('self/page-history/2026-11-13T09-00-00Z.md', 'First note.\n')
     put('self/page-history/2026-11-14T09-30-00Z.md', 'Second note.\n')
@@ -50,9 +50,10 @@ describe('/page/ (spec 9.7)', () => {
     renderSite(world, out)
     const html = page('page/index.html')
     // The file names are UTC; the page shows Merge's own time (Stockholm, an hour ahead in November).
-    expect(html).toContain('2026-11-15 11:00 (Europe/Stockholm)')
-    expect(html.indexOf('2026-11-15 11:00')).toBeLessThan(html.indexOf('2026-11-14 10:30'))
+    expect(html).toContain('2026-11-14 10:30 (Europe/Stockholm)')
     expect(html.indexOf('2026-11-14 10:30')).toBeLessThan(html.indexOf('2026-11-13 10:00'))
+    expect(html).not.toContain('2026-11-15 11:00')
+    expect(html.match(/Newest note\./g)).toHaveLength(1)
     expect(html).toContain('First note.')
     expect(html).toContain('Second note.')
   })
@@ -86,4 +87,31 @@ describe('/page/ (spec 9.7)', () => {
     expect(html).toContain('Real one.')
     expect(html).not.toContain('Stray file.')
   })
+
+  it('keeps every earlier version collapsed until someone opens it', () => {
+    put('self/page.md', 'Now.\n')
+    put('self/page-history/2026-11-13T09-00-00Z.md', 'First note.\n')
+    put('self/page-history/2026-11-14T09-30-00Z.md', 'Second note.\n')
+    renderSite(world, out)
+    const html = page('page/index.html')
+    expect(html.match(/<details/g)).toHaveLength(2)
+    expect(html).not.toMatch(/<details[^>]*\bopen\b/)
+  })
+
+  it('has no "Earlier versions" heading when the only copy is the current page', () => {
+    put('self/page.md', 'Only note.\n')
+    put('self/page-history/2026-11-13T09-00-00Z.md', 'Only note.\n')
+    renderSite(world, out)
+    const html = page('page/index.html')
+    expect(html).not.toContain('Earlier versions')
+    expect(html.match(/Only note\./g)).toHaveLength(1)
+  })
+
+  it('keeps a newest copy that differs from the current page (it was restored or edited by hand)', () => {
+    put('self/page.md', 'Restored note.\n')
+    put('self/page-history/2026-11-15T10-00-00Z.md', 'Newer note.\n')
+    renderSite(world, out)
+    expect(page('page/index.html')).toContain('Newer note.')
+  })
 })
+

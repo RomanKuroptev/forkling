@@ -37,6 +37,7 @@ const review: WeeklyReview = {
   aboutChanges: [{ what: 'wrote the first version', why: 'The week showed me what I keep doing.' }],
   longGoal: { action: 'continue', text: null, reason: 'It still pulls at me.' },
   renames: [{ kind: 'work', id: 'tide-pool-clock', name: 'Tide clock', reason: 'It is a tide, not a pool.' }],
+  request: 'Could I read one more site?\nIt keeps blocking me.',
 }
 
 function client() {
@@ -64,6 +65,7 @@ describe('the weekly review through a tick (spec 9.5)', () => {
     expect(copy).toContain('- wrote the first version: The week showed me what I keep doing.')
     expect(WorkMeta.parse(json('works/tide-pool-clock/meta.json'))).toMatchObject({ title: 'Tide clock', titleHistory: [{ from: 'Tide pool clock', reason: 'It is a tide, not a pool.' }] })
     expect(MindState.parse(json('mind/state.json')).lastWeeklyDate).toBe('2026-11-15')
+    expect(readFileSync(file('self/requests/2026-11-15.md'), 'utf8')).toBe('Could I read one more site?\nIt keeps blocking me.\n')
     expect(Goals.parse(json('mind/goals.json')).long?.reviewedAt).toBe(new Date(SUNDAY).toISOString())
   })
 

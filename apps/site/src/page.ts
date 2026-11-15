@@ -54,7 +54,9 @@ export const hasPage = (page: MergePage): boolean => page.current !== null || pa
 /** `/page/` (spec 9.7): the notes Merge keeps for itself, as they stand and every earlier version. Everything is shown as plain text. */
 export function renderPage(i: PageInput): void {
   if (!hasPage(i.page)) return
-  const { current, history } = i.page
+  const { current } = i.page
+  // The newest copy is the page as it stands, so it is not listed again as an earlier version.
+  const history = current && i.page.history[0]?.text === current ? i.page.history.slice(1) : i.page.history
   i.add('page/index.html', {
     title: 'Page',
     active: 'page/',

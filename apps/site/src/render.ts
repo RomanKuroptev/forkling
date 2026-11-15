@@ -11,6 +11,7 @@ import { SINCE_SCRIPT } from './since.ts'
 import { loadPlaces, placeChangeLookup, placeFeedItems, renderPlaces } from './places.ts'
 import { loadRequests, loadWishes, renderRequests } from './requests.ts'
 import { hasPage, loadPage, renderPage } from './page.ts'
+import { hasAbout, loadAbout, loadSelfRequests, renderAbout } from './self.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
 
 /** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
@@ -199,7 +200,9 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const requests = loadRequests(world)
   const wishes = loadWishes(world)
   const mergePage = loadPage(world)
-  const nav: [string, string][] = [...NAV, ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
+  const mergeAbout = loadAbout(world)
+  const selfRequests = loadSelfRequests(world)
+  const nav: [string, string][] = [...NAV, ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
   const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, ...input }))
 
   // Home: who it is, what it wants, what it is doing and why.
@@ -368,7 +371,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     readSouvenir: (id) => souvenirs.get(id) ?? null,
     add,
   })
-  renderRequests({ requests, wishes, places, add })
+  renderRequests({ requests, wishes, places, selfRequests, add })
+  renderAbout({ about: mergeAbout, add })
   renderPage({ page: mergePage, stamp: (iso) => localStamp(iso, forkling.timezone), add })
 
   // The feed (works shelved, diary entries) and the list of changes the home page panel reads (spec 8).

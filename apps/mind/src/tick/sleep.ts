@@ -130,7 +130,7 @@ async function rerun(t: Tick, rw: Rewrite): Promise<void> {
   if (t.asleep) return
   if (rw.triedAt && t.nowMs - Date.parse(rw.triedAt) < RETRY_EVERY_MS) return
   const user = prompt(t, rw.date)
-  const result = await t.ask('sleep', MODEL, user, SleepRewriteAnswer, SLEEP_OUTPUT_TOKENS)
+  const result = await t.ask('sleeplate', MODEL, user, SleepRewriteAnswer, SLEEP_OUTPUT_TOKENS)
   const answer = result?.parsed
   if (!result || !answer || stopFailure(result.stopReason, answer)) {
     t.notes.push('the sleep rewrite gave nothing usable as a normal call: trying again in 30 minutes')

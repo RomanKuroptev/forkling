@@ -175,6 +175,8 @@ export interface Tick {
   about: string
   /** Set when the weekly review rewrote about.md: written to `self/about.md` and copied, with the reasons, to `self/history/<date>.md`. */
   aboutWrite: { text: string; changes: { what: string; why: string }[]; at: string } | null
+  /** Set when the weekly review made a request to Roman: written to `self/requests/<date>.md` (spec 9.5). */
+  selfRequest: { date: string; body: string } | null
   /** `self/page.md` as the tick leaves it (spec 9.7). */
   page: string
   /** Set when the page changed this tick: written to `self/page.md` and kept in `self/page-history/`. */

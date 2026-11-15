@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { isOpenRequest, parseRequest, Wish, type Place, type PlaceRequest } from '@forkling/schema'
+import { isOpenRequest, parseRequest, Wish, type Place, type PlaceRequest, type SelfRequest } from '@forkling/schema'
 import { esc } from './md.ts'
 
 /** The place requests in `requests/`, oldest first. A file that does not fit, or whose id is not its file name, is left out. */
@@ -85,29 +85,35 @@ export interface RequestsInput {
   requests: readonly PlaceRequest[]
   wishes: readonly Wish[]
   places: readonly Place[]
+  /** What Merge asked Roman about its own setup in its weekly reviews (spec 9.5). */
+  selfRequests?: readonly SelfRequest[]
   add: (rel: string, input: { title: string; active: string; body: string }) => void
 }
 
 /** `/requests/` (spec 10.3): what Merge has asked Roman for and what became of it. Nothing is written when there is nothing to list. */
 export function renderRequests(i: RequestsInput): void {
-  if (i.requests.length === 0 && i.wishes.length === 0) return
+  const own = i.selfRequests ?? []
+  if (i.requests.length === 0 && i.wishes.length === 0 && own.length === 0) return
   const placeFor = (r: PlaceRequest) => (r.status === 'built' || r.status === 'self-built' ? i.places.find((p) => sameChunk(p.chunk, r.chunk)) : undefined)
 
   const item = (r: PlaceRequest) => {
     const place = placeFor(r)
     return [
       `<li class="request" data-request="${esc(r.id)}" data-status="${esc(r.status)}">`,
-      `<strong>${esc(r.name)}</strong> <span class="quiet">${esc(r.tags.join(', '))}</span>`,
+      `<strong>${esc(r.name)}</strong> <span class="quiet">${r.tags.length === 1 ? 'Topic' : 'Topics'}: ${esc(r.tags.join(', '))}</span>`,
       `<p><em>${esc(requestStatusWords(r))}</em>${place ? ` <a href="../places/${esc(place.id)}/">See the place.</a>` : ''}</p>`,
       ...(r.status === 'declined' && r.note ? [`<p class="reason"><strong>Roman’s reason:</strong> ${esc(r.note)}</p>`] : []),
       `<p>${esc(r.purpose)}</p>`,
       paragraphs(r.body),
       r.kind === 'gift'
         ? `<p class="quiet">Filed ${esc(day(r.written))}.</p>`
-        : `<p class="quiet">Asked on ${esc(day(r.written))}${r.statusAt ? `; answered ${esc(day(r.statusAt))}` : ''}. Behind it: ${r.souvenirs.length} ${r.souvenirs.length === 1 ? 'souvenir' : 'souvenirs'}.</p>`,
+        : `<p class="quiet">Asked on ${esc(day(r.written))}${r.statusAt ? `; answered ${esc(day(r.statusAt))}` : ''}.${r.souvenirs.length > 0 ? ` Based on ${r.souvenirs.length} ${r.souvenirs.length === 1 ? 'thing' : 'things'} it kept while reading.` : ''}</p>`,
       '</li>',
     ].join('')
   }
+
+  const ownItem = (r: SelfRequest) =>
+    `<li class="request" data-self-request="${esc(r.date)}"><strong>${esc(r.date)}</strong>${paragraphs(r.body)}<p><em>${r.answer ? `Roman answered: ${esc(r.answer)}` : 'No answer yet.'}</em></p></li>`
 
   const waiting = i.requests.filter(isOpenRequest).sort((a, b) => Number(b.status === 'building') - Number(a.status === 'building'))
   const answered = i.requests.filter((r) => !isOpenRequest(r)).reverse()
@@ -124,6 +130,13 @@ export function renderRequests(i: RequestsInput): void {
       '<p class="quiet">What Merge has asked Roman to build, in its own words, and what became of each. Nothing it asks for is promised. A request nobody answers in 7 days is built plainly by Merge from the kit.</p>',
       ...(waiting.length > 0 ? ['<h2>Waiting</h2>', `<ul class="requests">${waiting.map(item).join('')}</ul>`] : []),
       ...(answered.length > 0 ? ['<h2>Answered</h2>', `<ul class="requests">${answered.map(item).join('')}</ul>`] : []),
+      ...(own.length > 0
+        ? [
+            '<h2>Asked about its own setup</h2>',
+            '<p class="quiet">Once a week Merge may ask Roman about its own setup: one change to a limit, a site, a part the kit lacks or a rule. Nothing changes because of a request. Roman may answer, and Merge reads his answer the next week.</p>',
+            `<ul class="requests">${own.map(ownItem).join('')}</ul>`,
+          ]
+        : []),
       ...(i.wishes.length > 0 ? ['<h2>Wishes</h2>', '<p class="quiet">Things Merge wishes an existing place had: a part the kit lacks, or something made by hand.</p>', `<ul class="requests">${[...i.wishes].reverse().map(wishItem).join('')}</ul>`] : []),
     ].join('\n'),
   })

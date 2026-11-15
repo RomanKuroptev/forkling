@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BudgetLedger, Goals, MindState, TickLine, WorkMeta, type Health } from '@forkling/schema'
-import { buildHealth, type HealthContext } from '../src/health.ts'
+import { buildHealth, w7SpendWarning, type HealthContext } from '../src/health.ts'
 
 const T0 = Date.parse('2026-11-03T09:00:00Z')
 const iso = (min: number) => new Date(T0 + min * 60_000).toISOString()
@@ -243,3 +243,66 @@ describe('the place numbers in health (spec 12.3, 12.6: repeated place, stuck in
     expect(h.novelty?.works).toEqual({ made: 0, wouldFire: 0, byKind: {} })
   })
 })
+
+describe('the day\'s spend by kind (Roman: reflection and the sleep rewrite, batch and late booked apart)', () => {
+  const priced = (kind: string, usd: number, ok = true) => ({ kind, model: 'claude-sonnet-5-5', usd, ok })
+  it('adds up what each kind cost today, failed calls included (a refusal is billed)', () => {
+    const h = run([
+      { min: 0, line: { calls: [priced('reflection', 0.05), priced('sleep', 0.2)] } },
+      { min: 5, line: { calls: [priced('reflection', 0.04), priced('sleeplate', 0.4), priced('reflection', 0.03, false)] } },
+    ])
+    expect(h.today.spendByKind.reflection).toBeCloseTo(0.12)
+    expect(h.today.spendByKind.sleep).toBeCloseTo(0.2)
+    expect(h.today.spendByKind.sleeplate).toBeCloseTo(0.4)
+  })
+  it('starts again on a new day', () => {
+    const first = buildHealth(null, line(0, { calls: [priced('reflection', 0.05)] }), ctx(0))
+    const next = buildHealth(first, line(24 * 60, { calls: [priced('reflection', 0.01)] }), ctx(24 * 60, { today: '2026-11-04' }))
+    expect(next.today.spendByKind.reflection).toBeCloseTo(0.01)
+  })
+})
+
+describe('the W7 spend warning (Roman: warn if W7 pushes the month over $20)', () => {
+  const ledger = (over: Record<string, unknown>, byKind: Record<string, number> = {}) =>
+    BudgetLedger.parse({ month: '2026-11', serverUsd: 7, capUsd: 13, ...over, byKind: Object.fromEntries(Object.entries(byKind).map(([k, usd]) => [k, { calls: 1, input: 1, cacheRead: 0, cacheWrite: 0, output: 1, usd }])) })
+
+  it('warns when the month projects past $20 with the server, and W7 calls are part of it', () => {
+    const w = w7SpendWarning(ledger({ spentUsd: 5 }, { reflection: 1, sleep: 0.8, weekly: 0.2 }), '2026-11-10')
+    expect(w).toMatch(/W7 spend would pass \$20/)
+    expect(w).toMatch(/\$22/)
+  })
+  it('says nothing when the projection stays under $20', () => {
+    expect(w7SpendWarning(ledger({ spentUsd: 3 }, { reflection: 1 }), '2026-11-10')).toBeNull()
+  })
+  it('says nothing when W7 calls cost nothing: it is not W7 that pushes it (the pace warning is for that)', () => {
+    expect(w7SpendWarning(ledger({ spentUsd: 5 }, { decide: 5 }), '2026-11-10')).toBeNull()
+  })
+  it('waits for the third day of the month, when a projection means something', () => {
+    expect(w7SpendWarning(ledger({ spentUsd: 5 }, { reflection: 5 }), '2026-11-02')).toBeNull()
+    expect(w7SpendWarning(ledger({ spentUsd: 5 }, { reflection: 5 }), '2026-11-03')).not.toBeNull()
+  })
+  it('counts the server price: the same spend is fine with a cheap server', () => {
+    expect(w7SpendWarning(ledger({ spentUsd: 5, serverUsd: 2, capUsd: 18 }, { reflection: 1 }), '2026-11-10')).toBeNull()
+  })
+  it('shows in the health warnings', () => {
+    const h = buildHealth(null, line(0), ctx(0, { today: '2026-11-10', budget: ledger({ spentUsd: 5 }, { reflection: 1 }) }))
+    expect(h.warnings.some((w) => /W7 spend would pass \$20/.test(w))).toBe(true)
+  })
+})
+
+describe('the weekly health check in health (spec 9.6)', () => {
+  const day = 86_400_000
+  const week = (rows: [string, number][]) => rows.map(([verb, ago]) => ({ verb, at: new Date(T0 - ago * day).toISOString() }))
+  it('adds the weekly warnings from the week\'s steps, the wake moods and the builds', () => {
+    const steps = week([['wander', 1], ['wander', 1], ['wander', 2], ['wander', 2], ['wander', 3], ['wander', 3], ['tend', 5], ['rest', 6]])
+    const h = buildHealth(null, line(0), ctx(0, { week: { steps, builds: { total: 6, failed: 3 } }, mind: MindState.parse({ wakeMoods: [{ date: '2026-11-01', mood: -0.7 }, { date: '2026-11-02', mood: -0.8 }, { date: '2026-11-03', mood: -0.9 }] }) }))
+    expect(h.warnings.some((w) => /"wander"/.test(w))).toBe(true)
+    expect(h.warnings.some((w) => /no tend, expand/.test(w))).toBe(true)
+    expect(h.warnings.some((w) => /mood/.test(w))).toBe(true)
+    expect(h.warnings.some((w) => /3 of 6 builds/.test(w))).toBe(true)
+  })
+  it('adds nothing without the week\'s numbers, and only warns: nothing here changes Merge', () => {
+    expect(buildHealth(null, line(0), ctx(0)).warnings).toEqual([])
+  })
+})
+

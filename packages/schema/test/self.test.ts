@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_WANTS, MindState, Note, NotesHidden, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants, WeeklyReview, WorkMeta } from '../src/index.ts'
+import { MAX_WANTS, MindState, Note, NotesHidden, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants, WeeklyReview, WorkMeta, formatSelfRequest, parseSelfRequest } from '../src/index.ts'
 
 const want = {
   id: 'w1',
@@ -141,13 +141,40 @@ describe('Merge\'s own page in the answers (spec 9.7)', () => {
   })
 })
 
+describe('the request to Roman as a file (spec 9.5)', () => {
+  it('is the request, then a line from Roman if he answered', () => {
+    expect(formatSelfRequest({ body: 'Could I read one more site?' })).toBe('Could I read one more site?\n')
+    expect(formatSelfRequest({ body: 'Could I read one more site?', answer: 'Not yet.' })).toBe('Could I read one more site?\n\nRoman: Not yet.\n')
+  })
+  it('is read back: the date is the file name, the answer is what follows Roman:', () => {
+    const text = 'Could I read one more site?\nIt keeps blocking me.\n\nRoman: Not yet. Ask again after the run.\n'
+    expect(parseSelfRequest('2026-11-15', text)).toEqual({ date: '2026-11-15', body: 'Could I read one more site?\nIt keeps blocking me.', answer: 'Not yet. Ask again after the run.' })
+    expect(parseSelfRequest('2026-11-15', 'Just a request.\n')).toEqual({ date: '2026-11-15', body: 'Just a request.', answer: null })
+  })
+  it('takes an answer on several lines, and Roman: only at the start of a line', () => {
+    const text = 'I asked about Roman: the person.\n\nRoman: Line one.\nLine two.\n'
+    expect(parseSelfRequest('2026-11-15', text)).toMatchObject({ body: 'I asked about Roman: the person.', answer: 'Line one.\nLine two.' })
+  })
+  it('turns down a file that is not a request: no body, too many words, or a name that is not a date', () => {
+    expect(parseSelfRequest('2026-11-15', '\n\nRoman: only an answer\n')).toBeNull()
+    expect(parseSelfRequest('2026-11-15', `${Array(121).fill('word').join(' ')}\n`)).toBeNull()
+    expect(parseSelfRequest('notes', 'A request.\n')).toBeNull()
+  })
+})
+
 describe('WeeklyReview (spec 9.5)', () => {
   const review = {
     about: null,
     aboutChanges: [],
     longGoal: { action: 'continue', text: null, reason: 'Still what I want.' },
     renames: [],
+    request: null,
   }
+  it('carries one optional request to Roman, or null', () => {
+    expect(WeeklyReview.safeParse({ ...review, request: 'Could I read one more site?' }).success).toBe(true)
+    const { request: _request, ...missing } = review
+    expect(WeeklyReview.safeParse(missing).success).toBe(false)
+  })
   it('parses a quiet review: nothing to change', () => {
     expect(WeeklyReview.safeParse(review).success).toBe(true)
   })
