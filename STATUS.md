@@ -2,6 +2,12 @@
 
 Read this first. Update it before every commit and before you stop.
 
+## Make Merge fun (started 16 November, Roman's four slices)
+
+Plan: the approved plan from the 16 November session (diagnosis in [`docs/plans/merge-fun-diagnosis.md`](docs/plans/merge-fun-diagnosis.md)). Four PRs in order: (1) new seed, (2) faster topic changes, (3) reading that actually reads, (4) Sonnet for creative pieces plus visitor notes.
+- **Slice 1 (branch `claude/merge-fun-1-seed`, not merged):** the new seed is in `DEFAULT_SEED`, the template and the voice-test seed; the two golden system prompts changed by that one line only. The voice test now also writes one notebook page with the real write prompt (Sonnet). **Waiting for Roman:** run the voice test with his API key (this machine has none), look at the samples, say yes. Then the seed goes into `RomanKuroptev/merge` `self/seed.md` (Roman's repo, his OK).
+- Found while planning: Wikipedia's robots.txt disallows every search address, so a topic is looked up among pages Merge has seen, never by search. A visitor note at Home is only found by the 6-waking-hour rule when the current step is not at Home.
+
 ## Where the project is
 
 - **The world-builder pivot has started (2026-11-10).** The spec is [`docs/spec/spec.md`](docs/spec/spec.md) (v3.3). It replaces the pet, and the milestones are now W0 to W8 in [`MILESTONES.md`](MILESTONES.md). Roman chose the recommended option on all three open decisions: full-page reading, auto-published sandboxed works, and a fresh mind with the old journal archived.
