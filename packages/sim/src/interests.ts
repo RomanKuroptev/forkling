@@ -8,8 +8,8 @@ export const OBSESSION_END = 30
 /** How much of a full delta moves a weight, so a topic takes a few feedings to become anything. */
 const FEED_STEP = 40
 /** What is left of a weight after a day. Obsessions burn out faster, so they end unless something keeps feeding them. */
-const DAILY_KEEP = 0.92
-const OBSESSION_DAILY_KEEP = 0.8
+const DAILY_KEEP = 0.85
+const OBSESSION_DAILY_KEEP = 0.7
 const FORGET_BELOW = 5
 /** At most this many topics are kept; the lowest goes first (spec 3.1). */
 export const MAX_TOPICS = 40
@@ -22,6 +22,8 @@ const MAX_PAST = 30
 const MAX_TOPIC = 60
 /** Reading about an obsession feeds it less each day it has lasted, and not at all after this many days. */
 const OBSESSION_FEED_DAYS = 3
+/** An obsession ends after this many days at most, whatever its weight: a topic does not get to be the whole life for a week. */
+export const OBSESSION_MAX_DAYS = 3
 /** An obsession that ended may not start again on the same topic for this many days. */
 const RELAPSE_COOLDOWN_DAYS = 14
 const DAY_MS = 86_400_000
@@ -29,7 +31,7 @@ const DAY_MS = 86_400_000
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n))
 const round3 = (n: number) => Math.round(n * 1000) / 1000
 
-function foldWord(word: string): string {
+export function foldWord(word: string): string {
   if (word.length >= 5 && word.endsWith('ies')) return `${word.slice(0, -3)}y`
   if (word.length >= 5 && /(s|x|z|ch|sh)es$/.test(word)) return word.slice(0, -2)
   if (word.length >= 5 && word.endsWith('s') && !/(ss|us|is)$/.test(word)) return word.slice(0, -1)
@@ -169,13 +171,14 @@ function mergeTopics(interests: Interests): Interests {
 
 /**
  * Starts an obsession when a topic spikes (and has a known source to trace it to), ends one when its topic has burned
- * out, and keeps the ended ones as past phases. One change per call. Pure.
+ * out or it has lasted 3 days, and keeps the ended ones as past phases. One change per call. Pure.
  */
 export function updatePhases(interests: Interests, nowIso: string): Interests {
   const { current } = interests
   if (current) {
     const weight = interests.topics[current.topic]?.weight ?? 0
-    if (weight >= OBSESSION_END) return interests
+    const days = (Date.parse(nowIso) - Date.parse(current.startedAt)) / DAY_MS
+    if (weight >= OBSESSION_END && days < OBSESSION_MAX_DAYS) return interests
     return { ...interests, current: null, past: [...interests.past, { ...current, endedAt: nowIso }].slice(-MAX_PAST) }
   }
   let best: { topic: string; weight: number; origin: InterestSource } | null = null

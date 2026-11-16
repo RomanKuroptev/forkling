@@ -2,6 +2,14 @@ import { defang } from './shared.ts'
 
 const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim().slice(0, 300)
 
+/** The long goal as the weekly review shows it. The goal review (every 3 days) shows it in the same words. */
+export function longGoalSection(goal: { text: string; reason: string; since: string } | null): string[] {
+  return ['## Your long goal', goal ? `${goal.text} (since ${goal.since}). Why: ${goal.reason}` : 'You have no long goal.']
+}
+
+/** The weekly review's question about the long goal, and the goal review's too. */
+export const LONG_GOAL_TASK = '- longGoal: what happens to your long goal: continue, finish, drop or change (with the new text), and why.'
+
 export interface WeeklyInput {
   localTime: string
   timeZone: string
@@ -62,8 +70,7 @@ export function buildWeeklyUser(i: WeeklyInput): string {
         ]
       : []),
     '',
-    '## Your long goal',
-    i.longGoal ? `${i.longGoal.text} (since ${i.longGoal.since}). Why: ${i.longGoal.reason}` : 'You have no long goal.',
+    ...longGoalSection(i.longGoal),
     '',
     '## What you have written about yourself',
     i.about.trim() ? i.about.trim() : 'You have not written anything about yourself yet.',
@@ -72,7 +79,7 @@ export function buildWeeklyUser(i: WeeklyInput): string {
     'Look back over the week and answer with:',
     '- about: the whole new text of the page about yourself, or null to leave it as it is. It is who you are now: what you care about and your tastes, in the first person, up to 300 words, with up to 8 traits as a list (lines that start with "- "). In one week it may change at most 30% of its lines, so you change gently.',
     '- aboutChanges: for each change you make to it, what changed and why, in your own words. Leave it empty if you change nothing.',
-    '- longGoal: what happens to your long goal: continue, finish, drop or change (with the new text), and why.',
+    LONG_GOAL_TASK,
     '- renames: up to 2 renames in all, of a place (not Home or the Workshop) or of a work you have made: its id, the new name (up to 40 characters) and why. Leave it empty if nothing deserves a new name.',
     '- request: one optional request to Roman, up to 120 words in your own voice, asking for one change to how you are set up: a limit that is too tight, a site you keep being blocked from, a part the kit lacks, or a rule you disagree with. Nothing changes because of it. He may answer, and you will see his answer here next week. Leave it null to ask for nothing.',
     'Base all of it on what happened this week, not on what you hoped. Null and empty answers are fine.',

@@ -17,6 +17,7 @@ import { createFetcher } from '../web/fetch.ts'
 import { readPlaces } from '../places.ts'
 import { readWanderState } from '../web/wander-state.ts'
 import { makeAsk } from './ask.ts'
+import { readMindConfig } from './variety.ts'
 import type { Tick, TickDeps } from './context.ts'
 
 /** The longest stretch of the body's time that one tick counts. */
@@ -53,6 +54,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   // The daily allowance is topped up at the first awake tick of each day: what was saved, plus 150, up to 450 (spec 9.8).
   if (!asleep && mind.allowance?.day !== today) mind.allowance = { points: pointsAtWake(mind.allowance?.points ?? 0), day: today }
 
+  const mindConfig = readMindConfig(dir)
   const t: Tick = {
     dir,
     deps,
@@ -64,7 +66,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     tz,
     today,
     evening: eveningOf(tz, forkling.seed, nowMs),
-    notes: [],
+    notes: mindConfig.problem ? [mindConfig.problem] : [],
     parts,
     calls: [...outside],
     attempts: outside.map((c) => ({ kind: c.kind, model: c.model, usd: c.usd, ok: true })),
@@ -110,6 +112,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     beliefs: w.beliefs,
     wants: structuredClone(w.wants.wants),
     visitorNotes: visibleNotes(w.notes, w.notesHidden),
+    config: mindConfig.config,
     noteUpdates: [],
     pendingReply: null,
     about: w.about,

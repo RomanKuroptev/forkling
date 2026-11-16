@@ -65,6 +65,22 @@ describe('feedInterest', () => {
 })
 
 describe('fadeInterests', () => {
+  it('keeps 85% of an ordinary interest a day, and 70% of an obsession', () => {
+    let i = feedInterest(empty, { topic: 'moon', delta: 1, source: hn, nowIso: T0 })
+    i = feedInterest(i, { topic: 'tea', delta: 1, source: wiki, nowIso: T0 })
+    i = { ...i, topics: { moon: { ...i.topics.moon!, weight: 80 }, tea: { ...i.topics.tea!, weight: 80 } }, current: { topic: 'moon', startedAt: T0, origin: hn } }
+    const after = fadeInterests(i)
+    expect(after.topics.tea!.weight).toBeCloseTo(68, 3)
+    expect(after.topics.moon!.weight).toBeCloseTo(56, 3)
+  })
+
+  it('takes an unfed topic from 60 to under 30 in 5 days (it took 9 at 92%)', () => {
+    let i = feedInterest(empty, { topic: 'moon', delta: 1, source: hn, nowIso: T0 })
+    i = { ...i, topics: { moon: { ...i.topics.moon!, weight: 60 } } }
+    for (let n = 0; n < 5; n++) i = fadeInterests(i)
+    expect(i.topics.moon!.weight).toBeLessThan(30)
+  })
+
   it('lowers every weight, and lets go of what has faded away', () => {
     let i = feedInterest(empty, { topic: 'moon', delta: 1, source: hn, nowIso: T0 })
     const w = i.topics.moon!.weight
@@ -105,6 +121,18 @@ describe('updatePhases', () => {
   it('picks the strongest topic when several are over', () => {
     const i: Interests = { ...hot('a', 85), topics: { ...hot('a', 85).topics, b: { weight: 95, firstSeen: T0, lastFed: T0, sources: [wiki], history: [] } } }
     expect(updatePhases(i, T1).current?.topic).toBe('b')
+  })
+
+  it('ends an obsession after three days at most, however strong the topic still is', () => {
+    const i = { ...hot('logic gates', 99), current: { topic: 'logic gates', startedAt: T0, origin: hn } }
+    const day2 = new Date(Date.parse(T0) + 2.9 * 86_400_000).toISOString()
+    const day3 = new Date(Date.parse(T0) + 3 * 86_400_000).toISOString()
+    expect(updatePhases(i, day2).current?.topic).toBe('logic gates')
+    const ended = updatePhases(i, day3)
+    expect(ended.current).toBeNull()
+    expect(ended.past).toEqual([{ topic: 'logic gates', startedAt: T0, origin: hn, endedAt: day3 }])
+    // The same topic does not start again at once (the relapse cooldown), though it is still at 99.
+    expect(updatePhases(ended, day3).current).toBeNull()
   })
 
   it('keeps an obsession going while the topic is still above the end mark', () => {
@@ -174,7 +202,7 @@ describe('an obsession cannot feed itself', () => {
     expect(fresh.topics.moss!.weight).toBeCloseTo(40, 3)
   })
 
-  it('burns out within a week even if it is read about four times every day', () => {
+  it('is over within three days even if it is read about four times every day', () => {
     let i = obsessed()
     let endedOn = -1
     for (let d = 1; d <= 12 && endedOn < 0; d++) {
@@ -183,7 +211,7 @@ describe('an obsession cannot feed itself', () => {
       if (!i.current) endedOn = d
     }
     expect(endedOn).toBeGreaterThan(0)
-    expect(endedOn).toBeLessThanOrEqual(8)
+    expect(endedOn).toBeLessThanOrEqual(3)
     expect(i.past.at(-1)?.topic).toBe('logic gates')
   })
 })
@@ -219,7 +247,7 @@ describe('the same topic under another spelling', () => {
     expect(merged.topics.octopus!.lastFed).toBe(T1)
     expect(merged.topics.octopus!.sources.map((x) => x.id)).toEqual(['hn:1', 'wiki:Logic_gate'])
     // 90 together, less a day's fade.
-    expect(merged.topics.octopus!.weight).toBeCloseTo(90 * 0.92, 2)
+    expect(merged.topics.octopus!.weight).toBeCloseTo(90 * 0.85, 2)
   })
 })
 

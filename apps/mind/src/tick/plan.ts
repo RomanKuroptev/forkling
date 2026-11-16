@@ -7,6 +7,7 @@ import { dropRepeatedStarts } from '../web/rails.ts'
 import { expandablePlaces } from './expand.ts'
 import { foundGate } from './found.ts'
 import { intentionSeed } from './util.ts'
+import { readWrittenPages, varietyFor } from './variety.ts'
 
 const MAX_RECENT = 20
 
@@ -31,6 +32,12 @@ const mindStepOf = (s: PlanStep): MindStep => ({
 /** The ids of the places the plan may name: the place files, or Home and the Workshop in a world that has none yet. */
 export const placeIds = (t: Pick<Tick, 'places'>): string[] => (t.places.length > 0 ? t.places.map((p) => p.id) : [...STARTING_PLACES])
 
+/** The variety switches that are on, or nothing. The pages are read only when a switch needs them. */
+function withVariety(t: Tick): { variety?: MindPlanContext['variety'] } {
+  const variety = varietyFor(t.config, (days) => readWrittenPages(t.dir, t.today, days), t.mind.recent)
+  return variety ? { variety } : {}
+}
+
 /** What the plan check needs to know that is not in the plan: the day, the mood, the points in hand, what exists. */
 export function planContext(t: Tick): MindPlanContext {
   return {
@@ -48,6 +55,7 @@ export function planContext(t: Tick): MindPlanContext {
     recent: t.mind.recent,
     used: { repliesToday: t.mind.replies?.date === t.today ? t.mind.replies.count : 0, sketchesToday: t.mind.sketches?.date === t.today ? t.mind.sketches.count : 0, foundThisWeek: foundsInWeek(t.mind.founds ?? [], t.nowMs) },
     lastExpandedPlace: t.mind.lastExpandedPlace ?? null,
+    ...withVariety(t),
   }
 }
 

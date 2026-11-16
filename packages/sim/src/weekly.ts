@@ -25,6 +25,24 @@ export interface WeeklyDueInput {
   lastTriedMs: number | null
 }
 
+/** The long goal is looked at again this many days after it was last reviewed, so it cannot stand unreviewed until a Sunday. */
+export const GOAL_REVIEW_DAYS = 3
+
+export interface GoalReviewDueInput {
+  nowMs: number
+  asleep: boolean
+  /** When the long goal was last reviewed (or set), or null when there is no long goal. */
+  reviewedAt: string | null
+  lastTriedMs: number | null
+}
+
+/** Whether the long goal should be looked at now: awake, there is one, it was last reviewed 3 days ago or more, and no try gave nothing in the last 30 minutes. Pure. */
+export function goalReviewDue(i: GoalReviewDueInput): boolean {
+  if (i.asleep || i.reviewedAt === null) return false
+  if (i.nowMs - Date.parse(i.reviewedAt) < GOAL_REVIEW_DAYS * 86_400_000) return false
+  return i.lastTriedMs === null || i.nowMs - i.lastTriedMs >= WEEKLY_RETRY_MS
+}
+
 /**
  * Whether the weekly review should run now: Sunday from 20:00 until Merge goes to bed, once a Sunday, and not within 30 minutes
  * of a try that gave nothing. A Sunday that is missed altogether is missed; the next is a week away. Pure.

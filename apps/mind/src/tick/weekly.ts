@@ -1,12 +1,13 @@
 import { kit } from '@forkling/schema/kit'
-import { Health, WeeklyReview, WorkMeta } from '@forkling/schema'
-import { checkAbout, MAX_REVIEW_RENAMES, neglectFor, validatePlacePatch, weeklyDue, WEEKLY_RETRY_MS } from '@forkling/sim'
+import { Health, LongGoalReview, WeeklyReview, WorkMeta } from '@forkling/schema'
+import { checkAbout, goalReviewDue, MAX_REVIEW_RENAMES, neglectFor, validatePlacePatch, weeklyDue, WEEKLY_RETRY_MS } from '@forkling/sim'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { readWorks } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
 import { claimsHuman, wordCount } from '../honesty.ts'
 import { stopFailure } from '../llm.ts'
+import { buildGoalReviewUser, GOAL_REVIEW_MAX_TOKENS } from '../prompts/goal-review.ts'
 import { buildWeeklyUser, type WeeklyInput } from '../prompts/weekly.ts'
 import { readSelfRequests } from '../self-requests.ts'
 import { readTimelineSince } from '../stream.ts'
@@ -95,6 +96,45 @@ export async function weeklyStep(t: Tick): Promise<void> {
   mind.lastWeeklyDate = t.today
   delete mind.weeklyTriedAt
   t.parts.push('weekly review')
+}
+
+const MAX_GOAL_STEP_LINES = 15
+const GOAL_REVIEW_STEP_DAYS = 3
+
+/**
+ * The long goal is looked at every 3 days, not only on Sunday (it stood unreviewed from its first hour). One Sonnet call asks the
+ * weekly review's own question about the goal: continue, finish, drop or change, and why. Code only runs it at the right time and
+ * applies the answer by the weekly review's rules (`applyLongGoal`). Merge may keep its goal, but the reason is kept in its memory
+ * either way. A Sunday review that has just looked at the goal in this tick is not followed by another look.
+ */
+export async function goalReviewStep(t: Tick): Promise<void> {
+  const { mind } = t
+  const long = t.goals.long
+  if (!long || t.parts.includes('weekly review')) return
+  if (!goalReviewDue({ nowMs: t.nowMs, asleep: t.asleep, reviewedAt: long.reviewedAt, lastTriedMs: mind.goalReviewTriedAt ? Date.parse(mind.goalReviewTriedAt) : null })) return
+
+  const steps = readTimelineSince(t.dir, t.today, GOAL_REVIEW_STEP_DAYS).slice(-MAX_GOAL_STEP_LINES)
+  const user = buildGoalReviewUser({
+    localTime: `${weekday(t.tz, t.nowMs)} ${t.today} ${clock(t.tz, t.nowMs)}`,
+    timeZone: t.tz,
+    longGoal: { text: long.text, reason: long.reason, since: long.setAt.slice(0, 10), reviewed: long.reviewedAt.slice(0, 10) },
+    steps: steps.map((s) => `${s.at.slice(0, 10)} ${s.verb}${s.targetId ? ` ${s.targetId}` : ''}: ${s.reason}`),
+    interests: Object.entries(t.interests.topics)
+      .sort((a, b) => b[1].weight - a[1].weight)
+      .slice(0, 10)
+      .map(([topic, i]) => `${topic} (${Math.round(i.weight)})`),
+  })
+  const result = await t.ask('goalreview', 'claude-sonnet-5-5', user, LongGoalReview, GOAL_REVIEW_MAX_TOKENS)
+  const parsed = LongGoalReview.safeParse(result?.parsed)
+  if (!result || !parsed.success || stopFailure(result.stopReason, result.parsed)) {
+    if (!t.deps.dryRun) t.notes.push(`the long goal review gave nothing usable: trying again in ${WEEKLY_RETRY_MS / 60_000} minutes`)
+    mind.goalReviewTriedAt = t.nowIso
+    return
+  }
+  applyLongGoal(t, parsed.data)
+  if (parsed.data.action === 'continue') t.remember.push({ at: t.nowIso, kind: 'event', text: clampText(`I looked at my long goal and kept it: ${parsed.data.reason.trim() || 'It is still what I want.'}`, 300) })
+  delete mind.goalReviewTriedAt
+  t.parts.push('reviewed the long goal')
 }
 
 /** The one optional request to Roman (spec 9.5): up to 120 words in Merge's voice. It is kept as a file and shown on `/requests/`; nothing changes because of it. */
