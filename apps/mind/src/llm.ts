@@ -97,13 +97,23 @@ export function requestParams(request: LlmRequest) {
 }
 
 /** The real thing. Reads `ANTHROPIC_API_KEY` (or whatever the SDK finds) from the environment. */
-export function anthropicClient(): LlmClient {
-  const client = new Anthropic()
+export function anthropicClient(client: Anthropic = new Anthropic()): LlmClient {
   const params = requestParams
   return {
     async complete<T>(request: LlmRequest<T>): Promise<LlmResult<T>> {
-      const response = await client.messages.parse(params(request))
-      return { parsed: (response.parsed_output as T | null | undefined) ?? null, stopReason: response.stop_reason, usage: usageOf(response.usage) }
+      // `messages.parse` throws when the answer stops in the middle of its JSON, and then neither the stop reason nor the cost
+      // gets back (a tend that ran out of tokens showed as "call failed" and was never booked). So the text is parsed here, as
+      // a batch result is: a cut-off answer is a null with its stop reason and usage.
+      const response = await client.messages.create(params(request))
+      const text = response.content.flatMap((block) => (block.type === 'text' ? [block.text] : [])).join('')
+      let parsed: T | null = null
+      try {
+        const checked = request.schema.safeParse(JSON.parse(text))
+        parsed = checked.success ? checked.data : null
+      } catch {
+        parsed = null
+      }
+      return { parsed, stopReason: response.stop_reason, usage: usageOf(response.usage) }
     },
     async submitBatch(request) {
       const batch = await client.messages.batches.create({ requests: [{ custom_id: BATCH_REQUEST_ID, params: params(request) }] })
