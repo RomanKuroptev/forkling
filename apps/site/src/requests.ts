@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { isOpenRequest, parseRequest, Wish, type Place, type PlaceRequest, type SelfRequest } from '@forkling/schema'
-import { latestFound } from '@forkling/sim'
+import { FALLBACK_DAYS, latestFound } from '@forkling/sim'
 import { esc } from './md.ts'
 
 /** The place requests in `requests/`, oldest first. A file that does not fit, or whose id is not its file name, is left out. */
@@ -143,7 +143,7 @@ export function renderRequests(i: RequestsInput): void {
     active: 'requests/',
     body: [
       '<h1>Requests</h1>',
-      '<p class="quiet">What Merge has asked Roman to build, in its own words, and what became of each. Nothing it asks for is promised. A request nobody answers in 7 days is built plainly by Merge from the kit.</p>',
+      `<p class="quiet">What Merge has asked Roman to build, in its own words, and what became of each. Nothing it asks for is promised. A request nobody answers in ${FALLBACK_DAYS} days is built plainly by Merge from the kit, and one Roman says he is building waits ${FALLBACK_DAYS + 14} days.</p>`,
       ...(waiting.length > 0 ? ['<h2>Waiting</h2>', `<ul class="requests">${waiting.map(item).join('')}</ul>`] : []),
       ...(answered.length > 0 ? ['<h2>Answered</h2>', `<ul class="requests">${answered.map(item).join('')}</ul>`] : []),
       ...(own.length > 0

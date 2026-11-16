@@ -246,6 +246,14 @@ describe('what /requests/ claims (it never says more than the files do)', () => 
     expect(item('late-gift')).toMatch(/Filed 2026-11-21/)
   })
 
+  it('says both waits in its intro: 7 days, and 21 once Roman says he is building it', () => {
+    putRequest({ id: 'a-open', name: 'A Open' })
+    render()
+    const intro = /<p class="quiet">What Merge has asked[^<]*<\/p>/.exec(page('requests/index.html'))?.[0] ?? ''
+    expect(intro).toMatch(/7 days/)
+    expect(intro).toMatch(/21 days/)
+  })
+
   it('lists the requests Merge is waiting on with Roman building first, then the answered ones newest first', () => {
     putRequest({ id: 'a-open', name: 'A Open', written: '2026-11-10T10:00:00Z', chunk: [4, 0] })
     putRequest({ id: 'b-building', name: 'B Building', written: '2026-11-11T10:00:00Z', status: 'building', statusAt: '2026-11-12T10:00:00Z', chunk: [5, 0] })
