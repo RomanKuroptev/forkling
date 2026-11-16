@@ -89,11 +89,12 @@ describe('templates/forkling-world', () => {
     expect(existsSync(join(dir, 'brain/persona.md'))).toBe(false)
   })
 
-  it('wakes the mind on a schedule and on visitor events, one run at a time, from a pinned engine', () => {
+  it('wakes the mind on a schedule, one run at a time, from a pinned engine', () => {
     const workflow = readFileSync(join(root, 'forkling-world', '.github/workflows/mind.yml'), 'utf8')
     // Off the busy :00 and :30 marks, and under 10 so the hourly sleeping-hours tick still lands on it.
     expect(workflow).toMatch(/cron: '[3-9]-59\/10 \* \* \* \*'/)
-    expect(workflow).toMatch(/repository_dispatch:\s+types: \[visitor-event\]/)
+    // Visitor events are gone (W7): nothing sends a dispatch, and notes reach Merge through the server.
+    expect(workflow).not.toMatch(/repository_dispatch|visitor-event/)
     expect(workflow).toMatch(/concurrency:\s+group: mind\s+cancel-in-progress: false/)
     expect(workflow).toMatch(/FORKLING_REF: v\d+\.\d+\.\d+\s/)
     expect(workflow).toMatch(/contents: write/)

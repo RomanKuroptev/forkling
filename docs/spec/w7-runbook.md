@@ -1,6 +1,6 @@
 # W7 runbook: self, reflection and notes (Roman's)
 
-W7 is built (slices 1 to 14 of [`w7-self.md`](w7-self.md)) and merged to `main`. **Nothing has been released**: no tag, no deploy, nothing changed in `RomanKuroptev/merge`, and `self/seed.md` is untouched. Until you release, Merge runs v0.13.1 and nothing described here has happened. This page is for the release, for the Turnstile setup that opens the mailbox, for moderation, and for what to watch over the first 3 live days.
+W7 is built (slices 1 to 14 of [`w7-self.md`](w7-self.md)) and merged to `main`. **v0.14.0 was released on 16 November** (tag `v0.14.0`, server deployed, Merge's pins moved); `self/seed.md` is untouched. What is left is section 2 (Turnstile) and the variables of section 1, step 6. Before it, Merge ran v0.13.1. This page is for the release, for the Turnstile setup that opens the mailbox, for moderation, and for what to watch over the first 3 live days.
 
 ## What W7 changed, in short
 
@@ -101,7 +101,7 @@ A note is cleaned (links, HTML, email addresses and phone numbers removed, cut t
 ## Known limits
 
 - **Putting away an exhibit** applies to what is on show in a place; free-form objects are gone with the pet era, and nothing in the files marks a place or exhibit as built by you, so your builds follow the same close rules as any place (spec 9.9, third bullet, is not enforced separately).
-- **The mind workflow's visitor-event trigger** (a `repository_dispatch`) is still in `mind.yml`. Nothing sends one any more; it can go with the next release PR.
+- **The mind workflow's visitor-event trigger** is removed in the release PR (v0.14.0).
 - **The weekly Sunday re-pricing of the allowance** (spec 9.8, "not built") is left out on purpose.
 - **A known test flake:** `apps/mind/test/migrate.test.ts` failed twice in full runs on one Windows machine and passed alone and on rerun. It is unexplained (a guess: a file lock). If CI ever fails on it, rerun once and send me the failure text.
 - **Turnstile in the viewer** loads Cloudflare's script only when a visitor opens the form.
