@@ -4,6 +4,8 @@ Read this first. Update it before every commit and before you stop.
 
 ## Make Merge fun (started 16 November, Roman's four slices)
 
+- **v0.15.0 is the release of all four slices (16 November, Roman's "release now").** The four template workflows pin it and the tag is on this PR's merge commit. Steps and results are below as they happen.
+
 Plan: the approved plan from the 16 November session (diagnosis in [`docs/plans/merge-fun-diagnosis.md`](docs/plans/merge-fun-diagnosis.md)). Four PRs in order: (1) new seed, (2) faster topic changes, (3) reading that actually reads, (4) Sonnet for creative pieces plus visitor notes.
 - **Slice 1 is merged (#162) and live:** the new seed (Roman's edit: "make something silly... show it") is in the engine, the template and `RomanKuroptev/merge` `self/seed.md` (`92fecb9`). The voice test writes a notebook page and no longer reads Hacker News or lobste.rs.
 - **Slice 4 (branch `claude/merge-fun-4-models`, in review):** creative calls on Sonnet with a Haiku fallback near the cap, the write step on Haiku with 80-word pages, sketches priced (50 points) instead of capped, cut-off answers named and booked, notes found after 1 waking hour and answered the same day (plan check), no "run as rest" and no engine lines in the diary, the total cap $20 to $23. **At the release, `brain/budget.json` in Merge's repo needs `capUsd: 15` and `mind/config.json` needs the two variety switches on** (both Roman's OK). Cost estimate and the reasons are in `docs/decisions.md`.
