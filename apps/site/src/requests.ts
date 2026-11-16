@@ -145,7 +145,7 @@ export function renderRequests(i: RequestsInput): void {
       '<h1>Requests</h1>',
       `<p class="quiet">What Merge has asked Roman to build, in its own words, and what became of each. Nothing it asks for is promised. A request nobody answers in ${FALLBACK_DAYS} days is built plainly by Merge from the kit, and one Roman says he is building waits ${FALLBACK_DAYS + 14} days.</p>`,
       ...(waiting.length > 0 ? ['<h2>Waiting</h2>', `<ul class="requests">${waiting.map(item).join('')}</ul>`] : []),
-      ...(answered.length > 0 ? ['<h2>Answered</h2>', `<ul class="requests">${answered.map(item).join('')}</ul>`] : []),
+      ...(answered.length > 0 ? ['<h2>Settled</h2>', `<ul class="requests">${answered.map(item).join('')}</ul>`] : []),
       ...(own.length > 0
         ? [
             '<h2>Asked about its own setup</h2>',

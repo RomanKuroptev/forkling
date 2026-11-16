@@ -254,6 +254,16 @@ describe('what /requests/ claims (it never says more than the files do)', () => 
     expect(intro).toMatch(/21 days/)
   })
 
+  it('calls the section of requests that are no longer waiting "Settled", not "Answered"', () => {
+    putRequest({ id: 'a-open', name: 'A Open' })
+    putRequest({ id: 'c-built', name: 'C Built', status: 'declined', statusAt: '2026-11-19T10:00:00Z', note: 'No.', chunk: [9, 0] })
+    render()
+    const html = page('requests/index.html')
+    expect(html).toContain('<h2>Waiting</h2>')
+    expect(html).toContain('<h2>Settled</h2>')
+    expect(html).not.toMatch(/<h2>Answered<\/h2>/)
+  })
+
   it('lists the requests Merge is waiting on with Roman building first, then the answered ones newest first', () => {
     putRequest({ id: 'a-open', name: 'A Open', written: '2026-11-10T10:00:00Z', chunk: [4, 0] })
     putRequest({ id: 'b-building', name: 'B Building', written: '2026-11-11T10:00:00Z', status: 'building', statusAt: '2026-11-12T10:00:00Z', chunk: [5, 0] })
