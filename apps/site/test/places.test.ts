@@ -103,6 +103,26 @@ describe('/places/<id>/ (the place as a page)', () => {
     expect(history.indexOf('Put the fog on the shelf.')).toBeLessThan(history.indexOf('Given to Merge before it woke.'))
     expect(home).toMatch(/Back to the places|href="\.\.\/"/)
   })
+  describe('the grey line under a place: topics, when it was founded, its upkeep (the place id is never shown there)', () => {
+    const meta = (id: string) => /<p class="quiet">([^<]*Founded[^<]*)<\/p>/.exec(page(`places/${id}/index.html`))?.[1] ?? ''
+
+    it('leaves out a tag that is the place id, as Home and the Workshop have', () => {
+      render()
+      expect(meta('home')).toMatch(/^Founded /)
+      expect(meta('home')).not.toMatch(/home/i)
+      expect(meta('workshop')).toMatch(/^Founded /)
+    })
+
+    it('keeps the topics that are not the id, and drops only the id', () => {
+      putPlace('lantern-hall', { name: 'Lantern Hall', chunk: [1, 0], offset: [0, 0], tags: ['lantern-hall', 'lidar'], founded: '2026-11-18' })
+      putPlace('bell-tower', { name: 'Bell Tower', chunk: [2, 0], offset: [0, 0], tags: ['bells', 'ringing'], founded: '2026-11-18' })
+      render()
+      expect(meta('lantern-hall')).toMatch(/^lidar\. Founded 2026-11-18\./)
+      expect(meta('lantern-hall')).not.toMatch(/lantern-hall/)
+      expect(meta('bell-tower')).toMatch(/^bells, ringing\. Founded 2026-11-18\./)
+    })
+  })
+
   it('shows a souvenir with its words, why, and its source as a link, and an image with its credit and licence', () => {
     render()
     const home = page('places/home/index.html')

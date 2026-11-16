@@ -18,3 +18,24 @@ export function readRequests(dir: string): PlaceRequest[] {
       }
     })
 }
+
+/**
+ * The files in `requests/` that `readRequests` leaves out: one that does not fit (CRLF line endings, a status set by hand with no
+ * `statusAt`, a decline with no note) or whose id is not its name. The health file warns about them, so a hand edit never makes a
+ * request vanish without a word.
+ */
+export function unreadableRequests(dir: string): string[] {
+  const folder = join(dir, 'requests')
+  if (!existsSync(folder)) return []
+  return readdirSync(folder)
+    .filter((f) => f.endsWith('.md'))
+    .sort()
+    .filter((f) => {
+      try {
+        const request = parseRequest(readFileSync(join(folder, f), 'utf8'))
+        return !(request && `${request.id}.md` === f)
+      } catch {
+        return true
+      }
+    })
+}

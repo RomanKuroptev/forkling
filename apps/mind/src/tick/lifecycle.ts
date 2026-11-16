@@ -1,5 +1,5 @@
 import { PlaceRequest, isOpenRequest, type Place, type Wish } from '@forkling/schema'
-import { capHistory } from '@forkling/sim'
+import { capHistory, GIFT_LINE, KIT_BUILT_LINE, PLACE_LIMITS, ROMAN_BUILT_LINE } from '@forkling/sim'
 import { readRequests } from '../requests.ts'
 import { readWishes } from '../wishes.ts'
 import { requestId } from '../builds/found.ts'
@@ -21,7 +21,10 @@ const sameChunk = (a: readonly [number, number], b: readonly [number, number]) =
  * The life of a request, a wish and a place Roman builds (spec 10.3), looked at once a tick, before the builders' results are taken in:
  * - A place that lands in the world (a file the mind has not seen) starts 6 hours of waking time of construction (unless Roman set
  *   one), gets a history line that says who had the idea and who built it, and answers the request staked on its chunk (that request
- *   becomes `built`); with no such request it is filed as a gift. Merge is told once.
+ *   becomes `built`); with no such request it is filed as a gift. Merge is told once. The history line that says who built it is the
+ *   engine's: a `found` line the place file arrived with is dropped.
+ * - Roman's full build over the plain kit place the fallback made (same chunk, the kit line gone from its history) answers the
+ *   request too: it becomes `built`, and the place keeps both lines, the kit one and then Roman's.
  * - A status Roman sets on a request or a wish is told to the next decide call once, with his words as data and never as an
  *   instruction (the trigger line names only the place and the status).
  * - A wish with no status 30 days after it was written closes as `unanswered`, and Merge may wish again.
@@ -53,20 +56,40 @@ export function lifecycleStep(t: Tick): void {
     if (placeIds.length > 0) mind.placesSeen = placeIds
   } else {
     const seen = new Set(mind.placesSeen)
-    for (const place of t.places.filter((p) => !seen.has(p.id))) landPlace(place)
+    const landed = new Set<string>()
+    for (const place of t.places.filter((p) => !seen.has(p.id))) {
+      landed.add(place.id)
+      landPlace(place)
+    }
+    // Roman's full build: a place on a self-built request's chunk that no longer says the kit built it.
+    for (const r of requests.filter((x) => x.kind === 'place' && x.status === 'self-built')) {
+      const place = t.places.find((p) => seen.has(p.id) && !landed.has(p.id) && sameChunk(p.chunk, r.chunk))
+      if (place && !place.history.some((h) => h.verb === 'found' && h.summary === KIT_BUILT_LINE)) landPlace(place, r)
+    }
     mind.placesSeen = placeIds
   }
 
-  function landPlace(place: Place): void {
-    const match = requests.find((r) => sameChunk(r.chunk, place.chunk) && (isOpenRequest(r) || r.status === 'built'))
+  /** The history of a place that lands: what it brought, minus any founding line of its own, plus the engine's, in time order. */
+  function landedHistory(place: Place, match: PlaceRequest | undefined, asked: boolean): Place['history'] {
+    const lines = place.history.filter((h) => h.verb !== 'found')
+    // The plain version the fallback made came first, and Roman's build is the one that stands now: both stay written down.
+    if (match?.status === 'self-built') lines.push({ at: match.statusAt ?? match.written, verb: 'found', summary: KIT_BUILT_LINE })
+    lines.push({ at: t.nowIso, verb: 'found', summary: asked ? ROMAN_BUILT_LINE : GIFT_LINE })
+    return capHistory(
+      lines.sort((a, b) => Date.parse(a.at) - Date.parse(b.at)),
+      PLACE_LIMITS.historyMax,
+    )
+  }
+
+  function landPlace(place: Place, forced?: PlaceRequest): void {
+    const match = forced ?? requests.find((r) => sameChunk(r.chunk, place.chunk) && (isOpenRequest(r) || r.status === 'built' || r.status === 'self-built'))
     const asked = match?.kind === 'place'
-    const history = { at: t.nowIso, verb: 'found' as const, summary: asked ? 'Asked for by Merge, built by Roman with Claude Code.' : 'A gift from Roman.' }
     const construction = place.state.construction ?? { kind: 'found' as const, finishesAt: constructionEnd(t, FOUND_CONSTRUCTION_MS) }
-    const landed: Place = { ...place, state: { ...place.state, construction }, history: capHistory([...place.history, history], 50) }
+    const landed: Place = { ...place, state: { ...place.state, construction }, history: landedHistory(place, match, asked) }
     t.placeUpdates.push(landed)
     t.places = t.places.map((p) => (p.id === landed.id ? landed : p))
 
-    if (match && isOpenRequest(match)) {
+    if (match && match.status !== 'built') {
       t.newRequests.push(PlaceRequest.parse({ ...match, status: 'built', statusAt: t.nowIso }))
     } else if (!match) {
       const taken = new Set([...requests.map((r) => r.id), ...t.newRequests.map((r) => r.id)])

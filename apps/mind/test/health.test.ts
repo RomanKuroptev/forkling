@@ -348,3 +348,18 @@ describe('the rest of the novelty block (spec 12.6): texts, doors, the one host,
     expect(busy.warnings.join(' ')).not.toMatch(/repeat|door|similar|diary|writing/i)
   })
 })
+
+describe('request files that do not fit (a warning, so a hand edit never makes a request vanish silently)', () => {
+  it('warns with the file names, and says nothing when every file fits', () => {
+    const warnings = buildHealth(null, line(0), ctx(0, { badRequests: ['lantern-hall.md', 'bell-tower.md'] })).warnings
+    expect(warnings.join(' ')).toMatch(/request file.*does not fit.*lantern-hall\.md.*bell-tower\.md/)
+    expect(buildHealth(null, line(0), ctx(0, { badRequests: [] })).warnings.join(' ')).not.toMatch(/request file/)
+    expect(buildHealth(null, line(0), ctx(0)).warnings.join(' ')).not.toMatch(/request file/)
+  })
+
+  it('keeps the warning inside the limit however many files there are', () => {
+    const many = Array.from({ length: 40 }, (_, i) => `request-number-${i}.md`)
+    const w = buildHealth(null, line(0), ctx(0, { badRequests: many })).warnings.find((x) => /request file/.test(x))!
+    expect(w.length).toBeLessThanOrEqual(200)
+  })
+})

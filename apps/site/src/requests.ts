@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { isOpenRequest, parseRequest, Wish, type Place, type PlaceRequest, type SelfRequest } from '@forkling/schema'
+import { FALLBACK_DAYS, latestFound } from '@forkling/sim'
 import { esc } from './md.ts'
 
 /** The place requests in `requests/`, oldest first. A file that does not fit, or whose id is not its file name, is left out. */
@@ -37,8 +38,11 @@ export function loadWishes(world: string): Wish[] {
     .sort((a, b) => a.written.localeCompare(b.written) || a.id.localeCompare(b.id))
 }
 
-/** What a request's status means, in plain words. A gift is always filed built, and says whose idea it was. */
-export function requestStatusWords(r: Pick<PlaceRequest, 'kind' | 'status'>): string {
+/**
+ * What a request's status means, in plain words. A gift is always filed built, and says whose idea it was. "Built by Roman" is only
+ * said when a place stands on the chunk (`placeStands`): a status set by hand with nothing built is just "Marked built.".
+ */
+export function requestStatusWords(r: Pick<PlaceRequest, 'kind' | 'status'>, placeStands = true): string {
   if (r.kind === 'gift') return 'A gift from Roman.'
   switch (r.status) {
     case 'open':
@@ -46,11 +50,11 @@ export function requestStatusWords(r: Pick<PlaceRequest, 'kind' | 'status'>): st
     case 'building':
       return 'Roman says he is building it.'
     case 'built':
-      return 'Built by Roman with Claude Code.'
+      return placeStands ? 'Built by Roman with Claude Code.' : 'Marked built.'
     case 'declined':
       return 'Roman declined.'
     case 'self-built':
-      return 'Built by Merge from the kit, because no one answered in time.'
+      return 'Built by Merge from the kit when the time was up.'
     case 'withdrawn':
       return 'Merge took it back.'
   }
@@ -65,14 +69,23 @@ const WISH_WORDS: Record<Wish['status'], string> = {
   withdrawn: 'Merge took it back.',
 }
 
-/** Who had a place's idea and who built it, from the line the engine wrote when it was founded. Never guessed. */
+/** Who had a place's idea and who built it, from the newest founding line the engine wrote (the build that stands now). Never guessed. */
 export function provenanceOf(place: Pick<Place, 'history'>): string {
-  const found = place.history.find((h) => h.verb === 'found')
+  const found = latestFound(place.history)
   return found ? found.summary : 'Who had the idea and who built it is not written down.'
 }
 
 const sameChunk = (a: readonly [number, number], b: readonly [number, number]) => a[0] === b[0] && a[1] === b[1]
-const day = (iso: string) => iso.slice(0, 10)
+/** A moment as `2026-11-21`, in the forkling's own time zone like the rest of its site. */
+const dayIn = (iso: string, tz: string): string => {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10)
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d)
+  } catch {
+    return iso.slice(0, 10)
+  }
+}
 const paragraphs = (text: string) =>
   text
     .split(/\n\s*\n/)
@@ -85,6 +98,8 @@ export interface RequestsInput {
   requests: readonly PlaceRequest[]
   wishes: readonly Wish[]
   places: readonly Place[]
+  /** The forkling's IANA time zone, for the dates. UTC when not given. */
+  timezone?: string
   /** What Merge asked Roman about its own setup in its weekly reviews (spec 9.5). */
   selfRequests?: readonly SelfRequest[]
   add: (rel: string, input: { title: string; active: string; body: string }) => void
@@ -93,6 +108,7 @@ export interface RequestsInput {
 /** `/requests/` (spec 10.3): what Merge has asked Roman for and what became of it. Nothing is written when there is nothing to list. */
 export function renderRequests(i: RequestsInput): void {
   const own = i.selfRequests ?? []
+  const day = (iso: string) => dayIn(iso, i.timezone ?? 'UTC')
   if (i.requests.length === 0 && i.wishes.length === 0 && own.length === 0) return
   const placeFor = (r: PlaceRequest) => (r.status === 'built' || r.status === 'self-built' ? i.places.find((p) => sameChunk(p.chunk, r.chunk)) : undefined)
 
@@ -101,13 +117,13 @@ export function renderRequests(i: RequestsInput): void {
     return [
       `<li class="request" data-request="${esc(r.id)}" data-status="${esc(r.status)}">`,
       `<strong>${esc(r.name)}</strong> <span class="quiet">${r.tags.length === 1 ? 'Topic' : 'Topics'}: ${esc(r.tags.join(', '))}</span>`,
-      `<p><em>${esc(requestStatusWords(r))}</em>${place ? ` <a href="../places/${esc(place.id)}/">See the place.</a>` : ''}</p>`,
+      `<p><em>${esc(requestStatusWords(r, place !== undefined))}</em>${place ? ` <a href="../places/${esc(place.id)}/">See the place.</a>` : ''}</p>`,
       ...(r.status === 'declined' && r.note ? [`<p class="reason"><strong>Roman’s reason:</strong> ${esc(r.note)}</p>`] : []),
       `<p>${esc(r.purpose)}</p>`,
       paragraphs(r.body),
       r.kind === 'gift'
         ? `<p class="quiet">Filed ${esc(day(r.written))}.</p>`
-        : `<p class="quiet">Asked on ${esc(day(r.written))}${r.statusAt ? `; answered ${esc(day(r.statusAt))}` : ''}.${r.souvenirs.length > 0 ? ` Based on ${r.souvenirs.length} ${r.souvenirs.length === 1 ? 'thing' : 'things'} it kept while reading.` : ''}</p>`,
+        : `<p class="quiet">Asked on ${esc(day(r.written))}${r.statusAt ? `; last changed ${esc(day(r.statusAt))}` : ''}.${r.souvenirs.length > 0 ? ` Based on ${r.souvenirs.length} ${r.souvenirs.length === 1 ? 'thing' : 'things'} it kept while reading.` : ''}</p>`,
       '</li>',
     ].join('')
   }
@@ -127,9 +143,9 @@ export function renderRequests(i: RequestsInput): void {
     active: 'requests/',
     body: [
       '<h1>Requests</h1>',
-      '<p class="quiet">What Merge has asked Roman to build, in its own words, and what became of each. Nothing it asks for is promised. A request nobody answers in 7 days is built plainly by Merge from the kit.</p>',
+      `<p class="quiet">What Merge has asked Roman to build, in its own words, and what became of each. Nothing it asks for is promised. A request nobody answers in ${FALLBACK_DAYS} days is built plainly by Merge from the kit, and one Roman says he is building waits ${FALLBACK_DAYS + 14} days.</p>`,
       ...(waiting.length > 0 ? ['<h2>Waiting</h2>', `<ul class="requests">${waiting.map(item).join('')}</ul>`] : []),
-      ...(answered.length > 0 ? ['<h2>Answered</h2>', `<ul class="requests">${answered.map(item).join('')}</ul>`] : []),
+      ...(answered.length > 0 ? ['<h2>Settled</h2>', `<ul class="requests">${answered.map(item).join('')}</ul>`] : []),
       ...(own.length > 0
         ? [
             '<h2>Asked about its own setup</h2>',

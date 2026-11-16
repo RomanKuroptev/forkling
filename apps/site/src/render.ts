@@ -380,7 +380,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     readSouvenir: (id) => souvenirs.get(id) ?? null,
     add,
   })
-  renderRequests({ requests, wishes, places, selfRequests, add })
+  renderRequests({ requests, wishes, places, selfRequests, timezone: forkling.timezone, add })
   renderAbout({ about: mergeAbout, add })
   const endpoint = notesEndpoint(opts.mindUrl)
   const siteKey = validSiteKey(opts.turnstileSiteKey)
