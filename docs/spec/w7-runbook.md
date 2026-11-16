@@ -15,6 +15,8 @@ W7 is built (slices 1 to 14 of [`w7-self.md`](w7-self.md)) and merged to `main`.
 
 ## 1. The release (a stop, and yours)
 
+**Do not hand-edit `brain/budget.json` (or any file the server writes) in Merge's repo while the server is awake.** The server commits and `pull --rebase`s every 15 minutes, and its commits change `spentUsd` right next to `capUsd`, so an edit to the cap makes every rebase conflict and the server shows `push failing` until the cap line is reverted (16 November, v0.15.0). Change the cap while Merge sleeps and has nothing unpushed, then check `/health`.
+
 **Time it for the day.** Release **during the day** (your rule of 15 November): after the night's sleep rewrite has been collected and before bedtime. A batch that is in flight when the new engine starts is not read by it, so a release overnight would lose that night's rewrite (a few cents and a diary entry).
 
 1. **Read the prompt diff once more.** `git diff v0.13.1 -- apps/mind/test/golden/system.txt` should show only the lines you approved in W7: the reply verb line (slice 9), the page block (slice 6, `system-with-page.txt`), the tend line (slices 12 and 12b: closing a place and putting an exhibit away) and any wording of wants and notes. The new call prompts are the files `golden/user-reflection.txt`, `user-sleep.txt`, `user-weekly.txt`, `user-reply.txt` and `user-decide-notes.txt`.
