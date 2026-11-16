@@ -101,7 +101,7 @@ A note is cleaned (links, HTML, email addresses and phone numbers removed, cut t
 ## Known limits
 
 - **Putting away an exhibit** applies to what is on show in a place; free-form objects are gone with the pet era, and nothing in the files marks a place or exhibit as built by you, so your builds follow the same close rules as any place (spec 9.9, third bullet, is not enforced separately).
-- **The mind workflow's visitor-event trigger** (a `repository_dispatch`) is still in `mind.yml`. Nothing sends one any more; it can go with the next release PR.
+- **The mind workflow's visitor-event trigger** is removed in the release PR (v0.14.0).
 - **The weekly Sunday re-pricing of the allowance** (spec 9.8, "not built") is left out on purpose.
 - **A known test flake:** `apps/mind/test/migrate.test.ts` failed twice in full runs on one Windows machine and passed alone and on rerun. It is unexplained (a guess: a file lock). If CI ever fails on it, rerun once and send me the failure text.
 - **Turnstile in the viewer** loads Cloudflare's script only when a visitor opens the form.
