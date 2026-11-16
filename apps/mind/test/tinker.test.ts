@@ -318,6 +318,12 @@ describe('runTinker: a meme (spec 7.7)', () => {
     expect(buildTinkerUser(input())).toMatch(/not looked at any picture|no page/i)
   })
 
+  it('offers a format it read as the format of a meme when it has looked at no picture, and says the picture was not looked at', () => {
+    const t = buildTinkerUser(input({ memeSeeds: { looked: [], read: [{ url: 'https://imgflip.com/meme/1', title: 'Drake' }], formats: [{ url: 'https://imgflip.com/meme/1', title: 'Drake', what: 'A man says no, then yes.' }] } }))
+    expect(t).not.toMatch(/cannot make a meme/i)
+    expect(t).toContain('looked | https://imgflip.com/meme/1 | Drake | a format you read about, not a picture you looked at: A man says no, then yes.')
+  })
+
   it('shelves a meme whose sources are pages it looked at and read, and the check is told it is a meme', async () => {
     const { checker, pages } = fakeChecker([{ ok: true }])
     const out = await runTinker(deps(fakeComplete([answer(output({ kind: 'meme', sources: good }))]).complete, checker), input({ memeSeeds: seeds }))

@@ -159,6 +159,10 @@ export const MindState = z.object({
   trips: z.object({ date: z.iso.date(), reads: z.number().int().nonnegative(), trips: z.number().int().nonnegative(), looks: z.number().int().nonnegative().default(0), starts: z.array(z.string().max(300)).max(60) }).optional(),
   /** Trips by day and how many started through a stranger's door, the last 7 days (spec 12.3, 12.6). */
   doorDays: z.array(z.object({ date: z.iso.date(), trips: z.number().int().nonnegative(), strangers: z.number().int().nonnegative() })).max(7).default([]),
+  /** The pages Merge was shown links to on trips and front pages, newest last, at most 100: a topic is matched with a real title from here, never invented into an address. */
+  seen: z.array(z.object({ title: z.string().max(200), url: z.string().max(500) })).max(100).default([]),
+  /** Today's starting points (front-page links and 3 doors), kept for the day so a replan after the morning can still name them. */
+  points: z.object({ date: z.iso.date(), list: z.array(z.object({ title: z.string().max(200), url: z.string().max(500), door: z.boolean() })).max(30) }).optional(),
   /** The day the boredom event was last written (spec 12.4 item 8), so it comes at most once a day. */
   boredom: z.object({ date: z.iso.date() }).optional(),
   /** Things made so far on a local date, for the daily limit. */

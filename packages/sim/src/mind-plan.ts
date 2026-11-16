@@ -54,6 +54,17 @@ export interface VarietyContext {
   sameWorkTinker?: { limit: number; recent: readonly string[] }
 }
 
+/**
+ * Today's starting points (front-page links and doors), when they are known: at least one trip a day starts from one of them, not
+ * from a topic Merge chose (Roman, 16 November: five days of trips all began as its own interests typed in as titles).
+ */
+export interface StartingPointsContext {
+  /** Whether a wander target is one of today's starting points (an address). */
+  isPoint(target: string): boolean
+  /** Whether a trip today has already started from one. */
+  takenToday: boolean
+}
+
 export interface MindPlanContext {
   /** When the first step starts, and when it is bed time. */
   startMs: number
@@ -76,6 +87,7 @@ export interface MindPlanContext {
   used: { repliesToday: number; sketchesToday: number; foundThisWeek: number }
   lastExpandedPlace: string | null
   variety?: VarietyContext
+  points?: StartingPointsContext
 }
 
 export type MindPlanResult = { ok: true; steps: MindStep[] } | { ok: false; reasons: string[] }
@@ -86,6 +98,8 @@ const MAX_REASON = 140
 /** The wants list is allowed to start empty: until it holds this many, a step need not point at one. */
 export const COLD_START_WANTS = 3
 const NO_NEW_STEP_BEFORE_BED_MS = 45 * 60_000
+/** The starting-point rule is not asked in the last hours of the day: a trip needs time. */
+const STARTING_POINT_MIN_LEFT_MS = 3 * 3_600_000
 const MAX_REPLIES_PER_DAY = 5
 const MAX_SKETCHES_PER_DAY = 3
 export const MAX_FOUND_PER_WEEK = 1
@@ -211,6 +225,14 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
     }
     reasons.push(...here)
   })
+
+  if (c.points && !c.points.takenToday && c.bedMs - c.startMs >= STARTING_POINT_MIN_LEFT_MS) {
+    const wanders = steps.map((s, i) => ({ s, i })).filter(({ s }) => s.verb === 'wander')
+    if (!wanders.some(({ s }) => c.points!.isPoint(s.target?.trim() ?? ''))) {
+      const ask = 'today no trip has started from one of the starting points (listed above, with the doors), and at least one a day does: start a wander from one of them, by its address, not from a topic you chose'
+      reasons.push(wanders.length > 0 ? `step ${wanders[0]!.i + 1}: ${ask}` : `the plan has no wander, and ${ask}`)
+    }
+  }
 
   const valid = steps.filter((s): s is MindStep => isVerb(s.verb))
   const cost = planCost(valid)

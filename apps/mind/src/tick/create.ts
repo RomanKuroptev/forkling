@@ -131,7 +131,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     wander: readWanderState(dir, today),
     sources: w.sources,
     pendingTrip: null,
-    startingPoints: [],
+    startingPoints: mind.points?.date === today ? mind.points.list : [],
     newTrails: [],
     newSouvenirs: [],
     newWorks: [],

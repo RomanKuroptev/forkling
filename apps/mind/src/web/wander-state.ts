@@ -49,3 +49,12 @@ export function readWanderState(dir: string, today: string): WanderState {
     })
   return { readRecently: (url) => recent.has(url), souvenirs, trailsToday }
 }
+
+/** The trails of the last `days` days (today included), oldest first, for what the write step is told about what it read. */
+export function readTrailsSince(dir: string, today: string, days: number): Trail[] {
+  const cutoff = new Date(Date.parse(`${today}T00:00:00Z`) - (days - 1) * DAY_MS).toISOString().slice(0, 10)
+  return files(dir, 'trails').flatMap((file) => {
+    const trail = parse(dir, 'trails', file, Trail)
+    return trail && trail.date >= cutoff ? [trail] : []
+  })
+}

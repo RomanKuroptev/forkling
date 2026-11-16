@@ -259,3 +259,40 @@ describe('the variety switches (spec 12.3), when Roman has turned them on', () =
     expect(r.join('\n')).toMatch(/step 3: you have made the same work 2 times in a row/)
   })
 })
+
+describe("one trip a day from a starting point (Roman's rule, not a switch)", () => {
+  const door = 'https://en.wikipedia.org/wiki/Moon'
+  const points = (takenToday = false) => ({ isPoint: (target: string) => target === door || target === 'https://esolangs.org/wiki/Befunge', takenToday })
+  const fromPoint = wander({ target: door })
+  const fromTopic = wander({ target: 'logic gates' })
+
+  it('does nothing when no starting points are known (a replan with none offered)', () => {
+    expect(reasons([fromTopic, write(), rest()], ctx())).toEqual([])
+  })
+
+  it('asks for a wander that starts from one of the starting points when none has yet today, and names the step', () => {
+    const r = reasons([fromTopic, write(), rest()], ctx({ points: points() }))
+    expect(r).toHaveLength(1)
+    expect(r[0]).toMatch(/step 1: .*starting points/)
+  })
+
+  it('accepts the plan once any wander starts from one, in any position', () => {
+    expect(reasons([fromTopic, write(), fromPoint], ctx({ points: points() }))).toEqual([])
+    expect(reasons([fromPoint, write(), rest()], ctx({ points: points() }))).toEqual([])
+  })
+
+  it('asks for one when the plan has no wander at all', () => {
+    const r = reasons([write(), rest(), write({ target: 'workshop' })], ctx({ points: points() }))
+    expect(r.join('\n')).toMatch(/no wander.*starting points/)
+  })
+
+  it('is satisfied by a trip already taken today', () => {
+    expect(reasons([fromTopic, write(), rest()], ctx({ points: points(true) }))).toEqual([])
+    expect(reasons([write(), rest(), write({ target: 'workshop' })], ctx({ points: points(true) }))).toEqual([])
+  })
+
+  it('does not ask late in the day, when fewer than 3 hours are left', () => {
+    const late = ctx({ points: points(), startMs: BED - 2 * HOUR })
+    expect(reasons([write(), rest(), write({ target: 'workshop' })], late).join('\n')).not.toMatch(/starting points/)
+  })
+})

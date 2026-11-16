@@ -3,7 +3,7 @@ import { MIND_VERBS, daysSinceCare, foundsInWeek, stepCost, validateMindPlan, ty
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
-import { dropRepeatedStarts } from '../web/rails.ts'
+import { dropRepeatedStarts, startKey } from '../web/rails.ts'
 import { expandablePlaces } from './expand.ts'
 import { foundGate } from './found.ts'
 import { intentionSeed } from './util.ts'
@@ -38,6 +38,16 @@ function withVariety(t: Tick): { variety?: MindPlanContext['variety'] } {
   return variety ? { variety } : {}
 }
 
+/**
+ * Today's starting points, when there are any: the plan must have a trip that starts from one unless one already has (`trips.starts`
+ * holds the key of every start today). With none known (a world with no web, or the front pages down) there is nothing to ask for.
+ */
+function withPoints(t: Tick): { points?: NonNullable<MindPlanContext['points']> } {
+  if (t.startingPoints.length === 0) return {}
+  const keys = new Set(t.startingPoints.map((p) => startKey(p.url)))
+  return { points: { isPoint: (target) => keys.has(startKey(target)), takenToday: (t.trips.date === t.today ? t.trips.starts : []).some((k) => keys.has(k)) } }
+}
+
 /** What the plan check needs to know that is not in the plan: the day, the mood, the points in hand, what exists. */
 export function planContext(t: Tick): MindPlanContext {
   return {
@@ -56,6 +66,7 @@ export function planContext(t: Tick): MindPlanContext {
     used: { repliesToday: t.mind.replies?.date === t.today ? t.mind.replies.count : 0, sketchesToday: t.mind.sketches?.date === t.today ? t.mind.sketches.count : 0, foundThisWeek: foundsInWeek(t.mind.founds ?? [], t.nowMs) },
     lastExpandedPlace: t.mind.lastExpandedPlace ?? null,
     ...withVariety(t),
+    ...withPoints(t),
   }
 }
 

@@ -5,6 +5,7 @@ import type { Tick } from './context.ts'
 import { readRecentPast } from '../past.ts'
 import { moodWords, openPlaceRequests, PRICES } from '@forkling/sim'
 import { expandablePlaces } from './expand.ts'
+import { unreadSeen } from '../web/lookup.ts'
 import { foundGate, foundableInterest } from './found.ts'
 import { checkPlan, placeIds } from './plan.ts'
 import { clock, weekday } from './util.ts'
@@ -46,6 +47,7 @@ export async function think(t: Tick): Promise<void> {
     interests: t.interests,
     past: readRecentPast(t.dir, t.today, t.w.art),
     startingPoints: t.startingPoints,
+    seenPages: unreadSeen(t.mind.seen ?? [], { not: t.startingPoints.map((p) => p.url), readRecently: t.wander.readRecently }),
     notes: noteLines(t),
   })
   let asking = user

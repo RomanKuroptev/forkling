@@ -234,6 +234,32 @@ describe('when a page cannot be read', () => {
     expect(b.trail.pages.map((p) => p.title)).toEqual(['Lighthouse', 'Lighthouse 2'])
   })
 
+  it("goes on from a start it read lately by one of that page's links, and not by a link it read lately too", async () => {
+    const recent = new Set([`${wiki}/Lighthouse`, `${wiki}/Lighthouse_1`])
+    const s = setup({
+      pages: { [`${wiki}/Lighthouse`]: page('Lighthouse'), [`${wiki}/Lighthouse_2`]: page('Lighthouse_2') },
+      reads: [read({}, { answer: null, skipped: 'read in the last 30 days' }), read({ next: null })],
+      known: { souvenirs: [], readRecently: (url) => recent.has(url) },
+    })
+    const r = await runTrip(s.deps, s.start)
+    expect(s.opened).toEqual([`${wiki}/Lighthouse`, `${wiki}/Lighthouse_2`])
+    expect(r.reads).toBe(1)
+    expect(r.trail.pages.map((p) => [p.title, p.failed ? 'failed' : 'read'])).toEqual([['Lighthouse', 'failed'], ['Lighthouse 2', 'read']])
+  })
+
+  it('does not follow links from a start that was skipped for being too short', async () => {
+    const s = setup({ pages: { [`${wiki}/Lighthouse`]: page('Lighthouse') }, reads: [read({}, { answer: null, skipped: 'a page under 300 words (12)' })] })
+    const r = await runTrip(s.deps, s.start)
+    expect(s.opened).toEqual([`${wiki}/Lighthouse`])
+    expect(r.reads).toBe(0)
+  })
+
+  it('hands back the links it was shown, for the pages Merge has seen', async () => {
+    const s = setup({ pages: { [`${wiki}/Lighthouse`]: page('Lighthouse') }, reads: [read({ next: null })] })
+    const r = await runTrip(s.deps, s.start)
+    expect(r.seen).toEqual([1, 2, 3].map((n) => ({ title: `Lighthouse link ${n}`, url: `${wiki}/Lighthouse_${n}` })))
+  })
+
   it('ends the trip, with a note, when the read call gave nothing usable', async () => {
     const s = setup({ pages: { [`${wiki}/Lighthouse`]: page('Lighthouse') }, reads: [{ answer: null, souvenir: {}, usd: 0, note: 'over the budget' }] })
     const r = await runTrip(s.deps, s.start)

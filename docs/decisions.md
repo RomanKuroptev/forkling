@@ -2,6 +2,16 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+## 2026-11-16: Reading that actually reads (make Merge fun, slice 3)
+All 20 trips began as Merge's own interests typed in as Wikipedia titles. Several were 404s ("Absurd_rigorous_joke_papers", "Multi-directional_shading"), and it then wrote pages as if it had read them. So:
+- **No search, no invented addresses.** Wikipedia's robots.txt disallows every search route (`/w/`, `/api/`, `/wiki/Special:`), and Merge never ignores robots.txt. A topic is matched with the titles of pages Merge has really been shown links to (a ring of the last 100 in `mind/state.json`: `seen`), then tried as the Wikipedia page of that name. If neither is a page, the trip says "found nothing to read".
+- **The write step is told what it read.** Before, it never saw trails. Now it is shown the pages it really read (in a data block), or told plainly that it read nothing ("Do not write as if you had read about it"), or, for a target no trip was about, that it has not read about it. A place target gets nothing.
+- **One trip a day starts from a starting point or a door**, not a topic Merge chose: a plan check (not a switch) asks for it when none has started from one today and 3 or more hours remain. Today's points are kept in `mind/state.json` (`points`) so a replan can still name them. The system prompt lists starting points first and a topic last.
+- **A page read in the last 30 days is a way in:** the trip goes on from its links, not ends with nothing.
+- **Memes become possible.** A meme had to cite a picture Merge looked at, and Merge never asks to look. An Imgflip format whose record page it read on a trip now counts as the format (role looked); the meme still carries no picture (the work check). Only formats read on a trip count (not merely offered), so the pull-request check can see the same trails later.
+- **The planner is shown 12 real page titles** it could go to (seen, not read lately, not already a starting point).
+**Why:** the honesty rule ("validators reject... souvenirs that don't match their source") had a hole: a failed trip was recorded as a normal one and the write step could not see it.
+
 ## 2026-11-16: Topics change faster, and two variety rules are enforced (make Merge fun, slice 2)
 Merge spent five days on one subject (about eight titles, all lidar or elevation), so four things changed:
 - **The long goal is looked at every 3 days**, not only on Sunday. One Sonnet call asks the weekly review's own question about the goal (continue, finish, drop or change, and why). It may keep the goal, but it says why, and the reason goes into its memory. (The Sunday review had never run: it first shipped in v0.14.0, after the 15th. The first one is Sunday 22 November.)

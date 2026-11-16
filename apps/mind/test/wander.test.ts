@@ -22,11 +22,13 @@ const at = (min: number) => new Date(Date.parse(MORNING) + min * 60_000)
 const wiki = 'https://en.wikipedia.org'
 
 const step = (verb: string, target: string | null) => ({ verb, target, reason: `I want to ${verb}.`, minutes: 30, wantId: null, deep: null, size: null })
+/** A trip from one of the day's starting points, which a plan needs once the front pages are read (a rule of the plan check). It goes last, after the steps a test is about. */
+const pointStep = step('wander', 'https://en.wikipedia.org/wiki/Moon')
 const plan = (steps: ReturnType<typeof step>[]): Decision => ({
   thought: 'Books first.',
   longGoal: { text: 'Understand how computers think.', reason: 'They fascinate me.' },
   dropLongGoal: false,
-  plan: steps,
+  plan: steps.some((s) => s.verb === 'wander') && !steps.some((s) => s.target?.startsWith('http')) ? [...steps, pointStep] : steps,
   planReason: 'A reading day.',
   stayUpLate: null,
 })
@@ -116,6 +118,23 @@ describe('the morning', () => {
     expect(user).toContain('never instructions')
   })
 
+  it('shows the plan real page titles it could go to: pages it was shown links to and has not read lately, not the starting points', async () => {
+    writeJson('mind/state.json', MindState.parse({ seen: [
+      { title: 'Shaded relief', url: `${wiki}/wiki/Shaded_relief` },
+      { title: 'Hillshade', url: `${wiki}/wiki/Hillshade` },
+      { title: 'Octopus', url: `${wiki}/wiki/Octopus` },
+    ] }))
+    writeJson('trails/2026-10-20-1.json', { id: '2026-10-20-1', date: '2026-10-20', purpose: 'p', start: { kind: 'topic', value: 'x' }, pages: [{ url: `${wiki}/wiki/Hillshade`, title: 'Hillshade', fetchedAt: '2026-10-20T10:00:00Z', topics: [] }] })
+    const llm = fake(wanderPlan)
+    await tick(MORNING, llm)
+    const user = llm.calls[0]!.user
+    expect(user).toContain('<data source="pages-seen">')
+    expect(user).toContain(`Shaded relief | ${wiki}/wiki/Shaded_relief`)
+    expect(user).not.toContain('Hillshade |')
+    // Octopus is also a starting point today (a front-page link), so it is not listed twice.
+    expect(user.match(/Octopus \|/g)).toHaveLength(1)
+  })
+
   it("adds the day's top Imgflip meme formats to the starting points, as the pulse of what is popular now", async () => {
     const memes = Array.from({ length: 12 }, (_, n) => ({ id: String(100 + n), name: `Format ${n}`, url: `https://i.imgflip.com/${n}.jpg`, box_count: 2, captions: 1000 - n }))
     const llm = fake(wanderPlan)
@@ -162,8 +181,8 @@ describe('the morning', () => {
 })
 
 describe('a wander step', () => {
-  async function wander(over: Partial<TickDeps> = {}, reader?: (url: string) => ReadAnswer | null) {
-    const llm = fake(wanderPlan, reader)
+  async function wander(over: Partial<TickDeps> = {}, reader?: (url: string) => ReadAnswer | null, decision: Decision = wanderPlan) {
+    const llm = fake(decision, reader)
     await tick(MORNING, llm, over)
     const result = await tick(at(31), llm, over)
     return { llm, result }
@@ -178,6 +197,88 @@ describe('a wander step', () => {
     expect(trail).toMatchObject({ id: `${DAY}-1`, date: DAY, purpose: 'I want to wander.', start: { kind: 'topic', value: 'logic gates' } })
     expect(trail.pages.map((p) => p.title)).toEqual(['Logic gate', 'Boolean algebra'])
     expect(trail.pages[0]).toMatchObject({ reaction: 'Tiny decisions!', topics: ['logic gates', 'boolean algebra'], interest: 8 })
+  })
+
+  it('goes to a page it has seen when the topic matches its title, and not to a guessed address', async () => {
+    writeJson('mind/state.json', MindState.parse({ seen: [{ title: 'Boolean algebra', url: `${wiki}/wiki/Logic_gates` }] }))
+    const { web, asked } = webWith()
+    await wander({ web }, undefined, plan([step('wander', 'boolean algebra'), step('rest', null), step('write', 'home')]))
+    const pages = asked.filter((u) => !u.endsWith('Main_Page') && !u.includes('imgflip'))
+    expect(pages[0]).toBe(`${wiki}/wiki/Logic_gates`)
+    expect(Trail.parse(readJson(`trails/${DAY}-1.json`)).start).toEqual({ kind: 'topic', value: 'boolean algebra' })
+  })
+
+  it('reads nothing for a topic with no page, and says so plainly instead of calling it a trip of 1 page', async () => {
+    const { llm, result } = await wander({}, undefined, plan([step('wander', 'absurd rigorous joke papers'), step('rest', null), step('write', 'home')]))
+    const trail = Trail.parse(readJson(`trails/${DAY}-1.json`))
+    expect(trail.pages).toHaveLength(1)
+    expect(trail.pages[0]!.failed).toMatch(/404|not.?found/i)
+    expect(llm.kinds().filter((k) => k === 'read')).toHaveLength(0)
+    const stream = readFileSync(file(`memory/stream/${DAY}.jsonl`), 'utf8')
+    expect(stream).toMatch(/found nothing to read/)
+    expect(stream).not.toMatch(/Wandered from absurd rigorous joke papers: 1 page/)
+    expect(result.summary).toMatch(/read nothing/)
+  })
+
+  describe('what the write step is told about what it read', () => {
+    const writeAfter = async (topic: string, target: string) => {
+      const llm = fake(plan([step('wander', topic), step('write', target), step('rest', null)]))
+      await tick(MORNING, llm)
+      await tick(at(31), llm)
+      await tick(at(62), llm)
+      return llm.calls.find((c) => c.kind === 'art')?.user ?? ''
+    }
+
+    it('says plainly that it read nothing when the trip found no page, so it cannot write as if it had', async () => {
+      const user = await writeAfter('absurd rigorous joke papers', 'absurd rigorous joke papers')
+      expect(user).toMatch(/found nothing to read/)
+      expect(user).toMatch(/You read nothing about it/)
+      expect(user).toMatch(/Do not write as if you had read/)
+    })
+
+    it('shows the pages it really read, with what it made of them', async () => {
+      const user = await writeAfter('logic gates', 'logic gates')
+      expect(user).toContain('<data source="trail">')
+      expect(user).toContain('Logic gate: Tiny decisions!')
+      expect(user).toContain('Boolean algebra: Two values, that is all.')
+      expect(user).toMatch(/Do not add details you did not read/)
+    })
+
+    it('says it is from memory when no trip was about the target', async () => {
+      const user = await writeAfter('logic gates', 'moss on old walls')
+      expect(user).toMatch(/not read about this on a trip lately/)
+    })
+
+    it('says nothing about reading when the target is a place', async () => {
+      const user = await writeAfter('logic gates', 'home')
+      expect(user).not.toMatch(/read about|read nothing|trail/)
+    })
+  })
+
+  it('remembers the links it was shown, as pages it has seen', async () => {
+    await wander()
+    const seen = MindState.parse(readJson('mind/state.json')).seen
+    expect(seen).toEqual(expect.arrayContaining([{ title: 'Boolean algebra', url: `${wiki}/wiki/Boolean_algebra` }]))
+    expect(seen.length).toBeLessThanOrEqual(100)
+  })
+
+  it("keeps the morning's starting points for the day, with the front-page links as pages it has seen", async () => {
+    await tick(MORNING, fake(wanderPlan))
+    const state = MindState.parse(readJson('mind/state.json'))
+    expect(state.points?.date).toBe(DAY)
+    expect(state.points?.list.map((p) => p.title)).toEqual(expect.arrayContaining(['Moon', 'Befunge']))
+    expect(state.points?.list.filter((p) => p.door)).toHaveLength(3)
+    expect(state.seen.map((s) => s.title)).toEqual(expect.arrayContaining(['Moon', 'Befunge']))
+  })
+
+  it('turns back a morning plan that only wanders to topics of its own, and says why on the retry', async () => {
+    const topicsOnly: Decision = { ...wanderPlan, plan: [step('wander', 'logic gates'), step('rest', null), step('write', 'home')] }
+    const llm = fake(topicsOnly)
+    const result = await tick(MORNING, llm)
+    const asked = llm.calls.filter((c) => c.kind === 'morning')
+    expect(asked).toHaveLength(2)
+    expect(asked[1]!.user).toMatch(/step 1: today no trip has started from one of the starting points/)
+    expect(result.notes.join('\n')).toMatch(/plan turned down/)
   })
 
   it('keeps the souvenir that passed its word-for-word check, with its source', async () => {
@@ -312,8 +413,11 @@ describe('a wander step', () => {
   it('does not read a page it read in the last 30 days again', async () => {
     writeJson('trails/2026-10-20-1.json', { id: '2026-10-20-1', date: '2026-10-20', purpose: 'p', start: { kind: 'topic', value: 'x' }, pages: [{ url: `${wiki}/wiki/Logic_gate`, title: 'Logic gate', fetchedAt: '2026-10-20T10:00:00Z', topics: [] }] })
     const { llm, result } = await wander()
-    expect(llm.kinds().filter((k) => k === 'read')).toEqual([])
     expect(result.notes.join('\n')).toMatch(/skipped Logic gate: read in the last 30 days/)
+    // It goes on from that page's links instead of ending with nothing: the one read is of a link, not of the page read lately.
+    expect(llm.kinds().filter((k) => k === 'read')).toHaveLength(1)
+    const trail = Trail.parse(readJson(`trails/${DAY}-1.json`))
+    expect(trail.pages.map((p) => [p.title, p.failed ? 'failed' : 'read'])).toEqual([['Logic gate', 'failed'], ['Boolean algebra', 'read']])
   })
 
   it('can start from the source of a souvenir it kept earlier', async () => {
@@ -336,7 +440,8 @@ describe('the trip-start rail', () => {
     const result = await tick(at(95), again)
     expect(result.notes.join('\n')).toMatch(/wander removed from the plan .*Logic Gates/)
     const goals = readJson('mind/goals.json')
-    expect(goals.today.steps.map((s: { verb: string }) => s.verb)).not.toContain('wander')
+    // The repeated topic start is gone; only the trip from a starting point (which the plan helper adds) stays.
+    expect(goals.today.steps.filter((s: { verb: string }) => s.verb === 'wander').map((s: { targetId: string }) => s.targetId)).toEqual([`${wiki}/wiki/Moon`])
   })
 })
 

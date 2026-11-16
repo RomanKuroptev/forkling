@@ -2,6 +2,7 @@ import { MAX_TRIP_READS, Souvenir, type Trail, type TrailPage } from '@forkling/
 import { similarity } from '@forkling/sim'
 import { WebError } from './fetch.ts'
 import type { Item } from './item.ts'
+import type { SeenPage } from './lookup.ts'
 import { chosenLink, clampInterest, clampReaction, cleanTopics } from './read.ts'
 import type { LookOutcome } from './look.ts'
 import type { Kept } from './read.ts'
@@ -16,6 +17,10 @@ export const SOUVENIR_SIMILARITY = 0.5
 const BORING = 3
 /** Items skipped before a read, past which a trip gives up looking for one it can read. */
 const MAX_SKIPS = 2
+/** The skip reason (`web/skip.ts`) of a page that is fine but was read lately: the trip goes on from its links. */
+const READ_LATELY = 'read in the last 30 days'
+/** The links of each page the trip was shown that are kept as pages Merge has seen. */
+const SEEN_PER_PAGE = 12
 
 export interface KnownSouvenir {
   id: string
@@ -78,6 +83,8 @@ export interface TripResult {
   reads: number
   /** Looks this trip made at pictures. */
   looks: number
+  /** The links the trip was shown on the pages it opened, so Merge can later match a topic to a real title. */
+  seen: SeenPage[]
   usd: number
   stats: HostStat[]
   notes: string[]
@@ -118,6 +125,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
   const notes: string[] = []
   const visited = new Set<string>()
   const attempted = new Set<string>()
+  const seen: SeenPage[] = []
   let reads = 0
   let failures = 0
   let skips = 0
@@ -134,7 +142,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
 
   /** The links of the last page read that the trip has not tried: where it goes when something fails. */
   let previous: Item | null = null
-  const untried = () => previous?.links.filter((l) => !attempted.has(l.url) && !visited.has(l.url)) ?? []
+  const untried = () => previous?.links.filter((l) => !attempted.has(l.url) && !visited.has(l.url) && !deps.known.readRecently(l.url)) ?? []
 
   let url: string | null = limit > 0 ? input.startUrl : null
   while (url !== null && reads < limit) {
@@ -154,6 +162,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
       continue
     }
 
+    for (const l of item.links.slice(0, SEEN_PER_PAGE)) if (!seen.some((x) => x.url === l.url)) seen.push({ title: l.title.slice(0, 200), url: l.url.slice(0, 500) })
     const outcome = await deps.read(item)
     usd += outcome.usd
     deps.onRead?.(item, outcome)
@@ -162,6 +171,8 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
       skips++
       notes.push(`skipped ${item.title}: ${outcome.skipped}`)
       if (pages.length === 0) pages.push({ url: item.url.slice(0, 500), title: item.title.slice(0, 200), fetchedAt: deps.now(), failed: `skipped: ${outcome.skipped}`.slice(0, 200), topics: [] })
+      // A page read lately is still a way in: the trip goes on from its links, not from where it started.
+      if (outcome.skipped === READ_LATELY && previous === null) previous = item
       url = skips >= MAX_SKIPS ? null : (untried()[0]?.url ?? null)
       continue
     }
@@ -189,11 +200,11 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
     const want = answer.look
     if (want !== null && deps.look && Number.isInteger(want) && want >= 1 && want <= item.images.length && looks < (deps.looksLeft ?? 0)) {
       looks++
-      const seen = await deps.look(item, want, page.reaction ?? '')
-      usd += seen.usd
-      deps.onLook?.(item, seen)
-      if (seen.text) page.look = seen.text.slice(0, 600)
-      else notes.push(`look at ${item.title}: ${seen.note ?? 'nothing seen'}`)
+      const picture = await deps.look(item, want, page.reaction ?? '')
+      usd += picture.usd
+      deps.onLook?.(item, picture)
+      if (picture.text) page.look = picture.text.slice(0, 600)
+      else notes.push(`look at ${item.title}: ${picture.note ?? 'nothing seen'}`)
     }
 
     const kept = outcome.souvenir.kept
@@ -226,6 +237,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
     feeds,
     reads,
     looks,
+    seen,
     usd,
     stats: [...stats.values()],
     notes,
