@@ -24,9 +24,14 @@ export interface HealthContext {
   doorDays?: readonly DoorDay[]
   /** The last 7 days for the weekly health check (spec 9.6): the steps started and the build attempts. Absent means no check. */
   week?: { steps: readonly { verb: string; at: string }[]; builds: { total: number; failed: number } }
+  /** Files in `requests/` that do not fit, by name: a request Roman edited by hand that Merge and the site can no longer read. */
+  badRequests?: readonly string[]
   /** The places, requests and steps of the last days, for the place nudges (spec 12.3). `dayOf` gives the forkling's own day. */
   placeNudges?: { places: readonly PlaceNudgeLike[]; requests: readonly PlaceNudgeRequest[]; steps: readonly PlaceNudgeStep[]; dayOf?: (iso: string) => string }
 }
+
+/** A warning is at most 200 characters (the Health schema); a long list of file names is cut. */
+const clipWarning = (text: string): string => (text.length <= 200 ? text : `${text.slice(0, 197)}...`)
 
 /** A need under 15, an idle spell or a wait this long (in minutes) is worth a warning. */
 const WARN_MINUTES = 60
@@ -140,6 +145,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   const w7Warning = w7SpendWarning(budget, ctx.today)
   if (w7Warning) warnings.push(w7Warning)
   if (ctx.week) warnings.push(...weeklyHealthWarnings({ steps: ctx.week.steps, nowMs: ctx.nowMs, wakeMoods: (mind.wakeMoods ?? []).map((m) => m.mood), builds: ctx.week.builds }))
+  if (ctx.badRequests && ctx.badRequests.length > 0) warnings.push(clipWarning(`a request file does not fit and is not read: ${ctx.badRequests.join(', ')}`))
   if (openBuild && openBuild.ageHours > WARN_BUILD_HOURS) warnings.push(`build ${openBuild.id} has been open for ${openBuild.ageHours} hours`)
 
   return {

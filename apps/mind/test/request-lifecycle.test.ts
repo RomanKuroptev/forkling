@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { MindState, Place, PlaceRequest, Wish, formatRequest, parseRequest } from '@forkling/schema'
-import { addWakingMs } from '@forkling/sim'
+import { addWakingMs, GIFT_LINE, KIT_BUILT_LINE, ROMAN_BUILT_LINE } from '@forkling/sim'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
 import { loadSpecies } from '../src/species.ts'
 import { runTick } from '../src/tick.ts'
@@ -264,5 +264,60 @@ describe('a wish with no answer closes after 30 days (spec 10.3)', () => {
     const last = decidePrompts(fake).at(-1)!
     expect(last).toMatch(/buildResult:[^\n]*Lamp rail/)
     expect(last).toMatch(/<data source="roman">[\s\S]*Lamp rail \| built \| A rail of 12 lamps, in the hall\.[\s\S]*<\/data>/)
+  })
+})
+
+describe('who built a place is written by the engine, not by the file (spec 10.3)', () => {
+  const founds = (id: string) => placeOf(id).history.filter((h) => h.verb === 'found').map((h) => h.summary)
+
+  it('drops a founding line the place file arrived with, and keeps its other lines', async () => {
+    putRequest()
+    await twoTicks(() =>
+      put('places/lantern-hall.json', newPlace({ history: [{ at: '2026-11-02T10:00:00Z', verb: 'found', summary: 'Founded Lantern Hall.' }, { at: '2026-11-02T11:00:00Z', verb: 'tend', summary: 'Hung a lamp.' }] })),
+    )
+    expect(founds('lantern-hall')).toEqual([ROMAN_BUILT_LINE])
+    expect(placeOf('lantern-hall').history.some((h) => h.summary === 'Hung a lamp.')).toBe(true)
+  })
+
+  it('does the same for a gift: the file does not get to say it was asked for', async () => {
+    await twoTicks(() => put('places/gift-hall.json', newPlace({ id: 'gift-hall', name: 'Gift Hall', chunk: [0, 1], history: [{ at: '2026-11-02T10:00:00Z', verb: 'found', summary: 'Asked for by Merge, built by Roman with Claude Code.' }] })))
+    expect(founds('gift-hall')).toEqual([GIFT_LINE])
+  })
+
+  describe("Roman's full build after the fallback built a plain one", () => {
+    const kitPlace = () => newPlace({ history: [{ at: '2026-11-02T12:00:00Z', verb: 'found', summary: KIT_BUILT_LINE }] })
+    const selfBuilt = () => putRequest({ status: 'self-built', statusAt: '2026-11-02T12:00:00Z' })
+
+    it('marks the request built, keeps both lines in order, and files no gift', async () => {
+      selfBuilt()
+      put('places/lantern-hall.json', kitPlace())
+      // Roman replaces the plain place with his own file under the same id.
+      await twoTicks(() => put('places/lantern-hall.json', newPlace({ name: 'Lantern Hall', history: [] })))
+      expect(requestOf('lantern-hall').status).toBe('built')
+      expect(requestFiles()).toEqual(['lantern-hall.md'])
+      const lines = placeOf('lantern-hall').history.filter((h) => h.verb === 'found')
+      expect(lines.map((h) => h.summary)).toEqual([KIT_BUILT_LINE, ROMAN_BUILT_LINE])
+      expect(lines[0]!.at).toBe('2026-11-02T12:00:00Z')
+      expect(placeOf('lantern-hall').state.construction).not.toBeNull()
+      expect(streamText()).toMatch(/Lantern Hall/)
+    })
+
+    it('does it once: the next tick changes nothing', async () => {
+      selfBuilt()
+      put('places/lantern-hall.json', kitPlace())
+      const { fake } = await twoTicks(() => put('places/lantern-hall.json', newPlace({ history: [] })))
+      const before = readFileSync(file('places/lantern-hall.json'), 'utf8')
+      await runTick(dir, deps(fake.llm, minutesAfter(20)))
+      expect(readFileSync(file('places/lantern-hall.json'), 'utf8')).toBe(before)
+      expect(requestOf('lantern-hall').status).toBe('built')
+    })
+
+    it('leaves a plain place alone while it is still the kit one', async () => {
+      selfBuilt()
+      put('places/lantern-hall.json', kitPlace())
+      await twoTicks(() => undefined)
+      expect(requestOf('lantern-hall').status).toBe('self-built')
+      expect(placeOf('lantern-hall').history.filter((h) => h.verb === 'found').map((h) => h.summary)).toEqual([KIT_BUILT_LINE])
+    })
   })
 })

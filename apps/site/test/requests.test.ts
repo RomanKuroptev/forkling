@@ -101,13 +101,15 @@ describe('/requests/ (spec 10.3: place requests and wishes, with their status)',
       ['building', 'b-building', /Roman says he is building it/],
       ['built', 'c-built', /Built by Roman with Claude Code/],
       ['declined', 'd-declined', /Roman declined/],
-      ['self-built', 'e-selfbuilt', /Built by Merge from the kit/],
+      ['self-built', 'e-selfbuilt', /Built by Merge from the kit when the time was up/],
       ['withdrawn', 'f-withdrawn', /Merge took it back/],
     ]
     for (const [status, id] of cases) {
       const answered = status !== 'open'
       putRequest({ id, name: `Place ${id}`, status, statusAt: answered ? '2026-11-19T10:00:00Z' : null, note: status === 'declined' ? 'Not now.' : null })
     }
+    // A place stands on the staked chunk, so a built request has something to point at.
+    putPlace('lantern-hall', { name: 'Lantern Hall', chunk: [1, 0], offset: [0, 0], state, history: [{ at: '2026-11-19T10:00:00Z', verb: 'found', summary: 'Asked for by Merge, built by Roman with Claude Code.' }] })
     render()
     const html = page('requests/index.html')
     for (const [status, id, words] of cases) {
@@ -200,6 +202,64 @@ describe('/requests/ (spec 10.3: place requests and wishes, with their status)',
   })
 })
 
+describe('what /requests/ claims (it never says more than the files do)', () => {
+  const item = (id: string) => new RegExp(`<li[^>]*data-request="${id}"[\\s\\S]*?</li>`).exec(page('requests/index.html'))?.[0] ?? ''
+
+  it('does not say who built a request marked built when no place stands on its chunk', () => {
+    putRequest({ id: 'marked', name: 'Marked Hall', status: 'built', statusAt: '2026-11-19T10:00:00Z', chunk: [6, 6] })
+    render()
+    expect(item('marked')).toMatch(/Marked built\./)
+    expect(item('marked')).not.toMatch(/Built by Roman|Claude Code|See the place/)
+  })
+
+  it('says Roman built it, and links the place, when a place stands on its chunk', () => {
+    putRequest({ id: 'lantern-hall', status: 'built', statusAt: '2026-11-19T10:00:00Z' })
+    putPlace('lantern-hall', { name: 'Lantern Hall', chunk: [1, 0], offset: [0, 0], state, history: [] })
+    render()
+    expect(item('lantern-hall')).toMatch(/Built by Roman with Claude Code/)
+    expect(item('lantern-hall')).toMatch(/href="..\/places\/lantern-hall\/"/)
+  })
+
+  it('never says "answered" for a request Merge took back or the kit built, and says "last changed" instead', () => {
+    putRequest({ id: 'taken-back', name: 'Taken Back', status: 'withdrawn', statusAt: '2026-11-19T10:00:00Z' })
+    putRequest({ id: 'kit-made', name: 'Kit Made', status: 'self-built', statusAt: '2026-11-19T10:00:00Z', chunk: [2, 0] })
+    putRequest({ id: 'on-it', name: 'On It', status: 'building', statusAt: '2026-11-19T10:00:00Z', chunk: [3, 0] })
+    render()
+    for (const id of ['taken-back', 'kit-made', 'on-it']) {
+      expect(item(id), id).not.toMatch(/answered/i)
+      expect(item(id), id).toMatch(/Asked on 2026-11-18; last changed 2026-11-19\./)
+    }
+  })
+
+  it('does not claim nobody answered a request that Roman said he was building', () => {
+    putRequest({ id: 'kit-made', name: 'Kit Made', status: 'self-built', statusAt: '2026-11-19T10:00:00Z', chunk: [2, 0] })
+    render()
+    expect(item('kit-made')).not.toMatch(/no one answered/i)
+  })
+
+  it("writes dates in the forkling's time zone, not UTC", () => {
+    // 23:30 UTC on the 20th is 00:30 on the 21st in Stockholm.
+    putRequest({ id: 'late-night', name: 'Late Night', written: '2026-11-20T23:30:00Z', status: 'open', chunk: [7, 0] })
+    putRequest({ id: 'late-gift', name: 'Late Gift', kind: 'gift', written: '2026-11-20T23:30:00Z', status: 'built', statusAt: '2026-11-20T23:30:00Z', souvenirs: [], chunk: [8, 0], body: 'Built by Roman without a request.' })
+    render()
+    expect(item('late-night')).toMatch(/Asked on 2026-11-21/)
+    expect(item('late-gift')).toMatch(/Filed 2026-11-21/)
+  })
+
+  it('lists the requests Merge is waiting on with Roman building first, then the answered ones newest first', () => {
+    putRequest({ id: 'a-open', name: 'A Open', written: '2026-11-10T10:00:00Z', chunk: [4, 0] })
+    putRequest({ id: 'b-building', name: 'B Building', written: '2026-11-11T10:00:00Z', status: 'building', statusAt: '2026-11-12T10:00:00Z', chunk: [5, 0] })
+    putRequest({ id: 'c-old', name: 'C Old', written: '2026-11-01T10:00:00Z', status: 'declined', statusAt: '2026-11-02T10:00:00Z', note: 'No.', chunk: [9, 0] })
+    putRequest({ id: 'd-new', name: 'D New', written: '2026-11-05T10:00:00Z', status: 'declined', statusAt: '2026-11-06T10:00:00Z', note: 'No.', chunk: [10, 0] })
+    render()
+    const html = page('requests/index.html')
+    const at = (id: string) => html.indexOf(`data-request="${id}"`)
+    expect(at('b-building')).toBeLessThan(at('a-open'))
+    expect(at('a-open')).toBeLessThan(at('d-new'))
+    expect(at('d-new')).toBeLessThan(at('c-old'))
+  })
+})
+
 describe('the honesty line on a place page: who had the idea and who built it (spec 10.3)', () => {
   const found = (summary: string) => [{ at: '2026-11-19T10:00:00Z', verb: 'found', summary }]
   const line = (id: string) => /<p class="provenance">([\s\S]*?)<\/p>/.exec(page(`places/${id}/index.html`))?.[1] ?? ''
@@ -226,6 +286,23 @@ describe('the honesty line on a place page: who had the idea and who built it (s
     render()
     expect(line('home')).toMatch(/given to Merge before it woke/)
     expect(line('workshop')).toMatch(/given to Merge before it woke/)
+  })
+
+  it('says the newest founding line: the build that stands now, not the first', () => {
+    putPlace('rebuilt', {
+      name: 'Rebuilt Hall',
+      chunk: [6, 0],
+      offset: [0, 0],
+      state,
+      history: [
+        { at: '2026-11-10T10:00:00Z', verb: 'found', summary: 'Asked for by Merge, built by Merge from the kit.' },
+        { at: '2026-11-12T10:00:00Z', verb: 'tend', summary: 'Looked after.' },
+        { at: '2026-11-15T10:00:00Z', verb: 'found', summary: 'Asked for by Merge, built by Roman with Claude Code.' },
+      ],
+    })
+    render()
+    expect(line('rebuilt')).toMatch(/built by Roman with Claude Code/)
+    expect(line('rebuilt')).not.toMatch(/from the kit/)
   })
 
   it('says so when no one wrote it down, and never guesses', () => {
