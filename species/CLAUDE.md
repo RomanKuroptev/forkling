@@ -27,5 +27,5 @@ An upright cat that drops to four legs to run, play and sleep.
 - The cat's model is generated, not downloaded. To change it, edit `species/cat/src/buildCat.ts` or `clips.ts` and run `pnpm --filter @forkling/species-cat build:model`.
 - Keep the art style coherent across species. Prefer CC0 low-poly assets (Kenney, KayKit, Quaternius).
 
-## Still here until W5 slice 14 lands
-The cat's actions that target free-form objects (`pick_up`, `carry`, `put_on`, `build`, `paint`, `code` and the like) and `watch` (it needs a perch, which only the island has). They never run in a world with places. Slice 14 removes them.
+## Still here until W5 slice 14 part B lands
+The cat's actions that target free-form objects (`pick_up`, `carry`, `put_on`, `build`, `paint`, `code` and the like) and `watch` (it needs a perch, which no place has). They never run. Part B of slice 14 removes them.

@@ -151,7 +151,6 @@ export interface Tick {
   /** What happened this tick that moves mood and energy (spec 3.2), applied by `feel`. */
   moodEvents: MoodEvent[]
   justNow: string[]
-  spotKeys: Set<string>
 
   goals: Goals
   mind: MindState

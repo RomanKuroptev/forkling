@@ -3,10 +3,12 @@ import { SpeciesPack, type MicroBehavior } from '@forkling/schema'
 import blobJson from './fixtures/blob.species.json'
 import { resolveSlot } from '../src/animation.ts'
 import { createForkling, stepForkling, STEP, toRepoIntention, type StepContext } from '../src/forkling.ts'
-import { world } from './helpers/world.ts'
+import { buildBodyWorld } from '../src/body-world.ts'
+import { starterPlaces } from '../src/starter-places.ts'
 import { runHeadless, type HeadlessOptions } from '../src/headless.ts'
 
 const blob = SpeciesPack.parse(blobJson)
+const world = buildBodyWorld(1, starterPlaces())
 
 const simulate = (opts: Omit<HeadlessOptions, 'pack'> & { pack?: SpeciesPack }) => runHeadless({ pack: blob, ...opts })
 
@@ -43,10 +45,6 @@ describe('stepForkling with the blob pack (no animations, no behaviors)', () => 
 
   it('resolves every slot it asks for to nothing, as a pack without animations must', () => {
     for (const slot of run.slots) expect(resolveSlot(slot as never, new Set())).toBeNull()
-  })
-
-  it('reaches its spot targets: it eats at the food spot', () => {
-    expect(run.intentionTypes.has('eat')).toBe(true)
   })
 })
 

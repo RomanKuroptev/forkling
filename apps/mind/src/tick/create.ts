@@ -1,8 +1,6 @@
 import {
   bodyWorldFor,
-  collectSpots,
   eveningOf,
-  hourInZone,
   isAsleepAt,
   liveBeliefs,
   localDate,
@@ -10,8 +8,6 @@ import {
   pointsAtWake,
   sleepWindow,
   startPlayback,
-  sunDirection,
-  worldWithObjects,
 } from '@forkling/sim'
 import type { WorldObject } from '@forkling/schema'
 import { monthOf, recordCall, rollLedger } from '../budget.ts'
@@ -25,13 +21,6 @@ import { makeAsk } from './ask.ts'
 import type { Tick, TickDeps } from './context.ts'
 
 /** The longest stretch of the body's time that one tick counts. */
-
-/** The spot kinds that have at least one place in the world made of `objects`. */
-export function spotsFor(t: Pick<Tick, 'pack' | 'tz' | 'nowMs'>, objects: readonly WorldObject[]): Set<string> {
-  const w2 = worldWithObjects(objects)
-  const spots = collectSpots(t.pack, w2.cfg, w2.nav, w2.spawn, sunDirection(hourInZone(t.tz, t.nowMs)), w2.objects)
-  return new Set(Object.keys(spots).filter((k) => (spots[k]?.length ?? 0) > 0))
-}
 
 /** Reads the world and replays the body to now: the starting point every step works from. */
 export function createTick(dir: string, deps: TickDeps): Tick {
@@ -56,7 +45,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
 
   // Where the body is now: exactly what a viewer would have seen since the last commit.
   const places = readPlaces(dir)
-  const world = bodyWorldFor({ seed: forkling.seed, pack, places, objects: w.objects })
+  const world = bodyWorldFor({ seed: forkling.seed, places })
   const playbackInput = { forkling, pack, behaviors, world, goals: w.goals, stateTime: playbackStateTime(forkling) }
   const playback = startPlayback(playbackInput, nowMs)
   // What the body really did on the plan step since the last write: the step's effect waits on it.
@@ -110,7 +99,6 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     gone: new Set(),
     moodEvents: [],
     justNow: [],
-    spotKeys: new Set(),
 
     goals: structuredClone(w.goals),
     mind,
@@ -161,7 +149,6 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     journal: null,
     summaryNext: null,
   }
-  t.spotKeys = spotsFor(t, t.objects)
   t.ask = makeAsk(t)
   return t
 }

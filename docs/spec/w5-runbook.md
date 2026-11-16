@@ -2,7 +2,7 @@
 
 The code is built and merged (slices 1 to 13 of [`w5-places.md`](w5-places.md)); slice 14 (retiring the pet era) and slice 15 (this page) are noted at the end. Nothing here has been done to the server, to `RomanKuroptev/merge` or to a tag: they are yours. This page is for the day W3 and W4 have passed their live checks and you want Merge to live in places.
 
-Until you release, nothing changes for Merge. A world with no `places/` folder is drawn as the old island by the viewer, makes no tend or revisit call, and renders the site with no `/places/` pages and no link to them.
+Until you release, nothing changes for Merge. A world with no `places/` folder is drawn by the viewer as Home and the Workshop (part A of slice 14; before that, as the old island), makes no tend or revisit call, and renders the site with no `/places/` pages and no link to them.
 
 ## 1. The release (a stop, and yours)
 
@@ -50,5 +50,4 @@ The viewer and the site change at the same moment: the viewer draws the land wit
 
 ## Not yet done in W5
 
-- **Slice 14, retire the pet era.** The island, the nav grid, objects and the pet-era sim and schema are still in the code, and the viewer still draws the island for a world with no places. Removing them changes what visitors see (the island goes), so it waits for your word. It is also what lets the viewer start a world with no `places/` on built-in Home and Workshop.
-- The three area `CLAUDE.md` files (`packages/sim`, `apps/viewer`, `species`) still describe the pet and are rewritten in slice 14.
+- **Slice 14, retire the pet era.** Part C (the area `CLAUDE.md` files) is done. Part A (the island, its walking grid and the viewer's island scene) is built and waits for your OK and for v0.14.0; a world with no `places/` then starts on built-in Home and Workshop. Part B (free-form objects in the schema, sim, mind, viewer, species pack and template) is not started.

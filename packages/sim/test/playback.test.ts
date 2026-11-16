@@ -11,11 +11,11 @@ import {
   startPlayback,
   type PlaybackInput,
 } from '../src/playback.ts'
-import { bodyWorldFromStarter } from '../src/body-world.ts'
-import { starterWorld } from '../src/starter.ts'
+import { buildBodyWorld } from '../src/body-world.ts'
+import { starterPlaces } from '../src/starter-places.ts'
 
 const blob = SpeciesPack.parse(blobJson)
-const world = bodyWorldFromStarter(starterWorld(), blob)
+const world = buildBodyWorld(1, starterPlaces())
 
 /** 2026-10-30T12:00:00Z, which is the start of an epoch. */
 const EPOCH_START = Date.UTC(2026, 9, 30, 12, 0, 0) / 1000

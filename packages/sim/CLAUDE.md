@@ -16,8 +16,9 @@ The pure, deterministic sim. It runs in the browser, in the mind and in CI, so i
 - The headless runner steps the world without a renderer. Use it to test behaviour over simulated days.
 - Triggers decide when the mind wakes the LLM (`surprise.ts`, spec 2.3): `sparked`, `stepDone`, `replan`, `newDay`, `buildResult`, `reflected` and `note`. No trigger means no LLM call; utility AI keeps the body busy between them.
 - The plan owns the visible action. Drift fills gaps, then the plan goes on. A step's effect lands only after the body really spent time on its verb (`tallyWindow`).
+- `starter-places.ts` is Home and the Workshop: the places of a new world, and what a world with none is walked and drawn as (`bodyWorldFor`).
 - `fixture-world.ts` makes the 10-place test world (`?world=local&fixture=10` in the viewer).
 - Run one file with `pnpm vitest run packages/sim/test/<file>`.
 
-## Still here until W5 slice 14 lands
-The pet-era island and its walking grid (`island.ts`, `starter.ts`, `buildNavGrid` in `nav.ts`), and the free-form objects (`objects.ts`, `world.ts`). They only run for a world with no places. Don't extend them; slice 14 deletes them.
+## Still here until W5 slice 14 part B lands
+The free-form objects (`objects.ts`) and the species-pack fields that serve them. Nothing reads a world's `objects/` for the body any more. Don't extend them.

@@ -2,7 +2,7 @@
   "name": "Unnamed",
   "species": "cat",
   "seed": 1,
-  "position": [2, 0, 20],
+  "position": [8, 0, 16],
   "mood": 0,
   "energy": 0.5,
   "stored": {},

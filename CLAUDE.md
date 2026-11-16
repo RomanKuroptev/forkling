@@ -6,7 +6,7 @@ Forkling is an engine for autonomous AIs that grow a 3D world. Each forkling has
 
 **The spec is [`docs/spec/spec.md`](docs/spec/spec.md)** (v3.3, exported from Roman's Claude doc). Where it gives a number, the number is the rule. **Read [`STATUS.md`](STATUS.md) first. Update it before every commit and before you stop.**
 
-**The pet is mostly gone.** W1 deleted needs, the bowl and temperament. The island, its walking grid and the free-form objects are still in the code for a world with no places, and W5 slice 14 deletes them. Don't extend them.
+**The pet is mostly gone.** W1 deleted needs, the bowl and temperament. The free-form objects are still in the code until W5 slice 14 part B deletes them. Don't extend them.
 
 The mind decides *what* and *why*: it runs as the Actions tick or as a loop on a server (W3). The body (the visitor's browser) decides *how it looks moment to moment*. The build worker and the site turn the mind's choices into files.
 
@@ -75,4 +75,4 @@ pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 - [`docs/spec/`](docs/spec/): the spec. `spec.md` is the whole thing, and each milestone gets its own file when it starts.
 - `docs/decisions.md`: why things are the way they are. `docs/milestones-done.md`: the pet-era milestones M1 to M7.
 - Pet-era docs, kept as history until the code they describe is replaced: `docs/how-it-works.md`, `docs/architecture.md`, `docs/review-2026-11.md`, `docs/future.md`, `docs/plans/`.
-- Area rules: `packages/sim/CLAUDE.md`, `species/CLAUDE.md`, `apps/mind/CLAUDE.md`, `apps/viewer/CLAUDE.md`, and `templates/forkling-world/CLAUDE.md` (for the builder). Each ends with a short note on what pet-era code is still there until W5 slice 14.
+- Area rules: `packages/sim/CLAUDE.md`, `species/CLAUDE.md`, `apps/mind/CLAUDE.md`, `apps/viewer/CLAUDE.md`, and `templates/forkling-world/CLAUDE.md` (for the builder). Each ends with a short note on what pet-era code is still there until W5 slice 14 part B.

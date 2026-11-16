@@ -1,17 +1,9 @@
-import type { IslandConfig } from '@forkling/schema'
-import { heightAt } from './island.ts'
-
 export interface Point2 {
   x: number
   z: number
 }
 
-/** A circular footprint that blocks walking, in meters. */
-export interface Obstacle extends Point2 {
-  radius: number
-}
-
-/** Walkability over the island in square cells. Cell (col, row) covers x from `originX + col * cellSize`, and likewise for z. */
+/** Walkability over the land in square cells. Cell (col, row) covers x from `originX + col * cellSize`, and likewise for z. */
 export interface NavGrid {
   cols: number
   rows: number
@@ -22,59 +14,7 @@ export interface NavGrid {
   walkable: Uint8Array
 }
 
-export interface NavOptions {
-  cellSize?: number
-  /** Minimum height above the waterline for a cell to count as dry land, in meters. */
-  minAboveWater?: number
-  /** Steepest slope that can be walked, in degrees. */
-  maxSlopeDeg?: number
-  /** Extra clearance around obstacles, in meters. */
-  margin?: number
-}
-
 export function createNavGrid(grid: NavGrid): NavGrid {
-  return grid
-}
-
-export function buildNavGrid(cfg: IslandConfig, obstacles: Obstacle[], opts: NavOptions = {}): NavGrid {
-  const { cellSize = 1, minAboveWater = 0.3, maxSlopeDeg = 35, margin = 0.3 } = opts
-  const cols = Math.ceil(cfg.size / cellSize)
-  const rows = cols
-  const originX = -cfg.size / 2
-  const originZ = -cfg.size / 2
-  const walkable = new Uint8Array(cols * rows)
-  const maxSlope = Math.tan((maxSlopeDeg * Math.PI) / 180)
-  const probe = cellSize / 2
-
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      const x = originX + (col + 0.5) * cellSize
-      const z = originZ + (row + 0.5) * cellSize
-      if (heightAt(x, z, cfg) <= cfg.waterLevel + minAboveWater) continue
-      const dx = (heightAt(x + probe, z, cfg) - heightAt(x - probe, z, cfg)) / (2 * probe)
-      const dz = (heightAt(x, z + probe, cfg) - heightAt(x, z - probe, cfg)) / (2 * probe)
-      if (Math.hypot(dx, dz) >= maxSlope) continue
-      walkable[row * cols + col] = 1
-    }
-  }
-
-  const grid = createNavGrid({ cols, rows, cellSize, originX, originZ, walkable })
-  for (const o of obstacles) {
-    const reach = o.radius + margin
-    const c0 = Math.floor((o.x - reach - originX) / cellSize)
-    const c1 = Math.floor((o.x + reach - originX) / cellSize)
-    const r0 = Math.floor((o.z - reach - originZ) / cellSize)
-    const r1 = Math.floor((o.z + reach - originZ) / cellSize)
-    for (let row = Math.max(0, r0); row <= Math.min(rows - 1, r1); row++) {
-      for (let col = Math.max(0, c0); col <= Math.min(cols - 1, c1); col++) {
-        const c = cellCenter(grid, col, row)
-        if (Math.hypot(c.x - o.x, c.z - o.z) <= reach) walkable[row * cols + col] = 0
-      }
-    }
-    // The cell holding the obstacle's centre is always blocked, even for a footprint smaller than a cell.
-    const cell = worldToCell(grid, o.x, o.z)
-    if (cell) walkable[cell.row * cols + cell.col] = 0
-  }
   return grid
 }
 

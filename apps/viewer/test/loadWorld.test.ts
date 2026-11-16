@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { PlaceRequest, SpeciesPack, formatRequest } from '@forkling/schema'
 import catSpecies from '@forkling/species-cat/species.json'
-import { loadWorld, type LoadDeps } from '../src/world/loadWorld.ts'
+import { loadWorld, placesOrStarter, type LoadDeps } from '../src/world/loadWorld.ts'
 import homeFile from '../../../templates/forkling-world/places/home.json'
 import workshopFile from '../../../templates/forkling-world/places/workshop.json'
 
@@ -190,9 +190,20 @@ describe('loadWorld places (W5)', () => {
     expect(result.ok && result.world.places.map((p) => p.id)).toEqual(['home', 'workshop'])
   })
 
-  it('has no places for a world that has none yet', async () => {
+  it('shows Home and the Workshop for a world that has no places yet', async () => {
     const result = await loadWorld(ref, deps({ 'forkling.json': forkling }))
-    expect(result.ok && result.world.places).toEqual([])
+    expect(result.ok && result.world.places.map((p) => p.id)).toEqual(['home', 'workshop'])
+  })
+
+  it('also falls back when every place file is left out as not fitting', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'places/broken.json': { id: 'broken' } }))
+    expect(result.ok && result.world.places.map((p) => p.id)).toEqual(['home', 'workshop'])
+  })
+
+  it('keeps the places a world has, and never mixes the built-in ones in', () => {
+    const mine = [{ ...home, id: 'mine' }] as never[]
+    expect(placesOrStarter(mine)).toBe(mine)
+    expect(placesOrStarter([]).map((p) => p.id)).toEqual(['home', 'workshop'])
   })
 
   it('leaves out a place file that does not fit, as the mind does, instead of failing the whole world', async () => {

@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { SpeciesPack } from '@forkling/schema'
 import { makeFixtureWorld } from '../src/fixture-world.ts'
-import { bodyWorldFromStarter, buildBodyWorld } from '../src/body-world.ts'
+import { buildBodyWorld } from '../src/body-world.ts'
 import { chunkCentre, createLand, placeCentre, toLandPlace } from '../src/land.ts'
 import { findPath, isWalkable } from '../src/nav.ts'
 import { advancePlayback, startPlayback } from '../src/playback.ts'
-import { collectSpots } from '../src/world.ts'
-import { starterWorld } from '../src/starter.ts'
 import blobJson from './fixtures/blob.species.json'
 
 const blob = SpeciesPack.parse(blobJson)
@@ -116,17 +114,6 @@ describe('the body\'s world on the new land (spec 2.7, 4)', () => {
     expect(again.spots(sun)).toEqual(world.spots(sun))
     const empty = buildBodyWorld(1, [])
     expect(isWalkable(empty.grid, empty.spawn.x, empty.spawn.z)).toBe(true)
-  })
-})
-
-describe('the pet-era island as a body world, until it is retired', () => {
-  it('offers the same grid, spawn and spots the island always did', () => {
-    const starter = starterWorld()
-    const adapted = bodyWorldFromStarter(starter, blob)
-    expect(adapted.grid).toBe(starter.nav.grid)
-    expect(adapted.spawn).toBe(starter.spawn)
-    expect(adapted.visitorSpawn).toBe(starter.spawn)
-    expect(adapted.spots(sun)).toEqual(collectSpots(blob, starter.cfg, starter.nav, starter.spawn, sun, starter.objects))
   })
 })
 

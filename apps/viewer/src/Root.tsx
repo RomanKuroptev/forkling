@@ -10,7 +10,7 @@ import { notesStore } from './world/notesStore.ts'
 import { createWorldClock } from './clock.ts'
 import { loadFixtureWorld } from './world/fixtureWorld.ts'
 import templateForkling from '../../../templates/forkling-world/forkling.json'
-import { loadWorld, type LoadedWorld, type LoadResult, type WorldError } from './world/loadWorld.ts'
+import { loadWorld, placesOrStarter, type LoadedWorld, type LoadResult, type WorldError } from './world/loadWorld.ts'
 import { LOCAL_REF, localFetch } from './world/localWorld.ts'
 import { parseRoute, type WorldRef } from './world/route.ts'
 import { WorldErrorPanel } from './world/WorldErrorPanel.tsx'
@@ -99,7 +99,7 @@ export function Root() {
       setTimer: (run, ms) => setTimeout(run, ms),
       clearTimer: (id) => clearTimeout(id as ReturnType<typeof setTimeout>),
       knownRev: placesRev(first.places),
-      onPlaces: (places) => setState((s) => (s.status === 'ready' ? { status: 'ready', world: { ...s.world, places } } : s)),
+      onPlaces: (places) => setState((s) => (s.status === 'ready' ? { status: 'ready', world: { ...s.world, places: placesOrStarter(places) } } : s)),
     })
   }, [live])
 

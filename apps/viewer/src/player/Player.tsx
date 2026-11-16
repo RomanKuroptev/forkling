@@ -24,13 +24,12 @@ const clipMode = new URLSearchParams(location.search).has('clip')
 /** The visitor: a simple capsule avatar driven by ecctrl, with an orbiting follow camera. */
 export function Player() {
   const { simWorld, world } = useWorld()
-  // What the camera may not go into: the walls, floors and roofs of the places (none in the pet-era island), and the ground.
+  // What the camera may not go into: the walls, floors and roofs of the places, and the ground.
   const ground = useMemo(() => {
-    if (world.places.length === 0) return simWorld.heightAt
     const land = worldLand(world)
     return (x: number, z: number) => land.heightAt(x, z)
-  }, [world, simWorld])
-  const solids = useMemo(() => (world.places.length === 0 ? [] : worldSolids(world.places, kit, ground)), [world, ground])
+  }, [world])
+  const solids = useMemo(() => worldSolids(world.places, kit, ground), [world, ground])
   const shown = useRef<Vec3 | null>(null)
   const lookAt = useRef(new THREE.Vector3())
   // `?stand=x,z,yaw` starts the visitor somewhere else, to look at a part of the world.

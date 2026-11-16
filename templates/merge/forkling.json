@@ -2,11 +2,7 @@
   "name": "Merge",
   "species": "cat",
   "seed": 20260101,
-  "position": [
-    -6,
-    0,
-    12
-  ],
+  "position": [8, 0, 16],
   "mood": 0,
   "energy": 0.5,
   "stored": {},
