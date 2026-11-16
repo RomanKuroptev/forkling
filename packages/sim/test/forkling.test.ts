@@ -79,13 +79,6 @@ describe('micro-behaviors', () => {
 })
 
 describe('acting after a micro-behavior', () => {
-  it('does not write the engine label for any object a verb fits into the repo, where it is not a thing in the world', () => {
-    const intention = { type: 'carry', targetId: 'for:carry', startedAt: 1_000, seed: 1, reason: 'Taking it over there.' }
-    expect(toRepoIntention(intention).targetId).toBeUndefined()
-    expect(toRepoIntention({ ...intention, targetId: 'sunny-rock' }).targetId).toBe('sunny-rock')
-    expect(toRepoIntention({ ...intention, targetId: 'sunbeam' }).targetId).toBe('sunbeam')
-  })
-
   it('does not resume an action from the repo that is not allowed at this time of day', () => {
     // The repo says it was resting, but resting is for the day and it is bed time now.
     const dayRest = SpeciesPack.parse({ ...blobJson, actions: blob.actions.map((a) => (a.id === 'rest' ? { ...a, requires: ['day'] } : a)) })

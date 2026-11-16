@@ -1,4 +1,4 @@
-import { Forkling, forklingPackIssues, Goals, objectIdFromPath, parseRequest, Place, WorldObject, type PlaceRequest, type SpeciesPack } from '@forkling/schema'
+import { Forkling, forklingPackIssues, Goals, parseRequest, Place, type PlaceRequest, type SpeciesPack } from '@forkling/schema'
 import { starterPlaces } from '@forkling/sim'
 import type { WorldRef } from './route.ts'
 
@@ -10,7 +10,6 @@ export interface LoadedWorld {
   committedAt: string | null
   forkling: Forkling
   pack: SpeciesPack
-  objects: WorldObject[]
   /** `places/*.json`, in id order. Home and the Workshop when the world has none yet. */
   places: Place[]
   /** `requests/*.md` (spec 10.3), in id order: the place requests Merge has made, whatever their status. The open ones are staked plots. */
@@ -41,11 +40,8 @@ export interface LoadDeps {
   fetch: typeof fetch
   /** Species packs the viewer ships, by id. */
   species: Record<string, SpeciesPack>
-  /** Model assets the viewer ships, like `nature/rock_largeA`. */
-  assets: ReadonlySet<string>
 }
 
-const MAX_OBJECTS = 300
 
 /** A world with no places is shown as Home and the Workshop, as the body walks it (`bodyWorldFor`); one with places is left alone. */
 export function placesOrStarter(places: Place[]): Place[] {
@@ -156,23 +152,6 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         })
       : {}
 
-    const objectPaths = paths.filter((p) => objectIdFromPath(p) !== null).slice(0, MAX_OBJECTS)
-    const objects = await Promise.all(
-      objectPaths.map((path) =>
-        readFile(deps, ref, commit.sha, path, problems, (data) => {
-          const parsed = WorldObject.safeParse(data)
-          if (!parsed.success) return { lines: zodLines(parsed.error) }
-          const lines: string[] = []
-          if (parsed.data.id !== objectIdFromPath(path)) lines.push(`id: "${parsed.data.id}" should match the file name`)
-          const model = parsed.data.model
-          if ('asset' in model && !deps.assets.has(model.asset)) {
-            lines.push(`model.asset: "${model.asset}" isn't a model the viewer ships (available: ${[...deps.assets].join(', ')})`)
-          }
-          return lines.length ? { lines } : { value: parsed.data }
-        }),
-      ),
-    )
-
     // Places are read the way the mind reads them: one that does not fit is left out, never an error and never guessed at,
     // so the viewer and the mind always agree on which places exist.
     const placePaths = paths.filter((p) => /^places\/[^/]+\.json$/.test(p)).slice(0, MAX_PLACES)
@@ -226,7 +205,6 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         committedAt: commit.commit?.committer?.date ?? null,
         forkling: forkling.forkling,
         pack: forkling.pack,
-        objects: objects.filter((o): o is WorldObject => o !== null),
         places: placesOrStarter(places),
         requests,
         workIds: paths.flatMap((p) => /^works\/([^/]+)\/meta\.json$/.exec(p)?.[1] ?? []).sort(),

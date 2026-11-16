@@ -232,10 +232,6 @@ html[data-input='touch'] body {
   user-select: none;
 }
 
-.touch-controls .touch-action {
-  background: rgb(217 119 6 / 85%);
-}
-
 .touch-controls .touch-text[aria-pressed='true'],
 .touch-controls .touch-mind[aria-pressed='true'] {
   background: rgb(255 255 255 / 80%);

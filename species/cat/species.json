@@ -12,377 +12,230 @@
     "reply": "mind_write",
     "rest": "mind_rest"
   },
-  "perception": { "noticeRadius": 5, "eyeHeight": 0.55, "fovDeg": 70 },
-  "locomotion": { "walkSpeed": 1.1, "runSpeed": 4.5 },
+  "perception": {
+    "noticeRadius": 5,
+    "eyeHeight": 0.55,
+    "fovDeg": 70
+  },
+  "locomotion": {
+    "walkSpeed": 1.1,
+    "runSpeed": 4.5
+  },
   "bodyPlans": {
-    "quadruped": ["body"],
-    "upright": ["body", "hands", "making", "growing", "mind"]
+    "quadruped": [
+      "body"
+    ],
+    "upright": [
+      "body",
+      "hands",
+      "making",
+      "growing",
+      "mind"
+    ]
   },
   "actions": [
-    { "id": "mind_read", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "desk" }, "slot": "holdUp", "reason": "I am reading at my desk." },
-    { "id": "mind_write", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "desk" }, "slot": "useTool", "reason": "I am writing at my desk." },
-    { "id": "mind_tinker", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "workbench" }, "slot": "useTool", "reason": "I am working at the bench." },
-    { "id": "mind_tend", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "home" }, "slot": "carry", "reason": "I am carrying things where they belong." },
-    { "id": "mind_visit", "group": "body", "durationSec": [30, 70], "target": { "type": "spot", "kind": "home" }, "slot": "idle", "reason": "I am looking round." },
-    { "id": "mind_build", "group": "body", "body": "upright", "durationSec": [40, 90], "target": { "type": "spot", "kind": "home" }, "slot": "useTool", "reason": "I am building." },
-    { "id": "mind_rest", "group": "body", "durationSec": [30, 90], "target": { "type": "spot", "kind": "home" }, "slot": "sit", "reason": "I am resting at home." },
     {
-      "id": "go_to",
+      "id": "mind_read",
       "group": "body",
       "body": "upright",
-      "durationSec": [2, 6],
-      "target": { "type": "object" },
-      "slot": "stand",
-      "requires": ["day"],
-      "reason": "I wanted to see it up close."
+      "durationSec": [
+        40,
+        90
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "desk"
+      },
+      "slot": "holdUp",
+      "reason": "I am reading at my desk."
     },
     {
-      "id": "inspect",
+      "id": "mind_write",
       "group": "body",
       "body": "upright",
-      "durationSec": [6, 14],
-      "target": { "type": "object" },
-      "slot": "holdUp",
-      "requires": ["day"],
-      "reason": "That looks new. I will look at it properly."
+      "durationSec": [
+        40,
+        90
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "desk"
+      },
+      "slot": "useTool",
+      "reason": "I am writing at my desk."
+    },
+    {
+      "id": "mind_tinker",
+      "group": "body",
+      "body": "upright",
+      "durationSec": [
+        40,
+        90
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "workbench"
+      },
+      "slot": "useTool",
+      "reason": "I am working at the bench."
+    },
+    {
+      "id": "mind_tend",
+      "group": "body",
+      "body": "upright",
+      "durationSec": [
+        40,
+        90
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "home"
+      },
+      "slot": "carry",
+      "reason": "I am carrying things where they belong."
+    },
+    {
+      "id": "mind_visit",
+      "group": "body",
+      "durationSec": [
+        30,
+        70
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "home"
+      },
+      "slot": "idle",
+      "reason": "I am looking round."
+    },
+    {
+      "id": "mind_build",
+      "group": "body",
+      "body": "upright",
+      "durationSec": [
+        40,
+        90
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "home"
+      },
+      "slot": "useTool",
+      "reason": "I am building."
+    },
+    {
+      "id": "mind_rest",
+      "group": "body",
+      "durationSec": [
+        30,
+        90
+      ],
+      "target": {
+        "type": "spot",
+        "kind": "home"
+      },
+      "slot": "sit",
+      "reason": "I am resting at home."
     },
     {
       "id": "sit",
       "group": "body",
-      "durationSec": [8, 20],
-      "target": { "type": "none" },
+      "durationSec": [
+        8,
+        20
+      ],
+      "target": {
+        "type": "none"
+      },
       "slot": "sit",
-      "requires": ["day"],
+      "requires": [
+        "day"
+      ],
       "reason": "I am resting my eyes. And the rest of me."
-    },
-    {
-      "id": "watch",
-      "group": "body",
-      "durationSec": [30, 70],
-      "target": { "type": "spot", "kind": "perch" },
-      "slot": "sit",
-      "requires": ["day"],
-      "reason": "Everything looks better from up high."
     },
     {
       "id": "follow",
       "group": "body",
-      "durationSec": [8, 16],
-      "target": { "type": "visitor" },
+      "durationSec": [
+        8,
+        16
+      ],
+      "target": {
+        "type": "visitor"
+      },
       "slot": "happy",
-      "requires": ["visitorNearby"],
+      "requires": [
+        "visitorNearby"
+      ],
       "reason": "I decided you could stay. For now."
     },
     {
       "id": "ignore_visitor",
       "group": "body",
-      "durationSec": [5, 12],
-      "target": { "type": "none" },
+      "durationSec": [
+        5,
+        12
+      ],
+      "target": {
+        "type": "none"
+      },
       "slot": "sit",
-      "requires": ["visitorNearby"],
+      "requires": [
+        "visitorNearby"
+      ],
       "reason": "I noticed you. I am choosing to look elsewhere."
-    },
-    {
-      "id": "hide",
-      "group": "body",
-      "durationSec": [20, 50],
-      "target": { "type": "object", "where": { "canHide": true } },
-      "slot": "sit",
-      "requires": ["day"],
-      "reason": "Nobody can see me in here. That is the point."
     },
     {
       "id": "sleep",
       "group": "body",
-      "durationSec": [120, 240],
-      "target": { "type": "none" },
+      "durationSec": [
+        120,
+        240
+      ],
+      "target": {
+        "type": "none"
+      },
       "slot": "sleep",
-      "requires": ["night"],
+      "requires": [
+        "night"
+      ],
       "reason": "It is dark. I am sleeping. Do not wake me."
     },
     {
       "id": "stretch",
       "group": "body",
-      "durationSec": [3, 4],
-      "target": { "type": "none" },
+      "durationSec": [
+        3,
+        4
+      ],
+      "target": {
+        "type": "none"
+      },
       "slot": "stretch",
-      "requires": ["day"],
+      "requires": [
+        "day"
+      ],
       "reason": "Everything needed lengthening."
     },
     {
       "id": "explore",
       "group": "body",
-      "durationSec": [15, 35],
-      "target": { "type": "wander", "radius": 25 },
+      "durationSec": [
+        15,
+        35
+      ],
+      "target": {
+        "type": "wander",
+        "radius": 25
+      },
       "slot": "idle",
-      "requires": ["day"],
+      "requires": [
+        "day"
+      ],
       "reason": "I wanted to see what was over there."
-    },
-    {
-      "id": "pick_up",
-      "group": "hands",
-      "body": "upright",
-      "effect": "pickUp",
-      "hands": "empty",
-      "durationSec": [3, 6],
-      "target": { "type": "object" },
-      "slot": "work",
-      "reason": "This one is coming with me."
-    },
-    {
-      "id": "carry",
-      "group": "hands",
-      "body": "upright",
-      "hands": "full",
-      "durationSec": [2, 6],
-      "target": { "type": "object" },
-      "slot": "carry",
-      "reason": "I am taking this over there."
-    },
-    {
-      "id": "drop",
-      "group": "hands",
-      "body": "upright",
-      "effect": "drop",
-      "hands": "full",
-      "durationSec": [2, 4],
-      "target": { "type": "none" },
-      "slot": "stand",
-      "reason": "I have put it down. It stays there now."
-    },
-    {
-      "id": "put_on",
-      "group": "hands",
-      "body": "upright",
-      "effect": "putOn",
-      "hands": "full",
-      "durationSec": [2, 5],
-      "target": { "type": "object" },
-      "slot": "work",
-      "reason": "That is where it goes."
-    },
-    {
-      "id": "open",
-      "group": "hands",
-      "body": "upright",
-      "effect": "open",
-      "durationSec": [2, 4],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "work",
-      "reason": "It was closed. Now it is not."
-    },
-    {
-      "id": "close",
-      "group": "hands",
-      "body": "upright",
-      "effect": "close",
-      "durationSec": [2, 4],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "work",
-      "reason": "Closed. Better."
-    },
-    {
-      "id": "cut",
-      "group": "making",
-      "body": "upright",
-      "effect": "cut",
-      "hands": "empty",
-      "durationSec": [4, 8],
-      "target": { "type": "object", "where": { "yields": true } },
-      "slot": "useTool",
-      "reason": "I need some of that, so I am taking some."
-    },
-    {
-      "id": "join",
-      "group": "making",
-      "body": "upright",
-      "effect": "make",
-      "accepts": ["wood", "fibre", "stone", "clay"],
-      "durationSec": [4, 8],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "work",
-      "reason": "These belong together."
-    },
-    {
-      "id": "shape",
-      "group": "making",
-      "body": "upright",
-      "effect": "make",
-      "accepts": ["clay", "stone", "shells", "wood"],
-      "durationSec": [4, 8],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "work",
-      "reason": "It is nearly the right shape."
-    },
-    {
-      "id": "build",
-      "group": "making",
-      "body": "upright",
-      "effect": "make",
-      "accepts": ["wood", "stone", "clay", "shells", "fibre"],
-      "durationSec": [4, 8],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "useTool",
-      "reason": "I am making something. Do not ask what yet."
-    },
-    {
-      "id": "sew",
-      "group": "making",
-      "body": "upright",
-      "effect": "make",
-      "accepts": ["fibre", "flowers"],
-      "durationSec": [4, 8],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "work",
-      "reason": "One small stitch at a time."
-    },
-    {
-      "id": "tinker",
-      "group": "making",
-      "body": "upright",
-      "effect": "create",
-      "artifact": "contraption",
-      "durationSec": [8, 16],
-      "target": { "type": "object", "where": { "mechanism": true } },
-      "slot": "useTool",
-      "reason": "I want to see what it does when I set it off."
-    },
-    {
-      "id": "paint",
-      "group": "making",
-      "body": "upright",
-      "effect": "paint",
-      "durationSec": [4, 8],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "useTool",
-      "reason": "It needed more colour."
-    },
-    {
-      "id": "read",
-      "group": "mind",
-      "body": "upright",
-      "effect": "read",
-      "durationSec": [10, 20],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "holdUp",
-      "requires": ["day"],
-      "reason": "There is a page I want to see."
-    },
-    {
-      "id": "study",
-      "group": "mind",
-      "body": "upright",
-      "effect": "study",
-      "durationSec": [14, 28],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "holdUp",
-      "requires": ["day"],
-      "reason": "I want to understand this properly."
-    },
-    {
-      "id": "write",
-      "group": "mind",
-      "body": "upright",
-      "effect": "create",
-      "artifact": "writing",
-      "durationSec": [10, 20],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "useTool",
-      "reason": "Words want to be put somewhere."
-    },
-    {
-      "id": "draw",
-      "group": "mind",
-      "body": "upright",
-      "effect": "create",
-      "artifact": "drawing",
-      "durationSec": [10, 20],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "useTool",
-      "reason": "I can see it. I need to get it onto paper."
-    },
-    {
-      "id": "compose",
-      "group": "mind",
-      "body": "upright",
-      "effect": "create",
-      "artifact": "melody",
-      "durationSec": [10, 20],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "useTool",
-      "reason": "There is a tune in my head and it will not leave."
-    },
-    {
-      "id": "play",
-      "group": "mind",
-      "body": "upright",
-      "effect": "none",
-      "durationSec": [12, 24],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "useTool",
-      "reason": "I want to hear it, not think about it."
-    },
-    {
-      "id": "broadcast",
-      "group": "mind",
-      "body": "upright",
-      "effect": "create",
-      "artifact": "broadcast",
-      "durationSec": [10, 20],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "useTool",
-      "reason": "Somebody might be listening. Probably not. I will say it anyway."
-    },
-    {
-      "id": "experiment",
-      "group": "mind",
-      "body": "upright",
-      "effect": "create",
-      "artifact": "labnote",
-      "durationSec": [10, 20],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "useTool",
-      "reason": "I want to know what happens if I do this."
-    },
-    {
-      "id": "observe",
-      "group": "mind",
-      "body": "upright",
-      "effect": "create",
-      "artifact": "labnote",
-      "durationSec": [10, 20],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "holdUp",
-      "requires": ["dusk"],
-      "reason": "The sky is doing something. I should write it down."
-    },
-    {
-      "id": "photograph",
-      "group": "mind",
-      "body": "upright",
-      "effect": "create",
-      "artifact": "photo",
-      "durationSec": [6, 12],
-      "target": { "type": "object" },
-      "slot": "holdUp",
-      "requires": ["day"],
-      "reason": "I want to keep how this looks right now."
-    },
-    {
-      "id": "code",
-      "group": "mind",
-      "body": "upright",
-      "effect": "create",
-      "artifact": "code",
-      "durationSec": [14, 26],
-      "target": { "type": "object", "unlocked": true },
-      "slot": "useTool",
-      "reason": "I have an idea for something that runs. Let me write it down."
     }
   ],
   "weights": {
-    "go_to": 0.5,
-    "hide": 0.4,
     "stretch": 0.6,
     "sleep": 8,
     "follow": 0.55,

@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -15,8 +15,6 @@ let dir: string
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'outside-'))
   copyFileSync(join(templates, 'forkling.json'), join(dir, 'forkling.json'))
-  mkdirSync(join(dir, 'objects'))
-  for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), join(dir, 'objects', f))
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 

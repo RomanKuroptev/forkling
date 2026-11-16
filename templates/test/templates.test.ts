@@ -2,12 +2,11 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, NotesHidden, objectIdFromPath, SpeciesPack, WorldObject, type Material } from '@forkling/schema'
+import { Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, NotesHidden, SpeciesPack } from '@forkling/schema'
 import { bodyWorldFor, isWalkable } from '@forkling/sim'
 import catSpecies from '@forkling/species-cat/species.json'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
-const assets = fileURLToPath(new URL('../../apps/viewer/public/models', import.meta.url))
 const packs: Record<string, SpeciesPack> = { cat: SpeciesPack.parse(catSpecies) }
 const { grid } = bodyWorldFor({ seed: 1, places: [] })
 
@@ -33,14 +32,6 @@ for (const template of ['forkling-world', 'merge']) {
       expect(pack, `no species pack "${forkling.species}"`).toBeDefined()
       expect(forklingPackIssues(forkling, pack!)).toEqual([])
       expect(isWalkable(grid, forkling.position[0], forkling.position[2])).toBe(true)
-    })
-
-    it('has objects that parse, are named after their id and use shipped assets', () => {
-      for (const path of paths.filter((p) => p.startsWith('objects/') && p.endsWith('.json'))) {
-        const object = WorldObject.parse(read(join(dir, path)))
-        expect(objectIdFromPath(path), path).toBe(object.id)
-        if ('asset' in object.model) expect(existsSync(join(assets, `${object.model.asset}.glb`)), `${path}: ${object.model.asset}`).toBe(true)
-      }
     })
 
     it('keeps people.json a list', () => {
@@ -69,7 +60,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|objects\/.+|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|requests\/.+|wishes\/.+|notes\/.+|mind\/.+|brain\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|requests\/.+|wishes\/.+|notes\/.+|mind\/.+|brain\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 
@@ -84,7 +75,7 @@ for (const template of ['forkling-world', 'merge']) {
 
 describe('templates/forkling-world', () => {
   it('ships every top-level folder a world needs', () => {
-    for (const folder of ['objects', 'memory', 'journal', 'self']) expect(existsSync(join(root, 'forkling-world', folder))).toBe(true)
+    for (const folder of ['memory', 'journal', 'self', 'places']) expect(existsSync(join(root, 'forkling-world', folder))).toBe(true)
     expect(existsSync(join(root, 'forkling-world', 'forkling.json'))).toBe(true)
   })
 

@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -99,9 +99,6 @@ const tick = (now: Date | string, llm: LlmClient | null, over: Partial<TickDeps>
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'wander-'))
   copyFileSync(join(merge, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
-  for (const f of readdirSync(join(world, 'objects'))) copyFileSync(join(world, 'objects', f), file(`objects/${f}`))
-  for (const f of readdirSync(join(merge, 'objects'))) copyFileSync(join(merge, 'objects', f), file(`objects/${f}`))
 })
 
 describe('the morning', () => {

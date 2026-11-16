@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, objectIdFromPath, SourceStats, Wants, WorldObject, type Note, type NotesHidden } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, SourceStats, Wants, type Note, type NotesHidden } from '@forkling/schema'
 import { readNotes, readNotesHidden } from './notes.ts'
 import { DEFAULT_SEED } from './seed.ts'
 
@@ -9,7 +9,6 @@ import { DEFAULT_SEED } from './seed.ts'
 export interface WorldFiles {
   dir: string
   forkling: Forkling
-  objects: WorldObject[]
   goals: Goals
   mindState: MindState
   budget: BudgetLedger
@@ -77,18 +76,12 @@ function listJson(dir: string, rel: string): string[] {
 /** Reads and validates a world repo. A file that doesn't fit is an error naming the file and every problem in it. */
 export function readWorld(dir: string, monthFor: (forkling: Forkling) => string): WorldFiles {
   const forkling = readJson(dir, 'forkling.json', Forkling)
-  const objects = listJson(dir, 'objects').map((rel) => {
-    const object = readJson(dir, rel, WorldObject)
-    if (objectIdFromPath(rel) !== object.id) throw new WorldFileError(rel, [`id "${object.id}" doesn't match the file name`])
-    return object
-  })
   const personaPath = join(dir, 'brain/persona.md')
   const summaryPath = join(dir, 'memory/summary.md')
 
   return {
     dir,
     forkling,
-    objects,
     goals: readJson(dir, 'mind/goals.json', Goals, {}),
     mindState: readJson(dir, 'mind/state.json', MindState, {}),
     budget: readJson(dir, 'brain/budget.json', BudgetLedger, { month: monthFor(forkling) }),

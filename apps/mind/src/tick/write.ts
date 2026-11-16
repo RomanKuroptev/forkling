@@ -2,7 +2,7 @@ import { Forkling, formatRequest, formatSelfRequest, type Goals, type Intention,
 import { toRepoIntention } from '@forkling/sim'
 import { renderPlan } from '../plan-page.ts'
 import { appendStream, appendTimeline, prune } from '../stream.ts'
-import { deleteFile, writeBytes, writeJson, writeText } from '../world.ts'
+import { writeBytes, writeJson, writeText } from '../world.ts'
 import type { Tick, TickResult } from './context.ts'
 import { pageHistoryPath } from './page.ts'
 import { aboutHistoryPath, renderAboutHistory } from './weekly.ts'
@@ -38,8 +38,6 @@ export function writeWorld(t: Tick): TickResult {
   const sourcesChanged = !same(t.sources, w.sources)
   const writeBody =
     t.started !== null ||
-    t.touched.size > 0 ||
-    t.gone.size > 0 ||
     goalsChanged ||
     mindChanged ||
     asleep !== forkling.asleep ||
@@ -64,10 +62,8 @@ export function writeWorld(t: Tick): TickResult {
           : inPack
             ? bodyIntention
             : forkling.intention)
-      // What the pet carried and stored is not kept: the forkling has paws for nothing now.
-      const { holding: _held, stored: _stored, ...rest } = forkling
       const next = Forkling.parse({
-        ...rest,
+        ...forkling,
         position: [round(body.pos.x, 2), 0, round(body.pos.z, 2)],
         mood: round(mood, 3),
         energy: round(energy, 3),
@@ -77,14 +73,6 @@ export function writeWorld(t: Tick): TickResult {
         lastTickAt: nowIso,
       })
       if (writeJson(dir, 'forkling.json', next)) written.push('forkling.json')
-    }
-    for (const id of t.touched) {
-      const object = t.objects.find((o) => o.id === id)
-      if (object && writeJson(dir, `objects/${id}.json`, object)) written.push(`objects/${id}.json`)
-    }
-    for (const id of t.gone) {
-      deleteFile(dir, `objects/${id}.json`)
-      written.push(`objects/${id}.json`)
     }
     if ((goalsChanged || (writeBody && workedChanged)) && writeJson(dir, 'mind/goals.json', goals)) written.push('mind/goals.json')
     if ((mindChanged || (writeBody && brokenOffChanged)) && writeJson(dir, 'mind/state.json', mind)) written.push('mind/state.json')

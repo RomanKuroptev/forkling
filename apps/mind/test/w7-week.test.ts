@@ -113,7 +113,6 @@ let seen: Seen
 beforeAll(async () => {
   dir = mkdtempSync(join(tmpdir(), 'w7-week-'))
   copyFileSync(join(merge, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
   mkdirSync(file('places'))
   for (const f of readdirSync(join(world, 'places'))) copyFileSync(join(world, 'places', f), file(`places/${f}`))
   const model = scripted()

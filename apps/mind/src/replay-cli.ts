@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
-import { Forkling, Goals, WorldObject, type Place } from '@forkling/schema'
+import { Forkling, Goals, type Place } from '@forkling/schema'
 import { parsePlaces } from './places.ts'
 import { formatReplay, replay, type ReplayState } from './replay.ts'
 import { loadSpecies } from './species.ts'
@@ -51,7 +51,6 @@ function main(): void {
   const commits = [...(before ? [before] : []), ...inWindow]
   if (commits.length === 0) throw new Error('no commit of forkling.json before the end of that window')
 
-  const objectCache = new Map<string, WorldObject[]>()
   const placeCache = new Map<string, Place[]>()
   const states: ReplayState[] = []
   let species: ReturnType<typeof loadSpecies> | null = null
@@ -64,27 +63,6 @@ function main(): void {
     }
     species ??= loadSpecies(parsed.data.species)
     const goalsRaw = show(dir, c.sha, 'mind/goals.json')
-    const treeId = (() => {
-      try {
-        return git(dir, ['rev-parse', `${c.sha}:objects`]).trim()
-      } catch {
-        return ''
-      }
-    })()
-    let objects = objectCache.get(treeId)
-    if (!objects) {
-      objects = treeId
-        ? git(dir, ['ls-tree', '-r', '--name-only', c.sha, 'objects'])
-            .split('\n')
-            .filter((p) => p.endsWith('.json'))
-            .flatMap((p) => {
-              const text = show(dir, c.sha, p)
-              const o = text ? WorldObject.safeParse(JSON.parse(text)) : null
-              return o?.success ? [o.data] : []
-            })
-        : []
-      objectCache.set(treeId, objects)
-    }
     // The places as of that commit, if the world had any yet.
     const placesTree = (() => {
       try {
@@ -109,7 +87,6 @@ function main(): void {
       atMs: c.atMs,
       forkling: parsed.data,
       goals: Goals.parse(goalsRaw ? JSON.parse(goalsRaw) : {}),
-      objects,
       places,
     })
   }

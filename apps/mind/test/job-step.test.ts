@@ -50,8 +50,6 @@ const deps = (llm: LlmClient | null, now: string) => ({ now: new Date(now), llm,
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'job-'))
   copyFileSync(join(templates, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
-  for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), file(`objects/${f}`))
   // A full work costs 240 points, which is two days of saving: start with enough.
   mkdirSync(file('mind'), { recursive: true })
   writeFileSync(file('mind/state.json'), JSON.stringify({ allowance: { points: 450, day: '2026-11-03' } }))

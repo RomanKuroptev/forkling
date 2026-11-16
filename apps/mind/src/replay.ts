@@ -1,4 +1,4 @@
-import type { Forkling, Goals, MicroBehavior, Place, SpeciesPack, WorldObject } from '@forkling/schema'
+import type { Forkling, Goals, MicroBehavior, Place, SpeciesPack } from '@forkling/schema'
 import { bodyWorldFor, isAsleepAt, playbackStateTime, startPlayback, type BodyWorld } from '@forkling/sim'
 
 /** The repo as one commit of `forkling.json` left it: what a viewer loading that commit would have been given. */
@@ -7,7 +7,6 @@ export interface ReplayState {
   atMs: number
   forkling: Forkling
   goals: Goals
-  objects: WorldObject[]
   /** The places as of that commit; missing means the world had none. */
   places?: Place[]
 }

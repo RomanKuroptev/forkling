@@ -211,7 +211,6 @@ export function startPlayback(input: PlaybackInput, nowMs: number): Playback {
   const state = createForkling(pack, behaviors, anchor.seed, start, {
     time: anchor.time,
     firstAction: carried?.action ?? forkling.intention.type,
-    holding: forkling.holding !== undefined,
     // The body's drift is bent a little by how it feels: mood is valence, and energy is how wound up it is.
     feelings: { valence: forkling.mood, arousal: (forkling.energy + 1) / 2 },
     ...focusFor(input.goals, pack, world),

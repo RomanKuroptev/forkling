@@ -1,14 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { Forkling, Goals, WorldObject } from '@forkling/schema'
+import { Forkling, Goals } from '@forkling/schema'
 import { formatReplay, replay, type ReplayState } from '../src/replay.ts'
 import { loadSpecies } from '../src/species.ts'
 
 const cat = loadSpecies('cat')
 const templates = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
 const read = (rel: string) => JSON.parse(readFileSync(`${templates}/${rel}`, 'utf8'))
-const objects = ['sunny-rock', 'tall-rock'].map((id) => WorldObject.parse(read(`objects/${id}.json`)))
 
 const T0 = Date.parse('2026-11-03T09:00:00Z')
 const iso = (min: number) => new Date(T0 + min * 60_000).toISOString()
@@ -18,7 +17,6 @@ function state(atMin: number, over: Partial<Forkling> = {}, goals: unknown = {})
     atMs: T0 + atMin * 60_000,
     forkling: Forkling.parse({ ...read('forkling.json'), lastTickAt: iso(atMin), intention: { type: 'sit', startedAt: iso(atMin), seed: 3, reason: 'Resting.' }, ...over }),
     goals: Goals.parse(goals),
-    objects,
   }
 }
 

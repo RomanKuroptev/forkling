@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -21,8 +21,6 @@ const json = (rel: string) => JSON.parse(readFileSync(file(rel), 'utf8'))
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'weekly-tick-'))
   copyFileSync(join(templates, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
-  for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), file(`objects/${f}`))
   mkdirSync(file('mind'), { recursive: true })
   // A plan is made for the day and a long goal exists, so nothing else wants the model.
   writeFileSync(file('mind/state.json'), JSON.stringify(MindState.parse({ lastPlanDate: '2026-11-15' })))

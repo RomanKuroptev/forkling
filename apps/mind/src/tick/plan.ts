@@ -91,13 +91,12 @@ export function startStep(t: Tick, index: number, reason?: string): void {
   t.mind.recent = [...t.mind.recent, { verb: step.verb, ...(step.targetId ? { targetId: step.targetId } : {}), at: t.nowIso }].slice(-MAX_RECENT)
   const goalRef = `today:${index}`
   const heldBeliefs = step.because && step.because.length > 0 ? { beliefRefs: step.because } : {}
-  const targetName = step.targetId ? (t.objects.find((o) => o.id === step.targetId)?.name ?? step.targetId) : ''
+  const targetName = step.targetId ?? ''
   t.remember.push({
     at: t.nowIso,
     kind: 'step',
     text: `Started ${step.verb}${targetName ? ` (${targetName})` : ''}: ${started.reason}`,
     verb: step.verb,
-    ...(step.targetId && t.objectIds.has(step.targetId) ? { objectId: step.targetId } : {}),
     goalRef,
     ...heldBeliefs,
   })

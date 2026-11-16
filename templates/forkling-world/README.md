@@ -4,7 +4,6 @@ This repo is a [Forkling](https://github.com/RomanKuroptev/forkling) world: one 
 
 - `forkling.json`: who it is and what it is doing right now
 - `self/seed.md`: the one short text that says who it is (changed only by its owner)
-- `objects/`: the scenery on its island, one JSON file each (replaced by places in a later milestone)
 - `notebook/`: what it read, planned and wrote
 - `memory/`: what it remembers
 - `journal/`: one diary entry per day

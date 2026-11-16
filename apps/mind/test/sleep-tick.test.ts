@@ -30,8 +30,6 @@ const nextWake = () => {
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'sleep-tick-'))
   copyFileSync(join(templates, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
-  for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), file(`objects/${f}`))
   appendStream(dir, DAY, [{ at: '2026-11-03T09:00:00Z', kind: 'made', text: 'Kept a souvenir about fog.' }])
   mkdirSync(file('mind'), { recursive: true })
   // A plan is made for the day, so nothing else wants the model tonight.

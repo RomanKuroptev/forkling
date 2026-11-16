@@ -51,8 +51,6 @@ const health = () => Health.parse(JSON.parse(readFileSync(file('mind/health.json
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'ticks-'))
   copyFileSync(join(templates, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
-  for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), file(`objects/${f}`))
 })
 
 describe('the tick log', () => {

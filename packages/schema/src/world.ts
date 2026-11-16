@@ -1,14 +1,9 @@
 import { z } from 'zod'
 import { Vec3 } from './geometry.ts'
 import { Intention, Timestamp } from './intention.ts'
-import { Material, ObjectProperties } from './properties.ts'
 import type { SpeciesPack } from './species.ts'
 
 const Slug = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'lowercase letters, digits and dashes')
-
-/** What the forkling has in its paws: a loose material, or a whole object (a ball of yarn). */
-export const Holding = z.union([z.object({ material: Material }).strict(), z.object({ objectId: Slug }).strict()])
-export type Holding = z.infer<typeof Holding>
 
 function isTimezone(tz: string): boolean {
   try {
@@ -33,10 +28,6 @@ const ForklingShape = z.object({
   /** How much it has in it, from spent (-1) to full (1). Set to +0.5 at wake. */
   energy: z.number().min(-1).max(1).default(0.5),
   intention: Intention,
-  /** What it is carrying right now. Paws hold one thing. */
-  holding: Holding.optional(),
-  /** Materials put away at home. */
-  stored: z.partialRecord(Material, z.number().int().nonnegative()).default({}),
   lastTickAt: Timestamp,
   /** True between bedtime and waking, as decided by the mind from the sleep schedule. */
   asleep: z.boolean().default(false),
@@ -65,13 +56,6 @@ function fromPetEra(raw: unknown): unknown {
 export const Forkling = z.preprocess(fromPetEra, ForklingShape) as unknown as z.ZodType<z.output<typeof ForklingShape>, z.input<typeof ForklingShape>>
 export type Forkling = z.infer<typeof Forkling>
 
-/** What a forkling can do with an object. Replaced by `properties` and `unlocks`; read until the sim no longer does. */
-export const Affordance = z.enum(['sit', 'eat', 'play', 'sleep', 'climb', 'perch'])
-export type Affordance = z.infer<typeof Affordance>
-
-/** A model from the engine's shipped asset library, e.g. `nature/rock_largeA`. */
-export const AssetModel = z.object({ asset: z.string().regex(/^[a-z0-9-]+\/[A-Za-z0-9_-]+$/, 'like nature/rock_largeA') }).strict()
-
 /** One primitive of a composed model. Sizes are meters, `at` is relative to the object's origin. */
 export const ModelPart = z.object({
   shape: z.enum(['box', 'sphere', 'cylinder', 'cone']),
@@ -81,124 +65,6 @@ export const ModelPart = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'like #a67c52'),
 })
 export type ModelPart = z.infer<typeof ModelPart>
-
-/** A model composed of primitives, which is how a forkling's own creations look. */
-export const PartsModel = z.object({ parts: z.array(ModelPart).min(1).max(24) }).strict()
-export type PartsModel = z.infer<typeof PartsModel>
-
-/** What changes about an object over time. Everything here is a timestamp or a count, so growth can be worked out lazily. */
-export const ObjectState = z.object({
-  /** Material left in a source, as of `stockAt`. Missing means full. */
-  stock: z.number().int().nonnegative().optional(),
-  stockAt: Timestamp.optional(),
-  plantedAt: Timestamp.optional(),
-  wateredAt: Timestamp.optional(),
-  paintedAt: Timestamp.optional(),
-  cookedAt: Timestamp.optional(),
-  open: z.boolean().optional(),
-  /** Meals left in something with `portions`. Missing means full. */
-  portionsLeft: z.number().int().nonnegative().optional(),
-  /** In the forkling's paws. A held object stays in `objects/` but is not on the ground. */
-  held: z.boolean().optional(),
-  /** Id of the object this one is tucked behind or inside. */
-  hiddenBy: Slug.optional(),
-})
-export type ObjectState = z.infer<typeof ObjectState>
-
-/** Set on objects the forkling made. A build that needs several sessions appears at once, unfinished, and grows. */
-export const MadeInfo = z.object({
-  verb: z.string().min(1),
-  materials: z.array(Material).min(1).max(12),
-  /** Making skill level when it was started: how tidy it is. */
-  skill: z.number().int().min(0).max(10),
-  /** Sessions worked so far, and how many it takes. */
-  sessions: z.number().int().min(1),
-  needed: z.number().int().min(1),
-  done: z.boolean(),
-  at: Timestamp,
-  /** Seed of its look, fixed when it was started, so later sessions grow the same thing. */
-  seed: z.number().int().nonnegative().optional(),
-})
-export type MadeInfo = z.infer<typeof MadeInfo>
-
-/** The most a trigger may push a part, in newton-seconds, and the longest a contraption runs. */
-export const MAX_IMPULSE = 20
-export const MAX_RUN_SEC = 15
-
-/** Which of the object's parts is fixed in place and which moves, and how heavy the moving ones are. */
-export const ContraptionBody = z.object({
-  /** Index into `model.parts`. */
-  part: z.number().int().min(0).max(23),
-  body: z.enum(['fixed', 'dynamic']),
-  massKg: z.number().min(0.01).max(100).default(1),
-})
-
-/**
- * What makes an object a mechanism: a physics sequence the viewer plays as a show and the mind runs headless to know
- * how it ended. One push on a moving part sets it off, and the rest is physics.
- */
-export const Contraption = z.object({
-  bodies: z.array(ContraptionBody).min(1).max(24),
-  trigger: z.object({ part: z.number().int().min(0).max(23), impulse: Vec3 }),
-  runSec: z.number().min(1).max(MAX_RUN_SEC),
-  /** What happened the last time it ran. */
-  lastRun: z.object({ at: Timestamp, moved: z.boolean(), maxTravel: z.number().min(0), settled: z.boolean() }).optional(),
-})
-export type Contraption = z.infer<typeof Contraption>
-
-/** `objects/<id>.json`: one thing in the world. */
-export const WorldObject = z.object({
-  id: Slug,
-  kind: Slug,
-  name: z.string().min(1).max(60),
-  position: Vec3,
-  /** Radians. */
-  rotation: Vec3.default([0, 0, 0]),
-  scale: z.number().positive().default(1),
-  model: z.union([AssetModel, PartsModel]),
-  properties: ObjectProperties.prefault({}),
-  /** Verb ids this object makes possible: a workbench unlocks `build`, a plot unlocks `plant`. */
-  unlocks: z.array(z.string().min(1)).default([]),
-  /** A source of a material (driftwood, a clay bank) that refills slowly. */
-  yields: z.object({ material: Material, max: z.number().int().positive(), respawnHours: z.number().positive() }).optional(),
-  /** A plant: once watered it ripens after `hours`, then `harvest` gives `gives`. */
-  grows: z.object({ hours: z.number().positive(), gives: Material }).optional(),
-  /** Food and the like go off this many hours after being made or picked. */
-  spoilsAfterHours: z.number().positive().optional(),
-  state: ObjectState.default({}),
-  made: MadeInfo.optional(),
-  /** Set when the object is a mechanism that runs a physics sequence when triggered (needs `model.parts`). */
-  contraption: Contraption.optional(),
-  affordances: z.array(Affordance).default([]),
-  /** Optional sandboxed script for the object (M6). */
-  behavior: z.string().regex(/^behaviors\/[a-z0-9-]+\.js$/, 'a file under behaviors/').optional(),
-  /** Why the forkling wanted it. */
-  reason: z.string().min(1).max(200),
-})
-  .superRefine((o, ctx) => {
-    const c = o.contraption
-    if (!c) return
-    if (!('parts' in o.model)) {
-      ctx.addIssue({ code: 'custom', path: ['contraption'], message: 'a contraption needs a model made of parts' })
-      return
-    }
-    const count = o.model.parts.length
-    const seen = new Set<number>()
-    c.bodies.forEach((b, i) => {
-      if (b.part >= count) ctx.addIssue({ code: 'custom', path: ['contraption', 'bodies', i, 'part'], message: `part ${b.part} does not exist (the model has ${count})` })
-      if (seen.has(b.part)) ctx.addIssue({ code: 'custom', path: ['contraption', 'bodies', i, 'part'], message: `part ${b.part} is listed twice` })
-      seen.add(b.part)
-    })
-    const pushed = c.bodies.find((b) => b.part === c.trigger.part)
-    if (!pushed || pushed.body !== 'dynamic') ctx.addIssue({ code: 'custom', path: ['contraption', 'trigger', 'part'], message: 'the trigger has to push a part that moves' })
-    if (Math.hypot(...c.trigger.impulse) > MAX_IMPULSE) ctx.addIssue({ code: 'custom', path: ['contraption', 'trigger', 'impulse'], message: `the push is limited to ${MAX_IMPULSE}` })
-  })
-export type WorldObject = z.infer<typeof WorldObject>
-
-/** The object id for an `objects/<id>.json` path, or null for anything else. */
-export function objectIdFromPath(path: string): string | null {
-  return /^objects\/([a-z0-9][a-z0-9-]*)\.json$/.exec(path)?.[1] ?? null
-}
 
 /**
  * Problems with a forkling that only show up next to its species pack: a different species or an intention that isn't one of its actions. Empty when they match.

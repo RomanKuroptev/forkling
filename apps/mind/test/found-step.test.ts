@@ -79,8 +79,6 @@ const days = (...topics: [string, number][][]) => topics.map((t, i) => ({ date: 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'found-step-'))
   copyFileSync(join(merge, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
-  for (const f of readdirSync(join(merge, 'objects'))) copyFileSync(join(merge, 'objects', f), file(`objects/${f}`))
   mkdirSync(file('places'))
   copyFileSync(join(world, 'places/home.json'), file('places/home.json'))
   copyFileSync(join(world, 'places/workshop.json'), file('places/workshop.json'))

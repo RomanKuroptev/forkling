@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { createFlag, createPersistedFlag } from '../src/ui/flag.ts'
 import { detectTouch } from '../src/touch.ts'
 import { DEAD_ZONE, mergeMovement, RUN_THRESHOLD } from '../src/player/touchInput.ts'
-import { createPress, createReach } from '../src/world/interact.ts'
 
 describe('detectTouch', () => {
   it('is touch for a coarse pointer on a device with touch points', () => {
@@ -102,39 +101,6 @@ describe('createFlag', () => {
 
   it('starts from what it is given', () => {
     expect(createFlag(true).get()).toBe(true)
-  })
-})
-
-describe('createPress', () => {
-  it('counts presses, so every reader can tell whether there was one since it last looked', () => {
-    const press = createPress()
-    const seen = press.count()
-    expect(press.count()).toBe(seen)
-    press.press()
-    press.press()
-    expect(press.count()).toBe(seen + 2)
-  })
-})
-
-describe('createReach', () => {
-  it('is near while any contraption is in reach, and not once the last one is out', () => {
-    const flag = createFlag(false)
-    const reach = createReach(flag)
-    reach.report('a', true)
-    reach.report('b', true)
-    expect(flag.get()).toBe(true)
-    reach.report('a', false)
-    expect(flag.get()).toBe(true)
-    reach.report('b', false)
-    expect(flag.get()).toBe(false)
-  })
-
-  it('forgets a contraption that is gone', () => {
-    const flag = createFlag(false)
-    const reach = createReach(flag)
-    reach.report('a', true)
-    reach.forget('a')
-    expect(flag.get()).toBe(false)
   })
 })
 

@@ -39,7 +39,6 @@ describe('SpeciesPack', () => {
     const pack = SpeciesPack.parse(base)
     expect(pack.actions[0]!.gait).toBe('walk')
     expect(pack.actions[0]!.requires).toEqual([])
-    expect(pack.starterSpots).toEqual([])
   })
 
   it('maps a mind verb to a pose that is one of its own actions, and rejects one that is not', () => {

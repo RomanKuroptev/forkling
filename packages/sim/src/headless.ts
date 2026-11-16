@@ -18,8 +18,6 @@ export interface HeadlessOptions {
   world?: BodyWorld
   /** Favour this action and target until `until` seconds into the run. */
   focus?: Focus
-  /** Start with full paws. */
-  holding?: boolean
 }
 
 export interface HeadlessRun {
@@ -52,7 +50,6 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
   const start = nearestWalkable(world.grid, { x: world.spawn.x, z: world.spawn.z })!
   const state = createForkling(pack, behaviors, opts.seed, start, {
     ...(opts.focus ? { focus: opts.focus } : {}),
-    ...(opts.holding ? { holding: true } : {}),
   })
   const run: HeadlessRun = {
     trace: [],

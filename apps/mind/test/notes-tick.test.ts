@@ -32,8 +32,6 @@ beforeEach(() => {
   copyFileSync(join(templates, 'forkling.json'), file('forkling.json'))
   // Merge is in bed at the file's last write, so this first tick is its waking up.
   writeFileSync(file('forkling.json'), JSON.stringify({ ...Forkling.parse(json('forkling.json')), asleep: true }))
-  mkdirSync(file('objects'))
-  for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), file(`objects/${f}`))
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 

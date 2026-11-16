@@ -36,11 +36,6 @@ export function DebugOverlay() {
   if (!open || !pb) return null
   const sim = pb.state
   const { ref, sha, forkling } = world
-  const holding = forkling.holding ? ('material' in forkling.holding ? forkling.holding.material : forkling.holding.objectId) : 'empty'
-  const stored = Object.entries(forkling.stored)
-    .filter(([, n]) => (n ?? 0) > 0)
-    .map(([m, n]) => `${n} ${m}`)
-    .join(', ')
 
   return (
     <div className="debug">
@@ -51,10 +46,6 @@ export function DebugOverlay() {
         mood {forkling.mood >= 0 ? '+' : ''}
         {forkling.mood.toFixed(2)} · energy {forkling.energy >= 0 ? '+' : ''}
         {forkling.energy.toFixed(2)}
-      </div>
-      <div className="debug-line dim">
-        paws: {holding}
-        {stored ? ` · stored: ${stored}` : ''}
       </div>
       <div className="debug-line">
         <b>{sim.intention.type}</b>

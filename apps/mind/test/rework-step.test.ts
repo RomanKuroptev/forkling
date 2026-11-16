@@ -71,8 +71,6 @@ async function landOn(fake: ReturnType<typeof fakeLlm>, workCheck?: WorkChecker)
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'rework-'))
   copyFileSync(join(templates, 'forkling.json'), file('forkling.json'))
-  mkdirSync(file('objects'))
-  for (const f of readdirSync(join(templates, 'objects'))) copyFileSync(join(templates, 'objects', f), file(`objects/${f}`))
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 

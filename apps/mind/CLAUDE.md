@@ -36,6 +36,3 @@ The mind of one world repo. Today it runs as the Actions tick (`src/cli.ts`, `mi
 - GitHub cron can be delayed by several minutes. Never assume exact tick times.
 - Every LLM decision goes through the validate step in code before it is used; on rejection fall back to the sim's utility AI and log why.
 - Uses `@anthropic-ai/sdk` for calls. Merge's engine is pinned by tag in each world's workflows (`FORKLING_REF`).
-
-## Still here until W5 slice 14 part B lands
-`src/world.ts` still reads a world's `objects/`. Nothing uses them. Don't extend them.

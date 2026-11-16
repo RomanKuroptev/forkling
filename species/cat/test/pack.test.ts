@@ -32,38 +32,17 @@ describe('cat species pack', () => {
     expect(pack.bodyPlans.upright).toEqual(['body', 'hands', 'making', 'growing', 'mind'])
   })
 
-  it('has every verb of the groups M5 ships, the mind verbs so far, and none of the later ones', () => {
+  it('has the body verbs and one pose for each mind verb, and no verb that works on objects', () => {
     const ids = new Set(pack.actions.map((a) => a.id))
-    const wanted = {
-      body: ['go_to', 'inspect', 'sit', 'watch', 'follow', 'hide', 'sleep', 'stretch', 'explore'],
-      hands: ['pick_up', 'carry', 'drop', 'put_on', 'open', 'close'],
-      making: ['cut', 'join', 'shape', 'build', 'paint', 'sew', 'tinker'],
-      mind: ['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph', 'code'],
-    }
-    for (const [group, verbs] of Object.entries(wanted)) {
-      for (const verb of verbs) expect(ids.has(verb), `${group}: ${verb}`).toBe(true)
-    }
-    for (const later of [] as string[]) {
-      expect(ids.has(later), later).toBe(false)
-    }
-    expect(pack.actions.filter((a) => a.group === 'mind').map((a) => a.id)).toEqual(['read', 'study', 'write', 'draw', 'compose', 'play', 'broadcast', 'experiment', 'observe', 'photograph', 'code'])
+    for (const verb of ['sit', 'follow', 'sleep', 'stretch', 'explore']) expect(ids.has(verb), verb).toBe(true)
+    for (const verb of ['mind_read', 'mind_write', 'mind_tinker', 'mind_tend', 'mind_visit', 'mind_build', 'mind_rest']) expect(ids.has(verb), verb).toBe(true)
+    expect(pack.actions.some((a) => a.target.type === ('object' as string))).toBe(false)
   })
 
   it('is made of verbs, not activities', () => {
     for (const activity of ['gardening', 'fishing', 'collecting', 'cooking_session', 'coding_session']) {
       expect(pack.actions.some((a) => a.id === activity), activity).toBe(false)
     }
-  })
-
-  it('does its work upright', () => {
-    for (const verb of pack.actions.filter((a) => a.group === 'hands' || a.group === 'making' || a.group === 'growing')) {
-      expect(verb.body ?? 'upright', verb.id).not.toBe('quadruped')
-    }
-  })
-
-  it('only lets the mind plan what changes the world', () => {
-    const planned = pack.actions.filter((a) => a.effect !== 'none' && a.effect !== 'hide').map((a) => a.id)
-    expect(planned).toEqual(expect.arrayContaining(['pick_up', 'cut', 'build']))
   })
 
   it('maps every slot its verbs and behaviors use, so nothing silently falls back', () => {
@@ -80,9 +59,6 @@ describe('cat species pack', () => {
     expect(pack.weights.follow ?? 1).toBeLessThan(pack.weights.ignore_visitor ?? 1)
   })
 
-  it('only works with materials that make sense for each making verb', () => {
-    expect(byId('sew').accepts).toEqual(['fibre', 'flowers'])
-  })
 })
 
 describe('cat behaviors', () => {
@@ -255,12 +231,6 @@ describe('cat in the headless sim', () => {
     // It kneads before it lies down to sleep, and stretches after it wakes.
     const night = [11, 12, 13].flatMap((seed) => runHeadless({ pack, behaviors, seed, startHour: 23, seconds: 300 }).micros.map((m) => m.id))
     for (const id of ['knead', 'stretch']) expect(night.includes(id), id).toBe(true)
-  })
-
-  it('never chooses by itself what would change the world', () => {
-    const runs = [1, 2, 3, 4].map((seed) => runHeadless({ pack, behaviors, seed, startHour: 12, seconds: 900 }))
-    const worldChanging = new Set(pack.actions.filter((a) => a.effect !== 'none' && a.effect !== 'hide').map((a) => a.id))
-    for (const r of runs) for (const type of r.intentionTypes) expect(worldChanging.has(type), type).toBe(false)
   })
 
   it('has no verb that waits for a visit that cannot come: give returns with the visit gateway', () => {

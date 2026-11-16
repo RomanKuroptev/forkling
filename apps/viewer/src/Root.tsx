@@ -2,7 +2,6 @@ import { placesRev } from '@forkling/sim'
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
 import { App } from './App.tsx'
 import { speciesPacks } from './species/registry.ts'
-import { ASSETS } from './world/assets.ts'
 import { fixtureNotes } from './world/fixtureNotes.ts'
 import { mindUrlFrom, startLiveSync } from './world/liveSync.ts'
 import { startNotesSync } from './world/notesClient.ts'
@@ -33,7 +32,7 @@ function load(ref: WorldRef, local: boolean): Promise<LoadResult> {
   if (!pending) {
     const real: typeof fetch = (input, init) => fetch(input, init)
     // `?world=local` reads the world from files served next to the viewer, not from GitHub.
-    pending = loadWorld(ref, { fetch: local ? localFetch(`${location.origin}${import.meta.env.BASE_URL}`, real) : real, species: speciesPacks, assets: ASSETS })
+    pending = loadWorld(ref, { fetch: local ? localFetch(`${location.origin}${import.meta.env.BASE_URL}`, real) : real, species: speciesPacks })
     loads.set(key, pending)
   }
   return pending
