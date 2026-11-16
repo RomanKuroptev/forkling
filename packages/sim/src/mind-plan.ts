@@ -4,6 +4,7 @@
  */
 import { planCost, type PricedStep } from './allowance.ts'
 import { tiredLimits, type MoodState } from './mood.ts'
+import { sameSubject, writesOnTopic, type WrittenPage } from './topic-cluster.ts'
 
 export const MIND_VERBS = ['wander', 'tend', 'revisit', 'expand', 'found', 'tinker', 'write', 'reply', 'rest'] as const
 export type MindVerb = (typeof MIND_VERBS)[number]
@@ -42,6 +43,17 @@ export interface MindStep extends PricedStep {
   wantId?: string | null
 }
 
+/**
+ * The variety switches Roman has turned on (spec 12.3, `mind/config.json`). A rule is on when its field is here. Both only refuse a
+ * step, with a reason Merge can read, and never choose one.
+ */
+export interface VarietyContext {
+  /** No more than `limit` writes on one subject in `days` days. `pages` are the pages written, newest last. */
+  sameTopicWrites?: { limit: number; days: number; pages: readonly WrittenPage[] }
+  /** No tinker on the same work more than `limit` times in a row. `recent` are the targets of the latest tinkers, oldest first. */
+  sameWorkTinker?: { limit: number; recent: readonly string[] }
+}
+
 export interface MindPlanContext {
   /** When the first step starts, and when it is bed time. */
   startMs: number
@@ -63,6 +75,7 @@ export interface MindPlanContext {
   recent: readonly { verb: string }[]
   used: { repliesToday: number; sketchesToday: number; foundThisWeek: number }
   lastExpandedPlace: string | null
+  variety?: VarietyContext
 }
 
 export type MindPlanResult = { ok: true; steps: MindStep[] } | { ok: false; reasons: string[] }
@@ -96,6 +109,9 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
   let lastExpanded = c.lastExpandedPlace
   let startMs = c.startMs
   const verbs = c.recent.map((r) => r.verb)
+  // Pages and tinkers the plan itself adds count against the later steps of the same plan.
+  const plannedPages: WrittenPage[] = []
+  const plannedTinkers: string[] = []
 
   steps.forEach((s, i) => {
     const n = `step ${i + 1}`
@@ -160,6 +176,12 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
         break
       case 'tinker':
         if (!target) here.push(`${n}: tinker needs an idea`)
+        else if (c.variety?.sameWorkTinker) {
+          const { limit, recent } = c.variety.sameWorkTinker
+          const last = [...recent, ...plannedTinkers].slice(-limit)
+          if (last.length >= limit && last.every((r) => sameSubject(r, target))) here.push(`${n}: you have made the same work ${limit} times in a row ("${last.at(-1)!.slice(0, 50)}"): make or change something else this time`)
+          plannedTinkers.push(target)
+        }
         if (s.size === 'sketch') {
           sketches++
           if (sketches > MAX_SKETCHES_PER_DAY) here.push(`${n}: at most ${MAX_SKETCHES_PER_DAY} sketches a day`)
@@ -167,6 +189,15 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
         break
       case 'write':
         if (!target) here.push(`${n}: write needs a place or a subject`)
+        else if (c.variety?.sameTopicWrites) {
+          const { limit, days, pages } = c.variety.sameTopicWrites
+          const hits = writesOnTopic({ target, reason: s.reason }, [...pages, ...plannedPages], { nowMs: c.startMs, days })
+          if (hits.length >= limit) {
+            const titles = hits.slice(-3).map((h) => `"${h.title.slice(0, 40)}"`).join(', ')
+            here.push(`${n}: you have written about this ${hits.length} times in the last ${days} days (${titles}): write about something else, or make or read something instead`)
+          }
+          plannedPages.push({ at: new Date(at).toISOString(), title: target, target, text: s.reason })
+        }
         break
       case 'reply':
         if (!target) here.push(`${n}: reply needs a note`)

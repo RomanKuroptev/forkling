@@ -6,6 +6,7 @@ import type {
   BuildRequest,
   Goals,
   Intention,
+  MindConfig,
   Note,
   Souvenir,
   SourceStats,
@@ -171,6 +172,8 @@ export interface Tick {
   aboutWrite: { text: string; changes: { what: string; why: string }[]; at: string } | null
   /** The notes visitors left that Roman has not hidden (spec 10.1), as the tick leaves them. */
   visitorNotes: Note[]
+  /** `mind/config.json`: which variety switches Roman has turned on (every one is off without it). */
+  config: MindConfig
   /** Notes that changed this tick (found, replied, declined, kept): written to `notes/<id>.json`. */
   noteUpdates: Note[]
   /** Set when a reply step finishes: the note is answered after the step is applied (spec 10.1). */

@@ -204,3 +204,58 @@ describe('timing sanity', () => {
     expect(BED - START).toBe(13 * HOUR)
   })
 })
+
+describe('the variety switches (spec 12.3), when Roman has turned them on', () => {
+  const NOW = START
+  const DAY = 86_400_000
+  const lidarPage = (title: string, daysAgo: number, target: string | null = null) => ({
+    at: new Date(NOW - daysAgo * DAY).toISOString(),
+    title,
+    target,
+    text: `${title}. ${'I keep thinking about lidar and laser and canopy and elevation and ground, and what the laser does next. '.repeat(4)}`,
+  })
+  const pages = [lidarPage('What the laser found', 5), lidarPage('Height without the sky', 4), lidarPage('A height grid forgets', 2, 'Digital elevation model')]
+  const topicOn = { sameTopicWrites: { limit: 3, days: 7, pages } }
+  const lidarWrite = (over: Partial<MindStep> = {}) => write({ target: 'Airborne lidar', reason: 'What the laser keeps and drops', ...over })
+
+  it('does nothing while a switch is off or missing', () => {
+    expect(reasons([wander(), lidarWrite(), rest()], ctx())).toEqual([])
+    expect(reasons([wander(), lidarWrite(), rest()], ctx({ variety: {} }))).toEqual([])
+  })
+
+  it('refuses a write that is a fourth on the same subject in 7 days, in words Merge can read', () => {
+    const r = reasons([wander(), lidarWrite(), rest()], ctx({ variety: topicOn }))
+    expect(r).toHaveLength(1)
+    expect(r[0]).toMatch(/step 2: you have written about this 3 times in the last 7 days/)
+    expect(r[0]).toMatch(/What the laser found/)
+  })
+
+  it('lets a write on another subject through, and lets the third one through', () => {
+    expect(reasons([wander(), write({ target: 'Moss on old walls', reason: 'something soft' }), rest()], ctx({ variety: topicOn }))).toEqual([])
+    expect(reasons([wander(), lidarWrite(), rest()], ctx({ variety: { sameTopicWrites: { limit: 3, days: 7, pages: pages.slice(0, 2) } } }))).toEqual([])
+  })
+
+  it('counts a write earlier in the same plan', () => {
+    const two = pages.slice(0, 2)
+    const steps = [lidarWrite({ target: 'Airborne lidar' }), wander(), lidarWrite({ target: 'Airborne lidar', reason: 'The laser again' }), rest()]
+    const r = reasons(steps, ctx({ variety: { sameTopicWrites: { limit: 3, days: 7, pages: two } } }))
+    expect(r.join('\n')).toMatch(/step 3: you have written about this 3 times/)
+    expect(r.join('\n')).not.toMatch(/step 1:/)
+  })
+
+  it('refuses a third tinker in a row on the same work, and a different work resets it', () => {
+    const tinker = (target: string): MindStep => ({ verb: 'tinker', target, reason: 'Sand again.', minutes: 60, wantId: 'w1', size: 'sketch' })
+    const on = { sameWorkTinker: { limit: 2, recent: ['Grain under a low sun', 'Grain under a low sun, again'] } }
+    expect(reasons([wander(), tinker('Grain under a low sun 3'), rest()], ctx({ variety: on })).join('\n')).toMatch(/step 2: you have made the same work 2 times in a row/)
+    expect(reasons([wander(), tinker('A paper boat on a pond'), rest()], ctx({ variety: on }))).toEqual([])
+    const mixed = { sameWorkTinker: { limit: 2, recent: ['Grain under a low sun', 'A paper boat on a pond'] } }
+    expect(reasons([wander(), tinker('Grain under a low sun'), rest()], ctx({ variety: mixed }))).toEqual([])
+  })
+
+  it('counts tinkers earlier in the same plan', () => {
+    const tinker = (target: string): MindStep => ({ verb: 'tinker', target, reason: 'Sand again.', minutes: 60, wantId: 'w1', size: 'sketch' })
+    const on = { sameWorkTinker: { limit: 2, recent: ['Ripples breathing as one'] } }
+    const r = reasons([tinker('Ripples breathing as one'), wander(), tinker('Ripples breathing as one, again'), rest()], ctx({ variety: on }))
+    expect(r.join('\n')).toMatch(/step 3: you have made the same work 2 times in a row/)
+  })
+})
