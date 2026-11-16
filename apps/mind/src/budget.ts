@@ -64,6 +64,14 @@ export function paceAhead(ledger: BudgetLedger, today: string): boolean {
   return ledger.spentUsd > paceUsd(ledger, today) * (1 + PACE_AHEAD_SHARE) + 1e-9
 }
 
+/** Creative calls run on Sonnet until spend is this close to the monthly cap, and then on Haiku, so the end of a month is plainer sketches, not a silent Merge. */
+export const CREATIVE_FALLBACK_USD = 1.5
+
+/** The model for a creative call (a sketch, a meme, a rework, a reply): Sonnet, or Haiku when the month is nearly spent. */
+export function creativeModel(ledger: Pick<BudgetLedger, 'capUsd' | 'spentUsd'>): ModelId {
+  return ledger.capUsd - ledger.spentUsd <= CREATIVE_FALLBACK_USD ? 'claude-haiku-5-5' : 'claude-sonnet-5-5'
+}
+
 export function canSpend(ledger: BudgetLedger, estimateUsd: number): boolean {
   return ledger.spentUsd + estimateUsd <= ledger.capUsd + 1e-9
 }

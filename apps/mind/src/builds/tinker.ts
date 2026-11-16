@@ -10,12 +10,12 @@ import { verifyMemeSources, type MemeSeeds } from './memes.ts'
 import { withPolicy } from './sandbox.ts'
 
 const SONNET: ModelId = 'claude-sonnet-5-5'
-const HAIKU: ModelId = 'claude-haiku-5-5'
 
 /** A work is about 12K tokens of output on average (spec 13); the limit is twice that, so thinking cannot cut the page short. */
 export const TINKER_MAX_TOKENS = 24_000
 /** A sketch is about 3K tokens of output (spec 13); the limit is twice that, so thinking cannot cut the page short. */
-export const SKETCH_MAX_TOKENS = 6_000
+/** A sketch is a page of code on Sonnet, and Sonnet's thinking counts against this: 6,000 was Haiku's, with room to spare. */
+export const SKETCH_MAX_TOKENS = 10_000
 /** Under the limits of 7.1 and 7.6 by what the build adds (the policy tag is about 0.4 KB). */
 const FULL_TARGET = '140 KB'
 const SKETCH_TARGET = '3.5 KB'
@@ -210,8 +210,8 @@ export interface TinkerDeps {
   nowIso: string
   /** Ids of the works that exist, so a new one never takes one. */
   existingIds: ReadonlySet<string>
-  /** A sketch marked deep is made by Sonnet instead of Haiku (spec 9.8). */
-  deep?: boolean
+  /** The model that makes a sketch: Sonnet, or Haiku when the month is nearly spent (`creativeModel`). A full work is always Sonnet. */
+  sketchModel?: ModelId
 }
 
 export type TinkerOutcome =
@@ -237,15 +237,15 @@ const clampDraft = (out: TinkerOutput): Draft => {
 
 /**
  * One tinker (spec 7.2, 7.3): the Sonnet call, the check, and if the check fails one repair call with the reasons and a
- * second check. A second failure keeps the work as a scrap, with the reason. A sketch (spec 7.6) is the same with a Haiku call
- * (Sonnet if it is deep), a smaller page, and no repair: the first failed check is the scrap. A refusal, an answer cut off or no call at all
+ * second check. A second failure keeps the work as a scrap, with the reason. A sketch (spec 7.6) is the same with a Sonnet call
+ * (Haiku when the month is nearly spent), a smaller page, and no repair: the first failed check is the scrap. A refusal, an answer cut off or no call at all
  * is `failed`, with nothing kept and no second try with the same input; no browser is `unavailable`, with nothing decided.
  * The model call and the checker are given, so the same code serves a full work in the worker and a sketch in a step.
  */
 export async function runTinker(deps: TinkerDeps, input: TinkerInput): Promise<TinkerOutcome> {
   const size = input.size
   const sketch = size === 'sketch'
-  const model: ModelId = sketch && !deps.deep ? HAIKU : SONNET
+  const model: ModelId = sketch ? (deps.sketchModel ?? SONNET) : SONNET
   const maxTokens = sketch ? SKETCH_MAX_TOKENS : TINKER_MAX_TOKENS
 
   /** The title, kind and sources as a work's meta must have them, and the page, then the check. */

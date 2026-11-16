@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BudgetLedger } from '@forkling/schema'
-import { canSpend, costUsd, estimateCallUsd, estimateTokens, monthOf, paceAhead, paceUsd, recordCall, rollLedger } from '../src/budget.ts'
+import { canSpend, CREATIVE_FALLBACK_USD, costUsd, creativeModel, estimateCallUsd, estimateTokens, monthOf, paceAhead, paceUsd, recordCall, rollLedger } from '../src/budget.ts'
 
 const usage = { input: 1000, cacheRead: 3000, cacheWrite: 0, output: 200 }
 
@@ -136,5 +136,23 @@ describe('byKind: the month so far for each kind of call (spec 13: compare the t
     for (let i = 0; i < 520; i++) ledger = recordCall(ledger, call('thought', 'claude-haiku-5-5', 10, 1, 0.0001))
     expect(ledger.calls).toHaveLength(500)
     expect(ledger.byKind.thought?.calls).toBe(520)
+  })
+})
+
+describe('creativeModel (sketches, memes, reworks and replies: Sonnet, then Haiku near the cap instead of a silent stop)', () => {
+  const ledger = (spentUsd: number, capUsd = 15) => BudgetLedger.parse({ month: '2026-11', capUsd, spentUsd })
+  it('is Sonnet while the month has room', () => {
+    expect(creativeModel(ledger(0))).toBe('claude-sonnet-5-5')
+    expect(creativeModel(ledger(13.49))).toBe('claude-sonnet-5-5')
+  })
+  it('falls back to Haiku once spend is within $1.50 of the cap, and stays there, so Merge gets plainer instead of going quiet', () => {
+    expect(CREATIVE_FALLBACK_USD).toBe(1.5)
+    expect(creativeModel(ledger(13.5))).toBe('claude-haiku-5-5')
+    expect(creativeModel(ledger(14.99))).toBe('claude-haiku-5-5')
+    expect(creativeModel(ledger(15))).toBe('claude-haiku-5-5')
+  })
+  it('follows the cap in the ledger, whatever it is', () => {
+    expect(creativeModel(ledger(10, 12.6))).toBe('claude-sonnet-5-5')
+    expect(creativeModel(ledger(11.2, 12.6))).toBe('claude-haiku-5-5')
   })
 })

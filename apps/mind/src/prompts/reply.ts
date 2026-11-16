@@ -2,7 +2,8 @@ import { z } from 'zod'
 import { defang } from './shared.ts'
 
 /** The reply call is short: a few sentences and a label. Haiku's thinking is off at low effort, so this is the whole budget. */
-export const REPLY_MAX_TOKENS = 600
+/** Sonnet thinks before it answers, and that counts against the limit. */
+export const REPLY_MAX_TOKENS = 2000
 
 /** What Merge does with a note it found (spec 10.1, 9.9): write back once, decline with a reason, or keep it with no answer. */
 export const ReplyAnswer = z.object({

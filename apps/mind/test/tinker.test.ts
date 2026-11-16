@@ -279,18 +279,18 @@ describe('runTinker: when the model gives no work', () => {
 })
 
 describe('runTinker: a sketch (spec 7.6)', () => {
-  it('is one Haiku call of its own kind, at the sketch output limit', async () => {
+  it('is one Sonnet call of its own kind, at the sketch output limit', async () => {
     const { complete, calls } = fakeComplete([answer(output())])
     const out = await runTinker(deps(complete, fakeChecker([{ ok: true }]).checker), input({ size: 'sketch' }))
     expect(calls).toHaveLength(1)
-    expect(calls[0]).toMatchObject({ kind: 'sketch', model: 'claude-haiku-5-5', maxTokens: SKETCH_MAX_TOKENS })
+    expect(calls[0]).toMatchObject({ kind: 'sketch', model: 'claude-sonnet-5-5', maxTokens: SKETCH_MAX_TOKENS })
     expect(out.status).toBe('shelf')
   })
 
-  it('may be marked deep, and then Sonnet makes it (spec 9.8)', async () => {
+  it('is made by the model it is given, so the month nearly spent gives Haiku instead of a stop', async () => {
     const { complete, calls } = fakeComplete([answer(output())])
-    await runTinker({ ...deps(complete, fakeChecker([{ ok: true }]).checker), deep: true }, input({ size: 'sketch' }))
-    expect(calls[0]).toMatchObject({ kind: 'sketch', model: 'claude-sonnet-5-5' })
+    await runTinker({ ...deps(complete, fakeChecker([{ ok: true }]).checker), sketchModel: 'claude-haiku-5-5' }, input({ size: 'sketch' }))
+    expect(calls[0]).toMatchObject({ kind: 'sketch', model: 'claude-haiku-5-5' })
   })
 
   it('goes to the scrap bin on the first failed check, with no repair call', async () => {

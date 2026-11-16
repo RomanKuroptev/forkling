@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { TinkerJob, WorkMeta, type PlanStep } from '@forkling/schema'
+import { creativeModel } from '../budget.ts'
 import { pendingJobs } from '../build-worker.ts'
 import { buildReworkUser, MAX_RETIRES_PER_WEEK, REWORK_MAX_TOKENS, ReworkAnswer, retirementsInWeek } from '../builds/rework.ts'
 import { drawForBuild } from '../builds/draw.ts'
@@ -26,7 +27,7 @@ function askForWork(t: Tick, step: PlanStep, index: number, o: { idea: string; r
   if (pendingJobs(t.dir).some((j) => j.kind === 'tinker') || t.newJobs.length > 0) {
     t.notes.push('tinker: a work is already being built, so this step rested instead')
     const text = 'A work was already being built, so I rested instead of asking for another.'
-    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: 'tinker' })
+    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: 'tinker', engine: true })
     t.justNow.push(text)
     return
   }
@@ -66,7 +67,7 @@ async function reworkStep(t: Tick, step: PlanStep, index: number, work: WorkMeta
     return
   }
   const user = buildReworkUser({ title: work.title, kind: work.kind, about: work.about, status: work.status, retireReason: work.retireReason, reason: step.reason })
-  const result = await t.ask('rework', 'claude-haiku-5-5', user, ReworkAnswer, REWORK_MAX_TOKENS)
+  const result = await t.ask('rework', creativeModel(t.budget), user, ReworkAnswer, REWORK_MAX_TOKENS)
   if (!result) return
   const answer = result.parsed
   if (!answer) {
@@ -107,7 +108,7 @@ async function reworkStep(t: Tick, step: PlanStep, index: number, work: WorkMeta
 }
 
 /**
- * When a sketch step finishes, one Haiku call makes the sketch (Sonnet if the step is marked deep), the browser checks it, and
+ * When a sketch step finishes, one Sonnet call makes the sketch (Haiku when the month is nearly spent), the browser checks it, and
  * `works/<id>/` keeps it (spec 7.6, 2.4). A sketch that fails its check is kept in the scrap bin with the reason and has no
  * repair. With no browser (the Actions tick has none) the step rests, and a refusal or a cut-off page leaves nothing; neither
  * counts against the 3 a day. A sketch that was made, shelved or scrapped, does.
@@ -116,7 +117,7 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
   const rested = (why: string) => {
     t.notes.push(`tinker: ${why}`)
     const text = 'I could not check the sketch, so it rested instead.'
-    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: 'tinker' })
+    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: 'tinker', engine: true })
     t.justNow.push(text)
   }
   const checker = t.deps.workCheck
@@ -141,7 +142,7 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
     ...drawn,
   }
   const taken = new Set([...existingWorkIds(t.dir), ...t.newWorks.map((w) => w.meta.id)])
-  const outcome = await runTinker({ complete: (kind, model, user, schema, maxTokens) => t.ask(kind, model, user, schema, maxTokens), checker, nowIso: t.nowIso, existingIds: taken, deep: !!step.deep }, input)
+  const outcome = await runTinker({ complete: (kind, model, user, schema, maxTokens) => t.ask(kind, model, user, schema, maxTokens), checker, nowIso: t.nowIso, existingIds: taken, sketchModel: creativeModel(t.budget) }, input)
 
   const count = () => {
     t.mind.sketches = { date: t.today, count: (t.mind.sketches?.date === t.today ? t.mind.sketches.count : 0) + 1 }

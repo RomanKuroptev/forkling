@@ -2,8 +2,8 @@ import { z } from 'zod'
 import { Timestamp } from './intention.ts'
 import { VerbGroup } from './species.ts'
 
-/** Hard monthly ceiling per forkling in US dollars, the server included (CLAUDE.md, spec 13). */
-export const TOTAL_CAP_USD = 20
+/** Hard monthly ceiling per forkling in US dollars, the server included (CLAUDE.md, spec 13). Raised from $20 to $23 by Roman on 16 November 2026, with a model cap of $15 for Merge. */
+export const TOTAL_CAP_USD = 23
 /** What the server is guessed to cost a month (Hetzner CX23 with Swedish VAT) until Roman has the first invoice. */
 export const DEFAULT_SERVER_USD = 7.49
 /** The model cap is the total cap minus what the server really costs. */
@@ -229,7 +229,7 @@ export const BudgetLedger = z.object({
   byKind: z.record(z.string(), KindTotals).default({}),
   /** Totals of earlier months, kept after the call list is reset. */
   history: z.array(z.object({ month: z.string(), spentUsd: z.number().nonnegative(), calls: z.number().int().nonnegative() })).default([]),
-}).refine((l) => l.capUsd + l.serverUsd <= TOTAL_CAP_USD + 1e-9, { message: 'the model cap plus the server price must stay within $20', path: ['capUsd'] })
+}).refine((l) => l.capUsd + l.serverUsd <= TOTAL_CAP_USD + 1e-9, { message: 'the model cap plus the server price must stay within $23', path: ['capUsd'] })
 export type BudgetLedger = z.infer<typeof BudgetLedger>
 
 /** `brain/skills.json`: practice per verb group. Level only rises with use, and sets how good the things it makes are. */

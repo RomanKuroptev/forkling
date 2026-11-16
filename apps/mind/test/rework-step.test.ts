@@ -75,12 +75,12 @@ beforeEach(() => {
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
 describe('a tinker step on an earlier work (spec 7.5, 9.9)', () => {
-  it('first asks a cheap Haiku question: remix it, put it away, or (if it is put away) bring it back', async () => {
+  it('first asks a question of Sonnet at low effort: remix it, put it away, or (if it is put away) bring it back', async () => {
     putWork('lamp')
     const fake = fakeLlm(planFor('lamp'), { action: 'retire', reason: 'I have outgrown it.' })
     await landOn(fake)
     const ask = fake.calls.find((c) => c.kind === 'rework')!
-    expect(ask).toMatchObject({ model: 'claude-haiku-5-5', effort: 'low' })
+    expect(ask).toMatchObject({ model: 'claude-sonnet-5-5', effort: 'low' })
     expect(ask.user).toContain('Humming lamp')
     expect(ask.user).toMatch(/remix/i)
     expect(ask.user).toMatch(/retire/i)

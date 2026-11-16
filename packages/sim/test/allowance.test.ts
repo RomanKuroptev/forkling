@@ -29,7 +29,7 @@ describe('the daily allowance (spec 9.8)', () => {
   })
 
   it('starts with the prices in the spec', () => {
-    expect(PRICES).toEqual({ fullWork: 240, expand: 50, trip: 3, tend: 2, sketch: 2, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 })
+    expect(PRICES).toEqual({ fullWork: 240, expand: 50, trip: 3, tend: 2, sketch: 50, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 })
   })
 })
 
@@ -47,7 +47,8 @@ describe('stepCost', () => {
 
   it('prices a tinker as a full work or a sketch', () => {
     expect(stepCost(step({ verb: 'tinker', size: 'full' }))).toBe(240)
-    expect(stepCost(step({ verb: 'tinker', size: 'sketch' }))).toBe(2)
+    // A sketch is made by Sonnet and costs about $0.05, so it is priced at 50 points of a day's 150: Merge chooses, there is no daily cap.
+    expect(stepCost(step({ verb: 'tinker', size: 'sketch' }))).toBe(50)
     // A tinker that does not say is a full work: the dear reading, so a plan cannot hide its price.
     expect(stepCost(step({ verb: 'tinker' }))).toBe(240)
   })
@@ -55,7 +56,6 @@ describe('stepCost', () => {
   it('costs 30 for a deep step, which thinks harder on Sonnet', () => {
     expect(DEEP_COST).toBe(30)
     for (const verb of ['tend', 'write', 'found'] as const) expect(stepCost(step({ verb, deep: true }))).toBe(30)
-    expect(stepCost(step({ verb: 'tinker', size: 'sketch', deep: true }))).toBe(30)
   })
 
   it('ignores deep on a verb that cannot be deep', () => {
@@ -64,6 +64,8 @@ describe('stepCost', () => {
     expect(stepCost(step({ verb: 'reply', deep: true }))).toBe(0)
     expect(stepCost(step({ verb: 'expand', deep: true }))).toBe(50)
     expect(stepCost(step({ verb: 'tinker', size: 'full', deep: true }))).toBe(240)
+    // A sketch is always made by Sonnet now, so there is nothing deeper to buy.
+    expect(stepCost(step({ verb: 'tinker', size: 'sketch', deep: true }))).toBe(50)
   })
 
   it('takes prices set from the ledger instead of the starting ones', () => {
