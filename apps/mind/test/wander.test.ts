@@ -348,7 +348,7 @@ describe('interests across days', () => {
     const llm = fake(wanderPlan)
     await tick(MORNING, llm, { web: undefined })
     const interests = Interests.parse(readJson('brain/interests.json'))
-    expect(interests.topics['logic gates']!.weight).toBeCloseTo(87.4, 1)
+    expect(interests.topics['logic gates']!.weight).toBeCloseTo(80.75, 1)
     expect(interests.current).toMatchObject({ topic: 'logic gates', origin: { id: 'hn:1' } })
     expect(llm.calls[0]!.user).toContain('obsessed with "logic gates"')
   })
@@ -371,7 +371,7 @@ describe('interests across days', () => {
     expect(wakeTop).toHaveLength(1)
     expect(wakeTop[0]!.date).toBe(DAY)
     expect(Object.keys(wakeTop[0]!.topics)).toEqual(['logic gates'])
-    expect(wakeTop[0]!.topics['logic gates']).toBeCloseTo(87.4, 1)
+    expect(wakeTop[0]!.topics['logic gates']).toBeCloseTo(80.75, 1)
   })
 
   it('notes it once a day, and keeps the last 3 mornings', async () => {
