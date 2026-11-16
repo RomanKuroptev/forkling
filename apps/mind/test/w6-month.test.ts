@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { BudgetLedger, Interests, MindState, Place, PlaceRequest, Souvenir, Wish, formatRequest, isOpenRequest, isOpenWish, parseRequest, MAX_OPEN_PLACE_REQUESTS, MAX_OPEN_WISHES } from '@forkling/schema'
-import { allPaths, expandCheck, layoutProblems, placementCandidates, toLandPlace } from '@forkling/sim'
+import { allPaths, expandCheck, lastSizeChange, layoutProblems, placementCandidates, PLACE_LIMITS, toLandPlace } from '@forkling/sim'
 import { createBuildWorker } from '../src/build-worker.ts'
 import { createExpandHandler } from '../src/builds/expand-job.ts'
 import { createFoundBuildHandler } from '../src/builds/found-build-job.ts'
@@ -101,7 +101,8 @@ function fakeBuilder() {
       if (req.kind === ('foundbuild' as never)) {
         parsed = { style: 'timber', palette: 'meadow', width: 12, depth: 10, floors: 1, rooms: [{ id: 'main', name: 'Main room', width: 10, depth: 8, height: 3, x: 0, z: 0, floor: 0, parts: [{ part: 'shelf-low', x: 0, y: 0, z: 3, rot: 0 }, { part: 'lamp-floor', x: 3, y: 0, z: 3, rot: 0 }] }] }
       } else if (req.kind === ('expand' as never)) {
-        const id = /placeId["':\s]+([a-z0-9-]+)/i.exec(req.user)?.[1] ?? /Place: ([a-z0-9-]+)/i.exec(req.user)?.[1] ?? 'home'
+        const id = /\(id ([a-z0-9-]+)\)/.exec(req.user)?.[1]
+        if (!id) throw new Error('the expand job prompt names no place: the builder would have lumped every expand together')
         const k = done.get(id) ?? 0
         done.set(id, k + 1)
         const other = id === 'home' ? 'workshop' : 'home'
@@ -160,6 +161,7 @@ function romanActs(nowMs: number) {
 interface Snapshot {
   places: Map<string, Place>
 }
+const historyKey = (h: { at: string; verb: string; summary: string }) => `${h.at}|${h.verb}|${h.summary}`
 const violations: string[] = []
 const expands: { at: string; place: string }[] = []
 let ticks = 0
@@ -191,6 +193,9 @@ async function liveThirtyDays() {
 
     model.setNow(nowMs)
     await runTick(dir, { now: new Date(nowMs), llm: model.llm, pack: cat.pack, behaviors: cat.behaviors, speciesPersona: cat.persona })
+    // A job the tick just wrote is checked now, on the world as the tick left it, before the worker finishes it and a landed expand
+    // resets the place (checked after the worker, the check could never fail).
+    checkJobs(nowMs)
     await worker.tick()
     ticks++
     romanActs(nowMs)
@@ -214,14 +219,21 @@ function check(nowMs: number, before: Snapshot) {
   for (const place of readPlaces()) {
     const prev = before.places.get(place.id)
     if (!prev) continue
-    const newExpands = place.history.slice(prev.history.length).filter((h) => h.verb === 'expand')
+    // What was added, not what lies past the old length: a history held at the cap loses its oldest lines as new ones come in.
+    const had = new Set(prev.history.map(historyKey))
+    const newExpands = place.history.filter((h) => h.verb === 'expand' && !had.has(historyKey(h)))
     for (const h of newExpands) {
       expands.push({ at: h.at, place: place.id })
       const building = prev.state.construction && Date.parse(prev.state.construction.finishesAt) > nowMs
       if (building) violations.push(`${at}: ${place.id} was expanded while it was under construction`)
     }
   }
+}
+const checkedJobs = new Set<string>()
 
+/** Spec 2.5: an expand job is only ever written for a place that has earned it. Looked at the moment it is first seen. */
+function checkJobs(nowMs: number) {
+  const at = isoOf(nowMs)
   // Spec 2.5: an expand job is only ever written for a place that has earned it, checked on the world as the tick left it.
   const jobs = listDir('mind/builds', '.json').filter((f) => f.startsWith('expand-') && !f.endsWith('.result.json'))
   for (const f of jobs) {
@@ -235,14 +247,10 @@ function check(nowMs: number, before: Snapshot) {
     if (!place) violations.push(`${at}: an expand job for ${job.placeId}, which is not a place`)
     else {
       const verdict = expandCheck(place, weights, souvenirs)
-      // The place may have changed size by the time the check is looked at again (a landed expand resets it), so only a job that is
-      // still open must still hold; the tick itself checked it before writing the job.
-      if (!verdict.ok && !jobDone(f)) violations.push(`${at}: an expand job for ${job.placeId} while 2.5 does not hold (${verdict.ok ? '' : verdict.reasons.join('; ')})`)
+      if (!verdict.ok) violations.push(`${at}: an expand job for ${job.placeId} while 2.5 does not hold (${verdict.ok ? '' : verdict.reasons.join('; ')})`)
     }
   }
 }
-const checkedJobs = new Set<string>()
-const jobDone = (f: string) => existsSync(file(`mind/builds/${f.replace(/\.json$/, '.result.json')}`))
 
 beforeAll(async () => {
   dir = mkdtempSync(join(tmpdir(), 'w6-month-'))
@@ -295,6 +303,26 @@ describe('thirty days of the real mind, with a scripted model and a scripted Rom
     expect(plain.history.some((h) => h.summary === 'Asked for by Merge, built by Merge from the kit.')).toBe(true)
     const waited = Date.parse(plain.history.find((h) => h.verb === 'found')!.at) - Date.parse(selfBuilt[0]!.written)
     expect(waited, 'the fallback came before the 7 days were up').toBeGreaterThanOrEqual(WEEK_MS)
+  })
+
+  it('holds every place inside the history cap and keeps what is read later: its founding lines and its last size change', () => {
+    const places = readPlaces()
+    for (const place of places) {
+      expect(place.history.length, `${place.id} history`).toBeLessThanOrEqual(PLACE_LIMITS.historyMax)
+      expect(place.history.some((h) => h.verb === 'found'), `${place.id} lost every founding line`).toBe(true)
+      const lastExpand = [...expands].filter((e) => e.place === place.id).sort((a, b) => a.at.localeCompare(b.at)).at(-1)
+      if (lastExpand) expect(lastSizeChange(place), `${place.id} forgot when it last grew`).toBeGreaterThanOrEqual(Date.parse(lastExpand.at))
+    }
+    // The cap is really met in this month: a place tended every day reaches it, so the lines above were kept by the rule, not by luck.
+    expect(Math.max(...places.map((p) => p.history.length)), 'no place reached the cap, so the cap was never exercised').toBe(PLACE_LIMITS.historyMax)
+  })
+
+  it('writes the place numbers into mind/health.json and never warns about them', () => {
+    const health = read('mind/health.json')
+    const numbers = health.novelty.places
+    expect(Object.keys(numbers).sort()).toEqual(['repeatedPlace', 'stuckInOnePlace', 'weekendRevisit', 'wouldFire'])
+    expect(numbers.wouldFire).toBe(numbers.repeatedPlace + numbers.stuckInOnePlace + numbers.weekendRevisit)
+    expect((health.warnings as string[]).join(' ')).not.toMatch(/repeated place|stuck in one place|weekend revisit/i)
   })
 
   it('puts a place built by the fallback on the chunk the rule picks, and joins it to the others by a path', () => {

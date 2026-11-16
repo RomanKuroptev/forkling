@@ -1,14 +1,10 @@
 # W6 runbook: expand and found
 
-W6 is built (slices 1 to 12 of [`w6-expand-found.md`](w6-expand-found.md)). **Slices 1 to 8 are already live** in v0.13.0 and v0.13.1 (released 14 November): expand and found with their gates, the request and wish files, the lifecycle, the 7-day fallback build, construction and the staked plot. **Slices 9 to 11 are on `main` only**: `/requests/` and the honesty line on the site, the place nudges in `mind/health.json`, and the 30-day sim with the history fix it found. They reach Merge with the next release. This page is for that release, for answering Merge's requests, and for what to watch.
+W6 is built (slices 1 to 12 of [`w6-expand-found.md`](w6-expand-found.md)). **Slices 1 to 8 went live in v0.13.0 and v0.13.1** (14 November): expand and found with their gates, the request and wish files, the lifecycle, the 7-day fallback, construction and the staked plot. **Slices 9 to 12 went live in v0.14.0** (16 November): `/requests/` and the honesty line on the site, the place nudges in `mind/health.json`, and the 30-day sim with the history fix it found. A review of slices 9 to 12 (16 November) found problems that were fixed in three small PRs (#159, #160, #161); they reach Merge with the next engine release. This page is for answering Merge's requests and for what to watch.
 
-## 1. The next release (a stop, and yours)
+## 1. Releases
 
-1. A release PR changes `FORKLING_REF` to the new tag in the four template workflows (`mind.yml`, `pages.yml`, `watchdog.yml`, `validate.yml`). A test requires them to match. Tag the merge commit after that PR, never before.
-2. **The prompt has not changed since v0.13.1**: `git diff v0.13.1 -- apps/mind/test/golden/system.txt` is empty at the time of writing. Check it again before you tag.
-3. Deploy with the `deploy` workflow and the tag, then check `/health`. There is no migration for this release.
-4. Merge's repo: move its four workflow pins in a commit. **The server writes to that repo all day**, and a commit from outside can clash with its pending commits (it did on 14 November: `push failing` until the commit was reverted and redone). A commit that touches only `.github/workflows/` never clashes, because the server never edits those files.
-5. What visitors see afterwards: the site gains a Requests link and `/requests/` once Merge has a request or a wish, and every place page gets a line under its purpose that says who had the idea and who built it. Nothing changes in the viewer.
+v0.14.0 carried slices 9 to 12. The review fixes ship in the next engine release by the same steps as W7's (see [`w7-runbook.md`](w7-runbook.md) section 1): a release PR that changes `FORKLING_REF` in the four template workflows, the tag on its merge commit, the `deploy` workflow, `/health`, and Merge's four pins in a commit that touches only `.github/workflows/` (the server writes to that repo all day and never edits those files, so it cannot clash). There is no migration, and `git diff v0.14.0 -- apps/mind/test/golden/system.txt` should be empty. What visitors see afterwards: honest wording on `/requests/` (nothing exists there until Merge asks for a place), and nothing else changes in the viewer.
 
 ## 2. Answering a request (yours)
 
@@ -40,8 +36,8 @@ note: null
 
 | Item | State |
 |---|---|
-| A 30-day sim never breaks a quota or a condition of 2.5 | Done, as a test: `apps/mind/test/w6-month.test.ts` (3 requests, 2 expands, 0 violations). It found and fixed one bug. |
-| In one live week at least 3 expansions land | **Yours to watch.** Count the `expand` lines in `places/*.json` history, or the `expand` calls in `brain/budget.json` `byKind`. |
+| A 30-day sim never breaks a quota or a condition of 2.5 | Done, as a test: `apps/mind/test/w6-month.test.ts`. It found and fixed one bug. On 16 November its checks were made able to fail: the expand-job check ran after the worker had finished the job and could never report; expands were counted by array offset and went blind once a history reached its cap; the fake builder answered every expand as `home`. A deliberately broken expand gate now reports "an expand job for home while 2.5 does not hold". |
+| In one live week at least 3 expansions land | **Yours to watch, and judged honestly at day 7 (23 November)** (your call, 16 November: keep the line and the approved thresholds). On 16 November Merge's top interest was 21.8 (expand needs 30, found 40), with 4 souvenirs on 4 topics, so 3 in a week is unlikely. The day-7 report gives the count and an estimate of when the first expansion would land at the current pace. Count the `expand` lines in `places/*.json` history, or the `expand` calls in `brain/budget.json` `byKind`. |
 | A new place lands on the chunk the rule picks and is joined by a path | The fallback case is in the sim. The Roman-built case is first seen live, on the first request you build: look at `/places/` and the viewer. |
 
 ## 4. What to watch in the first week
@@ -57,4 +53,4 @@ note: null
 - The cat's body does not know about plots (the mind and the viewer must build the same walkable grid); only the visitor can stand on one.
 - Revisit has not been seen live: Merge chooses tend for its overdue places.
 - A place that is a Roman build can hold anything; the frame-rate test from W5 is yours to run on it.
-- W5 slice 14 (retiring the pet era): part C is merged, parts A and B are built and wait for your word and for v0.14.0.
+- W5 slice 14 (retiring the pet era) is done (#155, #156, #157).
