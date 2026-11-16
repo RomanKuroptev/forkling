@@ -20,7 +20,7 @@ const put = (t: Trail) => {
 
 describe('memeSeeds (what Merge has looked at and read, from its trails; spec 7.7, 7.8)', () => {
   it('is empty when there are no trails', () => {
-    expect(memeSeeds(dir)).toEqual({ looked: [], read: [] })
+    expect(memeSeeds(dir)).toEqual({ looked: [], read: [], formats: [] })
   })
 
   it('lists the pages whose picture it looked at, with what it saw, and the Wikipedia pages it read, newest first', () => {
@@ -83,5 +83,32 @@ describe('verifyMemeSources (a meme names a format it looked at and read about)'
 
   it('has nothing to pass when there are no seeds at all', () => {
     expect(verifyMemeSources([looked, read], { looked: [], read: [] }).length).toBeGreaterThan(0)
+  })
+})
+
+describe('an Imgflip format it read, without ever looking at its picture (it never asks to look)', () => {
+  const format = { url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling', reaction: 'A man says no to one thing and yes to another.' }
+
+  it('is offered as a format, with what it made of the page, apart from the pictures it looked at', () => {
+    put(trail('2026-11-16-1', '2026-11-16', [format, { url: 'https://en.wikipedia.org/wiki/Moon', title: 'Moon' }, { url: 'https://imgflip.com/meme/2', title: 'Failed one', failed: 'timeout' }]))
+    const seeds = memeSeeds(dir)
+    expect(seeds.looked).toEqual([])
+    expect(seeds.formats).toEqual([{ url: format.url, title: format.title, what: format.reaction }])
+    expect(seeds.read.map((r) => r.url)).toEqual(['https://en.wikipedia.org/wiki/Moon', format.url])
+  })
+
+  it('may be cited as the format (role looked) and as the page read about it, so a meme can be made', () => {
+    const seeds = { looked: [], read: [{ url: format.url, title: format.title }], formats: [{ url: format.url, title: format.title, what: 'x' }] }
+    expect(verifyMemeSources([{ role: 'looked', url: format.url }, { role: 'read', url: format.url }], seeds)).toEqual([])
+  })
+
+  it('is not a way round the rule for any other page: a Wikipedia page it only read is still not a picture it looked at', () => {
+    const seeds = { looked: [], read: [{ url: 'https://en.wikipedia.org/wiki/Moon', title: 'Moon' }], formats: [] }
+    expect(verifyMemeSources([{ role: 'looked', url: 'https://en.wikipedia.org/wiki/Moon' }, { role: 'read', url: 'https://en.wikipedia.org/wiki/Moon' }], seeds).join(' ')).toMatch(/looked at/)
+  })
+
+  it('does not count an Imgflip page that is not a format record, or from another host', () => {
+    put(trail('2026-11-16-2', '2026-11-16', [{ url: 'https://imgflip.com.evil.com/meme/1', title: 'evil' }, { url: 'https://imgflip.com/about', title: 'About' }]))
+    expect(memeSeeds(dir).formats).toEqual([])
   })
 })
