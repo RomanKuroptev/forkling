@@ -110,37 +110,6 @@ async function esolang(): Promise<Item> {
   }
 }
 
-const hn = 'https://hacker-news.firebaseio.com/v0'
-
-async function hackerNews(list: 'showstories' | 'topstories', index: number): Promise<Item> {
-  const ids: number[] = await json(`${hn}/${list}.json`)
-  for (const id of ids.slice(index, index + 15)) {
-    const s = await json(`${hn}/item/${id}.json`)
-    if (!s || (s.descendants ?? 0) < 5) continue
-    const comments: string[] = []
-    for (const kid of (s.kids ?? []).slice(0, 5)) {
-      const c = await json(`${hn}/item/${kid}.json`)
-      if (c?.text && !c.deleted) comments.push(`${c.by ?? 'someone'} said:\n${htmlToText(c.text)}`)
-    }
-    const body = [s.title, s.text ? htmlToText(s.text) : '', s.url ? `Link: ${s.url}` : '', ...comments].filter(Boolean).join('\n\n')
-    return { source: 'news.ycombinator.com', kind: 'page', tier: 'voices', url: `https://news.ycombinator.com/item?id=${id}`, title: s.title, text: cutToTokens(body), links: [] }
-  }
-  throw new Error(`no ${list} story with comments`)
-}
-
-async function lobsters(index: number): Promise<Item> {
-  const hot: any[] = await json('https://lobste.rs/hottest.json')
-  const busy = hot.filter((s) => s.comment_count >= 5)
-  const s = busy[index % busy.length]
-  const full = await json(`https://lobste.rs/s/${s.short_id}.json`)
-  const comments = (full.comments ?? [])
-    .filter((c: any) => !c.is_deleted && !c.parent_comment)
-    .slice(0, 5)
-    .map((c: any) => `${c.commenting_user?.username ?? c.commenting_user ?? 'someone'} said:\n${htmlToText(c.comment)}`)
-  const body = [s.title, `Tags: ${s.tags.join(', ')}`, s.description_plain || '', s.url ? `Link: ${s.url}` : '', ...comments].filter(Boolean).join('\n\n')
-  return { source: 'lobste.rs', kind: 'page', tier: 'voices', url: s.short_id_url ?? `https://lobste.rs/s/${s.short_id}`, title: s.title, text: cutToTokens(body), links: [] }
-}
-
 async function imgflip(index: number): Promise<Item> {
   const memes: any[] = (await json('https://api.imgflip.com/get_memes')).data.memes
   const m = memes[index % memes.length]
@@ -231,14 +200,11 @@ type Source = { name: string; take: number; next: (n: number) => Promise<Item> }
 /** The mix for 20 reads. Voices sites get a lower word floor: a thread is short but has a lot in it. */
 export function plan(now: Date, offset: number): Source[] {
   return [
-    { name: 'wikipedia random', take: 3, next: () => wikipediaRandom() },
-    { name: 'wikipedia on this day', take: 2, next: (n) => wikipediaOnThisDay(now, offset + n * 3) },
-    { name: 'esolangs random', take: 3, next: () => esolang() },
-    { name: 'hacker news show', take: 2, next: (n) => hackerNews('showstories', offset + n * 15) },
-    { name: 'hacker news top', take: 2, next: (n) => hackerNews('topstories', offset + n * 15) },
-    { name: 'lobste.rs hottest', take: 2, next: (n) => lobsters(offset + n) },
-    { name: 'imgflip top formats', take: 2, next: (n) => imgflip(offset * 7 + n * 13) },
-    { name: 'art institute of chicago', take: 2, next: (n) => artic(1 + ((offset * 97 + n * 331) % 900)) },
+    { name: 'wikipedia random', take: 5, next: () => wikipediaRandom() },
+    { name: 'wikipedia on this day', take: 3, next: (n) => wikipediaOnThisDay(now, offset + n * 3) },
+    { name: 'esolangs random', take: 4, next: () => esolang() },
+    { name: 'imgflip top formats', take: 3, next: (n) => imgflip(offset * 7 + n * 13) },
+    { name: 'art institute of chicago', take: 3, next: (n) => artic(1 + ((offset * 97 + n * 331) % 900)) },
     { name: 'nasa apod', take: 1, next: () => apod() },
     { name: 'github creative coding', take: 1, next: (n) => github(offset + n) },
   ]
