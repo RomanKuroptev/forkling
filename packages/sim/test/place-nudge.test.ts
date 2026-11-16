@@ -55,6 +55,37 @@ describe('the repeated-place nudge (spec 12.3): a new place whose name is over 0
   })
 })
 
+describe('the repeated-place nudge leaves out what Merge did not choose and what it just built (spec 12.3)', () => {
+  const at = (p: ReturnType<typeof place>, chunk: [number, number]) => ({ ...p, chunk })
+  const request = (over: Record<string, unknown> = {}) => ({ id: 'lantern-hall', kind: 'place' as const, name: 'Lantern Hall', purpose: 'Where I keep the lidar finds', written: '2026-11-18T10:00:00Z', chunk: [1, 0] as [number, number], ...over })
+
+  it('does not count a request as a repeat of the place that was built from it', () => {
+    // Roman built it on the staked chunk, taking the request's name: the place is the answer, not a copy.
+    expect(repeatedPlaces([home, at(hall, [1, 0])], [request()], { sinceMs: SINCE })).toEqual([])
+  })
+
+  it('still counts a request whose name is like a place on another chunk', () => {
+    expect([...new Set(repeatedPlaces([home, at(hall, [2, 0])], [request()], { sinceMs: SINCE }).map((n) => n.id))]).toEqual(['request:lantern-hall'])
+  })
+
+  it('does not report a place Roman gave: Merge did not choose it', () => {
+    const gift = at(place('lantern-hall-2', 'Lantern Hall', 'Where I keep the lidar finds, each under its own lamp', '2026-11-19'), [3, 0])
+    const filed = request({ id: 'lantern-hall-2', kind: 'gift', chunk: [3, 0], written: '2026-11-19T10:00:00Z' })
+    expect(repeatedPlaces([home, hall, gift], [filed], { sinceMs: SINCE })).toEqual([])
+    // The same place with no gift filed for its chunk is a repeat.
+    expect(repeatedPlaces([home, hall, gift], [], { sinceMs: SINCE }).map((n) => n.id)).toContain('lantern-hall-2')
+  })
+
+  it('counts a place founded exactly 7 days ago, and not one founded the day before', () => {
+    const edge = place('edge', 'Lantern Hall', 'x', '2026-11-13')
+    const before = place('before', 'Lantern Hall', 'x', '2026-11-12')
+    // The window opens at the start of a day (a place's founding date has no time of day).
+    const since = Date.parse('2026-11-13T00:00:00Z')
+    expect([...new Set(repeatedPlaces([home, hall, edge], [], { sinceMs: since }).map((n) => n.id))]).toEqual(['edge'])
+    expect(repeatedPlaces([home, hall, before], [], { sinceMs: since })).toEqual([])
+  })
+})
+
 describe('the stuck-in-one-place nudge: a place other than Home is the target of more than 3 steps in a day', () => {
   const ids = ['home', 'workshop', 'lantern-hall']
   const four = (target: string, day = '2026-11-19') => ['08:00', '09:00', '10:00', '11:00'].map((t) => step(`${day}T${t}:00Z`, 'tend', target))
