@@ -57,10 +57,13 @@ export type SleepRewriteAnswer = z.infer<typeof SleepRewriteAnswer>
  * limits (300 words, 8 traits, 30% of the lines, 2 renames) are applied in code. `about` is the whole new `self/about.md`, or null
  * to leave it; `aboutChanges` is the reason for each change, kept beside the copy in `self/history/`.
  */
+export const LongGoalReview = z.object({ action: z.enum(['continue', 'finish', 'drop', 'change']), text: z.string().nullable(), reason: z.string() })
+export type LongGoalReview = z.infer<typeof LongGoalReview>
+
 export const WeeklyReview = z.object({
   about: z.string().nullable(),
   aboutChanges: z.array(z.object({ what: z.string(), why: z.string() })),
-  longGoal: z.object({ action: z.enum(['continue', 'finish', 'drop', 'change']), text: z.string().nullable(), reason: z.string() }),
+  longGoal: LongGoalReview,
   renames: z.array(z.object({ kind: z.enum(['place', 'work']), id: z.string(), name: z.string(), reason: z.string() })),
   /** One optional request to Roman, up to 120 words (spec 9.5), or null. Nothing changes because of it. */
   request: z.string().nullable(),

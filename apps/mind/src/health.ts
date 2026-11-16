@@ -47,7 +47,7 @@ const MAX_COUNTED_GAP = 180
 
 const DECIDE_KINDS = new Set(['morning', 'decide'])
 /** The calls W7 added, watched against the $20 cap: reflection, the sleep rewrite (batch and late call) and the weekly review. */
-export const W7_KINDS: readonly string[] = ['reflection', 'sleep', 'sleeplate', 'weekly']
+export const W7_KINDS: readonly string[] = ['reflection', 'sleep', 'sleeplate', 'weekly', 'goalreview']
 /** A projection from the first two days of a month means nothing. */
 const MIN_DAYS_TO_PROJECT = 3
 

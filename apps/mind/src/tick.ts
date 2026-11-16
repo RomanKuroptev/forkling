@@ -23,7 +23,7 @@ import { boredomStep } from './tick/boredom.ts'
 import { logTick } from './ticklog.ts'
 import { findNotes, replyStep } from './tick/notes.ts'
 import { reflectionStep } from './tick/reflection.ts'
-import { weeklyStep } from './tick/weekly.ts'
+import { goalReviewStep, weeklyStep } from './tick/weekly.ts'
 import { sleepRewriteStep } from './tick/sleep.ts'
 import { think } from './tick/think.ts'
 import { morningStep, tripStep } from './tick/wander.ts'
@@ -62,6 +62,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   await reflectionStep(t)
   // The weekly review (spec 9.5) is on Sunday at 20:00, by its own clock.
   await weeklyStep(t)
+  // The long goal is looked at again every 3 days, between the Sundays.
+  await goalReviewStep(t)
   await think(t)
   await sleepRewriteStep(t)
   applyDecision(t)

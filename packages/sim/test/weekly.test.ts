@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_REVIEW_RENAMES, WEEKLY_RETRY_MS, localWeekday, weeklyDue } from '../src/weekly.ts'
+import { GOAL_REVIEW_DAYS, MAX_REVIEW_RENAMES, WEEKLY_RETRY_MS, goalReviewDue, localWeekday, weeklyDue } from '../src/weekly.ts'
 
 const TZ = 'Europe/Stockholm'
 // 2026-11-15 is a Sunday; Stockholm is UTC+1 in November, so 19:00Z is 20:00 there.
@@ -45,4 +45,27 @@ describe('weeklyDue (spec 9.5: Sunday at 20:00)', () => {
 
 describe('the review\'s limits', () => {
   it('allows up to 2 renames', () => expect(MAX_REVIEW_RENAMES).toBe(2))
+})
+
+describe('goalReviewDue (the long goal is looked at every 3 days)', () => {
+  const DAY = 86_400_000
+  const now = Date.parse('2026-11-16T14:00:00Z')
+  const due = { nowMs: now, asleep: false, reviewedAt: new Date(now - 3 * DAY).toISOString(), lastTriedMs: null }
+  it('is due 3 days after the goal was last reviewed, and not before', () => {
+    expect(goalReviewDue(due)).toBe(true)
+    expect(goalReviewDue({ ...due, reviewedAt: new Date(now - 3 * DAY + 1000).toISOString() })).toBe(false)
+  })
+  it('is never due while asleep or with no long goal', () => {
+    expect(goalReviewDue({ ...due, asleep: true })).toBe(false)
+    expect(goalReviewDue({ ...due, reviewedAt: null })).toBe(false)
+  })
+  it('waits 30 minutes after a try that gave nothing', () => {
+    expect(goalReviewDue({ ...due, lastTriedMs: now - 29 * 60_000 })).toBe(false)
+    expect(goalReviewDue({ ...due, lastTriedMs: now - 30 * 60_000 })).toBe(true)
+  })
+  it('is on any day of the week, unlike the Sunday review', () => {
+    expect(GOAL_REVIEW_DAYS).toBe(3)
+    expect(localWeekday('Europe/Stockholm', now)).toBe(1)
+    expect(goalReviewDue(due)).toBe(true)
+  })
 })
