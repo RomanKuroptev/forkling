@@ -1,5 +1,5 @@
 import { PlaceRequest, isOpenRequest, type Place, type Wish } from '@forkling/schema'
-import { capHistory, GIFT_LINE, KIT_BUILT_LINE, ROMAN_BUILT_LINE } from '@forkling/sim'
+import { capHistory, GIFT_LINE, KIT_BUILT_LINE, PLACE_LIMITS, ROMAN_BUILT_LINE } from '@forkling/sim'
 import { readRequests } from '../requests.ts'
 import { readWishes } from '../wishes.ts'
 import { requestId } from '../builds/found.ts'
@@ -77,7 +77,7 @@ export function lifecycleStep(t: Tick): void {
     lines.push({ at: t.nowIso, verb: 'found', summary: asked ? ROMAN_BUILT_LINE : GIFT_LINE })
     return capHistory(
       lines.sort((a, b) => Date.parse(a.at) - Date.parse(b.at)),
-      50,
+      PLACE_LIMITS.historyMax,
     )
   }
 
