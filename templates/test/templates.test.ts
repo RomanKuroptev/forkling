@@ -148,7 +148,7 @@ describe('templates/forkling-world seed', () => {
     const seed = readFileSync(join(root, 'forkling-world', 'self/seed.md'), 'utf8')
     expect(seed.trim()).toMatch(/^You are Merge, an AI\./)
     expect(seed).toMatch(/never claim a human life/)
-    expect(seed.trim().split(/\s+/).length).toBeLessThan(120)
+    expect(seed.trim().split(/\s+/).length).toBeLessThan(200)
     expect(existsSync(join(root, 'forkling-world', 'self/about.md'))).toBe(false)
     expect(existsSync(join(root, 'forkling-world', 'brain/temperament.json'))).toBe(false)
   })

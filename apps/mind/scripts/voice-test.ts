@@ -4,7 +4,7 @@
  *   ANTHROPIC_API_KEY=... pnpm --filter @forkling/mind voice-test -- --merge <clone of RomanKuroptev/merge>
  *
  * Steps: fetch 20 real items from the first allowlist; one Haiku read call each; 50 Haiku thought lines over that day;
- * one Sonnet reflection and one Sonnet diary entry; the sameness measure (spec 12.1) over Merge's pet-era text and the
+ * one Sonnet reflection, one Sonnet diary entry and one Sonnet notebook page; the sameness measure (spec 12.1) over Merge's pet-era text and the
  * new text. Stops before any call that would take the spend past --cap (default $1).
  *
  * Flags: --out <dir>, --merge <dir>, --cap <usd>, --offset <n> (a different mix of items), --seed-file <path>,
@@ -19,6 +19,7 @@ import { maxSimilarity, samenessProfile, words, wornPhrases, type SamenessProfil
 import { costUsd, estimateCallUsd, estimateTokens, type ModelId } from '../src/budget.ts'
 import { hasCredentials } from '../src/credentials.ts'
 import { anthropicClient, IMAGE_TOKENS, type LlmClient, type LlmImage } from '../src/llm.ts'
+import { buildNoteUser, NoteOutput } from '../src/tick/mind-step.ts'
 import { checkSouvenir } from '../src/web/souvenir.ts'
 import {
   claimsHuman, DiaryAnswer, diaryPrompt, ReadAnswer, readPrompt, ReflectionAnswer, reflectionPrompt, system, ThoughtAnswer, thoughtPrompt,
@@ -160,6 +161,14 @@ const reflection = await call('reflection', SONNET, reflectionPrompt(stream, 'st
 log('Writing the diary...')
 const diary = await call('diary', SONNET, diaryPrompt(stream, reflection), DiaryAnswer, 4000, 'low')
 
+// ---- 4b. A notebook page: the real write prompt, on Sonnet (slice 4 of the fun plan moves write there) ----
+
+const best = [...reads].filter((r) => r.answer).sort((a, b) => (b.answer?.interest ?? 0) - (a.answer?.interest ?? 0))[0]
+log('Writing a notebook page...')
+const page = best
+  ? await call('notebook page', SONNET, buildNoteUser({ target: best.item.title, reason: `I just read it. ${best.answer!.reaction}`, date: now.toISOString().slice(0, 10), recent: [] }), NoteOutput, 4000, 'low')
+  : null
+
 // ---- 5. Sameness (spec 12.1) ----
 
 const past: PastText | null = args.merge ? readPast(resolve(args.merge)) : null
@@ -185,7 +194,7 @@ const newThoughts = ticks.flatMap((t) => (t.answer ? [t.answer.thought] : []))
 const newReactions = reads.flatMap((r) => (r.answer ? [r.answer.reaction] : []))
 if (newThoughts.length) sameness.push(`- **New thought lines** (window 50): ${fmt(samenessProfile(newThoughts, { window: 50, thresholds: [0.35, 0.5, 0.6] }))}`)
 if (newReactions.length) sameness.push(`- **New read reactions** (window 20): ${fmt(samenessProfile(newReactions, { window: 20, thresholds: [0.2, 0.35] }))}`)
-const newWorn = wornPhrases([...newThoughts, ...newReactions, diary?.entry ?? ''])
+const newWorn = wornPhrases([...newThoughts, ...newReactions, diary?.entry ?? '', page?.text ?? ''])
 if (newThoughts.length) sameness.push(`- **Worn phrases** in the new text: ${newWorn.length ? newWorn.slice(0, 15).map((w) => `"${w.phrase}" ×${w.count}`).join(', ') : 'none'}`)
 
 // ---- 6. Report ----
@@ -208,6 +217,10 @@ const report: string[] = [
   '## Diary entry (Sonnet)',
   '',
   diary ? `${diary.entry}\n\n(${wc(diary.entry)} words)` : '(no entry)',
+  '',
+  '## Notebook page (Sonnet, the real write prompt)',
+  '',
+  page ? `# ${page.title}\n\n${page.text}\n\n(${wc(page.text)} words; written about "${best?.item.title}")` : '(no page)',
   '',
   '## Reflection (Sonnet)',
   '',
@@ -256,6 +269,6 @@ const report: string[] = [
 
 mkdirSync(out, { recursive: true })
 writeFileSync(join(out, 'report.md'), report.filter((l, i, a) => !(l === '' && a[i - 1] === '')).join('\n'))
-writeFileSync(join(out, 'raw.json'), JSON.stringify({ seed, items, reads, ticks, reflection, diary, spend, skipped, fetchLog }, null, 2))
+writeFileSync(join(out, 'raw.json'), JSON.stringify({ seed, items, reads, ticks, reflection, diary, page, spend, skipped, fetchLog }, null, 2))
 log(`\nReport: ${join(out, 'report.md')}`)
 log(`Spend: $${spent().toFixed(3)} (estimate before calling $${estimated.toFixed(3)})`)
