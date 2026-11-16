@@ -122,22 +122,22 @@ function lineFor(t: Tick, result: TickResult, previous: Health | null): TickLine
  * world. These are the only files a quiet tick writes. A dry run writes nothing.
  */
 /** The places, requests and last week's steps the place nudges are measured from (spec 12.3). Read-only: nothing here changes a place. */
-export function placeNudgeInputs(t: Tick) {
+export function placeNudgeInputs(t: Tick, timeline: readonly { at: string; verb: string; targetId?: string | undefined }[] = readTimelineSince(t.dir, t.today, 7)) {
   const tz = t.sleepOpts.timezone
   return {
-    places: t.places.map((p) => ({ id: p.id, name: p.name, purpose: p.purpose, founded: p.founded, lastCareAt: p.state.lastCareAt, closed: p.state.closed !== null })),
-    requests: readRequests(t.dir).map((r) => ({ id: r.id, kind: r.kind, name: r.name, purpose: r.purpose, written: r.written })),
-    steps: readTimelineSince(t.dir, t.today, 7).map((s) => ({ at: s.at, verb: s.verb, ...(s.targetId ? { targetId: s.targetId } : {}) })),
+    places: t.places.map((p) => ({ id: p.id, name: p.name, purpose: p.purpose, founded: p.founded, lastCareAt: p.state.lastCareAt, closed: p.state.closed !== null, chunk: p.chunk })),
+    requests: readRequests(t.dir).map((r) => ({ id: r.id, kind: r.kind, name: r.name, purpose: r.purpose, written: r.written, chunk: r.chunk })),
+    steps: timeline.map((s) => ({ at: s.at, verb: s.verb, ...(s.targetId ? { targetId: s.targetId } : {}) })),
     dayOf: (iso: string) => localDate(tz, Date.parse(iso)),
   }
 }
 
 /** The steps and build attempts of the last 7 days, for the weekly health check (spec 9.6). A build counts as failed if it failed or ended in the scrap bin. */
-function weekInputs(t: Tick) {
+function weekInputs(t: Tick, timeline: readonly { at: string; verb: string }[]) {
   const since = t.nowMs - 7 * 86_400_000
   const results = readResults(t.dir).filter((r) => Date.parse(r.at) > since)
   return {
-    steps: readTimelineSince(t.dir, t.today, 7).map((s) => ({ verb: s.verb, at: s.at })),
+    steps: timeline.map((s) => ({ verb: s.verb, at: s.at })),
     builds: { total: results.length, failed: results.filter((r) => r.status === 'failed' || r.workStatus === 'scrap').length },
   }
 }
@@ -152,6 +152,8 @@ export function logTick(t: Tick, result: TickResult): TickResult {
   const line = lineFor(t, result, previous)
   appendTick(t.dir, t.today, line)
   pruneTicks(t.dir, t.today)
-  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir), badRequests: unreadableRequests(t.dir), texts: { writings: readWritings(t.dir), diaries: readDiaries(t.dir) }, doorDays: t.mind.doorDays ?? [], placeNudges: placeNudgeInputs(t), week: weekInputs(t) }))
+  // The last 7 days of the timeline are read once for both the place nudges and the weekly check.
+  const timeline = readTimelineSince(t.dir, t.today, 7)
+  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir), badRequests: unreadableRequests(t.dir), texts: { writings: readWritings(t.dir), diaries: readDiaries(t.dir) }, doorDays: t.mind.doorDays ?? [], placeNudges: placeNudgeInputs(t, timeline), week: weekInputs(t, timeline) }))
   return { ...result, logged: true }
 }

@@ -1,4 +1,4 @@
-import { capHistory } from '@forkling/sim'
+import { capHistory, PLACE_LIMITS } from '@forkling/sim'
 import type { Kit, Place, WorkMeta } from '@forkling/schema'
 import { clampText } from '../decision.ts'
 
@@ -95,5 +95,5 @@ export function planInstalls(place: Place, works: readonly WorkMeta[], kit: Kit,
     [names.put.length > 0 ? `Put ${names.put.join(', ')} on ${names.put.length === 1 ? 'a screen' : 'screens'}.` : '', names.off.length > 0 ? `Took ${names.off.join(', ')} off.` : ''].filter(Boolean).join(' ') || 'Rearranged the screens.',
     140,
   )
-  return { place: { ...place, exhibits, history: capHistory([...place.history, { at: nowIso, verb: 'install', summary }], 50) }, workUpdates }
+  return { place: { ...place, exhibits, history: capHistory([...place.history, { at: nowIso, verb: 'install', summary }], PLACE_LIMITS.historyMax) }, workUpdates }
 }
