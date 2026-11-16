@@ -9,6 +9,8 @@ export interface PlaceNudgeLike {
   founded: string
   lastCareAt: string | null
   closed?: boolean
+  /** The chunk it stands on, so a place built from a request is not counted as a copy of it. */
+  chunk?: readonly [number, number]
 }
 
 /** What the repeated-place nudge needs of a request: a gift is Roman's choice of name, so it is left alone. */
@@ -18,6 +20,8 @@ export interface PlaceNudgeRequest {
   name: string
   purpose: string
   written: string
+  /** The chunk the request staked. */
+  chunk?: readonly [number, number]
 }
 
 /** A step it started, from `memory/timeline/`. */
@@ -43,7 +47,8 @@ const foundedMs = (p: { founded: string }) => Date.parse(`${p.founded}T00:00:00Z
 /**
  * The repeated-place nudge (spec 12.3): a new place whose name is over 0.5, or whose purpose is over 0.4, like an existing place.
  * A place founded since `sinceMs` is compared with the places founded before it (the same day goes by id), and a request for a
- * new place written since then is compared with every place there is. A gift is not Merge's choice, so it is never reported.
+ * new place written since then is compared with the places there are, except the one standing on its own chunk (that is the answer
+ * to it, not a copy). A gift is not Merge's choice, so neither a gift request nor a place on a gift's chunk is ever reported.
  * Measured and logged, never enforced: nothing here turns a place or a request away.
  */
 export function repeatedPlaces(places: readonly PlaceNudgeLike[], requests: readonly PlaceNudgeRequest[], opts: { sinceMs: number }): PlaceNudge[] {
@@ -54,11 +59,15 @@ export function repeatedPlaces(places: readonly PlaceNudgeLike[], requests: read
     if (maxSimilarity(name, against.map((p) => p.name)) > PLACE_NAME_SIMILARITY) out.push({ id, why: 'its name is like an existing place' })
     if (maxSimilarity(purpose, against.map((p) => p.purpose)) > PLACE_PURPOSE_SIMILARITY) out.push({ id, why: 'its purpose is like an existing place' })
   }
+  const key = (c: readonly [number, number]) => `${c[0]},${c[1]}`
+  const giftChunks = new Set(requests.filter((r) => r.kind === 'gift' && r.chunk).map((r) => key(r.chunk!)))
   list.forEach((p, i) => {
-    if (foundedMs(p) >= opts.sinceMs) check(p.id, p.name, p.purpose, list.slice(0, i))
+    if (foundedMs(p) >= opts.sinceMs && !(p.chunk && giftChunks.has(key(p.chunk)))) check(p.id, p.name, p.purpose, list.slice(0, i))
   })
   for (const r of requests) {
-    if (r.kind === 'place' && Date.parse(r.written) >= opts.sinceMs) check(`request:${r.id}`, r.name, r.purpose, list)
+    if (r.kind !== 'place' || Date.parse(r.written) < opts.sinceMs) continue
+    const own = r.chunk ? key(r.chunk) : null
+    check(`request:${r.id}`, r.name, r.purpose, own ? list.filter((p) => !p.chunk || key(p.chunk) !== own) : list)
   }
   return out
 }

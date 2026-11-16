@@ -48,7 +48,7 @@ note: null
 
 - **Are the thresholds right?** Expand needs weight 30 on a topic with 3 souvenirs since the place last changed size; found needs weight 40 for 3 mornings in a row. If a week passes with no expand, they are too shy; if Merge asks every week for the same thing, too eager. They are `EXPAND_MIN_WEIGHT` and `WAKE_TOP_MIN` in `packages/sim/src/build-rules.ts`.
 - **Spend.** Expand and the fallback build are plain Sonnet calls at low effort (about $0.02 an expand in the sim; a fallback build is estimated at $0.07). Watch the `expand`, `repair` and `foundbuild` rows in `brain/budget.json` `byKind` against the pace.
-- **Place nudges** (after the next release): `mind/health.json` `novelty.places` has `repeatedPlace`, `stuckInOnePlace` and `weekendRevisit`. They are measured and never enforced, and they never warn; you decide which to switch on in W8.
+- **Place nudges** (after the next release): `mind/health.json` `novelty.places` has `repeatedPlace`, `stuckInOnePlace` and `weekendRevisit`. They are measured and never enforced, and they never warn; you decide which to switch on in W8. `weekendRevisit` is a **snapshot**, not the spec's end-of-week figure: it counts the places at neglect 1 or more (7 days with no care) at the moment of each health write, so it moves from tick to tick. A place built from a request is not counted as a repeat of it, and neither is a place Roman gave.
 - **Requests**: at most 2 place requests and 5 wishes open, and found at most once a week. `/requests/` shows all of it.
 
 ## Known limits
