@@ -4,8 +4,8 @@ import { resolveStart } from '../src/web/start.ts'
 const known = [{ id: '2026-11-10-keepers-log', url: 'https://en.wikipedia.org/wiki/Lighthouse', content: 'Fog.' }]
 
 describe('where a trip starts', () => {
-  it('goes straight to the Wikipedia page of a topic', () => {
-    expect(resolveStart('lighthouses', known)).toEqual({ ok: true, kind: 'topic', value: 'lighthouses', url: 'https://en.wikipedia.org/wiki/Lighthouses' })
+  it('tries the Wikipedia page of a topic it has not seen, and says that is a guess', () => {
+    expect(resolveStart('lighthouses', known)).toEqual({ ok: true, kind: 'topic', value: 'lighthouses', url: 'https://en.wikipedia.org/wiki/Lighthouses', found: 'guess' })
     expect(resolveStart('  logic gates ', known)).toMatchObject({ kind: 'topic', url: 'https://en.wikipedia.org/wiki/Logic_gates' })
   })
 

@@ -5,6 +5,7 @@ import { pickDoors } from '../web/doors.ts'
 import { addStats } from '../web/stats.ts'
 import { MAX_LOOKS_PER_DAY, performLook } from '../web/look.ts'
 import { performRead } from '../web/readcall.ts'
+import { rememberSeen, type SeenPage } from '../web/lookup.ts'
 import { startKey } from '../web/rails.ts'
 import { frontPageLinks, imgflipTopLinks, readUrl } from '../web/sources/index.ts'
 import { resolveStart } from '../web/start.ts'
@@ -58,6 +59,9 @@ export async function morningStep(t: Tick): Promise<void> {
   ])
   const links = [...(wiki ?? []).slice(0, WIKIPEDIA_POINTS), ...(esolangs ?? []).slice(0, ESOLANG_POINTS), ...(memes ?? [])]
   t.startingPoints = pickDoors(links, t.interests, createPrng((t.forkling.seed ^ Number(today.replaceAll('-', ''))) >>> 0))
+  // Kept for the day, so a replan after the morning can still name them, and the links are pages it has now seen.
+  mind.points = { date: today, list: t.startingPoints.map((p) => ({ title: p.title.slice(0, 200), url: p.url.slice(0, 500), door: p.door })).slice(0, 30) }
+  mind.seen = rememberSeen(mind.seen ?? [], links.map((l) => ({ title: l.title.slice(0, 200), url: l.url.slice(0, 500) })))
   mind.pausedHosts = fetcher.pausedHosts()
 }
 
@@ -86,7 +90,9 @@ export async function tripStep(t: Tick): Promise<void> {
   if (!llm) return skip('there is no model this tick')
   const readsLeft = MAX_READS_PER_DAY - t.trips.reads
   if (readsLeft <= 0) return skip(`the ${MAX_READS_PER_DAY} reads of the day are used`)
-  const start = resolveStart(step.targetId ?? '', t.wander.souvenirs)
+  // A topic is matched with the titles of pages it has really seen (no search: robots.txt allows none), before its own page is tried.
+  const pool: SeenPage[] = [...(t.mind.seen ?? []), ...t.startingPoints.map((p) => ({ title: p.title, url: p.url }))]
+  const start = resolveStart(step.targetId ?? '', t.wander.souvenirs, pool)
   if (!start.ok) return skip(start.reason)
 
   /** A model call booked in the ledger and the tick log. A call that never happened is only noted. */
@@ -134,6 +140,7 @@ export async function tripStep(t: Tick): Promise<void> {
   if (best && best.gain >= SPARK_GAIN && (t.mind.sparked?.date !== today || t.mind.sparked.count < 2)) {
     t.mind.sparked = { date: today, count: t.mind.sparked?.date === today ? t.mind.sparked.count : 0, pending: { topic: best.topic.slice(0, 60), gain: best.gain } }
   }
+  t.mind.seen = rememberSeen(t.mind.seen ?? [], result.seen)
   t.mind.trips = { date: today, reads: t.trips.reads + result.reads, trips: t.trips.trips + 1, looks: t.trips.looks + result.looks, starts: [...t.trips.starts, startKey(start.value)].slice(-60) }
   t.trips = t.mind.trips
   // Where the trip started, for the week's share of trips through a stranger's door (spec 12.3): measured, never enforced.
@@ -145,9 +152,17 @@ export async function tripStep(t: Tick): Promise<void> {
   t.mind.pausedHosts = fetcher.pausedHosts()
   for (const _ of result.souvenirs) t.moodEvents.push('souvenirKept')
 
+  notes.push(...result.notes.slice(0, 10))
+  // A trip that found no page to read says so in plain words, so nothing written after it can pretend it read something.
+  if (result.trail.pages.every((p) => p.failed)) {
+    const why = start.kind === 'topic' && start.found === 'guess' ? 'there is no page of that name' : 'the page could not be read'
+    remember.push({ at: nowIso, kind: 'reading', text: `Looked for ${start.value} and found nothing to read (${why}), so I read nothing about it.`, verb: 'wander', goalRef: `today:${pending.index}` })
+    justNow.push(`looked for ${start.value}: found nothing to read, so read nothing`)
+    parts.push(`looked for ${start.value}, read nothing`)
+    return
+  }
   const kept = result.souvenirs.length
   const summary = `${result.trail.pages.length} page${result.trail.pages.length === 1 ? '' : 's'}${kept > 0 ? `, kept ${kept} souvenir${kept === 1 ? '' : 's'}` : ''}`
-  notes.push(...result.notes.slice(0, 10))
   remember.push({ at: nowIso, kind: 'reading', text: `Wandered from ${start.value}: ${summary}.`, verb: 'wander', goalRef: `today:${pending.index}` })
   for (const s of result.souvenirs) rememberScored(t, { at: nowIso, kind: 'made', text: `Kept a souvenir from ${s.source.title}: "${s.content}"`, verb: 'wander', goalRef: `today:${pending.index}` }, 'souvenirKept')
   justNow.push(`wandered from ${start.value}: ${summary}`)
