@@ -84,10 +84,12 @@ export interface MindPlanContext {
   wants: readonly { id: string }[]
   /** The latest steps from before this plan, oldest first. */
   recent: readonly { verb: string }[]
-  used: { repliesToday: number; sketchesToday: number; foundThisWeek: number }
+  used: { repliesToday: number; foundThisWeek: number }
   lastExpandedPlace: string | null
   variety?: VarietyContext
   points?: StartingPointsContext
+  /** Found notes that have waited 3 hours or more for their reply step: the plan must make room for each (spec 16: answered the same day). */
+  overdueNotes?: ReadonlySet<string>
 }
 
 export type MindPlanResult = { ok: true; steps: MindStep[] } | { ok: false; reasons: string[] }
@@ -100,8 +102,9 @@ export const COLD_START_WANTS = 3
 const NO_NEW_STEP_BEFORE_BED_MS = 45 * 60_000
 /** The starting-point rule is not asked in the last hours of the day: a trip needs time. */
 const STARTING_POINT_MIN_LEFT_MS = 3 * 3_600_000
+/** A reply takes 10 minutes and nothing starts in the last 45 before bed, so the reply rule is not asked in the last hour. */
+const REPLY_MIN_LEFT_MS = 3_600_000
 const MAX_REPLIES_PER_DAY = 5
-const MAX_SKETCHES_PER_DAY = 3
 export const MAX_FOUND_PER_WEEK = 1
 const CARE_VERBS = new Set<MindVerb>(['tend', 'revisit', 'expand'])
 const BUILD_VERBS = new Set<MindVerb>(['expand', 'found', 'tinker'])
@@ -118,7 +121,6 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
   const wantIds = new Set(c.wants.map((w) => w.id))
   const needsWant = c.wants.length >= COLD_START_WANTS
   let replies = c.used.repliesToday
-  let sketches = c.used.sketchesToday
   let found = c.used.foundThisWeek
   let lastExpanded = c.lastExpandedPlace
   let startMs = c.startMs
@@ -196,10 +198,6 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
           if (last.length >= limit && last.every((r) => sameSubject(r, target))) here.push(`${n}: you have made the same work ${limit} times in a row ("${last.at(-1)!.slice(0, 50)}"): make or change something else this time`)
           plannedTinkers.push(target)
         }
-        if (s.size === 'sketch') {
-          sketches++
-          if (sketches > MAX_SKETCHES_PER_DAY) here.push(`${n}: at most ${MAX_SKETCHES_PER_DAY} sketches a day`)
-        }
         break
       case 'write':
         if (!target) here.push(`${n}: write needs a place or a subject`)
@@ -231,6 +229,13 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
     if (!wanders.some(({ s }) => c.points!.isPoint(s.target?.trim() ?? ''))) {
       const ask = 'today no trip has started from one of the starting points (listed above, with the doors), and at least one a day does: start a wander from one of them, by its address, not from a topic you chose'
       reasons.push(wanders.length > 0 ? `step ${wanders[0]!.i + 1}: ${ask}` : `the plan has no wander, and ${ask}`)
+    }
+  }
+
+  if (c.overdueNotes && c.overdueNotes.size > 0 && c.bedMs - c.startMs >= REPLY_MIN_LEFT_MS) {
+    const answered = new Set(steps.filter((s) => s.verb === 'reply').map((s) => s.target?.trim() ?? ''))
+    for (const id of c.overdueNotes) {
+      if (c.notes.has(id) && !answered.has(id)) reasons.push(`the note "${id}" has waited 3 hours or more for an answer: add a reply step for it (you may reply, decline it with a reason, or keep it)`)
     }
   }
 

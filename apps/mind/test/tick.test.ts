@@ -220,11 +220,13 @@ describe('the nine verbs in the tick', () => {
     expect(stateOf().rejections[0]!.reasons.join(' ')).toMatch(/at most 4 steps/)
   })
 
-  it('runs the verbs that are not built yet as rest, and says so', async () => {
+  it('rests a tend on a place that does not exist, and keeps that out of the day: the tick log has it, the stream does not', async () => {
+    // This world has no place files yet, so a tend of Home has no place to land on and rests.
     const sketch: Decision = { ...morning, plan: [llmStep('tend', 'home', 30, 'I want to put a shelf straight.'), llmStep('write', 'home', 25, 'A plaque.'), llmStep('rest', null, 30, 'Breakfast can wait.')] }
     await runTick(dir, at(NOW, { llm: fakeLlm(sketch) }))
-    await runTick(dir, at(minutesAfter(61), { llm: fakeLlm(keep) }))
-    expect(streamText()).toMatch(/tend is not built yet, so it rested instead\./)
+    const result = await runTick(dir, at(minutesAfter(61), { llm: fakeLlm(keep) }))
+    expect(streamText()).not.toMatch(/not built yet|not a place/)
+    expect(result.notes.join('\n')).toMatch(/tend: "home" is not a place that exists yet, so it rested instead/)
   })
 
   it('says it could not go wandering when there is no way to reach the web, instead of resting', async () => {
@@ -240,13 +242,15 @@ describe('the nine verbs in the tick', () => {
     writeJson('mind/goals.json', { ...goalsOf(), now: { index: 1, startedAt: NOW, until: '2026-11-03T09:10:00Z' } })
     const llm = fakeLlm(byKind({ title: 'The lamp', text: 'A lamp is a small argument with the dark. I am winning slowly.' }))
     await runTick(dir, at(minutesAfter(12), { llm }))
+    // The write step stays on Haiku (Roman, 16 November): the pages are short captions now, and Sonnet is for what is made and said to visitors.
+    expect(llm.calls.find((c) => c.kind === 'art')).toMatchObject({ model: 'claude-haiku-5-5' })
     const written = readFileSync(file('notebook/writing/2026-11-03-0912-the-lamp.md'), 'utf8')
     expect(written).toBe('# The lamp\n\nA lamp is a small argument with the dark. I am winning slowly.\n')
     expect(streamText()).toMatch(/write: The lamp/)
     expect(Forkling.parse(readJson('forkling.json')).energy).toBeCloseTo(0.45)
   })
 
-  it('throws away writing that claims a human life, or runs over 300 words', async () => {
+  it('throws away writing that claims a human life, or runs well over the 80 words it was asked for (100)', async () => {
     await runTick(dir, at(NOW))
     writeJson('mind/goals.json', { ...goalsOf(), now: { index: 1, startedAt: NOW, until: '2026-11-03T09:10:00Z' } })
     const human = fakeLlm(byKind({ title: 'Home', text: 'When I was a kid I kept a lamp.' }))
@@ -257,10 +261,10 @@ describe('the nine verbs in the tick', () => {
     writeJson('mind/goals.json', { ...goalsOf(), now: { index: 1, startedAt: minutesAfter(12), until: minutesAfter(14) } })
     mkdirSync(file('mind'), { recursive: true })
     writeJson('mind/state.json', { ...stateOf(), appliedStepAt: undefined })
-    const long = fakeLlm(byKind({ title: 'Long', text: 'word '.repeat(301) }))
+    const long = fakeLlm(byKind({ title: 'Long', text: 'word '.repeat(101) }))
     const second = await runTick(dir, at(minutesAfter(16), { llm: long }))
     expect(existsSync(file('notebook/writing'))).toBe(false)
-    expect(second.notes.join(' ')).toMatch(/over the 300 word limit/)
+    expect(second.notes.join(' ')).toMatch(/over the 100 word limit/)
   })
 })
 
@@ -449,7 +453,7 @@ describe('what it did before comes back to it', () => {
     await runTick(dir, at(NOW, { llm }))
     const user = llm.calls[0]!.user
     expect(user).toMatch(/^points in hand: 150$/m)
-    expect(user).toMatch(/^prices today: wander 3, tend 2, revisit 1, expand 50, found 2, tinker \(full work\) 240, tinker \(sketch\) 2, write 1, reply 0, rest 0; a deep step costs 30$/m)
+    expect(user).toMatch(/^prices today: wander 3, tend 2, revisit 1, expand 50, found 2, tinker \(full work\) 240, tinker \(sketch\) 50, write 1, reply 0, rest 0; a deep step costs 30$/m)
   })
 
   it('does not ask for a late night in the morning, when it cannot be one', async () => {

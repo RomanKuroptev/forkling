@@ -3,8 +3,8 @@
 The mind of one world repo. Today it runs as the Actions tick (`src/cli.ts`, `mind.yml`); from W3 it also runs as a loop on a server (`src/serve.ts`, `src/tick/loop.ts`): a reflex tick in code every 10 s while awake (60 s asleep), a Haiku thought tick every 2 to 5 minutes while awake, and decide, step, reflection and sleep calls at the triggers in spec 2.3. A plan is 3 to 8 steps in the nine verbs, written by the mind; code validates it and never chooses it.
 
 ## Models and calls
-- **Haiku 5.5** (`claude-haiku-5-5`) for the thought tick, decide and replan calls, one call per step that writes a file (tend, revisit, write, reply, sketches), web reads and looks.
-- **Sonnet 5.5** (`claude-sonnet-5-5`) for reflection, the sleep rewrite, the weekly review, and expand, found, tinker and deep steps. Roles and effort levels are in spec 13. No other models or providers.
+- **Haiku 5.5** (`claude-haiku-5-5`) for the thought tick, decide and replan calls, one call per step that writes a file (tend, revisit, write), web reads and looks. Write pages are 80 words.
+- **Sonnet 5.5** (`claude-sonnet-5-5`) for reflection, the sleep rewrite, the weekly review, the 3-day goal review, and expand, found, tinker and deep steps, and for the creative calls: sketches and memes, reworks and replies (`creativeModel` in `src/budget.ts`: Haiku instead within $1.50 of the cap). Roles and effort levels are in spec 13. No other models or providers.
 - Use structured outputs (`output_config.format`) for anything the code parses. Don't rely on forced `tool_choice` or assistant prefill; current models reject them.
 - Put the seed, `self/page.md`, schemas and verb list at the start of prompts so they cache. Keep volatile content (time, events) after the cache breakpoint.
 - The sleep rewrite goes through the Batch API (50% off).
@@ -13,9 +13,9 @@ The mind of one world repo. Today it runs as the Actions tick (`src/cli.ts`, `mi
 ## Cost rules (non-negotiable)
 - Every prompt stays under 100K tokens. Summarize memory instead of passing history.
 - Skip the LLM entirely when no trigger fired.
-- At the monthly model cap (`brain/budget.json`: `capUsd`, and `capUsd` plus `serverUsd` never over $20), stop all LLM calls until the month resets. `src/budget.ts` estimates every call before it is made.
+- At the monthly model cap (`brain/budget.json`: `capUsd`, and `capUsd` plus `serverUsd` never over $23), stop all LLM calls until the month resets. `src/budget.ts` estimates every call before it is made.
 - No LLM calls while asleep except the sleep rewrite batch.
-- Quotas and the daily allowance are rails in code (spec 9.8, `packages/sim/src/allowance.ts`, `build-rules.ts`): at most 40 reads and 20 looks a day, 3 sketches a day, 2 works put away a week, 1 found a week, and the like. Variety rules are nudges that are measured and logged only, and only Roman switches one on in `mind/config.json`.
+- Quotas and the daily allowance are rails in code (spec 9.8, `packages/sim/src/allowance.ts`, `build-rules.ts`): at most 40 reads and 20 looks a day, sketches priced at 50 points and not capped, 2 works put away a week, 1 found a week, and the like. Variety rules are nudges that are measured and logged only, and only Roman switches one on in `mind/config.json`.
 - Every tick commits: world state only when it changed, and the tick log (`mind/ticks/`, `mind/health.json`) always, in commits that start with `tick:`.
 - Log token usage and cost per run to the Actions summary.
 

@@ -15,7 +15,7 @@ export async function revisitStep(t: Tick): Promise<void> {
   if (!place) return
   const fail = (why: string) => {
     t.notes.push(`revisit ${place.id}: ${why}`)
-    t.remember.push({ at: t.nowIso, kind: 'event', text: `My visit to ${place.name} did not work out (${clampText(why, 160)}).`, verb: 'revisit' })
+    t.remember.push({ at: t.nowIso, kind: 'event', text: `My visit to ${place.name} did not work out (${clampText(why, 160)}).`, verb: 'revisit', engine: true })
   }
   const user = buildRevisitUser({
     place,

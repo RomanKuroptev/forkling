@@ -1,5 +1,5 @@
 import type { PlanStep } from '@forkling/schema'
-import { MIND_VERBS, daysSinceCare, foundsInWeek, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
+import { MIND_VERBS, daysSinceCare, foundsInWeek, overdueNotes, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
@@ -63,10 +63,11 @@ export function planContext(t: Tick): MindPlanContext {
     notes: new Set(t.visitorNotes.filter((n) => n.status === 'found').map((n) => n.id)),
     wants: t.wants,
     recent: t.mind.recent,
-    used: { repliesToday: t.mind.replies?.date === t.today ? t.mind.replies.count : 0, sketchesToday: t.mind.sketches?.date === t.today ? t.mind.sketches.count : 0, foundThisWeek: foundsInWeek(t.mind.founds ?? [], t.nowMs) },
+    used: { repliesToday: t.mind.replies?.date === t.today ? t.mind.replies.count : 0, foundThisWeek: foundsInWeek(t.mind.founds ?? [], t.nowMs) },
     lastExpandedPlace: t.mind.lastExpandedPlace ?? null,
     ...withVariety(t),
     ...withPoints(t),
+    overdueNotes: new Set(overdueNotes(t.visitorNotes, t.nowMs)),
   }
 }
 

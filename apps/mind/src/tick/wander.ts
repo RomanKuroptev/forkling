@@ -77,7 +77,7 @@ export async function tripStep(t: Tick): Promise<void> {
   const { notes, remember, justNow, nowIso, today, parts } = t
   const skip = (why: string) => {
     notes.push(`wander: ${why}`)
-    remember.push({ at: nowIso, kind: 'event', text: `Could not go wandering: ${why}.`, verb: 'wander' })
+    remember.push({ at: nowIso, kind: 'event', text: `Could not go wandering: ${why}.`, verb: 'wander', engine: true })
     justNow.push(`could not wander: ${why}`)
   }
   if (t.deps.dryRun) {

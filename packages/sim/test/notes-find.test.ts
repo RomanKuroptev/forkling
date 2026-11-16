@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Note } from '@forkling/schema'
-import { NOTE_AUTO_FIND_WAKING_MS, NOTE_TRIGGER_GAP_MS, findReason, noteTriggerDue, visibleNotes } from '../src/notes-find.ts'
+import { NOTE_AUTO_FIND_WAKING_MS, NOTE_REPLY_OVERDUE_MS, NOTE_TRIGGER_GAP_MS, findReason, noteTriggerDue, overdueNotes, visibleNotes } from '../src/notes-find.ts'
 import { sleepWindow } from '../src/sleep.ts'
 
 const opts = { seed: 7, timezone: 'Europe/Stockholm' }
@@ -10,7 +10,7 @@ const wake = window.wakeMs
 const HOUR = 3_600_000
 
 const note = (over: Partial<Note> = {}): Note => ({ id: 'n1', name: '', message: 'hello', placeId: 'workshop', at: new Date(wake + HOUR).toISOString(), topics: [], status: 'new', foundAt: null, reply: null, declineReason: null, position: null, ...over })
-const ctx = (over: object = {}) => ({ nowMs: wake + 2 * HOUR, stepPlaceId: null, thoughtPlaceId: null, justWoke: false, sleep: opts, ...over })
+const ctx = (over: object = {}) => ({ nowMs: wake + HOUR + 30 * 60_000, stepPlaceId: null, thoughtPlaceId: null, justWoke: false, sleep: opts, ...over })
 
 describe('findReason (spec 10.1, decision 1: within 10 m is the same place)', () => {
   it('a note is not found by itself', () => expect(findReason(note(), ctx())).toBeNull())
@@ -21,18 +21,33 @@ describe('findReason (spec 10.1, decision 1: within 10 m is the same place)', ()
     expect(findReason(note({ placeId: 'home' }), ctx({ justWoke: true }))).toBe('wake')
     expect(findReason(note({ placeId: 'workshop' }), ctx({ justWoke: true }))).toBeNull()
   })
-  it('found by itself after 6 waking hours', () => {
-    expect(NOTE_AUTO_FIND_WAKING_MS).toBe(6 * HOUR)
+  it('found by itself after 1 waking hour (spec 16: found and answered or marked within 1 waking hour; it was 6, and a note at Home waited from 10:28 to 15:48)', () => {
+    expect(NOTE_AUTO_FIND_WAKING_MS).toBe(HOUR)
     const n = note({ at: new Date(wake).toISOString() })
-    expect(findReason(n, ctx({ nowMs: wake + 6 * HOUR - 1 }))).toBeNull()
-    expect(findReason(n, ctx({ nowMs: wake + 6 * HOUR }))).toBe('timeout')
+    expect(findReason(n, ctx({ nowMs: wake + HOUR - 1 }))).toBeNull()
+    expect(findReason(n, ctx({ nowMs: wake + HOUR }))).toBe('timeout')
   })
-  it('the night does not count toward the 6 hours', () => {
-    const n = note({ at: new Date(window.bedMs - HOUR).toISOString() })
+  it('the night does not count toward the hour', () => {
+    const n = note({ at: new Date(window.bedMs - HOUR / 2).toISOString() })
     expect(findReason(n, ctx({ nowMs: window.bedMs + 8 * HOUR }))).toBeNull()
+    expect(findReason(n, ctx({ nowMs: window.wakeMs + 24 * HOUR + 2 * HOUR }))).toBe('timeout')
   })
   it('a note already found is not found again', () => {
     expect(findReason(note({ status: 'found', foundAt: new Date(wake).toISOString() }), ctx({ stepPlaceId: 'workshop' }))).toBeNull()
+  })
+})
+
+describe('overdueNotes (a found note waits at most 3 hours for its reply step before a plan must make room for it)', () => {
+  const found = (id: string, hoursAgo: number, over: Partial<Note> = {}) => note({ id, status: 'found', foundAt: new Date(wake + 10 * HOUR - hoursAgo * HOUR).toISOString(), ...over })
+  const now = wake + 10 * HOUR
+
+  it('lists the found notes that have waited 3 hours or more, oldest first', () => {
+    expect(NOTE_REPLY_OVERDUE_MS).toBe(3 * HOUR)
+    expect(overdueNotes([found('new', 1), found('old', 5), found('edge', 3)], now)).toEqual(['old', 'edge'])
+  })
+
+  it('leaves out notes already answered, declined or kept, and notes that were never found', () => {
+    expect(overdueNotes([found('a', 9, { status: 'replied' }), found('b', 9, { status: 'declined' }), found('c', 9, { status: 'kept' }), note({ id: 'd' }), found('e', 9, { foundAt: null })], now)).toEqual([])
   })
 })
 

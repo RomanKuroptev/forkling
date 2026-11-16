@@ -42,7 +42,9 @@ export const MAX_DAY_EVENTS = 300
 export const MAX_DAY_THOUGHTS = 60
 
 /** What the sleep rewrite is shown of a day, in order. A paragraph of the diary may cite only these. */
-export function dayLines(stream: readonly StreamEntry[]): StreamEntry[] {
+export function dayLines(all: readonly StreamEntry[]): StreamEntry[] {
+  // Engine lines (a check turned a tend down over a label length, there was no web) are plumbing, not the day: the diary would report them.
+  const stream = all.filter((e) => !e.engine)
   const events = new Set(stream.filter((e) => e.kind !== 'thought').slice(-MAX_DAY_EVENTS))
   const thoughts = new Set(stream.filter((e) => e.kind === 'thought').slice(-MAX_DAY_THOUGHTS))
   return stream.filter((e) => events.has(e) || thoughts.has(e))
