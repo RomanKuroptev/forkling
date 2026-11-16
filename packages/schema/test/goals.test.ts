@@ -112,11 +112,11 @@ describe('BudgetLedger', () => {
     usd: 0.012,
   }
 
-  it('starts empty with the model cap of $20 minus the server (spec 13)', () => {
+  it('starts empty with the model cap of the total minus the server (spec 13)', () => {
     const ledger = BudgetLedger.parse({ month: '2026-11' })
     expect(ledger.serverUsd).toBe(7.49)
-    expect(ledger.capUsd).toBe(12.51)
-    expect(modelCapUsd(7.49)).toBe(12.51)
+    expect(ledger.capUsd).toBe(15.51)
+    expect(modelCapUsd(7.49)).toBe(15.51)
     expect(ledger.spentUsd).toBe(0)
     expect(ledger.calls).toEqual([])
   })
@@ -125,11 +125,11 @@ describe('BudgetLedger', () => {
     expect(BudgetLedger.parse({ month: '2026-11', spentUsd: 0.012, calls: [call] }).calls).toHaveLength(1)
   })
 
-  it('keeps the model cap and the server price within $20 together, and refuses a malformed month', () => {
-    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 13 }).success).toBe(false)
-    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 10 }).success).toBe(true)
-    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 14, serverUsd: 6 }).success).toBe(true)
-    expect(BudgetLedger.safeParse({ month: '2026-11', serverUsd: 21 }).success).toBe(false)
+  it('keeps the model cap and the server price within $23 together, and refuses a malformed month', () => {
+    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 16 }).success).toBe(false)
+    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 15 }).success).toBe(true)
+    expect(BudgetLedger.safeParse({ month: '2026-11', capUsd: 17, serverUsd: 6 }).success).toBe(true)
+    expect(BudgetLedger.safeParse({ month: '2026-11', serverUsd: 24 }).success).toBe(false)
     expect(BudgetLedger.safeParse({ month: 'November' }).success).toBe(false)
   })
 })

@@ -66,7 +66,7 @@ describe('buildHealth', () => {
     expect(h.plan.current).toMatchObject({ index: 0, verb: 'watch', overdueMinutes: 0 })
     expect(h.plan.stepsLeft).toBe(1)
     expect(h.today.ticks).toBe(2)
-    expect(h.spend).toMatchObject({ monthUsd: 0, capUsd: 12.51 })
+    expect(h.spend).toMatchObject({ monthUsd: 0, capUsd: 15.51 })
   })
 
   it('counts triggers and calls by kind, and the decide calls, for the day', () => {
@@ -143,7 +143,7 @@ describe('buildHealth', () => {
 
     it('warns when spend runs more than 15% ahead of the pace of the month (spec 13)', () => {
       const h = run([{ min: 0, ctx: { budget: BudgetLedger.parse({ month: '2026-11', spentUsd: 4 }) } }])
-      expect(h.spend.paceUsd).toBeCloseTo(1.25, 2) // $12.51 cap, 3 of 30 days
+      expect(h.spend.paceUsd).toBeCloseTo(1.55, 2) // $15.51 cap, 3 of 30 days
       expect(h.warnings.join(' ')).toMatch(/spent \$4\.00 .* pace/)
     })
 
@@ -262,31 +262,31 @@ describe('the day\'s spend by kind (Roman: reflection and the sleep rewrite, bat
   })
 })
 
-describe('the W7 spend warning (Roman: warn if W7 pushes the month over $20)', () => {
+describe('the W7 spend warning (Roman: warn if W7 pushes the month over the total cap, $23)', () => {
   const ledger = (over: Record<string, unknown>, byKind: Record<string, number> = {}) =>
     BudgetLedger.parse({ month: '2026-11', serverUsd: 7, capUsd: 13, ...over, byKind: Object.fromEntries(Object.entries(byKind).map(([k, usd]) => [k, { calls: 1, input: 1, cacheRead: 0, cacheWrite: 0, output: 1, usd }])) })
 
-  it('warns when the month projects past $20 with the server, and W7 calls are part of it', () => {
-    const w = w7SpendWarning(ledger({ spentUsd: 5 }, { reflection: 1, sleep: 0.8, weekly: 0.2 }), '2026-11-10')
-    expect(w).toMatch(/W7 spend would pass \$20/)
-    expect(w).toMatch(/\$22/)
+  it('warns when the month projects past the total cap with the server, and W7 calls are part of it', () => {
+    const w = w7SpendWarning(ledger({ spentUsd: 6 }, { reflection: 1, sleep: 0.8, weekly: 0.2 }), '2026-11-10')
+    expect(w).toMatch(/W7 spend would pass \$23/)
+    expect(w).toMatch(/\$25/)
   })
-  it('says nothing when the projection stays under $20', () => {
+  it('says nothing when the projection stays under the total cap', () => {
     expect(w7SpendWarning(ledger({ spentUsd: 3 }, { reflection: 1 }), '2026-11-10')).toBeNull()
   })
   it('says nothing when W7 calls cost nothing: it is not W7 that pushes it (the pace warning is for that)', () => {
-    expect(w7SpendWarning(ledger({ spentUsd: 5 }, { decide: 5 }), '2026-11-10')).toBeNull()
+    expect(w7SpendWarning(ledger({ spentUsd: 6 }, { decide: 6 }), '2026-11-10')).toBeNull()
   })
   it('waits for the third day of the month, when a projection means something', () => {
-    expect(w7SpendWarning(ledger({ spentUsd: 5 }, { reflection: 5 }), '2026-11-02')).toBeNull()
-    expect(w7SpendWarning(ledger({ spentUsd: 5 }, { reflection: 5 }), '2026-11-03')).not.toBeNull()
+    expect(w7SpendWarning(ledger({ spentUsd: 6 }, { reflection: 5 }), '2026-11-02')).toBeNull()
+    expect(w7SpendWarning(ledger({ spentUsd: 6 }, { reflection: 5 }), '2026-11-03')).not.toBeNull()
   })
   it('counts the server price: the same spend is fine with a cheap server', () => {
     expect(w7SpendWarning(ledger({ spentUsd: 5, serverUsd: 2, capUsd: 18 }, { reflection: 1 }), '2026-11-10')).toBeNull()
   })
   it('shows in the health warnings', () => {
-    const h = buildHealth(null, line(0), ctx(0, { today: '2026-11-10', budget: ledger({ spentUsd: 5 }, { reflection: 1 }) }))
-    expect(h.warnings.some((w) => /W7 spend would pass \$20/.test(w))).toBe(true)
+    const h = buildHealth(null, line(0), ctx(0, { today: '2026-11-10', budget: ledger({ spentUsd: 6 }, { reflection: 1 }) }))
+    expect(h.warnings.some((w) => /W7 spend would pass \$23/.test(w))).toBe(true)
   })
 })
 

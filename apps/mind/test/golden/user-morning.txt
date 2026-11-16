@@ -3,7 +3,7 @@ time: Tuesday 2026-11-03 10:00 (Europe/Stockholm); woke at 07:10; bedtime 23:05
 mood: steady, rested
 doing now: sit ("New island. I will allow it.")
 points in hand: 150
-prices today: wander 3, tend 2, revisit 1, expand 50, found 2, tinker (full work) 240, tinker (sketch) 2, write 1, reply 0, rest 0; a deep step costs 30
+prices today: wander 3, tend 2, revisit 1, expand 50, found 2, tinker (full work) 240, tinker (sketch) 50, write 1, reply 0, rest 0; a deep step costs 30
 </situation>
 
 <interests>

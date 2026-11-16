@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { effortFor, requestParams, stopFailure, thinkingFor, userContent } from '../src/llm.ts'
+import { anthropicClient, effortFor, requestParams, stopFailure, thinkingFor, userContent } from '../src/llm.ts'
 
 describe('userContent', () => {
   it('is the plain text when there is no picture', () => {
@@ -61,5 +61,31 @@ describe('stopFailure (spec 11.3)', () => {
 
   it('counts a refusal as a refusal even if something parsed', () => {
     expect(stopFailure('refusal', { a: 1 })).toBe('refusal')
+  })
+})
+
+describe('anthropicClient: an answer cut off in the middle still comes back as a cut-off, with its cost', () => {
+  const Answer = z.object({ title: z.string(), n: z.number() })
+  const usage = { input_tokens: 1200, output_tokens: 600, cache_read_input_tokens: 0, cache_creation_input_tokens: 300 }
+  const clientWith = (message: unknown) => anthropicClient({ messages: { create: async () => message, batches: {} } } as never)
+  const request = { kind: 'sketch' as const, model: 'claude-sonnet-5-5' as const, system: 's', user: 'u', maxTokens: 600, effort: 'medium' as const, schema: Answer }
+
+  it('gives null, the stop reason and the usage when the JSON stops half way (the SDK parser used to throw, and the cost was never booked)', async () => {
+    const r = await clientWith({ content: [{ type: 'text', text: '{"title": "A boat on a pon' }], stop_reason: 'max_tokens', usage }).complete(request)
+    expect(r.parsed).toBeNull()
+    expect(r.stopReason).toBe('max_tokens')
+    expect(r.usage).toEqual({ input: 1200, cacheRead: 0, cacheWrite: 300, output: 600 })
+    expect(stopFailure(r.stopReason, r.parsed)).toBe('cut_off')
+  })
+
+  it('gives the parsed answer when it fits the schema', async () => {
+    const r = await clientWith({ content: [{ type: 'thinking', thinking: '...' }, { type: 'text', text: '{"title": "A boat", "n": 3}' }], stop_reason: 'end_turn', usage }).complete(request)
+    expect(r.parsed).toEqual({ title: 'A boat', n: 3 })
+  })
+
+  it('gives null and an unparsed failure when the answer is whole but does not fit the schema', async () => {
+    const r = await clientWith({ content: [{ type: 'text', text: '{"title": 7}' }], stop_reason: 'end_turn', usage }).complete(request)
+    expect(r.parsed).toBeNull()
+    expect(stopFailure(r.stopReason, r.parsed)).toBe('unparsed')
   })
 })

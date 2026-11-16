@@ -28,6 +28,8 @@ export const StreamEntry = z.object({
   importance: z.number().int().min(1).max(10).optional(),
   /** On a reflection entry: the stream ids an insight rests on (spec 9.3). */
   cites: z.array(StreamId).max(6).optional(),
+  /** An engine line: the code reporting that it could not do what a step asked (a check turned a tend down, a call gave nothing, there was no web). Kept for the log and the site, but left out of what the diary and the reflection are given. */
+  engine: z.boolean().optional(),
   /** On a thought entry: how surprising the current step is, 0 to 10. */
   surprise: z.number().int().min(0).max(10).optional(),
 })

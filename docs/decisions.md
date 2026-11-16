@@ -2,6 +2,28 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+## 2026-11-16: Creative pieces on Sonnet, notes answered the same day, a $15 model cap (make Merge fun, slice 4)
+- **Models.** Sketches and memes, reworks and replies run on Sonnet 5.5 (they were Haiku). **The write step stays on Haiku**, and notebook pages are 80 words (the model is asked for 80, and a page up to 100 is kept, so a page of 85 is not thrown away): text is the caption now and the main products are visual. Thoughts, decide, reads, looks and tend stay Haiku. The diary was already Sonnet (the sleep rewrite).
+- **A fallback, not a stop.** Within $1.50 of the monthly cap the creative calls run on Haiku (`creativeModel`), so the end of a month is plainer sketches for a few days and not a silent Merge.
+- **No hard daily sketch cap.** A sketch costs 50 points (a Sonnet call of about $0.05; a point is $0.001) of the 150 a day, so Merge chooses how many: a wallet, not a schedule. A deep sketch is gone (a sketch is always Sonnet). A rework (put a work away, bring it back) is also priced as a sketch for now, because it is marked `size: sketch`: rare (2 a week at most), but dear for what it is.
+- **Cut-off answers are named and booked.** `messages.parse` threw when an answer stopped in the middle of its JSON, so the cost never reached the ledger and the tick log said "call failed". The client now reads the text itself: a cut-off is a null with its stop reason and usage.
+- **Visitor notes.** A note nobody is near is found after 1 waking hour (it was 6: Roman's note at Home, 10:28, was found at 14:48). A found note that has waited 3 hours makes the next plan include a reply step for it (a plan check; Merge may reply, decline with a reason, or keep it), except in the last hour before bed.
+- **No plumbing in its voice.** The prompt's "run as rest" sentence is gone (all nine verbs run). A step on a place that is not a place rests with a true note in the tick log and in Merge's next prompt, and engine lines (a check turned a tend down over a label length, no web, a call gave nothing) are flagged `engine` in the stream and left out of the diary's and the reflection's input. A sketch that fails its own check stays in: that is Merge's story.
+- **The caps.** The model cap is $15 for Merge (in `brain/budget.json`, at the release). The total, server included, goes from $20 to $23 (`TOTAL_CAP_USD`, CLAUDE.md), Roman's decision.
+- **Cost estimate** (from Merge's ledger: $1.13 over its first 6 days, the nightly Sonnet batch and a Sonnet reflection included, so about $0.19 a day or $5.6 a month before this change):
+
+  | | a month |
+  |---|---|
+  | what it costs now | about $5.6 |
+  | sketches and memes on Sonnet, about 1.5 to 2 a day at about $0.06 | +$2.7 to $3.6 (at 3 a day, the most 150 points allow: +$5.4) |
+  | replies on Sonnet, 1 to 3 a day at about $0.01 | +$0.3 to $0.9 |
+  | goal review every 3 days, about $0.02 | +$0.2 |
+  | reworks, 2 a week at most | under $0.05 |
+  | **model total** | **about $9 to $10 (at most about $12)**, under the $15 cap |
+  | with the server ($7.49) | **about $16.5 to $17.5 (at most about $19.5)**, under the $23 total |
+
+  The first live day gives the real numbers.
+
 ## 2026-11-16: Reading that actually reads (make Merge fun, slice 3)
 All 20 trips began as Merge's own interests typed in as Wikipedia titles. Several were 404s ("Absurd_rigorous_joke_papers", "Multi-directional_shading"), and it then wrote pages as if it had read them. So:
 - **No search, no invented addresses.** Wikipedia's robots.txt disallows every search route (`/w/`, `/api/`, `/wiki/Special:`), and Merge never ignores robots.txt. A topic is matched with the titles of pages Merge has really been shown links to (a ring of the last 100 in `mind/state.json`: `seen`), then tried as the Wikipedia page of that name. If neither is a page, the trip says "found nothing to read".

@@ -13,7 +13,7 @@ export interface Prices {
   /** A wander: one trip of up to 6 reads. */
   trip: number
   tend: number
-  /** A tinker that makes a sketch. */
+  /** A tinker that makes a sketch: a Sonnet call of about $0.05, so 50 points. A price, not a daily cap: Merge chooses how many. */
   sketch: number
   /** Writing the build request that a found step makes. */
   foundRequest: number
@@ -24,7 +24,7 @@ export interface Prices {
   rest: number
 }
 
-export const PRICES: Prices = { fullWork: 240, expand: 50, trip: 3, tend: 2, sketch: 2, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 }
+export const PRICES: Prices = { fullWork: 240, expand: 50, trip: 3, tend: 2, sketch: 50, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 }
 
 /** Points at each wake. */
 export const DAILY_POINTS = 150
@@ -37,7 +37,7 @@ export interface PricedStep {
   verb: PricedVerb
   /** Only a tinker has a size. One that does not say is a full work. */
   size?: 'full' | 'sketch'
-  /** Marks a tend, write, sketch or found request as one to think harder about. */
+  /** Marks a tend, write or found request as one to think harder about. */
   deep?: boolean
 }
 
@@ -46,9 +46,9 @@ export function pointsAtWake(inHand: number): number {
   return Math.min(MAX_POINTS_IN_HAND, Math.max(0, inHand) + DAILY_POINTS)
 }
 
-/** Whether a step may be deep: the ones whose step call is a Haiku call that Merge may choose to run on Sonnet. */
+/** Whether a step may be deep: the ones whose step call is a Haiku call that Merge may choose to run on Sonnet. A sketch is not one: it is always Sonnet. */
 function mayBeDeep(step: PricedStep): boolean {
-  return step.verb === 'tend' || step.verb === 'write' || step.verb === 'found' || (step.verb === 'tinker' && step.size === 'sketch')
+  return step.verb === 'tend' || step.verb === 'write' || step.verb === 'found'
 }
 
 export function stepCost(step: PricedStep, prices: Prices = PRICES): number {

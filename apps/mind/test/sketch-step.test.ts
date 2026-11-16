@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { Interests, MindState, Souvenir, WorkMeta } from '@forkling/schema'
+import { BudgetLedger, Interests, MindState, Souvenir, WorkMeta } from '@forkling/schema'
 import type { WorkCheckResult, WorkChecker } from '../src/builds/browser-check.ts'
 import { hasPolicy } from '../src/builds/sandbox.ts'
 import { drawConstraint } from '../src/prompts/constraints.ts'
@@ -89,13 +89,13 @@ async function sketchHour(fake: Fake, workCheck?: WorkChecker, web?: { fetchImpl
 }
 
 describe('a sketch step (spec 7.6, 2.4)', () => {
-  it('makes the sketch when the step lands: Haiku, one call, checked, and written to works/ with its thumbnail', async () => {
+  it('makes the sketch when the step lands: Sonnet, one call, checked, and written to works/ with its thumbnail', async () => {
     const fake = fakeLlm(planWith())
     const checker = checkerOf({})
     const result = await sketchHour(fake, checker)
     const calls = fake.calls.filter((c) => c.kind === 'sketch')
     expect(calls).toHaveLength(1)
-    expect(calls[0]).toMatchObject({ model: 'claude-haiku-5-5', effort: 'medium' })
+    expect(calls[0]).toMatchObject({ model: 'claude-sonnet-5-5', effort: 'medium' })
     expect(workIds()).toEqual(['humming-lamp'])
     const html = readFileSync(file('works/humming-lamp/index.html'), 'utf8')
     expect(hasPolicy(html)).toBe(true)
@@ -108,15 +108,17 @@ describe('a sketch step (spec 7.6, 2.4)', () => {
     expect(result.summary).toMatch(/sketched "Humming lamp"/)
   })
 
-  it('counts it against the 3 a day, in the state a replan reads', async () => {
+  it('counts it in the state a replan reads (a count, not a cap: the price is in points)', async () => {
     await sketchHour(fakeLlm(planWith()), checkerOf({}))
     expect(stateOf().sketches).toEqual({ date: '2026-11-03', count: 1 })
   })
 
-  it('is made by Sonnet when it is marked deep (spec 9.8)', async () => {
-    const fake = fakeLlm(planWith({ deep: true }))
+  it('is made by Haiku instead when the month is within $1.50 of the cap, so Merge gets plainer, not silent', async () => {
+    mkdirSync(file('brain'), { recursive: true })
+    writeFileSync(file('brain/budget.json'), JSON.stringify(BudgetLedger.parse({ month: '2026-11', capUsd: 15, spentUsd: 13.8 })))
+    const fake = fakeLlm(planWith())
     await sketchHour(fake, checkerOf({}))
-    expect(fake.calls.find((c) => c.kind === 'sketch')).toMatchObject({ model: 'claude-sonnet-5-5', effort: 'medium' })
+    expect(fake.calls.find((c) => c.kind === 'sketch')).toMatchObject({ model: 'claude-haiku-5-5', effort: 'medium' })
   })
 
   it('offers the newest souvenirs and the top interests to the call', async () => {
@@ -174,19 +176,12 @@ describe('a sketch that does not come out', () => {
   })
 })
 
-describe('the plan sees how many sketches were made (spec 9.8: 3 a day)', () => {
-  it('rejects a plan with a sketch once 3 are made today', async () => {
+describe('a sketch is priced, not capped (a wallet, not a schedule)', () => {
+  it('still accepts a plan with a sketch after 3 are made today: only the 50 points limit it', async () => {
     mkdirSync(file('mind'), { recursive: true })
     writeFileSync(file('mind/state.json'), JSON.stringify({ sketches: { date: '2026-11-03', count: 3 } }))
     const result = await runTick(dir, deps(fakeLlm(planWith()).llm, NOW, checkerOf({})))
-    expect(result.notes.join(' ')).toMatch(/at most 3 sketches a day/)
-  })
-
-  it('starts the count again on a new day', async () => {
-    mkdirSync(file('mind'), { recursive: true })
-    writeFileSync(file('mind/state.json'), JSON.stringify({ sketches: { date: '2026-11-02', count: 3 } }))
-    const result = await runTick(dir, deps(fakeLlm(planWith()).llm, NOW, checkerOf({})))
-    expect(result.notes.join(' ')).not.toMatch(/at most 3 sketches a day/)
+    expect(result.notes.join(' ')).not.toMatch(/sketches a day|plan turned down/)
   })
 })
 

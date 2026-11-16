@@ -15,8 +15,8 @@ import { failWant } from './wants.ts'
 export const isMindVerb = (verb: string): boolean => (MIND_VERBS as readonly string[]).includes(verb)
 
 /**
- * A mind-verb step has run its time. `wander` runs a trip, `write` writes a note and a sketch is made; `rest` does nothing. The others are built
- * in later milestones, so for now they run as rest, and the record says so (spec 16). Every step that lands costs energy.
+ * A mind-verb step has run its time: each verb hands its work to its own step (a trip, a note, a work, a tend, a visit, a growth, a request,
+ * a reply); `rest` does nothing. A tend, revisit or expand on a place that does not exist rests instead. Every step that lands costs energy.
  */
 export function landMindStep(t: Tick, step: PlanStep, index: number): void {
   t.moodEvents.push('stepCompleted')
@@ -53,9 +53,11 @@ export function landMindStep(t: Tick, step: PlanStep, index: number): void {
     return
   }
   if (step.verb !== 'rest') {
-    const text = `${step.verb} is not built yet, so it rested instead.`
-    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: step.verb })
-    t.justNow.push(text)
+    // Only a tend, revisit or expand that names a place that does not exist gets here. It is the plan's mistake, not a day to remember:
+    // the tick log has it, and Merge is told in its next prompt, but it is not a line of the stream, so the diary does not report it.
+    const target = step.targetId ?? 'nothing'
+    t.notes.push(`${step.verb}: "${clampText(target, 60)}" is not a place that exists yet, so it rested instead`)
+    t.justNow.push(`I could not ${step.verb} "${clampText(target, 60)}": it is not a place yet, so I rested instead.`)
   }
 }
 
@@ -68,12 +70,15 @@ export function leaveMindStep(t: Tick, step: PlanStep): void {
   failWant(t, step.wantId)
 }
 
-export const MAX_NOTE_WORDS = 300
+/** A notebook page is a caption, not an essay: the model is asked for this many words. Most of what Merge makes is visual now. */
+export const MAX_NOTE_WORDS = 80
+/** A page this long is kept (a model told 80 words writes 85 often, and dropping those wastes the call); longer is dropped. */
+export const NOTE_WORDS_KEPT = 100
 const MAX_NOTE_TOKENS = 1500
 
 export const NoteOutput = z.object({
   title: z.string().describe('A few words: what this is.'),
-  text: z.string().describe('What you wrote, in your voice, up to 300 words.'),
+  text: z.string().describe('What you wrote, in your voice, up to 80 words.'),
 })
 
 /** What a write step asks for: the words stay Merge's, and the target and reason tell it what they are for. */
@@ -84,7 +89,7 @@ export function buildNoteUser(i: { target: string | null; reason: string; date: 
     ...readingLines(i.reading ?? null, !!i.target && !i.isPlace),
     ...(i.recent.length > 0 ? ['', 'What you wrote before, so you do not repeat yourself:', ...i.recent.map((r) => `- ${clampText(r, 100)}`)] : []),
     '',
-    `Write up to ${MAX_NOTE_WORDS} words in your own voice: a plaque, a short page or a letter, whichever it wants to be. Title it in a few words.`,
+    `Write up to ${MAX_NOTE_WORDS} words in your own voice: a caption, a plaque or a few lines, whichever it wants to be. It is short: one joke or one picture, not an essay. Title it in a few words.`,
   ].join('\n')
 }
 
@@ -148,8 +153,8 @@ export async function noteStep(t: Tick): Promise<void> {
     t.notes.push('write: the model wrote nothing')
     return
   }
-  if (wordCount(text) > MAX_NOTE_WORDS) {
-    t.notes.push(`write: ${wordCount(text)} words is over the ${MAX_NOTE_WORDS} word limit, so it was dropped`)
+  if (wordCount(text) > NOTE_WORDS_KEPT) {
+    t.notes.push(`write: ${wordCount(text)} words is over the ${NOTE_WORDS_KEPT} word limit, so it was dropped`)
     return
   }
   if (claimsHuman(text) || claimsHuman(title)) {

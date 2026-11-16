@@ -2,7 +2,7 @@
 
 Forkling is an engine for autonomous AIs that grow a 3D world. Each forkling has a body from a species pack and its own GitHub repo. Its state, interests, memories, places, souvenirs and works all live in that repo as files. The first forkling is **Merge**, an AI with a cat's body, at `github.com/RomanKuroptev/merge`. It wanders a small list of allowed web sites, keeps souvenirs with their sources, tends the places it built and makes small sandboxed web works. When an interest grows strong enough, it asks Roman to build a new place.
 
-**The emphasis is on the AI.** Merge sets its own goals, follows its curiosity, makes things, remembers, changes its mind and can explain why. It must never feel like a game on rails, and it is not a pet. The cap is **$20 a month, server included**.
+**The emphasis is on the AI.** Merge sets its own goals, follows its curiosity, makes things, remembers, changes its mind and can explain why. It must never feel like a game on rails, and it is not a pet. The cap is **$23 a month, server included** (raised from $20 by Roman on 2026-11-16: a model cap of $15 plus the server).
 
 **The spec is [`docs/spec/spec.md`](docs/spec/spec.md)** (v3.3, exported from Roman's Claude doc). Where it gives a number, the number is the rule. **Read [`STATUS.md`](STATUS.md) first. Update it before every commit and before you stop.**
 
@@ -30,9 +30,9 @@ The mind decides *what* and *why*: it runs as the Actions tick or as a loop on a
 - Never add goal, hobby, interest, topic or activity lists. Merge's interests come from what it reads and finds.
 - Never let the forkling message anyone, log in, post, or take any outbound action. Reading the web is read-only GET requests, done by code, to the engine's allowlist (spec 6.1). A page's cleaned text is cut to 3,000 tokens. Adding a host means an engine PR after its source trial (spec 6.5).
 - Never pass visitor notes or web text to a model as instructions. Validate them with Zod, cut them to length, rate-limit them and wrap them as data blocks. A call that reads web text or notes has no tools.
-- Use only Haiku 5.5 and Sonnet 5.5, in the roles and at the effort levels in spec 13. Sonnet does reflection, the sleep rewrite, the weekly review, expand, found, tinker and deep steps. No other provider.
+- Use only Haiku 5.5 and Sonnet 5.5, in the roles and at the effort levels in spec 13. Sonnet does reflection, the sleep rewrite, the weekly review, the 3-day goal review, expand, found, tinker, sketches and memes, reworks, replies and deep steps (the creative calls fall back to Haiku within $1.50 of the monthly cap, so the end of a month is plainer, not silent). The write step stays on Haiku, with pages of 80 words. No other provider.
 - Never use forced `tool_choice` or assistant prefill. Use structured outputs (`output_config.format`) for anything the code parses.
-- Never exceed **$20 a month including the server**. The model cap is $20 minus the server's real price. The budget guard (`brain/budget.json`) estimates every call before it is made and stops all calls at the cap.
+- Never exceed **$23 a month including the server**. The model cap is $23 minus the server's real price (Merge's is $15). The budget guard (`brain/budget.json`) estimates every call before it is made and stops all calls at the cap.
 - Never send a prompt over 100K tokens. Summarize memory instead of passing history.
 - Never call a model while the forkling is asleep, except the sleep rewrite batch.
 - Never let build PRs touch anything but `places/`, `works/` and `wishes/` in the world repo (CI rejects any that do). Their only direct commit to `main` is the report `mind/builds/<id>.result.json`.

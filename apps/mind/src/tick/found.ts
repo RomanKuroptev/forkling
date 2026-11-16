@@ -47,12 +47,12 @@ export async function foundStep(t: Tick): Promise<void> {
   const rest = (why: string) => {
     t.notes.push(`found ${name}: ${why}`)
     const text = `My found of ${name || 'a place'} could not start (${clampText(why, 160)}), so I rested instead.`
-    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: 'found' })
+    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: 'found', engine: true })
     t.justNow.push(text)
   }
   const fail = (why: string) => {
     t.notes.push(`found ${name}: ${why}`)
-    t.remember.push({ at: t.nowIso, kind: 'event', text: `My request for ${name} was not written (${clampText(why, 160)}), so nothing was asked.`, verb: 'found' })
+    t.remember.push({ at: t.nowIso, kind: 'event', text: `My request for ${name} was not written (${clampText(why, 160)}), so nothing was asked.`, verb: 'found', engine: true })
     t.justNow.push(`Your request for ${name} did not work: ${clampText(why, 160)}`)
   }
   if (name.length < 3) return rest('a new place needs a name of 3 to 40 characters')
@@ -88,7 +88,7 @@ export async function foundStep(t: Tick): Promise<void> {
   const answer = FoundAnswer.safeParse(result.parsed)
   if (!answer.success) {
     t.notes.push(`no usable request (stopped: ${result.stopReason ?? 'unknown'})`)
-    t.remember.push({ at: t.nowIso, kind: 'event', text: `My request for ${name} gave nothing usable, so nothing was asked.`, verb: 'found' })
+    t.remember.push({ at: t.nowIso, kind: 'event', text: `My request for ${name} gave nothing usable, so nothing was asked.`, verb: 'found', engine: true })
     return
   }
 

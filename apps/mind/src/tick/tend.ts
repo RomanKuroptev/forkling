@@ -27,7 +27,7 @@ export async function tendStep(t: Tick): Promise<void> {
   const name = place.name
   const fail = (why: string) => {
     t.notes.push(`tend ${place.id}: ${why}`)
-    t.remember.push({ at: t.nowIso, kind: 'event', text: `My tend of ${name} was turned down (${clampText(why, 160)}), so nothing changed.`, verb: 'tend' })
+    t.remember.push({ at: t.nowIso, kind: 'event', text: `My tend of ${name} was turned down (${clampText(why, 160)}), so nothing changed.`, verb: 'tend', engine: true })
     t.justNow.push(`Your tend of ${name} did not work: ${clampText(why, 160)}`)
   }
   const user = buildTendUser({
@@ -44,7 +44,7 @@ export async function tendStep(t: Tick): Promise<void> {
   const answer = TendAnswer.safeParse(result.parsed)
   if (!answer.success) {
     t.notes.push(`no usable tend (stopped: ${result.stopReason ?? 'unknown'})`)
-    t.remember.push({ at: t.nowIso, kind: 'event', text: `My tend of ${name} gave nothing usable, so nothing changed.`, verb: 'tend' })
+    t.remember.push({ at: t.nowIso, kind: 'event', text: `My tend of ${name} gave nothing usable, so nothing changed.`, verb: 'tend', engine: true })
     return
   }
   const words = [answer.data.summary, answer.data.sign ?? '', answer.data.doorReason ?? '', answer.data.putAwayReason ?? '', ...answer.data.labels.map((l) => l.label), ...answer.data.exhibits.map((e) => e.label ?? '')]

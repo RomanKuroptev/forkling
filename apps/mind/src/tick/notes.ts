@@ -1,5 +1,6 @@
 import { Note } from '@forkling/schema'
 import { feedTopic, findReason } from '@forkling/sim'
+import { creativeModel } from '../budget.ts'
 import { clampText } from '../decision.ts'
 import { claimsHuman } from '../honesty.ts'
 import { buildReplyUser, REPLY_MAX_TOKENS, ReplyAnswer } from '../prompts/reply.ts'
@@ -45,7 +46,7 @@ export function findNotes(t: Tick, opts: { thought?: boolean } = {}): void {
 }
 
 /**
- * A reply step has run its time (spec 10.1, 9.9): one Haiku call reads the note, as data, and Merge writes back once, declines with
+ * A reply step has run its time (spec 10.1, 9.9): one Sonnet call (Haiku when the month is nearly spent) reads the note, as data, and Merge writes back once, declines with
  * a reason of up to 80 characters, or keeps it. Code keeps what is allowed: only a note that was found and not answered can be
  * answered, a reply is up to 600 characters and never claims to be human, and a decline needs a reason. Nothing it reads can
  * change what code does with the answer. A call that fails leaves the note found, for another time.
@@ -57,7 +58,7 @@ export async function replyStep(t: Tick): Promise<void> {
   const note = t.visitorNotes.find((n) => n.id === step.targetId && n.status === 'found')
   if (!note) {
     t.notes.push(`reply: there is no note to answer (${step.targetId ?? 'no target'}), so it rested`)
-    t.remember.push({ at: t.nowIso, kind: 'event', text: 'There was no note to answer, so I rested.', verb: 'reply' })
+    t.remember.push({ at: t.nowIso, kind: 'event', text: 'There was no note to answer, so I rested.', verb: 'reply', engine: true })
     return
   }
   const recent = t.visitorNotes
@@ -65,7 +66,7 @@ export async function replyStep(t: Tick): Promise<void> {
     .slice(-RECENT_REPLIES)
     .map((n) => clampText(n.reply!, 120))
   const user = buildReplyUser({ note: { id: note.id, place: placeName(t, note.placeId), name: note.name, message: note.message }, reason: clampText(step.reason, 200), recent })
-  const result = await t.ask('reply', 'claude-haiku-5-5', user, ReplyAnswer, REPLY_MAX_TOKENS)
+  const result = await t.ask('reply', creativeModel(t.budget), user, ReplyAnswer, REPLY_MAX_TOKENS)
   const answer = ReplyAnswer.safeParse(result?.parsed)
   if (!result || !answer.success) {
     t.notes.push('reply: no usable answer, so the note stays to answer another time')

@@ -1,8 +1,10 @@
 import type { Note, NotesHidden } from '@forkling/schema'
 import { addWakingMs, type SleepOptions } from './sleep.ts'
 
-/** Spec 10.1: a note nobody found is found by itself after 6 waking hours, so none waits for ever. */
-export const NOTE_AUTO_FIND_WAKING_MS = 6 * 3_600_000
+/** Spec 10.1 and 16: a note nobody found is found by itself after 1 waking hour, so none waits for ever. It was 6: a note left at Home at 10:28 was found at 14:48. */
+export const NOTE_AUTO_FIND_WAKING_MS = 3_600_000
+/** A found note that has waited this long without its reply step makes the next plan include one (it may reply, decline or keep it). */
+export const NOTE_REPLY_OVERDUE_MS = 3 * 3_600_000
 /** Spec 2.3: the `note` trigger fires at most once every 30 minutes. */
 export const NOTE_TRIGGER_GAP_MS = 30 * 60_000
 
@@ -33,6 +35,14 @@ export function findReason(note: Pick<Note, 'status' | 'placeId' | 'at'>, c: Fin
 export function visibleNotes<N extends Pick<Note, 'id'>>(notes: readonly N[], hidden: NotesHidden): N[] {
   const gone = new Set(hidden.hidden)
   return notes.filter((n) => !gone.has(n.id))
+}
+
+/** The ids of the found notes that have waited 3 hours or more for an answer, the oldest first. Pure. */
+export function overdueNotes(notes: readonly Pick<Note, 'id' | 'status' | 'foundAt'>[], nowMs: number): string[] {
+  return notes
+    .filter((n) => n.status === 'found' && n.foundAt !== null && nowMs - Date.parse(n.foundAt) >= NOTE_REPLY_OVERDUE_MS)
+    .sort((a, b) => Date.parse(a.foundAt!) - Date.parse(b.foundAt!))
+    .map((n) => n.id)
 }
 
 export function noteTriggerDue(a: { foundCount: number; lastMs: number | null; nowMs: number }): boolean {

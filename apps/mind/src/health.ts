@@ -46,13 +46,13 @@ const WARN_BUILD_HOURS = 48
 const MAX_COUNTED_GAP = 180
 
 const DECIDE_KINDS = new Set(['morning', 'decide'])
-/** The calls W7 added, watched against the $20 cap: reflection, the sleep rewrite (batch and late call) and the weekly review. */
+/** The calls W7 added, watched against the total cap: reflection, the sleep rewrite (batch and late call) and the weekly review. */
 export const W7_KINDS: readonly string[] = ['reflection', 'sleep', 'sleeplate', 'weekly', 'goalreview']
 /** A projection from the first two days of a month means nothing. */
 const MIN_DAYS_TO_PROJECT = 3
 
 /**
- * Roman's warning: would W7's calls push the month over $20? The month's spend so far is spread over the days gone, projected to
+ * Roman's warning: would W7's calls push the month over the total cap? The month's spend so far is spread over the days gone, projected to
  * the whole month, and the server's price added. It warns only when that passes the cap and W7's calls are part of the spend; a
  * month that is ahead for other reasons is the pace warning's business. Pure.
  */

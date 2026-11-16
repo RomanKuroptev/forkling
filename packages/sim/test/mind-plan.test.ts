@@ -18,7 +18,7 @@ const ctx = (over: Partial<MindPlanContext> = {}): MindPlanContext => ({
   notes: new Set(['n1']),
   wants: [{ id: 'w1' }, { id: 'w2' }, { id: 'w3' }],
   recent: [],
-  used: { repliesToday: 0, sketchesToday: 0, foundThisWeek: 0 },
+  used: { repliesToday: 0, foundThisWeek: 0 },
   lastExpandedPlace: null,
   ...over,
 })
@@ -149,7 +149,7 @@ describe('targets and conditions', () => {
     const found: MindStep = { verb: 'found', target: 'The Lamp Room', reason: 'The lights keep pointing at each other.', minutes: 30, wantId: 'w1' }
     expect(reasons([wander(), found, rest()])).toEqual([expect.stringContaining('no interest has earned a new place')])
     expect(reasons([wander(), found, rest()], ctx({ canFound: true }))).toEqual([])
-    expect(reasons([wander(), found, rest()], ctx({ canFound: true, used: { repliesToday: 0, sketchesToday: 0, foundThisWeek: 1 } }))).toEqual([expect.stringContaining('1 a week')])
+    expect(reasons([wander(), found, rest()], ctx({ canFound: true, used: { repliesToday: 0, foundThisWeek: 1 } }))).toEqual([expect.stringContaining('1 a week')])
     expect(reasons([wander(), { ...found, target: 'ab' }, rest()], ctx({ canFound: true }))).toEqual([expect.stringContaining('3 to 40 characters')])
   })
 
@@ -163,15 +163,18 @@ describe('targets and conditions', () => {
     const reply = (target: string): MindStep => ({ verb: 'reply', target, reason: 'They asked a fair question.', minutes: 10, wantId: 'w1' })
     expect(reasons([wander(), reply('n1'), rest()])).toEqual([])
     expect(reasons([wander(), reply('n9'), rest()])).toEqual([expect.stringContaining('"n9"')])
-    expect(reasons([wander(), reply('n1'), rest()], ctx({ used: { repliesToday: 5, sketchesToday: 0, foundThisWeek: 0 } }))).toEqual([expect.stringContaining('5 replies a day')])
-    expect(reasons([reply('n1'), wander(), reply('n1'), write(), reply('n1')], ctx({ used: { repliesToday: 3, sketchesToday: 0, foundThisWeek: 0 } }))).toEqual([expect.stringContaining('5 replies a day')])
+    expect(reasons([wander(), reply('n1'), rest()], ctx({ used: { repliesToday: 5, foundThisWeek: 0 } }))).toEqual([expect.stringContaining('5 replies a day')])
+    expect(reasons([reply('n1'), wander(), reply('n1'), write(), reply('n1')], ctx({ used: { repliesToday: 3, foundThisWeek: 0 } }))).toEqual([expect.stringContaining('5 replies a day')])
   })
 
-  it('lets rest take no target, and a sketch at most 3 a day', () => {
-    expect(reasons([wander(), write(), rest({ target: 'home' })])).toEqual([expect.stringContaining('step 3: rest takes no target')])
+  it('lets rest take no target, and prices a sketch instead of capping it (a wallet, not a schedule)', () => {
+    expect(reasons([wander(), rest({ target: 'home' }), write()])).toEqual([expect.stringContaining('rest takes no target')])
     const sketch = (): MindStep => ({ verb: 'tinker', target: 'a loop', reason: 'Small and quick.', minutes: 60, wantId: 'w1', size: 'sketch' })
     expect(reasons([wander(), sketch(), rest()])).toEqual([])
-    expect(reasons([sketch(), wander(), sketch()], ctx({ used: { repliesToday: 0, sketchesToday: 2, foundThisWeek: 0 } }))).toEqual([expect.stringContaining('3 sketches a day')])
+    // Four sketches in one plan are allowed when the points are there, and refused when they are not: only the price limits them.
+    const four = [sketch(), wander(), sketch(), write(), sketch(), rest(), sketch()]
+    expect(reasons(four, ctx({ pointsInHand: 400 }))).toEqual([])
+    expect(reasons(four, ctx({ pointsInHand: 150 }))).toEqual([expect.stringContaining('costs 204 points and you have 150 in hand')])
   })
 })
 
@@ -294,5 +297,35 @@ describe("one trip a day from a starting point (Roman's rule, not a switch)", ()
   it('does not ask late in the day, when fewer than 3 hours are left', () => {
     const late = ctx({ points: points(), startMs: BED - 2 * HOUR })
     expect(reasons([write(), rest(), write({ target: 'workshop' })], late).join('\n')).not.toMatch(/starting points/)
+  })
+})
+
+describe('a found note is answered the same day (spec 16), as a rule of the plan check', () => {
+  const reply = (target: string): MindStep => ({ verb: 'reply', target, reason: 'It deserves an answer.', minutes: 10, wantId: 'w1' })
+  const waiting = (...ids: string[]) => ctx({ notes: new Set(['n1', 'n2']), overdueNotes: new Set(ids) })
+
+  it('does nothing when no note is overdue, or the check has no list', () => {
+    expect(reasons([wander(), write(), rest()], waiting())).toEqual([])
+    expect(reasons([wander(), write(), rest()], ctx())).toEqual([])
+  })
+
+  it('asks for a reply step to a note that has waited 3 hours, and names it', () => {
+    const r = reasons([wander(), write(), rest()], waiting('n1'))
+    expect(r).toEqual([expect.stringContaining('"n1" has waited')])
+    expect(r[0]).toMatch(/reply, decline it with a reason, or keep it/)
+  })
+
+  it('is satisfied by a reply step to it, wherever it stands in the plan', () => {
+    expect(reasons([wander(), write(), reply('n1')], waiting('n1'))).toEqual([])
+    expect(reasons([reply('n1'), wander(), write()], waiting('n1'))).toEqual([])
+  })
+
+  it('names every note still unanswered', () => {
+    const r = reasons([wander(), reply('n1'), rest()], waiting('n1', 'n2'))
+    expect(r).toEqual([expect.stringContaining('"n2" has waited')])
+  })
+
+  it('does not ask in the last hour before bed, when a reply could not be fitted in, and the note waits for the morning', () => {
+    expect(reasons([wander(), write(), rest()], ctx({ notes: new Set(['n1']), overdueNotes: new Set(['n1']), startMs: BED - 50 * 60_000 })).join(' ')).not.toMatch(/has waited/)
   })
 })

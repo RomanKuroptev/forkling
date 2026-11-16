@@ -3,7 +3,8 @@ import { clampText } from '../decision.ts'
 
 /** Merge may put away at most this many works in a week (spec 9.9). */
 export const MAX_RETIRES_PER_WEEK = 2
-export const REWORK_MAX_TOKENS = 400
+/** Sonnet thinks before it answers, and that counts against the limit. */
+export const REWORK_MAX_TOKENS = 1500
 const WEEK_MS = 7 * 86_400_000
 
 /** What Merge decides to do with an earlier work it chose to spend a tinker step on. */
