@@ -52,6 +52,8 @@ export function landMindStep(t: Tick, step: PlanStep, index: number): void {
     t.pendingReply = { step, index }
     return
   }
+  // A build step's session reports by itself when it ends (`settleJobs`), which also closes the step.
+  if (step.verb === 'build') return
   if (step.verb !== 'rest') {
     // Only a tend, revisit or expand that names a place that does not exist gets here. It is the plan's mistake, not a day to remember:
     // the tick log has it, and Merge is told in its next prompt, but it is not a line of the stream, so the diary does not report it.

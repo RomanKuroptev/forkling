@@ -47,6 +47,10 @@ export const JobResult = z.object({
   wishes: z.array(WishDraft).max(2).optional(),
   constraint: WorkConstraint.nullable().optional(),
   collision: z.array(z.string().min(1).max(80)).length(2).nullable().optional(),
+  /** For a build session (spec-v4 3.3): the project, the session's caption and what Merge is told when it differs from what it asked. */
+  projectId: z.string().regex(/^[a-z0-9][a-z0-9-]{0,47}$/).optional(),
+  caption: z.string().min(1).max(140).optional(),
+  told: z.string().min(1).max(300).optional(),
   /** What the worker spent, for the mind to book once. The worker never writes the ledger. */
   calls: z.array(BudgetCall).default([]),
   at: Timestamp,

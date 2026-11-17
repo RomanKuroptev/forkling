@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { Timestamp } from './intention.ts'
 import { InspiredBy } from './work.ts'
+import { JobRequest } from './job.ts'
 
 /**
  * A project (spec-v4 3.1): something Merge builds over more than one sitting, in `projects/<id>/` of the world repo:
@@ -80,3 +81,18 @@ export function projectIdFor(name: string, taken: readonly string[]): string {
   if (!taken.includes(slug)) return slug
   for (let n = 2; ; n++) if (!taken.includes(`${slug}-${n}`)) return `${slug}-${n}`
 }
+
+/**
+ * A build session the mind asks the worker for (spec-v4 3.2, 3.3): the step's target (a project's id, or the name of a new one) and
+ * its reason, Merge's own words, and the points in hand when the step started, which the session may not pass.
+ */
+export const SessionJob = JobRequest.extend({
+  kind: z.literal('session'),
+  target: z.string().min(1).max(60),
+  reason: z.string().min(1).max(200),
+  pointsInHand: z.number().int().nonnegative(),
+})
+export type SessionJob = z.infer<typeof SessionJob>
+
+/** The id of the session job a build step asks for: from when the step started, so the step can find its own result. */
+export const sessionJobId = (startedAt: string): string => `session-${startedAt.slice(0, 19).replace(/[-:T]/g, '')}`

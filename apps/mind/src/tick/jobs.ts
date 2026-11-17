@@ -1,6 +1,7 @@
 import type { JobResult } from '@forkling/schema'
 import { readResults } from '../build-worker.ts'
-import { recordCall } from '../budget.ts'
+import { recordCall, sessionPoints } from '../budget.ts'
+import { sessionJobId } from '@forkling/schema'
 import { clampText } from '../decision.ts'
 import type { Tick } from './context.ts'
 import { applyExpandResult } from './expand.ts'
@@ -14,10 +15,28 @@ const MAX_PENDING = 10
 /** What a result means, in plain words for the stream and for the decide call that answers it. */
 export function describeResult(r: JobResult): string {
   const title = r.title ?? r.workId ?? r.id
+  if (r.kind === 'session') {
+    if (r.status === 'failed') return `I could not work on ${title}${r.reason ? `: ${r.reason}` : ''}`
+    return `I worked on ${title}: ${r.caption ?? 'a session'}${r.told ? ` ${r.told}` : ''}`
+  }
   if (r.status === 'failed') return `the workshop could not build ${title}${r.reason ? `: ${r.reason}` : ''}`
   if (r.workStatus === 'shelf') return `the workshop finished "${title}": it passed its check and is on its way to the shelf`
   if (r.workStatus === 'scrap') return `the workshop finished "${title}", but it did not pass its check${r.reason ? ` (${clampText(r.reason, 140)})` : ''}: it is in the scrap bin`
   return `the workshop finished ${title}`
+}
+
+/**
+ * A session has ended (spec-v4 3.3). Its points are taken (1 per $0.001 it spent, which the session already kept within the points
+ * in hand), and the build step that asked for it closes now, so the steps after it start. A session that ends after its step has
+ * already run out (the plan moved on) only reports.
+ */
+function settleSession(t: Tick, r: JobResult): void {
+  const usd = r.calls.reduce((sum, c) => sum + c.usd, 0)
+  if (t.mind.allowance && usd > 0) t.mind.allowance = { ...t.mind.allowance, points: Math.max(0, t.mind.allowance.points - sessionPoints(usd)) }
+  const now = t.goals.now
+  const step = now ? t.goals.today?.steps[now.index] : undefined
+  if (now && step?.verb === 'build' && sessionJobId(now.startedAt) === r.id && t.nowMs < Date.parse(now.until)) now.until = t.nowIso
+  if (r.told) t.justNow.push(clampText(r.told, 300))
 }
 
 /**
@@ -37,10 +56,11 @@ export function settleJobs(t: Tick): void {
     }
     // An expand is applied here, by the loop, which is the one writer of `places/`; a work arrives as a pull request.
     const applied = r.kind === 'expand' ? applyExpandResult(t, r) : r.kind === 'found' ? applyFoundResult(t, r) : null
-    const ok = applied ? applied.ok : r.status === 'done' && r.workStatus === 'shelf'
+    const ok = applied ? applied.ok : r.kind === 'session' ? r.status === 'done' : r.status === 'done' && r.workStatus === 'shelf'
+    if (r.kind === 'session') settleSession(t, r)
     t.moodEvents.push(ok ? 'buildAccepted' : 'buildFailed')
     const text = applied ? applied.text : describeResult(r)
-    rememberScored(t, { at: t.nowIso, kind: 'event', text: clampText(text, 300), verb: r.kind === 'expand' ? 'expand' : r.kind === 'found' ? 'found' : 'tinker' }, ok ? 'buildLanded' : 'buildFailed')
+    rememberScored(t, { at: t.nowIso, kind: 'event', text: clampText(text, 300), verb: r.kind === 'expand' ? 'expand' : r.kind === 'found' ? 'found' : r.kind === 'session' ? 'build' : 'tinker' }, ok ? 'buildLanded' : 'buildFailed')
     // A build that failed counts against the want of the step that asked for it (spec 9.4); either way the note of which want it was is done with.
     if (!ok) failWant(t, t.mind.jobWants?.[r.id])
     if (t.mind.jobWants && r.id in t.mind.jobWants) delete t.mind.jobWants[r.id]

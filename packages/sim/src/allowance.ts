@@ -6,7 +6,7 @@
 import { localDate } from './sleep.ts'
 import { localWeekday } from './weekly.ts'
 
-export type PricedVerb = 'wander' | 'tend' | 'revisit' | 'expand' | 'found' | 'tinker' | 'write' | 'reply' | 'rest'
+export type PricedVerb = 'wander' | 'tend' | 'revisit' | 'expand' | 'found' | 'tinker' | 'write' | 'reply' | 'rest' | 'build'
 
 export interface Prices {
   /** A tinker that makes a whole work: the build plus the average repair. */
@@ -78,6 +78,9 @@ export function stepCost(step: PricedStep, prices: Prices = PRICES): number {
       return prices.reply
     case 'rest':
       return prices.rest
+    case 'build':
+      // A build session is metered as it runs (spec-v4 3.3: 1 point per $0.001 spent), so it costs nothing when it starts.
+      return 0
   }
 }
 

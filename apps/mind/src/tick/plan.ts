@@ -1,4 +1,4 @@
-import type { PlanStep } from '@forkling/schema'
+import { SessionJob, sessionJobId, type PlanStep } from '@forkling/schema'
 import { MIND_VERBS, daysSinceCare, foundsInWeek, livePrices, overdueNotes, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import type { ThinkKind } from '../prompts.ts'
@@ -8,6 +8,9 @@ import { expandablePlaces } from './expand.ts'
 import { foundGate } from './found.ts'
 import { intentionSeed } from './util.ts'
 import { readWrittenPages, varietyFor } from './variety.ts'
+import { readProjects } from '../builds/projects.ts'
+import { rememberJobWant } from './wants.ts'
+import { paceAhead } from '../budget.ts'
 
 const MAX_RECENT = 20
 
@@ -49,6 +52,13 @@ function withPoints(t: Tick): { points?: NonNullable<MindPlanContext['points']> 
 }
 
 /** What the plan check needs to know that is not in the plan: the day, the mood, the points in hand, what exists. */
+/** Its projects, for a build step's target: the ones building, and the ones done or abandoned. */
+function projectsContext(dir: string): NonNullable<MindPlanContext['projects']> {
+  const { projects } = readProjects(dir)
+  const brief = (p: { id: string; name: string }) => ({ id: p.id, name: p.name })
+  return { building: projects.filter((p) => p.status === 'building').map(brief), ended: projects.filter((p) => p.status !== 'building').map(brief) }
+}
+
 export function planContext(t: Tick): MindPlanContext {
   return {
     startMs: t.nowMs,
@@ -71,6 +81,8 @@ export function planContext(t: Tick): MindPlanContext {
     ...withVariety(t),
     ...withPoints(t),
     overdueNotes: new Set(overdueNotes(t.visitorNotes, t.nowMs)),
+    projects: projectsContext(t.dir),
+    paceAhead: paceAhead(t.budget, t.today),
   }
 }
 
@@ -110,6 +122,11 @@ export function startStep(t: Tick, index: number, reason?: string): void {
   if ((MIND_VERBS as readonly string[]).includes(step.verb) && t.mind.allowance) {
     const cost = stepCost({ verb: step.verb as MindVerb, ...(step.size ? { size: step.size } : {}), ...(step.deep ? { deep: true } : {}), ...(step.verb === 'expand' && expandablePlaces(t).some((e) => e.id === step.targetId && e.earned.earned) ? { earned: true } : {}) }, livePrices(t.mind.prices))
     t.mind.allowance = { ...t.mind.allowance, points: Math.max(0, t.mind.allowance.points - cost) }
+  }
+  // A build step asks the worker for a session (spec-v4 3.3) and holds the plan until its result arrives (`settleJobs`).
+  if (step.verb === 'build' && step.targetId) {
+    t.newJobs.push(SessionJob.parse({ id: sessionJobId(t.nowIso), kind: 'session', requestedAt: t.nowIso, target: clampText(step.targetId, 60), reason: clampText(step.reason, 200), pointsInHand: t.mind.allowance?.points ?? 0 }))
+    rememberJobWant(t, sessionJobId(t.nowIso), step.wantId)
   }
   t.mind.recent = [...t.mind.recent, { verb: step.verb, ...(step.targetId ? { targetId: step.targetId } : {}), at: t.nowIso }].slice(-MAX_RECENT)
   const goalRef = `today:${index}`

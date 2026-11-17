@@ -19,7 +19,7 @@ export interface BuildHandlerOutcome {
    * the place, the checked patch, the wishes, the constraint and collision, and what the calls cost. For the fallback build of a place request:
    * the request and the whole new place, and what the calls cost.
    */
-  extra?: Partial<Pick<JobResult, 'workId' | 'title' | 'workStatus' | 'prUrl' | 'calls' | 'placeId' | 'patch' | 'wishes' | 'constraint' | 'collision' | 'requestId' | 'place'>>
+  extra?: Partial<Pick<JobResult, 'workId' | 'title' | 'workStatus' | 'prUrl' | 'calls' | 'placeId' | 'patch' | 'wishes' | 'constraint' | 'collision' | 'requestId' | 'place' | 'projectId' | 'caption' | 'told'>>
 }
 /** What runs one kind of job. W4 adds `tinker`, W6 adds `expand` (and the fallback `found`); W3 has none. */
 export type BuildHandler = (job: JobRequest, ctx: { dir: string; nowMs: number }) => Promise<BuildHandlerOutcome>

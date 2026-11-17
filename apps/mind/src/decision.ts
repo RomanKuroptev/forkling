@@ -6,7 +6,7 @@ import { PlanStep } from '@forkling/schema'
  * outputs; everything is checked again by the real schemas and the validator before any of it reaches the world.
  */
 export const LlmStep = z.object({
-  /** One of the nine mind verbs, spelled exactly. */
+  /** One of the ten mind verbs, spelled exactly. */
   verb: z.string(),
   /** A topic, a place id, a name, an idea or a note id, by verb; null for rest. */
   target: z.string().nullable(),

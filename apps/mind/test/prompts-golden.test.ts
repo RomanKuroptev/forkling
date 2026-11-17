@@ -80,6 +80,19 @@ describe('prompt golden files', () => {
     expect(text.match(/<\/data>/g)).toHaveLength(1)
     await expect(text).toMatchFileSnapshot('golden/user-decide-notes.txt')
   })
+  it('decide user prompt with projects (spec-v4 3.2)', async () => {
+    const withProjects = {
+      ...input('decide'),
+      projects: {
+        building: [
+          { id: 'tide-clock', name: 'Tide clock', aim: 'A clock that tells the time by how full a pool is.', captions: ['a blue square', 'the pool fills, slowly'] },
+          { id: 'cloud-loom', name: 'Cloud loom', aim: 'Weave the sky.', captions: [] },
+        ],
+        ended: [{ name: 'Sand clock', status: 'abandoned' }],
+      },
+    }
+    await expect(buildUser(withProjects)).toMatchFileSnapshot('golden/user-decide-projects.txt')
+  })
   it('has no notes section when there are none, so every other prompt is unchanged', () => {
     expect(buildUser(input('decide'))).not.toContain('source="notes"')
     expect(buildUser({ ...input('decide'), notes: [] })).not.toContain('source="notes"')

@@ -240,7 +240,7 @@ describe('cat in the headless sim', () => {
 })
 
 describe("the cat's poses for the mind verbs (spec 2.7: the engine says where, the pack says how it looks)", () => {
-  const verbs = ['wander', 'tend', 'revisit', 'expand', 'found', 'tinker', 'write', 'reply', 'rest'] as const
+  const verbs = ['wander', 'tend', 'revisit', 'expand', 'found', 'tinker', 'write', 'reply', 'rest', 'build'] as const
 
   it('shows every mind verb as one of its own actions, which goes to a place', () => {
     for (const verb of verbs) {

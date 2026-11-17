@@ -8,6 +8,7 @@
     "expand": "mind_build",
     "found": "mind_build",
     "tinker": "mind_tinker",
+    "build": "mind_tinker",
     "write": "mind_write",
     "reply": "mind_write",
     "rest": "mind_rest"
