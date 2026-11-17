@@ -78,6 +78,15 @@ describe('a new tool is announced once (spec v4 8)', () => {
     expect(t.remember).toEqual([])
     expect(t.mind.toolsSeen).toEqual(['read-sites'])
   })
+  it('the entries of the template are abilities Merge always had: copying the file in is never news', () => {
+    const tools = readWorld(dir, () => '2026-11').tools.tools
+    const t = tick(tools)
+    t.nowIso = '2026-11-17T00:00:00.000Z'
+    toolStep(t)
+    expect(t.remember).toEqual([])
+    expect(t.mind.toolsSeen).toEqual(tools.map((x) => x.id))
+    expect(tools.every((x) => x.since <= '2026-11-10')).toBe(true)
+  })
   it('a world with no file: no tools, nothing announced, nothing written to the mind', () => {
     const t = tick([])
     const before = JSON.stringify(t.mind)

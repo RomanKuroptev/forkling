@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Note } from '@forkling/schema'
-import { threadPicture, wrapLines } from '../src/note-picture.ts'
+import { pictureToPng, threadPicture, wrapLines } from '../src/note-picture.ts'
 import { renderSite } from '../src/render.ts'
 
 const merge = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
@@ -49,6 +49,19 @@ describe('threadPicture', () => {
   })
 })
 
+describe('pictureToPng', () => {
+  it('renders the picture as a real 1200 by 630 PNG', () => {
+    const png = pictureToPng(threadPicture({ name: 'Anna', message: 'Hello', reply: 'Hi.', address: 'merge.example' }))
+    expect(png).not.toBeNull()
+    expect(png!.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe(true)
+    expect(png!.readUInt32BE(16)).toBe(1200)
+    expect(png!.readUInt32BE(20)).toBe(630)
+  })
+  it('is null for something that is not a picture, so the build falls back to the SVG', () => {
+    expect(pictureToPng('not an svg')).toBeNull()
+  })
+})
+
 describe('a thread has its own page and picture (sharing S5)', () => {
   const a = () => note({ id: 'n-a', message: 'first question', reply: 'first reply' })
   const b = () => note({ id: 'n-b', message: 'my answer', reply: 'second reply', thread: 'n-a', replyTo: 'n-a', at: '2026-11-16T12:00:00Z', foundAt: '2026-11-16T13:00:00Z' })
@@ -60,9 +73,12 @@ describe('a thread has its own page and picture (sharing S5)', () => {
     const html = read('notes/t/n-a.html')
     expect(html.indexOf('first question')).toBeLessThan(html.indexOf('my answer'))
     expect(html).toContain('property="og:title"')
-    expect(html).toContain('property="og:image" content="https://merge.example/notes/t/n-a.svg"')
+    expect(html).toContain('property="og:image" content="https://merge.example/notes/t/n-a.png"')
     expect(html).toContain('property="og:url" content="https://merge.example/notes/t/n-a.html"')
     expect(html).toContain('name="twitter:card"')
+    expect(html).toContain('name="twitter:image" content="https://merge.example/notes/t/n-a.png"')
+    expect(html).toContain('property="og:image:width" content="1200"')
+    expect(readFileSync(join(out, 'notes/t/n-a.png')).subarray(1, 4).toString()).toBe('PNG')
     const svg = read('notes/t/n-a.svg')
     expect(svg).toContain('my answer')
     expect(svg).toContain('second reply')
@@ -89,5 +105,6 @@ describe('a thread has its own page and picture (sharing S5)', () => {
     expect(existsSync(join(out, 'notes/t/n-z.html'))).toBe(false)
     expect(existsSync(join(out, 'notes/t/n-a.html'))).toBe(false)
     expect(existsSync(join(out, 'notes/t/n-a.svg'))).toBe(false)
+    expect(existsSync(join(out, 'notes/t/n-a.png'))).toBe(false)
   })
 })
