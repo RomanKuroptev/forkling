@@ -357,6 +357,17 @@ describe('a wander step', () => {
     expect(MindState.parse(readJson('mind/state.json')).doorDays).toEqual([{ date: DAY, trips: 1, strangers: 1 }])
   })
 
+  it('counts a trip from a front-page link outside the top 5 interests at wake as a stranger start, door or not (audit 17 Nov)', async () => {
+    await wander({}, undefined, plan([step('wander', `${wiki}/wiki/Moon`), step('rest', null), step('write', 'home')]))
+    expect(MindState.parse(readJson('mind/state.json')).doorDays).toEqual([{ date: DAY, trips: 1, strangers: 1 }])
+  })
+
+  it('does not count it when the title of the page it starts from is one of the top 5 interests at wake', async () => {
+    writeJson('brain/interests.json', Interests.parse({ version: 2, topics: { moon: { weight: 62, firstSeen: '2026-11-01T07:00:00Z', lastFed: '2026-11-02T07:00:00Z', history: [] } } }))
+    await wander({}, undefined, plan([step('wander', `${wiki}/wiki/Moon`), step('rest', null), step('write', 'home')]))
+    expect(MindState.parse(readJson('mind/state.json')).doorDays).toEqual([{ date: DAY, trips: 1, strangers: 0 }])
+  })
+
   it('books each read call in the budget ledger as it happens, and in the tick log', async () => {
     const { result } = await wander()
     const ledger = BudgetLedger.parse(readJson('brain/budget.json'))
