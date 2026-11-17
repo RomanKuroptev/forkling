@@ -402,7 +402,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   } catch {
     log = ''
   }
-  const changes = parseChanges(log, { titleOf: (id) => titles.get(id), placeAt: placeChangeLookup(places) })
+  const changes = parseChanges(log, { titleOf: (id) => titles.get(id), inspiredOf: (id) => { const by = works.find((w) => w.meta.id === id)?.meta.inspiredBy; return by ? by.name || 'a visitor' : undefined },  placeAt: placeChangeLookup(places) })
   const home = pages.get('index.html')
   const panel = ['<aside id="since" hidden><h2>Since your last visit</h2><ul></ul></aside>', '<script src="since.js" data-root=""></script>', '</main>'].join('\n')
   if (home) pages.set('index.html', home.replace('</main>', () => panel))

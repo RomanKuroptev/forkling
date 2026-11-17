@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Interests, TinkerJob } from '@forkling/schema'
+import { inspiredByFrom, visibleNotes } from '@forkling/sim'
 import { clampText } from '../decision.ts'
 import type { LlmClient } from '../llm.ts'
 import type { BuildHandler } from '../build-worker.ts'
@@ -8,6 +9,7 @@ import { createFetcher, type FetcherOptions } from '../web/fetch.ts'
 import { manualPagesFor } from '../web/sources/manuals.ts'
 import type { WorkChecker } from './browser-check.ts'
 import type { GithubClient, GithubFile } from './github.ts'
+import { readNotes, readNotesHidden } from '../notes.ts'
 import { createWorkerComplete } from './complete.ts'
 import { drawForBuild } from './draw.ts'
 import { memeSeeds } from './memes.ts'
@@ -71,6 +73,7 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
       memeSeeds: memeSeeds(o.dir),
       constraint: draw.constraint,
       collision: draw.collision ?? undefined,
+      inspiredBy: inspiredByFrom(job.reason, visibleNotes(readNotes(o.dir), readNotesHidden(o.dir))) ?? undefined,
     }
     const outcome = await runTinker({ complete, checker: o.checker, nowIso, existingIds: new Set(existingWorkIds(o.dir)) }, input)
 

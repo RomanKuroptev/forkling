@@ -12,8 +12,9 @@ import {
 import { monthOf, recordCall, rollLedger } from '../budget.ts'
 import { buildSystem } from '../prompts.ts'
 import { readWorld } from '../world.ts'
-import { livePrices, visibleNotes } from '@forkling/sim'
+import { livePrices, reconcileMade, visibleNotes } from '@forkling/sim'
 import { createFetcher } from '../web/fetch.ts'
+import { readWorks } from '../builds/works.ts'
 import { readPlaces } from '../places.ts'
 import { readWanderState } from '../web/wander-state.ts'
 import { makeAsk } from './ask.ts'
@@ -112,7 +113,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     beliefs: w.beliefs,
     wants: structuredClone(w.wants.wants),
     visitorNotes: visibleNotes(w.notes, w.notesHidden),
-    visitors: structuredClone(w.visitors),
+    visitors: structuredClone(Object.keys(w.visitors.visitors).length > 0 ? reconcileMade(w.visitors, readWorks(dir)) : w.visitors),
     config: mindConfig.config,
     noteUpdates: [],
     pendingReply: null,

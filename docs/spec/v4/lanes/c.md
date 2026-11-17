@@ -1,6 +1,6 @@
 # Lane C: visitors and tools (steps 5, 6)
 
-State: slice A merged (#183). Slice B (remembering) in a prompt-review PR, waiting for the reviewer. Next: slice C (credit), then sharing S5, then step 6.
+State: slice A merged (#183), B merged (#188). Slice C (credit) in PR. Next: sharing S5, then step 6.
 
 ## Plan for step 5 (one PR each, branches claude/v4-c-<slice>)
 

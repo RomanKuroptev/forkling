@@ -145,6 +145,17 @@ describe('slugify', () => {
   })
 })
 
+describe('runTinker: credit to a note (spec v4 7)', () => {
+  it('a work made after a note carries inspiredBy; one made after none carries null', async () => {
+    const credited = await runTinker(deps(fakeComplete([answer(output())]).complete, fakeChecker([{ ok: true }]).checker), input({ inspiredBy: { noteId: 'n-2026-11-16-aaaaaa', name: 'Anna' } }))
+    if (credited.status !== 'shelf') throw new Error('not shelved')
+    expect(credited.meta.inspiredBy).toEqual({ noteId: 'n-2026-11-16-aaaaaa', name: 'Anna' })
+    const plain = await runTinker(deps(fakeComplete([answer(output())]).complete, fakeChecker([{ ok: true }]).checker), input())
+    if (plain.status !== 'shelf') throw new Error('not shelved')
+    expect(plain.meta.inspiredBy).toBeNull()
+  })
+})
+
 describe('runTinker: a work that passes', () => {
   it('is one Sonnet call at the tinker output limit, then the check, and the work goes on the shelf', async () => {
     const { complete, calls } = fakeComplete([answer(output())])

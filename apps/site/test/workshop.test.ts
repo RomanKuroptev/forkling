@@ -34,6 +34,22 @@ beforeEach(() => {
   copyFileSync(join(merge, 'forkling.json'), join(world, 'forkling.json'))
 })
 
+describe('a work made after a note (spec v4 7)', () => {
+  it('its page and the shelf say who the note was from; a work with no credit says nothing', () => {
+    putWork('fog', { inspiredBy: { noteId: 'n-2026-11-16-aaaaaa', name: 'Anna <b>' } })
+    putWork('plain')
+    renderSite(world, out)
+    expect(page('workshop/fog.html')).toContain('made after a note from Anna &lt;b&gt;')
+    expect(page('workshop/index.html')).toContain('made after a note from Anna &lt;b&gt;')
+    expect(page('workshop/plain.html')).not.toMatch(/made after a note/i)
+  })
+  it('says a visitor when the note had no name', () => {
+    putWork('fog', { inspiredBy: { noteId: 'n-2026-11-16-aaaaaa', name: '' } })
+    renderSite(world, out)
+    expect(page('workshop/fog.html')).toContain('made after a note from a visitor')
+  })
+})
+
 describe('/workshop/ is always there (spec 8)', () => {
   it('is built for a world with no works, says so, and every page links to it', () => {
     renderSite(world, out)

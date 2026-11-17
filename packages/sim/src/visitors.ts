@@ -27,6 +27,18 @@ export function recordVisitor(v: Visitors, note: { name: string; at: string }): 
   return { visitors }
 }
 
+/** Spec v4 7: a work made after a note from a remembered name is listed in that entry's `made` (newest 100). Returns the same object when nothing is added. Pure. */
+export function reconcileMade(v: Visitors, works: readonly { id: string; inspiredBy: { name: string } | null }[]): Visitors {
+  let visitors = v.visitors
+  for (const w of works) {
+    const key = w.inspiredBy ? foldName(w.inspiredBy.name) : null
+    const entry = key ? visitors[key] : undefined
+    if (!key || !entry || entry.made.includes(w.id)) continue
+    visitors = { ...visitors, [key]: { ...entry, made: [...entry.made, w.id].slice(-100) } }
+  }
+  return visitors === v.visitors ? v : { visitors }
+}
+
 /** Whether Roman hid this folded name (`mind/notes-hidden.json`, `names`): its entry is in no prompt. */
 export function hiddenVisitor(key: string, hidden: Pick<NotesHidden, 'hidden'> & { names?: readonly string[] }): boolean {
   return (hidden.names ?? []).includes(key)

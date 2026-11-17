@@ -39,6 +39,19 @@ export function visibleNotes<N extends Pick<Note, 'id'> & { thread?: string | nu
   return notes.filter((n) => !gone.has(n.id) && !goneThreads.has(n.thread ?? n.id))
 }
 
+/**
+ * Spec v4 7: the note a step's reason names. A reason that holds the id of a visible note (the notes block shows ids) credits that
+ * note, with the name given on it. An id that is not a visible note credits nothing. The first id named counts. Pure.
+ */
+export function inspiredByFrom(reason: string, notes: readonly Pick<Note, 'id' | 'name'>[]): { noteId: string; name: string } | null {
+  const named = reason.match(/n-\d{4}-\d{2}-\d{2}-[a-z0-9]+/gi) ?? []
+  for (const id of named) {
+    const note = notes.find((n) => n.id === id)
+    if (note) return { noteId: note.id, name: note.name.slice(0, 40) }
+  }
+  return null
+}
+
 /** The ids of the found notes that have waited 3 hours or more for an answer, the oldest first. Pure. */
 export function overdueNotes(notes: readonly Pick<Note, 'id' | 'status' | 'foundAt'>[], nowMs: number): string[] {
   return notes

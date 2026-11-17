@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Note } from '@forkling/schema'
-import { NOTE_AUTO_FIND_WAKING_MS, NOTE_REPLY_OVERDUE_MS, NOTE_TRIGGER_GAP_MS, findReason, noteTriggerDue, overdueNotes, visibleNotes } from '../src/notes-find.ts'
+import { inspiredByFrom, NOTE_AUTO_FIND_WAKING_MS, NOTE_REPLY_OVERDUE_MS, NOTE_TRIGGER_GAP_MS, findReason, noteTriggerDue, overdueNotes, visibleNotes } from '../src/notes-find.ts'
 import { sleepWindow } from '../src/sleep.ts'
 
 const opts = { seed: 7, timezone: 'Europe/Stockholm' }
@@ -66,5 +66,17 @@ describe('noteTriggerDue (spec 2.3: once every 30 minutes)', () => {
     expect(noteTriggerDue({ foundCount: 1, lastMs: null, nowMs: 1e9 })).toBe(true)
     expect(noteTriggerDue({ foundCount: 2, lastMs: 1e9 - NOTE_TRIGGER_GAP_MS + 1, nowMs: 1e9 })).toBe(false)
     expect(noteTriggerDue({ foundCount: 2, lastMs: 1e9 - NOTE_TRIGGER_GAP_MS, nowMs: 1e9 })).toBe(true)
+  })
+})
+
+describe('inspiredByFrom (spec v4 7)', () => {
+  const notes = [note({ id: 'n-2026-11-16-aaaaaa', name: 'Anna' }), note({ id: 'n-2026-11-16-bbbbbb', name: '' })]
+  it('credits the visible note a reason names, with its name', () => {
+    expect(inspiredByFrom('Anna asked about fog in n-2026-11-16-aaaaaa, so I made a fog thing.', notes)).toEqual({ noteId: 'n-2026-11-16-aaaaaa', name: 'Anna' })
+  })
+  it('keeps an empty name', () => expect(inspiredByFrom('after n-2026-11-16-bbbbbb', notes)).toEqual({ noteId: 'n-2026-11-16-bbbbbb', name: '' }))
+  it('credits nothing for an id that is not a visible note, or for no id', () => {
+    expect(inspiredByFrom('after n-2026-11-16-cccccc', notes)).toBeNull()
+    expect(inspiredByFrom('I just felt like it', notes)).toBeNull()
   })
 })

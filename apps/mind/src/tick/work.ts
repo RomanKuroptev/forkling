@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { TinkerJob, WorkMeta, type PlanStep } from '@forkling/schema'
+import { inspiredByFrom } from '@forkling/sim'
 import { creativeModel } from '../budget.ts'
 import { pendingJobs } from '../build-worker.ts'
 import { buildReworkUser, MAX_RETIRES_PER_WEEK, REWORK_MAX_TOKENS, ReworkAnswer, retirementsInWeek } from '../builds/rework.ts'
@@ -139,6 +140,7 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
     recentTitles: recentWorkTitles(works),
     manuals,
     memeSeeds: memeSeeds(t.dir),
+    inspiredBy: inspiredByFrom(step.reason, t.visitorNotes) ?? undefined,
     ...drawn,
   }
   const taken = new Set([...existingWorkIds(t.dir), ...t.newWorks.map((w) => w.meta.id)])

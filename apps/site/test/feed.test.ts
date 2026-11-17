@@ -123,6 +123,11 @@ describe('parseChanges (spec 8: site/changes.json, from commits)', () => {
     'D\tworks/old/thumb.png',
   ].join('\n')
 
+  it('says a work was made after a note from someone, when its meta says so', () => {
+    const changes = parseChanges(log, { titleOf: (id) => (id === 'lamp' ? 'A lamp' : undefined), inspiredOf: (id) => (id === 'lamp' ? 'Anna' : undefined) })
+    expect(changes.map((c) => c.text)).toContain('shelved a work: A lamp (made after a note from Anna)')
+  })
+
   it('says what changed in plain words, newest first, with when', () => {
     const changes = parseChanges(log, { titleOf: (id) => (id === 'lamp' ? 'A lamp' : undefined) })
     expect(changes.map((c) => c.text)).toEqual(['kept 2 souvenirs', 'went on a trip', 'shelved a work: A lamp', 'wrote a diary entry', 'wrote something'])
