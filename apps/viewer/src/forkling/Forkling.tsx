@@ -9,6 +9,8 @@ import { visitor } from '../visitor.ts'
 import { disposeParts, partsGroup } from '../world/primitives.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { live } from './live.ts'
+import { createFaceScreen } from './FaceScreen.ts'
+import { faceState } from './face.ts'
 import { ThoughtBubble } from './ThoughtBubble.tsx'
 
 const params = new URLSearchParams(location.search)
@@ -19,6 +21,9 @@ const ONCE_SLOTS = new Set(['stretch'])
 const FADE = 0.25
 /** Further than this from where it's shown, and the forkling is snapped rather than slid (e.g. after a re-sync). */
 const SNAP_DISTANCE = 3
+
+/** The body is drawn this much bigger than the sim's own size, so it is easy to spot and its face can be read from across a place. A drawing scale only: the sim's sizes are unchanged. */
+const DRAW_SCALE = 1.5
 
 const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a))
 
@@ -41,6 +46,16 @@ export function Forkling() {
     })
     return root
   }, [gltf])
+
+  // A body may have a screen: a mesh named `Face` is painted with the face (awake, in a step, asleep, no signal) from what the viewer has.
+  const screen = useMemo(() => {
+    let face: THREE.Mesh | null = null
+    model.traverse((o) => {
+      if (o.name === 'Face' && (o as THREE.Mesh).isMesh) face = o as THREE.Mesh
+    })
+    return face ? createFaceScreen(face) : null
+  }, [model])
+  useEffect(() => () => screen?.dispose(), [screen])
 
   const rig = useMemo(() => {
     const mixer = new THREE.AnimationMixer(model)
@@ -138,6 +153,12 @@ export function Forkling() {
     }
     body.current?.setNextKinematicTranslation({ x: view.shown.x, y, z: view.shown.z })
 
+    if (screen) {
+      const now = clock.now()
+      const goal = world.goals.now
+      screen.paint(faceState({ stale: !clock.synced, asleep: Boolean(pb.ctx.asleep), inStep: Boolean(goal && now < Date.parse(goal.until)) }), now / 1000)
+    }
+
     rig.mixer.update(dt)
     const micro = sim.micro?.behavior
     if (micro?.animate && !FORCED_CLIP) {
@@ -149,7 +170,9 @@ export function Forkling() {
   return (
     <>
       <group ref={group}>
-        <primitive object={model} />
+        <group scale={DRAW_SCALE}>
+          <primitive object={model} />
+        </group>
         <ThoughtBubble />
       </group>
       <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[spawn.x, 0, spawn.z]}>

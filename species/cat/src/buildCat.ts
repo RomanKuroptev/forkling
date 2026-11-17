@@ -3,12 +3,15 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { buildClips } from './clips.ts'
 import { BONES, PARENT, REST, type BoneName } from './skeleton.ts'
 
-const FUR = new THREE.Color('#e08f3c')
-const BELLY = new THREE.Color('#f4e2c0')
-const STRIPE = new THREE.Color('#9a561c')
-const PINK = new THREE.Color('#e8a0a0')
-const EYE = new THREE.Color('#7cc24a')
-const DARK = new THREE.Color('#2a1d14')
+const FUR = new THREE.Color('#c9a8ff')
+const BELLY = new THREE.Color('#ffe6f5')
+const STRIPE = new THREE.Color('#8c1eff')
+const PINK = new THREE.Color('#ff6ad5')
+/** The monitor that is Merge's head: chrome bezel, a dark screen with the face drawn on it by the viewer. */
+const CHROME = new THREE.Color('#d8d8ff')
+const SCREEN = new THREE.Color('#04140b')
+/** The monitor: width, height, depth and where its middle is, in the cat's space. */
+export const MONITOR = { size: [0.17, 0.14, 0.14], at: [0, 0.35, 0.31] } as const
 
 /** Rest position of each bone in the cat's space, from the local offsets in `skeleton.ts`. */
 const ABS = {} as Record<BoneName, THREE.Vector3>
@@ -86,17 +89,14 @@ function buildParts(): THREE.BufferGeometry[] {
     parts.push(part(box(0.05, 0.014, 0.03), place(0, 0.307, z), STRIPE, BODY_BLEND))
   }
 
-  // Neck and head.
+  // Neck and head: an old monitor with ears on top. The face is a separate quad (`Face`, see `buildCat`) the viewer paints.
   parts.push(part(cylinder(0.04, 0.046, 0.09), place(0, 0.285, 0.255), FUR, 'neck'))
-  parts.push(part(sphere(), place(0, 0.335, 0.315, [0.075, 0.065, 0.068]), FUR, 'head'))
-  parts.push(part(box(0.05, 0.035, 0.035), place(0, 0.318, 0.375), BELLY, 'head'))
-  parts.push(part(box(0.016, 0.012, 0.012), place(0, 0.328, 0.395), PINK, 'head'))
+  parts.push(part(box(...MONITOR.size), place(...MONITOR.at), CHROME, 'head'))
+  parts.push(part(box(0.13, 0.1, 0.012), place(MONITOR.at[0], MONITOR.at[1], MONITOR.at[2] + MONITOR.size[2] / 2 + 0.001), SCREEN, 'head'))
   for (const side of [1, -1]) {
-    parts.push(part(box(0.014, 0.016, 0.008), place(side * 0.032, 0.345, 0.378), EYE, 'head'))
-    parts.push(part(box(0.006, 0.014, 0.004), place(side * 0.032, 0.345, 0.383), DARK, 'head'))
     const ear: BoneName = side === 1 ? 'earL' : 'earR'
-    parts.push(part(new THREE.ConeGeometry(0.04, 0.075, 4), place(side * 0.05, 0.405, 0.3, [1, 1, 0.8], 0, -side * 0.15), FUR, ear))
-    parts.push(part(new THREE.ConeGeometry(0.022, 0.05, 4), place(side * 0.05, 0.4, 0.31, [1, 1, 0.6], 0, -side * 0.15), PINK, ear))
+    parts.push(part(new THREE.ConeGeometry(0.04, 0.075, 4), place(side * 0.05, 0.445, 0.3, [1, 1, 0.8], 0, -side * 0.15), FUR, ear))
+    parts.push(part(new THREE.ConeGeometry(0.022, 0.05, 4), place(side * 0.05, 0.44, 0.31, [1, 1, 0.6], 0, -side * 0.15), PINK, ear))
   }
 
   // Tail: four ringed segments running back from the hips.
@@ -155,6 +155,13 @@ export function buildCat(): { scene: THREE.Group; clips: THREE.AnimationClip[] }
   scene.add(mesh)
   scene.updateMatrixWorld(true)
   mesh.bind(new THREE.Skeleton(bones))
+
+  // The face: a quad on the screen, a child of the head bone so it moves with the head. The viewer paints it from what the body is doing.
+  const head = ABS.head
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.09), new THREE.MeshBasicMaterial({ name: 'face', color: '#39ff88' }))
+  face.name = 'Face'
+  face.position.set(MONITOR.at[0] - head.x, MONITOR.at[1] - head.y, MONITOR.at[2] + MONITOR.size[2] / 2 + 0.008 - head.z)
+  bones[BONES.indexOf('head')]!.add(face)
 
   return { scene, clips: buildClips() }
 }

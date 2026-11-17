@@ -99,6 +99,9 @@ export const EXHIBIT = { brass: '#ffe08a', paper: COLORS.face, dust: '#d8d8ff', 
 export const NOTE_PAPER = { new: '#fff7d6', found: '#fff27a', replied: '#ff9ad8', kept: '#9ff3ff', declined: '#ff7a9a' } as const
 export const NOTE_POST = '#4a2a8a'
 
+/** Merge's screen: terminal green on near black. */
+export const SCREEN = { on: COLORS.green, off: '#04140b' } as const
+
 /** The place signs and labels are small windows: face-coloured body, ink text, a gradient title bar. */
 export const WINDOW = { body: COLORS.face, ink: COLORS.ink, barFrom: COLORS.purple, barTo: COLORS.hotPink, barText: COLORS.white } as const
 

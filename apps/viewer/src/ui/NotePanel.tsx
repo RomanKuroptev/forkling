@@ -1,10 +1,21 @@
-import { useEffect } from 'react'
-import { noteFate } from '@forkling/sim'
-import { notesStore, useOpenedNote } from '../world/notesStore.ts'
+import { useEffect, useState } from 'react'
+import { notesStore, useNotes, useOpenedNote } from '../world/notesStore.ts'
+import { useWorld } from '../world/WorldContext.tsx'
+import { NoteForm, config } from './NoteForm.tsx'
+import { Win } from './Win.tsx'
+import { CLOSED_THREAD_TEXT, threadView } from './threadView.ts'
 
-/** A paper note opened by a click: who left it, what it says, and what became of it, in the same words as the site's notes page. Everything is plain text. */
+/**
+ * A paper note opened by a click, as a window: its whole thread, oldest note first, each with who left it, what it says and what became
+ * of it, in the same words as the site's notes page. Under the newest reply of an open thread there is an Answer button that opens
+ * the answer box; a closed thread says so. Everything is plain text.
+ */
 export function NotePanel() {
   const note = useOpenedNote()
+  const notes = useNotes()
+  const { clock } = useWorld()
+  const [answering, setAnswering] = useState<string | null>(null)
+  useEffect(() => setAnswering(null), [note?.id])
   useEffect(() => {
     if (!note) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && notesStore.close()
@@ -12,21 +23,33 @@ export function NotePanel() {
     return () => window.removeEventListener('keydown', onKey)
   }, [note])
   if (!note) return null
-  const fate = noteFate(note, note.foundAt?.slice(0, 10) ?? '')
+  const view = threadView(notes, note, clock.now())
+  const canPost = Boolean(config.endpoint && config.siteKey)
   return (
-    <div className="hud note-ui" role="dialog" aria-label="A note" style={{ top: 16, bottom: 'auto', left: '50%', transform: 'translateX(-50%)', width: 'min(560px, 94vw)', maxHeight: '84vh', overflow: 'auto', pointerEvents: 'auto', zIndex: 20, background: 'rgb(20 24 20 / 88%)' }}>
-      <button onClick={() => notesStore.close()} style={{ float: 'right' }} aria-label="Close">
-        ×
-      </button>
-      <h3 style={{ margin: '0 0 8px' }}>A note from {note.name.trim() || 'a visitor'}</h3>
-      <p style={{ whiteSpace: 'pre-wrap', margin: '0 0 8px' }}>{note.message}</p>
-      <p style={{ margin: '0 0 4px' }}>
-        <small>Left on {note.at.slice(0, 10)}.</small>
-      </p>
-      <p style={{ margin: 0 }}>
-        {fate.lead}
-        {fate.detail ? <blockquote style={{ margin: '6px 0 0' }}>{fate.detail}</blockquote> : null}
-      </p>
-    </div>
+    <Win title="note.txt" label="A note" onClose={() => notesStore.close()}>
+      <ul className="win-thread">
+        {view.items.map(({ note: n, verb, fate }) => (
+          <li key={n.id}>
+            <p className="win-quiet">
+              <strong>{n.name.trim() || 'A visitor'}</strong> {verb} on {n.at.slice(0, 10)}.
+            </p>
+            <p style={{ whiteSpace: 'pre-wrap' }}>{n.message}</p>
+            <p>
+              {fate.lead}
+              {fate.detail ? <blockquote>{fate.detail}</blockquote> : null}
+            </p>
+          </li>
+        ))}
+      </ul>
+      {view.answerTo && canPost && answering !== view.answerTo && (
+        <button type="button" className="win-btn" onClick={() => setAnswering(view.answerTo)}>
+          Answer
+        </button>
+      )}
+      {view.closed && <p className="win-quiet">{CLOSED_THREAD_TEXT}</p>}
+      {answering && config.endpoint && config.siteKey && (
+        <NoteForm endpoint={config.endpoint} siteKey={config.siteKey} replyTo={answering} placeId={note.placeId} inline onClose={() => setAnswering(null)} />
+      )}
+    </Win>
   )
 }
