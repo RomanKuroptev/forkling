@@ -4,7 +4,7 @@ import type { RecentPast } from '../past.ts'
 import type { StartingPoint } from '../web/doors.ts'
 import { decideTask } from './decide.ts'
 import { morningTask } from './morning.ts'
-import { defang, describeBelief, describeInterests, json, type ThinkKind } from './shared.ts'
+import { defang, describeBelief, describeInterestFamilies, json, type ThinkKind } from './shared.ts'
 
 export interface UserInput {
   kind: ThinkKind
@@ -110,7 +110,7 @@ export function buildUser(i: UserInput): string {
     '</situation>',
     '',
     '<interests>',
-    ...describeInterests(i.interests),
+    ...describeInterestFamilies(i.interests),
     '</interests>',
     ...(i.memory.trim() ? ['', '<memory>', i.memory.trim(), '</memory>'] : []),
     ...(liveBeliefs(i.beliefs).length > 0 ? ['', '<beliefs>', ...liveBeliefs(i.beliefs).map(describeBelief), '</beliefs>'] : []),
