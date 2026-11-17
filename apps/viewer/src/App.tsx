@@ -6,6 +6,7 @@ import { debugEnabled } from './debugEnabled.ts'
 import { DebugOverlay } from './forkling/DebugOverlay.tsx'
 import { Forkling } from './forkling/Forkling.tsx'
 import { Player } from './player/Player.tsx'
+import { Boot } from './ui/Boot.tsx'
 import { Cursor } from './ui/Cursor.tsx'
 import { Taskbar } from './ui/Taskbar.tsx'
 import { ExhibitPanel } from './ui/ExhibitPanel.tsx'
@@ -16,6 +17,7 @@ import { desktopHint } from './ui/hint.ts'
 import { touchUi } from './touch.ts'
 import { useWorld } from './world/WorldContext.tsx'
 import { TouchControls } from './ui/TouchControls.tsx'
+import { Effects } from './world/Effects.tsx'
 import { Environment } from './world/Environment.tsx'
 import { Fog } from './world/Fog.tsx'
 import { Land } from './world/Land.tsx'
@@ -41,7 +43,7 @@ const physicsDebug = params.get('debug') === 'physics'
 
 function Loading() {
   const { active, progress } = useProgress()
-  return active ? <div className="loading">Loading… {Math.round(progress)}%</div> : null
+  return active ? <Boot progress={progress} note={`Loading… ${Math.round(progress)}%`} /> : null
 }
 
 export function App() {
@@ -50,6 +52,7 @@ export function App() {
     <>
       <KeyboardControls map={keyboardMap}>
         <Canvas
+          flat
           shadows="percentage"
           dpr={touchUi ? [1, 1.25] : [1, 1.5]}
           camera={{ fov: 70, near: 0.1, far: 400 }}
@@ -67,6 +70,7 @@ export function App() {
               <Player />
             </Physics>
           </Suspense>
+          <Effects />
           {debug && <Stats />}
         </Canvas>
       </KeyboardControls>

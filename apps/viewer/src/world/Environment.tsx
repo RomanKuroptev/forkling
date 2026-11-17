@@ -59,9 +59,9 @@ const skyFragment = /* glsl */ `
     float y = (d.y - s.y) / R;
     // Solid above the middle, then stripes that get thicker towards the bottom.
     float band = clamp(0.1 - y, 0.0, 1.5);
-    float gap = 0.18 + 0.4 * clamp(band, 0.0, 1.0);
-    float stripe = y > 0.1 ? 1.0 : step(gap, fract(band * 5.0));
-    vec3 sunCol = mix(uSunLow, uSunHigh, smoothstep(-0.9, 0.9, y));
+    float gap = 0.26 + 0.5 * clamp(band / 0.64, 0.0, 1.0);
+    float stripe = y > 0.1 ? 1.0 : step(gap, fract(band * 7.0));
+    vec3 sunCol = mix(uSunLow, uSunHigh, smoothstep(-0.5, 0.6, y));
     float show = disc * stripe * step(0.0, h) * (1.0 - uNight);
     c = mix(c, sunCol, show);
     gl_FragColor = vec4(c, 1.0);
@@ -157,12 +157,12 @@ export function Environment() {
     fog.color.copy(fogDay).lerp(fogNight, night)
     if (sun.current) {
       sun.current.position.set(dir[0] * 80, Math.max(dir[1], 0.25) * 80, dir[2] * 80)
-      sun.current.intensity = 1.5 * (1 - night) + 0.35 * night
+      sun.current.intensity = 2.2 * (1 - night) + 0.4 * night
       sun.current.color.copy(colors.sunDay).lerp(colors.sunNight, night)
     }
     if (rim.current) rim.current.intensity = 0.9 * (1 - night) + 0.5 * night
     if (hemi.current) {
-      hemi.current.intensity = 1.9 - 1.0 * night
+      hemi.current.intensity = LIGHT.hemiDayIntensity - 1.6 * night
       hemi.current.color.copy(tmp.copy(colors.hemiDay).lerp(colors.hemiNight, night))
     }
   })
@@ -175,7 +175,7 @@ export function Environment() {
       <mesh material={grid} rotation={[-Math.PI / 2, 0, 0]} position={[0, -9, 0]}>
         <planeGeometry args={[4000, 4000]} />
       </mesh>
-      <hemisphereLight ref={hemi} args={[LIGHT.hemiSkyDay, LIGHT.hemiGround, 1.9]} />
+      <hemisphereLight ref={hemi} args={[LIGHT.hemiSkyDay, LIGHT.hemiGround, LIGHT.hemiDayIntensity]} />
       <directionalLight
         ref={sun}
         intensity={2}

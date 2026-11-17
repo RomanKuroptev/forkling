@@ -1,6 +1,7 @@
 import { placesRev } from '@forkling/sim'
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
 import { App } from './App.tsx'
+import { Boot } from './ui/Boot.tsx'
 import { speciesPacks } from './species/registry.ts'
 import { fixtureNotes } from './world/fixtureNotes.ts'
 import { mindUrlFrom, startLiveSync } from './world/liveSync.ts'
@@ -121,7 +122,8 @@ export function Root() {
     })
   }, [notesReady])
 
-  if (state.status === 'loading') return <div className="loading">Finding the world…</div>
+  if (new URLSearchParams(location.search).has('boot')) return <Boot progress={60} note="Loading… 60%" />
+  if (state.status === 'loading') return <Boot note="Finding the world…" />
   if (state.status === 'error') return <WorldErrorPanel error={state.error} worldRef={state.ref} />
   return (
     <WorldProvider world={state.world}>

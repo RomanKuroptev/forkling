@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { SIGN_CELL, SIGN_PAD, atlasLayout, type SignBoard } from './signGeometry.ts'
+import { WINDOW } from './theme.ts'
+import { SIGN_CELL, SIGN_PAD, TITLE_BAR, atlasLayout, type SignBoard } from './signGeometry.ts'
 
 /** Every sign's words painted onto one canvas, a cell for each (`atlasLayout`), as one texture. */
 function paintAtlas(boards: readonly SignBoard[]): THREE.CanvasTexture {
@@ -14,13 +15,23 @@ function paintAtlas(boards: readonly SignBoard[]): THREE.CanvasTexture {
     g.save()
     g.translate(cell.x, cell.y)
     g.scale(atlas.scale, atlas.scale)
-    g.fillStyle = board.colors.bg
+    // A small window: ink outline, face-coloured body, gradient title bar with the three buttons.
+    g.fillStyle = WINDOW.ink
     g.fillRect(0, 0, SIGN_CELL.w, SIGN_CELL.h)
-    g.globalAlpha = 0.55
-    g.strokeStyle = board.colors.fg
-    g.lineWidth = 6
-    g.strokeRect(10, 10, SIGN_CELL.w - 20, SIGN_CELL.h - 20)
-    g.globalAlpha = 1
+    g.fillStyle = board.colors.bg
+    g.fillRect(6, 6, SIGN_CELL.w - 12, SIGN_CELL.h - 12)
+    const bar = g.createLinearGradient(0, 0, SIGN_CELL.w, 0)
+    bar.addColorStop(0, WINDOW.barFrom)
+    bar.addColorStop(1, WINDOW.barTo)
+    g.fillStyle = bar
+    g.fillRect(10, 10, SIGN_CELL.w - 20, TITLE_BAR - 14)
+    g.fillStyle = board.colors.bg
+    for (let k = 0; k < 3; k++) {
+      g.fillRect(SIGN_CELL.w - 24 - (k + 1) * 36, 16, 28, 20)
+      g.strokeStyle = WINDOW.ink
+      g.lineWidth = 3
+      g.strokeRect(SIGN_CELL.w - 24 - (k + 1) * 36, 16, 28, 20)
+    }
     g.fillStyle = board.colors.fg
     g.textAlign = 'center'
     g.textBaseline = 'alphabetic'
@@ -76,7 +87,7 @@ export function Signs({ boards }: { boards: readonly SignBoard[] }) {
     const map = paintAtlas(boards)
     return {
       geometry: boardGeometry(boards),
-      material: new THREE.MeshStandardMaterial({ map, emissiveMap: map, emissive: new THREE.Color('#ffffff'), emissiveIntensity: 0.5, roughness: 0.9 }),
+      material: new THREE.MeshStandardMaterial({ map, emissiveMap: map, emissive: new THREE.Color(WINDOW.body), emissiveIntensity: 0.5, roughness: 0.9 }),
     }
   }, [boards])
   useEffect(

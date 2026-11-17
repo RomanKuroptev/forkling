@@ -107,10 +107,11 @@ describe('the scaffolding of a place being built (spec 4.5)', () => {
     expect(constructionInstances(big, 0, NOW).length).toBeLessThan(200)
   })
 
-  it('uses the plain shapes of the kit only, in wood colours', () => {
+  it('uses the plain shapes of the kit only, as glowing wireframe lines (cyan, lit by day too)', () => {
     for (const inst of constructionInstances(building, 0, NOW)) {
       expect(['box', 'cylinder']).toContain(inst.shape)
       expect(inst.color).toMatch(/^#[0-9a-f]{6}$/i)
+      expect(inst.glow).toBe(true)
     }
   })
 })

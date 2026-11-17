@@ -1,4 +1,5 @@
 import type { Kit, Place } from '@forkling/schema'
+import { WINDOW } from './theme.ts'
 import { SIGN_BOTTOM, SIGN_H, SIGN_W, signSpot } from './exhibitGeometry.ts'
 
 /**
@@ -12,7 +13,9 @@ export const SIGN_CELL = { w: 512, h: 236 } as const
 export const SIGN_PAD = 24
 const PAD = SIGN_PAD
 /** Room kept clear above and below the words. */
-const VERTICAL_PAD = 16
+const VERTICAL_PAD = 12
+/** The title bar along the top of a sign's window, in design pixels. The words stand below it. */
+export const TITLE_BAR = 44
 const NAME_SIZES = [64, 56, 48, 42, 38, 36]
 const TEXT_SIZES = [34, 32, 30, 28]
 /** How wide a character of the sign's bold sans is, as a share of its size: an estimate that errs wide, so words never run off. */
@@ -74,7 +77,7 @@ const cut = (lines: string[], max: number): string[] => (lines.length <= 2 ? lin
 export function signLayout(place: Place): SignLayout {
   const nameText = squash(place.name)
   const signText = place.state.closed ? squash(`Closed: ${place.state.closed.reason}`) : squash(place.exterior.sign)
-  const room = SIGN_CELL.h - 2 * VERTICAL_PAD
+  const room = SIGN_CELL.h - TITLE_BAR - 2 * VERTICAL_PAD
   let chosen: { namePx: number; name: string[]; textPx: number; text: string[] } | undefined
   for (const namePx of NAME_SIZES) {
     const name = wrap(nameText, maxChars(namePx))
@@ -104,7 +107,7 @@ export function signLayout(place: Place): SignLayout {
   }
   const { namePx, name, textPx, text } = chosen
   const total = name.length * namePx * 1.12 + (text.length > 0 ? 14 + text.length * textPx * 1.15 : 0)
-  let top = (SIGN_CELL.h - total) / 2
+  let top = TITLE_BAR + (SIGN_CELL.h - TITLE_BAR - total) / 2
   const ops: SignOp[] = []
   for (const line of name) {
     ops.push({ text: line, role: 'name', px: namePx, y: top + namePx, bold: true })
@@ -134,17 +137,12 @@ export function contrast(a: string, b: string): number {
   return (hi! + 0.05) / (lo! + 0.05)
 }
 
-const CREAM = '#f6efdc'
-const INK = '#241a12'
-
-/** The colours a sign is painted in: the palette's wood, darkened until cream (or ink) letters read on it at 4.5 to 1 or better. */
-export function signColors(wood: string): { bg: string; fg: string } {
-  for (let step = 0; step <= 10; step++) {
-    const bg = toHex([0, 1, 2].map((i) => channel(wood, i) * (1 - step * 0.09)))
-    const fg = contrast(bg, CREAM) >= contrast(bg, INK) ? CREAM : INK
-    if (contrast(bg, fg) >= 4.5) return { bg, fg }
-  }
-  return { bg: '#2a1f16', fg: CREAM }
+/**
+ * The colours a sign is painted in: a small window on Merge's desktop, with a face-coloured body and ink letters (the theme's
+ * `WINDOW`). Ink on face is far above 4.5 to 1. The palette's wood no longer colours it; the argument stays so callers do not change.
+ */
+export function signColors(_wood: string): { bg: string; fg: string } {
+  return { bg: WINDOW.body, fg: WINDOW.ink }
 }
 
 export interface SignBoard {

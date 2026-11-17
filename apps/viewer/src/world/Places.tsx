@@ -33,7 +33,7 @@ const nightUniform = { value: 0 }
 
 /** A matte standard material that adds a warm glow to the instances marked to glow (a window's glass, a lamp that is on), at night. */
 function glowMaterial(): THREE.MeshStandardMaterial {
-  const material = new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.9 })
+  const material = new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.45, metalness: 0.05 })
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = nightUniform
     shader.vertexShader = shader.vertexShader
@@ -42,7 +42,7 @@ function glowMaterial(): THREE.MeshStandardMaterial {
     // The warm glow is added to the light the surface gives off, so it shows in the dark and is lost in daylight.
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(1.0, 0.78, 0.4) * vGlow * uNight * 1.4;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * vGlow * (0.9 + uNight * 1.6);')
   }
   return material
 }

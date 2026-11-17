@@ -1,9 +1,10 @@
+import { COLORS } from '../world/theme.ts'
 import { cursorKind } from '../player/look.ts'
 import { useOpenedNote } from '../world/notesStore.ts'
 import { useHover } from '../world/hoverStore.ts'
 import { usePanel } from '../world/panelStore.ts'
 
-const INK = '#1a0b3b'
+const INK = COLORS.ink
 
 /** The visitor is the cursor: a white arrow in the middle of the screen, the hand when what it points at can be opened. */
 export function Cursor() {

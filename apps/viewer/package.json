@@ -17,6 +17,7 @@
     "@forkling/species-cat": "workspace:*",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
+    "@react-three/postprocessing": "^3.2.2",
     "@react-three/rapier": "^2.2.0",
     "ecctrl": "^2.0.2",
     "leva": "^0.10.1",

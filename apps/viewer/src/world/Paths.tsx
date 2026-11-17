@@ -1,4 +1,5 @@
 import { allPaths, createLand, placeCentre, routePath, toLandPlace } from '@forkling/sim'
+import { PATH } from './theme.ts'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
@@ -52,7 +53,7 @@ export function Paths() {
 
   return (
     <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial ref={material} color="#c9b588" emissive="#c9b588" emissiveIntensity={0} roughness={1} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
+      <meshStandardMaterial ref={material} color={PATH.color} emissive={PATH.glow} emissiveIntensity={0} roughness={1} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
     </mesh>
   )
 }

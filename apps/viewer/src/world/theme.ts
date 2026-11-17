@@ -46,7 +46,7 @@ export const GRID = {
   farSpacing: 8,
   landSpacing: 4,
   landFade: [40, 220],
-  farFade: [120, 900],
+  farFade: [50, 380],
 } as const
 
 export const LIGHT = {
@@ -54,6 +54,7 @@ export const LIGHT = {
   hemiSkyNight: '#8a7bff',
   /** The ground colour of the hemisphere light stays a light purple, or walls facing away from the sun turn brown. */
   hemiGround: COLORS.lilac,
+  hemiDayIntensity: 2.5,
   sunDay: '#fff0f8',
   sunNight: '#9db4ff',
   rim: COLORS.cyan,
@@ -64,6 +65,8 @@ export const MIST = {
   fogDay: '#ff7ab8',
   fogNight: '#3a1280',
   cloud: '#e8d8ff',
+  /** How much of its own opacity a puff keeps: the sky behind it, and the sun, must stay clear. */
+  strength: 0.3,
   targetNight: COLORS.lilac,
   targetDay: COLORS.face,
 } as const

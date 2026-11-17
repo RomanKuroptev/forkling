@@ -34,7 +34,7 @@ export function constructionInstances(place: Place, baseY: number, nowMs?: numbe
   const hz = fd / 2 + SCAFFOLD_REACH
   const out: Instance[] = []
   const piece = (shape: Instance['shape'], at: [number, number, number], size: [number, number, number], color: string): void => {
-    out.push({ shape, matrix: compose(at, [0, 0, 0], size), color })
+    out.push({ shape, matrix: compose(at, [0, 0, 0], size), color, glow: true })
   }
 
   // Poles: both corners of each side and a pole every few meters between, each corner once.
@@ -65,6 +65,9 @@ export function constructionInstances(place: Place, baseY: number, nowMs?: numbe
     for (const [a, b] of frontParts(-hx, hx)) piece('box', [px + (a + b) / 2, y, pz + hz], [b - a, 0.08, 0.08], RAIL)
     for (const sx of [-1, 1]) piece('box', [px + sx * hx, y, pz], [0.08, 0.08, 2 * hz], RAIL)
   }
+
+
+
 
   // Boards along the front (the door's side, +z) on each side of the way in, at the second level when the building is tall enough.
   const deck = SCAFFOLD_HEAD + Math.min(1, levels - 1) * LEVEL

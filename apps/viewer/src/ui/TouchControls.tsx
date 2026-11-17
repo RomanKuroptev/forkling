@@ -1,3 +1,4 @@
+import { COLORS } from '../world/theme.ts'
 import { Joystick, VirtualButton } from 'ecctrl/input'
 import { useSyncExternalStore } from 'react'
 import { bubbleHidden } from '../forkling/bubbleHidden.ts'
@@ -26,8 +27,8 @@ export function TouchControls() {
       <VirtualButton
         id="jump"
         label="Jump"
-        buttonWrapperStyle={{ position: 'fixed', right: inset('right', 20), bottom: inset('bottom', 36 + TASKBAR_H) }}
-        buttonCapStyle={{ color: '#1a0b3b', fontFamily: 'Press Start 2P, monospace', fontSize: 10, background: '#ffd6f1', border: '2px solid #1a0b3b', borderRadius: 0, boxShadow: 'inset -2px -2px 0 #8c1eff, inset 2px 2px 0 #fff' }}
+        buttonWrapperStyle={{ position: 'fixed', right: inset('right', 20), bottom: inset('bottom', 36 + TASKBAR_H), background: 'transparent', borderRadius: 0, width: 64, height: 48 }}
+        buttonCapStyle={{ color: COLORS.ink, fontFamily: 'Press Start 2P, monospace', fontSize: 10, background: COLORS.face, border: `2px solid ${COLORS.ink}`, borderRadius: 0, width: 64, height: 48, boxSizing: 'border-box', boxShadow: `inset 2px 2px 0 ${COLORS.white}, inset -2px -2px 0 ${COLORS.purple}` }}
       />
       <button
         type="button"

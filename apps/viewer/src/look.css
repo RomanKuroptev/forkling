@@ -4,6 +4,10 @@
   --face: #ffd6f1;
   --ink: #1a0b3b;
   --purple: #8c1eff;
+  --hot-pink: #ff3fa4;
+  --cyan: #01cdfe;
+  --sun: #fff27a;
+  --green: #39ff88;
 }
 
 canvas {
@@ -47,11 +51,42 @@ canvas {
 
 .taskbar-start {
   flex: none;
-  padding: 7px 10px 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 5px 8px;
   background: var(--face);
-  border: 2px solid var(--ink);
-  box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 var(--purple);
+  /* The 95 bevel: light on the top and left, dark on the bottom and right. */
+  border: 2px solid;
+  border-color: #fff var(--ink) var(--ink) #fff;
+  box-shadow: inset -2px -2px 0 var(--purple), inset 2px 2px 0 #fff;
   font: 10px/1 'Press Start 2P', monospace;
+}
+
+.taskbar-logo {
+  display: grid;
+  grid-template-columns: 7px 7px;
+  gap: 1px;
+  transform: skewY(-6deg);
+}
+
+.taskbar-logo i {
+  display: block;
+  width: 7px;
+  height: 7px;
+  background: var(--hot-pink);
+}
+
+.taskbar-logo i:nth-child(2) {
+  background: var(--cyan);
+}
+
+.taskbar-logo i:nth-child(3) {
+  background: var(--sun);
+}
+
+.taskbar-logo i:nth-child(4) {
+  background: var(--green);
 }
 
 .taskbar-hint {

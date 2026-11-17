@@ -4,10 +4,32 @@ import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { landMesh, visibleChunks } from './landGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
+import { GRID, LAND } from './theme.ts'
 
-const GRASS = new THREE.Color('#86b95c')
-const DARK_GRASS = new THREE.Color('#5f9a46')
-const MEADOW = new THREE.Color('#a3c46a')
+const GRASS = new THREE.Color(LAND.grass)
+const DARK_GRASS = new THREE.Color(LAND.darkGrass)
+const MEADOW = new THREE.Color(LAND.meadow)
+/** A thin line of the look's grid on the ground itself, so the land has scale; it fades out with distance (the theme sets spacing and fade). */
+function gridOnLand(shader: { uniforms: Record<string, { value: unknown }>; vertexShader: string; fragmentShader: string }) {
+  shader.uniforms.uGridColor = { value: new THREE.Color(GRID.landLine) }
+  shader.uniforms.uGridFade = { value: new THREE.Vector2(...GRID.landFade) }
+  shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGridPos;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvGridPos = (modelMatrix * vec4(position, 1.0)).xyz;')
+  shader.fragmentShader = shader.fragmentShader
+    .replace('#include <common>', '#include <common>\nvarying vec3 vGridPos;\nuniform vec3 uGridColor;\nuniform vec2 uGridFade;')
+    .replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+      {
+        vec2 gp = vGridPos.xz / ${GRID.landSpacing.toFixed(1)};
+        vec2 gw = fwidth(gp);
+        vec2 ga = abs(fract(gp - 0.5) - 0.5) / max(gw, vec2(0.0001));
+        float gl = 1.0 - min(min(ga.x, ga.y) / 1.5, 1.0);
+        float gf = 1.0 - smoothstep(uGridFade.x, uGridFade.y, length(vGridPos.xz - cameraPosition.xz));
+        diffuseColor.rgb = mix(diffuseColor.rgb, uGridColor, gl * gf * 0.75);
+      }`,
+    )
+}
+
 /** Squares of 2 meters: gentle terrain, and few enough triangles for a world of 64 places. */
 const SEGMENTS = 16
 
@@ -60,7 +82,7 @@ export function Land() {
     <RigidBody type="fixed" colliders={false}>
       <TrimeshCollider args={[vertices, indices]} />
       <mesh geometry={geometry} receiveShadow>
-        <meshStandardMaterial vertexColors flatShading roughness={0.95} />
+        <meshStandardMaterial vertexColors flatShading roughness={0.55} metalness={0.05} onBeforeCompile={gridOnLand} />
       </mesh>
     </RigidBody>
   )

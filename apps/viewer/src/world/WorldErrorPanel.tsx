@@ -8,6 +8,14 @@ export function WorldErrorPanel({ error, worldRef }: { error: WorldError; worldR
   return (
     <div className="world-error">
       <div className="world-error-card">
+        <div className="win-title">
+          <span>error.exe</span>
+          <span className="win-buttons" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+        </div>
         <h1>{error.title}</h1>
         <p>{error.message}</p>
         {error.problems.map((problem) => (

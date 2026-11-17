@@ -28,7 +28,7 @@ export function Player() {
   const at = parseStand(location.search)
   const spawn = at ? { x: at.x, z: at.z, y: simWorld.heightAt(at.x, at.z), yaw: at.yaw } : simWorld.visitorSpawn
   const body = useRef<EcctrlHandle>(null)
-  const look = useRef<Look>({ yaw: spawn.yaw, pitch: 0 })
+  const look = useRef<Look>({ yaw: spawn.yaw, pitch: (Number(new URLSearchParams(location.search).get('pitch')) || 0) * (Math.PI / 180) })
   const frame = useRef(0)
   const [, getKeys] = useKeyboardControls()
   const gl = useThree((s) => s.gl)
