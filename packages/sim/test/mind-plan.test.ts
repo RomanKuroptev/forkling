@@ -116,7 +116,7 @@ describe('validateMindPlan', () => {
     const sketches = [wander(), { ...write(), verb: 'tinker', size: 'sketch', target: 'a lamp' } as MindStep, { ...write(), verb: 'tinker', size: 'sketch', target: 'a door' } as MindStep]
     // At 50 points each two sketches plus a trip cost 103; at 23 they cost 49.
     expect(reasons(sketches, ctx({ pointsInHand: 60 }))).toEqual([expect.stringContaining('costs 103 points')])
-    expect(reasons(sketches, ctx({ pointsInHand: 60, prices: { fullWork: 240, expand: 50, trip: 3, tend: 2, sketch: 23, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 } }))).toEqual([])
+    expect(reasons(sketches, ctx({ pointsInHand: 60, prices: { fullWork: 240, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 23, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 } }))).toEqual([])
   })
 
   it('rejects a step that starts in the 45 minutes before bed', () => {
@@ -149,10 +149,10 @@ describe('targets and conditions', () => {
     expect(reasons([wander(), revisit('workshop'), rest()])).toEqual([])
   })
 
-  it('lets expand take only a place whose interest has grown, and never the same place twice in a row', () => {
+  it('lets expand take only a place that may be expanded, and never the same place twice in a row', () => {
     const expand = (target: string): MindStep => ({ ...tend({ wantId: null }), verb: 'expand', target, minutes: 20 })
     const c = ctx({ expandable: new Set(['workshop']), pointsInHand: 200 })
-    expect(reasons([wander(), expand('home'), rest()], c)).toEqual([expect.stringContaining('not ready to grow')])
+    expect(reasons([wander(), expand('home'), rest()], c)).toEqual([expect.stringContaining('cannot be expanded')])
     expect(reasons([wander(), expand('workshop'), rest()], c)).toEqual([])
     expect(reasons([wander(), expand('workshop'), rest()], { ...c, lastExpandedPlace: 'workshop' })).toEqual([expect.stringContaining('twice in a row')])
   })
@@ -339,5 +339,17 @@ describe('a found note is answered the same day (spec 16), as a rule of the plan
 
   it('does not ask in the last hour before bed, when a reply could not be fitted in, and the note waits for the morning', () => {
     expect(reasons([wander(), write(), rest()], ctx({ notes: new Set(['n1']), overdueNotes: new Set(['n1']), startMs: BED - 50 * 60_000 })).join(' ')).not.toMatch(/has waited/)
+  })
+})
+
+describe('the price of an expand (spec v4 2.2)', () => {
+  const expand: MindStep = { ...tend({ wantId: null }), verb: 'expand', target: 'workshop', minutes: 20 }
+  const base = ctx({ expandable: new Set(['workshop']), pointsInHand: 55 })
+  it('costs 50 unearned and 20 earned, and a plan short of points is refused with the points reason only', () => {
+    // A wander costs 3.
+    expect(reasons([wander(), expand, rest()], base)).toEqual([])
+    expect(reasons([wander(), expand, rest()], { ...base, pointsInHand: 40 })).toEqual([expect.stringContaining('costs 53 points')])
+    expect(reasons([wander(), expand, rest()], { ...base, pointsInHand: 40, expandEarned: new Set(['workshop']) })).toEqual([])
+    expect(reasons([wander(), expand, rest()], { ...base, pointsInHand: 10, expandEarned: new Set(['workshop']) })).toEqual([expect.stringContaining('costs 23 points')])
   })
 })

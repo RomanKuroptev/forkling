@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { BudgetLedger, Interests, MindState, Place, PlaceRequest, Souvenir, Wish, formatRequest, isOpenRequest, isOpenWish, parseRequest, MAX_OPEN_PLACE_REQUESTS, MAX_OPEN_WISHES } from '@forkling/schema'
-import { allPaths, expandCheck, lastSizeChange, layoutProblems, placementCandidates, PLACE_LIMITS, toLandPlace } from '@forkling/sim'
+import { allPaths, expandAllowed, lastSizeChange, layoutProblems, placementCandidates, PLACE_LIMITS, toLandPlace } from '@forkling/sim'
 import { createBuildWorker } from '../src/build-worker.ts'
 import { createExpandHandler } from '../src/builds/expand-job.ts'
 import { createFoundBuildHandler } from '../src/builds/found-build-job.ts'
@@ -246,7 +246,7 @@ function checkJobs(nowMs: number) {
     const weights = Object.fromEntries(Object.entries(interests.topics).map(([k, v]) => [k, v.weight]))
     if (!place) violations.push(`${at}: an expand job for ${job.placeId}, which is not a place`)
     else {
-      const verdict = expandCheck(place, weights, souvenirs)
+      const verdict = expandAllowed(place, null)
       if (!verdict.ok) violations.push(`${at}: an expand job for ${job.placeId} while 2.5 does not hold (${verdict.ok ? '' : verdict.reasons.join('; ')})`)
     }
   }

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ExpandJob, type JobResult, type Souvenir, type WishDraft } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import { addWakingMs, addWishes, expandCheck, finishedBuildings, validatePlacePatch } from '@forkling/sim'
+import { addWakingMs, addWishes, expandAllowed, expandEarned, finishedBuildings, interestFamilies, type ExpandEarned, validatePlacePatch } from '@forkling/sim'
 import { pendingJobs } from '../build-worker.ts'
 import { paceAhead } from '../budget.ts'
 import { refFile } from '../builds/tend.ts'
@@ -33,23 +33,20 @@ export function constructionEnd(t: Tick, ms: number): string {
   return new Date(addWakingMs(t.nowMs, ms, { seed: t.forkling.seed, timezone: t.tz, ...(t.forkling.lateNight ? { lateNight: t.forkling.lateNight } : {}) })).toISOString()
 }
 
-/** The interest weights as they are now, for the conditions of spec 2.5. */
-const weightsOf = (t: Tick): Record<string, number> => Object.fromEntries(Object.entries(t.interests.topics).map(([topic, v]) => [topic, v.weight]))
-
 /** Every souvenir kept, those on disk and those kept earlier in this tick. */
 function allSouvenirs(t: Tick): Souvenir[] {
   const seen = new Set<string>()
   return [...readAllSouvenirs(t.dir), ...t.newSouvenirs].filter((s) => (seen.has(s.id) ? false : (seen.add(s.id), true)))
 }
 
-/** The places that have earned an expand (spec 2.5), each with the tag that earned it. */
-export function expandablePlaces(t: Tick): { id: string; tag: string }[] {
+/**
+ * The places that may be expanded (spec v4 2.2: not closed, not under construction), each with whether it has earned the lower price
+ * and why. The last-expanded rail is the plan's and the step's own, so it is not applied here.
+ */
+export function expandablePlaces(t: Tick): { id: string; earned: ExpandEarned }[] {
   const souvenirs = allSouvenirs(t)
-  const weights = weightsOf(t)
-  return t.places.flatMap((p) => {
-    const check = expandCheck(p, weights, souvenirs)
-    return check.ok && check.tag !== null ? [{ id: p.id, tag: check.tag }] : []
-  })
+  const families = interestFamilies(t.interests)
+  return t.places.flatMap((p) => (expandAllowed(p, null).ok ? [{ id: p.id, earned: expandEarned(p, families, souvenirs, p.exhibits) }] : []))
 }
 
 /**
@@ -88,7 +85,7 @@ export function expandStep(t: Tick): void {
   if (pendingJobs(t.dir).some((j) => j.kind === 'expand') || t.newJobs.some((j) => j.kind === 'expand')) return rest('an expansion is already being built')
   if (paceAhead(t.budget, t.today)) return rest("spending is ahead of the month's pace, so building waits")
   if (t.mind.lastExpandedPlace === place.id) return rest('it was the last place I expanded')
-  const check = expandCheck(place, weightsOf(t), allSouvenirs(t))
+  const check = expandAllowed(place, null)
   if (!check.ok) return rest(check.reasons.join('; '))
 
   const base = `expand-${t.today.replaceAll('-', '')}-${t.nowIso.slice(11, 16).replace(':', '')}`
@@ -125,7 +122,7 @@ export function applyExpandResult(t: Tick, r: JobResult): { ok: boolean; text: s
   const drop = (why: string) => ({ ok: false, text: `the builders' expansion of ${name} could not be built: ${clampText(why, 160)}` })
   if (!place || !r.patch) return drop('the place or the change is missing')
 
-  const check = expandCheck(place, weightsOf(t), allSouvenirs(t))
+  const check = expandAllowed(place, null)
   if (!check.ok) return drop(check.reasons.join('; '))
   const checked = validatePlacePatch(place, r.patch, {
     kit,

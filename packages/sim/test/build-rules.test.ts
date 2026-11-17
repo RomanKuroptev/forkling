@@ -7,7 +7,8 @@ import {
   FOUND_STREAK_DAYS,
   WAKE_TOP_MIN,
   addWishes,
-  expandCheck,
+  expandAllowed,
+  expandEarned,
   fallbackDue,
   foundCheck,
   foundsInWeek,
@@ -40,110 +41,73 @@ describe('lastSizeChange (spec 2.5: since the place last changed size)', () => {
   })
 })
 
-describe('expandCheck (spec 2.5)', () => {
+describe('expandAllowed (spec v4 2.2, the rails)', () => {
+  it('allows an ordinary place, with no interest gate', () => {
+    expect(expandAllowed(place(), null)).toEqual({ ok: true, reasons: [] })
+  })
+  it('refuses a closed place, a place under construction and the place expanded last', () => {
+    const closed = place({ state: { ...base().state, closed: { at: '2026-11-21T10:00:00Z', reason: 'Quiet.' } } })
+    expect(expandAllowed(closed, null).reasons.join(' ')).toMatch(/closed/)
+    const building = place({ state: { construction: { kind: 'expand', finishesAt: '2026-12-01T10:00:00Z' }, lastCareAt: null, neglect: 0 } })
+    expect(expandAllowed(building, null).reasons.join(' ')).toMatch(/construction/)
+    expect(expandAllowed(place(), 'house-of-lights').reasons.join(' ')).toMatch(/last place/)
+    expect(expandAllowed(place(), 'workshop').ok).toBe(true)
+  })
+})
+
+describe('expandEarned (spec v4 2.2)', () => {
   const p = place()
   const fresh = since('2026-11-20T17:10:00Z', 3)
+  // Each topic is its own family: the same answers as the old weight check.
+  const fam = (weights: Record<string, number>) => Object.entries(weights).map(([name, weight]) => ({ name, weight, members: [name] }))
+  const work = (added: string, ref = 'works/a') => ({ kind: 'work' as const, ref, added })
+  const none = [] as ReturnType<typeof work>[]
 
-  it('allows an expand when a tag has weight 30 and 3 souvenirs on it were kept since (Roman, 14 November: it was 50)', () => {
+  it('is earned by making when 3 works were added since the place last changed size, not with 2', () => {
+    const three = [work('2026-11-21', 'works/a'), work('2026-11-22', 'works/b'), work('2026-11-23', 'works/c')]
+    expect(expandEarned(p, fam({}), [], three)).toEqual({ earned: true, by: 'made', family: null, works: ['works/a', 'works/b', 'works/c'] })
+    expect(expandEarned(p, fam({}), [], three.slice(0, 2)).earned).toBe(false)
+  })
+  it('does not count works added before the last size change, or souvenirs', () => {
+    const old = [work('2026-11-01'), work('2026-11-02'), work('2026-11-03'), { kind: 'souvenir' as const, ref: 'souvenirs/a', added: '2026-11-22' }]
+    expect(expandEarned(p, fam({}), [], old).earned).toBe(false)
+  })
+
+  it('is earned by reading when a family of 30 or more holds a tag and 3 souvenirs were kept (Roman, 14 November)', () => {
     expect(EXPAND_MIN_WEIGHT).toBe(30)
-    expect(expandCheck(p, { lighthouses: 30 }, fresh)).toEqual({ ok: true, tag: 'lighthouses', reasons: [] })
+    expect(expandEarned(p, fam({ lighthouses: 30 }), fresh, none)).toEqual({ earned: true, by: 'read', family: 'lighthouses', works: [] })
   })
-
-  it('is not offered for a closed place (spec 9.9)', () => {
-    const closed = place({ state: { ...base().state, closed: { at: '2026-11-21T10:00:00Z', reason: 'Quiet.' } } })
-    const r = expandCheck(closed, { lighthouses: 90 }, fresh)
-    expect(r.ok).toBe(false)
-    expect(r.reasons.join(' ')).toMatch(/closed/)
+  it('refuses a family under 30, with only 2 souvenirs, or with souvenirs kept before the last size change', () => {
+    expect(expandEarned(p, fam({ lighthouses: 29.9 }), fresh, none).earned).toBe(false)
+    expect(expandEarned(p, fam({ lighthouses: 90 }), since('2026-11-20T17:10:00Z', 2), none).earned).toBe(false)
+    expect(expandEarned(p, fam({ lighthouses: 90 }), [...since('2026-11-19T10:00:00Z', 3), ...since('2026-11-20T17:10:00Z', 2)], none).earned).toBe(false)
   })
-
-  it('refuses a tag under 30', () => {
-    const r = expandCheck(p, { lighthouses: 29.9, signals: 10 }, fresh)
-    expect(r.ok).toBe(false)
-    expect(r.reasons.join(' ')).toMatch(/weight 30/)
+  it('wants the same family to have both the weight and the souvenirs, and ignores case', () => {
+    expect(expandEarned(p, fam({ lighthouses: 80, signals: 10 }), since('2026-11-20T17:10:00Z', 3, ['signals']), none).earned).toBe(false)
+    expect(expandEarned(place({ tags: ['signals'] }), fam({ Signals: 70 }), since('2026-11-20T17:10:00Z', 3, ['SIGNALS']), none)).toMatchObject({ earned: true, family: 'Signals' })
   })
-
-  it('refuses with only 2 souvenirs, and ignores souvenirs kept before the last change in size', () => {
-    expect(expandCheck(p, { lighthouses: 90 }, since('2026-11-20T17:10:00Z', 2)).ok).toBe(false)
-    const old = since('2026-11-19T10:00:00Z', 3)
-    const r = expandCheck(p, { lighthouses: 90 }, [...old, ...since('2026-11-20T17:10:00Z', 2)])
-    expect(r.ok).toBe(false)
-    expect(r.reasons.join(' ')).toMatch(/3 souvenirs/)
+  it('counts the souvenirs of any member of a family, so related topics count together', () => {
+    const family = [{ name: 'lidar', weight: 45, members: ['lidar', 'digital elevation model', 'forest canopy'] }]
+    const kept = [...since('2026-11-20T17:10:00Z', 1, ['lidar']), ...since('2026-11-20T17:10:00Z', 1, ['forest canopy']), ...since('2026-11-20T17:10:00Z', 1, ['digital elevation model'])]
+    expect(expandEarned(place({ tags: ['lidar'] }), family, kept, none)).toMatchObject({ earned: true, by: 'read', family: 'lidar' })
   })
-
-  it('wants the same tag to have both the weight and the souvenirs', () => {
-    const r = expandCheck(p, { lighthouses: 80, signals: 10 }, since('2026-11-20T17:10:00Z', 3, ['signals']))
-    expect(r.ok).toBe(false)
-  })
-
-  it('takes the other tag when the first does not qualify, and matches tags without caring about case', () => {
-    const r = expandCheck(p, { lighthouses: 20, signals: 70 }, since('2026-11-20T17:10:00Z', 3, ['Signals']))
-    expect(r).toMatchObject({ ok: true, tag: 'signals' })
-  })
-
-  it('counts a souvenir with two topics once for each tag it carries', () => {
-    const r = expandCheck(p, { signals: 60 }, since('2026-11-20T17:10:00Z', 3, ['lighthouses', 'signals']))
-    expect(r.ok).toBe(true)
-  })
-
-  it('picks the heaviest qualifying tag, and the first by name on a tie, so the same world gives the same answer', () => {
+  it('takes the heaviest qualifying family, the first by name on a tie', () => {
     const two = [...since('2026-11-20T17:10:00Z', 3, ['lighthouses']), ...since('2026-11-20T17:10:00Z', 3, ['signals'])]
-    expect(expandCheck(p, { lighthouses: 60, signals: 75 }, two).tag).toBe('signals')
-    expect(expandCheck(p, { lighthouses: 60, signals: 60 }, two).tag).toBe('lighthouses')
-  })
-
-  it('refuses a place under construction, with that reason', () => {
-    const r = expandCheck(place({ state: { construction: { kind: 'expand', finishesAt: '2026-12-01T10:00:00Z' }, lastCareAt: null, neglect: 0 } }), { lighthouses: 90 }, fresh)
-    expect(r.ok).toBe(false)
-    expect(r.reasons.join(' ')).toMatch(/construction/)
+    expect(expandEarned(p, fam({ lighthouses: 60, signals: 75 }), two, none).family).toBe('signals')
+    expect(expandEarned(p, fam({ lighthouses: 60, signals: 60 }), two, none).family).toBe('lighthouses')
   })
 
   describe('the topics of what a place shows count as its tags (Roman, 14 November)', () => {
-    // A place whose tag is never fed (like Home's) can still grow on what it holds.
     const home = place({ tags: ['home'] })
     const shown = (topics: string[], placedIn: string | null = 'house-of-lights') => ({ topics, placedIn, source: { fetchedAt: '2026-11-19T10:00:00Z' } })
     const piled = (n: number, topic: string) => since('2026-11-20T17:10:00Z', n, [topic])
-
-    it('lets a place grow on a topic of something shown in it, when that topic has the weight and 3 souvenirs since', () => {
-      const fresh = { ...shown(['lidar']), source: { fetchedAt: '2026-11-21T10:00:00Z' } }
-      const r = expandCheck(home, { home: 0, lidar: 40 }, [fresh, ...piled(2, 'lidar')])
-      expect(r).toEqual({ ok: true, tag: 'lidar', reasons: [] })
+    it('lets a place be earned on a topic of something shown in it', () => {
+      const f = { ...shown(['lidar']), source: { fetchedAt: '2026-11-21T10:00:00Z' } }
+      expect(expandEarned(home, fam({ home: 0, lidar: 40 }), [f, ...piled(2, 'lidar')], none)).toMatchObject({ earned: true, family: 'lidar' })
     })
-
     it('does not count a topic of a souvenir that is in the pile or in another place', () => {
-      const r = expandCheck(home, { lidar: 90 }, [shown(['lidar'], null), shown(['lidar'], 'workshop'), ...piled(3, 'lidar')])
-      expect(r.ok).toBe(false)
+      expect(expandEarned(home, fam({ lidar: 90 }), [shown(['lidar'], null), shown(['lidar'], 'workshop'), ...piled(3, 'lidar')], none).earned).toBe(false)
     })
-
-    it('counts the 3 souvenirs on the topic wherever they are, since the place last changed size', () => {
-      expect(expandCheck(home, { lidar: 40 }, [...piled(3, 'lidar'), shown(['lidar'], 'house-of-lights')]).ok).toBe(true)
-      expect(expandCheck(home, { lidar: 40 }, [shown(['lidar']), ...piled(1, 'lidar')]).ok).toBe(false)
-    })
-
-    it('makes a shown topic a candidate even when the souvenir that shows it is older than the last size change', () => {
-      const old = { topics: ['lidar'], placedIn: 'house-of-lights', source: { fetchedAt: '2026-11-01T10:00:00Z' } }
-      expect(expandCheck(home, { lidar: 40 }, [old, ...piled(3, 'lidar')]).ok).toBe(true)
-    })
-
-    it('is the same topic however it is spelled, and a tag and a shown topic are one candidate', () => {
-      const r = expandCheck(place({ tags: ['Signals'] }), { signals: 35 }, [shown(['signals']), ...piled(3, 'SIGNALS')])
-      expect(r).toMatchObject({ ok: true })
-    })
-
-    it('still takes the heaviest candidate, tags and shown topics together, and the first by name on a tie', () => {
-      const souvenirs = [shown(['lidar']), ...piled(3, 'lidar'), ...piled(3, 'lighthouses')]
-      expect(expandCheck(place({ tags: ['lighthouses'] }), { lighthouses: 40, lidar: 60 }, souvenirs).tag).toBe('lidar')
-      expect(expandCheck(place({ tags: ['lighthouses'] }), { lighthouses: 50, lidar: 50 }, souvenirs).tag).toBe('lidar')
-    })
-
-    it('says in the reason that shown topics count', () => {
-      const r = expandCheck(home, {}, [shown(['lidar'])])
-      expect(r.reasons.join(' ')).toMatch(/topics of what it shows/)
-    })
-  })
-
-  it('says every reason at once', () => {
-    const r = expandCheck(place({ state: { construction: { kind: 'found', finishesAt: '2026-12-01T10:00:00Z' }, lastCareAt: null, neglect: 0 } }), {}, [])
-    expect(r.reasons.length).toBeGreaterThanOrEqual(2)
   })
 })
 

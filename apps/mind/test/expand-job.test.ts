@@ -210,15 +210,12 @@ describe('the expand handler (spec 10.2)', () => {
     expect(out.reason).toMatch(/no call was made|budget/i)
   })
 
-  it('checks the conditions of 2.5 again, and makes no call when they no longer hold', async () => {
+  it('builds an expand that has not earned the lower price: earning is a price, not a gate (spec v4 2.2)', async () => {
     stock(25, 3)
     const { llm, calls } = fakeLlm([roomAnswer()])
     const out = await run(handler(llm))
-    expect(calls).toHaveLength(0)
-    expect(out.status).toBe('failed')
-    expect(out.reason).toMatch(/weight 30/)
-    stock(60, 2)
-    expect((await run(handler(fakeLlm([roomAnswer()]).llm))).reason).toMatch(/3 souvenirs/)
+    expect(calls).toHaveLength(1)
+    expect(out.status).toBe('done')
   })
 
   it('fails without a call when the place is gone or is under construction', async () => {

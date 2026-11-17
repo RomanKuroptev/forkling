@@ -95,7 +95,7 @@ describe('the plan offers an expand only where spec 2.5 allows it', () => {
   it('lists the places that have earned an expand, with the tag, so Merge knows where to look', async () => {
     const fake = fakeLlm(planFor(expandStep()))
     await runTick(dir, deps(fake.llm, NOW))
-    expect(fake.calls[0]!.user).toMatch(/<growable>[\s\S]*house-of-lights \(signals\)[\s\S]*<\/growable>/)
+    expect(fake.calls[0]!.user).toMatch(/<growable>[\s\S]*house-of-lights \(your reading on signals\)[\s\S]*<\/growable>/)
   })
 
   it('offers a place whose own tag is never fed when it shows a souvenir on an interest that is (Roman, 14 November)', async () => {
@@ -104,7 +104,7 @@ describe('the plan offers an expand only where spec 2.5 allows it', () => {
     put('souvenirs/2026-11-02-s4.json', { ...read('souvenirs/2026-11-02-s4.json'), placedIn: 'house-of-lights' })
     const fake = fakeLlm(planFor(expandStep()))
     await runTick(dir, deps(fake.llm, NOW))
-    expect(fake.calls[0]!.user).toMatch(/<growable>[\s\S]*house-of-lights \(signals\)[\s\S]*<\/growable>/)
+    expect(fake.calls[0]!.user).toMatch(/<growable>[\s\S]*house-of-lights \(your reading on signals\)[\s\S]*<\/growable>/)
     expect(read('mind/goals.json').today.steps[0]).toMatchObject({ verb: 'expand', targetId: 'house-of-lights' })
   })
 
@@ -120,10 +120,10 @@ describe('the plan offers an expand only where spec 2.5 allows it', () => {
     expect(read('mind/goals.json').today.steps[0]).toMatchObject({ verb: 'expand', targetId: 'house-of-lights' })
   })
 
-  it('turns down an expand of a place whose tag is under weight 30 or has fewer than 3 souvenirs', async () => {
-    interests(30) // fades to about 28 by the morning
-    await runTick(dir, deps(fakeLlm(planFor(expandStep()), true).llm, NOW))
-    expect(stateOf().rejections.at(-1)!.reasons.join(' ')).toMatch(/not ready to grow/)
+  it('takes an expand of a place that has not earned it, at the full price of 50 (a price, never a gate)', async () => {
+    interests(30) // fades to about 28 by the morning: nothing is earned
+    await runTick(dir, deps(fakeLlm(planFor(expandStep())).llm, NOW))
+    expect(read('mind/goals.json').today.steps[0]).toMatchObject({ verb: 'expand', targetId: 'house-of-lights' })
   })
 
   it('turns down an expand of the same place twice in a row', async () => {
@@ -135,7 +135,7 @@ describe('the plan offers an expand only where spec 2.5 allows it', () => {
   it('turns down an expand of a place under construction', async () => {
     put('places/house-of-lights.json', lights({ state: { construction: { kind: 'expand', finishesAt: '2026-11-04T10:00:00Z' }, lastCareAt: null, neglect: 0, lamps: true } }))
     await runTick(dir, deps(fakeLlm(planFor(expandStep()), true).llm, NOW))
-    expect(stateOf().rejections.at(-1)!.reasons.join(' ')).toMatch(/not ready to grow/)
+    expect(stateOf().rejections.at(-1)!.reasons.join(' ')).toMatch(/cannot be expanded/)
   })
 
   it('does not list a place that has not earned one', async () => {
@@ -173,7 +173,7 @@ describe('an expand step asks the builders (spec 2.4, 10.2)', () => {
   it('rests when the place stops being ready between the plan and the step (the conditions are checked again)', async () => {
     const fake = fakeLlm(planFor(expandStep()))
     await runTick(dir, deps(fake.llm, NOW))
-    rmSync(file('souvenirs'), { recursive: true })
+    put('places/house-of-lights.json', lights({ state: { construction: { kind: 'expand', finishesAt: '2026-11-04T10:00:00Z' }, lastCareAt: null, neglect: 0, lamps: true } }))
     await runTick(dir, deps(fake.llm, minutesAfter(31)))
     expect(jobFiles()).toEqual([])
     expect(streamText()).toMatch(/expand of House of Lights could not start/i)
@@ -280,13 +280,6 @@ describe('what comes back from the builders (spec 10.2: the loop checks it again
     expect(out.written).not.toContain('places/house-of-lights.json')
     expect(streamText()).toMatch(/could not be built/i)
     expect(BudgetLedger.parse(read('brain/budget.json')).byKind.expand).toMatchObject({ calls: 1 })
-  })
-
-  it('drops a change when the conditions of 2.5 no longer hold, with the reason', async () => {
-    rmSync(file('souvenirs'), { recursive: true })
-    await settle(result())
-    expect(placeOf('house-of-lights').rooms).toHaveLength(1)
-    expect(streamText()).toMatch(/3 souvenirs/)
   })
 
   it('drops a change when the place is already under construction', async () => {

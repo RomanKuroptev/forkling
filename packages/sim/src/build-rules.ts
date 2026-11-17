@@ -1,5 +1,6 @@
-import { MAX_OPEN_PLACE_REQUESTS, MAX_OPEN_WISHES, isOpenRequest, isOpenWish, type Place, type RequestStatus, type WakeSnapshot, type Wish, type WishDraft, type WishStatus } from '@forkling/schema'
+import { MAX_OPEN_PLACE_REQUESTS, MAX_OPEN_WISHES, isOpenRequest, isOpenWish, type Exhibit, type Place, type RequestStatus, type WakeSnapshot, type Wish, type WishDraft, type WishStatus } from '@forkling/schema'
 import { MAX_PLACES } from './land.ts'
+import type { InterestFamily } from './interest-family.ts'
 import { addDays } from './sleep.ts'
 
 export type { WakeSnapshot }
@@ -34,40 +35,62 @@ export interface Kept {
   placedIn?: string | null | undefined
 }
 
-export type ExpandResult = { ok: boolean; tag: string | null; reasons: string[] }
 export type FoundResult = { ok: boolean; interest: string | null; reasons: string[] }
+export type ExpandAllowed = { ok: boolean; reasons: string[] }
+
+/** An expand is earned by making when a place shows this many new works or projects since it last changed size (spec v4 2.2). */
+export const EARNED_WORKS = 3
 
 /**
- * Whether an expand on a place is allowed (spec 2.5, with Roman's changes of 14 November): one of the place's tags, **or a topic of
- * a souvenir shown in it**, has weight 30 or more (it was 50) and at least 3 souvenirs on that topic were kept since the place last
- * changed size, and the land is free of construction. A place's own tags are fixed when it is founded and Home's and the Workshop's
- * are never fed by reading, so what a place holds is what lets it grow. `weights` are the interest weights now. Gives the topic that
- * qualifies (the heaviest, the first by name on a tie) or every reason it does not, in plain words. (Closed places, spec 9.9, are not
- * offered for expand either.)
+ * Whether an expand on a place is allowed (spec v4 2.2, the rails only): it is not closed, not under construction and not the place
+ * expanded last. There is no interest gate; the price and the points do the rest. The place's existence and the land limits are checked
+ * by the plan and the patch checks.
  */
-export function expandCheck(place: Pick<Place, 'id' | 'tags' | 'founded' | 'history' | 'state'>, weights: Readonly<Record<string, number>>, souvenirs: readonly Kept[]): ExpandResult {
+export function expandAllowed(place: Pick<Place, 'id' | 'state'>, lastExpandedPlace: string | null): ExpandAllowed {
   const reasons: string[] = []
   if (place.state.construction !== null) reasons.push('the place is under construction')
   if (place.state.closed) reasons.push('the place is closed, so it is not offered for expand')
+  if (lastExpandedPlace === place.id) reasons.push('it was the last place expanded')
+  return { ok: reasons.length === 0, reasons }
+}
 
-  const weightOf = new Map(Object.entries(weights).map(([k, v]) => [lower(k), v]))
+export interface ExpandEarned {
+  earned: boolean
+  by: 'made' | 'read' | null
+  /** The family that earned it, for a read expand. */
+  family: string | null
+  /** The refs of the works or projects that earned it, for a made expand. */
+  works: string[]
+}
+
+/**
+ * Whether a place has earned the lower price of an expand (spec v4 2.2). **Made:** it shows at least 3 exhibits of kind work or project
+ * added after its last change in size. **Read:** a family with weight 30 or more holds one of its tags or a topic of a souvenir shown in it,
+ * and at least 3 souvenirs on topics of that family were kept since. Made is tried first. Gives the heaviest qualifying family, the first by
+ * name on a tie.
+ */
+export function expandEarned(
+  place: Pick<Place, 'id' | 'tags' | 'founded' | 'history'>,
+  families: readonly InterestFamily[],
+  souvenirs: readonly Kept[],
+  exhibits: readonly Pick<Exhibit, 'kind' | 'ref' | 'added'>[],
+): ExpandEarned {
   const since = lastSizeChange(place)
+  const sinceDay = new Date(since).toISOString().slice(0, 10)
+  const works = exhibits.filter((e) => (e.kind === 'work' || (e.kind as string) === 'project') && e.added > sinceDay)
+  if (works.length >= EARNED_WORKS) return { earned: true, by: 'made', family: null, works: works.map((e) => e.ref ?? '') }
+
   const kept = souvenirs.filter((s) => Date.parse(s.source.fetchedAt) > since)
-  // The place's tags and the topics of what it shows, each topic once however it is spelled.
-  const candidates = [...place.tags, ...souvenirs.filter((s) => s.placedIn === place.id).flatMap((s) => s.topics)].filter((t, i, all) => all.findIndex((o) => lower(o) === lower(t)) === i)
-  const rows = candidates.map((tag) => ({
-    tag,
-    weight: weightOf.get(lower(tag)) ?? 0,
-    souvenirs: kept.filter((s) => s.topics.some((t) => lower(t) === lower(tag))).length,
-  }))
-  const qualifying = rows.filter((r) => r.weight >= EXPAND_MIN_WEIGHT && r.souvenirs >= EXPAND_MIN_SOUVENIRS).sort((a, b) => b.weight - a.weight || lower(a.tag).localeCompare(lower(b.tag)))
-  if (qualifying.length === 0) {
-    const heavy = rows.filter((r) => r.weight >= EXPAND_MIN_WEIGHT)
-    if (heavy.length === 0) reasons.push(`none of its tags or the topics of what it shows (${candidates.slice(0, 6).join(', ')}) has weight ${EXPAND_MIN_WEIGHT} or more`)
-    else reasons.push(`a topic at weight ${EXPAND_MIN_WEIGHT} or more needs ${EXPAND_MIN_SOUVENIRS} souvenirs kept on it since the place last changed size (${heavy.map((r) => `${r.tag}: ${r.souvenirs}`).join(', ')})`)
-  }
-  if (reasons.length > 0) return { ok: false, tag: null, reasons }
-  return { ok: true, tag: qualifying[0]!.tag, reasons: [] }
+  const mine = new Set([...place.tags, ...souvenirs.filter((s) => s.placedIn === place.id).flatMap((s) => s.topics)].map(lower))
+  const qualifying = families
+    .filter((f) => f.weight >= EXPAND_MIN_WEIGHT && f.members.some((m: string) => mine.has(lower(m))))
+    .filter((f) => {
+      const names = new Set(f.members.map(lower))
+      return kept.filter((s) => s.topics.some((t) => names.has(lower(t)))).length >= EXPAND_MIN_SOUVENIRS
+    })
+    .sort((a, b) => b.weight - a.weight || lower(a.name).localeCompare(lower(b.name)))
+  if (qualifying.length > 0) return { earned: true, by: 'read', family: qualifying[0]!.name, works: [] }
+  return { earned: false, by: null, family: null, works: [] }
 }
 
 /** Notes the interests at 40 or more on a wake day, keeping the last 3 days (the same day replaces itself). */

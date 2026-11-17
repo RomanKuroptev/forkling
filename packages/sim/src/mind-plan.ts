@@ -75,8 +75,10 @@ export interface MindPlanContext {
   places: ReadonlySet<string>
   /** Places that have had no care for 7 or more days. */
   revisitable: ReadonlySet<string>
-  /** Places that may grow: a tag, or a topic of what is shown in it, at weight 30 or more with 3 souvenirs kept since, and no construction (spec 2.5). */
+  /** Places that may be expanded: not closed and not under construction (spec v4 2.2, the rails only). */
   expandable: ReadonlySet<string>
+  /** Places that have earned the lower price of an expand (spec v4 2.2). */
+  expandEarned?: ReadonlySet<string>
   /** Whether an interest has earned a new place and fewer than 2 place requests are open (spec 2.5). */
   canFound: boolean
   /** Visitor notes found and not yet answered. */
@@ -185,7 +187,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
       case 'expand':
         if (!target) here.push(`${n}: expand needs a place`)
         else if (!c.places.has(target)) here.push(`${n}: there is no place "${target}"`)
-        else if (!c.expandable.has(target)) here.push(`${n}: "${target}" is not ready to grow`)
+        else if (!c.expandable.has(target)) here.push(`${n}: "${target}" is closed or still under construction, so it cannot be expanded`)
         else if (lastExpanded === target) here.push(`${n}: expand on "${target}" twice in a row`)
         if (target) lastExpanded = target
         break
@@ -245,7 +247,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
   }
 
   const valid = steps.filter((s): s is MindStep => isVerb(s.verb))
-  const cost = planCost(valid, c.prices)
+  const cost = planCost(valid.map((s) => (s.verb === 'expand' && s.target && c.expandEarned?.has(s.target.trim()) ? { ...s, earned: true } : s)), c.prices)
   if (cost > c.pointsInHand) reasons.push(`the plan costs ${cost} points and you have ${c.pointsInHand} in hand`)
 
   return reasons.length > 0 ? { ok: false, reasons } : { ok: true, steps: valid }

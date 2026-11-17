@@ -95,6 +95,7 @@ export const MindState = z.object({
     .object({
       fullWork: z.number().int().min(1),
       expand: z.number().int().min(1),
+      expandEarned: z.number().int().min(1).optional(),
       trip: z.number().int().min(1),
       tend: z.number().int().min(1),
       sketch: z.number().int().min(1),

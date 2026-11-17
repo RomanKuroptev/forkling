@@ -58,6 +58,15 @@ describe('prompt golden files', () => {
     }
     await expect(buildUser(withPast)).toMatchFileSnapshot('golden/user-morning-past.txt')
   })
+  it('decide user prompt with interest families and the places that earned the lower expand price', async () => {
+    const topic = (weight: number, trail: string) => ({ weight, firstSeen: '2026-11-10T08:00:00Z', lastFed: '2026-11-16T08:00:00Z', sources: [], history: [{ at: '2026-11-16T08:00:00Z', change: 4, event: 'page', trail }] })
+    const withFamilies = {
+      ...input('decide'),
+      interests: Interests.parse({ version: 2, topics: { lidar: topic(20, 't1'), 'forest canopy': topic(14, 't1'), 'digital elevation model': topic(12, 't1'), 'joke papers': { ...topic(10, 't2'), history: [] } } }),
+      growable: ['workshop (3 works shown since it last changed size)', 'home (your reading on lidar)'],
+    }
+    await expect(buildUser(withFamilies)).toMatchFileSnapshot('golden/user-decide-families.txt')
+  })
   it('decide user prompt with notes: found notes to answer and notes it kept, as data', async () => {
     const withNotes = {
       ...input('decide'),
