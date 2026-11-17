@@ -8,7 +8,11 @@ Plan: [`docs/spec/v4/parallel-plan.md`](docs/spec/v4/parallel-plan.md). One coor
 
 - **Checked at the start (17 November, 21:15Z):** `deploy.yml` with tag v0.16.0 succeeded ("up on v0.16.0"), `/health` up with no "push failing" (warnings: 18 decide calls today, 4 plans turned down), Merge's four workflows pin v0.16.0.
 - **Lane 0:** spec v4 and the look committed (this PR); next, the fast-forward command and step 8's run report.
-- **Lane A (steps 1, 2), lane B (steps 3, 4), lane C (steps 5, 6), lane D (look L3, L1, L1b, L2, L4, then step 7):** starting after this PR is merged.
+- **Lane 0:** spec merged (#178). A lane-0 helper builds the run report, then the fast-forward command (fakes only; the coordinator runs the real runs).
+- **Lane A (steps 1, 2):** step 1 slice A merged (#179, prompt review passed): `interestFamilies()` in sim, and the planner's interests block lists the top 10 families ("lidar (60; also …)"). Slice B (expand by price) next; lane B's `build` verb waits for it.
+- **Lane B (steps 3, 4):** building step 3 (3A project files, 3B one browser path, 3C server side, 3D runbook). Approved change from the step file: the browser runs through a root-owned socket-activated unit (`forkling-sandbox.socket` + `forkling-sandbox@.service`) with the same properties, instead of `systemd-run` with sudoers or polkit, because the mind service's `NoNewPrivileges` blocks sudo and polkit cannot pin a transient unit's properties.
+- **Lane C (steps 5, 6):** building step 5 slice A (threads). No new plan check: the 3-reply close is enforced at note intake and by `threadState`.
+- **Lane D (look, step 7):** building L3 (first person).
 - **Releases:** R1 when lanes A and C are done, step 3's code and look L3 to L4 are merged and a fast-forward run passes; R2 when step 4 and step 7 are merged and `/health` says `sandbox: ok`.
 
 ## v0.16.0 (audit fixes, release of 17 November)
