@@ -5,7 +5,8 @@ Read this first. Update it before every commit and before you stop.
 ## Audit fixes (17 November, Roman's 8 items, one PR each, plan in `docs/plans/merge-audit-2026-11-17.md`)
 
 Order: 1 wants, 2 goal vs variety, 3 sources, 4 thoughts, 5 voice, 6 prices, 7 doors, 8 works, then one review PR for prompt text and new hosts (Roman merges), then one release (pin-only commit in Merge's repo). Prompt text changes are held for the review PR, so the code PRs leave `golden/` alone.
-- **1 Wants (in review):** a step may name a want but no longer has to; `"long"` is accepted when there is a long goal (`longGoal` in the plan context). Held for the review PR: the system prompt line that tells Merge it can use "long".
+- **1 Wants (merged, #168):** a step may name a want but no longer has to; `"long"` is accepted when there is a long goal (`longGoal` in the plan context). Held for the review PR: the system prompt line that tells Merge it can use "long".
+- **2 Goal vs variety (in review):** a plan turned down by `sameTopicWrites` while the long goal is on that topic flags an early goal review (`mind.goalReviewEarly`, once a day, `flagGoalClosed` in `tick/variety.ts`, `goalClosedForWriting` in sim); the review also sees 30 timeline lines, not 15. After 2 turned-down plans in a row (`mind.planRejects`) no `replan` trigger fires for 60 minutes (a step that ran out, a new day or a note still do), and the first call after that starts the count again. Held for the review PR: the goal-review prompt line "this topic is closed for writing for now" (the count is already in `goalReviewEarly.closed`) and the decide prompt naming closed topics.
 
 ## Make Merge fun (started 16 November, Roman's four slices)
 

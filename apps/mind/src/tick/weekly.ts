@@ -98,7 +98,7 @@ export async function weeklyStep(t: Tick): Promise<void> {
   t.parts.push('weekly review')
 }
 
-const MAX_GOAL_STEP_LINES = 15
+const MAX_GOAL_STEP_LINES = 30
 const GOAL_REVIEW_STEP_DAYS = 3
 
 /**
@@ -111,7 +111,9 @@ export async function goalReviewStep(t: Tick): Promise<void> {
   const { mind } = t
   const long = t.goals.long
   if (!long || t.parts.includes('weekly review')) return
-  if (!goalReviewDue({ nowMs: t.nowMs, asleep: t.asleep, reviewedAt: long.reviewedAt, lastTriedMs: mind.goalReviewTriedAt ? Date.parse(mind.goalReviewTriedAt) : null })) return
+  // The topic of the goal is closed for writing: look at it early, once a day (audit 17 Nov).
+  const early = mind.goalReviewEarly?.date === t.today && mind.goalReviewEarlyOn !== t.today
+  if (!goalReviewDue({ nowMs: t.nowMs, asleep: t.asleep, reviewedAt: long.reviewedAt, lastTriedMs: mind.goalReviewTriedAt ? Date.parse(mind.goalReviewTriedAt) : null, early })) return
 
   const steps = readTimelineSince(t.dir, t.today, GOAL_REVIEW_STEP_DAYS).slice(-MAX_GOAL_STEP_LINES)
   const user = buildGoalReviewUser({
@@ -134,7 +136,11 @@ export async function goalReviewStep(t: Tick): Promise<void> {
   applyLongGoal(t, parsed.data)
   if (parsed.data.action === 'continue') t.remember.push({ at: t.nowIso, kind: 'event', text: clampText(`I looked at my long goal and kept it: ${parsed.data.reason.trim() || 'It is still what I want.'}`, 300) })
   delete mind.goalReviewTriedAt
-  t.parts.push('reviewed the long goal')
+  if (early) {
+    mind.goalReviewEarlyOn = t.today
+    delete mind.goalReviewEarly
+  }
+  t.parts.push(early ? 'reviewed the long goal early' : 'reviewed the long goal')
 }
 
 /** The one optional request to Roman (spec 9.5): up to 120 words in Merge's voice. It is kept as a file and shown on `/requests/`; nothing changes because of it. */

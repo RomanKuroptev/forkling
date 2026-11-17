@@ -102,6 +102,25 @@ describe('scoreSurprise', () => {
       expect(kinds(calm)).toEqual([])
     })
 
+    describe('after 2 plans in a row were turned down (audit 17 Nov)', () => {
+      const rejected = (count: number, at: string) => MindState.parse({ ...calm.mindState, planRejects: { count, lastAt: at } })
+      it('asks no more for a replan for 60 minutes after the second rejection', () => {
+        expect(kinds({ ...noStep, mindState: rejected(2, '2026-11-03T09:30:00Z') })).toEqual([])
+        expect(kinds({ ...noStep, mindState: rejected(3, '2026-11-03T09:30:00Z') })).toEqual([])
+      })
+      it('asks again once 60 minutes have passed since the last rejection', () => {
+        expect(kinds({ ...noStep, mindState: rejected(2, '2026-11-03T09:00:00Z') })).toEqual(['replan'])
+      })
+      it('still asks after one rejection, and a thought asking for a replan is held back too', () => {
+        expect(kinds({ ...noStep, mindState: rejected(1, '2026-11-03T09:59:00Z') })).toEqual(['replan'])
+        const asked = MindState.parse({ lastPlanDate: '2026-11-03', planRejects: { count: 2, lastAt: '2026-11-03T09:30:00Z' }, thought: { replanRequest: { reason: 'not where I thought', at: '2026-11-03T09:58:00Z' } } })
+        expect(kinds({ ...calm, mindState: asked })).toEqual([])
+      })
+      it('lets a step that ran out through, because that is a new trigger', () => {
+        expect(kinds({ ...calm, nowMs: Date.parse('2026-11-03T10:11:00Z'), mindState: rejected(2, '2026-11-03T10:00:00Z') })).toEqual(['stepDone'])
+      })
+    })
+
     it('waits until replanAfter, then asks again', () => {
       const later = (iso: string) => MindState.parse({ ...calm.mindState, replanAfter: iso })
       expect(kinds({ ...noStep, mindState: later('2026-11-03T10:30:00Z') })).toEqual([])

@@ -107,6 +107,34 @@ describe('the long goal is looked at every 3 days (and not only on Sunday)', () 
     expect(soon.seen).toHaveLength(0)
   })
 
+  it('runs early, a day after the last review, when the goal topic is closed for writing, and only once that day', async () => {
+    const reviewed = { ...GOAL, reviewedAt: '2026-11-15T14:00:00Z' }
+    const { t, seen } = tick(answer({ action: 'change', text: 'Make one sketch about lidar light.', reason: 'The pages are closed for now.' }), {}, { goalReviewEarly: { date: '2026-11-16', closed: 3 } }, reviewed)
+    await goalReviewStep(t)
+    expect(seen).toHaveLength(1)
+    expect(t.goals.long?.text).toBe('Make one sketch about lidar light.')
+    expect(t.mind.goalReviewEarly).toBeUndefined()
+    expect(t.mind.goalReviewEarlyOn).toBe('2026-11-16')
+    // The same day it is flagged again: no second early review.
+    t.mind.goalReviewEarly = { date: '2026-11-16', closed: 3 }
+    t.goals.long = { ...t.goals.long!, reviewedAt: '2026-11-15T14:00:00Z' }
+    await goalReviewStep(t)
+    expect(seen).toHaveLength(1)
+  })
+
+  it('ignores an early flag from another day', async () => {
+    const { t, seen } = tick(answer(), {}, { goalReviewEarly: { date: '2026-11-15', closed: 3 } }, { ...GOAL, reviewedAt: '2026-11-15T14:00:00Z' })
+    await goalReviewStep(t)
+    expect(seen).toHaveLength(0)
+  })
+
+  it('a failed early try keeps the flag for the next try', async () => {
+    const { t } = tick(null, {}, { goalReviewEarly: { date: '2026-11-16', closed: 3 } }, { ...GOAL, reviewedAt: '2026-11-15T14:00:00Z' })
+    await goalReviewStep(t)
+    expect(t.mind.goalReviewEarly).toEqual({ date: '2026-11-16', closed: 3 })
+    expect(t.mind.goalReviewEarlyOn).toBeUndefined()
+  })
+
   it('does not run in the same tick as a weekly review that has just looked at the goal', async () => {
     const { t, seen } = tick(answer(), { parts: ['weekly review'] })
     await goalReviewStep(t)

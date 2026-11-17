@@ -1,8 +1,9 @@
-import { hourInZone } from '@forkling/sim'
+import { hourInZone, REJECTS_BEFORE_HOLD, REPLAN_HOLD_MS, SAME_TOPIC_REASON } from '@forkling/sim'
 import { clampText } from '../decision.ts'
 import type { Tick } from './context.ts'
 import { leaveStep } from './apply-step.ts'
 import { checkPlan, startStep } from './plan.ts'
+import { flagGoalClosed } from './variety.ts'
 
 /** A late night is only a choice for the evening. */
 const LATE_NIGHT_FROM_HOUR = 18
@@ -70,10 +71,16 @@ export function applyDecision(t: Tick): void {
       leaveStep(t)
       goals.today = { date: today, steps: usable, reason: clampText((decision.planReason ?? decision.thought).trim() || 'This is what I feel like doing.', 200) }
       delete mind.replanAfter
+      delete mind.planRejects
       startStep(t, 0, decision.thought)
       if (thinkKind !== 'morning') parts.push('new plan')
     } else {
       mind.rejections = [...mind.rejections, { at: nowIso, reasons: check.reasons.slice(0, 8) }].slice(-10)
+      // Plans turned down in a row: after 2 no replan is asked for until 60 minutes pass, and the call that is then allowed starts the count again.
+      const prev = mind.planRejects
+      const fresh = !prev || (prev.count >= REJECTS_BEFORE_HOLD && nowMs - Date.parse(prev.lastAt) >= REPLAN_HOLD_MS)
+      mind.planRejects = { count: fresh ? 1 : prev.count + 1, lastAt: nowIso }
+      if (check.reasons.some((r) => r.includes(SAME_TOPIC_REASON))) flagGoalClosed(t)
       notes.push(`plan rejected: ${check.reasons.join('; ')}`)
       remember.push({ at: nowIso, kind: 'rejected', text: `A plan was turned down: ${check.reasons[0] ?? 'it could not be carried out'}` })
       parts.push('plan rejected')

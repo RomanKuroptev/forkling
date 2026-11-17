@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GOAL_REVIEW_DAYS, MAX_REVIEW_RENAMES, WEEKLY_RETRY_MS, goalReviewDue, localWeekday, weeklyDue } from '../src/weekly.ts'
+import { GOAL_REVIEW_DAYS, MAX_REVIEW_RENAMES, WEEKLY_RETRY_MS, goalClosedForWriting, goalReviewDue, localWeekday, weeklyDue } from '../src/weekly.ts'
 
 const TZ = 'Europe/Stockholm'
 // 2026-11-15 is a Sunday; Stockholm is UTC+1 in November, so 19:00Z is 20:00 there.
@@ -67,5 +67,43 @@ describe('goalReviewDue (the long goal is looked at every 3 days)', () => {
     expect(GOAL_REVIEW_DAYS).toBe(3)
     expect(localWeekday('Europe/Stockholm', now)).toBe(1)
     expect(goalReviewDue(due)).toBe(true)
+  })
+})
+
+describe('goalReviewDue, early (the topic of the long goal is closed for writing)', () => {
+  const DAY = 86_400_000
+  const now = Date.parse('2026-11-17T14:00:00Z')
+  const fresh = { nowMs: now, asleep: false, reviewedAt: new Date(now - DAY).toISOString(), lastTriedMs: null }
+  it('is due a day after the last review when early is asked for, and not without it', () => {
+    expect(goalReviewDue(fresh)).toBe(false)
+    expect(goalReviewDue({ ...fresh, early: true })).toBe(true)
+  })
+  it('still never runs asleep, and still waits 30 minutes after a try that gave nothing', () => {
+    expect(goalReviewDue({ ...fresh, early: true, asleep: true })).toBe(false)
+    expect(goalReviewDue({ ...fresh, early: true, lastTriedMs: now - 29 * 60_000 })).toBe(false)
+    expect(goalReviewDue({ ...fresh, early: true, lastTriedMs: now - 30 * 60_000 })).toBe(true)
+  })
+})
+
+describe('goalClosedForWriting', () => {
+  const page = (day: number, title: string, text: string) => ({ at: `2026-11-${day}T10:00:00Z`, title, text, target: title })
+  const long = { text: 'write one short page on telling a real lidar find from a wishful one', reason: 'lidar finds under tree canopy are easy to over-read' }
+  const common = 'lidar canopy ground returns terrain elevation forest archaeology surface survey'
+  const lidar = [
+    page(14, 'Lidar under trees', `${common} wishful`),
+    page(15, 'Lidar and wishful finds', `${common} real find`),
+    page(16, 'Reading a lidar find', `${common} careful`),
+  ]
+  const now = Date.parse('2026-11-17T12:00:00Z')
+  it('returns the pages that close the topic of the goal once the limit is reached', () => {
+    expect(goalClosedForWriting(long, { limit: 3, days: 7, pages: lidar }, now).length).toBe(3)
+  })
+  it('returns nothing under the limit, or when the pages are about something else', () => {
+    expect(goalClosedForWriting(long, { limit: 4, days: 7, pages: lidar }, now)).toEqual([])
+    const other = [page(15, 'A lamp', 'lamp dims nobody room'), page(16, 'A door', 'door opens stop walking'), page(16, 'A hill', 'hill lit angles')]
+    expect(goalClosedForWriting(long, { limit: 3, days: 7, pages: other }, now)).toEqual([])
+  })
+  it('does not count pages older than the window', () => {
+    expect(goalClosedForWriting(long, { limit: 3, days: 2, pages: lidar }, now)).toEqual([])
   })
 })
