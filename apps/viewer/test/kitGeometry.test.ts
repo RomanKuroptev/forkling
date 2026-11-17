@@ -338,7 +338,8 @@ describe('windows and lamps that light at night', () => {
   })
 
   it('sticks out of the wall on both faces for every style, so the glass is seen from the path and from inside (and can light up)', () => {
-    for (const style of kit.styles) {
+    // The tower is drawn by the building model, whose lit things (ring, crown, edge) are not windows: test/building.test.ts checks its windows.
+    for (const style of kit.styles.filter((s) => s.id !== 'tower')) {
       const wall = part(style.wall).size[2]
       const glass = exteriorInstances(withStyle(home, style.id), kit, 0).filter((i) => i.glow)
       expect(glass.length, style.id).toBeGreaterThan(0)

@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { isOpenRequest, parseRequest, Wish, type Place, type PlaceRequest, type SelfRequest } from '@forkling/schema'
+import { isOpenRequest, parseRequest, Wish, type Place, type PlaceRequest, type SelfRequest, type Tool } from '@forkling/schema'
 import { latestFound } from '@forkling/sim'
 import { esc } from './md.ts'
 
@@ -102,6 +102,8 @@ export interface RequestsInput {
   timezone?: string
   /** What Merge asked Roman about its own setup in its weekly reviews (spec 9.5). */
   selfRequests?: readonly SelfRequest[]
+  /** What Roman has given Merge (spec v4 8). */
+  tools?: readonly Tool[]
   add: (rel: string, input: { title: string; active: string; body: string }) => void
 }
 
@@ -111,7 +113,8 @@ export function renderRequests(i: RequestsInput): void {
   const day = (iso: string) => dayIn(iso, i.timezone ?? 'UTC')
   // Place requests are gone (spec v4 2.3): Merge founds its own places. Gifts, wishes and the weekly requests stay.
   const listed = i.requests.filter((r) => r.kind === 'gift')
-  if (listed.length === 0 && i.wishes.length === 0 && own.length === 0) return
+  const tools = i.tools ?? []
+  if (listed.length === 0 && i.wishes.length === 0 && own.length === 0 && tools.length === 0) return
   const placeFor = (r: PlaceRequest) => (r.status === 'built' || r.status === 'self-built' ? i.places.find((p) => sameChunk(p.chunk, r.chunk)) : undefined)
 
   const item = (r: PlaceRequest) => {
@@ -130,8 +133,9 @@ export function renderRequests(i: RequestsInput): void {
     ].join('')
   }
 
+  const SELF_STATUS_WORDS: Record<SelfRequest['status'], string> = { open: 'No answer yet.', yes: 'Roman said yes.', no: 'Roman said no.', later: 'Roman said later.', built: 'Roman built it.' }
   const ownItem = (r: SelfRequest) =>
-    `<li class="request" data-self-request="${esc(r.date)}"><strong>${esc(r.date)}</strong>${paragraphs(r.body)}<p><em>${r.answer ? `Roman answered: ${esc(r.answer)}` : 'No answer yet.'}</em></p></li>`
+    `<li class="request" data-self-request="${esc(r.date)}" data-kind="${esc(r.kind)}" data-status="${esc(r.status)}"><strong>${esc(r.title || r.date)}</strong> <span class="quiet">${esc(r.kind)}, asked ${esc(r.date)}</span>${paragraphs(r.body)}<p><em>${esc(SELF_STATUS_WORDS[r.status])}</em>${r.answer ? ` Roman answered: ${esc(r.answer)}` : ''}</p></li>`
 
   const waiting = listed.filter(isOpenRequest).sort((a, b) => Number(b.status === 'building') - Number(a.status === 'building'))
   const answered = listed.filter((r) => !isOpenRequest(r)).reverse()
@@ -151,8 +155,15 @@ export function renderRequests(i: RequestsInput): void {
       ...(own.length > 0
         ? [
             '<h2>Asked about its own setup</h2>',
-            '<p class="quiet">Once a week Merge may ask Roman about its own setup: one change to a limit, a site, a part the kit lacks or a rule. Nothing changes because of a request. Roman may answer, and Merge reads his answer the next week.</p>',
+            '<p class="quiet">Once a week Merge may ask Roman about its own setup: for something it wishes it could do, or for a number or a rule it finds wrong. Nothing changes because of a request alone, and nothing is promised. Roman sets a status (yes, no, later or built) and may answer, and Merge reads both the next week.</p>',
             `<ul class="requests">${own.map(ownItem).join('')}</ul>`,
+          ]
+        : []),
+      ...(tools.length > 0
+        ? [
+            '<h2>What Merge can do</h2>',
+            '<p class="quiet">The things Roman has given Merge, in plain words. Only Roman adds to this list.</p>',
+            `<ul class="requests">${tools.map((t) => `<li class="request" data-tool="${esc(t.id)}"><strong>${esc(t.name)}</strong> <span class="quiet">${t.gift ? 'a gift' : 'asked for'}, since ${esc(t.since)}</span><p>${esc(t.what)}</p></li>`).join('')}</ul>`,
           ]
         : []),
       ...(i.wishes.length > 0 ? ['<h2>Wishes</h2>', '<p class="quiet">Things Merge wishes an existing place had: a part the kit lacks, or something made by hand.</p>', `<ul class="requests">${[...i.wishes].reverse().map(wishItem).join('')}</ul>`] : []),

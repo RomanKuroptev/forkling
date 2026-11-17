@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_WANTS, MindState, Note, NotesHidden, Visitors, NotesResponse, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants, WeeklyReview, WorkMeta, formatSelfRequest, parseSelfRequest } from '../src/index.ts'
+import { MAX_WANTS, MindState, Note, NotesHidden, Visitors, NotesResponse, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants, WeeklyReview, WorkMeta, formatSelfRequest, parseSelfRequest, requestAnswerForPrompt } from '../src/index.ts'
 
 const want = {
   id: 'w1',
@@ -185,8 +185,8 @@ describe('the request to Roman as a file (spec 9.5)', () => {
   })
   it('is read back: the date is the file name, the answer is what follows Roman:', () => {
     const text = 'Could I read one more site?\nIt keeps blocking me.\n\nRoman: Not yet. Ask again after the run.\n'
-    expect(parseSelfRequest('2026-11-15', text)).toEqual({ date: '2026-11-15', body: 'Could I read one more site?\nIt keeps blocking me.', answer: 'Not yet. Ask again after the run.' })
-    expect(parseSelfRequest('2026-11-15', 'Just a request.\n')).toEqual({ date: '2026-11-15', body: 'Just a request.', answer: null })
+    expect(parseSelfRequest('2026-11-15', text)).toMatchObject({ date: '2026-11-15', body: 'Could I read one more site?\nIt keeps blocking me.', answer: 'Not yet. Ask again after the run.' })
+    expect(parseSelfRequest('2026-11-15', 'Just a request.\n')).toMatchObject({ date: '2026-11-15', body: 'Just a request.', answer: null })
   })
   it('takes an answer on several lines, and Roman: only at the start of a line', () => {
     const text = 'I asked about Roman: the person.\n\nRoman: Line one.\nLine two.\n'
@@ -249,5 +249,35 @@ describe('stream kinds (spec 9.3, 10.1)', () => {
   it('has reflection and note', () => {
     expect(StreamKind.safeParse('reflection').success).toBe(true)
     expect(StreamKind.safeParse('note').success).toBe(true)
+  })
+})
+
+describe('a request with a kind, a title, a status and an answer (spec v4 8)', () => {
+  const body = 'I would like to read one more place on the web.'
+  it('an old file with no front matter reads as kind other, open, with no title', () => {
+    expect(parseSelfRequest('2026-11-15', body)).toMatchObject({ kind: 'other', title: '', status: 'open', answer: null, body })
+  })
+  it('an old file with an answer keeps it', () => {
+    expect(parseSelfRequest('2026-11-15', `${body}\n\nRoman: Maybe later.`)).toMatchObject({ kind: 'other', answer: 'Maybe later.' })
+  })
+  it('round trips front matter, body and answer', () => {
+    const text = formatSelfRequest({ body, kind: 'tool', title: 'A reading tool', status: 'later', answer: 'Not yet.' })
+    expect(text.startsWith('---\n')).toBe(true)
+    expect(parseSelfRequest('2026-11-22', text)).toEqual({ date: '2026-11-22', kind: 'tool', title: 'A reading tool', status: 'later', body, answer: 'Not yet.' })
+  })
+  it('a status Roman sets in the front matter is read; an unknown status or kind falls back', () => {
+    const text = `---\nkind: tool\ntitle: T\nstatus: built\n---\n${body}\n\nRoman: Done.\n`
+    expect(parseSelfRequest('2026-11-22', text)).toMatchObject({ status: 'built' })
+    expect(parseSelfRequest('2026-11-22', `---\nkind: weird\nstatus: odd\n---\n${body}`)).toMatchObject({ kind: 'other', status: 'open' })
+  })
+  it('a title is up to 60 characters', () => {
+    expect(SelfRequest.safeParse({ date: '2026-11-22', body, title: 'x'.repeat(61) }).success).toBe(false)
+  })
+  it('an answer over 80 words is cut for the prompt and flagged for Roman', () => {
+    const long = Array.from({ length: 100 }, (_, i) => `w${i}`).join(' ')
+    const cut = requestAnswerForPrompt(long)
+    expect(cut.cut).toBe(true)
+    expect(cut.text.split(/\s+/)).toHaveLength(80)
+    expect(requestAnswerForPrompt('Yes, go ahead.')).toEqual({ text: 'Yes, go ahead.', cut: false })
   })
 })

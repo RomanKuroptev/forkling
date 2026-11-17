@@ -34,3 +34,13 @@ Plan approved by the coordinator on 17 November 2026: L3, L1, L1b, L2, L4, then 
 - The pop-up is `merge.exe`: at most 4 lines of about 30 characters, cut with `...`, kept inside the screen (`clampPopup`). Hover labels and the note windows use the same window look (`Win.tsx`, `look-windows.css`).
 - The note panel shows the whole thread (oldest first), an Answer button under the newest reply of an open thread (sends with `replyTo`), and a closed thread says so.
 - Not checked in the world: the face in a screenshot (the sitting cat faces the wall at its desk in the fixture, and `?clip=` needs a camera fix after L3 when `?stand` is used); the four faces are shown from the same grid code on a plain page. Every animation clip still plays by test (the clip list is unchanged) but I did not check each by eye.
+## L1b notes (tower first)
+
+- Front and crown clamped to the 12 m limit of spec 5.2, Roman to decide. The clamp is `MAX_OUTLINE_HEIGHT` in `apps/viewer/src/world/building.ts`; lifting it is one constant.
+- The tower is drawn by `buildingModel` (six slots); the four other styles keep the old drawing until the first style is reviewed. Style ids are unchanged.
+- Shape of a kit part is not read by anything but the viewer, the kit tests and the mind kit-model test; nothing was changed there.
+- Crown rule as built: its tip rises above the front by half the body, and it stands right behind the front, so it shows in the front view.
+- Not done yet: the place name as text on the front title bar (the sign by the door carries it), the front screen showing the newest work (no such data in the viewer yet), and the finished model as wireframe for a place being built (L1b-3).
+- 100 m views are not possible in the fixture world (it is only about 190 m long), so the far shots are 75 m, from behind.
+- Later look PR: strengthen the land grid a little at night (reviewer note on L1).
+- L4 also: lane C sharing: PNG share pictures instead of the SVG for notes threads (`notes/t/<thread>.svg`), and styling the thread pages.

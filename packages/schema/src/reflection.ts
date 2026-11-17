@@ -67,5 +67,8 @@ export const WeeklyReview = z.object({
   renames: z.array(z.object({ kind: z.enum(['place', 'work']), id: z.string(), name: z.string(), reason: z.string() })),
   /** One optional request to Roman, up to 120 words (spec 9.5), or null. Nothing changes because of it. */
   request: z.string().nullable(),
+  /** Spec v4 8: what kind of request it is, and its title (up to 60 characters); null when there is no request. Optional so older answers still parse. */
+  requestKind: z.enum(['tool', 'setting', 'other']).nullish(),
+  requestTitle: z.string().nullish(),
 })
 export type WeeklyReview = z.infer<typeof WeeklyReview>

@@ -22,6 +22,8 @@ import { route } from './tick/route.ts'
 import { boredomStep } from './tick/boredom.ts'
 import { logTick } from './ticklog.ts'
 import { findNotes, replyStep } from './tick/notes.ts'
+import { requestStatusStep } from './tick/requests.ts'
+import { toolStep } from './tick/tools.ts'
 import { reflectionStep } from './tick/reflection.ts'
 import { pricesStep } from './tick/prices.ts'
 import { goalReviewStep, weeklyStep } from './tick/weekly.ts'
@@ -44,6 +46,10 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   settleJobs(t)
   // Notes the world has gained are found as Merge comes upon them (spec 2.2, step 3; 10.1). Code only.
   findNotes(t)
+  // A status Roman set on one of Merge's requests is a stream event (spec v4 8). Code only.
+  requestStatusStep(t)
+  // A tool Roman added to mind/tools.json is announced once (spec v4 8). Code only.
+  toolStep(t)
   fallbackStep(t)
   finishStep(t)
   route(t)

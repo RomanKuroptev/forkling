@@ -1,6 +1,7 @@
 import type { Kit, KitColor, KitPalette, KitPart, Place, PlaceRequest } from '@forkling/schema'
 import { DARK_GLOW, repaint } from './theme.ts'
 import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
+import { buildingModel } from './building.ts'
 import { constructionInstances } from './constructionGeometry.ts'
 import { plotInstances } from './plotGeometry.ts'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
@@ -67,6 +68,13 @@ function look(place: Place, kit: Kit) {
 
 /** The outside of a place: walls with windows on every floor, a door in the front (+z) wall, a roof, as its style and palette say. */
 export function exteriorInstances(place: Place, kit: Kit, baseY: number): Instance[] {
+  // A style drawn by the building model (look.md) is its six slots and the sign by the door; the others keep the drawing below.
+  const model = buildingModel(place, kit, baseY)
+  if (model) {
+    const post = kit.parts.find((p) => p.id === 'sign-post')
+    const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
+    return post ? [...model.instances, ...partInstances(post, signSpot(place, baseY).position, 0, palette)] : model.instances
+  }
   const { palette, wall, window, door, roof } = look(place, kit)
   const [px, pz] = placeCentre(toLandPlace(place))
   const [fw, fd] = place.exterior.footprint
