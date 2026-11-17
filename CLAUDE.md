@@ -64,6 +64,7 @@ pnpm --filter @forkling/mind voice-test   # W0: the voice test (needs ANTHROPIC_
 pnpm mind:local                # one mind tick against a local copy of a world repo (--dry-run prints the prompt and token estimate)
 pnpm --filter @forkling/mind <tick|serve|validate-pr|replay|source-trial>
 pnpm --filter @forkling/mind replay --world <clone>   # the canonical body from a world repo's history beside its plan
+pnpm --filter @forkling/mind run-report --world <clone> --from <date> --to <date>   # step 8's run report: the launch checklist counted from a world repo (writes nothing; Merge never sees it)
 pnpm --filter @forkling/site build                    # render a forkling's Pages site
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 ```

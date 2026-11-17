@@ -8,6 +8,7 @@
     "serve": "node --env-file-if-exists=../../.env src/serve.ts",
     "validate-pr": "node src/validate-pr-cli.ts",
     "replay": "node src/replay-cli.ts",
+    "run-report": "node src/run-report-cli.ts",
     "migrate-w1": "node src/migrate-cli.ts",
     "migrate-w5": "node src/migrate-w5-cli.ts",
     "source-trial": "node --env-file-if-exists=../../.env src/trial-cli.ts",
