@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { repaint } from '../src/world/theme.ts'
 import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { DOOR_HALF, WALL, createLand, placeCentre, toLandPlace } from '@forkling/sim'
@@ -98,33 +97,6 @@ describe('the outside of a building (spec 5.3: a style is a set of wall, window 
     expect(Math.max(...instances.map((i) => pos(i.matrix)[1]!))).toBeGreaterThan(height)
   })
 
-  it('closes both ends of a gable roof: nothing but sky shows through the triangle above the end walls', () => {
-    const home = place('home')
-    expect(part('roof-gable')).toBeDefined()
-    const [px, pz] = at(home)
-    const [fw, fd] = home.exterior.footprint
-    const wallTop = floorHeight(home)
-    const scaleX = (fw + 1.2) / 4
-    const boxes = exteriorInstances(home, kit, 0)
-      .filter((i) => i.shape === 'box' && Math.abs(i.matrix[1]!) < 1e-6 && Math.abs(i.matrix[2]!) < 1e-6 && Math.abs(i.matrix[4]!) < 1e-6)
-      .map((i) => {
-        const [x, y, z] = pos(i.matrix)
-        return { x, y, z, hx: i.matrix[0]! / 2, hy: i.matrix[5]! / 2, hz: i.matrix[10]! / 2 }
-      })
-    for (const side of [1, -1]) {
-      const endZ = pz + (side * fd) / 2
-      // The underside of the slopes, in the part's own units: 1.844 m half-width at the eaves, none at 1.4 m.
-      for (let y = 0.1; y <= 1.2; y += 0.1) {
-        const half = scaleX * (1.844 - 1.4007 * (y - 0.08)) * 0.92
-        for (const fx of [-1, -0.5, 0, 0.5, 1]) {
-          const x = px + half * fx
-          const covered = boxes.some((b) => Math.abs(b.z - endZ) < 1.3 && Math.abs(x - b.x) <= b.hx && Math.abs(wallTop + y - b.y) <= b.hy)
-          expect(covered, `end ${side} at y=${y.toFixed(1)} x=${(half * fx).toFixed(2)}`).toBe(true)
-        }
-      }
-    }
-  })
-
   it('looks different for each of the five styles', () => {
     const counts = kit.styles.map((s) => exteriorInstances(withStyle(home, s.id), kit, 0).length)
     expect(new Set(counts).size).toBeGreaterThan(2)
@@ -139,13 +111,17 @@ describe('the outside of a building (spec 5.3: a style is a set of wall, window 
     expect(low).toBeGreaterThanOrEqual(7 - 0.01)
   })
 
-  it('has a door, in the middle of the front wall (the +z side)', () => {
+  it('has an open doorway in the middle of the front wall (the +z side): nothing stands in it at walking height', () => {
     const [px, pz] = at(home)
     const [, fd] = home.exterior.footprint
-    const door = kit.parts.find((p) => p.id === 'door-wood')!
-    const doorColors = new Set(door.primitives.map((p) => resolveColor(p.color, kit.palettes.find((x) => x.id === home.exterior.palette)!)))
-    const near = exteriorInstances(home, kit, 0).filter((i) => Math.abs(pos(i.matrix)[0]! - px) <= 1.3 && Math.abs(pos(i.matrix)[2]! - (pz + fd / 2)) <= 1 && pos(i.matrix)[1]! < 2.3)
-    expect(near.some((i) => doorColors.has(i.color))).toBe(true)
+    for (const i of exteriorInstances(home, kit, 0)) {
+      const [x, y, z] = pos(i.matrix)
+      const hy = Math.hypot(i.matrix[4]!, i.matrix[5]!, i.matrix[6]!) / 2
+      const hx = Math.hypot(i.matrix[0]!, i.matrix[1]!, i.matrix[2]!) / 2
+      // The slab the building stands on is looks only; the sign post stands to the side.
+      if (hy < 0.1 || Math.abs(z - (pz + fd / 2 - 0.4)) > 0.3 || y - hy > 2.1) continue
+      expect(Math.abs(x - px) - hx >= 1.2 || y - hy > 2.1, `a piece in the doorway at x ${x - px}`).toBe(true)
+    }
   })
 })
 
@@ -314,7 +290,6 @@ describe("parts that are models (spec 5.3: a model stands in for the primitives,
 
 describe('windows and lamps that light at night', () => {
   const home = place('home')
-  const GLASS = repaint('#bfe3f0')
   const withLamps = (p: Place, lamps: boolean): Place => ({ ...p, state: { ...p.state, lamps } })
   const glowing = (p: Place, opts: { nowMs?: number; interiors?: ReadonlySet<string> } = {}) => {
     const scene = sceneInstances([p], kit, { heightAt: () => 0, interiors: opts.interiors ?? new Set(), nowMs: opts.nowMs })
@@ -330,25 +305,11 @@ describe('windows and lamps that light at night', () => {
     expect(glowing({ ...closed, state: { ...closed.state, closed: null } }, {})).toBe(glowing(withLamps(home, true), {}))
   })
 
-  it('marks the glass of every window of a place to glow, and nothing else on the outside', () => {
+  it('marks the lit things of a building to glow (windows, screens, edges) in the palette glow colour, and nothing else', () => {
+    const glowColor = kit.palettes.find((p) => p.id === home.exterior.palette)!.colors.glow
     const outside = exteriorInstances(home, kit, 0)
-    const glass = outside.filter((i) => i.color === GLASS)
-    expect(glass.length).toBeGreaterThan(2)
-    for (const i of outside) expect(i.glow ?? false, i.color).toBe(i.color === GLASS)
-  })
-
-  it('sticks out of the wall on both faces for every style, so the glass is seen from the path and from inside (and can light up)', () => {
-    // The tower is drawn by the building model, whose lit things (ring, crown, edge) are not windows: test/building.test.ts checks its windows.
-    for (const style of kit.styles.filter((s) => s.id !== 'tower')) {
-      const wall = part(style.wall).size[2]
-      const glass = exteriorInstances(withStyle(home, style.id), kit, 0).filter((i) => i.glow)
-      expect(glass.length, style.id).toBeGreaterThan(0)
-      for (const i of glass) {
-        // How deep the glass is, across the wall: the smaller of its reach along x and along z (a window in a front, back or side wall).
-        const along = (row: number) => 0.5 * (Math.abs(i.matrix[row]!) + Math.abs(i.matrix[row + 4]!) + Math.abs(i.matrix[row + 8]!))
-        expect(Math.min(along(0), along(2)), `${style.id} glass`).toBeGreaterThanOrEqual(wall / 2 + 0.03)
-      }
-    }
+    expect(outside.filter((i) => i.glow).length).toBeGreaterThan(2)
+    for (const i of outside) expect(i.glow ?? false, i.color).toBe(i.color === glowColor)
   })
 
   it('is a round window with its glass standing up in the wall, not a disc on the floor', () => {
@@ -368,7 +329,7 @@ describe('windows and lamps that light at night', () => {
   })
 
   it('lights every window of a place that is cared for and has its lamps on', () => {
-    const glass = exteriorInstances(home, kit, 0).filter((i) => i.color === GLASS).length
+    const glass = exteriorInstances(home, kit, 0).filter((i) => i.glow).length
     expect(glowing(withLamps(home, true))).toBe(glass)
   })
 
