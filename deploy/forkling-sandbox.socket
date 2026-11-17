@@ -1,0 +1,17 @@
+# The sandbox's door (spec v4 section 4, step 3). The mind (group forkling) connects here to have one page run in headless
+# Chromium; systemd starts one forkling-sandbox@.service for each connection, with the limits written in that file, as the user
+# forkling-build. The mind gets no privilege from this: it can only ask for a run, and every property of the run is fixed by root.
+# Installed by root from the deployed release (docs/spec/v4/step-3-runbook.md, or setup.sh on a fresh server).
+[Unit]
+Description=Forkling sandbox socket (one page run at a time, in a unit with no network)
+
+[Socket]
+ListenStream=/run/forkling-sandbox.sock
+SocketUser=root
+SocketGroup=forkling
+SocketMode=0660
+Accept=yes
+MaxConnections=1
+
+[Install]
+WantedBy=sockets.target

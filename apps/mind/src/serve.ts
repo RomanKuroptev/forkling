@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createBuildWorker } from './build-worker.ts'
 import { createBrowserChecker } from './builds/browser-check.ts'
+import { createLocalSandbox, createSandbox, sandboxSelfTest } from './builds/sandbox-run.ts'
 import { createGithubClient, repoFromUrl } from './builds/github.ts'
 import { createExpandHandler } from './builds/expand-job.ts'
 import { createFoundBuildHandler } from './builds/found-build-job.ts'
@@ -61,8 +62,15 @@ async function main(): Promise<void> {
   const llm = values['no-llm'] || !hasCredentials(env) ? null : anthropicClient()
   if (!llm) console.log('no model calls: no key, or --no-llm')
   const git = values['no-git'] ? null : gitRunner(dir)
+  // Every page Merge wrote runs on one path (spec-v4 4): in the sandbox unit when its socket is there, in this process otherwise.
+  // The self-test runs once, from inside the unit, and /health says what it found (spec-v4 step 3).
+  // When the unit is there but fails its self-test, works are checked in this process as before, and a build session will not start.
+  const unit = createSandbox()
+  const selfTest = await sandboxSelfTest(unit, { world: dir, port })
+  console.log(`sandbox: ${selfTest.status}${selfTest.reasons.length > 0 ? ` (${selfTest.reasons.join('; ')})` : ''}`)
+  const sandbox = selfTest.status === 'ok' ? unit : createLocalSandbox()
   // Checks a sketch in a browser (spec 7.3). It starts one only when a sketch is made.
-  const workCheck = createBrowserChecker()
+  const workCheck = createBrowserChecker({ sandbox })
 
   // Visitor notes (spec 10.1): the mailbox opens only with a Turnstile secret and a model to screen with. The screening calls are booked by the loop's next tick.
   let intake: NotesIntake | null = null
@@ -113,7 +121,7 @@ async function main(): Promise<void> {
     console.log('the mailbox is open: notes are screened before Merge reads them')
   } else console.log(`the mailbox is closed: ${env.TURNSTILE_SECRET ? 'no model to screen with' : 'no TURNSTILE_SECRET'}`)
 
-  const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now()), ...(intake ? { notes: { submit: (body, ip) => intake!.submit(body, ip) } } : {}), publicNotes: createPublicNotes(dir, Date.now), pagesOrigin })
+  const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now(), selfTest.status), ...(intake ? { notes: { submit: (body, ip) => intake!.submit(body, ip) } } : {}), publicNotes: createPublicNotes(dir, Date.now), pagesOrigin })
   await new Promise<void>((ready, fail) => {
     server.once('error', fail)
     server.listen(port, '127.0.0.1', ready)

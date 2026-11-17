@@ -202,3 +202,94 @@ describe('the deploy scripts can be run (found on the server: a file committed o
   })
 })
 
+
+describe('the sandbox unit (spec v4 section 4, step 3)', () => {
+  const socket = read('deploy/forkling-sandbox.socket')
+  const service = read('deploy/forkling-sandbox@.service')
+  const setup = read('deploy/setup.sh')
+  const deploy = read('deploy/deploy.sh')
+  const mind = read('deploy/forkling-mind.service')
+
+  it('listens on one socket that only root and the group forkling may use, one run at a time', () => {
+    expect(socket).toMatch(/^ListenStream=\/run\/forkling-sandbox\.sock$/m)
+    expect(socket).toMatch(/^SocketUser=root$/m)
+    expect(socket).toMatch(/^SocketGroup=forkling$/m)
+    expect(socket).toMatch(/^SocketMode=0660$/m)
+    expect(socket).toMatch(/^Accept=yes$/m)
+    expect(socket).toMatch(/^MaxConnections=1$/m)
+  })
+
+  it.each([
+    'User=forkling-build',
+    'NoNewPrivileges=yes',
+    'ProtectSystem=strict',
+    'ProtectHome=yes',
+    'PrivateTmp=yes',
+    'PrivateDevices=yes',
+    'ReadWritePaths=/var/lib/forkling-build/scratch',
+    'IPAddressDeny=any',
+    'RestrictAddressFamilies=AF_UNIX',
+    'MemoryMax=1G',
+    'CPUQuota=100%',
+    'RuntimeMaxSec=30',
+    'InaccessiblePaths=/opt/forkling/engine /var/lib/forkling /etc/forkling',
+    'ProtectProc=invisible',
+  ])('runs with %s, as step 3 requires', (property) => {
+    expect(service.split('\n')).toContain(property)
+  })
+
+  it('may write only to its scratch folder, has no other address family, and no other network setting', () => {
+    expect(service.match(/^ReadWritePaths=.*$/gm)).toEqual(['ReadWritePaths=/var/lib/forkling-build/scratch'])
+    expect(service.match(/^RestrictAddressFamilies=.*$/gm)).toEqual(['RestrictAddressFamilies=AF_UNIX'])
+    expect(service).not.toMatch(/^IPAddressAllow=/m)
+    expect(service).not.toMatch(/^PrivateNetwork=no/m)
+  })
+
+  it('has HOME and PATH and nothing else in its environment, and no key file', () => {
+    expect(service.match(/^Environment=.*$/gm)).toEqual(['Environment=HOME=/var/lib/forkling-build/scratch', 'Environment=PATH=/usr/bin:/bin'])
+    expect(service).not.toMatch(/EnvironmentFile|PassEnvironment|mind\.env/)
+  })
+
+  it('runs the deployed runner (never the checkout) and keeps Chromium\'s own sandbox on', () => {
+    expect(service).toMatch(/^ExecStart=\/usr\/bin\/node \/opt\/forkling\/sandbox\/current\/runner\.ts --browsers \/opt\/forkling\/browsers --scratch \/var\/lib\/forkling-build\/scratch$/m)
+    expect(service).toMatch(/^StandardInput=socket$/m)
+    expect(service).toMatch(/^StandardOutput=socket$/m)
+    for (const file of [service, socket, read('apps/mind/src/builds/sandbox-runner.ts')]) expect(file).not.toMatch(/--no-sandbox|chromiumSandbox: false/)
+    expect(read('apps/mind/src/builds/sandbox-runner.ts')).toMatch(/chromiumSandbox: true/)
+  })
+
+  it('empties the scratch folder after every run, a killed one too, without rm -rf', () => {
+    expect(service).toMatch(/^ExecStopPost=\/usr\/bin\/find \/var\/lib\/forkling-build\/scratch -mindepth 1 -delete$/m)
+    expect(service).not.toMatch(/rm -rf/)
+  })
+
+  it('deploy copies the runner and its playwright-core into a folder of their own and points current at it, deleting nothing', () => {
+    expect(deploy).toMatch(/SANDBOX=\/opt\/forkling\/sandbox/)
+    expect(deploy).toMatch(/install -m 644 apps\/mind\/src\/builds\/sandbox-runner\.ts "\$RELEASE\/runner\.ts"/)
+    expect(deploy).toMatch(/cp -R "\$CORE" "\$RELEASE\/node_modules\/playwright-core"/)
+    expect(deploy).toMatch(/ln -sfn "releases\/\$TAG" "\$SANDBOX\/current"/)
+    expect(deploy).not.toMatch(/rm -r/)
+    expect(existsSync(`${root}apps/mind/src/builds/sandbox-runner.ts`)).toBe(true)
+  })
+
+  it('the runner imports nothing of the engine: only Node and playwright-core', () => {
+    const runner = read('apps/mind/src/builds/sandbox-runner.ts')
+    const imports = [...runner.matchAll(/^import (?!type ).*from '([^']+)'/gm)].map((m) => m[1])
+    expect(imports.every((x) => x!.startsWith('node:')), JSON.stringify(imports)).toBe(true)
+    expect(runner).toMatch(/const name = 'playwright-core'/)
+  })
+
+  it('setup makes the user with no login and no home, the scratch folder, and installs both units from root-owned copies', () => {
+    expect(setup).toMatch(/useradd --system --user-group --no-create-home --home-dir \/nonexistent --shell \/usr\/sbin\/nologin forkling-build/)
+    expect(setup).toMatch(/install -d -m 750 -o forkling-build -g forkling \/var\/lib\/forkling-build\/scratch/)
+    expect(setup).toMatch(/install -m 644 -o root -g root "\$HERE\/forkling-sandbox\.socket" \/etc\/systemd\/system\/forkling-sandbox\.socket/)
+    expect(setup).toMatch(/install -m 644 -o root -g root "\$HERE\/forkling-sandbox@\.service" \/etc\/systemd\/system\/forkling-sandbox@\.service/)
+    expect(setup).toMatch(/systemctl enable --now forkling-sandbox\.socket/)
+  })
+
+  it('leaves the mind service as it was: no new privilege, NoNewPrivileges still on', () => {
+    expect(mind).toMatch(/^NoNewPrivileges=true$/m)
+    expect(mind).not.toMatch(/forkling-build|sandbox/)
+    expect(setup).not.toMatch(/forkling ALL=|polkit/)
+  })
+})

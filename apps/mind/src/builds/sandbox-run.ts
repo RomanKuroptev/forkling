@@ -1,12 +1,13 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { createConnection } from 'node:net'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, posix } from 'node:path'
 import type { Browser } from 'playwright'
 import { copyLibs, VENDORED_FILES } from '@forkling/site/libs'
 import { launchChromium } from './browser.ts'
 import { listProjectFiles, resolveProjectPath } from './project-files.ts'
 import { workFrame } from './sandbox.ts'
-import { emptyPageResult, runPage, type PageRequest, type PageResult } from './sandbox-runner.ts'
+import { clean, emptyPageResult, MAX_CONSOLE_LINES, runPage, type PageRequest, type PageResult, type ProbeRequest, type ProbeResult, type RunnerRequest } from './sandbox-runner.ts'
 
 /**
  * One path for every page Merge wrote (spec-v4 section 4, step 3): works in the work check and, from step 4, projects in a build
@@ -160,4 +161,184 @@ export async function runInSandbox(projectDir: string, sandbox: Sandbox, opts: {
   }
   if (!files.has(`${base}index.html`)) return fromPageResult(emptyPageResult({ errors: ['there is no src/index.html to run'] }), sandbox.sandboxed)
   return sandbox.run({ files, frame: `${base}index.html` }, opts.durationMs === undefined ? {} : { durationMs: opts.durationMs })
+}
+
+/** Where the root-owned sandbox unit listens on the server (`deploy/forkling-sandbox.socket`). */
+export const SANDBOX_SOCKET = '/run/forkling-sandbox.sock'
+/** The unit kills a run at 30 seconds (`RuntimeMaxSec=30`); the client gives up a little after. */
+export const UNIT_LIMIT_MS = 30_000
+const CLIENT_LIMIT_MS = UNIT_LIMIT_MS + 10_000
+/** A run with no answer that ended this close to the unit's limit was cut off by it. */
+const KILLED_AFTER_MS = UNIT_LIMIT_MS - 3_000
+/** The socket takes one connection at a time; one that is just ending can refuse the next for a moment. */
+const CONNECT_TRIES = 5
+const CONNECT_GAP_MS = 400
+/** The most an answer may be: a screenshot in base64 and the lines around it. */
+const MAX_ANSWER_BYTES = 8 * 1024 * 1024
+
+export interface SocketSandbox extends Sandbox {
+  /** Asks the unit to try the things a probe names (spec-v4 step 3, tests 4 to 6). Null when the unit could not be reached. */
+  probe(req: Omit<ProbeRequest, 'mode'>): Promise<ProbeResult | null>
+}
+
+export type Exchange = { answer: unknown; ms: number } | { answer: null; ms: number; error: string }
+
+/** One request, one answer (each one line of JSON), over one connection. Never throws. */
+export function exchange(socketPath: string, request: RunnerRequest, opts: { limitMs?: number } = {}): Promise<Exchange> {
+  const started = Date.now()
+  const elapsed = () => Date.now() - started
+  const attempt = (tries: number): Promise<Exchange> =>
+    new Promise((resolve) => {
+      const socket = createConnection(socketPath)
+      const chunks: Buffer[] = []
+      let size = 0
+      let connected = false
+      let settled = false
+      const finish = (x: Exchange) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
+        socket.destroy()
+        resolve(x)
+      }
+      const timer = setTimeout(() => finish({ answer: null, ms: elapsed(), error: 'no answer in time' }), opts.limitMs ?? CLIENT_LIMIT_MS)
+      socket.on('connect', () => {
+        connected = true
+        socket.write(`${JSON.stringify(request)}\n`)
+      })
+      socket.on('data', (chunk: Buffer) => {
+        size += chunk.length
+        if (size > MAX_ANSWER_BYTES) return finish({ answer: null, ms: elapsed(), error: 'the answer was too big' })
+        chunks.push(chunk)
+      })
+      socket.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8').split('\n')[0] ?? ''
+        try {
+          finish({ answer: JSON.parse(text) as unknown, ms: elapsed() })
+        } catch {
+          finish({ answer: null, ms: elapsed(), error: text ? 'the answer was not whole' : 'the run ended with no answer' })
+        }
+      })
+      socket.on('error', (error: NodeJS.ErrnoException) => {
+        if (settled) return
+        if (!connected && tries > 1 && ['ECONNREFUSED', 'EAGAIN', 'ECONNRESET'].includes(error.code ?? '')) {
+          settled = true
+          clearTimeout(timer)
+          socket.destroy()
+          void delay(CONNECT_GAP_MS).then(() => attempt(tries - 1).then(resolve))
+          return
+        }
+        finish({ answer: null, ms: elapsed(), error: connected ? 'the connection broke' : `the sandbox cannot be reached (${error.code ?? 'error'})` })
+      })
+    })
+  return attempt(CONNECT_TRIES)
+}
+
+/** Turns the unit's answer to a page into a run, or says what went wrong. Pure. */
+export function readPageAnswer(x: Exchange): SandboxRun {
+  const unavailable = (why: string): SandboxRun => ({ ...fromPageResult(emptyPageResult({ errors: [why] }), true), unavailable: true })
+  if (x.answer !== null && typeof x.answer === 'object') {
+    const a = x.answer as Partial<PageResult> & { failed?: unknown }
+    if (typeof a.failed === 'string') return unavailable(`the sandbox could not run the page: ${clean(a.failed)}`)
+    if (typeof a.loaded === 'boolean' && Array.isArray(a.errors) && Array.isArray(a.consoleErrors)) {
+      const r: PageResult = { ...emptyPageResult(), ...a }
+      return fromPageResult({ ...r, errors: r.errors.map((e) => clean(String(e))), consoleErrors: r.consoleErrors.slice(0, MAX_CONSOLE_LINES).map((e) => clean(String(e))) }, true)
+    }
+    return unavailable('the sandbox gave an answer of the wrong shape')
+  }
+  if ('error' in x && x.error.startsWith('the sandbox cannot be reached')) return unavailable(x.error)
+  // No answer: the unit was killed. At its time limit the page was stuck; before it, the page took the memory or crashed it.
+  if (x.ms >= KILLED_AFTER_MS) return fromPageResult(emptyPageResult({ loaded: true, timedOut: true }), true)
+  return fromPageResult(emptyPageResult({ loaded: true, crashed: true }), true)
+}
+
+/** Whether a probe answer has the right shape. */
+const isProbeResult = (a: unknown): a is ProbeResult => {
+  const p = a as Partial<ProbeResult> | null
+  return !!p && Array.isArray(p.read) && Array.isArray(p.write) && Array.isArray(p.connect) && typeof p.browser === 'string' && Array.isArray(p.envNames)
+}
+
+/** The client of the sandbox unit on the server. Runs go one at a time, as the socket takes one connection at a time. */
+export function createSocketSandbox(opts: { socketPath?: string; libsDir?: string; limitMs?: number } = {}): SocketSandbox {
+  const socketPath = opts.socketPath ?? SANDBOX_SOCKET
+  const limit = opts.limitMs === undefined ? {} : { limitMs: opts.limitMs }
+  let libs: Map<string, Buffer> | null = null
+  let tail: Promise<unknown> = Promise.resolve()
+  const queued = <T>(job: () => Promise<T>): Promise<T> => {
+    const next = tail.then(job)
+    tail = next.catch(() => undefined)
+    return next
+  }
+  return {
+    sandboxed: true,
+    run(page, o = {}) {
+      return queued(async () => {
+        libs ??= libraryFiles(opts.libsDir)
+        return readPageAnswer(await exchange(socketPath, pageRequest(page, libs, o.durationMs ?? RUN_MS), limit))
+      })
+    },
+    probe(req) {
+      return queued(async () => {
+        const x = await exchange(socketPath, { mode: 'probe', ...req }, limit)
+        return isProbeResult(x.answer) ? x.answer : null
+      })
+    },
+    async available() {
+      return existsSync(socketPath)
+    },
+    async close() {
+      await tail.catch(() => undefined)
+    },
+  }
+}
+
+/** The sandbox for this machine: the unit when its socket is there (the server), this process otherwise. */
+export function createSandbox(opts: LocalSandboxOptions & { socketPath?: string } = {}): Sandbox {
+  const socketPath = opts.socketPath ?? SANDBOX_SOCKET
+  return existsSync(socketPath) ? createSocketSandbox({ socketPath, ...(opts.libsDir ? { libsDir: opts.libsDir } : {}) }) : createLocalSandbox(opts)
+}
+
+export const isSocketSandbox = (s: Sandbox): s is SocketSandbox => s.sandboxed && typeof (s as Partial<SocketSandbox>).probe === 'function'
+
+/** The server's real paths (deploy/setup.sh, the W3 runbook): the keys file and the world the mind runs. */
+export const SERVER_PATHS = { envFile: '/etc/forkling/mind.env', world: '/var/lib/forkling/world', engine: '/opt/forkling/engine' } as const
+
+/**
+ * What the self-test at start tries from inside the unit (step 3's "cannot read" and "cannot connect" tests, run once): the keys
+ * file, the world's `.git/config`, this process's environment, the engine's `.env`; a connection out and one to the mind's own
+ * port; and the browser, with its sandbox on.
+ */
+export function selfTestProbe(o: { world: string; pid?: number; port?: number }): Omit<ProbeRequest, 'mode'> {
+  return {
+    read: [SERVER_PATHS.envFile, posix.join(o.world, '.git/config'), `/proc/${o.pid ?? process.pid}/environ`, `${SERVER_PATHS.engine}/.env`],
+    write: [],
+    connect: ['1.1.1.1:443', `127.0.0.1:${o.port ?? 8787}`],
+    browser: true,
+  }
+}
+
+/** A name in the environment that may hold a key. */
+export const SECRET_NAME = /KEY|TOKEN|SECRET|PASSWORD|ANTHROPIC|GITHUB|TURNSTILE/i
+
+/**
+ * `sandbox: ok` (step 3) only when the run went through the unit and, from inside it, nothing could be read, written or connected
+ * to, no name in its environment looks like a key, and the browser started with its own sandbox on. Anything else is `missing`,
+ * with the reasons for the log. Pure.
+ */
+export function sandboxStatus(probe: ProbeResult | null): { status: 'ok' | 'missing'; reasons: string[] } {
+  if (!probe) return { status: 'missing', reasons: ['the sandbox unit did not answer (or this machine has none)'] }
+  const reasons = [
+    ...probe.read.filter((r) => r.readable).map((r) => `it could read ${r.path}`),
+    ...probe.write.filter((w) => w.writable).map((w) => `it could write ${w.path}`),
+    ...probe.connect.filter((c) => c.connected).map((c) => `it could connect to ${c.target}`),
+    ...(probe.browser === 'ok' ? [] : [`the browser did not start: ${probe.browser}`]),
+    ...probe.envNames.filter((n) => SECRET_NAME.test(n)).map((n) => `its environment has ${n}`),
+  ]
+  return { status: reasons.length === 0 ? 'ok' : 'missing', reasons }
+}
+
+/** The self-test at start: `missing` at once off the server (no unit), else one probe through the unit. */
+export async function sandboxSelfTest(sandbox: Sandbox, o: { world: string; port?: number }): Promise<{ status: 'ok' | 'missing'; reasons: string[] }> {
+  if (!isSocketSandbox(sandbox)) return { status: 'missing', reasons: ['no sandbox unit on this machine: pages run in this process'] }
+  return sandboxStatus(await sandbox.probe(selfTestProbe(o)))
 }
