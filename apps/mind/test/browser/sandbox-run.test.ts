@@ -74,6 +74,14 @@ describe.skipIf(!probe)('runInSandbox, in this process', () => {
     expect(r.outside).toContain('example.com')
   })
 
+  it('keeps a screenshot of noise at most 300 KB', async () => {
+    const noise = `<canvas id="c" width="480" height="360"></canvas><script>const g = document.getElementById('c').getContext('2d'); const d = g.createImageData(480, 360); let s = 7; for (let i = 0; i < d.data.length; i++) { s = (s * 1103515245 + 12345) % 2147483648; d.data[i] = i % 4 === 3 ? 255 : s % 256 } g.putImageData(d, 0, 0)</script>`
+    write('index.html', html(noise))
+    const r = await runInSandbox(dir, sandbox, { durationMs: MS })
+    expect(r.screenshotPng).not.toBeNull()
+    expect(r.screenshotPng!.length).toBeLessThanOrEqual(300_000)
+  })
+
   it('says so when there is no src/index.html', async () => {
     write('draw.js', DRAW_JS)
     const r = await runInSandbox(dir, sandbox, { durationMs: MS })

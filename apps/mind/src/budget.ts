@@ -113,3 +113,8 @@ export function rollLedger(ledger: BudgetLedger, month: string): BudgetLedger {
     history: unused ? ledger.history : [...ledger.history, { month: ledger.month, spentUsd: ledger.spentUsd, calls: ledger.calls.length }],
   }
 }
+
+/** A build session is metered (spec-v4 3.3, 5.1): 1 point per $0.001 it really spends, taken as it runs. */
+export const SESSION_POINTS_PER_USD = 1000
+/** The points a session has taken once it has spent `usd` in all. Rounded on the running total, so the points always agree with the ledger. */
+export const sessionPoints = (usd: number): number => Math.round(usd * SESSION_POINTS_PER_USD)
