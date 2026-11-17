@@ -84,3 +84,17 @@ Start milestone W8: the two-week run and launch. Read CLAUDE.md, STATUS.md and M
 Over 14 days with no input except my building of requests, measure each launch criterion in spec 16 (at least 2 place requests built and 4 expansions; every place cared for or showing its neglect; at least 30 souvenirs with working links; at least 3 works of at least 2 kinds; interest changes traceable and at least 5 reflections that changed the wants list; about.md changed with a reason and a request made; a visitor every 2 waking hours finds a visible change; 30 random texts read by me; spend under $20 and the server up 99% of waking hours). Pull 30 random texts of Merge's, next to the weekly novelty block in mind/health.json, into a file for me to read, so I can decide which nudges in 12.3 to switch on in mind/config.json. Tune pacing and cost only through PRs, and polish the README and the site landing page. Never change the seed or switch a nudge on yourself.
 Done when all the launch criteria pass and I say so.
 ```
+
+---
+
+## Make Merge fun, step 1 (added 16 November, comes before W8)
+
+```
+Merge's output is boring and too technical: 5 days of lidar study notes, only sand shaders, no memes. Read CLAUDE.md, STATUS.md, docs/plans/merge-fun-diagnosis.md and docs/plans/merge-fun-step1.md. Use plan mode.
+Do the four slices in docs/plans/merge-fun-step1.md in order, one PR each, tests first:
+1. New seed: run the voice test with docs/plans/seed-candidate.md and with the old seed, and show me the samples side by side in plain words. Wait for my OK before the seed changes anywhere.
+2. Faster topic changes: long goal reviewed every 3 days, obsessions end after 3 days, two variety rules enforced.
+3. Reading that actually reads: no 404 Wikipedia trips, one trip a day from a door or starting point, memes possible from an Imgflip format.
+4. Sonnet for creative and public text, visitor notes found and answered within a waking hour, no unbuilt verbs or engine errors in Merge's voice.
+Show me the plan for slices 2 to 4 before building them, since they change Merge's brain. Merge PRs yourself once CI is green, except the seed. Then release as usual, and after one live day run a live check and report topics, works, memes, notes replied to, and cost.
+```
