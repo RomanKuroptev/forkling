@@ -41,7 +41,8 @@ describe('buildFoundBuildUser (what the fallback build asks for)', () => {
   const prompt = buildFoundBuildUser({ request: request(), kit, chunk: [1, 0] })
   it('says why it is being built, and shows the request in Merge\'s own words as data', () => {
     expect(prompt).toContain('Lantern Hall')
-    expect(prompt).toMatch(/nobody has answered|7 days/i)
+    expect(prompt).toMatch(/founded a place/i)
+    expect(prompt).not.toMatch(/Roman|nobody has answered|7 days/)
     expect(prompt).toMatch(/<data source="request">[\s\S]*one lamp over each find[\s\S]*<\/data>/)
   })
   it('lists the styles and palettes of the kit and every part, so it can only name what exists', () => {
@@ -68,7 +69,7 @@ describe('toFoundBuildPlace (the answer as a whole place file; the words are the
   it('takes the name, purpose, tags and related places from the request, and says who had the idea and who built it', () => {
     const place = toFoundBuildPlace(FoundBuildAnswer.parse(answer()), ctx)
     expect(place).toMatchObject({ id: 'lantern-hall', name: 'Lantern Hall', purpose: 'Where I keep the lidar finds that hold up.', tags: ['maya lidar'], related: ['home'], founded: '2026-11-10', chunk: [1, 0], exhibits: [] })
-    expect(place.history).toEqual([{ at: '2026-11-10T10:00:00.000Z', verb: 'found', summary: 'Asked for by Merge, built by Merge from the kit.' }])
+    expect(place.history).toEqual([{ at: '2026-11-10T10:00:00.000Z', verb: 'found', summary: 'Founded by Merge, built by Merge from the kit.' }])
     expect(place.state).toMatchObject({ construction: null, lastCareAt: null, neglect: 0, lamps: true })
   })
 
@@ -203,8 +204,7 @@ describe('the fallback build handler (spec 10.3: the build job runs only as the 
       [{ status: 'built', statusAt: '2026-11-05T10:00:00Z' }, /built/],
       [{ status: 'declined', statusAt: '2026-11-05T10:00:00Z', note: 'No.' }, /declined/],
       [{ status: 'self-built', statusAt: '2026-11-05T10:00:00Z' }, /self-built/],
-      [{ status: 'building', statusAt: '2026-11-05T10:00:00Z' }, /not due/i],
-      [{ written: '2026-11-08T10:00:00Z' }, /not due/i],
+      [{ written: '2026-11-20T10:00:00Z' }, /not due/i],
     ] as const) {
       putRequest(over)
       const out = await run(handler(none.llm))
@@ -216,8 +216,8 @@ describe('the fallback build handler (spec 10.3: the build job runs only as the 
     expect(none.calls).toHaveLength(0)
   })
 
-  it('runs for a request Roman said he is building once the 14 more days have passed', async () => {
-    putRequest({ status: 'building', statusAt: '2026-11-03T10:00:00Z', written: '2026-10-19T10:00:00Z' })
+  it('runs for a request Roman once marked building: it no longer holds the kit build off (spec v4 2.3)', async () => {
+    putRequest({ status: 'building', statusAt: '2026-11-05T10:00:00Z' })
     expect((await run(handler(fakeLlm([answer()]).llm))).status).toBe('done')
   })
 

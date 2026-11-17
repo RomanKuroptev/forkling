@@ -5,7 +5,7 @@ import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { dropRepeatedStarts, startKey } from '../web/rails.ts'
 import { expandablePlaces } from './expand.ts'
-import { canFoundNow } from './found.ts'
+import { foundGate } from './found.ts'
 import { intentionSeed } from './util.ts'
 import { readWrittenPages, varietyFor } from './variety.ts'
 
@@ -60,7 +60,7 @@ export function planContext(t: Tick): MindPlanContext {
     revisitable: new Set(t.places.filter((p) => p.state.closed === null && daysSinceCare({ lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) >= 7).map((p) => p.id)),
     expandable: new Set(expandablePlaces(t).map((e) => e.id)),
     expandEarned: new Set(expandablePlaces(t).filter((e) => e.earned.earned).map((e) => e.id)),
-    canFound: canFoundNow(t),
+    canFound: foundGate(t).check.ok,
     notes: new Set(t.visitorNotes.filter((n) => n.status === 'found').map((n) => n.id)),
     wants: t.wants,
     prices: livePrices(t.mind.prices),

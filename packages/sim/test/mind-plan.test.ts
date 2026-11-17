@@ -157,9 +157,9 @@ describe('targets and conditions', () => {
     expect(reasons([wander(), expand('workshop'), rest()], { ...c, lastExpandedPlace: 'workshop' })).toEqual([expect.stringContaining('twice in a row')])
   })
 
-  it('lets found go only when an interest has earned it, and once a week', () => {
+  it('lets found go when the rails hold (nothing founded is still being built, room in the world), and once a week', () => {
     const found: MindStep = { verb: 'found', target: 'The Lamp Room', reason: 'The lights keep pointing at each other.', minutes: 30, wantId: 'w1' }
-    expect(reasons([wander(), found, rest()])).toEqual([expect.stringContaining('no interest has earned a new place')])
+    expect(reasons([wander(), found, rest()])).toEqual([expect.stringContaining('still being built')])
     expect(reasons([wander(), found, rest()], ctx({ canFound: true }))).toEqual([])
     expect(reasons([wander(), found, rest()], ctx({ canFound: true, used: { repliesToday: 0, foundThisWeek: 1 } }))).toEqual([expect.stringContaining('1 a week')])
     expect(reasons([wander(), { ...found, target: 'ab' }, rest()], ctx({ canFound: true }))).toEqual([expect.stringContaining('3 to 40 characters')])

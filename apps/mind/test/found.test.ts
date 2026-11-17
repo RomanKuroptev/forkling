@@ -4,7 +4,7 @@ import { FOUND_MAX_TOKENS, FoundAnswer, buildFoundUser, requestId, toPlaceReques
 
 const answer = (over: Partial<FoundAnswer> = {}): FoundAnswer => ({
   purpose: 'Where I keep the lidar finds that hold up under their own weight.',
-  tags: [],
+  tags: ['maya lidar'],
   related: [],
   souvenirs: [],
   body: 'I keep coming back to the finds that survive being doubted. I want a place with one lamp over each of them.',

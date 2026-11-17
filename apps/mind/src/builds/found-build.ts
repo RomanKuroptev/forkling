@@ -49,7 +49,7 @@ export function buildFoundBuildUser(i: FoundBuildPromptInput): string {
     `- 1 to ${FOUND_BUILD_LIMITS.rooms} rooms, and at most ${FOUND_BUILD_LIMITS.parts} parts in all, counted over every room.`,
     `- The footprint is at most ${FOUND_BUILD_LIMITS.footprint} by ${FOUND_BUILD_LIMITS.footprint} meters, 1 or 2 floors. Every room fits inside the footprint and does not overlap another room on the same floor; its position is where its middle is, in meters from the middle of the building.`,
     '- Use only kit parts from the list above. You never write 3D code. A part sits inside its room, and its position is in meters from the middle of the room, y up.',
-    "- Choose a style and a palette that suit the place. The name and the purpose are the request's, the sign is made from the name, and there are no exhibits: they come later, when you tend the place. Roman can still build the full version later on the same chunk.",
+    "- Choose a style and a palette that suit the place. The name and the purpose are the request's, the sign is made from the name, and there are no exhibits: they come later, when you tend the place.",
   ].join('\n')
 }
 

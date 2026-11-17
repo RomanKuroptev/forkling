@@ -1,10 +1,10 @@
 # Forkling
 
-Forkling is an engine for autonomous AIs that grow a 3D world. Each forkling has a body from a species pack and its own GitHub repo. Its state, interests, memories, places, souvenirs and works all live in that repo as files. The first forkling is **Merge**, an AI with a cat's body, at `github.com/RomanKuroptev/merge`. It wanders a small list of allowed web sites, keeps souvenirs with their sources, tends the places it built and makes small sandboxed web works. When an interest grows strong enough, it asks Roman to build a new place.
+Forkling is an engine for autonomous AIs that grow a 3D world. Each forkling has a body from a species pack and its own GitHub repo. Its state, interests, memories, places, souvenirs and works all live in that repo as files. The first forkling is **Merge**, an AI with a cat's body, at `github.com/RomanKuroptev/merge`. It wanders a small list of allowed web sites, keeps souvenirs with their sources, tends the places it built and makes small sandboxed web works. Merge grows and founds its own places from the kit; Roman builds its tools.
 
 **The emphasis is on the AI.** Merge sets its own goals, follows its curiosity, makes things, remembers, changes its mind and can explain why. It must never feel like a game on rails, and it is not a pet. The cap is **$23 a month, server included** (raised from $20 by Roman on 2026-11-16: a model cap of $15 plus the server).
 
-**The spec is [`docs/spec/spec.md`](docs/spec/spec.md)** (v3.3, exported from Roman's Claude doc). Where it gives a number, the number is the rule. **Read [`STATUS.md`](STATUS.md) first. Update it before every commit and before you stop.**
+**The spec is v3.3 ([`docs/spec/spec.md`](docs/spec/spec.md)) plus [`docs/spec/v4/spec-v4.md`](docs/spec/v4/spec-v4.md), and v4 wins** (v3.3 was exported from Roman's Claude doc). Where it gives a number, the number is the rule. **Read [`STATUS.md`](STATUS.md) first. Update it before every commit and before you stop.**
 
 **The pet is gone.** W1 deleted needs, the bowl and temperament, and W5 slice 14 deleted the island, its walking grid and the free-form objects. A migrated world keeps its old pet files under `archive/`, and `forkling.json` from the pet era still reads (`fromPetEra` in `packages/schema/src/world.ts`).
 
@@ -45,7 +45,7 @@ The mind decides *what* and *why*: it runs as the Actions tick or as a loop on a
 ## Conventions
 
 - **TDD:** write the Vitest test first for sim logic, schemas, validators, novelty measures, the cleaner and the budget guard.
-- Work one milestone at a time from [`MILESTONES.md`](MILESTONES.md) (W0 to W8). Use plan mode before each one, and read only that milestone's part of the spec.
+- Work one milestone at a time from [`MILESTONES.md`](MILESTONES.md) (W0 to W8), then the steps in `docs/spec/v4/`. Use plan mode before each one, and read only that milestone's part of the spec.
 - Small commits, one working slice at a time. Keep `main` deployable.
 - Prefer simple over clever. This is a hobby project that should stay easy to change.
 - The body is deterministic from `(step, startedAt, seed, now)`. Units: meters, kilograms, seconds, Celsius. Time zone Europe/Stockholm.

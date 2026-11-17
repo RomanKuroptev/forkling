@@ -44,7 +44,7 @@ describe('stepCost', () => {
     expect(stepCost(step({ verb: 'tend' }))).toBe(2)
     expect(stepCost(step({ verb: 'revisit' }))).toBe(1)
     expect(stepCost(step({ verb: 'expand' }))).toBe(50)
-    expect(stepCost(step({ verb: 'found' }))).toBe(2)
+    expect(stepCost(step({ verb: 'found' }))).toBe(80)
     expect(stepCost(step({ verb: 'write' }))).toBe(1)
     expect(stepCost(step({ verb: 'reply' }))).toBe(0)
     expect(stepCost(step({ verb: 'rest' }))).toBe(0)

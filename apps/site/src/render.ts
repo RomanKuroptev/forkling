@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { z } from 'zod'
-import { Beliefs, Forkling, Goals, Interests, MindState, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
+import { Beliefs, Forkling, Goals, Interests, isOpenRequest, MindState, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
 import { moodWords } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { esc, markdown } from './md.ts'
@@ -379,6 +379,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     works,
     nowMs: (opts.now ?? new Date()).getTime(),
     tz,
+    foundings: requests.filter((r) => r.kind === 'place' && isOpenRequest(r)).map((r) => ({ id: r.id, name: r.name, purpose: r.purpose })),
     souvenirHtml,
     readText: (rel) => readText(world, rel),
     readSouvenir: (id) => souvenirs.get(id) ?? null,

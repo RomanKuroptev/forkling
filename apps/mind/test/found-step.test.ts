@@ -74,7 +74,6 @@ async function landOn(fake: ReturnType<typeof fakeLlm>) {
 }
 const openRequest = (id: string, chunk: [number, number], status = 'open') =>
   put(`requests/${id}.md`, formatRequest(PlaceRequest.parse({ id, kind: 'place', name: id.replace(/-/g, ' '), purpose: 'x', tags: ['other'], chunk, related: [], souvenirs: [], written: '2026-11-02T10:00:00Z', status, statusAt: status === 'open' ? null : '2026-11-02T12:00:00Z', note: status === 'declined' ? 'not now' : null, body: 'A request.' })))
-const days = (...topics: [string, number][][]) => topics.map((t, i) => ({ date: `2026-11-0${i + 1}`, topics: Object.fromEntries(t) }))
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'found-step-'))
@@ -84,67 +83,65 @@ beforeEach(() => {
   copyFileSync(join(world, 'places/workshop.json'), file('places/workshop.json'))
   // 'maya lidar' held at 40 or more on the two mornings before, and fades to about 74 by this one.
   put('brain/interests.json', Interests.parse({ version: 2, topics: { 'maya lidar': { weight: 80, firstSeen: '2026-10-30T10:00:00Z', lastFed: '2026-11-02T10:00:00Z', sources: [] }, 'digital elevation model': { weight: 30, firstSeen: '2026-11-01T10:00:00Z', lastFed: '2026-11-02T10:00:00Z', sources: [] } } }))
-  put('mind/state.json', MindState.parse({ wakeTop: days([['maya lidar', 80]], [['maya lidar', 78]]) }))
   for (const n of [1, 2]) put(`souvenirs/2026-11-02-s${n}.json`, Souvenir.parse({ kind: 'quote', id: `s${n}`, why: 'it stuck', content: `lidar words ${n}`, topics: ['maya lidar'], source: { url: 'https://en.wikipedia.org/wiki/Lidar', title: `S${n}`, fetchedAt: '2026-11-02T10:00:00Z' } }))
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-describe('the plan offers a found only when spec 2.5 allows it (Roman, 14 November: 40 on 3 mornings in a row)', () => {
-  it('tells Merge which interest has earned a place, so it knows what to ask for', async () => {
+describe('the plan offers a found on the rails only (spec v4 2.3: no interest gate)', () => {
+  it('tells Merge it may found now, without naming any interest', async () => {
     const fake = fakeLlm(planFor(foundStep()))
     await runTick(dir, deps(fake.llm, NOW))
-    expect(fake.calls[0]!.user).toMatch(/<foundable>[\s\S]*maya lidar[\s\S]*<\/foundable>/)
+    const block = /<foundable>[\s\S]*<\/foundable>/.exec(fake.calls[0]!.user)?.[0] ?? ''
+    expect(block).toMatch(/may found a new place/)
+    expect(block).not.toMatch(/maya lidar|weight|mornings/)
   })
 
-  it('takes a found when an interest has held on 3 mornings and no place carries it', async () => {
+  it('takes a found with no strong interest at all and no wake record', async () => {
+    put('brain/interests.json', Interests.parse({ version: 2, topics: {} }))
+    put('mind/state.json', MindState.parse({}))
     await runTick(dir, deps(fakeLlm(planFor(foundStep())).llm, NOW))
     expect(read('mind/goals.json').today.steps[0]).toMatchObject({ verb: 'found', targetId: 'Lantern Hall' })
   })
 
-  it('turns it down when the interest was missing on one of the mornings', async () => {
-    put('mind/state.json', MindState.parse({ wakeTop: days([['maya lidar', 80]], []) }))
-    await runTick(dir, deps(fakeLlm(planFor(foundStep()), goodAnswer(), true).llm, NOW))
-    expect(stateOf().rejections.at(-1)!.reasons.join(' ')).toMatch(/no interest has earned a new place/)
-  })
-
-  it('turns it down when a place already carries the interest as a tag, and does not list it', async () => {
+  it('takes a found even when a place already carries the interest as a tag', async () => {
     put('places/home.json', { ...read('places/home.json'), tags: ['maya lidar'] })
-    const fake = fakeLlm(planFor(foundStep()), goodAnswer(), true)
-    await runTick(dir, deps(fake.llm, NOW))
-    expect(stateOf().rejections.at(-1)!.reasons.join(' ')).toMatch(/no interest has earned a new place/)
-    expect(fake.calls[0]!.user).not.toContain('<foundable>')
-  })
-
-  it('turns it down with 2 place requests open, and a built one does not count', async () => {
-    openRequest('first-one', [1, 0])
-    openRequest('second-one', [0, 1], 'building')
-    await runTick(dir, deps(fakeLlm(planFor(foundStep()), goodAnswer(), true).llm, NOW))
-    expect(stateOf().rejections.at(-1)!.reasons.join(' ')).toMatch(/two requests are already open|no interest has earned/)
-    rmSync(file('mind/state.json'))
-    put('mind/state.json', MindState.parse({ wakeTop: days([['maya lidar', 80]], [['maya lidar', 78]]) }))
-    rmSync(file('requests'), { recursive: true })
-    openRequest('first-one', [1, 0], 'built')
-    openRequest('second-one', [0, 1], 'declined')
     await runTick(dir, deps(fakeLlm(planFor(foundStep())).llm, NOW))
     expect(read('mind/goals.json').today.steps[0]).toMatchObject({ verb: 'found' })
   })
 
+  it('has no limit on open requests any more', async () => {
+    openRequest('first-one', [1, 0])
+    openRequest('second-one', [0, 1], 'building')
+    openRequest('third-one', [-1, 0])
+    await runTick(dir, deps(fakeLlm(planFor(foundStep())).llm, NOW))
+    expect(read('mind/goals.json').today.steps[0]).toMatchObject({ verb: 'found' })
+  })
+
+  it('turns it down while a place from an earlier found is still being built', async () => {
+    const home = read('places/home.json')
+    put('places/lantern.json', { ...home, id: 'lantern', name: 'Lantern', chunk: [1, 0], state: { ...home.state, construction: { kind: 'found', finishesAt: '2026-11-04T10:00:00Z' } } })
+    const fake = fakeLlm(planFor(foundStep()), goodAnswer(), true)
+    await runTick(dir, deps(fake.llm, NOW))
+    expect(stateOf().rejections.at(-1)!.reasons.join(' ')).toMatch(/still being built/)
+    expect(fake.calls[0]!.user).not.toContain('<foundable>')
+  })
+
   it('turns it down when one was written in the last 7 days (1 a week)', async () => {
-    put('mind/state.json', MindState.parse({ wakeTop: days([['maya lidar', 80]], [['maya lidar', 78]]), founds: ['2026-11-01T10:00:00Z'] }))
+    put('mind/state.json', MindState.parse({ founds: ['2026-11-01T10:00:00Z'] }))
     await runTick(dir, deps(fakeLlm(planFor(foundStep()), goodAnswer(), true).llm, NOW))
     expect(stateOf().rejections.at(-1)!.reasons.join(' ')).toMatch(/1 a week/)
   })
 
-  it('lists the requests that are open, so Merge does not ask twice', async () => {
+  it('lists the foundings that are not built yet', async () => {
     openRequest('first-one', [1, 0])
     const fake = fakeLlm(planFor(step('rest', null, 30, 'Rest.')))
     await runTick(dir, deps(fake.llm, NOW))
-    expect(fake.calls[0]!.user).toMatch(/<requests>[\s\S]*first one[\s\S]*open[\s\S]*<\/requests>/)
+    expect(fake.calls[0]!.user).toMatch(/<requests>[\s\S]*not built yet[\s\S]*first one[\s\S]*<\/requests>/)
   })
 })
 
 describe('a found step writes a request (spec 2.4, 10.3)', () => {
-  it('makes one Haiku call, and writes requests/<id>.md: open, in its own words, with the interest first among the tags', async () => {
+  it('makes one Haiku call, and writes requests/<id>.md: open, in its own words, with the tags it chose', async () => {
     const fake = fakeLlm(planFor(foundStep()))
     const out = await landOn(fake)
     const calls = fake.calls.filter((c) => c.kind === ('found' as never))
@@ -153,7 +150,7 @@ describe('a found step writes a request (spec 2.4, 10.3)', () => {
     expect(requestFiles()).toEqual(['lantern-hall.md'])
     const r = requestOf('lantern-hall')
     expect(r).toMatchObject({ kind: 'place', name: 'Lantern Hall', status: 'open', statusAt: null, note: null, related: ['home'], souvenirs: ['s1', 's2'] })
-    expect(r.tags).toEqual(['maya lidar', 'digital elevation model'])
+    expect(r.tags).toEqual(['digital elevation model'])
     expect(r.body).toMatch(/one lamp over each/)
     expect(out.written).toContain('requests/lantern-hall.md')
   })
@@ -171,7 +168,8 @@ describe('a found step writes a request (spec 2.4, 10.3)', () => {
     await landOn(fakeLlm(planFor(foundStep())))
     expect(stateOf().founds).toHaveLength(1)
     expect(Wish.parse(read('wishes/lamp-rail.json'))).toMatchObject({ count: 1, status: 'open' })
-    expect(streamText()).toMatch(/Asked Roman for a place: Lantern Hall/)
+    expect(streamText()).toMatch(/Founded a place: Lantern Hall/)
+    expect(streamText()).not.toMatch(/Asked Roman/)
   })
 
   it('offers the constraint drawn for this step, and says so in the stream when Merge refuses it', async () => {
@@ -189,7 +187,7 @@ describe('a found step writes a request (spec 2.4, 10.3)', () => {
     expect(fake.calls.find((c) => c.kind === ('found' as never))).toMatchObject({ model: 'claude-sonnet-5-5' })
   })
 
-  it('shows the souvenirs on the interest to the call as data, and not the places it has as instructions', async () => {
+  it('shows the latest souvenirs to the call as data, and not the places it has as instructions', async () => {
     const fake = fakeLlm(planFor(foundStep()))
     await landOn(fake)
     const prompt = fake.calls.find((c) => c.kind === ('found' as never))!.user
@@ -200,7 +198,7 @@ describe('a found step writes a request (spec 2.4, 10.3)', () => {
   it('writes nothing, and does not count it, when the answer breaks a rule (a body over 200 words, words that claim to be human, a web address)', async () => {
     for (const bad of [{ body: Array(201).fill('word').join(' ') }, { body: 'I am a human and I want a house.' }, { body: 'Look at https://example.org now.' }]) {
       rmSync(file('requests'), { recursive: true, force: true })
-      put('mind/state.json', MindState.parse({ wakeTop: days([['maya lidar', 80]], [['maya lidar', 78]]) }))
+      put('mind/state.json', MindState.parse({}))
       rmSync(file('memory'), { recursive: true, force: true })
       await landOn(fakeLlm(planFor(foundStep()), goodAnswer(bad)))
       expect(requestFiles()).toEqual([])
@@ -214,13 +212,14 @@ describe('a found step writes a request (spec 2.4, 10.3)', () => {
     expect(stateOf().founds ?? []).toEqual([])
   })
 
-  it('rests, with a note, when two requests got open between the plan and the step (the conditions are checked again)', async () => {
+  it('rests, with a note, when a place of a found got under construction between the plan and the step (the rails are checked again)', async () => {
     const fake = fakeLlm(planFor(foundStep()))
     await runTick(dir, deps(fake.llm, NOW))
-    openRequest('first-one', [1, 0])
-    openRequest('second-one', [0, 1])
+    const home = read('places/home.json')
+    put('mind/state.json', { ...read('mind/state.json'), placesSeen: ['home', 'workshop', 'lantern'] })
+    put('places/lantern.json', { ...home, id: 'lantern', name: 'Lantern', chunk: [1, 0], state: { ...home.state, construction: { kind: 'found', finishesAt: '2026-11-04T10:00:00Z' } } })
     await runTick(dir, deps(fake.llm, minutesAfter(31)))
-    expect(requestFiles()).toEqual(['first-one.md', 'second-one.md'])
+    expect(requestFiles()).toEqual([])
     expect(streamText()).toMatch(/found of Lantern Hall could not start/i)
     expect(fake.calls.some((c) => c.kind === ('found' as never))).toBe(false)
   })
