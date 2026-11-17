@@ -1,5 +1,5 @@
 import { THOUGHT_MAX_CHARS, ThoughtAnswer } from '@forkling/schema'
-import { afterThought, requestReplan, surpriseImportance, type ThoughtOutcome } from '@forkling/sim'
+import { afterThought, isRepeatedThought, requestReplan, surpriseImportance, thoughtFingerprint, thoughtUnchanged, type ThoughtOutcome } from '@forkling/sim'
 import { clampText } from '../decision.ts'
 import { claimsHuman } from '../honesty.ts'
 import { stopFailure } from '../llm.ts'
@@ -33,12 +33,20 @@ export async function thoughtTick(t: Tick): Promise<void> {
     .filter((e) => e.kind !== 'thought' && Date.parse(e.at) > since)
     .slice(-MAX_EVENTS)
   const stepOf = goals.now ? goals.today?.steps[goals.now.index] : undefined
+  const found = t.visitorNotes.filter((n) => n.status === 'found')
+  const fingerprint = thoughtFingerprint({ step: stepOf && goals.now ? { verb: stepOf.verb, target: stepOf.targetId ?? null, until: goals.now.until } : null, noteIds: found.map((n) => n.id) })
+  // Nothing changed since the last thought: no call, and the last line stands (audit 17 Nov).
+  if (thoughtUnchanged(mind.thought, fingerprint, events.length)) {
+    notes.push('thought skipped: nothing changed since the last one')
+    mind.thought = afterThought(mind.thought, { skipped: true }, t.nowMs)
+    return
+  }
   const user = buildThoughtUser({
     step: stepOf && goals.now ? { verb: stepOf.verb, target: stepOf.targetId ?? null, reason: stepOf.reason, until: clock(t.tz, Date.parse(goals.now.until)) } : null,
     events: events.map((e) => ({ id: e.id, text: e.text })),
     recent: mind.thought?.recent ?? [],
     wants: t.wants.slice(0, TOP_WANTS).map((w) => w.text),
-    notes: t.visitorNotes.filter((n) => n.status === 'found').slice(0, 5).map((n) => ({ id: n.id, place: n.placeId, message: n.message })),
+    notes: found.slice(0, 5).map((n) => ({ id: n.id, place: n.placeId, message: n.message })),
   })
 
   const before = t.attempts.length
@@ -61,12 +69,21 @@ export async function thoughtTick(t: Tick): Promise<void> {
     return done({ ok: false })
   }
 
+  // A line nearly like one of the last 5 is thrown away whole: not shown, not kept, no scores. The call was made for this input, so it is not asked again for it.
+  if (isRepeatedThought(line, mind.thought?.recent ?? [])) {
+    notes.push('thought dropped: it was too like one of the last 5')
+    done({ skipped: true })
+    mind.thought = { ...mind.thought!, lastInput: fingerprint }
+    return
+  }
+
   // Only what code has not already scored (spec 9.3 sets a few events' importance itself).
   const shown = new Set(events.filter((e) => e.importance === undefined).map((e) => e.id))
   const scored = answer.scores.filter((s) => shown.has(s.id)).slice(0, 20)
   addImportance(t, scored.reduce((n, s) => n + s.importance, 0) + surpriseImportance(answer.surprise))
   t.remember.push({ at: t.nowIso, kind: 'thought', text: line, ...(scored.length > 0 ? { scored } : {}), surprise: answer.surprise })
   done({ ok: true, line })
+  mind.thought = { ...mind.thought!, lastInput: fingerprint }
 
   if (answer.action === 'replan') {
     const reason = answer.reason?.trim()

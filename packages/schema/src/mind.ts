@@ -66,6 +66,8 @@ export const ThoughtState = z.object({
   replanRequest: z.object({ reason: z.string().max(140), at: Timestamp }).optional(),
   /** The last 5 thought lines, newest last: "you just thought". */
   recent: z.array(z.string().max(140)).max(5).default([]),
+  /** The step and notes the last thought was made for: with no new event and the same step and notes, the next thought tick makes no call (audit 17 Nov). */
+  lastInput: z.string().max(400).optional(),
 })
 export type ThoughtState = z.infer<typeof ThoughtState>
 

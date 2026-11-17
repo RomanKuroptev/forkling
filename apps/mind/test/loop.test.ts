@@ -114,18 +114,26 @@ describe('the reflex tick (spec 2.2)', () => {
 })
 
 describe('the thought tick in the loop', () => {
-  it('runs every 5 minutes through the day: 12 in an hour, on time', async () => {
+  const lastThoughtAt = () => Date.parse(JSON.parse(readFileSync(join(dir, 'mind/state.json'), 'utf8')).thought.lastAt)
+
+  it('comes due every 5 minutes through the day, on time, but only calls when something changed (audit 17 Nov)', async () => {
     const { llm, calls } = fakeLlm()
     const { runFor } = makeLoop(AWAKE, llm, null)
     await runFor(60)
-    expect(calls.filter((c) => c.kind === 'thought')).toHaveLength(12)
+    const n = calls.filter((c) => c.kind === 'thought').length
+    expect(n).toBeGreaterThanOrEqual(1)
+    expect(n).toBeLessThanOrEqual(12)
+    // The clock kept moving at every due tick, call or not: the last one is within 5 minutes of the hour's end.
+    expect(AWAKE + 60 * 60_000 - lastThoughtAt()).toBeLessThanOrEqual(5 * 60_000)
   })
 
-  it('runs every 2 minutes from 18:00: 30 in an hour', async () => {
+  it('comes due every 2 minutes from 18:00, on time, and never calls more than 30 times an hour', async () => {
     const { llm, calls } = fakeLlm()
-    const { runFor } = makeLoop(Date.parse('2026-11-12T17:00:00Z'), llm, null)
+    const start = Date.parse('2026-11-12T17:00:00Z')
+    const { runFor } = makeLoop(start, llm, null)
     await runFor(60)
-    expect(calls.filter((c) => c.kind === 'thought')).toHaveLength(30)
+    expect(calls.filter((c) => c.kind === 'thought').length).toBeLessThanOrEqual(30)
+    expect(start + 60 * 60_000 - lastThoughtAt()).toBeLessThanOrEqual(2 * 60_000)
   })
 
   it('shows the last thought line in now.json', async () => {
