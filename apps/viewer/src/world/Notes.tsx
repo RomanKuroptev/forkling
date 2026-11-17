@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { hoverStore, opens } from './hoverStore.ts'
+import { NOTE_POST } from './theme.ts'
 import { noteMarks } from './noteMarks.ts'
 import { notesStore, useNotes } from './notesStore.ts'
 import { useWorld } from './WorldContext.tsx'
@@ -18,7 +19,7 @@ export function Notes() {
           {/* A dark edge under a bright, glowing sheet, so a paper stands out from the grass at a distance. */}
           <mesh position={[0, -0.005, 0]}>
             <boxGeometry args={[0.98, 0.02, 1.26]} />
-            <meshStandardMaterial color="#3a3224" />
+            <meshStandardMaterial color={NOTE_POST} />
           </mesh>
           <mesh position={[0, 0.012, 0]} castShadow>
             <boxGeometry args={[0.86, 0.03, 1.14]} />

@@ -25,6 +25,9 @@ Everything here needs `?debug`. Press **F3** for the overlay: mood and energy, a
 | `?clip=Sit` | Pin the forkling in front of you looping one animation, to check it by eye |
 | `?world=local` | Read the world from this site's own `/world/manifest.json` instead of GitHub |
 | `?world=local&fixture=10` | The made-up 10-place world from `packages/sim` |
+| `?stand=x,z,yaw` and `?pitch=deg` | Start the visitor somewhere, facing a heading, looking up or down: for screenshots |
+| `?fx=0` | No glow and no scanlines |
+| `?boot` | Pin the boot screen |
 
 GitHub can take up to a minute to serve a new commit. The repo state counts from the forkling's own `lastTickAt`, not the commit time, so commits that leave `forkling.json` alone (works, souvenirs, the tick log) do not move it.
 - Stack: React Three Fiber, drei, `@react-three/rapier` for physics, `ecctrl` for the walking controller. Assets are CC0 low-poly packs (Kenney, KayKit, Quaternius); keep the art style coherent across species.

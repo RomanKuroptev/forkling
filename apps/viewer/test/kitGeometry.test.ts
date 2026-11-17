@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { repaint } from '../src/world/theme.ts'
 import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { DOOR_HALF, WALL, createLand, placeCentre, toLandPlace } from '@forkling/sim'
@@ -313,7 +314,7 @@ describe("parts that are models (spec 5.3: a model stands in for the primitives,
 
 describe('windows and lamps that light at night', () => {
   const home = place('home')
-  const GLASS = '#bfe3f0'
+  const GLASS = repaint('#bfe3f0')
   const withLamps = (p: Place, lamps: boolean): Place => ({ ...p, state: { ...p.state, lamps } })
   const glowing = (p: Place, opts: { nowMs?: number; interiors?: ReadonlySet<string> } = {}) => {
     const scene = sceneInstances([p], kit, { heightAt: () => 0, interiors: opts.interiors ?? new Set(), nowMs: opts.nowMs })

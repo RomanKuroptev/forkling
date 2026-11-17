@@ -6,6 +6,7 @@ import { Root } from './Root.tsx'
 import { touchUi } from './touch.ts'
 import './styles.css'
 import './look.css'
+import './look-world.css'
 
 // Lets the stylesheet switch on how the page is being used.
 document.documentElement.dataset.input = touchUi ? 'touch' : 'pointer'

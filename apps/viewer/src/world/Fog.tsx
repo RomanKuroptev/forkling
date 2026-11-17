@@ -1,4 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber'
+import { MIST } from './theme.ts'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { MIST_FADE_FAR, MIST_FADE_NEAR, mistColor, mistPuffs } from './mistGeometry.ts'
@@ -44,10 +45,11 @@ const vertexShader = /* glsl */ `
 const fragmentShader = /* glsl */ `
   uniform sampler2D uMap;
   uniform vec3 uColor;
+  uniform float uStrength;
   varying vec2 vUv;
   varying float vAlpha;
   void main() {
-    float a = texture2D(uMap, vUv).a * vAlpha;
+    float a = texture2D(uMap, vUv).a * vAlpha * uStrength;
     if (a < 0.003) discard;
     gl_FragColor = vec4(uColor, a);
     #include <tonemapping_fragment>
@@ -74,7 +76,7 @@ export function Fog() {
     geometry.setAttribute('aShape', new THREE.InstancedBufferAttribute(new Float32Array(puffs.flatMap((p) => [p.size, p.alpha])), 2))
     geometry.instanceCount = puffs.length
     const material = new THREE.ShaderMaterial({
-      uniforms: { uMap: { value: cloudTexture() }, uColor: { value: new THREE.Color('#d7e6f0') }, uNear: { value: MIST_FADE_NEAR }, uFar: { value: MIST_FADE_FAR } },
+      uniforms: { uMap: { value: cloudTexture() }, uColor: { value: new THREE.Color(MIST.cloud) }, uStrength: { value: MIST.strength }, uNear: { value: MIST_FADE_NEAR }, uFar: { value: MIST_FADE_FAR } },
       vertexShader,
       fragmentShader,
       transparent: true,

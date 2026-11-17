@@ -11,9 +11,9 @@ const puffs = mistPuffs(land)
 const walls = fogWalls(land)
 
 /** The fog colours the environment sets: day, dusk and night (`Environment.tsx`). */
-const DAY = '#bcd7e6'
-const DUSK = '#e9a77c'
-const NIGHT = '#1a2c52'
+const DAY = '#ff7ab8'
+const DUSK = '#b45a9c'
+const NIGHT = '#3a1280'
 
 describe('the mist at the world\'s edge: soft puffs, not panels', () => {
   it('has puffs along every fog side, at least one for every 8 m of it', () => {

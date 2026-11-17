@@ -1,4 +1,5 @@
 import { createPrng, hashString, type Land } from '@forkling/sim'
+import { MIST } from './theme.ts'
 import { FOG_LAYERS, FOG_LAYER_GAP, fogWalls } from './landGeometry.ts'
 
 /**
@@ -74,6 +75,6 @@ const smoothstep = (e0: number, e1: number, x: number) => {
  */
 export function mistColor(fog: string): string {
   const day = smoothstep(0.05, 0.5, luminance(fog))
-  const target = mix('#cfdcf0', '#ffffff', day)
+  const target = mix(MIST.targetNight, MIST.targetDay, day)
   return mix(fog, target, 0.75 - 0.4 * day)
 }

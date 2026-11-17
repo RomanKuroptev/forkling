@@ -1,4 +1,5 @@
 import type { Place } from '@forkling/schema'
+import { WIREFRAME } from './theme.ts'
 import { DOOR_HALF, isBuilding, placeCentre, toLandPlace } from '@forkling/sim'
 import { SIGN_W, signSpot } from './exhibitGeometry.ts'
 import { floorHeight, type Instance } from './kitBase.ts'
@@ -12,9 +13,9 @@ export const SCAFFOLD_HEAD = 2
 const LEVEL = 1.4
 /** Clear room beside the door and the sign, on each side of the way in, in meters. */
 const FRONT_MARGIN = 0.4
-const POLE = '#a98a5a'
-const RAIL = '#cdb888'
-const PLANK = '#7c633f'
+const POLE = WIREFRAME.pole
+const RAIL = WIREFRAME.rail
+const PLANK = WIREFRAME.plank
 
 /**
  * The scaffolding round a place that is being built (spec 4.5): poles at the corners and along each side, rails at every level up
@@ -33,7 +34,7 @@ export function constructionInstances(place: Place, baseY: number, nowMs?: numbe
   const hz = fd / 2 + SCAFFOLD_REACH
   const out: Instance[] = []
   const piece = (shape: Instance['shape'], at: [number, number, number], size: [number, number, number], color: string): void => {
-    out.push({ shape, matrix: compose(at, [0, 0, 0], size), color })
+    out.push({ shape, matrix: compose(at, [0, 0, 0], size), color, glow: true })
   }
 
   // Poles: both corners of each side and a pole every few meters between, each corner once.
@@ -64,6 +65,9 @@ export function constructionInstances(place: Place, baseY: number, nowMs?: numbe
     for (const [a, b] of frontParts(-hx, hx)) piece('box', [px + (a + b) / 2, y, pz + hz], [b - a, 0.08, 0.08], RAIL)
     for (const sx of [-1, 1]) piece('box', [px + sx * hx, y, pz], [0.08, 0.08, 2 * hz], RAIL)
   }
+
+
+
 
   // Boards along the front (the door's side, +z) on each side of the way in, at the second level when the building is tall enough.
   const deck = SCAFFOLD_HEAD + Math.min(1, levels - 1) * LEVEL

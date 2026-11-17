@@ -2245,112 +2245,112 @@
       "id": "harbour",
       "name": "Harbour",
       "colors": {
-        "wall": "#d8dde0",
-        "trim": "#4a6275",
-        "roof": "#3e5668",
-        "floor": "#b8a58a",
-        "accent": "#c8503c",
-        "wood": "#8a6a4a",
-        "metal": "#7b8a94",
-        "glow": "#ffd98a"
+        "wall": "#bfeaf5",
+        "trim": "#6a4cff",
+        "roof": "#01cdfe",
+        "floor": "#e8d9ff",
+        "accent": "#ff3fa4",
+        "wood": "#b388ff",
+        "metal": "#d8d8ff",
+        "glow": "#7ffcff"
       }
     },
     {
       "id": "meadow",
       "name": "Meadow",
       "colors": {
-        "wall": "#efe6c8",
-        "trim": "#7a9a4a",
-        "roof": "#a8c070",
-        "floor": "#c9b98a",
-        "accent": "#e0863a",
-        "wood": "#8a6a3a",
-        "metal": "#8a8f7a",
-        "glow": "#fff0a0"
+        "wall": "#eaffd6",
+        "trim": "#ff71ce",
+        "roof": "#7fe3d8",
+        "floor": "#ffe6f5",
+        "accent": "#ff9f43",
+        "wood": "#c79bff",
+        "metal": "#e2e0ff",
+        "glow": "#fff27a"
       }
     },
     {
       "id": "ember",
       "name": "Ember",
       "colors": {
-        "wall": "#e8d2bc",
-        "trim": "#7a3a2a",
-        "roof": "#9a4a30",
-        "floor": "#a88a6a",
-        "accent": "#e0a030",
-        "wood": "#6a4228",
-        "metal": "#6f6460",
-        "glow": "#ffb060"
+        "wall": "#ffc8e8",
+        "trim": "#ff4f6d",
+        "roof": "#ff7a59",
+        "floor": "#ffe9dc",
+        "accent": "#fff27a",
+        "wood": "#c06cff",
+        "metal": "#e8d6ff",
+        "glow": "#ffb36b"
       }
     },
     {
       "id": "moss",
       "name": "Moss",
       "colors": {
-        "wall": "#cfd8c2",
-        "trim": "#4a6a45",
-        "roof": "#5c7a52",
-        "floor": "#9a9a78",
-        "accent": "#b8a040",
-        "wood": "#6e5a3a",
-        "metal": "#7a8678",
-        "glow": "#e8f0a0"
+        "wall": "#d6ffe9",
+        "trim": "#19c6a6",
+        "roof": "#39ff88",
+        "floor": "#e8fff4",
+        "accent": "#ff6ad5",
+        "wood": "#8f7bff",
+        "metal": "#d8f5ff",
+        "glow": "#baffc9"
       }
     },
     {
       "id": "dusk",
       "name": "Dusk",
       "colors": {
-        "wall": "#cfc8dc",
-        "trim": "#5a4a7a",
-        "roof": "#4a3e6a",
-        "floor": "#a89cb8",
-        "accent": "#e07a9a",
-        "wood": "#6a5a6a",
-        "metal": "#7a748a",
-        "glow": "#ffc0e0"
+        "wall": "#e2ccff",
+        "trim": "#8c1eff",
+        "roof": "#5b2bd6",
+        "floor": "#f1e4ff",
+        "accent": "#ff6ad5",
+        "wood": "#a06bff",
+        "metal": "#d8d8ff",
+        "glow": "#ff9ad8"
       }
     },
     {
       "id": "paper",
       "name": "Paper",
       "colors": {
-        "wall": "#f3eee0",
-        "trim": "#8a8272",
-        "roof": "#b8b09a",
-        "floor": "#d8d0b8",
-        "accent": "#4a7aa0",
-        "wood": "#9a8a6a",
-        "metal": "#a09a8a",
-        "glow": "#fff4c0"
+        "wall": "#f4f0ff",
+        "trim": "#ff9ad8",
+        "roof": "#ffc8e8",
+        "floor": "#fff0fa",
+        "accent": "#01cdfe",
+        "wood": "#d0a8ff",
+        "metal": "#f0ecff",
+        "glow": "#fff27a"
       }
     },
     {
       "id": "slate",
       "name": "Slate",
       "colors": {
-        "wall": "#b8bec4",
-        "trim": "#3a4450",
-        "roof": "#2e3844",
-        "floor": "#8a9098",
-        "accent": "#e0c050",
-        "wood": "#5a5248",
-        "metal": "#68727c",
-        "glow": "#d8f0ff"
+        "wall": "#c9c6ff",
+        "trim": "#3a2a8a",
+        "roof": "#2b0b5e",
+        "floor": "#dedcff",
+        "accent": "#fff27a",
+        "wood": "#7a5cff",
+        "metal": "#e2e0ff",
+        "glow": "#7ffcff"
       }
     },
     {
       "id": "coral",
       "name": "Coral",
       "colors": {
-        "wall": "#f2d8cf",
-        "trim": "#c85a50",
-        "roof": "#d8766a",
-        "floor": "#d8b8a0",
-        "accent": "#3a8a8a",
-        "wood": "#8a5a48",
-        "metal": "#9a8a88",
-        "glow": "#ffd0a0"
+        "wall": "#ffc8e8",
+        "trim": "#ff3fa4",
+        "roof": "#ff6ad5",
+        "floor": "#ffe6f5",
+        "accent": "#01cdfe",
+        "wood": "#b967ff",
+        "metal": "#f5e6ff",
+        "glow": "#ffd0f0"
       }
     }
   ]

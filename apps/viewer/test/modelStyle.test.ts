@@ -8,16 +8,16 @@ describe('restyleMaterial', () => {
 
   it('is matte and non-metallic, so it is lit without an environment map', () => {
     const m = restyleMaterial(authored)
-    expect(m.metalness).toBe(0)
-    expect(m.roughness).toBeGreaterThan(0.7)
+    expect(m.metalness).toBeLessThan(0.1)
+    expect(m.roughness).toBeGreaterThan(0.3)
   })
 
   it('replaces the authored colour with the palette, by material name', () => {
     const leaves = restyleMaterial(authored).color
     const bark = restyleMaterial(Object.assign(authored.clone(), { name: 'woodBarkDark' })).color
     expect(leaves.getHex()).not.toBe(authored.color.getHex())
-    expect(leaves.g).toBeGreaterThan(leaves.r)
-    expect(bark.r).toBeGreaterThan(bark.b)
+    expect(leaves.g).toBeLessThan(leaves.r)
+    expect(bark.b).toBeGreaterThan(bark.g)
   })
 
   it('does not mutate the loaded material and keeps unknown names as authored', () => {

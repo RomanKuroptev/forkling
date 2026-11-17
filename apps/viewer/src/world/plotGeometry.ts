@@ -1,4 +1,5 @@
 import { isOpenRequest, type PlaceRequest } from '@forkling/schema'
+import { PLOT } from './theme.ts'
 import { chunkCentre } from '@forkling/sim'
 import type { Instance } from './kitBase.ts'
 import { compose } from './matrix.ts'
@@ -6,10 +7,10 @@ import { compose } from './matrix.ts'
 /** Half the side of a staked plot, in meters: a square 14 meters across in the middle of its chunk. */
 export const PLOT_HALF = 7
 const REACH = 0.6
-const STAKE = '#8a6a3f'
-const ROPE = '#d9c8a0'
-const BOARD = '#e8dcc0'
-const PENNANT = '#c0502f'
+const STAKE = PLOT.stake
+const ROPE = PLOT.rope
+const BOARD = PLOT.board
+const PENNANT = PLOT.pennant
 
 export type Ground = number | ((x: number, z: number) => number)
 const at = (ground: Ground, x: number, z: number) => (typeof ground === 'function' ? ground(x, z) : ground)
