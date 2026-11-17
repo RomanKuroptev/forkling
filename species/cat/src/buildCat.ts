@@ -3,12 +3,19 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { buildClips } from './clips.ts'
 import { BONES, PARENT, REST, type BoneName } from './skeleton.ts'
 
-const FUR = new THREE.Color('#e08f3c')
-const BELLY = new THREE.Color('#f4e2c0')
-const STRIPE = new THREE.Color('#9a561c')
-const PINK = new THREE.Color('#e8a0a0')
-const EYE = new THREE.Color('#7cc24a')
-const DARK = new THREE.Color('#2a1d14')
+// Mockup D (docs/spec/v4/look/merge-options.png): a smooth pastel blue body, darker blue legs and ears, a peach monitor for a head.
+const FUR = new THREE.Color('#6fb0ff')
+const BELLY = new THREE.Color('#b8dcff')
+const LEG = new THREE.Color('#3a5cff')
+const TAIL_TIP = new THREE.Color('#e6f3ff')
+/** The monitor that is Merge's head: a peach bezel and a dark screen with the face drawn on it by the viewer. */
+const BEZEL = new THREE.Color('#ffc9a8')
+const SCREEN = new THREE.Color('#04140b')
+/** The monitor: width, height, depth, where its middle is, and how far the screen is tilted up (radians), in the cat's space. */
+export const MONITOR = { size: [0.23, 0.2, 0.09], at: [0, 0.385, 0.32], tilt: -(15 * Math.PI) / 180, screen: 0.85 } as const
+
+/** A point `k` meters out of the monitor's front, along its tilted front direction. */
+const outFront = (k: number): [number, number, number] => [MONITOR.at[0], MONITOR.at[1] - k * Math.sin(MONITOR.tilt), MONITOR.at[2] + k * Math.cos(MONITOR.tilt)]
 
 /** Rest position of each bone in the cat's space, from the local offsets in `skeleton.ts`. */
 const ABS = {} as Record<BoneName, THREE.Vector3>
@@ -82,35 +89,28 @@ function buildParts(): THREE.BufferGeometry[] {
   // Torso.
   parts.push(part(sphere(), place(0, 0.225, 0, [0.095, 0.09, 0.2]), bodyColor, BODY_BLEND))
   parts.push(part(sphere(), place(0, 0.225, 0.15, [0.085, 0.085, 0.085]), bodyColor, 'chest'))
-  for (const z of [-0.12, -0.04, 0.04]) {
-    parts.push(part(box(0.05, 0.014, 0.03), place(0, 0.307, z), STRIPE, BODY_BLEND))
-  }
 
-  // Neck and head.
+  // Neck and head: an old monitor, tilted up a little, with ears on top. The face is a separate quad (`Face`, see `buildCat`) the viewer paints.
   parts.push(part(cylinder(0.04, 0.046, 0.09), place(0, 0.285, 0.255), FUR, 'neck'))
-  parts.push(part(sphere(), place(0, 0.335, 0.315, [0.075, 0.065, 0.068]), FUR, 'head'))
-  parts.push(part(box(0.05, 0.035, 0.035), place(0, 0.318, 0.375), BELLY, 'head'))
-  parts.push(part(box(0.016, 0.012, 0.012), place(0, 0.328, 0.395), PINK, 'head'))
+  parts.push(part(box(...MONITOR.size), place(...MONITOR.at, [1, 1, 1], MONITOR.tilt), BEZEL, 'head'))
+  parts.push(part(box(MONITOR.size[0] * MONITOR.screen, MONITOR.size[1] * MONITOR.screen, 0.012), place(...outFront(MONITOR.size[2] / 2 + 0.001), [1, 1, 1], MONITOR.tilt), SCREEN, 'head'))
   for (const side of [1, -1]) {
-    parts.push(part(box(0.014, 0.016, 0.008), place(side * 0.032, 0.345, 0.378), EYE, 'head'))
-    parts.push(part(box(0.006, 0.014, 0.004), place(side * 0.032, 0.345, 0.383), DARK, 'head'))
     const ear: BoneName = side === 1 ? 'earL' : 'earR'
-    parts.push(part(new THREE.ConeGeometry(0.04, 0.075, 4), place(side * 0.05, 0.405, 0.3, [1, 1, 0.8], 0, -side * 0.15), FUR, ear))
-    parts.push(part(new THREE.ConeGeometry(0.022, 0.05, 4), place(side * 0.05, 0.4, 0.31, [1, 1, 0.6], 0, -side * 0.15), PINK, ear))
+    parts.push(part(new THREE.ConeGeometry(0.04, 0.085, 4), place(side * 0.07, 0.52, 0.31, [1, 1, 0.8], 0, -side * 0.15), LEG, ear))
   }
 
   // Tail: four ringed segments running back from the hips.
   const tail: [BoneName, number, number, THREE.Color][] = [
     ['tail1', 0.1, 0.024, FUR],
-    ['tail2', 0.1, 0.021, STRIPE],
-    ['tail3', 0.1, 0.019, FUR],
-    ['tail4', 0.08, 0.017, STRIPE],
+    ['tail2', 0.1, 0.021, FUR],
+    ['tail3', 0.1, 0.019, TAIL_TIP],
+    ['tail4', 0.08, 0.017, TAIL_TIP],
   ]
   for (const [bone, length, radius, color] of tail) {
     const at = ABS[bone]
     parts.push(part(cylinder(radius * 0.9, radius, length), place(at.x, at.y, at.z - length / 2, [1, 1, 1], Math.PI / 2), color, bone))
   }
-  parts.push(part(sphere(0), place(ABS.tail4.x, ABS.tail4.y, ABS.tail4.z - 0.08, [0.017, 0.017, 0.017]), STRIPE, 'tail4'))
+  parts.push(part(sphere(0), place(ABS.tail4.x, ABS.tail4.y, ABS.tail4.z - 0.08, [0.017, 0.017, 0.017]), TAIL_TIP, 'tail4'))
 
   // Legs: upper, lower and a pale paw. Hind legs get a haunch.
   const legs: [BoneName, BoneName, number][] = [
@@ -123,10 +123,10 @@ function buildParts(): THREE.BufferGeometry[] {
     const hind = upper.startsWith('legB')
     const top = ABS[upper]
     const knee = ABS[lower]
-    parts.push(part(cylinder(0.026, hind ? 0.03 : 0.028, top.y - knee.y), place(top.x, (top.y + knee.y) / 2, top.z), FUR, upper))
-    if (hind) parts.push(part(sphere(), place(top.x + side * 0.005, top.y + 0.01, top.z - 0.01, [0.045, 0.07, 0.075]), FUR, upper))
+    parts.push(part(cylinder(0.026, hind ? 0.03 : 0.028, top.y - knee.y), place(top.x, (top.y + knee.y) / 2, top.z), LEG, upper))
+    if (hind) parts.push(part(sphere(), place(top.x + side * 0.005, top.y + 0.01, top.z - 0.01, [0.045, 0.07, 0.075]), LEG, upper))
     const ankle = 0.035
-    parts.push(part(cylinder(0.022, 0.024, knee.y - ankle), place(knee.x, (knee.y + ankle) / 2, knee.z), FUR, lower))
+    parts.push(part(cylinder(0.022, 0.024, knee.y - ankle), place(knee.x, (knee.y + ankle) / 2, knee.z), LEG, lower))
     parts.push(part(box(0.05, 0.035, 0.075), place(knee.x, ankle / 2, knee.z + 0.015), BELLY, lower))
   }
   return parts
@@ -155,6 +155,18 @@ export function buildCat(): { scene: THREE.Group; clips: THREE.AnimationClip[] }
   scene.add(mesh)
   scene.updateMatrixWorld(true)
   mesh.bind(new THREE.Skeleton(bones))
+
+  // The face: a quad on the screen, a child of the head bone so it moves with the head. The viewer paints it from what the body is doing.
+  const head = ABS.head
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(MONITOR.size[0] * MONITOR.screen * 0.96, MONITOR.size[1] * MONITOR.screen * 0.96),
+    new THREE.MeshBasicMaterial({ name: 'face', color: '#39ff88' }),
+  )
+  face.name = 'Face'
+  const front = outFront(MONITOR.size[2] / 2 + 0.009)
+  face.position.set(front[0] - head.x, front[1] - head.y, front[2] - head.z)
+  face.rotation.x = MONITOR.tilt
+  bones[BONES.indexOf('head')]!.add(face)
 
   return { scene, clips: buildClips() }
 }
