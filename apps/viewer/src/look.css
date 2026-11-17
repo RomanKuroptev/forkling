@@ -75,3 +75,8 @@ canvas {
   background: var(--purple);
   color: #fff;
 }
+
+/* On a phone the note button stands above Hide text, clear of the stick and Jump. */
+html[data-input="touch"] .note-btn {
+  bottom: calc(var(--taskbar-h) + 168px) !important;
+}
