@@ -64,7 +64,7 @@ export function ThoughtBubble() {
 }
 
 /** Above the top of Merge's monitor, so the pop-up never covers its face. */
-const ANCHOR_HEIGHT = 0.9 * 2.5
+const ANCHOR_HEIGHT = 0.9 * 2
 
 const projected = new THREE.Vector3()
 

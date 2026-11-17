@@ -1,4 +1,4 @@
-import { advancePlayback, playbackStateTime, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
+import { placeAt, advancePlayback, playbackStateTime, resolveSlot, startPlayback, type PlaybackInput } from '@forkling/sim'
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
@@ -33,7 +33,9 @@ const FADE = 0.25
 const SNAP_DISTANCE = 3
 
 /** The body is drawn this much bigger than the sim's own size, so it is easy to spot and its face can be read from across a place. A drawing scale only: the sim's sizes are unchanged. */
-const DRAW_SCALE = 2.5
+const DRAW_SCALE = 2
+/** Inside a place the furniture is made for a small cat, so the body is drawn smaller there (the scale eases from one to the other as it walks through the door). */
+const INDOOR_SCALE = 1.35
 
 const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a))
 
@@ -42,6 +44,7 @@ export function Forkling() {
   const { spawn } = simWorld
   const gltf = useGLTF(species.modelUrl)
   const group = useRef<THREE.Group>(null)
+  const scaler = useRef<THREE.Group>(null)
   const body = useRef<RapierRigidBody>(null)
 
   const model = useMemo(() => {
@@ -164,6 +167,11 @@ export function Forkling() {
     view.heading += wrapAngle(sim.heading - view.heading) * (1 - Math.exp(-dt * 10))
     const y = simWorld.heightAt(view.shown.x, view.shown.z)
 
+    if (scaler.current) {
+      const target = placeAt([view.shown.x, view.shown.z], world.places) ? INDOOR_SCALE : DRAW_SCALE
+      const now = scaler.current.scale.x
+      scaler.current.scale.setScalar(now + (target - now) * (1 - Math.exp(-dt * 6)))
+    }
     if (group.current) {
       group.current.position.set(view.shown.x, y, view.shown.z)
       group.current.rotation.y = view.heading
@@ -187,7 +195,7 @@ export function Forkling() {
   return (
     <>
       <group ref={group}>
-        <group scale={DRAW_SCALE}>
+        <group ref={scaler} scale={DRAW_SCALE}>
           <primitive object={model} />
         </group>
         <ThoughtBubble />
