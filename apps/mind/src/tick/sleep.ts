@@ -1,26 +1,23 @@
 import { SleepRewriteAnswer, type BudgetCall, type StreamEntry } from '@forkling/schema'
-import { applyBeliefOps, checkReflection, rewriteWants, wantsFromRewrite } from '@forkling/sim'
+import { applyBeliefOps, checkReflection, fitDiaryLines, rewriteWants, wantsFromRewrite } from '@forkling/sim'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, recordCall } from '../budget.ts'
 import { claimsHuman } from '../honesty.ts'
 import { stopFailure, thinkingFor } from '../llm.ts'
 import { buildSleepUser } from '../prompts/sleep.ts'
 import { renderJournal, renderSummary } from '../reflect.ts'
 import { readStream } from '../stream.ts'
-import { wordCount } from '../honesty.ts'
 import type { Tick } from './context.ts'
 import { applyPage } from './page.ts'
 
 const MODEL = 'claude-sonnet-5-5'
-/** The diary, twelve memory slots, belief changes and the wants list. Sonnet's thinking counts too, so the limit is generous. */
-const SLEEP_OUTPUT_TOKENS = 6000
+/** A 3-line diary, twelve memory slots, belief changes and the wants list. Sonnet's thinking counts too, so the limit is generous (the diary was about 350 tokens of the 6,000 and is now about 100). */
+const SLEEP_OUTPUT_TOKENS = 5500
 /** Spec 9.4: a batch that is not back this long after waking is cancelled and the request run as a normal call. */
 export const LATE_AFTER_WAKE_MS = 60 * 60_000
 /** The Batch API is asked about a waiting batch no more often than this. */
 export const POLL_EVERY_MS = 5 * 60_000
 /** A normal call that gave nothing is not repeated sooner than this. */
 export const RETRY_EVERY_MS = 30 * 60_000
-/** Spec 9.2: a diary entry is up to 250 words. */
-export const DIARY_MAX_WORDS = 250
 
 type Rewrite = NonNullable<Tick['mind']['sleepRewrite']>
 
@@ -160,16 +157,12 @@ function apply(t: Tick, date: string, parsed: unknown): void {
     return true
   }
 
-  // The diary: only what the day backs up, nothing human, and up to 250 words (whole paragraphs, from the start).
+  // The diary: only what the day backs up, nothing human, and at most 3 lines of 140 characters (spec v4 6): too much is cut, not thrown away.
   const checked = checkReflection({ journal: { title: a.diary.title, paragraphs: a.diary.paragraphs.filter((p) => !human('diary', p.text)) }, beliefOps: a.beliefOps.filter((o) => !(o.statement && human('belief', o.statement))) }, stream, t.beliefs)
   notes.push(...checked.dropped.map((d) => `claim dropped, ${d}`))
-  let words = 0
-  const paragraphs = checked.reflection.journal.paragraphs.filter((p) => {
-    words += wordCount(p.text)
-    if (words <= DIARY_MAX_WORDS) return true
-    notes.push(`diary: a paragraph was cut to keep the entry to ${DIARY_MAX_WORDS} words`)
-    return false
-  })
+  const fitted = fitDiaryLines(checked.reflection.journal.paragraphs.map((p) => p.text))
+  if (fitted.cut) notes.push('diary: cut to 3 lines of up to 140 characters')
+  const paragraphs = fitted.lines.map((text) => ({ text, refs: [] as string[] }))
   const text = renderJournal(date, { journal: { title: checked.reflection.journal.title, paragraphs }, beliefOps: [] })
   if (text) {
     t.journal = { date, text }

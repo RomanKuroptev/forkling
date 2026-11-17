@@ -137,9 +137,10 @@ describe('buildSleepUser (spec 9.4)', () => {
   it('cannot be closed early by text in the day', () => {
     expect(buildSleepUser(base).match(/<\/data>/g)).toHaveLength(1)
   })
-  it('asks for a diary of up to 250 words with refs, twelve slots with one for running jokes, belief changes, and the whole wants list with at most half changed', () => {
+  it('asks for a diary of up to 3 lines of 140 characters with refs, twelve slots with one for running jokes, belief changes, and the whole wants list with at most half changed', () => {
     const text = buildSleepUser(base)
-    expect(text).toMatch(/250 words/)
+    expect(text).toMatch(/up to 3 lines/)
+    expect(text).toMatch(/140 characters/)
     expect(text).toMatch(/refs/)
     expect(text).toMatch(/12 slots/)
     expect(text).toMatch(/Running jokes/)
@@ -265,14 +266,19 @@ describe('collecting it', () => {
     expect(t.notes.join(' ')).toMatch(/claim dropped/)
   })
 
-  it('keeps the diary to 250 words, cutting whole paragraphs from the end', async () => {
-    const para = (n: number) => ({ text: Array(100).fill(`word${n}`).join(' '), refs: [`${DAY}#1`] })
-    const t = tick(fake({ fetch: done(rewrite({ diary: { title: 'Long', paragraphs: [para(1), para(2), para(3)] } })) }), {}, pendingBatch())
+  it('keeps the diary to 3 lines of 140 characters, cutting rather than throwing away', async () => {
+    const para = (n: number, text = `Line ${n}.`) => ({ text, refs: [`${DAY}#1`] })
+    const long = Array(60).fill('wordy').join(' ')
+    const t = tick(fake({ fetch: done(rewrite({ diary: { title: 'Long', paragraphs: [para(1, long), para(2), para(3), para(4), para(5)] } })) }), {}, pendingBatch())
     await sleepRewriteStep(t)
-    expect(t.journal?.text).toContain('word1')
-    expect(t.journal?.text).toContain('word2')
-    expect(t.journal?.text).not.toContain('word3')
-    expect(t.notes.join(' ')).toMatch(/250 words/)
+    const text = t.journal?.text ?? ''
+    expect(text).toContain('Line 2.')
+    expect(text).toContain('Line 3.')
+    expect(text).not.toContain('Line 4.')
+    const body = text.split('\n').filter((l) => l.startsWith('wordy'))
+    expect(body).toHaveLength(1)
+    expect(body[0]!.length).toBeLessThanOrEqual(140)
+    expect(t.notes.join(' ')).toMatch(/cut to 3 lines/)
   })
 
   it('writes no diary when nothing in it survives, and still rewrites the memory', async () => {

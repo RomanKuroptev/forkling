@@ -228,7 +228,16 @@ describe('answering a note (spec 10.1: the reply step)', () => {
     expect(t.mind.replies).toEqual({ date: TODAY, count: 1 })
     expect(t.remember.some((e) => e.kind === 'made' && /replied/i.test(e.text))).toBe(true)
   })
-  it('cuts a reply to 600 characters', async () => {
+  it('keeps a reply of 60 words whole and cuts a longer one at 60 words (asked for 50)', async () => {
+    const words = (n: number) => Array.from({ length: n }, (_, i) => `w${i}`).join(' ')
+    for (const [given, kept] of [[60, 60], [75, 60]] as const) {
+      const { t } = tick({ notes: [found()], reply: { action: 'reply', reply: words(given), reason: null } })
+      withReplyStep(t, NOTE_ID)
+      await replyStep(t)
+      expect(t.noteUpdates[0]!.reply).toBe(words(kept))
+    }
+  })
+  it('still cuts one huge word to 600 characters, the safety limit', async () => {
     const { t } = tick({ notes: [found()], reply: { action: 'reply', reply: 'x'.repeat(900), reason: null } })
     withReplyStep(t, NOTE_ID)
     await replyStep(t)
@@ -403,7 +412,7 @@ describe('the reply prompt (golden)', () => {
     expect(text).toMatch(/decline/)
     expect(text).toMatch(/keep/)
     expect(text).toMatch(/80 characters/)
-    expect(text).toMatch(/600 characters/)
+    expect(text).toMatch(/up to 50 words/)
     expect(REPLY_MAX_TOKENS).toBeGreaterThan(200)
   })
 })

@@ -50,6 +50,8 @@ export const WorkMeta = z
     status: WorkStatus,
     /** Made after a visitor's note (spec v4 7), set by code when the step's reason names a visible note. */
     inspiredBy: InspiredBy.nullable().default(null),
+    /** A caption Merge wrote for it with a write step (spec v4 6): up to 40 words asked, 50 kept. Not a notebook page. */
+    caption: z.string().min(1).max(400).optional(),
     scrapReason: z.string().min(1).max(300).optional(),
     /** Why Merge put it away (spec 9.9). */
     retireReason: z.string().min(1).max(140).optional(),

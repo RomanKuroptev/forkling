@@ -386,7 +386,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     add,
   })
   renderRequests({ requests, wishes, places, selfRequests, tools: loadTools(world), timezone: forkling.timezone, add })
-  renderAbout({ about: mergeAbout, add })
+  renderAbout({ about: mergeAbout, built: { places: places.map((p) => ({ id: p.id, name: p.name })), works: works.filter((w) => w.meta.status !== 'scrap').map((w) => ({ id: w.meta.id, title: w.meta.title })) }, add })
   const endpoint = notesEndpoint(opts.mindUrl)
   const siteKey = validSiteKey(opts.turnstileSiteKey)
   renderNotes({ notes: loadNotes(world), places, mailbox: endpoint && siteKey ? { endpoint, siteKey } : null, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), nowMs: (opts.now ?? new Date()).getTime(), baseUrl: opts.baseUrl, name, addFile: (rel, text) => void extraFiles.set(rel, text), add })

@@ -1,0 +1,77 @@
+You founded a place, Lantern Hall, and the builders now make a plain version of it for you from the kit.
+Its purpose, in your words: One room that is all of my lamps.
+Its tags: installation art. It will stand on chunk 1, 0.
+What you wrote when you asked:
+<data source="request">
+I want one lamp over each thing I made, and a long shelf.
+</data>
+
+The styles: timber (Timber), stone (Stone), glass (Glass), tin-shack (Tin shack), tower (Tower).
+The palettes: harbour, meadow, ember, moss, dusk, paper, slate, coral.
+The kit: every part you may use (id | category | size in meters | slots):
+wall-timber | structure | 4x3x0.2 | slots: none
+wall-stone | structure | 4x3x0.3 | slots: none
+wall-glass | structure | 4x3x0.1 | slots: none
+wall-tin | structure | 4x3x0.12 | slots: none
+wall-tower | structure | 4x3x0.4 | slots: none
+window-small | structure | 1x1x0.25 | slots: none
+window-large | structure | 2x1.4x0.25 | slots: none
+window-round | structure | 1x1x0.25 | slots: none
+door-wood | structure | 1.2x2.2x0.25 | slots: none
+door-glass | structure | 1.4x2.3x0.2 | slots: none
+stairs | structure | 1.2x3x3 | slots: none
+roof-gable | structure | 4x1.5x4 | slots: none
+roof-flat | structure | 4x0.3x4 | slots: none
+roof-cone | structure | 4x3x4 | slots: none
+floor-boards | structure | 4x0.1x4 | slots: none
+floor-stone | structure | 4x0.1x4 | slots: none
+pillar | structure | 0.5x3x0.5 | slots: none
+fence | structure | 2x1x0.1 | slots: none
+arch | structure | 2x2.6x0.4 | slots: none
+shelf-low | furniture | 1.4x0.9x0.4 | slots: shelf, shelf, shelf
+shelf-tall | furniture | 1.4x2.2x0.4 | slots: shelf, shelf, shelf
+bookcase | furniture | 1.6x2x0.4 | slots: none
+desk | furniture | 1.6x0.8x0.8 | slots: none
+workbench | furniture | 2x1.2x0.8 | slots: none
+table | furniture | 1.4x0.75x1 | slots: none
+chair | furniture | 0.5x0.9x0.5 | slots: none
+stool | furniture | 0.4x0.5x0.4 | slots: none
+bench | furniture | 1.6x0.5x0.5 | slots: none
+rug-round | furniture | 2x0.03x2 | slots: none
+rug-square | furniture | 2x0.03x3 | slots: none
+plinth | furniture | 0.7x1x0.7 | slots: none
+cabinet | furniture | 1x1.2x0.6 | slots: none
+crate | furniture | 0.6x0.5x0.6 | slots: none
+cat-bed | furniture | 0.8x0.3x0.8 | slots: none
+frame-small | display | 0.6x0.6x0.08 | slots: frame
+frame-large | display | 1.2x0.9x0.08 | slots: frame
+screen-small | display | 0.9x0.8x0.2 | slots: screen
+screen-large | display | 1.6x1.2x0.2 | slots: screen
+terminal | display | 0.7x1.3x0.6 | slots: terminal
+case-glass | display | 0.7x1.1x0.7 | slots: case
+case-table | display | 1x0.9x0.6 | slots: case
+plaque-stand | display | 0.5x1.1x0.3 | slots: plaque
+sign-post | display | 2.8x2.3x0.3 | slots: none
+notice-board | display | 1.2x1x0.1 | slots: none
+lamp-floor | light | 0.3x1.6x0.3 | slots: none
+lamp-desk | light | 0.25x0.4x0.25 | slots: none
+lantern-hanging | light | 0.3x0.5x0.3 | slots: none
+lantern-ground | light | 0.3x0.4x0.3 | slots: none
+string-lights | light | 3x0.3x0.05 | slots: none
+candle | light | 0.1x0.2x0.1 | slots: none
+tree-round | nature | 2.5x3.5x2.5 | slots: none
+tree-pine | nature | 2x4x2 | slots: none
+tree-tall | nature | 2x6x2 | slots: none
+bush | nature | 1.2x0.9x1.2 | slots: none
+flower-patch | nature | 1.2x0.5x1.2 | slots: none
+rock-small | nature | 0.7x0.5x0.7 | slots: none
+rock-large | nature | 1.8x1.4x1.8 | slots: none
+mushroom | nature | 0.4x0.4x0.4 | slots: none
+fern | nature | 0.9x0.7x0.9 | slots: none
+log | nature | 1.4x0.4x0.5 | slots: none
+
+Rules for the plain place:
+- 1 to 2 rooms, and at most 30 parts in all, counted over every room.
+- The footprint is at most 24 by 24 meters, 1 or 2 floors. Every room fits inside the footprint and does not overlap another room on the same floor; its position is where its middle is, in meters from the middle of the building.
+- Use only kit parts from the list above. You never write 3D code. A part sits inside its room, and its position is in meters from the middle of the room, y up.
+- Choose a style and a palette that suit the place. The name and the purpose are the request's, the sign is made from the name, and there are no exhibits: they come later, when you tend the place.

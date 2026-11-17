@@ -2,7 +2,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
 import type { PlanStep } from '@forkling/schema'
-import { MIND_VERBS } from '@forkling/sim'
+import { CAPTION_WORDS, CAPTION_WORDS_KEPT, MIND_VERBS } from '@forkling/sim'
+import { readWorks } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
 import { claimsHuman, wordCount } from '../honesty.ts'
 import { defang } from '../prompts/shared.ts'
@@ -80,18 +81,23 @@ const MAX_NOTE_TOKENS = 1500
 
 export const NoteOutput = z.object({
   title: z.string().describe('A few words: what this is.'),
-  text: z.string().describe('What you wrote, in your voice, up to 80 words.'),
+  text: z.string().describe('What you wrote, in your voice, as short as the task says.'),
 })
 
+/** What a write step is: a caption when its target is a place or a work (or a project), a page when it is anything else (spec v4 6). */
+export type WriteKind = 'caption' | 'page'
+
 /** What a write step asks for: the words stay Merge's, and the target and reason tell it what they are for. */
-export function buildNoteUser(i: { target: string | null; reason: string; date: string; recent: readonly string[]; reading?: Reading | null; isPlace?: boolean }): string {
+export function buildNoteUser(i: { target: string | null; reason: string; date: string; recent: readonly string[]; reading?: Reading | null; isPlace?: boolean; kind?: WriteKind }): string {
   return [
     `You are writing something down. ${i.target ? `It is about or for: ${clampText(i.target, 120)}.` : 'Nobody told you what it is for.'}`,
     `Why you chose to: ${clampText(i.reason, 200)}`,
     ...readingLines(i.reading ?? null, !!i.target && !i.isPlace),
     ...(i.recent.length > 0 ? ['', 'What you wrote before, so you do not repeat yourself:', ...i.recent.map((r) => `- ${clampText(r, 100)}`)] : []),
     '',
-    `Write up to ${MAX_NOTE_WORDS} words in your own voice: a caption, a plaque or a few lines, whichever it wants to be. It is short: one joke or one picture, not an essay. Title it in a few words.`,
+    i.kind === 'caption'
+      ? `Write a caption of up to ${CAPTION_WORDS} words in your own voice, for the thing it is about. It is a label beside something people can see: one joke or one picture, not an essay. Title it in a few words.`
+      : `Write up to ${MAX_NOTE_WORDS} words in your own voice: a few lines about this subject. It is short: one joke or one picture, not an essay. Title it in a few words.`,
   ].join('\n')
 }
 
@@ -132,6 +138,14 @@ export function recentTitles(dir: string, n = 5): string[] {
 
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'note'
 
+/** Every work there is: those on disk and those made in this tick, with this tick's changes laid over them. */
+function knownWorks(t: Tick) {
+  const byId = new Map(readWorks(t.dir).map((w) => [w.id, w]))
+  for (const w of t.newWorks) byId.set(w.meta.id, w.meta)
+  for (const w of t.workUpdates) byId.set(w.id, w)
+  return [...byId.values()]
+}
+
 /** When a write step finishes, one Haiku call writes the words and a file in `notebook/` keeps them (spec 2.4, W1). */
 export async function noteStep(t: Tick): Promise<void> {
   const pending = t.pendingNote
@@ -141,7 +155,10 @@ export async function noteStep(t: Tick): Promise<void> {
   const target = step.targetId ?? null
   // What it read about the target: the trails of the last 3 days, and any trip made in this tick.
   const reading = target ? readingFor([...readTrailsSince(t.dir, t.today, 3), ...t.newTrails], target) : null
-  const user = buildNoteUser({ target, reason: step.reason, date: t.today, recent, reading, isPlace: !!target && placeIds(t).includes(target) })
+  const onPlace = !!target && placeIds(t).includes(target)
+  const workOf = target ? knownWorks(t).find((w) => w.id === target) : undefined
+  const kind: WriteKind = onPlace || workOf ? 'caption' : 'page'
+  const user = buildNoteUser({ target, reason: step.reason, date: t.today, recent, reading, isPlace: onPlace, kind })
   const result = await t.ask('art', 'claude-haiku-5-5', user, NoteOutput, MAX_NOTE_TOKENS)
   if (!result) return
   const written = NoteOutput.safeParse(result.parsed)
@@ -155,13 +172,21 @@ export async function noteStep(t: Tick): Promise<void> {
     t.notes.push('write: the model wrote nothing')
     return
   }
-  if (wordCount(text) > NOTE_WORDS_KEPT) {
-    t.notes.push(`write: ${wordCount(text)} words is over the ${NOTE_WORDS_KEPT} word limit, so it was dropped`)
+  const kept = kind === 'caption' ? CAPTION_WORDS_KEPT : NOTE_WORDS_KEPT
+  if (wordCount(text) > kept) {
+    t.notes.push(`write: ${wordCount(text)} words is over the ${kept} word limit for a ${kind}, so it was dropped`)
     return
   }
   if (claimsHuman(text) || claimsHuman(title)) {
     t.notes.push('write: it claimed to be human, so it was dropped')
     t.remember.push({ at: t.nowIso, kind: 'event', text: 'Something I wrote was thrown away: it claimed a human life.', verb: 'write' })
+    return
+  }
+  // A caption for a work belongs to the work (`caption` in its meta.json), and is not a notebook page (spec v4 6).
+  if (workOf) {
+    t.workUpdates = [...t.workUpdates.filter((w) => w.id !== workOf.id), { ...workOf, caption: clampText(text, 400) }]
+    t.remember.push({ at: t.nowIso, kind: 'made', text: `caption for ${workOf.title}: ${title}`, verb: 'write', goalRef: `today:${pending.index}` })
+    t.parts.push(`captioned "${workOf.title}"`)
     return
   }
   const time = t.nowIso.slice(11, 16).replace(':', '')

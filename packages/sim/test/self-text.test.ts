@@ -1,31 +1,36 @@
 import { describe, expect, it } from 'vitest'
-import { ABOUT_MAX_TRAITS, ABOUT_MAX_WORDS, PAGE_MAX_WORDS, aboutChange, checkAbout, checkPage } from '../src/self-text.ts'
+import { ABOUT_CHANGE_DAYS, ABOUT_MAX_TRAITS, ABOUT_MAX_WORDS, CAPTION_WORDS, CAPTION_WORDS_KEPT, DIARY_LINES, DIARY_LINE_CHARS, PAGE_MAX_WORDS, REPLY_WORDS, REPLY_WORDS_KEPT, aboutChange, checkAbout, checkPage, fitDiaryLines, fitReply } from '../src/self-text.ts'
 
 const lines = (n: number) => Array.from({ length: n }, (_, i) => `line ${i + 1} says something`).join('\n')
 
-describe('checkAbout (spec 9.2: 300 words, 8 traits, 30% of lines a week)', () => {
-  it('has the numbers of the spec', () => expect([ABOUT_MAX_WORDS, ABOUT_MAX_TRAITS]).toEqual([300, 8]))
+describe('checkAbout (spec v4 6: 80 words, 8 traits, one change a week)', () => {
+  it('has the numbers of the spec', () => expect([ABOUT_MAX_WORDS, ABOUT_MAX_TRAITS, ABOUT_CHANGE_DAYS]).toEqual([80, 8, 7]))
 
-  it('takes a first version freely, up to 300 words', () => {
-    expect(checkAbout('', lines(10)).ok).toBe(true)
-    expect(checkAbout('', Array(301).fill('w').join(' ')).ok).toBe(false)
-    expect(checkAbout('', Array(300).fill('w').join(' ')).ok).toBe(true)
+  it('takes a first version freely, up to 80 words', () => {
+    expect(checkAbout('', lines(10).split(' ').slice(0, 30).join(' ')).ok).toBe(true)
+    expect(checkAbout('', Array(81).fill('w').join(' ')).ok).toBe(false)
+    expect(checkAbout('', Array(80).fill('w').join(' ')).ok).toBe(true)
   })
   it('refuses an empty version', () => {
     expect(checkAbout(lines(5), '   ').ok).toBe(false)
   })
   it('refuses more than 8 traits in the list', () => {
-    const traits = (n: number) => `I like fog.\n${Array.from({ length: n }, (_, i) => `- trait ${i}`).join('\n')}`
+    const traits = (n: number) => ['I like fog.', ...Array.from({ length: n }, (_, i) => `- trait ${i}`)].join('\n')
     expect(checkAbout('', traits(8)).ok).toBe(true)
     expect(checkAbout('', traits(9)).ok).toBe(false)
   })
-  it('allows 30% of lines changed and refuses more', () => {
-    const prev = lines(10)
-    const changed = (n: number) => prev.split('\n').map((l, i) => (i < n ? `new ${i}` : l)).join('\n')
-    expect(checkAbout(prev, changed(3)).ok).toBe(true)
-    const r = checkAbout(prev, changed(4))
+  it('allows one change a week, whatever its size, and refuses a second inside 7 days', () => {
+    const prev = lines(3)
+    const next = 'something else entirely'
+    expect(checkAbout(prev, next, { lastChangeDate: '2026-11-10', today: '2026-11-17' }).ok).toBe(true)
+    const r = checkAbout(prev, next, { lastChangeDate: '2026-11-11', today: '2026-11-17' })
     expect(r.ok).toBe(false)
-    expect(r.reasons.join(' ')).toMatch(/30%/)
+    expect(r.reasons.join(' ')).toMatch(/one change a week/)
+    expect(checkAbout(prev, next, { lastChangeDate: null, today: '2026-11-17' }).ok).toBe(true)
+  })
+  it('does not count sending the same text again as a change', () => {
+    const prev = lines(3)
+    expect(checkAbout(prev, prev, { lastChangeDate: '2026-11-16', today: '2026-11-17' }).ok).toBe(true)
   })
   it('measures a change as the larger of lines removed and lines added', () => {
     const prev = lines(10)
@@ -69,5 +74,38 @@ describe('checkPage (spec 9.7: 300 words, no links or HTML, one change a day)', 
   })
   it('an unchanged page is not a change, so it may be sent again', () => {
     expect(checkPage(ok.prev, { ...ok, lastChangeDate: '2026-11-15' })).toMatchObject({ ok: true, changed: false })
+  })
+})
+
+describe('the short texts of spec v4 6', () => {
+  it('has the numbers of the spec', () => {
+    expect([CAPTION_WORDS, CAPTION_WORDS_KEPT, REPLY_WORDS, REPLY_WORDS_KEPT, DIARY_LINES, DIARY_LINE_CHARS]).toEqual([40, 50, 50, 60, 3, 140])
+  })
+  describe('fitDiaryLines: 3 lines of up to 140 characters, cut and never thrown away', () => {
+    it('keeps a diary that fits as it is', () => {
+      expect(fitDiaryLines(['One.', 'Two.', 'Three.'])).toEqual({ lines: ['One.', 'Two.', 'Three.'], cut: false })
+    })
+    it('cuts a diary of 5 lines to its first 3', () => {
+      const r = fitDiaryLines(['a', 'b', 'c', 'd', 'e'])
+      expect(r).toEqual({ lines: ['a', 'b', 'c'], cut: true })
+    })
+    it('cuts a long line at a word to 140 characters, and skips empty lines', () => {
+      const long = 'word '.repeat(60)
+      const r = fitDiaryLines(['', long, '  '])
+      expect(r.lines).toHaveLength(1)
+      expect(r.lines[0]!.length).toBeLessThanOrEqual(140)
+      expect(r.lines[0]!.endsWith('word')).toBe(true)
+      expect(r.cut).toBe(true)
+    })
+    it('keeps a line of exactly 140 characters', () => {
+      expect(fitDiaryLines(['x'.repeat(140)]).cut).toBe(false)
+    })
+  })
+  describe('fitReply: up to 60 words kept', () => {
+    it('keeps 60 words and cuts at 61', () => {
+      const words = (n: number) => Array.from({ length: n }, (_, i) => `w${i}`).join(' ')
+      expect(fitReply(words(60))).toBe(words(60))
+      expect(fitReply(words(61))).toBe(words(60))
+    })
   })
 })
