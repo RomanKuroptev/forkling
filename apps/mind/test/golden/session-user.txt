@@ -1,0 +1,15 @@
+## The project
+- Tide clock (id: tide-clock), started 2026-11-18.
+- Aim: a clock that tells the time by a pool
+- Sessions so far: 2. The last 2, oldest first:
+  - 2026-11-16: a blue square
+  - 2026-11-17: Stopped at the session limit. (it was broken)
+
+## Its files in src/
+- index.html (900 bytes)
+- js/pool.js (4 KB)
+
+## Why you are working on it now
+I want the pool to fill with the hours.
+
+The picture above is the latest screenshot.

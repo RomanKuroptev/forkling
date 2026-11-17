@@ -129,6 +129,19 @@ const singleColour = (base64: string) => `(async () => {
   return true
 })()`
 
+/** A screenshot is at most this big (spec-v4 3.3: shots/<n>.png at most 300 KB; a work's thumb the same). */
+export const MAX_SHOT_BYTES = 300_000
+/** The PNG at half its width and height, as base64, made inside the browser. */
+const halve = (base64: string) => `(async () => {
+  const bitmap = await createImageBitmap(await (await fetch('data:image/png;base64,${base64}')).blob())
+  const canvas = new OffscreenCanvas(Math.max(1, Math.floor(bitmap.width / 2)), Math.max(1, Math.floor(bitmap.height / 2)))
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  const bytes = new Uint8Array(await (await canvas.convertToBlob({ type: 'image/png' })).arrayBuffer())
+  let text = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return btoa(text)
+})()`
+
 async function findFrame(page: Page, url: string, ms: number): Promise<Frame | null> {
   const deadline = Date.now() + ms
   while (Date.now() < deadline) {
@@ -225,6 +238,12 @@ export async function runPage(browser: Browser, req: PageRequest): Promise<PageR
           result.screenshotPng = shot.toString('base64')
           const helper = await context.newPage()
           result.blank = await helper.evaluate(singleColour(result.screenshotPng)).then((x) => x === true, () => false)
+          // A screenshot is kept at most MAX_SHOT_BYTES (a work's thumb, a project's shots/<n>.png): halve it until it fits.
+          for (let i = 0; i < 4 && Buffer.byteLength(result.screenshotPng, 'base64') > MAX_SHOT_BYTES; i++) {
+            const smaller: unknown = await helper.evaluate(halve(result.screenshotPng)).catch(() => null)
+            if (typeof smaller !== 'string') break
+            result.screenshotPng = smaller
+          }
           await helper.close().catch(() => undefined)
         } catch {
           // no screenshot: the caller says so

@@ -15,6 +15,7 @@
     "source-trial": "node --env-file-if-exists=../../.env src/trial-cli.ts",
     "typecheck": "tsc -p .",
     "sandbox-proof": "node src/sandbox-proof.ts",
+    "session-try": "node --env-file-if-exists=../../.env scripts/session-try.ts",
     "topic-replay": "node scripts/topic-replay.ts",
     "voice-test": "node --env-file-if-exists=../../.env scripts/voice-test.ts"
   },

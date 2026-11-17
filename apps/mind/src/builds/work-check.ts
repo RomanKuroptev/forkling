@@ -1,4 +1,5 @@
 import { MAX_SKETCH_BYTES, MAX_WORK_BYTES, type WorkKind } from '@forkling/schema'
+import { posix } from 'node:path'
 import { hasPolicy } from './sandbox.ts'
 
 /** At most this many reasons are given, so a repair prompt stays short. */
@@ -116,6 +117,69 @@ export function staticCheck(html: string, opts: { size: 'full' | 'sketch'; kind?
     if (/\bnew\s+Image\s*\(|\bloadImage\s*\(|\bcreateImg\s*\(/.test(html)) reasons.add('a meme is drawn in code and carries no picture: it loads an image')
   }
 
+  const list = [...reasons]
+  return { ok: list.length === 0, reasons: list.slice(0, MAX_REASONS) }
+}
+
+/** Where a project's `src/` is on the site and in the sandbox (spec-v4 3.4): its pages reach the libraries three folders up. */
+const PROJECT_BASE = 'projects/p/src/'
+const PROJECT_LIBS = new Set(['lib/p5.min.js', 'lib/Tone.js', 'lib/three/three.module.js', 'lib/three/three.core.js'])
+
+type Target = { kind: 'local'; rel: string } | { kind: 'lib' } | { kind: 'missing'; rel: string } | { kind: 'out' }
+
+/** Where a reference in `file` leads: one of the project's own files, a vendored library, a file that is not there, or out. */
+function projectTarget(files: ReadonlyMap<string, string>, file: string, value: string): Target {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith('/') || value.includes('\\')) return { kind: 'out' }
+  const path = value.split(/[?#]/)[0] ?? ''
+  const resolved = posix.normalize(posix.join(PROJECT_BASE, posix.dirname(file), path))
+  if (PROJECT_LIBS.has(resolved)) return { kind: 'lib' }
+  if (!resolved.startsWith(PROJECT_BASE)) return { kind: 'out' }
+  const rel = resolved.slice(PROJECT_BASE.length)
+  return files.has(rel) ? { kind: 'local', rel } : { kind: 'missing', rel }
+}
+
+/**
+ * The static check of a project before it may be `done` (spec-v4 3.1, 3.3): v3.3 7.3 for a set of files instead of one page. A
+ * page may load the project's own files (scripts, modules, stylesheets, pictures) and the libraries in `lib/`; nothing from
+ * anywhere else. Every page carries the policy, `src/index.html` is there, and the forbidden list applies to every page, script
+ * and stylesheet. The limits of 3.1 are kept by the file tools. Pure. Works keep `staticCheck`.
+ */
+export function projectStaticCheck(files: ReadonlyMap<string, string>): CheckResult {
+  const reasons = new Set<string>()
+  if (!files.has('index.html')) reasons.add('there is no src/index.html, which is the page that is shown')
+  const outside = (file: string, value: string) => `${file} loads "${short(value)}" from outside the project, and a project may load only its own files and the libraries in lib/`
+  const check = (file: string, value: string) => {
+    if (!value || value.startsWith('#') || DATA_URI.test(value)) return
+    const t = projectTarget(files, file, value)
+    if (t.kind === 'out') reasons.add(outside(file, value))
+    else if (t.kind === 'missing') reasons.add(`${file} loads ${short(t.rel)}, which is not a file of the project`)
+  }
+  const code = (file: string, text: string) => {
+    for (const [pattern, reason] of BANNED_CODE) if (pattern.test(text)) reasons.add(`${file}: the code ${reason}`)
+    if (/\bimport\s*\(/.test(text)) reasons.add(`${file}: the code imports a module while it runs, and a project imports only by fixed paths`)
+    for (const m of text.matchAll(/\bimport\s+[^;'"]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]/g)) check(file, m[1] ?? m[2] ?? '')
+  }
+  const css = (file: string, text: string) => {
+    if (/@import\b/i.test(text)) reasons.add(`${file}: the CSS imports another file; link it from the page instead`)
+    for (const m of text.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/gi)) check(file, (m[2] ?? '').trim())
+  }
+
+  for (const [file, text] of files) {
+    if (file.endsWith('.html')) {
+      if (!hasPolicy(text)) reasons.add(`${file} does not start with the policy tag, which the file tools put first in the head`)
+      for (const { name, attrs } of tags(text)) {
+        const stylesheet = name === 'link' && /^stylesheet$/i.test(attrs.get('rel') ?? '') && (attrs.get('href') ?? '').endsWith('.css')
+        const banned = Object.hasOwn(BANNED_TAGS, name) && !stylesheet ? BANNED_TAGS[name] : undefined
+        if (banned) reasons.add(`${file} has ${banned}`)
+        if (name === 'meta' && /^refresh$/i.test(attrs.get('http-equiv') ?? '')) reasons.add(`${file} has a meta refresh, which sends the visitor elsewhere`)
+        if (banned) continue
+        for (const [attr, value] of attrs) if (URL_ATTRIBUTES.has(attr)) check(file, value)
+      }
+      code(file, text)
+      css(file, text)
+    } else if (file.endsWith('.js')) code(file, text)
+    else if (file.endsWith('.css')) css(file, text)
+  }
   const list = [...reasons]
   return { ok: list.length === 0, reasons: list.slice(0, MAX_REASONS) }
 }
