@@ -384,7 +384,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   renderAbout({ about: mergeAbout, add })
   const endpoint = notesEndpoint(opts.mindUrl)
   const siteKey = validSiteKey(opts.turnstileSiteKey)
-  renderNotes({ notes: loadNotes(world), places, mailbox: endpoint && siteKey ? { endpoint, siteKey } : null, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), add })
+  renderNotes({ notes: loadNotes(world), places, mailbox: endpoint && siteKey ? { endpoint, siteKey } : null, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), nowMs: (opts.now ?? new Date()).getTime(), add })
   renderPage({ page: mergePage, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), add })
 
   // The feed (works shelved, diary entries) and the list of changes the home page panel reads (spec 8).

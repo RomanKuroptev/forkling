@@ -3,10 +3,11 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join } from 'node:path'
 import { z } from 'zod'
 import { Note, NotePosition, PlaceId, type BudgetCall, type BudgetLedger } from '@forkling/schema'
-import { cleanNoteText, localDate, NOTE_MESSAGE_MAX, NOTE_NAME_MAX } from '@forkling/sim'
+import { canAnswer, cleanNoteText, localDate, NOTE_MESSAGE_MAX, NOTE_NAME_MAX } from '@forkling/sim'
 import { canSpend, costUsd, estimateCallUsd, estimateTokens } from './budget.ts'
 import { stopFailure, thinkingFor, type LlmClient } from './llm.ts'
 import { defang } from './prompts/shared.ts'
+import { readNotes, readNotesHidden } from './notes.ts'
 import { writeJson } from './world.ts'
 
 /** Spec 10.1: at most 3 notes a day from one visitor (kept 24 hours), and at most 30 accepted a day in all. */
@@ -43,7 +44,7 @@ export function buildScreenUser(i: { name: string; message: string }): string {
   return ['<data source="note">', defang(`name: ${i.name || '(none)'}`), 'message:', defang(i.message), '</data>', 'Label the note and list its topics.'].join('\n')
 }
 
-const Submission = z.object({ name: z.string().max(2000).optional(), message: z.string().max(5000), placeId: z.string().max(100).optional(), position: z.unknown().optional(), token: z.string().min(1).max(4096) })
+const Submission = z.object({ name: z.string().max(2000).optional(), message: z.string().max(5000), placeId: z.string().max(100).optional(), position: z.unknown().optional(), replyTo: z.string().max(60).optional(), token: z.string().min(1).max(4096) })
 
 export interface IntakeDeps {
   /** The world repo: accepted notes are written to `notes/<id>.json` and go out with the loop's next commit. */
@@ -154,6 +155,15 @@ export function createNotesIntake(deps: IntakeDeps) {
     if (!message) return { status: 422, body: { ok: false, error: 'Write something first: links and markup are taken out of a note.' } }
 
     const nowMs = deps.now()
+    // An answer (spec v4 7): to a note Merge replied to, the newest of its open thread, and not hidden. Checked first: it costs nothing.
+    let answering: { thread: string; replyTo: string; placeId: string } | null = null
+    if (shape.data.replyTo) {
+      const hidden = new Set(readNotesHidden(deps.dir).hidden)
+      const all = readNotes(deps.dir).filter((n) => !hidden.has(n.id))
+      const check = canAnswer(all, shape.data.replyTo, nowMs)
+      if (!check.ok) return { status: 409, body: { ok: false, error: check.reason } }
+      answering = { thread: check.thread, replyTo: shape.data.replyTo, placeId: all.find((n) => n.id === shape.data.replyTo)!.placeId }
+    }
     const today = localDate(deps.timezone, nowMs)
     const visitor = visitorOf(ip)
     const mine = recent(visitor, nowMs)
@@ -199,10 +209,10 @@ export function createNotesIntake(deps: IntakeDeps) {
     }
 
     const asked = shape.data.placeId?.trim()
-    const placeId = asked && PlaceId.safeParse(asked).success && deps.placeIds().includes(asked) ? asked : 'home'
+    const placeId = answering ? answering.placeId : asked && PlaceId.safeParse(asked).success && deps.placeIds().includes(asked) ? asked : 'home'
     let id = `n-${today}-${deps.suffix?.() ?? randomBytes(3).toString('hex')}`
     for (let tries = 0; existsSync(join(deps.dir, 'notes', `${id}.json`)) && tries < 8; tries++) id = `n-${today}-${randomBytes(3).toString('hex')}`
-    const note = Note.parse({ id, name, message, placeId, position: positionOf(shape.data.position), at: new Date(nowMs).toISOString(), topics: topicsOf(answer.topics), status: 'new' })
+    const note = Note.parse({ id, name, message, placeId, position: answering ? null : positionOf(shape.data.position), thread: answering?.thread ?? id, replyTo: answering?.replyTo ?? null, at: new Date(nowMs).toISOString(), topics: topicsOf(answer.topics), status: 'new' })
     writeJson(deps.dir, `notes/${note.id}.json`, note)
     return { status: 202, body: { ok: true, id: note.id } }
   }

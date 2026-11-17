@@ -53,6 +53,8 @@ export interface NoteInput {
   token: string
   position: [number, number] | null
   placeId: string
+  /** Spec v4 7: the id of the note this one answers; none for a new note. */
+  replyTo?: string
 }
 
 export type SendResult = { ok: true; text: string } | { ok: false; text: string }
@@ -63,6 +65,7 @@ const centimetres = (n: number) => Number(n.toFixed(2))
 /** Posts a note to the server and turns what comes back into words for the visitor. The server's own words are shown when it turns a note away. */
 export async function sendNote(deps: { fetch: typeof fetch; endpoint: string }, input: NoteInput): Promise<SendResult> {
   const body: Record<string, unknown> = { name: input.name, message: input.message, placeId: input.placeId, token: input.token }
+  if (input.replyTo) body.replyTo = input.replyTo
   if (input.position) body.position = [centimetres(input.position[0]), centimetres(input.position[1])]
   let res: Response
   try {
