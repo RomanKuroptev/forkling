@@ -20,6 +20,7 @@ import { loadSpecies } from './species.ts'
 import { commitAndPush, gitRunner } from './tick/git.ts'
 import { createLoop } from './tick/loop.ts'
 import { cloneRunner, ensureWorld } from './world-dir.ts'
+import { readTools } from './world.ts'
 
 const USAGE = `usage: pnpm --filter @forkling/mind serve --world <dir> --pages-origin <origin> [--repo <url>] [--port ${DEFAULT_PORT}] [--no-git] [--no-llm]
 
@@ -56,6 +57,8 @@ async function main(): Promise<void> {
 
   const dir = resolve(env.INIT_CWD ?? process.cwd(), worldArg)
   console.log(`world: ${await ensureWorld(dir, values.repo ?? env.FORKLING_REPO_URL, cloneRunner)} (${dir})`)
+  // The rail of spec v4 8: a tool of class act in mind/tools.json stops the engine here, in plain words, before anything runs.
+  readTools(dir)
 
   const speciesId = (JSON.parse(readFileSync(join(dir, 'forkling.json'), 'utf8')) as { species?: string }).species ?? 'cat'
   const species = loadSpecies(speciesId)

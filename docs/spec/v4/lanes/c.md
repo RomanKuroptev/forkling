@@ -1,6 +1,6 @@
 # Lane C: visitors and tools (steps 5, 6)
 
-State: step 5 done, sharing S5 (#195) done. Step 6 slice A (requests) in a prompt-review PR. Next: slice B.
+State: step 6 slice A merged (#200); slice B (tools) in a prompt-review PR. Next: the first tool, after R1.
 
 ## Plan for step 5 (one PR each, branches claude/v4-c-<slice>)
 

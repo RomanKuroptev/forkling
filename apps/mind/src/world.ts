@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, SourceStats, Visitors, Wants, type Note, type NotesHidden } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, SourceStats, Tools, Visitors, Wants, actTools, type Note, type NotesHidden } from '@forkling/schema'
 import { readNotes, readNotesHidden } from './notes.ts'
 import { DEFAULT_SEED } from './seed.ts'
 
@@ -25,6 +25,8 @@ export interface WorldFiles {
   notesHidden: NotesHidden
   /** `memory/visitors.json` (spec v4 7): who Merge has talked to, by the name they gave; empty before the first named note. */
   visitors: Visitors
+  /** `mind/tools.json` (spec v4 8): what Roman has given Merge, or none. */
+  tools: Tools
   /** `self/about.md` (spec 9.2): who Merge says it is now, or empty before its first weekly review. */
   about: string
   /** `self/page.md` (spec 9.7): Merge's own notes to itself, or empty. */
@@ -75,6 +77,17 @@ function listJson(dir: string, rel: string): string[] {
     .map((f) => `${rel}/${f}`)
 }
 
+/**
+ * `mind/tools.json` (spec v4 8). The rail: nothing Merge can do reaches outside its own world at launch, so an entry of class `act`
+ * stops the engine, with a plain message. The server checks it at start and every tick checks it again.
+ */
+export function readTools(dir: string): Tools {
+  const tools = readJson(dir, 'mind/tools.json', Tools, {})
+  const act = actTools(tools)
+  if (act.length > 0) throw new Error(`mind/tools.json has an entry of class act (${act.map((t) => t.id).join(', ')}). Merge cannot act outside its own world yet, so the engine will not start until it is taken out of the file.`)
+  return tools
+}
+
 /** Reads and validates a world repo. A file that doesn't fit is an error naming the file and every problem in it. */
 export function readWorld(dir: string, monthFor: (forkling: Forkling) => string): WorldFiles {
   const forkling = readJson(dir, 'forkling.json', Forkling)
@@ -95,6 +108,7 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
     notes: readNotes(dir),
     notesHidden: readNotesHidden(dir),
     visitors: readJson(dir, 'memory/visitors.json', Visitors, {}),
+    tools: readTools(dir),
     about: existsSync(join(dir, 'self/about.md')) ? readFileSync(join(dir, 'self/about.md'), 'utf8').trim() : '',
     page: existsSync(join(dir, 'self/page.md')) ? readFileSync(join(dir, 'self/page.md'), 'utf8').trim() : '',
     summary: existsSync(summaryPath) ? readFileSync(summaryPath, 'utf8') : '',
