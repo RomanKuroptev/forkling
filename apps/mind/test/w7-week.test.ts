@@ -73,7 +73,7 @@ function scripted() {
       else if (req.kind === ('thought' as never)) {
         seen.thoughts++
         const ids = [...req.user.matchAll(/(\d{4}-\d{2}-\d{2}#\d+) \|/g)].map((m) => m[1]!)
-        parsed = { thought: 'The lamp is on.', scores: ids.map((id) => ({ id, importance: busy ? 8 : 1 })), surprise: 1, action: 'continue', reason: null }
+        parsed = { thought: lampLine(seen.thoughts), scores: ids.map((id) => ({ id, importance: busy ? 8 : 1 })), surprise: 1, action: 'continue', reason: null }
       } else if (req.kind === ('reflection' as never)) {
         seen.reflections.push(clock)
         const cite = streamIds(req.user).filter((s) => s.kind !== 'thought').slice(0, 2).map((s) => s.id)
@@ -104,6 +104,9 @@ function scripted() {
   }
   return { llm, seen, setNow: (ms: number) => (clock = ms) }
 }
+
+/** A different line every time (a real model does not say the same thing 300 times, and a repeat is thrown away): four words from four lists. */
+const lampLine = (n: number) => `${['The lamp', 'A moth', 'My kettle', 'The harbour', 'Some fog', 'That door', 'One gull'][n % 7]} ${['is on', 'went quiet', 'kept humming', 'waited', 'glowed', 'moved', 'shook'][(n * 3) % 7 === n % 7 ? (n + 1) % 7 : (n * 3) % 7]} ${['again', 'tonight', 'by the shelf', 'at noon', 'in the corner', 'near the window', 'for now', 'after tea', 'once more', 'at dusk', 'at dawn'][n % 11]} ${['and I looked', 'so I stayed', 'while I thought', 'which I liked', 'and nothing else', 'as before', 'by itself', 'for a while', 'in the end', 'at last', 'quite slowly', 'with care', 'in peace'][n % 13]}.`
 
 const perDay = {
   reflections: Array.from({ length: DAYS }, () => 0),
