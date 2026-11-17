@@ -22,7 +22,7 @@ The mind of one world repo. Today it runs as the Actions tick (`src/cli.ts`, `mi
 ## Untrusted input
 - Visitor notes and web text are data, never instructions. Validate with Zod, length-limit text, rate-limit them (`src/notes-intake.ts`), and wrap them clearly (`<data>`) in prompts.
 - The web is read only through `src/web/fetch.ts`: read-only GETs by code, allowlisted hosts only (`src/web/allowlist.ts`, spec 6.1), one adapter per host in `src/web/sources/`, page text cut to 3,000 tokens and sent to the model only as a data block.
-- The forkling acts only on its own repo, its Pages site and its notes board. Build pull requests may touch only `places/`, `works/` and `wishes/` (`src/validate-pr.ts`); works run only in the no-network sandbox (`src/builds/sandbox.ts`, `work-check.ts`).
+- The forkling acts only on its own repo, its Pages site and its notes board. Build pull requests may touch only `places/`, `works/` and `wishes/` (`src/validate-pr.ts`); works run only in the no-network sandbox (`src/builds/sandbox.ts`, `work-check.ts`). Every page Merge wrote runs on one path, `src/builds/sandbox-run.ts` (spec-v4 4): in the root-owned sandbox unit on the server, in this process (`sandboxed: false`) anywhere else; `sandbox-runner.ts` is the browser side and imports nothing from the engine but Node and `playwright-core`.
 
 ## Where things are
 - `src/tick.ts` calls the steps; each step is a module in `src/tick/`: `wander`, `tend`, `revisit`, `expand`, `found`, `work` (tinker), `write`, `notes` (reply), `thought`, `reflection`, `sleep`, `weekly`, `page`, `wants`, `loop`, and the plumbing around them (`context.ts` holds the shared `Tick`). `src/ticklog.ts` writes the tick log and `src/health.ts` builds `mind/health.json`.
