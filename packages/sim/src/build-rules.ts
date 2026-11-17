@@ -1,9 +1,6 @@
-import { MAX_OPEN_PLACE_REQUESTS, MAX_OPEN_WISHES, isOpenRequest, isOpenWish, type Exhibit, type Place, type RequestStatus, type WakeSnapshot, type Wish, type WishDraft, type WishStatus } from '@forkling/schema'
+import { MAX_OPEN_WISHES, isOpenRequest, isOpenWish, type Exhibit, type Place, type RequestStatus, type Wish, type WishDraft, type WishStatus } from '@forkling/schema'
 import { MAX_PLACES } from './land.ts'
 import type { InterestFamily } from './interest-family.ts'
-import { addDays } from './sleep.ts'
-
-export type { WakeSnapshot }
 
 /**
  * Spec 2.5, changed by Roman on 14 November (docs/spec/w6-threshold-proposal.md): an expand needs a topic at weight **30** or more
@@ -11,10 +8,6 @@ export type { WakeSnapshot }
  */
 export const EXPAND_MIN_WEIGHT = 30
 export const EXPAND_MIN_SOUVENIRS = 3
-/** Spec 2.5, changed the same day: a found needs an interest at **40** or more (it was 70) at wake on 3 days in a row. */
-export const WAKE_TOP_MIN = 40
-export const FOUND_STREAK_DAYS = 3
-
 const DAY_MS = 86_400_000
 const lower = (s: string) => s.toLowerCase()
 
@@ -35,7 +28,7 @@ export interface Kept {
   placedIn?: string | null | undefined
 }
 
-export type FoundResult = { ok: boolean; interest: string | null; reasons: string[] }
+export type FoundResult = { ok: boolean; reasons: string[] }
 export type ExpandAllowed = { ok: boolean; reasons: string[] }
 
 /** An expand is earned by making when a place shows this many new works or projects since it last changed size (spec v4 2.2). */
@@ -93,12 +86,6 @@ export function expandEarned(
   return { earned: false, by: null, family: null, works: [] }
 }
 
-/** Notes the interests at 40 or more on a wake day, keeping the last 3 days (the same day replaces itself). */
-export function recordWake(wakeTop: readonly WakeSnapshot[], date: string, weights: Readonly<Record<string, number>>): WakeSnapshot[] {
-  const topics = Object.fromEntries(Object.entries(weights).filter(([, w]) => w >= WAKE_TOP_MIN))
-  return [...wakeTop.filter((s) => s.date !== date), { date, topics }].sort((a, b) => a.date.localeCompare(b.date)).slice(-FOUND_STREAK_DAYS)
-}
-
 export interface RequestLike {
   kind: 'place' | 'gift'
   status: RequestStatus
@@ -113,58 +100,35 @@ export function foundsInWeek(founds: readonly string[], nowMs: number): number {
   return founds.filter((f) => nowMs - Date.parse(f) < 7 * DAY_MS).length
 }
 
-/** Spec 10.3: a place request nobody has answered 7 days after it was written is built by the build worker as a plain kit place. */
-export const FALLBACK_DAYS = 7
-/** Spec 10.3: Roman's status `building` holds the fallback off for 14 more days. */
-export const BUILDING_HOLD_DAYS = 14
+/** Spec v4 2.3: a founding is built from the kit as soon as its text is written (it was 7 days, waiting for Roman). */
+export const FALLBACK_DAYS = 0
 
 /**
- * Whether the fallback build is due for a request at a moment: an open place request is due 7 days after it was written, one Roman has
- * marked `building` 14 days after that. An answered, declined, withdrawn or self-built request is never due, and neither is a gift.
+ * Whether the kit build is due for a founding at a moment: an open place request is due as soon as it is written (`FALLBACK_DAYS` is 0).
+ * Roman's old status `building` no longer holds it off. An answered, declined, withdrawn or self-built request is never due, and neither is a gift.
  */
 export function fallbackDue(request: { kind: 'place' | 'gift'; status: RequestStatus; written: string }, nowMs: number): boolean {
   if (request.kind !== 'place') return false
-  const days = request.status === 'open' ? FALLBACK_DAYS : request.status === 'building' ? FALLBACK_DAYS + BUILDING_HOLD_DAYS : null
-  return days !== null && nowMs >= Date.parse(request.written) + days * DAY_MS
+  return (request.status === 'open' || request.status === 'building') && nowMs >= Date.parse(request.written) + FALLBACK_DAYS * DAY_MS
 }
 
 export interface FoundInput {
-  /** The local date of this wake. */
-  today: string
-  wakeTop: readonly WakeSnapshot[]
-  places: readonly { tags: readonly string[] }[]
-  requests: readonly (RequestLike & { tags: readonly string[] })[]
+  places: readonly { tags: readonly string[]; state: { construction: { kind: string } | null } }[]
+  requests: readonly RequestLike[]
 }
 
 /**
- * Whether a found is allowed (spec 2.5, 10.3): an interest at 40 or more at wake on 3 days in a row that no place carries as a
- * tag (and no open request already asks for), fewer than 2 place requests open, and room in the world for another place.
- * Gives the interest (the heaviest today, the first by name on a tie) or every reason it is not. The 1 a week rail is
- * `foundsInWeek`, kept with the other plan rails.
+ * Whether a found is allowed (spec v4 2.3, the rails only): no place is under construction from an earlier found, and the world has room
+ * for another place (open requests counted). There is no interest gate. The 1 a week rail is `foundsInWeek`, kept with the other plan
+ * rails, and the name rules are checked by the plan and the found step.
  */
 export function foundCheck(i: FoundInput): FoundResult {
   const reasons: string[] = []
-  const open = openPlaceRequests(i.requests)
-  if (open.length >= MAX_OPEN_PLACE_REQUESTS) reasons.push(`${open.length} place requests are already open (the most is ${MAX_OPEN_PLACE_REQUESTS})`)
-  if (i.places.length + open.length >= MAX_PLACES) reasons.push(`the world is full (${MAX_PLACES} places, open requests included)`)
-
-  const days = Array.from({ length: FOUND_STREAK_DAYS }, (_, n) => addDays(i.today, -n))
-  const snapshots = days.map((d) => i.wakeTop.find((s) => s.date === d))
-  const streak = snapshots.every((s) => s !== undefined) ? Object.entries(snapshots[0]!.topics).filter(([name]) => snapshots.every((s) => lower(name) in lowerKeys(s!.topics))) : []
-  const taken = new Set([...i.places.flatMap((p) => p.tags), ...open.flatMap((r) => r.tags)].map(lower))
-  const free = streak.filter(([name]) => !taken.has(lower(name))).sort((a, b) => b[1] - a[1] || lower(a[0]).localeCompare(lower(b[0])))
-  if (free.length === 0) {
-    reasons.push(
-      streak.length === 0
-        ? `no interest has weight ${WAKE_TOP_MIN} or more on ${FOUND_STREAK_DAYS} days in a row`
-        : 'every interest that has earned a place already has one, or an open request for one',
-    )
-  }
-  if (reasons.length > 0) return { ok: false, interest: null, reasons }
-  return { ok: true, interest: free[0]![0], reasons: [] }
+  if (i.places.some((p) => p.state.construction?.kind === 'found')) reasons.push('a place you founded is still being built')
+  const open = openPlaceRequests(i.requests).length
+  if (i.places.length + open >= MAX_PLACES) reasons.push(`the world is full (${MAX_PLACES} places, open foundings included)`)
+  return { ok: reasons.length === 0, reasons }
 }
-
-const lowerKeys = (topics: Readonly<Record<string, number>>) => Object.fromEntries(Object.keys(topics).map((k) => [lower(k), true]))
 
 /** A wish's id: its name as a slug, up to 40 characters. */
 export function wishId(name: string): string {

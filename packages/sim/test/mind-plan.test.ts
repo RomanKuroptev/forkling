@@ -116,7 +116,7 @@ describe('validateMindPlan', () => {
     const sketches = [wander(), { ...write(), verb: 'tinker', size: 'sketch', target: 'a lamp' } as MindStep, { ...write(), verb: 'tinker', size: 'sketch', target: 'a door' } as MindStep]
     // At 50 points each two sketches plus a trip cost 103; at 23 they cost 49.
     expect(reasons(sketches, ctx({ pointsInHand: 60 }))).toEqual([expect.stringContaining('costs 103 points')])
-    expect(reasons(sketches, ctx({ pointsInHand: 60, prices: { fullWork: 240, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 23, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 } }))).toEqual([])
+    expect(reasons(sketches, ctx({ pointsInHand: 60, prices: { fullWork: 240, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 23, found: 80, revisit: 1, write: 1, reply: 0, rest: 0 } }))).toEqual([])
   })
 
   it('rejects a step that starts in the 45 minutes before bed', () => {

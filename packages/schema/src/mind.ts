@@ -99,7 +99,9 @@ export const MindState = z.object({
       trip: z.number().int().min(1),
       tend: z.number().int().min(1),
       sketch: z.number().int().min(1),
-      foundRequest: z.number().int().min(1),
+      found: z.number().int().min(1).optional(),
+      /** The price before v4 (a found was a request to Roman). Read and ignored. */
+      foundRequest: z.number().int().min(1).optional(),
       revisit: z.number().int().min(1),
       write: z.number().int().min(1),
       reply: z.number().int().min(0),

@@ -34,7 +34,7 @@ export interface FoundBuildPromptInput {
 export function buildFoundBuildUser(i: FoundBuildPromptInput): string {
   const { request } = i
   return [
-    `You asked Roman for a place, ${clampText(request.name, 40)}, and nobody has answered it in 7 days, so the builders make a plain version for you from the kit.`,
+    `You founded a place, ${clampText(request.name, 40)}, and the builders now make a plain version of it for you from the kit.`,
     `Its purpose, in your words: ${clampText(request.purpose, 160)}`,
     `Its tags: ${request.tags.join(', ')}. It will stand on chunk ${i.chunk.join(', ')}.`,
     'What you wrote when you asked:',
@@ -81,6 +81,6 @@ export function toFoundBuildPlace(a: FoundBuildAnswer, c: FoundBuildContext): Pl
     rooms: a.rooms.map((r) => ({ id: r.id, name: r.name, size: [r.width, r.depth, r.height], at: [r.x, r.z], floor: r.floor, parts: r.parts.map((p) => ({ part: p.part, at: [p.x, p.y, p.z], rot: p.rot })) })),
     exhibits: [],
     state: { construction: null, lastCareAt: null, neglect: 0, lamps: true },
-    history: [{ at: c.nowIso, verb: 'found', summary: 'Asked for by Merge, built by Merge from the kit.' }],
+    history: [{ at: c.nowIso, verb: 'found', summary: 'Founded by Merge, built by Merge from the kit.' }],
   })
 }

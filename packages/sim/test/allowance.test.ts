@@ -34,7 +34,7 @@ describe('the daily allowance (spec 9.8)', () => {
   })
 
   it('starts with the prices in the spec', () => {
-    expect(PRICES).toEqual({ fullWork: 240, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 50, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 })
+    expect(PRICES).toEqual({ fullWork: 240, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 50, found: 80, revisit: 1, write: 1, reply: 0, rest: 0 })
   })
 })
 

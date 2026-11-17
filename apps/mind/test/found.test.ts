@@ -15,7 +15,6 @@ const answer = (over: Partial<FoundAnswer> = {}): FoundAnswer => ({
 
 const ctx = (over: Partial<FoundContext> = {}): FoundContext => ({
   name: 'Lantern Hall',
-  interest: 'maya lidar',
   id: 'lantern-hall',
   chunk: [1, 0],
   nowIso: '2026-11-14T10:00:00Z',
@@ -28,7 +27,6 @@ const ctx = (over: Partial<FoundContext> = {}): FoundContext => ({
 const input = (over: Partial<FoundPromptInput> = {}): FoundPromptInput => ({
   name: 'Lantern Hall',
   reason: 'The lidar finds keep pulling at me and no place holds them.',
-  interest: 'maya lidar',
   kept: [{ id: 's1', kind: 'quote', content: 'A find is only as good as its terrain model.', why: 'it says it plainly' }],
   places: [{ id: 'home', name: 'Home', tags: ['home'], purpose: 'Where my days start and end.' }],
   interests: ['maya lidar', 'digital elevation model', 'leaf area index'],
@@ -44,12 +42,11 @@ describe('the found answer is flat and has no tuples (fits a structured output)'
 })
 
 describe('buildFoundUser (what a found step asks for)', () => {
-  it('names the place, why, and the interest that earned it, and says no place carries it', () => {
+  it('names the place and why, and gives no interest that earned it, no weight and no streak', () => {
     const prompt = buildFoundUser(input())
     expect(prompt).toContain('Lantern Hall')
     expect(prompt).toContain('The lidar finds keep pulling at me and no place holds them.')
-    expect(prompt).toContain('maya lidar')
-    expect(prompt).toMatch(/no place carries it/i)
+    expect(prompt).not.toMatch(/earned it|weight|days in a row|no place carries it/i)
   })
 
   it('shows the souvenirs on the interest and the places as data, and the interests tags may come from', () => {
@@ -64,9 +61,10 @@ describe('buildFoundUser (what a found step asks for)', () => {
     expect(prompt.match(/<\/data>/g)).toHaveLength(2) // the souvenirs block and the places block
   })
 
-  it('says it is a request to Roman in its own voice, what Roman does, and that his words are data', () => {
+  it('says it is a founding in its own voice that the builders make from the kit, and does not mention Roman', () => {
     const prompt = buildFoundUser(input())
-    expect(prompt).toMatch(/Roman/)
+    expect(prompt).not.toMatch(/Roman/)
+    expect(prompt).toMatch(/from the kit/)
     expect(prompt).toMatch(/your own voice/i)
     expect(prompt).toMatch(/Never claim to be a human/)
   })
@@ -90,20 +88,20 @@ describe('buildFoundUser (what a found step asks for)', () => {
 })
 
 describe('toPlaceRequest (the answer as the request file of spec 10.3)', () => {
-  it('makes an open place request in Merge\'s words, with the interest that earned it first among the tags', () => {
+  it('makes an open place request in Merge\'s words, with the tags it chose', () => {
     const r = toPlaceRequest(answer({ tags: ['digital elevation model'] }), ctx())
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(PlaceRequest.safeParse(r.request).success).toBe(true)
     expect(r.request).toMatchObject({ id: 'lantern-hall', kind: 'place', name: 'Lantern Hall', chunk: [1, 0], status: 'open', statusAt: null, note: null, written: '2026-11-14T10:00:00Z' })
-    expect(r.request.tags).toEqual(['maya lidar', 'digital elevation model'])
+    expect(r.request.tags).toEqual(['digital elevation model'])
   })
 
   it('keeps only tags that are interests it has, once each, at most 3, spelled as the interest is', () => {
     const r = toPlaceRequest(answer({ tags: ['Maya Lidar', 'LEAF AREA INDEX', 'made-up topic', 'sand', 'digital elevation model'] }), ctx())
     expect(r.ok && r.request.tags).toEqual(['maya lidar', 'leaf area index', 'sand'])
     const only = toPlaceRequest(answer({ tags: ['nothing real'] }), ctx())
-    expect(only.ok && only.request.tags).toEqual(['maya lidar'])
+    expect(only.ok).toBe(false)
   })
 
   it('keeps related places that exist and souvenirs that exist, at most 3 and 5, and drops the rest', () => {
