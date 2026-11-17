@@ -2,6 +2,11 @@
 
 Read this first. Update it before every commit and before you stop.
 
+## v0.16.0 (audit fixes, release of 17 November)
+
+- **v0.16.0 is the release of the eight audit fixes and the review PR (#176, Roman approved the prompt text).** The four template workflows (`mind.yml`, `pages.yml`, `validate.yml`, `watchdog.yml`) pin it. Steps: release PR, tag on its merge commit, `deploy.yml` with the tag, `/health`, then **one commit to `RomanKuroptev/merge`** that changes only `FORKLING_REF` in those four workflows (nothing in `brain/budget.json`, `mind/config.json`, `self/` or `memory/`). Nothing was added to the allowlist. The first Sunday after it (22 November) runs the first price reset.
+- **Live check (next full day on v0.16.0):** decide calls, plan rejections (the tick log should show far fewer and no stream lines for them), thought calls skipped and dropped, the hosts of the day's trips (Wikipedia share, GitHub repos, Esolang), doors share, whether the long goal changed, the sketch collisions and constraints, allowance against the new prices after Sunday. Run the `live-check` skill.
+
 ## Audit fixes (17 November, Roman's 8 items, one PR each, plan in `docs/plans/merge-audit-2026-11-17.md`)
 
 Order: 1 wants, 2 goal vs variety, 3 sources, 4 thoughts, 5 voice, 6 prices, 7 doors, 8 works, then one review PR for prompt text and new hosts (Roman merges), then one release (pin-only commit in Merge's repo). Prompt text changes are held for the review PR, so the code PRs leave `golden/` alone.
