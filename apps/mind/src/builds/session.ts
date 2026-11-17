@@ -24,7 +24,13 @@ import { projectStaticCheck } from './work-check.ts'
 
 export const SESSION_MODEL: ModelId = 'claude-sonnet-5-5'
 /** Spec-v4 3.3: the safety stop, and the points a session needs in hand to start. */
-export const SESSION_LIMITS = { turns: 25, usd: 1.5, minutes: 90, startPoints: 300 } as const
+export interface SessionLimits {
+  turns: number
+  usd: number
+  minutes: number
+  startPoints: number
+}
+export const SESSION_LIMITS: Readonly<SessionLimits> = { turns: 25, usd: 1.5, minutes: 90, startPoints: 300 }
 /** The most one turn may write: room for a whole file of code. */
 const TURN_MAX_TOKENS = 8_000
 /** A file read back to the model is cut here, so a session's prompt stays far under 100K tokens. */
@@ -184,7 +190,7 @@ export interface SessionDeps {
   book: (call: BudgetCall) => void
   pointsInHand: number
   now: () => number
-  limits?: Partial<typeof SESSION_LIMITS>
+  limits?: Partial<SessionLimits>
 }
 
 export interface SessionOutcome {

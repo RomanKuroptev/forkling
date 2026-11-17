@@ -354,7 +354,7 @@ describe('commitSession: one commit, projects/<id>/ and nothing else', () => {
   })
 
   it('makes no commit when nothing changed', async () => {
-    const git = async (args: readonly string[]) => ({ code: 0, stdout: args[0] })
+    const git = async (args: readonly string[]) => ({ code: 0, stdout: args[0] ?? '' })
     expect(await commitSession(git, 'tide-clock', 'x')).toBe(false)
   })
 })
