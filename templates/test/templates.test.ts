@@ -64,8 +64,13 @@ for (const template of ['forkling-world', 'merge']) {
       expect(NotesHidden.parse(read(join(dir, 'mind/notes-hidden.json')))).toEqual({ hidden: [], names: [] })
     })
 
+    it('has a place for projects (spec-v4 3.1), empty', () => {
+      if (!paths.includes('souvenirs/.gitkeep')) return
+      expect(paths.filter((p) => p.startsWith('projects/'))).toEqual(['projects/.gitkeep'])
+    })
+
     it('only contains files a world repo is allowed to have', () => {
-      const allowed = /^(forkling\.json|README\.md|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|requests\/.+|wishes\/.+|notes\/.+|mind\/.+|brain\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
+      const allowed = /^(forkling\.json|README\.md|memory\/.+|journal\/.+|notebook\/.+|souvenirs\/.+|places\/.+|trails\/.+|requests\/.+|wishes\/.+|notes\/.+|projects\/.+|mind\/.+|brain\/.+|self\/.+|site\/.+|CLAUDE\.md|\.github\/workflows\/(mind|heartbeat|pages|validate|watchdog)\.yml)$/
       for (const path of paths) expect(path).toMatch(allowed)
     })
 

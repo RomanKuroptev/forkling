@@ -1,5 +1,6 @@
 import { lstatSync, readdirSync } from 'node:fs'
 import { extname, join } from 'node:path'
+import { PROJECT_EXTENSIONS, PROJECT_LIMITS } from '@forkling/schema'
 
 /**
  * The files of a project (spec-v4 3.1): static web files in `projects/<id>/src/` and nowhere else. The file tools of a build
@@ -7,11 +8,8 @@ import { extname, join } from 'node:path'
  * and the limits are pure; `resolveProjectPath` also looks at the disk, so that a link cannot lead out of `src/`.
  */
 
-/** Spec-v4 3.1: at most 40 files, 500 KB a file, 2 MB in total. A storage rail. */
-export const PROJECT_LIMITS = { files: 40, fileBytes: 500 * 1024, totalBytes: 2 * 1024 * 1024 } as const
-
-/** The kinds of file a project may hold (spec-v4 3.1). */
-export const PROJECT_EXTENSIONS: readonly string[] = ['.html', '.js', '.css', '.json', '.svg', '.txt', '.md']
+/** The limits and kinds of file live with the project schema; they are re-exported here for the file tools. */
+export { PROJECT_EXTENSIONS, PROJECT_LIMITS }
 
 export type Refusal = { ok: false; reason: string }
 export type PathCheck = { ok: true; rel: string } | Refusal
