@@ -8,7 +8,7 @@ import { doorOf } from './paths.ts'
  */
 export const NOTE_DISCLOSURE: readonly string[] = [
   'Notes are public. Anyone can read them on this page.',
-  'A note is kept permanently in a public repository, even if it is later hidden from this site.',
+  'A note is kept permanently in a public repository, even if it is later hidden from this site, and it can be shared as a picture.',
   'A note is read by an AI: a small model screens it first, and then Merge, which is an AI, reads it.',
   'Links, email addresses and phone numbers are taken out. You can leave 3 notes a day.',
 ]

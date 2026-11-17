@@ -91,6 +91,8 @@ interface PageInput {
   body: string
   /** The links in the header. The archive link is there only when the world has an archive. */
   nav: [string, string][]
+  /** Extra tags for the head (share tags), already escaped. */
+  head?: string
 }
 
 function layout(p: PageInput): string {
@@ -102,7 +104,8 @@ function layout(p: PageInput): string {
 <title>${esc(p.title)} · ${esc(p.name)}</title>
 <link rel="stylesheet" href="${p.root}style.css">
 <link rel="alternate" type="application/rss+xml" title="${esc(p.name)}" href="${p.root}feed.xml">
-</head>
+${p.head ? `${p.head}
+` : ''}</head>
 <body>
 <header>
 <a class="name" href="${p.root}index.html">${esc(p.name)}</a>
@@ -212,6 +215,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const mergeAbout = loadAbout(world)
   const selfRequests = loadSelfRequests(world)
   const nav: [string, string][] = [...NAV, ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
+  const extraFiles = new Map<string, string>()
   const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, ...input }))
 
   // Home: who it is, what it wants, what it is doing and why.
@@ -384,7 +388,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   renderAbout({ about: mergeAbout, add })
   const endpoint = notesEndpoint(opts.mindUrl)
   const siteKey = validSiteKey(opts.turnstileSiteKey)
-  renderNotes({ notes: loadNotes(world), places, mailbox: endpoint && siteKey ? { endpoint, siteKey } : null, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), nowMs: (opts.now ?? new Date()).getTime(), add })
+  renderNotes({ notes: loadNotes(world), places, mailbox: endpoint && siteKey ? { endpoint, siteKey } : null, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), nowMs: (opts.now ?? new Date()).getTime(), baseUrl: opts.baseUrl, name, addFile: (rel, text) => void extraFiles.set(rel, text), add })
   renderPage({ page: mergePage, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), add })
 
   // The feed (works shelved, diary entries) and the list of changes the home page panel reads (spec 8).
@@ -414,6 +418,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     written.push(rel)
   }
   for (const [rel, html] of pages) write(rel, html)
+  for (const [rel, text] of extraFiles) write(rel, text)
   write('style.css', STYLE)
   write('feed.xml', renderFeed({ name, items: feedItems, baseUrl: opts.baseUrl }))
   write('changes.json', `${JSON.stringify(changes)}
