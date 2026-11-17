@@ -14,6 +14,8 @@ Merge's code never runs anywhere but inside headless Chromium. That browser runs
 
 One PR for the code, then a runbook for the server.
 
+> **Changed in the build (17 November):** the browser is started by a root-owned socket-activated unit (`deploy/forkling-sandbox.socket` and `forkling-sandbox@.service`) with the properties below, not by `systemd-run` from the mind with a sudoers or polkit line. The reason is in [`docs/decisions.md`](../../decisions.md) (2026-11-17, "The sandbox is a root-owned socket unit"). The wording below is kept as history.
+
 ### Code
 
 - `apps/mind/src/builds/sandbox-run.ts`: `runInSandbox(srcDir)` returns `{ errors[], consoleErrors[], screenshotPng | null, blank, timedOut }`. It copies `srcDir` to a fresh scratch folder owned by `forkling-build`, starts Chromium as that user through `systemd-run` with the properties below, loads `index.html` with the production policy of v3.3 7.4, waits 5 seconds, takes the screenshot, and empties the scratch folder. A single-colour screenshot is `blank`.
