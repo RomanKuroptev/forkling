@@ -125,6 +125,7 @@ export async function goalReviewStep(t: Tick): Promise<void> {
       .sort((a, b) => b[1].weight - a[1].weight)
       .slice(0, 10)
       .map(([topic, i]) => `${topic} (${Math.round(i.weight)})`),
+    ...(early && mind.goalReviewEarly ? { closedForWriting: { pages: mind.goalReviewEarly.closed, days: t.config.variety.sameTopicWrites.days } } : {}),
   })
   const result = await t.ask('goalreview', 'claude-sonnet-5-5', user, LongGoalReview, GOAL_REVIEW_MAX_TOKENS)
   const parsed = LongGoalReview.safeParse(result?.parsed)

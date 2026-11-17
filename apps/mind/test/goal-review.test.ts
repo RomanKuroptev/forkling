@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { BudgetLedger, Goals, Interests, MindState, type LongGoalReview } from '@forkling/schema'
+import { BudgetLedger, Goals, Interests, MindConfig, MindState, type LongGoalReview } from '@forkling/schema'
 import type { LlmClient, LlmRequest, LlmResult } from '../src/llm.ts'
 import { buildGoalReviewUser } from '../src/prompts/goal-review.ts'
 import { appendTimeline } from '../src/stream.ts'
@@ -45,6 +45,7 @@ function tick(reply: LongGoalReview | null | 'throw', over: Record<string, unkno
     calls: [] as Tick['calls'],
     remember: [] as Tick['remember'],
     budget: BudgetLedger.parse({ month: '2026-11' }),
+    config: MindConfig.parse({}),
     mind: MindState.parse(mind),
     goals: Goals.parse(long ? { long } : {}),
     interests: Interests.parse({ version: 2, topics: { lidar: { weight: 62, firstSeen: '2026-11-10T07:00:00Z', lastFed: '2026-11-14T07:00:00Z', history: [] } } }),
@@ -122,6 +123,15 @@ describe('the long goal is looked at every 3 days (and not only on Sunday)', () 
     expect(seen).toHaveLength(1)
   })
 
+  it('tells an early review that the topic is closed for writing, with how many pages closed it; a review on the 3-day schedule is not told', async () => {
+    const early = tick(answer(), {}, { goalReviewEarly: { date: '2026-11-16', closed: 24 } }, { ...GOAL, reviewedAt: '2026-11-15T14:00:00Z' })
+    await goalReviewStep(early.t)
+    expect(early.seen[0]!.user).toContain('The topic of this goal is closed for writing for now: you have written about it 24 times in the last 7 days')
+    const regular = tick(answer())
+    await goalReviewStep(regular.t)
+    expect(regular.seen[0]!.user).not.toContain('closed for writing')
+  })
+
   it('ignores an early flag from another day', async () => {
     const { t, seen } = tick(answer(), {}, { goalReviewEarly: { date: '2026-11-15', closed: 3 } }, { ...GOAL, reviewedAt: '2026-11-15T14:00:00Z' })
     await goalReviewStep(t)
@@ -153,5 +163,7 @@ describe('the goal review prompt', () => {
     expect(user).toContain('lidar (62)')
     expect(user).not.toMatch(/about\.md|renames|request:/)
     await expect(user).toMatchFileSnapshot('./golden/user-goal-review.txt')
+    const closed = buildGoalReviewUser({ localTime: 'Monday 2026-11-16 15:00', timeZone: 'Europe/Stockholm', longGoal: { text: GOAL.text, reason: GOAL.reason, since: '2026-11-11', reviewed: '2026-11-11' }, steps: ['2026-11-15 write Leaf area index: more of the same'], interests: ['lidar (62)'], closedForWriting: { pages: 24, days: 7 } })
+    await expect(closed).toMatchFileSnapshot('./golden/user-goal-review-closed.txt')
   })
 })
