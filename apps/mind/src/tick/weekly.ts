@@ -22,6 +22,8 @@ const MAX_NAME_CHARS = 40
 /** Spec 9.5: a request to Roman is up to 120 words. */
 const MAX_REQUEST_WORDS = 120
 const MAX_ASKED = 3
+/** What the weekly prompt shows of Roman's answer to a request (`oneLine(…, 700)` in `prompts/weekly.ts`). */
+const ANSWER_CHARS = 700
 /** Every version of about.md is kept as a copy named by the Sunday it changed (spec 9.2). */
 export const aboutHistoryPath = (date: string): string => `self/history/${date}.md`
 
@@ -70,8 +72,9 @@ function weeklyInput(t: Tick): WeeklyInput {
       .map((r) => {
         const answer = r.answer ? requestAnswerForPrompt(r.answer) : null
         // An answer over 80 words is cut for the prompt; Roman is told in the tick log, so he can shorten it.
-        if (answer?.cut) t.notes.push(`the answer to the request of ${r.date} is over 80 words, so Merge sees only the first 80 (for Roman)`)
-        return { date: r.date, body: r.body, answer: answer?.text ?? null, kind: r.kind, title: r.title, status: r.status }
+        // The prompt shows at most 700 characters of it, so that cut is told too.
+        if (answer && (answer.cut || answer.text.length > ANSWER_CHARS)) t.notes.push(`the answer to the request of ${r.date} is over 80 words or 700 characters, so Merge sees only the start of it (for Roman)`)
+        return { date: r.date, body: r.body, answer: answer ? answer.text.slice(0, ANSWER_CHARS) : null, kind: r.kind, title: r.title, status: r.status }
       }),
   }
 }

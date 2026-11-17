@@ -32,6 +32,7 @@ en.wikipedia.org
 
 ## What you asked Roman
 <data source="roman">
+2026-11-15 | tool | Read a Lemmy community | status: yes | you asked: I wish I could read what people say on Lemmy. | Roman answered: Yes, I will build it this week.
 2026-11-08 | other | untitled | status: open | you asked: Could I read one more site? It keeps blocking me. | Roman answered: Not yet. Ask again after the run.
 2026-11-01 | other | untitled | status: open | you asked: Could the kit have a lighthouse lamp? | no answer yet
 </data>
