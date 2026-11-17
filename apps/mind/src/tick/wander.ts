@@ -55,6 +55,7 @@ export async function morningStep(t: Tick): Promise<void> {
   t.interests = updatePhases(t.interests, nowIso)
   // What it is into at wake, for the found rule of 3 days in a row (spec 2.5). The same morning twice changes nothing.
   mind.wakeMoods = recordWakeMood(mind.wakeMoods ?? [], today, t.mood)
+  mind.wakeFive = { date: today, topics: Object.entries(t.interests.topics).sort((a, b) => b[1].weight - a[1].weight).slice(0, 5).map(([topic]) => topic) }
   mind.wakeTop = recordWake(mind.wakeTop ?? [], today, Object.fromEntries(Object.entries(t.interests.topics).map(([topic, v]) => [topic, v.weight])))
 
   if (deps.dryRun) {
@@ -156,8 +157,9 @@ export async function tripStep(t: Tick): Promise<void> {
   t.mind.trips = { date: today, reads: t.trips.reads + result.reads, trips: t.trips.trips + 1, looks: t.trips.looks + result.looks, starts: [...t.trips.starts, startKey(start.value)].slice(-60) }
   t.trips = t.mind.trips
   // Where the trip started, for the week's share of trips through a stranger's door (spec 12.3): measured, never enforced.
-  const top = Object.entries(before.topics).sort((a, b) => b[1].weight - a[1].weight).slice(0, 5).map(([topic]) => topic)
-  const stranger = isStrangerStart(start, t.startingPoints.filter((p) => p.door).map((p) => p.url), top)
+  const topNow = Object.entries(before.topics).sort((a, b) => b[1].weight - a[1].weight).slice(0, 5).map(([topic]) => topic)
+  const top = t.mind.wakeFive?.date === today ? t.mind.wakeFive.topics : topNow
+  const stranger = isStrangerStart(start, top, t.startingPoints.find((p) => p.url === start.url)?.title)
   const day = t.mind.doorDays?.find((d) => d.date === today)
   t.mind.doorDays = [...(t.mind.doorDays ?? []).filter((d) => d.date !== today), { date: today, trips: (day?.trips ?? 0) + 1, strangers: (day?.strangers ?? 0) + (stranger ? 1 : 0) }].sort((a, b) => a.date.localeCompare(b.date)).slice(-7)
   t.sources = addStats(t.sources, today, result.stats)

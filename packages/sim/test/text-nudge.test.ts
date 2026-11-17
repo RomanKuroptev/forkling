@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isStrangerStart, DIARY_PREFIX_WORDS, DIARY_SIMILARITY, WRITING_LOOKBACK, WRITING_SIMILARITY, boredomCount, diaryNudges, doorStats, drawStats, textNovelty, writingNudges } from '../src/text-nudge.ts'
+import { isStrangerStart, DIARY_PREFIX_WORDS, DIARY_SIMILARITY, WRITING_LOOKBACK, WRITING_SIMILARITY, boredomCount, diaryNudges, doorStats, drawStats, textNovelty, titleOfUrl, writingNudges } from '../src/text-nudge.ts'
 
 const DAY = 86_400_000
 const at = (day: number, h = 10) => new Date(Date.UTC(2026, 10, day, h)).toISOString()
@@ -100,18 +100,35 @@ describe('boredom (spec 12.4 item 8: 3 or more would-fires in one day)', () => {
 })
 void DAY
 
-describe('isStrangerStart (spec 12.3: a trip that started outside the top 5 interests, or through one of the morning\'s doors)', () => {
-  const top = ['lighthouses', 'logic gates', 'moss', 'tides', 'looms']
-  const doors = ['https://en.wikipedia.org/wiki/Octopus']
-  it('is a stranger when the start is one of the doors', () => {
-    expect(isStrangerStart({ kind: 'feed', value: 'https://en.wikipedia.org/wiki/Octopus', url: 'https://en.wikipedia.org/wiki/Octopus' }, doors, top)).toBe(true)
+describe('isStrangerStart (a trip whose start page matches none of the top 5 interests at wake, marked door or not; audit 17 Nov)', () => {
+  const top = ['lighthouse', 'logic gates', 'moss', 'tides', 'looms']
+  const feed = (url: string) => ({ kind: 'feed' as const, value: url, url })
+  it('is a stranger when a front-page link has a title outside the top 5, whether or not it was one of the doors', () => {
+    expect(isStrangerStart(feed('https://en.wikipedia.org/wiki/Octopus'), top, 'Octopus')).toBe(true)
+    expect(isStrangerStart(feed('https://en.wikipedia.org/wiki/Liminality'), top, 'Liminality')).toBe(true)
   })
-  it('is a stranger when a topic is outside the top 5 interests, and not when it is among them, however it is spelled', () => {
-    expect(isStrangerStart({ kind: 'topic', value: 'octopus', url: 'x' }, [], top)).toBe(true)
-    expect(isStrangerStart({ kind: 'topic', value: 'Logic  Gates', url: 'x' }, [], top)).toBe(false)
+  it('is not a stranger when the title of the start page is among the top 5, however it is spelled', () => {
+    expect(isStrangerStart(feed('https://en.wikipedia.org/wiki/Lighthouse'), top, 'Lighthouse')).toBe(false)
+    expect(isStrangerStart(feed('https://en.wikipedia.org/wiki/Logic_gate'), top, 'Logic  Gate')).toBe(false)
   })
-  it('is not a stranger when it goes back to an earlier souvenir, or follows a link that is not a door', () => {
-    expect(isStrangerStart({ kind: 'souvenir', value: 'a', url: 'x' }, doors, top)).toBe(false)
-    expect(isStrangerStart({ kind: 'feed', value: 'https://en.wikipedia.org/wiki/Tide', url: 'https://en.wikipedia.org/wiki/Tide' }, doors, top)).toBe(false)
+  it('reads the title from the address when the link had none', () => {
+    expect(isStrangerStart(feed('https://en.wikipedia.org/wiki/Logic_gates'), top)).toBe(false)
+    expect(isStrangerStart(feed('https://en.wikipedia.org/wiki/Octopus'), top)).toBe(true)
+  })
+  it('is a stranger when a topic is outside the top 5 interests, and not when it is among them', () => {
+    expect(isStrangerStart({ kind: 'topic', value: 'octopus', url: 'x' }, top)).toBe(true)
+    expect(isStrangerStart({ kind: 'topic', value: 'Logic  Gates', url: 'x' }, top)).toBe(false)
+  })
+  it('is not a stranger when it goes back to an earlier souvenir', () => {
+    expect(isStrangerStart({ kind: 'souvenir', value: 'a', url: 'x' }, top)).toBe(false)
+  })
+})
+
+describe('titleOfUrl', () => {
+  it('is the last part of the address, decoded, with underscores and dashes as spaces', () => {
+    expect(titleOfUrl('https://en.wikipedia.org/wiki/Marc_Aug%C3%A9')).toBe('Marc Augé')
+    expect(titleOfUrl('https://github.com/alice/glitch-lab')).toBe('glitch lab')
+    expect(titleOfUrl('https://imgflip.com/meme/181913649')).toBe('181913649')
+    expect(titleOfUrl('not a url')).toBe('not a url')
   })
 })

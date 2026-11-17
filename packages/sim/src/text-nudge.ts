@@ -135,13 +135,27 @@ export interface BoredomInput {
 export const boredomCount = (i: BoredomInput): number => i.repeatedWork + i.repeatedPlace + i.stuck + i.repeatedWriting + i.repeatedDiary
 export const BOREDOM_FROM = 3
 
+/** The last part of an address as a name: decoded, underscores and dashes as spaces. An address that is not one comes back as it is. */
+export function titleOfUrl(url: string): string {
+  const m = /^https?:\/\/([^/?#]+)([^?#]*)/i.exec(url)
+  if (!m) return url
+  const last = m[2]!.split('/').filter(Boolean).at(-1)
+  if (!last) return m[1]!
+  try {
+    return decodeURIComponent(last).replace(/[_-]+/g, ' ')
+  } catch {
+    return last.replace(/[_-]+/g, ' ')
+  }
+}
+
 /**
- * Whether a trip started through a stranger's door (spec 12.3, 12.4 item 3): one of the morning's three doors, or a topic that is not
- * among the top 5 interests. Going back to an earlier souvenir, or following a front-page link that is not a door, is not.
+ * Whether a trip started through a stranger's door (spec 12.3, 12.4 item 3, and audit 17 Nov): the page it started from has a title
+ * that matches none of the top 5 interests at wake, whether or not it was one of the morning's three marked doors. A topic is matched
+ * the same way, by its own words. Going back to an earlier souvenir is not a stranger start. A front-page link with no title of its own
+ * is named by its address. Measured only, never enforced.
  */
-export function isStrangerStart(start: { kind: 'topic' | 'feed' | 'souvenir'; value: string; url: string }, doorUrls: readonly string[], topInterests: readonly string[]): boolean {
+export function isStrangerStart(start: { kind: 'topic' | 'feed' | 'souvenir'; value: string; url: string }, topInterests: readonly string[], title?: string): boolean {
   if (start.kind === 'souvenir') return false
-  if (start.kind === 'feed') return doorUrls.includes(start.url)
-  const fold = (s: string) => foldTopic(s)
-  return !topInterests.some((t) => fold(t) === fold(start.value))
+  const name = start.kind === 'feed' ? (title ?? titleOfUrl(start.url)) : start.value
+  return !topInterests.some((t) => foldTopic(t) === foldTopic(name))
 }

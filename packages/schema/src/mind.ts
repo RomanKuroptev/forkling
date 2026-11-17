@@ -129,6 +129,8 @@ export const MindState = z.object({
   jobs: z.object({ seen: z.array(z.string().max(80)).max(100).default([]), pending: z.array(z.object({ id: z.string().max(80), text: z.string().max(300) })).max(10).default([]) }).optional(),
   /** The last 3 wake-day snapshots of the strong interests (spec 2.5), newest last. */
   wakeTop: z.array(WakeSnapshot).max(3).optional(),
+  /** The top 5 interests when Merge woke on a local date: a trip that starts from a page matching none of them is a stranger start (audit 17 Nov). */
+  wakeFive: z.object({ date: z.iso.date(), topics: z.array(z.string().max(60)).max(5) }).optional(),
   /** The place the last expand was for, so the same place is never expanded twice in a row (spec 2.4). */
   lastExpandedPlace: z.string().max(80).nullable().optional(),
   /** The status the mind last saw on each place request and wish, so a change Roman makes is told once (spec 10.3). */
