@@ -65,6 +65,7 @@ pnpm mind:local                # one mind tick against a local copy of a world r
 pnpm --filter @forkling/mind <tick|serve|validate-pr|replay|source-trial>
 pnpm --filter @forkling/mind replay --world <clone>   # the canonical body from a world repo's history beside its plan
 pnpm --filter @forkling/mind run-report --world <clone> --from <date> --to <date>   # step 8's run report: the launch checklist counted from a world repo (writes nothing; Merge never sees it)
+pnpm --filter @forkling/mind fast-forward --world <copy with no remote> --days 7 --cap 3   # the fast-forward test: the loop on a fake clock, real calls under a run cap; summary path printed, exit 0 on a pass (--clone-from <url> makes the copy; --dry-run uses fakes, no key)
 pnpm --filter @forkling/site build                    # render a forkling's Pages site
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 ```
