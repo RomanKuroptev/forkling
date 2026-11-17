@@ -149,6 +149,12 @@ export const MindState = z.object({
   weeklyTriedAt: Timestamp.optional(),
   /** When the goal-only review (every 3 days) last gave nothing usable, so it is not tried every tick. */
   goalReviewTriedAt: Timestamp.optional(),
+  /** A plan was turned down because its topic is closed for writing and the long goal is on that topic: the goal review runs early, once a day at most (audit 17 Nov). `closed` is how many pages closed it. */
+  goalReviewEarly: z.object({ date: z.iso.date(), closed: z.number().int().nonnegative() }).optional(),
+  /** The day an early goal review last ran, so it comes at most once a day. */
+  goalReviewEarlyOn: z.iso.date().optional(),
+  /** Plans turned down in a row, and when the last was: after 2 no replan is asked for until 60 minutes pass (audit 17 Nov). Cleared when a plan is accepted. */
+  planRejects: z.object({ count: z.number().int().positive(), lastAt: Timestamp }).optional(),
   sleepRewrite: z.object({ id: z.string().min(1).nullable(), date: z.iso.date(), submittedAt: Timestamp, polledAt: Timestamp.optional(), triedAt: Timestamp.optional() }).nullable().default(null),
   /** Reading sessions so far on a local date, for the daily limit; and whether the morning skim of the feeds is done. */
   readings: z.object({ date: z.iso.date(), count: z.number().int().nonnegative(), skimmed: z.boolean().default(false) }).optional(),

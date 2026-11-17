@@ -1,7 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { MindConfig } from '@forkling/schema'
-import type { VarietyContext, WrittenPage } from '@forkling/sim'
+import { goalClosedForWriting, type VarietyContext, type WrittenPage } from '@forkling/sim'
+import type { Tick } from './context.ts'
 import { readTimelineSince } from '../stream.ts'
 
 /** A write step finishes at most this long after it starts (write takes 20 to 45 minutes, and a tick may be late). */
@@ -68,4 +69,16 @@ export function varietyFor(
     ...(sameTopicWrites.on ? { sameTopicWrites: { limit: sameTopicWrites.limit, days: sameTopicWrites.days, pages: pages(sameTopicWrites.days * 2) } } : {}),
     ...(sameWorkTinker.on ? { sameWorkTinker: { limit: sameWorkTinker.limit, recent: recent.filter((r) => r.verb === 'tinker' && r.targetId).map((r) => r.targetId!) } } : {}),
   }
+}
+
+/**
+ * A plan was turned down because a topic is closed for writing. When Merge's long goal is on that topic, an early goal review is asked
+ * for, once a day at most (audit 17 Nov), so the goal can be dropped or reshaped instead of fought over.
+ */
+export function flagGoalClosed(t: Pick<Tick, 'goals' | 'config' | 'dir' | 'today' | 'nowMs' | 'mind'>): void {
+  const long = t.goals.long
+  const rule = t.config.variety.sameTopicWrites
+  if (!long || !rule.on || t.mind.goalReviewEarlyOn === t.today) return
+  const closed = goalClosedForWriting(long, { limit: rule.limit, days: rule.days, pages: readWrittenPages(t.dir, t.today, rule.days * 2) }, t.nowMs)
+  if (closed.length > 0) t.mind.goalReviewEarly = { date: t.today, closed: closed.length }
 }

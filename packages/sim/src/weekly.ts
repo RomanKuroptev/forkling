@@ -1,4 +1,5 @@
 import { localDate } from './sleep.ts'
+import { writesOnTopic, type WrittenPage } from './topic-cluster.ts'
 
 /** Spec 9.5: the weekly review is on Sunday at 20:00, Merge's own time. */
 export const WEEKLY_REVIEW_HOUR = 20
@@ -34,12 +35,14 @@ export interface GoalReviewDueInput {
   /** When the long goal was last reviewed (or set), or null when there is no long goal. */
   reviewedAt: string | null
   lastTriedMs: number | null
+  /** The topic of the long goal is closed for writing and no early review has run today: the 3 days need not have passed. */
+  early?: boolean
 }
 
-/** Whether the long goal should be looked at now: awake, there is one, it was last reviewed 3 days ago or more, and no try gave nothing in the last 30 minutes. Pure. */
+/** Whether the long goal should be looked at now: awake, there is one, it was last reviewed 3 days ago or more (or an early review is asked for), and no try gave nothing in the last 30 minutes. Pure. */
 export function goalReviewDue(i: GoalReviewDueInput): boolean {
   if (i.asleep || i.reviewedAt === null) return false
-  if (i.nowMs - Date.parse(i.reviewedAt) < GOAL_REVIEW_DAYS * 86_400_000) return false
+  if (!i.early && i.nowMs - Date.parse(i.reviewedAt) < GOAL_REVIEW_DAYS * 86_400_000) return false
   return i.lastTriedMs === null || i.nowMs - i.lastTriedMs >= WEEKLY_RETRY_MS
 }
 
@@ -52,4 +55,13 @@ export function weeklyDue(i: WeeklyDueInput): boolean {
   if (localWeekday(i.timezone, i.nowMs) !== 0 || localHour(i.timezone, i.nowMs) < WEEKLY_REVIEW_HOUR) return false
   if (i.lastWeeklyDate === localDate(i.timezone, i.nowMs)) return false
   return i.lastTriedMs === null || i.nowMs - i.lastTriedMs >= WEEKLY_RETRY_MS
+}
+
+/**
+ * The pages that close the long goal's topic for writing: the pages of the cluster the goal joins, when there are `limit` or more of them
+ * in the last `days` days (the same rule `sameTopicWrites` applies to a proposed write). Empty when the goal's topic is open. Pure.
+ */
+export function goalClosedForWriting(long: { text: string; reason: string }, rule: { limit: number; days: number; pages: readonly WrittenPage[] }, nowMs: number): WrittenPage[] {
+  const hits = writesOnTopic({ target: long.text, reason: long.reason }, rule.pages, { nowMs, days: rule.days })
+  return hits.length >= rule.limit ? hits : []
 }

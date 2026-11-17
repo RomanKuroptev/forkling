@@ -37,6 +37,10 @@ export const STRONG_NEED = 15
 /** A trip that raises an interest by this much wakes the mind (spec 2.3). */
 export const SPARK_GAIN = 15
 export const MAX_SPARKS_PER_DAY = 2
+/** Plans turned down in a row before replans are held back, and how long they are held (audit 17 Nov). */
+export const REJECTS_BEFORE_HOLD = 2
+export const REPLAN_HOLD_MS = 60 * 60_000
+
 /** No new plan is asked for this close to bed: the evening is for winding down, and the sleep rewrite comes at bedtime. */
 export const REPLAN_BEFORE_BED_MS = 45 * 60_000
 
@@ -64,7 +68,10 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
   const { bedMs } = sleepWindow(evening, forkling.seed, forkling.timezone, forkling.lateNight === evening)
   const lastStepDone = !!goals.now && !!goals.today && goals.now.index >= goals.today.steps.length - 1 && nowMs >= Date.parse(goals.now.until)
   // The plan is a day's, so when it has run out or never came the mind writes the next one. Code only asks.
-  if (mindState.lastPlanDate === today && (!goals.now || lastStepDone) && nowMs >= Date.parse(mindState.replanAfter ?? '1970-01-01T00:00:00Z')) {
+  // After 2 plans in a row were turned down no replan is asked for until 60 minutes have passed (audit 17 Nov); a step that ran out, a new day or a note still wake the mind.
+  const rejects = mindState.planRejects
+  const replanHeld = !!rejects && rejects.count >= REJECTS_BEFORE_HOLD && nowMs < Date.parse(rejects.lastAt) + REPLAN_HOLD_MS
+  if (!replanHeld && mindState.lastPlanDate === today && (!goals.now || lastStepDone) && nowMs >= Date.parse(mindState.replanAfter ?? '1970-01-01T00:00:00Z')) {
     if (!(nowMs >= bedMs - REPLAN_BEFORE_BED_MS && nowMs < bedMs)) {
       found.push({ kind: 'replan', score: 0.45, detail: goals.now ? 'the last step of the day\'s plan has run its time' : 'there is no step in progress and nothing planned next' })
     }
@@ -82,7 +89,7 @@ export function scoreSurprise(input: SurpriseInput): Trigger[] {
   if (reflected) found.push({ kind: 'reflected', score: 0.55, detail: reflected.reason })
   // A thought tick said the plan no longer fits (spec 2.3). It stays until a decide call answers it.
   const asked = mindState.thought?.replanRequest
-  if (asked && !found.some((x) => x.kind === 'replan')) {
+  if (asked && !replanHeld && !found.some((x) => x.kind === 'replan')) {
     found.push({ kind: 'replan', score: 0.5, detail: `a thought said the plan no longer fits: ${asked.reason}` })
   }
   // A new day starts when the forkling wakes, not at midnight, so a late night doesn't get a morning plan at 00:00.

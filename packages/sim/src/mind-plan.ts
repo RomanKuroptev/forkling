@@ -103,6 +103,8 @@ const MAX_REASON = 140
 export const COLD_START_WANTS = 3
 /** The id a step uses to point at the long goal. */
 export const LONG_GOAL_WANT = 'long'
+/** The words every same-topic rejection starts with, so the mind can tell that rule from the others. */
+export const SAME_TOPIC_REASON = 'you have written about this'
 const NO_NEW_STEP_BEFORE_BED_MS = 45 * 60_000
 /** The starting-point rule is not asked in the last hours of the day: a trip needs time. */
 const STARTING_POINT_MIN_LEFT_MS = 3 * 3_600_000
@@ -207,7 +209,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
           const hits = writesOnTopic({ target, reason: s.reason }, [...pages, ...plannedPages], { nowMs: c.startMs, days })
           if (hits.length >= limit) {
             const titles = hits.slice(-3).map((h) => `"${h.title.slice(0, 40)}"`).join(', ')
-            here.push(`${n}: you have written about this ${hits.length} times in the last ${days} days (${titles}): write about something else, or make or read something instead`)
+            here.push(`${n}: ${SAME_TOPIC_REASON} ${hits.length} times in the last ${days} days (${titles}): write about something else, or make or read something instead`)
           }
           plannedPages.push({ at: new Date(at).toISOString(), title: target, target, text: s.reason })
         }

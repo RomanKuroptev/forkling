@@ -479,6 +479,23 @@ describe('the validator', () => {
     expect(BudgetLedger.parse(readJson('brain/budget.json')).calls).toHaveLength(2)
   })
 
+  it('counts plans turned down in a row, and clears the count when a plan is accepted (audit 17 Nov)', async () => {
+    await runTick(dir, at(NOW, { llm: fakeLlm({ ...morning, plan: badPlan }) }))
+    expect(stateOf().planRejects).toEqual({ count: 1, lastAt: new Date(NOW).toISOString() })
+    // A second turned-down plan right after makes 2.
+    const later = (iso: string) => at(iso, { llm: fakeLlm({ ...morning, plan: badPlan }) })
+    writeJson('mind/state.json', { ...stateOf(), lastPlanDate: undefined })
+    await runTick(dir, later('2026-11-03T09:00:00Z'))
+    expect(stateOf().planRejects?.count).toBe(2)
+    // After the 60 minutes the call that is allowed starts the count again at 1 when it is turned down too.
+    writeJson('mind/state.json', { ...stateOf(), lastPlanDate: undefined, planRejects: { count: 2, lastAt: '2026-11-03T08:00:00Z' } })
+    await runTick(dir, later('2026-11-03T10:00:00Z'))
+    expect(stateOf().planRejects?.count).toBe(1)
+    writeJson('mind/state.json', { ...stateOf(), lastPlanDate: undefined })
+    await runTick(dir, at('2026-11-03T10:30:00Z', { llm: fakeLlm(morning) }))
+    expect(stateOf().planRejects).toBeUndefined()
+  })
+
   it('turns down a plan that is still wrong after asking again, and says why', async () => {
     const llm = fakeLlm({ ...morning, plan: badPlan })
     const result = await runTick(dir, at(NOW, { llm }))
