@@ -15,6 +15,7 @@ import { loadNotes, notesEndpoint, renderNotes, validSiteKey } from './notes.ts'
 import { NOTES_SCRIPT } from './notes-script.ts'
 import { hasAbout, loadAbout, loadSelfRequests, loadTools, renderAbout } from './self.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
+import { loadProjects, projectChangeLookup, projectFeedItems, publishProjects, renderProjects } from './projects.ts'
 
 /** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
 function localStamp(iso: string, timeZone: string): string {
@@ -214,7 +215,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const mergePage = loadPage(world)
   const mergeAbout = loadAbout(world)
   const selfRequests = loadSelfRequests(world)
-  const nav: [string, string][] = [...NAV, ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
+  const projects = loadProjects(world)
+  const nav: [string, string][] = [...NAV, ...(projects.length > 0 ? [['Projects', 'projects/'] as [string, string]] : []), ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
   const extraFiles = new Map<string, string | Buffer>()
   const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, ...input }))
 
@@ -374,6 +376,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   // The workshop is always there (spec 8): an empty shelf says so. A work is shown only through its own page, in its sandbox.
   const works = loadWorks(world)
   renderWorkshop({ works, tz, goals, add })
+  renderProjects({ projects, stamp: (iso) => localStamp(iso, tz), add })
   renderPlaces({
     places,
     works,
@@ -398,6 +401,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const feedItems: FeedItem[] = [
     ...works.filter((w) => w.meta.status === 'shelf').map((w) => ({ title: `Shelved: ${w.meta.title}`, path: `workshop/${w.meta.id}.html`, at: w.meta.made, description: w.meta.about })),
     ...placeFeedItems(places),
+    ...projectFeedItems(projects),
     ...journal.map((j) => ({ title: heading(j.text) ?? j.date, path: `journal/${j.date}.html`, at: `${j.date}T12:00:00Z`, description: summary(j.text) })),
   ]
   const titles = new Map(works.map((w) => [w.meta.id, w.meta.title]))
@@ -407,7 +411,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   } catch {
     log = ''
   }
-  const changes = parseChanges(log, { titleOf: (id) => titles.get(id), inspiredOf: (id) => { const by = works.find((w) => w.meta.id === id)?.meta.inspiredBy; return by ? by.name || 'a visitor' : undefined },  placeAt: placeChangeLookup(places) })
+  const changes = parseChanges(log, { titleOf: (id) => titles.get(id), inspiredOf: (id) => { const by = works.find((w) => w.meta.id === id)?.meta.inspiredBy; return by ? by.name || 'a visitor' : undefined },  placeAt: placeChangeLookup(places), projectAt: projectChangeLookup(projects) })
   const home = pages.get('index.html')
   const panel = ['<aside id="since" hidden><h2>Since your last visit</h2><ul></ul></aside>', '<script src="since.js" data-root=""></script>', '</main>'].join('\n')
   if (home) pages.set('index.html', home.replace('</main>', () => panel))
@@ -427,5 +431,6 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   write('since.js', SINCE_SCRIPT)
   write('notes.js', NOTES_SCRIPT)
   written.push(...publishWorks(world, out, works))
+  written.push(...publishProjects(world, out, projects))
   return { pages: written }
 }
