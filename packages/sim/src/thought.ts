@@ -1,4 +1,5 @@
 import type { ThoughtState } from '@forkling/schema'
+import { maxSimilarity } from './novelty.ts'
 import { hourInZone } from './playback.ts'
 
 const MIN = 60_000
@@ -59,4 +60,20 @@ export function requestReplan(prev: ThoughtState | undefined, a: { today: string
     replans: { date: a.today, count: used + 1 },
     replanRequest: { reason: a.reason.trim().slice(0, MAX_REASON_CHARS), at: a.at },
   }
+}
+
+/** What a thought is made for besides new events: the step in progress and the notes found and not yet answered. Same in, same fingerprint. */
+export function thoughtFingerprint(i: { step: { verb: string; target: string | null; until: string } | null; noteIds: readonly string[] }): string {
+  const step = i.step ? `${i.step.verb}|${i.step.target ?? ''}|${i.step.until}` : 'no step'
+  return `${step}#${[...i.noteIds].sort().join(',')}`
+}
+
+/** A thought tick has nothing to say when no event is new and its fingerprint is the one of the last thought. */
+export const thoughtUnchanged = (prev: ThoughtState | undefined, fingerprint: string, newEvents: number): boolean => newEvents === 0 && prev?.lastInput === fingerprint
+
+/** Over this similarity (3-gram) to one of the last 5 thoughts, a new line is thrown away. */
+export const REPEATED_THOUGHT_SIMILARITY = 0.6
+
+export function isRepeatedThought(line: string, recent: readonly string[]): boolean {
+  return maxSimilarity(line, recent) > REPEATED_THOUGHT_SIMILARITY
 }

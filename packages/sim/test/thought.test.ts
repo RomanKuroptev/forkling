@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { afterThought, MAX_THOUGHT_REPLANS_PER_DAY, requestReplan, thoughtDue, thoughtIntervalMs } from '../src/thought.ts'
+import { afterThought, isRepeatedThought, MAX_THOUGHT_REPLANS_PER_DAY, requestReplan, thoughtDue, thoughtFingerprint, thoughtIntervalMs } from '../src/thought.ts'
 
 const TZ = 'Europe/Stockholm'
 const MIN = 60_000
@@ -85,5 +85,30 @@ describe('requestReplan (spec 2.3: at most 4 thought-tick replans a day)', () =>
 
   it('cuts the reason to 140 characters', () => {
     expect(requestReplan(undefined, { today: '2026-11-12', reason: 'x'.repeat(300), at: at0 })?.replanRequest?.reason).toHaveLength(140)
+  })
+})
+
+describe('thoughtFingerprint (the step and the notes a thought was last made for)', () => {
+  const base = { step: { verb: 'wander', target: 'tide pools', until: '12:15' }, noteIds: ['n1'] }
+  it('is the same for the same step and notes, and different when either changes', () => {
+    expect(thoughtFingerprint(base)).toBe(thoughtFingerprint({ ...base }))
+    expect(thoughtFingerprint({ ...base, step: { ...base.step, target: 'moss' } })).not.toBe(thoughtFingerprint(base))
+    expect(thoughtFingerprint({ ...base, step: { ...base.step, until: '12:45' } })).not.toBe(thoughtFingerprint(base))
+    expect(thoughtFingerprint({ ...base, noteIds: [] })).not.toBe(thoughtFingerprint(base))
+    expect(thoughtFingerprint({ ...base, step: null })).not.toBe(thoughtFingerprint(base))
+  })
+  it('does not depend on the order of the notes', () => {
+    expect(thoughtFingerprint({ ...base, noteIds: ['a', 'b'] })).toBe(thoughtFingerprint({ ...base, noteIds: ['b', 'a'] }))
+  })
+})
+
+describe('isRepeatedThought (over 0.6 similar to one of the last 5)', () => {
+  const recent = ['Three lights, one hill. The sketch is done and the lamp still waits.', 'The tide pools keep pulling me back to the same quiet corner.']
+  it('drops a line that nearly repeats a recent one', () => {
+    expect(isRepeatedThought('Three lights, one hill. The sketch is done and the lamp still waits!', recent)).toBe(true)
+  })
+  it('keeps a line about something else, and any line when there are no recent ones', () => {
+    expect(isRepeatedThought('A door that opens only when I stop walking: I should try that next.', recent)).toBe(false)
+    expect(isRepeatedThought('Anything at all goes here.', [])).toBe(false)
   })
 })

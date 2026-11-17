@@ -205,3 +205,42 @@ describe('thoughtTick: when it does not work', () => {
     expect(t.notes.join(' ')).toMatch(/human/)
   })
 })
+
+describe('thoughtTick: no call when nothing changed, and no repeated line (audit 17 Nov)', () => {
+  it('makes no call when the step, the events and the notes are the same as at the last thought, and says so in the tick log', async () => {
+    const first = tickWith(good())
+    await thoughtTick(first.t)
+    expect(first.seen).toHaveLength(1)
+    expect(first.t.mind.thought?.lastInput).toBeTruthy()
+    const later = { ...first.t.mind.thought!, lastAt: '2026-11-12T10:55:00.000Z' }
+    const second = tickWith(good({ thought: 'Something else entirely, said differently.' }), { thought: later })
+    await thoughtTick(second.t)
+    expect(second.seen).toHaveLength(0)
+    expect(second.t.notes.join(' ')).toMatch(/nothing changed/)
+    expect(second.t.mind.thought?.lastAt).toBe(NOW_ISO)
+    expect(second.t.mind.thought?.recent).toEqual(first.t.mind.thought?.recent)
+    expect(second.t.mind.thought?.failures).toBe(0)
+  })
+
+  it('makes a call again when a new event has come in since the last thought', async () => {
+    const first = tickWith(good())
+    await thoughtTick(first.t)
+    const later = { ...first.t.mind.thought!, lastAt: '2026-11-12T10:55:00.000Z' }
+    appendStream(dir, TODAY, [{ at: '2026-11-12T10:58:00Z', kind: 'event', text: 'Kept a souvenir.' }])
+    const second = tickWith(good({ thought: 'A new thing happened and I noticed it.' }), { thought: later })
+    await thoughtTick(second.t)
+    expect(second.seen).toHaveLength(1)
+  })
+
+  it('throws away a line over 0.6 similar to one of the last 5: not in the stream, not in the recent lines, not a failure', async () => {
+    const line = 'Three lights, one hill. The sketch is done and the lamp still waits.'
+    const { t, seen } = tickWith(good({ thought: `${line} Yes.` }), { thought: { failures: 0, recent: [line] } })
+    await thoughtTick(t)
+    expect(seen).toHaveLength(1)
+    expect(t.remember).toEqual([])
+    expect(t.mind.thought?.recent).toEqual([line])
+    expect(t.mind.thought?.failures).toBe(0)
+    expect(t.notes.join(' ')).toMatch(/thought dropped/)
+    expect(t.mind.thought?.lastInput).toBeTruthy()
+  })
+})
