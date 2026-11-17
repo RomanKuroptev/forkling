@@ -53,7 +53,7 @@ describe('mind/tools.json is read with the world (spec v4 8)', () => {
 describe('the planner is shown what it can do (spec v4 8)', () => {
   it('"things you can do" comes after the verbs and before how planning works, one line each', () => {
     const text = buildSystem({ seed: DEFAULT_SEED, tools: [tool(), tool({ id: 'b', name: 'Look at images', what: 'Look at pictures on pages.' })] })
-    const verbs = text.indexOf('## Your nine verbs')
+    const verbs = text.indexOf('## Your ten verbs')
     const things = text.indexOf('## Things you can do')
     const planning = text.indexOf('## How planning works')
     expect(verbs).toBeGreaterThan(-1)
