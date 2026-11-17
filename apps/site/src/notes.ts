@@ -5,6 +5,7 @@ import { NOTE_DISCLOSURE, noteFate, notesEndpoint, threadNotes, threadOf, thread
 
 export { notesEndpoint, validSiteKey }
 import { esc } from './md.ts'
+import { threadPicture } from './note-picture.ts'
 
 /** The notes visitors left (`notes/*.json`) that fit their schema, newest first, without the ones Roman hid (`mind/notes-hidden.json`). */
 export function loadNotes(world: string): Note[] {
@@ -51,7 +52,13 @@ export interface NotesInput {
   zone: string
   /** The time the page is built at, to tell whether a thread is still open. */
   nowMs?: number
-  add: (rel: string, input: { title: string; active: string; body: string }) => void
+  /** The address of the site, for the share tags and the picture; without it the thread pages have no share tags. */
+  baseUrl?: string | undefined
+  /** The forkling's name, for the share tags. */
+  name?: string
+  /** A file that is not a page (a thread's share picture). */
+  addFile?: (rel: string, text: string) => void
+  add: (rel: string, input: { title: string; active: string; body: string; head?: string }) => void
 }
 
 const FORM = (m: { endpoint: string; siteKey: string }) =>
@@ -89,8 +96,47 @@ export function renderNotes(i: NotesInput): void {
     const state = threadState(i.notes, id, nowMs)
     const newest = state.newestId === n.id
     const answers = n.replyTo ? ` data-reply-to="${esc(n.replyTo)}"` : ''
-    const foot = !newest || n.status !== 'replied' ? '' : state.open ? (i.mailbox ? `<p><button type="button" class="note-answer-btn" data-answer="${esc(n.id)}">Answer</button></p>` : '') : '<p class="quiet">This thread is closed. Leave a new note above.</p>'
+    const shareable = newest && threadNotes(i.notes, id).some((t) => t.status === 'replied')
+    const share = shareable ? `<p class="quiet"><a href="t/${esc(id)}.html">Share this thread</a></p>` : ''
+    const foot = share + (!newest || n.status !== 'replied' ? '' : state.open ? (i.mailbox ? `<p><button type="button" class="note-answer-btn" data-answer="${esc(n.id)}">Answer</button></p>` : '') : '<p class="quiet">This thread is closed. Leave a new note above.</p>')
     return `<li class="note" data-note="${esc(n.id)}" data-thread="${esc(id)}"${answers} data-status="${esc(n.status)}"><p class="quiet"><strong>${esc(n.name || 'A visitor')}</strong> ${n.replyTo ? 'answered' : 'left this'} on ${esc(i.stamp(n.at))}, at ${esc(placeName(n.placeId))}.</p>${paragraphs(n.message)}${fate(n)}${foot}</li>`
+  }
+
+  // Sharing S5: a thread that has a reply from Merge gets its own page and picture. A hidden note took its thread out of `i.notes` already.
+  for (const id of threadIds) {
+    const inThread = threadNotes(i.notes, id)
+    const lastReplied = [...inThread].reverse().find((n) => n.status === 'replied' && n.reply)
+    if (!lastReplied) continue
+    const base = i.baseUrl?.replace(/\/+$/, '')
+    const pageUrl = base ? `${base}/notes/t/${id}.html` : null
+    const imageUrl = base ? `${base}/notes/t/${id}.svg` : null
+    const who = lastReplied.name || 'A visitor'
+    const description = `${who} left Merge a note, and Merge replied.`
+    const head = pageUrl && imageUrl
+      ? [
+          `<meta property="og:title" content="${esc(`${who} and ${i.name ?? 'Merge'}`)}">`,
+          `<meta property="og:description" content="${esc(description)}">`,
+          `<meta property="og:image" content="${esc(imageUrl)}">`,
+          `<meta property="og:url" content="${esc(pageUrl)}">`,
+          '<meta name="twitter:card" content="summary_large_image">',
+          `<meta name="twitter:title" content="${esc(`${who} and ${i.name ?? 'Merge'}`)}">`,
+          `<meta name="twitter:description" content="${esc(description)}">`,
+          `<meta name="twitter:image" content="${esc(imageUrl)}">`,
+        ].join('\n')
+      : undefined
+    i.add(`notes/t/${id}.html`, {
+      title: `${who}'s note`,
+      active: 'notes/',
+      ...(head ? { head } : {}),
+      body: [
+        '<p class="quiet"><a href="../">Notes</a></p>',
+        `<h1>${esc(who)} left a note</h1>`,
+        `<p class="quiet">Times are ${esc(i.zone)}.</p>`,
+        `<ul class="requests notes">${inThread.map(item).join('')}</ul>`,
+        `<p><img src="${esc(id)}.svg" alt="${esc(`A note from ${who} and Merge's reply`)}" width="600" height="315"></p>`,
+      ].join('\n'),
+    })
+    i.addFile?.(`notes/t/${id}.svg`, threadPicture({ name: lastReplied.name, message: lastReplied.message, reply: lastReplied.reply!, address: base ? base.replace(/^https?:\/\//, '') : (i.name ?? 'Merge') }))
   }
 
   i.add('notes/index.html', {

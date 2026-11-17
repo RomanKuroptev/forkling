@@ -1,6 +1,6 @@
 # Lane C: visitors and tools (steps 5, 6)
 
-State: slice A merged (#183), B merged (#188). Slice C (credit) in PR. Next: sharing S5, then step 6.
+State: step 5 done (#183, #188, #192). Sharing S5 in PR. Next: step 6 plan.
 
 ## Plan for step 5 (one PR each, branches claude/v4-c-<slice>)
 
