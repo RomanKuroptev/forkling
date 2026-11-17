@@ -124,3 +124,50 @@ export async function frontPageLinks(f: Fetcher, host: string): Promise<ItemLink
   const html = await f.text(`https://${host}/wiki/Main_Page`, { accept: 'text/html' })
   return capLinks(wikiLinks(articleHtml(html), host, 'Main Page'))
 }
+
+/** The Main Page sections a morning takes links from, in this order: today's featured article, in the news, did you know, on this day. */
+const MAIN_PAGE_SECTIONS = ['mp-tfa', 'mp-itn', 'mp-dyk', 'mp-otd'] as const
+/** The links a Main Page carries as furniture, in the welcome banner or the footer: never a place to start. */
+const FRONT_FURNITURE = new Set(['wikipedia', 'free content', 'english language', 'main page', 'encyclopedia', 'wikimedia foundation', 'wikimedia commons', 'wiktionary', 'wikibooks', 'wikidata', 'wikiquote', 'wikisource', 'wikiversity', 'wikivoyage', 'meta-wiki', 'mediawiki', 'cc by-sa 4.0'])
+
+/** The HTML of the div with this id, from its opening tag to its closing tag, or an empty string when the page has none. */
+function sectionHtml(html: string, id: string): string {
+  const open = new RegExp(String.raw`<div\b[^>]*\bid="${id}"[^>]*>`, 'i').exec(html)
+  if (!open) return ''
+  const from = open.index + open[0].length
+  return html.slice(from, closeOf(html, 'div', from))
+}
+
+/**
+ * The links of a Wikipedia-style front page for the morning: at most `max`, spread over its sections (the featured article, the news,
+ * did you know, on this day) one at a time, so no one section fills the list, and without the welcome banner's furniture links
+ * ("Wikipedia", "Free content", "English language"). A page with none of the sections gives its other links, furniture left out.
+ */
+export async function frontPageSectionLinks(f: Fetcher, host: string, max: number): Promise<ItemLink[]> {
+  const html = await f.text(`https://${host}/wiki/Main_Page`, { accept: 'text/html' })
+  const body = articleHtml(html)
+  const lists = MAIN_PAGE_SECTIONS.map((id) => wikiLinks(sectionHtml(body, id), host, 'Main Page').filter((l) => !FRONT_FURNITURE.has(l.title.toLowerCase())))
+  const out: ItemLink[] = []
+  const seen = new Set<string>()
+  const take = (l: ItemLink): boolean => {
+    if (seen.has(l.url)) return false
+    seen.add(l.url)
+    out.push(l)
+    return out.length >= max
+  }
+  if (lists.every((l) => l.length === 0)) {
+    for (const l of wikiLinks(body, host, 'Main Page')) if (!FRONT_FURNITURE.has(l.title.toLowerCase()) && take(l)) break
+    return out
+  }
+  for (let round = 0; out.length < max; round++) {
+    let any = false
+    for (const list of lists) {
+      const l = list[round]
+      if (!l) continue
+      any = true
+      if (take(l)) return out
+    }
+    if (!any) break
+  }
+  return out
+}
