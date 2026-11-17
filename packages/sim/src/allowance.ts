@@ -19,8 +19,8 @@ export interface Prices {
   tend: number
   /** A tinker that makes a sketch: a Sonnet call of about $0.05, so 50 points. A price, not a daily cap: Merge chooses how many. */
   sketch: number
-  /** Writing the build request that a found step makes. */
-  foundRequest: number
+  /** A found: Merge founds a place and the server builds it from the kit (spec v4 2.3). Fixed; the weekly reset leaves it. */
+  found: number
   revisit: number
   write: number
   /** Replies have a rail of their own (5 a day) and cost nothing from the allowance. */
@@ -28,7 +28,7 @@ export interface Prices {
   rest: number
 }
 
-export const PRICES: Prices = { fullWork: 240, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 50, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 }
+export const PRICES: Prices = { fullWork: 240, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 50, found: 80, revisit: 1, write: 1, reply: 0, rest: 0 }
 
 /** Points at each wake. */
 export const DAILY_POINTS = 150
@@ -69,7 +69,7 @@ export function stepCost(step: PricedStep, prices: Prices = PRICES): number {
     case 'expand':
       return step.earned ? prices.expandEarned : prices.expand
     case 'found':
-      return prices.foundRequest
+      return prices.found
     case 'tinker':
       return step.size === 'sketch' ? prices.sketch : prices.fullWork
     case 'write':
@@ -104,7 +104,6 @@ const PRICE_KINDS: Partial<Record<keyof Prices, readonly string[]>> = {
   sketch: ['sketch', 'rework'],
   tend: ['tend'],
   expand: ['expand'],
-  foundRequest: ['found'],
   revisit: ['revisit'],
   write: ['art'],
 }
@@ -143,5 +142,6 @@ export function pricesDue(a: { timezone: string; nowMs: number; asleep: boolean;
 
 /** The prices in force: the starting ones until a Sunday reset has set others. Anything a stored table lacks comes from the starting ones. */
 export function livePrices(stored: Partial<Prices> | undefined): Prices {
-  return { ...PRICES, ...stored }
+  const { foundRequest: _old, ...rest } = (stored ?? {}) as Partial<Prices> & { foundRequest?: number }
+  return { ...PRICES, ...rest }
 }

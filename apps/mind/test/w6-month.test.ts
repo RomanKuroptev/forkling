@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { BudgetLedger, Interests, MindState, Place, PlaceRequest, Souvenir, Wish, formatRequest, isOpenRequest, isOpenWish, parseRequest, MAX_OPEN_PLACE_REQUESTS, MAX_OPEN_WISHES } from '@forkling/schema'
+import { BudgetLedger, Interests, MindState, Place, PlaceRequest, Souvenir, Wish, formatRequest, isOpenWish, parseRequest, MAX_OPEN_WISHES } from '@forkling/schema'
 import { allPaths, expandAllowed, lastSizeChange, layoutProblems, placementCandidates, PLACE_LIMITS, toLandPlace } from '@forkling/sim'
 import { createBuildWorker } from '../src/build-worker.ts'
 import { createExpandHandler } from '../src/builds/expand-job.ts'
@@ -60,8 +60,7 @@ function fakeModel() {
     if (count < 3) return { thought: 'Enough planning for today.', longGoal: null, dropLongGoal: false, plan: null, planReason: null, stayUpLate: null }
     const places = listDir('places', '.json').map((f) => f.slice(0, -5))
     const steps: ReturnType<typeof step>[] = []
-    const interest = /<foundable>\s*You could ask Roman for a new place for: ([^.\n]+?)\./.exec(req.user)?.[1]
-    if (interest) steps.push(step('found', `The ${interest} Hall`.slice(0, 40), 30, `${interest} keeps pulling at me and no place holds it.`))
+    if (/<foundable>/.test(req.user)) steps.push(step('found', `Hall ${++halls}`, 30, 'I want a new place for what keeps pulling at me.'))
     const growable = /<growable>[\s\S]*?\n- ([a-z0-9-]+) \(/.exec(req.user)?.[1]
     if (growable) steps.push(step('expand', growable, 30, 'The place is full of what I keep finding.'))
     const cycle = ['tend', 'write', 'rest']
@@ -82,7 +81,7 @@ function fakeModel() {
       else if (req.kind === ('tend' as never)) parsed = { summary: `Looked after the shelves (${counts.tend}).`, exhibits: [], labels: [], sign: null, lamps: null, door: null, doorReason: null, putAwayId: null, putAwayReason: null }
       else if (req.kind === ('revisit' as never)) parsed = { summary: 'Sat there a while.', thought: 'It is quiet.' }
       else if (req.kind === ('found' as never)) {
-        parsed = { purpose: 'A place for what keeps pulling at me, held up under a lamp.', tags: ['anything'], related: [], souvenirs: [], body: 'I keep coming back to this. I want a place where it can sit under a lamp and be looked at slowly.', wishes: [], constraintRefusal: null }
+        parsed = { purpose: 'A place for what keeps pulling at me, held up under a lamp.', tags: ['dem'], related: [], souvenirs: [], body: 'I keep coming back to this. I want a place where it can sit under a lamp and be looked at slowly.', wishes: [], constraintRefusal: null }
       }
       return { parsed: parsed as T | null, stopReason: parsed ? 'end_turn' : 'refusal', usage }
     },
@@ -128,34 +127,6 @@ function feedInterests(day: number, atMs: number) {
   put('brain/interests.json', Interests.parse({ version: 2, topics }))
 }
 
-const kitPlace = (r: PlaceRequest, atMs: number) =>
-  Place.parse({
-    id: r.id,
-    name: r.name,
-    purpose: r.purpose,
-    tags: [r.tags[0]!],
-    founded: isoOf(atMs).slice(0, 10),
-    chunk: r.chunk,
-    related: [],
-    exterior: { style: 'timber', footprint: [12, 10], floors: 1, palette: 'meadow', sign: r.name.toUpperCase().slice(0, 24) },
-    rooms: [{ id: 'main', name: 'Main room', size: [10, 8, 3], at: [0, 0], floor: 0, parts: [{ part: 'shelf-low', at: [0, 0, 3], rot: 0 }, { part: 'lamp-floor', at: [3, 0, 3], rot: 0 }] }],
-    exhibits: [],
-    state: { construction: null, lastCareAt: null, neglect: 0, lamps: true },
-    history: [],
-  })
-
-/** Roman's side: he says he is building the first request a day after it is written, and builds it the day after that. The second one he never answers. */
-let romanSeen: string | null = null
-function romanActs(nowMs: number) {
-  const mine = readRequests().filter((r) => r.kind === 'place').sort((a, b) => a.written.localeCompare(b.written))
-  const first = mine[0]
-  if (!first) return
-  romanSeen = first.id
-  const age = nowMs - Date.parse(first.written)
-  if (first.status === 'open' && age >= DAY_MS) put(`requests/${first.id}.md`, formatRequest(PlaceRequest.parse({ ...first, status: 'building', statusAt: isoOf(nowMs), note: 'Two rooms, lamps in the windows.' })))
-  if ((first.status === 'open' || first.status === 'building') && age >= 2 * DAY_MS && !existsSync(file(`places/${first.id}.json`))) put(`places/${first.id}.json`, kitPlace(first, nowMs))
-}
-
 // ---- the month ----
 
 interface Snapshot {
@@ -167,6 +138,7 @@ const expands: { at: string; place: string }[] = []
 let ticks = 0
 let model: ReturnType<typeof fakeModel>
 let started = 0
+let halls = 0
 
 async function liveThirtyDays() {
   model = fakeModel()
@@ -185,7 +157,6 @@ async function liveThirtyDays() {
         for (const n of [1, 2, 3, 4]) souvenir(`dem-shop-${n}`, 'dem', 'workshop', nowMs - 60_000 * n)
       }
       if (dayIndex === 12) for (const n of [5, 6, 7, 8]) souvenir(`dem-home-${n}`, 'dem', 'home', nowMs), souvenir(`dem-shop-${n}`, 'dem', 'workshop', nowMs)
-      romanActs(nowMs)
     }
     const asleep = read('forkling.json').asleep
     // The workflow's gate: while asleep, only the tick in the first ten minutes of the hour runs.
@@ -198,7 +169,6 @@ async function liveThirtyDays() {
     checkJobs(nowMs)
     await worker.tick()
     ticks++
-    romanActs(nowMs)
     check(nowMs, before)
     before = { places: new Map(readPlaces().map((p) => [p.id, p])) }
   }
@@ -208,8 +178,8 @@ async function liveThirtyDays() {
 function check(nowMs: number, before: Snapshot) {
   const at = isoOf(nowMs)
   const requests = readRequests()
-  const open = requests.filter((r) => r.kind === 'place' && isOpenRequest(r)).length
-  if (open > MAX_OPEN_PLACE_REQUESTS) violations.push(`${at}: ${open} place requests open (at most ${MAX_OPEN_PLACE_REQUESTS})`)
+  const founding = readPlaces().filter((p) => p.state.construction?.kind === 'found' && Date.parse(p.state.construction.finishesAt) > nowMs).length
+  if (founding > 1) violations.push(`${at}: ${founding} founded places under construction at once (at most 1)`)
   const wishes = readWishes().filter(isOpenWish).length
   if (wishes > MAX_OPEN_WISHES) violations.push(`${at}: ${wishes} wishes open (at most ${MAX_OPEN_WISHES})`)
 
@@ -268,12 +238,11 @@ describe('thirty days of the real mind, with a scripted model and a scripted Rom
     expect(violations).toEqual([])
   })
 
-  it('actually exercises them: it asks for places, expands places, and a place lands', () => {
+  it('actually exercises them: it founds places, expands places, and a place lands', () => {
     const requests = readRequests().filter((r) => r.kind === 'place')
-    expect(requests.length, 'found never wrote a request').toBeGreaterThanOrEqual(2)
+    expect(requests.length, 'found never wrote a founding').toBeGreaterThanOrEqual(2)
     expect(expands.length, 'no expand ever landed').toBeGreaterThanOrEqual(2)
     expect(readPlaces().length).toBeGreaterThan(3)
-    expect(romanSeen).not.toBeNull()
   })
 
   it('asks for a new place at most once a week', () => {
@@ -291,18 +260,13 @@ describe('thirty days of the real mind, with a scripted model and a scripted Rom
     expect(ledger.spentUsd - started).toBeLessThan(10)
   })
 
-  it('answers a request Roman built (built, with who had the idea in the history) and one nobody answered (self-built after 7 days)', () => {
+  it('builds every founding from the kit at once, with no wait for Roman (spec v4 2.3)', () => {
     const requests = readRequests().filter((r) => r.kind === 'place')
-    const built = requests.filter((r) => r.status === 'built')
-    const selfBuilt = requests.filter((r) => r.status === 'self-built')
-    expect(built.length, JSON.stringify(requests.map((r) => [r.id, r.status]))).toBeGreaterThanOrEqual(1)
-    expect(selfBuilt.length, JSON.stringify(requests.map((r) => [r.id, r.status]))).toBeGreaterThanOrEqual(1)
-    const roman = readPlaces().find((p) => p.id === built[0]!.id)!
-    expect(roman.history.some((h) => h.summary === 'Asked for by Merge, built by Roman with Claude Code.')).toBe(true)
-    const plain = readPlaces().find((p) => p.id === selfBuilt[0]!.id)!
-    expect(plain.history.some((h) => h.summary === 'Asked for by Merge, built by Merge from the kit.')).toBe(true)
-    const waited = Date.parse(plain.history.find((h) => h.verb === 'found')!.at) - Date.parse(selfBuilt[0]!.written)
-    expect(waited, 'the fallback came before the 7 days were up').toBeGreaterThanOrEqual(WEEK_MS)
+    expect(requests.every((r) => r.status === 'self-built'), JSON.stringify(requests.map((r) => [r.id, r.status]))).toBe(true)
+    const plain = readPlaces().find((p) => p.id === requests[0]!.id)!
+    expect(plain.history.some((h) => h.summary === 'Founded by Merge, built by Merge from the kit.')).toBe(true)
+    const waited = Date.parse(plain.history.find((h) => h.verb === 'found')!.at) - Date.parse(requests[0]!.written)
+    expect(waited, 'the kit build came within a day').toBeLessThan(DAY_MS)
   })
 
   it('holds every place inside the history cap and keeps what is read later: its founding lines and its last size change', () => {

@@ -6,7 +6,7 @@ import { readRecentPast } from '../past.ts'
 import { foldName, hiddenVisitor, livePrices, moodWords, openPlaceRequests } from '@forkling/sim'
 import { expandablePlaces } from './expand.ts'
 import { unreadSeen } from '../web/lookup.ts'
-import { foundGate, foundableInterest } from './found.ts'
+import { canFoundNow, foundGate } from './found.ts'
 import { checkPlan, placeIds } from './plan.ts'
 import { clock, weekday } from './util.ts'
 
@@ -35,7 +35,7 @@ export async function think(t: Tick): Promise<void> {
     mindState: t.mind,
     places: placeIds(t),
     growable: expandablePlaces(t).filter((e) => e.earned.earned).map((e) => `${e.id} (${e.earned.by === 'made' ? `${e.earned.works.length} works shown since it last changed size` : `your reading on ${e.earned.family}`})`),
-    foundable: foundableInterest(t),
+    foundable: canFoundNow(t),
     fromRoman: (t.mind.fromRoman ?? []).map((x) => x.text),
     requests: openPlaceRequests(foundGate(t).requests).map((r) => ({ name: r.name, status: r.status })),
     triggers: t.triggers,

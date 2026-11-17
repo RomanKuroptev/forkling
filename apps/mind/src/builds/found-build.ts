@@ -34,7 +34,7 @@ export interface FoundBuildPromptInput {
 export function buildFoundBuildUser(i: FoundBuildPromptInput): string {
   const { request } = i
   return [
-    `You asked Roman for a place, ${clampText(request.name, 40)}, and nobody has answered it in 7 days, so the builders make a plain version for you from the kit.`,
+    `You founded a place, ${clampText(request.name, 40)}, and the builders now make a plain version of it for you from the kit.`,
     `Its purpose, in your words: ${clampText(request.purpose, 160)}`,
     `Its tags: ${request.tags.join(', ')}. It will stand on chunk ${i.chunk.join(', ')}.`,
     'What you wrote when you asked:',
@@ -49,7 +49,7 @@ export function buildFoundBuildUser(i: FoundBuildPromptInput): string {
     `- 1 to ${FOUND_BUILD_LIMITS.rooms} rooms, and at most ${FOUND_BUILD_LIMITS.parts} parts in all, counted over every room.`,
     `- The footprint is at most ${FOUND_BUILD_LIMITS.footprint} by ${FOUND_BUILD_LIMITS.footprint} meters, 1 or 2 floors. Every room fits inside the footprint and does not overlap another room on the same floor; its position is where its middle is, in meters from the middle of the building.`,
     '- Use only kit parts from the list above. You never write 3D code. A part sits inside its room, and its position is in meters from the middle of the room, y up.',
-    "- Choose a style and a palette that suit the place. The name and the purpose are the request's, the sign is made from the name, and there are no exhibits: they come later, when you tend the place. Roman can still build the full version later on the same chunk.",
+    "- Choose a style and a palette that suit the place. The name and the purpose are the request's, the sign is made from the name, and there are no exhibits: they come later, when you tend the place.",
   ].join('\n')
 }
 
@@ -81,6 +81,6 @@ export function toFoundBuildPlace(a: FoundBuildAnswer, c: FoundBuildContext): Pl
     rooms: a.rooms.map((r) => ({ id: r.id, name: r.name, size: [r.width, r.depth, r.height], at: [r.x, r.z], floor: r.floor, parts: r.parts.map((p) => ({ part: p.part, at: [p.x, p.y, p.z], rot: p.rot })) })),
     exhibits: [],
     state: { construction: null, lastCareAt: null, neglect: 0, lamps: true },
-    history: [{ at: c.nowIso, verb: 'found', summary: 'Asked for by Merge, built by Merge from the kit.' }],
+    history: [{ at: c.nowIso, verb: 'found', summary: 'Founded by Merge, built by Merge from the kit.' }],
   })
 }

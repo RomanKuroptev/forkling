@@ -70,7 +70,7 @@ const builtPlace = (over: Record<string, unknown> = {}) =>
     rooms: [{ id: 'main', name: 'Main room', size: [10, 8, 3], at: [0, 0], floor: 0, parts: [{ part: 'shelf-low', at: [0, 0, 3], rot: 0 }, { part: 'lamp-floor', at: [3, 0, 3], rot: 0 }] }],
     exhibits: [],
     state: { construction: null, lastCareAt: null, neglect: 0, lamps: true },
-    history: [{ at: '2026-11-03T09:30:00Z', verb: 'found', summary: 'Asked for by Merge, built by Merge from the kit.' }],
+    history: [{ at: '2026-11-03T09:30:00Z', verb: 'found', summary: 'Founded by Merge, built by Merge from the kit.' }],
     ...over,
   })
 const call = { at: '2026-11-03T10:00:00Z', kind: 'foundbuild', model: 'claude-sonnet-5-5', input: 15_000, cacheRead: 0, cacheWrite: 0, output: 4_000, usd: 0.07 }
@@ -99,18 +99,14 @@ describe('the fallback build is asked for when a request has had no answer (spec
     expect(streamText()).toMatch(/Nobody answered my request for Lantern Hall/)
   })
 
-  it('does not before the 7 days are up', async () => {
-    putRequest({ written: daysBefore(6) })
+  it('asks at once for a request written now: there is no wait (FALLBACK_DAYS is 0)', async () => {
+    putRequest({ written: NOW })
     await runTick(dir, deps(fakeLlm().llm, NOW))
-    expect(foundJobs()).toEqual([])
+    expect(foundJobs()).toHaveLength(1)
   })
 
-  it('waits 14 more days while Roman says he is building it, and then asks', async () => {
-    putRequest({ status: 'building', statusAt: daysBefore(15), written: daysBefore(20) })
-    await runTick(dir, deps(fakeLlm().llm, NOW))
-    expect(foundJobs()).toEqual([])
-    rmSync(file('mind'), { recursive: true, force: true })
-    putRequest({ status: 'building', statusAt: daysBefore(15), written: daysBefore(22) })
+  it('is no longer held off by the old status building', async () => {
+    putRequest({ status: 'building', statusAt: daysBefore(1), written: daysBefore(2) })
     await runTick(dir, deps(fakeLlm().llm, NOW))
     expect(foundJobs()).toHaveLength(1)
   })
@@ -184,7 +180,7 @@ describe('what the builders send back is checked again and written by the loop (
     const place = placeOf('lantern-hall')
     const f = read('forkling.json')
     expect(place.state.construction).toEqual({ kind: 'found', finishesAt: new Date(addWakingMs(Date.parse(at), 6 * HOUR, { seed: f.seed, timezone: f.timezone })).toISOString() })
-    expect(place.history.at(-1)).toMatchObject({ verb: 'found', summary: 'Asked for by Merge, built by Merge from the kit.' })
+    expect(place.history.at(-1)).toMatchObject({ verb: 'found', summary: 'Founded by Merge, built by Merge from the kit.' })
     expect(place.history).toHaveLength(1)
     expect(requestOf('lantern-hall')).toMatchObject({ status: 'self-built' })
     expect(requestOf('lantern-hall').statusAt).toBe(at)

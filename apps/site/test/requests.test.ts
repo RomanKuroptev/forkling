@@ -50,81 +50,25 @@ describe('a world with no requests and no wishes', () => {
   })
 })
 
-describe('/requests/ (spec 10.3: place requests and wishes, with their status)', () => {
-  it('appears with the first request, linked from every page', () => {
+describe('/requests/ (spec v4 2.3: gifts and wishes; place requests are gone)', () => {
+  it('does not list a place request, and has no page for a world whose only request is one', () => {
     putRequest()
     render()
-    expect(existsSync(join(out, 'requests/index.html'))).toBe(true)
-    expect(page('index.html')).toMatch(/href="requests\/"/)
-    expect(page('places/index.html')).toMatch(/href="..\/requests\/"/)
+    expect(existsSync(join(out, 'requests/index.html'))).toBe(false)
   })
 
-  it("shows a request in Merge's own words: name, purpose, its topic, when it asked, what it was based on, and what it imagines", () => {
+  it('does not list a place request on the page that wishes make', () => {
     putRequest()
+    putWish()
     render()
-    const html = page('requests/index.html')
-    expect(html).toContain('Lantern Hall')
-    expect(html).toContain('Where I keep the lidar finds.')
-    expect(html).toContain('maya lidar')
-    expect(html).toContain('2026-11-18')
-    expect(html).toMatch(/Based on 2 things it kept while reading\./)
-    expect(html).not.toMatch(/souvenir/i)
-    expect(html).not.toMatch(/Behind it/)
-    expect(html).toContain('I want a place with a lamp over each find.')
-    expect(html).toContain('It would be quiet.')
-  })
-
-  it('labels the tag next to the title: "Topic:" for one, "Topics:" for several', () => {
-    putRequest()
-    putRequest({ id: 'two-tags', name: 'Two Tags', tags: ['fog', 'moss'], written: '2026-11-19T10:00:00Z' })
-    render()
-    const html = page('requests/index.html')
-    expect(html).toMatch(/<strong>Lantern Hall<\/strong> <span class="quiet">Topic: maya lidar<\/span>/)
-    expect(html).toMatch(/<strong>Two Tags<\/strong> <span class="quiet">Topics: fog, moss<\/span>/)
-  })
-
-  it('says one thing in the singular, and says nothing about what it was based on when that is none', () => {
-    putRequest({ id: 'one-thing', name: 'One Thing', souvenirs: ['2026-11-02-fog'], written: '2026-11-19T10:00:00Z' })
-    putRequest({ id: 'no-things', name: 'No Things', souvenirs: [], written: '2026-11-20T10:00:00Z' })
-    render()
-    const html = page('requests/index.html')
-    const one = /<li[^>]*data-request="one-thing"[\s\S]*?<\/li>/.exec(html)![0]
-    const none = /<li[^>]*data-request="no-things"[\s\S]*?<\/li>/.exec(html)![0]
-    expect(one).toMatch(/Based on 1 thing it kept while reading\./)
-    expect(none).toMatch(/Asked on 2026-11-20/)
-    expect(none).not.toMatch(/Based on|souvenir|kept while reading/i)
-  })
-
-  it('says in plain words what each status means, and which ones are still waiting', () => {
-    const cases: [string, string, RegExp][] = [
-      ['open', 'a-open', /Waiting for Roman to answer/],
-      ['building', 'b-building', /Roman says he is building it/],
-      ['built', 'c-built', /Built by Roman with Claude Code/],
-      ['declined', 'd-declined', /Roman declined/],
-      ['self-built', 'e-selfbuilt', /Built by Merge from the kit when the time was up/],
-      ['withdrawn', 'f-withdrawn', /Merge took it back/],
-    ]
-    for (const [status, id] of cases) {
-      const answered = status !== 'open'
-      putRequest({ id, name: `Place ${id}`, status, statusAt: answered ? '2026-11-19T10:00:00Z' : null, note: status === 'declined' ? 'Not now.' : null })
-    }
-    // A place stands on the staked chunk, so a built request has something to point at.
-    putPlace('lantern-hall', { name: 'Lantern Hall', chunk: [1, 0], offset: [0, 0], state, history: [{ at: '2026-11-19T10:00:00Z', verb: 'found', summary: 'Asked for by Merge, built by Roman with Claude Code.' }] })
-    render()
-    const html = page('requests/index.html')
-    for (const [status, id, words] of cases) {
-      const item = new RegExp(`<li[^>]*data-request="${id}"[^>]*data-status="${status}"[^>]*>[\\s\\S]*?</li>`).exec(html)?.[0]
-      expect(item, id).toBeDefined()
-      expect(item!, id).toMatch(words)
-    }
-    // The ones still waiting come before the answered ones.
-    expect(html.indexOf('data-request="b-building"')).toBeLessThan(html.indexOf('data-request="c-built"'))
-    expect(html.indexOf('data-request="a-open"')).toBeLessThan(html.indexOf('data-request="d-declined"'))
+    expect(page('requests/index.html')).not.toContain('Lantern Hall')
+    expect(page('requests/index.html')).toContain('Lamp rail')
   })
 
   it('files a gift as a gift, so the record shows whose idea it was', () => {
     putRequest({ id: 'bell-tower', kind: 'gift', name: 'Bell Tower', status: 'built', statusAt: '2026-11-19T10:00:00Z', souvenirs: [], body: 'Built by Roman without a request.' })
     render()
+    expect(page('index.html')).toMatch(/href="requests\/"/)
     const item = /<li[^>]*data-request="bell-tower"[\s\S]*?<\/li>/.exec(page('requests/index.html'))![0]
     expect(item).toMatch(/A gift from Roman/)
     // Merge did not ask for it, so it says neither "asked" nor how many souvenirs are behind it.
@@ -132,55 +76,20 @@ describe('/requests/ (spec 10.3: place requests and wishes, with their status)',
     expect(item).toMatch(/Filed 2026-11-18/)
   })
 
-  it("does not show Roman's note on a request that is not declined (the viewer keeps it back too)", () => {
-    putRequest({ id: 'a-building', name: 'Place A', status: 'building', statusAt: '2026-11-19T10:00:00Z', note: 'Two rooms, lamps in the windows.' })
-    putRequest({ id: 'b-built', name: 'Place B', status: 'built', statusAt: '2026-11-19T10:00:00Z', note: 'Built with a stone hall.' })
+  it('escapes a gift: a name, a purpose and a body with markup are shown as text', () => {
+    putRequest({ id: 'x', kind: 'gift', status: 'built', statusAt: '2026-11-19T10:00:00Z', name: 'A <b>Hall</b>', purpose: 'Is <i>this</i> ok', souvenirs: [], body: 'Some <script>alert(1)</script> words' })
     render()
     const html = page('requests/index.html')
-    expect(html).not.toContain('Two rooms, lamps')
-    expect(html).not.toContain('stone hall')
-    expect(html).not.toContain('Roman’s reason')
+    expect(html).not.toMatch(/<script>alert|<b>Hall|<i>this/)
+    expect(html).toContain('&lt;b&gt;Hall')
   })
 
-  it("shows Roman's reason on a declined request, and only there", () => {
-    putRequest({ id: 'no-thanks', name: 'No Thanks', status: 'declined', statusAt: '2026-11-19T10:00:00Z', note: 'Too close to the Workshop; ask again further out.' })
+  it('says nothing about waiting for Roman or a 7 day fallback in its intro', () => {
+    putWish()
     render()
-    const item = /<li[^>]*data-request="no-thanks"[\s\S]*?<\/li>/.exec(page('requests/index.html'))![0]
-    expect(item).toMatch(/Roman declined/)
-    expect(item).toMatch(/Roman’s reason:[\s\S]*Too close to the Workshop; ask again further out\./)
-  })
-
-  it("escapes Roman's reason", () => {
-    putRequest({ id: 'no-thanks', name: 'No Thanks', status: 'declined', statusAt: '2026-11-19T10:00:00Z', note: '<script>alert(1)</script> no.' })
-    render()
-    const html = page('requests/index.html')
-    expect(html).not.toContain('<script>alert')
-    expect(html).toContain('&lt;script&gt;')
-  })
-
-  it('links a built request to its place when one stands on its chunk', () => {
-    putPlace('lantern-hall', { name: 'Lantern Hall', chunk: [1, 0], offset: [0, 0], state })
-    putRequest({ status: 'built', statusAt: '2026-11-19T10:00:00Z' })
-    render()
-    expect(page('requests/index.html')).toMatch(/href="..\/places\/lantern-hall\/"/)
-  })
-
-  it('escapes everything: a name, a purpose and a body with markup are shown as text', () => {
-    putRequest({ name: 'Hall <b>one</b>', purpose: 'A <script>alert(1)</script> place', body: '<img src=x onerror=alert(1)>' })
-    render()
-    const html = page('requests/index.html')
-    expect(html).not.toMatch(/<script>alert|<img src=x|<b>one/)
-    expect(html).toContain('&lt;script&gt;')
-  })
-
-  it('leaves out a request file that does not fit, or whose id is not its file name', () => {
-    putRequest()
-    put('requests/broken.md', '---\nname: x\n---\nno')
-    put('requests/other-name.md', formatRequest(request({ id: 'someone-else', name: 'Someone Else' })))
-    render()
-    const html = page('requests/index.html')
-    expect(html).toContain('Lantern Hall')
-    expect(html).not.toContain('Someone Else')
+    const intro = /<p class="quiet">Merge founds[^<]*<\/p>/.exec(page('requests/index.html'))?.[0] ?? ''
+    expect(intro).toMatch(/founds its own places/)
+    expect(intro).not.toMatch(/7 days|21 days|waiting/i)
   })
 
   it('lists wishes with their count, status and the place they are for', () => {
@@ -202,79 +111,15 @@ describe('/requests/ (spec 10.3: place requests and wishes, with their status)',
   })
 })
 
-describe('what /requests/ claims (it never says more than the files do)', () => {
-  const item = (id: string) => new RegExp(`<li[^>]*data-request="${id}"[\\s\\S]*?</li>`).exec(page('requests/index.html'))?.[0] ?? ''
-
-  it('does not say who built a request marked built when no place stands on its chunk', () => {
-    putRequest({ id: 'marked', name: 'Marked Hall', status: 'built', statusAt: '2026-11-19T10:00:00Z', chunk: [6, 6] })
+describe('/places/ lists a founding whose place is not on the land yet as being built (spec v4 2.3)', () => {
+  it('shows an open place request under "Being built", and no longer when its place stands', () => {
+    putRequest()
     render()
-    expect(item('marked')).toMatch(/Marked built\./)
-    expect(item('marked')).not.toMatch(/Built by Roman|Claude Code|See the place/)
-  })
-
-  it('says Roman built it, and links the place, when a place stands on its chunk', () => {
-    putRequest({ id: 'lantern-hall', status: 'built', statusAt: '2026-11-19T10:00:00Z' })
-    putPlace('lantern-hall', { name: 'Lantern Hall', chunk: [1, 0], offset: [0, 0], state, history: [] })
+    const html = page('places/index.html')
+    expect(html).toMatch(/<h2>Being built<\/h2>[\s\S]*data-founding="lantern-hall"[\s\S]*Lantern Hall[\s\S]*being built/)
+    putRequest({ status: 'self-built', statusAt: '2026-11-20T09:00:00Z' })
     render()
-    expect(item('lantern-hall')).toMatch(/Built by Roman with Claude Code/)
-    expect(item('lantern-hall')).toMatch(/href="..\/places\/lantern-hall\/"/)
-  })
-
-  it('never says "answered" for a request Merge took back or the kit built, and says "last changed" instead', () => {
-    putRequest({ id: 'taken-back', name: 'Taken Back', status: 'withdrawn', statusAt: '2026-11-19T10:00:00Z' })
-    putRequest({ id: 'kit-made', name: 'Kit Made', status: 'self-built', statusAt: '2026-11-19T10:00:00Z', chunk: [2, 0] })
-    putRequest({ id: 'on-it', name: 'On It', status: 'building', statusAt: '2026-11-19T10:00:00Z', chunk: [3, 0] })
-    render()
-    for (const id of ['taken-back', 'kit-made', 'on-it']) {
-      expect(item(id), id).not.toMatch(/answered/i)
-      expect(item(id), id).toMatch(/Asked on 2026-11-18; last changed 2026-11-19\./)
-    }
-  })
-
-  it('does not claim nobody answered a request that Roman said he was building', () => {
-    putRequest({ id: 'kit-made', name: 'Kit Made', status: 'self-built', statusAt: '2026-11-19T10:00:00Z', chunk: [2, 0] })
-    render()
-    expect(item('kit-made')).not.toMatch(/no one answered/i)
-  })
-
-  it("writes dates in the forkling's time zone, not UTC", () => {
-    // 23:30 UTC on the 20th is 00:30 on the 21st in Stockholm.
-    putRequest({ id: 'late-night', name: 'Late Night', written: '2026-11-20T23:30:00Z', status: 'open', chunk: [7, 0] })
-    putRequest({ id: 'late-gift', name: 'Late Gift', kind: 'gift', written: '2026-11-20T23:30:00Z', status: 'built', statusAt: '2026-11-20T23:30:00Z', souvenirs: [], chunk: [8, 0], body: 'Built by Roman without a request.' })
-    render()
-    expect(item('late-night')).toMatch(/Asked on 2026-11-21/)
-    expect(item('late-gift')).toMatch(/Filed 2026-11-21/)
-  })
-
-  it('says both waits in its intro: 7 days, and 21 once Roman says he is building it', () => {
-    putRequest({ id: 'a-open', name: 'A Open' })
-    render()
-    const intro = /<p class="quiet">What Merge has asked[^<]*<\/p>/.exec(page('requests/index.html'))?.[0] ?? ''
-    expect(intro).toMatch(/7 days/)
-    expect(intro).toMatch(/21 days/)
-  })
-
-  it('calls the section of requests that are no longer waiting "Settled", not "Answered"', () => {
-    putRequest({ id: 'a-open', name: 'A Open' })
-    putRequest({ id: 'c-built', name: 'C Built', status: 'declined', statusAt: '2026-11-19T10:00:00Z', note: 'No.', chunk: [9, 0] })
-    render()
-    const html = page('requests/index.html')
-    expect(html).toContain('<h2>Waiting</h2>')
-    expect(html).toContain('<h2>Settled</h2>')
-    expect(html).not.toMatch(/<h2>Answered<\/h2>/)
-  })
-
-  it('lists the requests Merge is waiting on with Roman building first, then the answered ones newest first', () => {
-    putRequest({ id: 'a-open', name: 'A Open', written: '2026-11-10T10:00:00Z', chunk: [4, 0] })
-    putRequest({ id: 'b-building', name: 'B Building', written: '2026-11-11T10:00:00Z', status: 'building', statusAt: '2026-11-12T10:00:00Z', chunk: [5, 0] })
-    putRequest({ id: 'c-old', name: 'C Old', written: '2026-11-01T10:00:00Z', status: 'declined', statusAt: '2026-11-02T10:00:00Z', note: 'No.', chunk: [9, 0] })
-    putRequest({ id: 'd-new', name: 'D New', written: '2026-11-05T10:00:00Z', status: 'declined', statusAt: '2026-11-06T10:00:00Z', note: 'No.', chunk: [10, 0] })
-    render()
-    const html = page('requests/index.html')
-    const at = (id: string) => html.indexOf(`data-request="${id}"`)
-    expect(at('b-building')).toBeLessThan(at('a-open'))
-    expect(at('a-open')).toBeLessThan(at('d-new'))
-    expect(at('d-new')).toBeLessThan(at('c-old'))
+    expect(page('places/index.html')).not.toContain('data-founding')
   })
 })
 
@@ -295,7 +140,7 @@ describe('the honesty line on a place page: who had the idea and who built it (s
   })
 
   it('says it for the fallback: built by Merge from the kit', () => {
-    putPlace('plain-hall', { name: 'Plain Hall', chunk: [3, 0], offset: [0, 0], state, history: found('Asked for by Merge, built by Merge from the kit.') })
+    putPlace('plain-hall', { name: 'Plain Hall', chunk: [3, 0], offset: [0, 0], state, history: found('Founded by Merge, built by Merge from the kit.') })
     render()
     expect(line('plain-hall')).toMatch(/built by Merge from the kit/)
   })

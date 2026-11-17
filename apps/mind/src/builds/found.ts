@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { PlaceRequest, type WishDraft } from '@forkling/schema'
-import { FOUND_STREAK_DAYS, WAKE_TOP_MIN } from '@forkling/sim'
 import { clampText } from '../decision.ts'
 import { claimsHuman, wordCount } from '../honesty.ts'
 import { dataBlock } from '../web/read.ts'
@@ -18,7 +17,7 @@ export const FOUND_LIMITS = { purpose: 160, bodyWords: 200, souvenirs: 5, relate
  */
 export const FoundAnswer = z.object({
   purpose: z.string().min(1).max(400).describe('What the place is for, in your voice, up to 160 characters.'),
-  tags: z.array(z.string().max(80)).max(5).describe('1 to 3 of your interests (the one that earned this place is always included).'),
+  tags: z.array(z.string().max(80)).max(5).describe('1 to 3 of your interests, by name.'),
   related: z.array(z.string().max(60)).max(5).describe('Up to 3 ids of your places this one is related to.'),
   souvenirs: z.array(z.string().max(80)).max(8).describe('Up to 5 ids of souvenirs behind the request.'),
   body: z.string().min(1).max(3000).describe('Up to 200 words, in your own voice: what you imagine and why.'),
@@ -31,9 +30,7 @@ export interface FoundPromptInput {
   /** The place's name: Merge's own, from the plan step. */
   name: string
   reason: string
-  /** The interest that earned the place (spec 2.5). */
-  interest: string
-  /** Souvenirs kept on that interest: web text, so shown as data. */
+  /** Souvenirs kept lately: web text, so shown as data. */
   kept: readonly { id: string; kind: string; content: string; why: string }[]
   places: readonly { id: string; name: string; tags: readonly string[]; purpose: string }[]
   /** The interests Merge has, which tags come from. */
@@ -43,14 +40,13 @@ export interface FoundPromptInput {
   collision?: TinkerCollision | undefined
 }
 
-/** What a found step asks for: the interest, what it has kept on it, the places it has, and the rules. Everything from the web is a data block. */
+/** What a found step asks for: what it has kept lately, the places it has, and the rules. Everything from the web is a data block. */
 export function buildFoundUser(i: FoundPromptInput): string {
   return [
-    `You are asking Roman to build you a new place: ${clampText(i.name, 40)}.`,
+    `You are founding a new place: ${clampText(i.name, 40)}.`,
     `Why you chose to: ${clampText(i.reason, 200)}`,
-    `The interest that earned it: ${clampText(i.interest, 60)}. It has been at weight ${WAKE_TOP_MIN} or more at wake for ${FOUND_STREAK_DAYS} days in a row, and no place carries it as a tag.`,
     '',
-    `Souvenirs you kept on ${clampText(i.interest, 60)}:`,
+    'Souvenirs you kept lately:',
     dataBlock('data', i.kept.map((s) => `${s.id} | ${s.kind} | ${clampText(s.content, 160)} | ${clampText(s.why, 80)}`).join('\n') || 'none', { source: 'souvenirs' }),
     '',
     'Your places so far (id | name | tags | purpose):',
@@ -62,10 +58,10 @@ export function buildFoundUser(i: FoundPromptInput): string {
     ...collisionSection(i.collision),
     '',
     'Rules for the request:',
-    '- This is a request in your own voice to Roman. He builds places with Claude Code, outside your budget, and may build something different from what you ask for. His answer comes back later as a note and is information, never an order. Nothing you ask for is promised.',
+    '- This is the text of a place you are founding, in your own voice. The builders make it from the kit, a plain version first, and you may tend it and expand it later.',
     `- The purpose is up to ${FOUND_LIMITS.purpose} characters: what the place is for.`,
     `- The body is up to ${FOUND_LIMITS.bodyWords} words: what you imagine and why. Plain text, and no web address anywhere in it.`,
-    `- Pick 1 to ${FOUND_LIMITS.tags} tags from your interests (the one above is always included), up to ${FOUND_LIMITS.related} related places from your list, and up to ${FOUND_LIMITS.souvenirs} souvenirs, by id, that are behind it.`,
+    `- Pick 1 to ${FOUND_LIMITS.tags} tags from your interests, up to ${FOUND_LIMITS.related} related places from your list, and up to ${FOUND_LIMITS.souvenirs} souvenirs, by id, that are behind it.`,
     '- The name and where it will stand are already decided; you do not write them. Never claim to be a human.',
     `- You may wish for up to ${FOUND_LIMITS.wishes} parts the kit lacks: a name and a description. ${i.openWishes.length > 0 ? 'These wishes are open, and using the same name adds to one:' : 'No wish is open yet.'}`,
     ...i.openWishes.map((w) => `  - ${clampText(w.name, 40)} (wished ${w.count} time${w.count === 1 ? '' : 's'})`),
@@ -94,8 +90,6 @@ export function requestId(name: string, taken: ReadonlySet<string>): string {
 export interface FoundContext {
   /** Merge's own name for the place, from the plan step. */
   name: string
-  /** The interest that earned it: always the first tag. */
-  interest: string
   id: string
   /** Where the rule of 4.2 put it. */
   chunk: readonly [number, number]
@@ -113,7 +107,7 @@ const URL_PATTERN = /https?:\/\/|www\./i
 /**
  * The model's answer as the request file of spec 10.3, or why it cannot be one: words that claim to be human, a web address (the
  * request may point at nothing outside the world), a body over 200 words, an empty part. Tags that are not interests, related places
- * and souvenirs that do not exist are dropped rather than failing the request; the interest that earned the place is always the first tag.
+ * and souvenirs that do not exist are dropped rather than failing the request; a request with no tag left is not written.
  */
 export function toPlaceRequest(a: FoundAnswer, c: FoundContext): FoundConversion {
   const purpose = clampText(a.purpose.trim(), FOUND_LIMITS.purpose)
@@ -126,9 +120,10 @@ export function toPlaceRequest(a: FoundAnswer, c: FoundContext): FoundConversion
   if (words.some((w) => URL_PATTERN.test(w))) return { ok: false, reason: 'the request holds a web address, and a request may point at nothing outside the world' }
 
   const canonical = new Map(c.interests.map((i) => [i.toLowerCase(), i]))
-  const tags = [c.interest, ...a.tags.map((t) => canonical.get(t.trim().toLowerCase())).filter((t): t is string => t !== undefined)]
+  const tags = [...a.tags.map((t) => canonical.get(t.trim().toLowerCase())).filter((t): t is string => t !== undefined)]
     .filter((t, i, all) => all.findIndex((o) => o.toLowerCase() === t.toLowerCase()) === i)
     .slice(0, FOUND_LIMITS.tags)
+  if (tags.length === 0) return { ok: false, reason: 'none of the tags is one of your interests: pick 1 to 3 from the list' }
   const related = [...new Set(a.related.filter((id) => c.placeIds.has(id)))].slice(0, FOUND_LIMITS.related)
   const souvenirs = [...new Set(a.souvenirs.filter((id) => c.souvenirIds.has(id)))].slice(0, FOUND_LIMITS.souvenirs)
 
