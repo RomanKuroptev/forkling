@@ -6,6 +6,8 @@ import { debugEnabled } from './debugEnabled.ts'
 import { DebugOverlay } from './forkling/DebugOverlay.tsx'
 import { Forkling } from './forkling/Forkling.tsx'
 import { Player } from './player/Player.tsx'
+import { Cursor } from './ui/Cursor.tsx'
+import { Taskbar } from './ui/Taskbar.tsx'
 import { ExhibitPanel } from './ui/ExhibitPanel.tsx'
 import { NoteButton } from './ui/NoteForm.tsx'
 import { NotePanel } from './ui/NotePanel.tsx'
@@ -30,7 +32,10 @@ const keyboardMap: KeyboardControlsEntry[] = [
   { name: 'run', keys: ['ShiftLeft', 'ShiftRight'] },
 ]
 
-const params = new URLSearchParams(location.search)
+/** How far the cursor reaches, in meters. */
+const OPEN_RANGE = 14
+
+const params =new URLSearchParams(location.search)
 const debug = params.has('debug')
 const physicsDebug = params.get('debug') === 'physics'
 
@@ -44,7 +49,12 @@ export function App() {
   return (
     <>
       <KeyboardControls map={keyboardMap}>
-        <Canvas shadows="percentage" dpr={touchUi ? [1, 1.25] : [1, 1.5]} camera={{ fov: 55, near: 0.1, far: 400 }}>
+        <Canvas
+          shadows="percentage"
+          dpr={touchUi ? [1, 1.25] : [1, 1.5]}
+          camera={{ fov: 70, near: 0.1, far: 400 }}
+          raycaster={{ far: OPEN_RANGE }}
+        >
           <Suspense fallback={null}>
             <Environment />
             <Physics debug={physicsDebug}>
@@ -67,11 +77,8 @@ export function App() {
       <NotePanel />
       <NoteButton />
       {touchUi && <TouchControls />}
-      {touchUi ? (
-        <div className="hud hud-touch">Left stick to walk · push to the edge to run · drag to look · pinch to zoom</div>
-      ) : (
-        <DesktopHud />
-      )}
+      <Cursor />
+      {touchUi ? <Taskbar touch hint="Stick to walk · drag to look" /> : <DesktopHud />}
     </>
   )
 }
@@ -79,5 +86,5 @@ export function App() {
 /** The key hints. With `?debug`, F3 opens the mind of whichever forkling is being watched. */
 function DesktopHud() {
   const { world } = useWorld()
-  return <div className="hud">{desktopHint(world.forkling.name, debugEnabled(location.search))}</div>
+  return <Taskbar touch={false} hint={desktopHint(world.forkling.name, debugEnabled(location.search))} />
 }

@@ -1,8 +1,11 @@
+import '@fontsource/press-start-2p/index.css'
+import '@fontsource/vt323/index.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Root } from './Root.tsx'
 import { touchUi } from './touch.ts'
 import './styles.css'
+import './look.css'
 
 // Lets the stylesheet switch on how the page is being used.
 document.documentElement.dataset.input = touchUi ? 'touch' : 'pointer'

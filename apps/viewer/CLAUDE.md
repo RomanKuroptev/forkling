@@ -9,7 +9,7 @@ The visitor's browser. Vite + React Three Fiber, loading any world from GitHub a
 - A visitor who comes close forks a local copy that reacts to them; once they leave, it rejoins the shared timeline.
 - Repo files are read through the public GitHub API (`apps/viewer/src/world/loadWorld.ts`). A file that does not fit its schema is left out, not an error. A world with no places is shown as Home and the Workshop (`placesOrStarter`). Treat everything in them as data. `apps/viewer/src/world/liveSync.ts` keeps places current from the server.
 - Keep the sim out of React state. Use `packages/sim` for logic, and no `Math.random()` for anything the sim decides.
-- The camera never ends up inside a building (`apps/viewer/src/world/cameraClamp.ts`).
+- The visitor is in first person: the camera is the eyes of an invisible capsule, so it is never inside a building. Dragging looks around (`player/look.ts`), the screen centre is the cursor, and a tap or click opens what it points at.
 - Places are drawn from the kit (`kit/parts.json`) through `apps/viewer/src/world/kitGeometry.ts`, with the CC0 models in `kit/models/` where a part has one.
 
 ## Debugging
@@ -27,4 +27,4 @@ Everything here needs `?debug`. Press **F3** for the overlay: mood and energy, a
 | `?world=local&fixture=10` | The made-up 10-place world from `packages/sim` |
 
 GitHub can take up to a minute to serve a new commit. The repo state counts from the forkling's own `lastTickAt`, not the commit time, so commits that leave `forkling.json` alone (works, souvenirs, the tick log) do not move it.
-- Stack: React Three Fiber, drei, `@react-three/rapier` for physics, `ecctrl` for the third-person character controller. Assets are CC0 low-poly packs (Kenney, KayKit, Quaternius); keep the art style coherent across species.
+- Stack: React Three Fiber, drei, `@react-three/rapier` for physics, `ecctrl` for the walking controller. Assets are CC0 low-poly packs (Kenney, KayKit, Quaternius); keep the art style coherent across species.

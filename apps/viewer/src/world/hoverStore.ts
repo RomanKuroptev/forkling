@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { DRAG_PIXELS } from '../player/look.ts'
 
 /** What the visitor is pointing at in the world: an exhibit's label, or a place's sign. Written by the 3D scene, read by the label. */
 export interface Hover {
@@ -23,3 +24,10 @@ export const hoverStore = {
 }
 
 export const useHover = (): Hover | null => useSyncExternalStore(hoverStore.subscribe, hoverStore.get)
+
+/** An onClick that opens only on a tap. A drag that ends over the thing was the visitor turning their view. */
+export const opens =
+  (open: () => void) =>
+  (e: { delta: number }): void => {
+    if (e.delta <= DRAG_PIXELS) open()
+  }

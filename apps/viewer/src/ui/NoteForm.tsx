@@ -15,7 +15,7 @@ export function NoteButton() {
   return open ? (
     <NoteForm endpoint={config.endpoint} siteKey={config.siteKey} onClose={() => setOpen(false)} />
   ) : (
-    <button className="hud note-btn" style={{ left: 'auto', right: 16, bottom: 16, pointerEvents: 'auto' }} onClick={() => setOpen(true)}>
+    <button className="hud note-btn" style={{ left: 'auto', right: 16, bottom: 'calc(var(--taskbar-h) + 12px)', pointerEvents: 'auto' }} onClick={() => setOpen(true)}>
       Leave a note
     </button>
   )

@@ -30,3 +30,6 @@ export const touchUi: boolean =
         coarse: typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches,
         touchPoints: typeof navigator === 'undefined' ? 0 : navigator.maxTouchPoints,
       })
+
+/** Height of the taskbar along the bottom edge, in pixels. The touch controls stand above it. */
+export const TASKBAR_H = 40

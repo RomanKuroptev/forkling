@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 import { bubbleHidden } from '../forkling/bubbleHidden.ts'
 import { debugEnabled } from '../debugEnabled.ts'
 import { debugOpen } from '../forkling/debugOpen.ts'
-import { JOYSTICK_RADIUS } from '../touch.ts'
+import { JOYSTICK_RADIUS, TASKBAR_H } from '../touch.ts'
 
 /** Keeps the controls clear of a notch or the home bar. */
 const inset = (side: 'left' | 'right' | 'bottom' | 'top', px: number) => `calc(${px}px + env(safe-area-inset-${side}, 0px))`
@@ -21,19 +21,19 @@ export function TouchControls() {
     <div className="touch-controls">
       <Joystick
         joystickMaxRadius={JOYSTICK_RADIUS}
-        joystickWrapperStyle={{ position: 'fixed', left: inset('left', 12), bottom: inset('bottom', 12) }}
+        joystickWrapperStyle={{ position: 'fixed', left: inset('left', 12), bottom: inset('bottom', 12 + TASKBAR_H) }}
       />
       <VirtualButton
         id="jump"
         label="Jump"
-        buttonWrapperStyle={{ position: 'fixed', right: inset('right', 20), bottom: inset('bottom', 36) }}
-        buttonCapStyle={{ color: '#1f2d38', fontWeight: 700 }}
+        buttonWrapperStyle={{ position: 'fixed', right: inset('right', 20), bottom: inset('bottom', 36 + TASKBAR_H) }}
+        buttonCapStyle={{ color: '#1a0b3b', fontFamily: 'Press Start 2P, monospace', fontSize: 10, background: '#ffd6f1', border: '2px solid #1a0b3b', borderRadius: 0, boxShadow: 'inset -2px -2px 0 #8c1eff, inset 2px 2px 0 #fff' }}
       />
       <button
         type="button"
         className="touch-text"
         aria-pressed={textHidden}
-        style={{ right: inset('right', 20), bottom: inset('bottom', 112) }}
+        style={{ right: inset('right', 20), bottom: inset('bottom', 112 + TASKBAR_H) }}
         onPointerDown={(e) => {
           e.stopPropagation()
           bubbleHidden.toggle()
