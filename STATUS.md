@@ -2,6 +2,11 @@
 
 Read this first. Update it before every commit and before you stop.
 
+## Audit fixes (17 November, Roman's 8 items, one PR each, plan in `docs/plans/merge-audit-2026-11-17.md`)
+
+Order: 1 wants, 2 goal vs variety, 3 sources, 4 thoughts, 5 voice, 6 prices, 7 doors, 8 works, then one review PR for prompt text and new hosts (Roman merges), then one release (pin-only commit in Merge's repo). Prompt text changes are held for the review PR, so the code PRs leave `golden/` alone.
+- **1 Wants (in review):** a step may name a want but no longer has to; `"long"` is accepted when there is a long goal (`longGoal` in the plan context). Held for the review PR: the system prompt line that tells Merge it can use "long".
+
 ## Make Merge fun (started 16 November, Roman's four slices)
 
 - **v0.15.0 is the release of all four slices (16 November, Roman's "release now").** The four template workflows pin it and the tag is on this PR's merge commit. Done on 16 November (Roman said "release now", about 18:45 local): release PR #166, tag `v0.15.0`, `deploy.yml` with the tag (success), `/health` up, then **one commit to `RomanKuroptev/merge`** (`669c2ac`: the four pins at v0.15.0 and `mind/config.json` with both variety switches on). The server ticks on v0.15.0 (health file says so) and the first tick ran the 3-day goal review.

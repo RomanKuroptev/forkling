@@ -62,6 +62,7 @@ export function planContext(t: Tick): MindPlanContext {
     canFound: foundGate(t).check.ok,
     notes: new Set(t.visitorNotes.filter((n) => n.status === 'found').map((n) => n.id)),
     wants: t.wants,
+    longGoal: t.goals.long != null,
     recent: t.mind.recent,
     used: { repliesToday: t.mind.replies?.date === t.today ? t.mind.replies.count : 0, foundThisWeek: foundsInWeek(t.mind.founds ?? [], t.nowMs) },
     lastExpandedPlace: t.mind.lastExpandedPlace ?? null,

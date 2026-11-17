@@ -82,6 +82,8 @@ export interface MindPlanContext {
   /** Visitor notes found and not yet answered. */
   notes: ReadonlySet<string>
   wants: readonly { id: string }[]
+  /** Whether Merge has a long goal: a step may then name it as want "long". */
+  longGoal?: boolean
   /** The latest steps from before this plan, oldest first. */
   recent: readonly { verb: string }[]
   used: { repliesToday: number; foundThisWeek: number }
@@ -97,8 +99,10 @@ export type MindPlanResult = { ok: true; steps: MindStep[] } | { ok: false; reas
 const MIN_STEPS = 3
 const MAX_STEPS = 8
 const MAX_REASON = 140
-/** The wants list is allowed to start empty: until it holds this many, a step need not point at one. */
+/** A step may name a want but never has to (audit 17 Nov). While there are fewer wants than this, the reflection runs on the cold-start threshold. */
 export const COLD_START_WANTS = 3
+/** The id a step uses to point at the long goal. */
+export const LONG_GOAL_WANT = 'long'
 const NO_NEW_STEP_BEFORE_BED_MS = 45 * 60_000
 /** The starting-point rule is not asked in the last hours of the day: a trip needs time. */
 const STARTING_POINT_MIN_LEFT_MS = 3 * 3_600_000
@@ -106,7 +110,6 @@ const STARTING_POINT_MIN_LEFT_MS = 3 * 3_600_000
 const REPLY_MIN_LEFT_MS = 3_600_000
 const MAX_REPLIES_PER_DAY = 5
 export const MAX_FOUND_PER_WEEK = 1
-const CARE_VERBS = new Set<MindVerb>(['tend', 'revisit', 'expand'])
 const BUILD_VERBS = new Set<MindVerb>(['expand', 'found', 'tinker'])
 const isVerb = (v: unknown): v is MindVerb => (MIND_VERBS as readonly unknown[]).includes(v)
 
@@ -119,7 +122,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
   if (limits.maxSteps !== null && steps.length > limits.maxSteps) reasons.push(`you are tired (energy ${c.mood.energy}): a plan has at most ${limits.maxSteps} steps today`)
 
   const wantIds = new Set(c.wants.map((w) => w.id))
-  const needsWant = c.wants.length >= COLD_START_WANTS
+  if (c.longGoal) wantIds.add(LONG_GOAL_WANT)
   let replies = c.used.repliesToday
   let found = c.used.foundThisWeek
   let lastExpanded = c.lastExpandedPlace
@@ -149,9 +152,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
     if (!reason) here.push(`${n}: it has no reason`)
     else if (reason.length > MAX_REASON) here.push(`${n}: the reason is over ${MAX_REASON} characters (${reason.length})`)
 
-    const care = CARE_VERBS.has(verb)
     if (s.wantId != null && !wantIds.has(s.wantId)) here.push(`${n}: want "${s.wantId}" does not exist`)
-    else if (needsWant && !care && s.wantId == null) here.push(`${n}: it serves no want (name one of: ${[...wantIds].join(', ')})`)
 
     if (at > c.bedMs - NO_NEW_STEP_BEFORE_BED_MS) {
       const minutes = Math.round((c.bedMs - at) / 60_000)

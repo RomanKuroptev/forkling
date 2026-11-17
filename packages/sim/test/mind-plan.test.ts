@@ -89,9 +89,15 @@ describe('validateMindPlan', () => {
     expect(reasons([wander(), write({ reason: 'x'.repeat(140) }), rest()])).toEqual([])
   })
 
-  it('rejects a reason that points at no want, once there are 3 wants', () => {
-    expect(reasons([wander({ wantId: null }), write(), rest()])).toEqual([expect.stringContaining('step 1: it serves no want')])
+  it('lets a step name no want, even with 3 wants, but still rejects a want that does not exist', () => {
+    expect(reasons([wander({ wantId: null }), write({ wantId: null }), rest({ wantId: null })])).toEqual([])
     expect(reasons([wander({ wantId: 'w99' }), write(), rest()])).toEqual([expect.stringContaining('"w99"')])
+  })
+
+  it('accepts "long" as a reference to the long goal when there is one, and not when there is none', () => {
+    expect(reasons([wander({ wantId: 'long' }), write(), rest()], ctx({ longGoal: true }))).toEqual([])
+    expect(reasons([wander({ wantId: 'long' }), write(), rest()], ctx({ longGoal: false }))).toEqual([expect.stringContaining('"long"')])
+    expect(reasons([wander({ wantId: 'long' }), write(), rest()])).toEqual([expect.stringContaining('"long"')])
   })
 
   it('lets tend, revisit and expand point at the place they care for instead of a want', () => {
@@ -99,11 +105,10 @@ describe('validateMindPlan', () => {
     expect(reasons([wander(), { ...tend({ wantId: null }), verb: 'revisit', target: 'workshop' }, rest()])).toEqual([])
   })
 
-  it('does not ask for a want while there are fewer than 3 (the cold start), so the first days are free', () => {
+  it('never asks for a want, with few wants or none', () => {
     const young = ctx({ wants: [{ id: 'w1' }] })
     expect(reasons([wander({ wantId: null }), write({ wantId: null }), rest({ wantId: null })], young)).toEqual([])
     expect(reasons([wander({ wantId: null }), write({ wantId: null }), rest({ wantId: null })], ctx({ wants: [] }))).toEqual([])
-    // A made-up want is still wrong, and so is a step that sets none when 3 exist.
     expect(reasons([wander({ wantId: 'w99' }), write({ wantId: 'w1' }), rest()], young)).toEqual([expect.stringContaining('"w99"')])
   })
 
