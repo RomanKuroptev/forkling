@@ -28,7 +28,7 @@ export const SKY = {
   night: { horizon: COLORS.purple, pink: COLORS.deep, purple: COLORS.deep, top: COLORS.night },
   /** Where each colour is fully reached, by day: pink by 0.10 up, purple by 0.26, deep from 0.5. */
   stops: { pink: 0.1, purple: 0.26, top: 0.5 },
-  below: '#12042e',
+  below: '#2b0b5e',
   starColor: COLORS.white,
   sunLow: COLORS.hotPink,
   sunHigh: COLORS.sun,
@@ -39,7 +39,7 @@ export const SKY = {
 
 /** The grid floor beyond the land and the faint grid on the land itself. */
 export const GRID = {
-  ground: '#12042e',
+  ground: '#3a1280',
   line: '#ff40d1',
   landLine: '#ff6bdb',
   /** Beyond the land: one line every 8 m. On the land: one every 4 m, fading out between 40 and 220 m. */
@@ -54,7 +54,7 @@ export const LIGHT = {
   hemiSkyNight: '#8a7bff',
   /** The ground colour of the hemisphere light stays a light purple, or walls facing away from the sun turn brown. */
   hemiGround: COLORS.lilac,
-  hemiDayIntensity: 2.5,
+  hemiDayIntensity: 2.1,
   sunDay: '#fff0f8',
   sunNight: '#9db4ff',
   rim: COLORS.cyan,

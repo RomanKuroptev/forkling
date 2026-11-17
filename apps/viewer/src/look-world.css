@@ -6,7 +6,13 @@
 /* The wallpaper: a sunset with a striped sun. Used by the boot screen and the error window. */
 .loading.boot,
 .world-error {
-  background: linear-gradient(to bottom, var(--deep) 0%, var(--purple) 30%, var(--hot-pink) 62%, #ffb36b 78%, #12042e 78%, #12042e 100%);
+  /* The sunset down to the horizon at 70%, then the pink grid floor to the bottom of the screen. */
+  background:
+    repeating-linear-gradient(to right, rgb(255 64 209 / 70%) 0 2px, transparent 2px 48px) 0 100% / 100% 30% no-repeat,
+    repeating-linear-gradient(to bottom, rgb(255 64 209 / 70%) 0 2px, transparent 2px 24px) 0 100% / 100% 30% no-repeat,
+    linear-gradient(to bottom, #3a1280, var(--deep)) 0 100% / 100% 30% no-repeat,
+    linear-gradient(to bottom, var(--deep) 0%, var(--purple) 25%, var(--hot-pink) 50%, #ffb36b 70%);
+  min-height: 100dvh;
   color: var(--face);
 }
 

@@ -172,7 +172,7 @@ export function Environment() {
       <mesh material={sky} frustumCulled={false} renderOrder={-10}>
         <sphereGeometry args={[1, 32, 16]} />
       </mesh>
-      <mesh material={grid} rotation={[-Math.PI / 2, 0, 0]} position={[0, -9, 0]}>
+      <mesh material={grid} rotation={[-Math.PI / 2, 0, 0]} position={[0, -7, 0]}>
         <planeGeometry args={[4000, 4000]} />
       </mesh>
       <hemisphereLight ref={hemi} args={[LIGHT.hemiSkyDay, LIGHT.hemiGround, LIGHT.hemiDayIntensity]} />

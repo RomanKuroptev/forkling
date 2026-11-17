@@ -42,7 +42,7 @@ function glowMaterial(): THREE.MeshStandardMaterial {
     // The warm glow is added to the light the surface gives off, so it shows in the dark and is lost in daylight.
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * vGlow * (0.9 + uNight * 1.6);')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * (0.14 + vGlow * (0.9 + uNight * 1.6));')
   }
   return material
 }
