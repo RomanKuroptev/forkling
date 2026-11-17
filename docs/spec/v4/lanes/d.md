@@ -28,6 +28,12 @@ Plan approved by the coordinator on 17 November 2026: L3, L1, L1b, L2, L4, then 
 - New debug flags: `?pitch=deg`, `?fx=0`, `?boot`.
 - Still differs from the pictures: walls in shade are a dusty rose rather than clean pastel; the sun's top is peach rather than lemon at dusk; stars are small specks; hover labels and note marks are not yet windows (the labels come with L2's pop-up work); frame rate on Roman's laptop not measured.
 
+## L2 notes
+
+- Merge has a monitor for a head (chrome bezel, dark screen, ears on top, pastel body); the face is a quad named `Face` painted by the viewer from state it already has: no signal (clock not synced), asleep, in a step (a goal step is running), else awake. Draw scale 1.5 (`DRAW_SCALE` in `Forkling.tsx`); the sim sizes (capsule, grid, furniture spots) are unchanged, so this is a drawing scale only.
+- The pop-up is `merge.exe`: at most 4 lines of about 30 characters, cut with `...`, kept inside the screen (`clampPopup`). Hover labels and the note windows use the same window look (`Win.tsx`, `look-windows.css`).
+- The note panel shows the whole thread (oldest first), an Answer button under the newest reply of an open thread (sends with `replyTo`), and a closed thread says so.
+- Not checked in the world: the face in a screenshot (the sitting cat faces the wall at its desk in the fixture, and `?clip=` needs a camera fix after L3 when `?stand` is used); the four faces are shown from the same grid code on a plain page. Every animation clip still plays by test (the clip list is unchanged) but I did not check each by eye.
 ## L1b notes (tower first)
 
 - Front and crown clamped to the 12 m limit of spec 5.2, Roman to decide. The clamp is `MAX_OUTLINE_HEIGHT` in `apps/viewer/src/world/building.ts`; lifting it is one constant.

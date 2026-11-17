@@ -215,7 +215,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const mergeAbout = loadAbout(world)
   const selfRequests = loadSelfRequests(world)
   const nav: [string, string][] = [...NAV, ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
-  const extraFiles = new Map<string, string>()
+  const extraFiles = new Map<string, string | Buffer>()
   const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, ...input }))
 
   // Home: who it is, what it wants, what it is doing and why.
@@ -413,7 +413,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   if (home) pages.set('index.html', home.replace('</main>', () => panel))
 
   const written: string[] = []
-  const write = (rel: string, text: string) => {
+  const write = (rel: string, text: string | Buffer) => {
     mkdirSync(dirname(join(out, rel)), { recursive: true })
     writeFileSync(join(out, rel), text)
     written.push(rel)

@@ -1,6 +1,6 @@
 # Lane C: visitors and tools (steps 5, 6)
 
-State: step 6 slice A merged (#200); slice B (tools) in a prompt-review PR. Next: the first tool, after R1.
+State: step 6 A (#200) and B (#203) merged. The thread share picture as PNG (og:image) is in a PR; the template tools are dated 2026-11-01. Next: the first tool, after R1.
 
 ## Plan for step 5 (one PR each, branches claude/v4-c-<slice>)
 

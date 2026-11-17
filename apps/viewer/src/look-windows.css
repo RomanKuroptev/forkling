@@ -1,0 +1,184 @@
+/* Merge 95 windows (look slice L2): the note panel, the note form and the thought pop-up. Loaded after look.css and look-world.css. */
+.win {
+  position: fixed;
+  z-index: 20;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, 94vw);
+  max-height: calc(100dvh - var(--taskbar-h) - 32px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--face);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink), inset 2px 2px 0 #fff;
+  font: 20px/1.25 'VT323', monospace;
+  pointer-events: auto;
+}
+
+.win-body {
+  padding: 10px 14px 14px;
+  overflow: auto;
+}
+
+.win .win-title button.win-close {
+  padding: 0;
+  min-width: 0;
+  width: 16px;
+  height: 14px;
+  background: var(--face);
+  border: 2px solid;
+  border-color: #fff var(--ink) var(--ink) #fff;
+  border-radius: 0;
+}
+
+.win h3 {
+  margin: 0 0 8px;
+  font: 12px/1.4 'Press Start 2P', monospace;
+}
+
+.win p {
+  margin: 0 0 8px;
+}
+
+.win blockquote {
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  background: #fff;
+  border: 2px solid var(--ink);
+}
+
+.win a {
+  color: var(--purple);
+}
+
+.win input,
+.win textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  background: #fff;
+  color: var(--ink);
+  border: 2px solid;
+  border-color: var(--ink) #fff #fff var(--ink);
+  border-radius: 0;
+  font: inherit;
+}
+
+.win button:not(.win-close),
+.win .win-btn {
+  min-height: 44px;
+  padding: 4px 14px;
+  background: var(--face);
+  color: var(--ink);
+  border: 2px solid;
+  border-color: #fff var(--ink) var(--ink) #fff;
+  box-shadow: inset -2px -2px 0 var(--purple);
+  border-radius: 0;
+  font: 10px/1 'Press Start 2P', monospace;
+  cursor: pointer;
+}
+
+.win button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.win-thread {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.win-thread > li {
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px dashed var(--purple);
+}
+
+.win-thread > li:last-child {
+  border-bottom: 0;
+}
+
+.win-quiet {
+  color: #5a4a80;
+}
+
+/* The pop-up over Merge: merge.exe. It stays on the screen and never covers the face. */
+.thought.win-thought {
+  /* The base `.thought` rule centres it over the anchor (translate -50%, -100%); `clampPopup` relies on that. */
+  width: 250px;
+  padding: 0;
+  border-radius: 0;
+  background: var(--face);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink), inset 2px 2px 0 #fff;
+  font: 18px/1.1 'VT323', monospace;
+}
+
+.thought.win-thought .win-title {
+  padding: 4px 6px;
+  font-size: 8px;
+}
+
+.thought.win-thought .win-title span {
+  color: #fff;
+  font: 8px/1 'Press Start 2P', monospace;
+  text-transform: none;
+}
+
+.thought.win-thought .win-title .win-buttons i {
+  width: 10px;
+  height: 9px;
+  border-width: 1px;
+}
+
+.win-thought-body {
+  padding: 4px 8px 6px;
+}
+
+.thought.win-thought p {
+  margin: 0 0 2px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.thought.win-thought span {
+  font: 8px/1 'Press Start 2P', monospace;
+  color: var(--purple);
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px), (pointer: coarse) {
+  .thought.win-thought {
+    width: min(200px, 56vw);
+  }
+}
+
+/* Hover labels and the Leave a note button. */
+.win.win-hover {
+  width: min(460px, 90vw);
+  top: 12px;
+  pointer-events: none;
+}
+
+.win-hover .win-body {
+  padding: 6px 12px 8px;
+}
+
+.hud.note-btn {
+  min-height: 44px;
+  background: var(--face);
+  color: var(--ink);
+  border: 2px solid;
+  border-color: #fff var(--ink) var(--ink) #fff;
+  box-shadow: inset -2px -2px 0 var(--purple);
+  border-radius: 0;
+  font: 10px/1 'Press Start 2P', monospace;
+}

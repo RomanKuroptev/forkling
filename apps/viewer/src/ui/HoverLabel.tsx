@@ -10,12 +10,11 @@ export function HoverLabel() {
   // While a panel is open it holds the words, so the hover label steps aside.
   if (!hover || panel.status !== 'closed' || note) return null
   return (
-    <div
-      className="hud"
-      style={{ top: 16, bottom: 'auto', left: '50%', transform: 'translateX(-50%)', maxWidth: 'min(560px, 90vw)', textAlign: 'center', pointerEvents: 'none' }}
-    >
-      <strong>{hover.title}</strong>
-      <div>{hover.text}</div>
+    <div className="win win-hover" role="status" style={{ pointerEvents: 'none' }}>
+      <div className="win-title">
+        <span>{hover.title}</span>
+      </div>
+      <div className="win-body">{hover.text}</div>
     </div>
   )
 }

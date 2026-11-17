@@ -35,7 +35,6 @@ export const CROWN_WIDTH = 3.2
 const WALL_THICKNESS = 0.4
 /** How far inside the footprint's edge a wall's middle stands (the body cannot walk on the outer 0.8 m). */
 const INSET = 0.4
-const DOOR_WIDTH = 2
 const DOOR_HEIGHT = 2.2
 /** Each floor of a tower stands this far in from the one below, on every side. */
 const TAPER = 0.35
@@ -157,7 +156,6 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       // The door is in the middle of the front (+z) wall, as wide a gap as the body's own world leaves, with a lintel over it.
       wall(x0, px - DOOR_HALF, z1, false, -1, true, true, 'after')
       wall(px + DOOR_HALF, x1, z1, false, -1, true, true, 'before')
-      add('body', 'box', [px, y + DOOR_HEIGHT / 2, z1], [DOOR_WIDTH, DOOR_HEIGHT, 0.3], c.accent)
       // The band goes on over the door too, above it.
       if (style === 'tower' && floors === 1) add('hero', 'box', [px, y + ringUp * Math.cos(tilt), z1 - ringUp * lean + WALL_THICKNESS / 2 + 0.15], [DOOR_HALF * 2 + 1, RING_HEIGHT, 0.3], c.glow, true, [-tilt, 0, 0])
       const lintel = h - DOOR_HEIGHT

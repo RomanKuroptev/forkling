@@ -5,7 +5,7 @@ import { NOTE_DISCLOSURE, noteFate, notesEndpoint, threadNotes, threadOf, thread
 
 export { notesEndpoint, validSiteKey }
 import { esc } from './md.ts'
-import { threadPicture } from './note-picture.ts'
+import { pictureToPng, threadPicture } from './note-picture.ts'
 
 /** The notes visitors left (`notes/*.json`) that fit their schema, newest first, without the ones Roman hid (`mind/notes-hidden.json`). */
 export function loadNotes(world: string): Note[] {
@@ -57,7 +57,7 @@ export interface NotesInput {
   /** The forkling's name, for the share tags. */
   name?: string
   /** A file that is not a page (a thread's share picture). */
-  addFile?: (rel: string, text: string) => void
+  addFile?: (rel: string, content: string | Buffer) => void
   add: (rel: string, input: { title: string; active: string; body: string; head?: string }) => void
 }
 
@@ -109,7 +109,10 @@ export function renderNotes(i: NotesInput): void {
     if (!lastReplied) continue
     const base = i.baseUrl?.replace(/\/+$/, '')
     const pageUrl = base ? `${base}/notes/t/${id}.html` : null
-    const imageUrl = base ? `${base}/notes/t/${id}.svg` : null
+    const svg = threadPicture({ name: lastReplied.name, message: lastReplied.message, reply: lastReplied.reply!, address: base ? base.replace(/^https?:\/\//, '') : (i.name ?? 'Merge') })
+    // Link previews read a PNG; the SVG is kept, and is the fallback when the PNG cannot be rendered.
+    const png = pictureToPng(svg)
+    const imageUrl = base ? `${base}/notes/t/${id}.${png ? 'png' : 'svg'}` : null
     const who = lastReplied.name || 'A visitor'
     const description = `${who} left Merge a note, and Merge replied.`
     const head = pageUrl && imageUrl
@@ -117,6 +120,7 @@ export function renderNotes(i: NotesInput): void {
           `<meta property="og:title" content="${esc(`${who} and ${i.name ?? 'Merge'}`)}">`,
           `<meta property="og:description" content="${esc(description)}">`,
           `<meta property="og:image" content="${esc(imageUrl)}">`,
+          ...(png ? ['<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">'] : []),
           `<meta property="og:url" content="${esc(pageUrl)}">`,
           '<meta name="twitter:card" content="summary_large_image">',
           `<meta name="twitter:title" content="${esc(`${who} and ${i.name ?? 'Merge'}`)}">`,
@@ -136,7 +140,8 @@ export function renderNotes(i: NotesInput): void {
         `<p><img src="${esc(id)}.svg" alt="${esc(`A note from ${who} and Merge's reply`)}" width="600" height="315"></p>`,
       ].join('\n'),
     })
-    i.addFile?.(`notes/t/${id}.svg`, threadPicture({ name: lastReplied.name, message: lastReplied.message, reply: lastReplied.reply!, address: base ? base.replace(/^https?:\/\//, '') : (i.name ?? 'Merge') }))
+    i.addFile?.(`notes/t/${id}.svg`, svg)
+    if (png) i.addFile?.(`notes/t/${id}.png`, png)
   }
 
   i.add('notes/index.html', {

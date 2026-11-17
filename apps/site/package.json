@@ -10,6 +10,7 @@
   "dependencies": {
     "@forkling/schema": "workspace:*",
     "@forkling/sim": "workspace:*",
+    "@resvg/resvg-js": "2.6.2",
     "p5": "2.4.0",
     "three": "0.187.0",
     "tone": "15.1.22",

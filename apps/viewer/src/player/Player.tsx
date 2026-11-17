@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react'
 import { parseStand } from '../world/at.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { touchUi } from '../touch.ts'
+import { live } from '../forkling/live.ts'
 import { visitor } from '../visitor.ts'
 import { applyLookDrag, lookEuler, type Look } from './look.ts'
 import { mergeMovement } from './touchInput.ts'
@@ -16,6 +17,12 @@ const CAPSULE_HALF_HEIGHT = 0.45
 const EYE_OFFSET = 0.7
 
 /** `?clip=Sit` pins the forkling in front of the visitor, so this camera frames it from the side instead. */
+/** `?look=forkling` puts the camera 2 m in front of the forkling, facing its face (for screenshots; the walk keys still work but the view stays on it). */
+const lookAtForkling = new URLSearchParams(location.search).get('look') === 'forkling'
+/** `?dist=` changes how far in front, in meters (default 2). */
+const lookDistance = Number(new URLSearchParams(location.search).get('dist')) || 2
+/** `?camy=` changes how high the camera is above the ground, in meters (default 0.6). */
+const lookHeight = Number(new URLSearchParams(location.search).get('camy')) || 0.6
 const clipMode = new URLSearchParams(location.search).has('clip')
 
 /**
@@ -96,6 +103,14 @@ export function Player() {
     b.setMovement(mergeMovement(getKeys(), stick, { jump: useButtonStore.getState().buttons.jump }))
     const p = b.currPos
     visitor.position = { x: p.x, z: p.z }
+    const pb = live.playback
+    if (lookAtForkling && pb) {
+      const { pos, heading } = pb.state
+      const y = simWorld.heightAt(pos.x, pos.z)
+      camera.position.set(pos.x + Math.sin(heading) * lookDistance, y + lookHeight, pos.z + Math.cos(heading) * lookDistance)
+      camera.lookAt(pos.x, y + 0.55, pos.z)
+      return
+    }
     if (clipMode) return
     camera.position.set(p.x, p.y + EYE_OFFSET, p.z)
     camera.quaternion.setFromEuler(lookEuler(look.current))
