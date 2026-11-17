@@ -203,10 +203,10 @@ describe('mind/wants.json in a tick', () => {
     expect(() => readFileSync(file('mind/wants.json'))).toThrow()
   })
 
-  it('once 3 wants exist, a plan step that names none is rejected (spec 2.6)', async () => {
+  it('even with 3 wants, a plan step that names none is accepted (audit 17 Nov)', async () => {
     writeFileSync(file('mind/wants.json'), JSON.stringify(threeWants()))
     const result = await runTick(dir, deps(fakeLlm(planWith(null))))
-    expect(result.notes.join(' ')).toMatch(/rejected/i)
+    expect(result.notes.join(' ')).not.toMatch(/rejected/i)
   })
 
   it('a step that names one of the wants is accepted', async () => {
