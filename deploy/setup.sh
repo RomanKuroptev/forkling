@@ -96,6 +96,16 @@ EOF
   apparmor_parser -r /etc/apparmor.d/forkling-chromium
 fi
 
+# The sandbox (spec v4 section 4, step 3). Every page Merge wrote runs as forkling-build, a user with no login, no home and no
+# files but its scratch folder, in a unit with no network, 1 GB, one CPU and 30 seconds. The mind asks for a run through a socket
+# that only its group may use; the properties of the run are fixed in the unit file, which root installs. The runner itself is
+# put in /opt/forkling/sandbox by each deploy. The same steps for a running server are in docs/spec/v4/step-3-runbook.md.
+id forkling-build >/dev/null 2>&1 || useradd --system --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin forkling-build
+install -d -m 755 -o root -g root /var/lib/forkling-build
+install -d -m 750 -o forkling-build -g forkling /var/lib/forkling-build/scratch
+install -m 644 -o root -g root "$HERE/forkling-sandbox.socket" /etc/systemd/system/forkling-sandbox.socket
+install -m 644 -o root -g root "$HERE/forkling-sandbox@.service" /etc/systemd/system/forkling-sandbox@.service
+
 # The keys file: filled in by hand, never in a repository.
 if [ ! -f /etc/forkling/mind.env ]; then
   cat > /etc/forkling/mind.env <<'EOF'
@@ -116,5 +126,6 @@ systemctl reload caddy || systemctl restart caddy
 install -m 644 -o root -g root "$HERE/forkling-mind.service" /etc/systemd/system/forkling-mind.service
 systemctl daemon-reload
 systemctl enable forkling-mind
+systemctl enable --now forkling-sandbox.socket
 
 echo "Done. Next: put the keys in /etc/forkling/mind.env, add the deploy key to /home/deploy/.ssh/authorized_keys, clone the world and deploy a release. See docs/spec/w3-runbook.md."

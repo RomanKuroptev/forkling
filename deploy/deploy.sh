@@ -25,6 +25,18 @@ pnpm install --frozen-lockfile --filter "@forkling/mind..."
 # The browser for the work check, for the Playwright version of this release, in the folder the service reads. It is quick when it is already there.
 PLAYWRIGHT_BROWSERS_PATH=/opt/forkling/browsers pnpm --filter @forkling/mind exec playwright install chromium
 
+# The sandbox runner (spec v4 section 4): the user forkling-build cannot read this checkout, so the one file it runs and the
+# playwright-core of this release are copied beside each other into a folder of their own, and `current` points at this release.
+# Nothing is deleted: an older release stays where it is, and deploying it again points `current` back at it.
+SANDBOX=/opt/forkling/sandbox
+RELEASE="$SANDBOX/releases/$TAG"
+CORE=$(cd apps/mind && node -e "const { createRequire } = require('node:module'); const r = createRequire(require.resolve('playwright/package.json')); console.log(require('node:path').dirname(r.resolve('playwright-core/package.json')))")
+mkdir -p "$RELEASE/node_modules"
+[ -d "$RELEASE/node_modules/playwright-core" ] || cp -R "$CORE" "$RELEASE/node_modules/playwright-core"
+install -m 644 apps/mind/src/builds/sandbox-runner.ts "$RELEASE/runner.ts"
+printf '{ "private": true, "type": "module" }\n' > "$RELEASE/package.json"
+ln -sfn "releases/$TAG" "$SANDBOX/current"
+
 sudo /usr/local/sbin/forkling-restart "$TAG"
 
 # It counts as deployed once it answers.

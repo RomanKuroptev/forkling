@@ -13,6 +13,7 @@
     "migrate-w5": "node src/migrate-w5-cli.ts",
     "source-trial": "node --env-file-if-exists=../../.env src/trial-cli.ts",
     "typecheck": "tsc -p .",
+    "sandbox-proof": "node src/sandbox-proof.ts",
     "topic-replay": "node scripts/topic-replay.ts",
     "voice-test": "node --env-file-if-exists=../../.env scripts/voice-test.ts"
   },

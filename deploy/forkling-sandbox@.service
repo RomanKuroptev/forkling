@@ -1,0 +1,40 @@
+# One run in the sandbox (spec v4 section 4, step 3): started by forkling-sandbox.socket for one connection from the mind. It
+# reads one request from the connection, runs the page in headless Chromium (its own sandbox on), writes one answer and ends.
+# The page's files come in the request and are served from memory; nothing Merge wrote is run by Node or a shell.
+#
+# Every property below is required by step 3. Do not widen one to make Chromium start: if it does not, stop and ask Roman.
+# Installed by root from the deployed release (docs/spec/v4/step-3-runbook.md, or setup.sh on a fresh server).
+[Unit]
+Description=Forkling sandbox run (headless Chromium as forkling-build, no network, 1 GB, 30 s)
+
+[Service]
+Type=simple
+User=forkling-build
+Group=forkling-build
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+ExecStart=/usr/bin/node /opt/forkling/sandbox/current/runner.ts --browsers /opt/forkling/browsers --scratch /var/lib/forkling-build/scratch
+# The scratch folder is emptied after every run, a killed one too (this runs after a timeout or an out-of-memory kill as well).
+ExecStopPost=/usr/bin/find /var/lib/forkling-build/scratch -mindepth 1 -delete
+# An environment with HOME and PATH only: no key, no token and no secret is ever in it.
+Environment=HOME=/var/lib/forkling-build/scratch
+Environment=PATH=/usr/bin:/bin
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/var/lib/forkling-build/scratch
+# The engine, the world (its .git holds the remote) and the keys file are not even visible.
+InaccessiblePaths=/opt/forkling/engine /var/lib/forkling /etc/forkling
+# Other users' processes (the mind's /proc/<pid>/environ) are hidden.
+ProtectProc=invisible
+# No network at all: no address is allowed, and no socket but a local one can even be made.
+IPAddressDeny=any
+RestrictAddressFamilies=AF_UNIX
+MemoryMax=1G
+MemorySwapMax=0
+CPUQuota=100%
+RuntimeMaxSec=30
