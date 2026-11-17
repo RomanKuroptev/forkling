@@ -70,6 +70,8 @@ export interface TinkerInput {
   constraint?: string | undefined
   /** The pair of souvenirs drawn for this call (spec 12.4, item 5). */
   collision?: TinkerCollision | undefined
+  /** The visible note this step's reason names (spec v4 7), set by code, never by the model. */
+  inspiredBy?: { noteId: string; name: string } | undefined
 }
 
 const data = (source: string, lines: readonly string[]) => [`<data source="${source}">`, ...lines.map(defang), '</data>']
@@ -278,6 +280,7 @@ export async function runTinker(deps: TinkerDeps, input: TinkerInput): Promise<T
       id: uniqueId(draft.title || 'work', deps.existingIds),
       made: deps.nowIso,
       remixOf: input.remix?.id ?? null,
+      inspiredBy: input.inspiredBy ?? null,
       constraint: input.constraint ? { text: clampText(input.constraint, 200), refused: draft.refusal !== null, reason: draft.refusal } : null,
       collision: input.collision ? [input.collision.a.souvenir.id, input.collision.b.souvenir.id] : null,
       status,

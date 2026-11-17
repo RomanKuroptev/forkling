@@ -13,6 +13,10 @@ export const RESERVED_WORK_IDS: readonly string[] = ['index']
 export const WorkKind = z.enum(['art', 'game', 'tool', 'sound', 'zine', 'meme'])
 export type WorkKind = z.infer<typeof WorkKind>
 
+/** Spec v4 7: a work (or project) made after a visitor's note: the note's id and the name given on it (empty when none). Shared with `project.json`. */
+export const InspiredBy = z.object({ noteId: z.string().min(1).max(60), name: z.string().max(40) }).strict()
+export type InspiredBy = z.infer<typeof InspiredBy>
+
 /** `shelf` is shown, `scrap` failed its check (the scrap bin shows why), `retired` was put away by Merge (spec 9.9) and can be brought back. */
 export const WorkStatus = z.enum(['shelf', 'scrap', 'retired'])
 export type WorkStatus = z.infer<typeof WorkStatus>
@@ -44,6 +48,8 @@ export const WorkMeta = z
     /** The ids of the two souvenirs the call was offered to put side by side (spec 12.4, item 5). */
     collision: z.array(z.string().min(1).max(80)).length(2).nullable().default(null),
     status: WorkStatus,
+    /** Made after a visitor's note (spec v4 7), set by code when the step's reason names a visible note. */
+    inspiredBy: InspiredBy.nullable().default(null),
     scrapReason: z.string().min(1).max(300).optional(),
     /** Why Merge put it away (spec 9.9). */
     retireReason: z.string().min(1).max(140).optional(),
