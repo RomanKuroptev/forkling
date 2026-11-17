@@ -1,7 +1,7 @@
 import { kit } from '@forkling/schema/kit'
 import { Health, LongGoalReview, WeeklyReview, WorkMeta, requestAnswerForPrompt } from '@forkling/schema'
 import { checkAbout, goalReviewDue, MAX_REVIEW_RENAMES, neglectFor, validatePlacePatch, weeklyDue, WEEKLY_RETRY_MS } from '@forkling/sim'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { readWorks } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
@@ -166,6 +166,14 @@ function applyRequest(t: Tick, request: string | null, kind?: 'tool' | 'setting'
   t.parts.push('asked Roman for something')
 }
 
+/** The date of the newest copy in `self/history/` (a file named by its date), or null when about.md has never changed. */
+function lastAboutChange(dir: string): string | null {
+  const folder = join(dir, 'self/history')
+  if (!existsSync(folder)) return null
+  const dates = readdirSync(folder).flatMap((f) => (/^\d{4}-\d{2}-\d{2}\.md$/.test(f) ? [f.slice(0, 10)] : []))
+  return dates.sort().at(-1) ?? null
+}
+
 function applyAbout(t: Tick, review: WeeklyReview): void {
   const text = review.about?.trim()
   if (!text) return
@@ -173,7 +181,7 @@ function applyAbout(t: Tick, review: WeeklyReview): void {
     t.notes.push('claim dropped, about.md: it claimed to be human, so the old version stays (for Roman)')
     return
   }
-  const check = checkAbout(t.about, text)
+  const check = checkAbout(t.about, text, { lastChangeDate: lastAboutChange(t.dir), today: t.today })
   if (!check.ok) {
     t.notes.push(`about.md turned down, the old version stays: ${check.reasons.join('; ')}`)
     return

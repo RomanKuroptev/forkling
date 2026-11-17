@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { withPolicy } from '@forkling/schema'
 import { renderSite } from '../src/render.ts'
 
 const merge = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
@@ -132,3 +133,25 @@ describe('/about/ (spec 9.2: who Merge says it is, and how that changed)', () =>
   })
 })
 
+
+describe('/about/ lists what Merge has built under its words (spec v4 6)', () => {
+  it('names the places and works, linked, and says it may change once a week', () => {
+    put('self/about.md', 'I am patient and fond of fog.\n')
+    const home = JSON.parse(readFileSync(join(fileURLToPath(new URL('../../../templates/forkling-world', import.meta.url)), 'places/home.json'), 'utf8'))
+    put('places/home.json', JSON.stringify(home))
+    put('works/the-lamp/index.html', withPolicy('<!doctype html><html><head><meta charset="utf-8"><title>w</title></head><body><p>hi</p></body></html>'))
+    put('works/the-lamp/meta.json', JSON.stringify({ id: 'the-lamp', title: 'The Lamp', kind: 'art', about: 'A lamp.', interest: null, made: '2026-11-02T10:00:00Z', status: 'shelf', size: 'sketch' }))
+    renderSite(world, out)
+    const html = page('about/index.html')
+    expect(html).toMatch(/at most once a week/)
+    expect(html).not.toMatch(/30%/)
+    expect(html).toMatch(/<h2>What it has built<\/h2>/)
+    expect(html).toMatch(/Places: <a href="..\/places\/home\/">/)
+    expect(html).toMatch(/Works: <a href="..\/workshop\/the-lamp.html">The Lamp<\/a>/)
+  })
+  it('lists nothing when nothing is built', () => {
+    put('self/about.md', 'I am patient.\n')
+    renderSite(world, out)
+    expect(page('about/index.html')).not.toContain('What it has built')
+  })
+})

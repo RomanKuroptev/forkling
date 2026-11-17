@@ -62,6 +62,8 @@ export function loadSelfRequests(world: string): SelfRequest[] {
 
 export interface AboutInput {
   about: MergeAbout
+  /** What Merge has built, listed under its own words (spec v4 6). */
+  built?: { places: readonly { id: string; name: string }[]; works: readonly { id: string; title: string }[] }
   add: (rel: string, input: { title: string; active: string; body: string }) => void
 }
 
@@ -71,6 +73,16 @@ function splitCopy(text: string): { body: string; reasons: string } {
   const at = withoutHeading.search(/\n## Why it changed\s*\n/)
   if (at < 0) return { body: withoutHeading.trim(), reasons: '' }
   return { body: withoutHeading.slice(0, at).trim(), reasons: withoutHeading.slice(at).replace(/^\n## Why it changed\s*\n/, '').trim() }
+}
+
+/** What Merge has built, as links under its words (spec v4 6): its places and the works on its shelf. Nothing is written when it has built nothing. */
+function builtLines(built: AboutInput['built']): string[] {
+  if (!built || (built.places.length === 0 && built.works.length === 0)) return []
+  return [
+    '<h2>What it has built</h2>',
+    ...(built.places.length > 0 ? [`<p>Places: ${built.places.map((p) => `<a href="../places/${esc(p.id)}/">${esc(p.name)}</a>`).join(', ')}.</p>`] : []),
+    ...(built.works.length > 0 ? [`<p>Works: ${built.works.map((w) => `<a href="../workshop/${esc(w.id)}.html">${esc(w.title)}</a>`).join(', ')}.</p>`] : []),
+  ]
 }
 
 /** `/about/` (spec 9.2): who Merge says it is now, and each weekly copy with why it changed. Written only once there is something to show. */
@@ -87,8 +99,9 @@ export function renderAbout(i: AboutInput): void {
     active: 'about/',
     body: [
       '<h1>About</h1>',
-      '<p class="quiet">Who Merge says it is now, in its own words. Only Merge writes it: on Sunday evening it may rewrite it, up to 30% of the lines in a week, and every version is kept below with the reasons it changed.</p>',
+      '<p class="quiet">Who Merge says it is now, in its own words. Only Merge writes it: on Sunday evening it may rewrite it, at most once a week, and every version is kept below with the reasons it changed.</p>',
       current ? markdown(current) : '<p class="quiet">Nothing current: there is only the history.</p>',
+      ...builtLines(i.built),
       ...(latest && why ? [`<h2>Why it last changed</h2>`, `<p class="quiet">Changed on ${esc(latest.date)}.</p>`, markdown(why)] : []),
       ...(history.length > 0
         ? ['<h2>Earlier versions</h2>', history.map((c) => `<details class="version"><summary>${esc(c.date)}</summary>${markdown(splitCopy(c.text).body + (splitCopy(c.text).reasons ? `\n\n## Why it changed\n\n${splitCopy(c.text).reasons}` : ''))}</details>`).join('\n')]

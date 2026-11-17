@@ -250,7 +250,7 @@ describe('the nine verbs in the tick', () => {
     expect(Forkling.parse(readJson('forkling.json')).energy).toBeCloseTo(0.45)
   })
 
-  it('throws away writing that claims a human life, or runs well over the 80 words it was asked for (100)', async () => {
+  it('throws away writing that claims a human life, or runs well over the 40 words a caption was asked for (50)', async () => {
     await runTick(dir, at(NOW))
     writeJson('mind/goals.json', { ...goalsOf(), now: { index: 1, startedAt: NOW, until: '2026-11-03T09:10:00Z' } })
     const human = fakeLlm(byKind({ title: 'Home', text: 'When I was a kid I kept a lamp.' }))
@@ -264,7 +264,7 @@ describe('the nine verbs in the tick', () => {
     const long = fakeLlm(byKind({ title: 'Long', text: 'word '.repeat(101) }))
     const second = await runTick(dir, at(minutesAfter(16), { llm: long }))
     expect(existsSync(file('notebook/writing'))).toBe(false)
-    expect(second.notes.join(' ')).toMatch(/over the 100 word limit/)
+    expect(second.notes.join(' ')).toMatch(/over the 50 word limit for a caption/)
   })
 })
 

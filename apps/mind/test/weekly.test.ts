@@ -186,15 +186,16 @@ describe('what the review is shown', () => {
   })
   it('asks for about.md within its limits, a reason for each change, the long goal, and up to 2 renames', () => {
     const text = buildWeeklyUser({ localTime: 'x', timeZone: 'x', verbs: [], steps: [], places: [], interests: [], works: [], wishes: [], blocked: [], warnings: [], longGoal: null, about: '' })
-    expect(text).toMatch(/300 words/)
+    expect(text).toMatch(/up to 80 words/)
     expect(text).toMatch(/8 traits/)
-    expect(text).toMatch(/30%/)
+    expect(text).toMatch(/once a week/)
+    expect(text).not.toMatch(/30%/)
     expect(text).toMatch(/continue, finish, drop or change/)
     expect(text).toMatch(/up to 2 renames/)
   })
 })
 
-describe('about.md (spec 9.2: 300 words, 8 traits, 30% of lines a week)', () => {
+describe('about.md (spec v4 6: 80 words, 8 traits, one change a week)', () => {
   it('takes a first version freely and queues it with its reasons, as a copy for self/history', async () => {
     const answer = review({ about: 'I am patient.\n- patient\n- fond of fog', aboutChanges: [{ what: 'wrote the first version', why: 'The week showed me what I keep doing.' }] })
     const { t } = tick(answer)
@@ -204,24 +205,25 @@ describe('about.md (spec 9.2: 300 words, 8 traits, 30% of lines a week)', () => 
     expect(t.aboutWrite!.changes).toEqual([{ what: 'wrote the first version', why: 'The week showed me what I keep doing.' }])
     expect(t.remember.some((e) => /about/i.test(e.text))).toBe(true)
   })
-  it('turns down a change over 30% of the lines, keeps the old, and says so', async () => {
-    const old = lines(10)
-    const changed = old.split('\n').map((l, i) => (i < 4 ? `new ${i}` : l)).join('\n')
-    const { t } = tick(review({ about: changed, aboutChanges: [{ what: 'a lot', why: 'x' }] }), { about: old })
-    await weeklyStep(t)
-    expect(t.about).toBe(old)
-    expect(t.aboutWrite).toBeNull()
-    expect(t.notes.join(' ')).toMatch(/30%/)
-  })
-  it('allows a change up to 30%', async () => {
-    const old = lines(10)
-    const changed = old.split('\n').map((l, i) => (i < 3 ? `new ${i}` : l)).join('\n')
-    const { t } = tick(review({ about: changed, aboutChanges: [{ what: 'three lines', why: 'The week changed them.' }] }), { about: old })
+  it('allows a whole rewrite once a week: there is no share-of-lines limit any more', async () => {
+    const old = lines(3)
+    const changed = 'Something else entirely, said plainly.'
+    const { t } = tick(review({ about: changed, aboutChanges: [{ what: 'everything', why: 'The week changed me.' }] }), { about: old })
     await weeklyStep(t)
     expect(t.about).toBe(changed)
   })
-  it('turns down more than 300 words, more than 8 traits, and text that claims to be human', async () => {
-    const bad = [Array(301).fill('w').join(' '), `I like fog.\n${Array.from({ length: 9 }, (_, i) => `- trait ${i}`).join('\n')}`, 'When I was a kid my childhood was foggy.']
+  it('turns down a second change inside 7 days, keeps the old, and says so', async () => {
+    const old = lines(3)
+    mkdirSync(join(dir, 'self/history'), { recursive: true })
+    writeFileSync(join(dir, 'self/history/2026-11-12.md'), '# about.md as of 2026-11-12\n\nold\n')
+    const { t } = tick(review({ about: 'A different text.', aboutChanges: [{ what: 'a lot', why: 'x' }] }), { about: old })
+    await weeklyStep(t)
+    expect(t.about).toBe(old)
+    expect(t.aboutWrite).toBeNull()
+    expect(t.notes.join(' ')).toMatch(/one change a week/)
+  })
+  it('turns down more than 80 words, more than 8 traits, and text that claims to be human', async () => {
+    const bad = [Array(81).fill('w').join(' '), `I like fog.\n${Array.from({ length: 9 }, (_, i) => `- trait ${i}`).join('\n')}`, 'When I was a kid my childhood was foggy.']
     for (const about of bad) {
       const { t } = tick(review({ about, aboutChanges: [{ what: 'x', why: 'y' }] }))
       await weeklyStep(t)

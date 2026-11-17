@@ -48,7 +48,7 @@ I am patient.
 
 ## Your task
 Look back over the week and answer with:
-- about: the whole new text of the page about yourself, or null to leave it as it is. It is who you are now: what you care about and your tastes, in the first person, up to 300 words, with up to 8 traits as a list (lines that start with "- "). In one week it may change at most 30% of its lines, so you change gently.
+- about: the whole new text of the page about yourself, or null to leave it as it is. It is who you are now: what you care about and your tastes, in the first person, up to 80 words, with up to 8 traits as a list (lines that start with "- "). It may change once a week. The site lists what you have built under it, so you do not need to list your places and works.
 - aboutChanges: for each change you make to it, what changed and why, in your own words. Leave it empty if you change nothing.
 - longGoal: what happens to your long goal: continue, finish, drop or change (with the new text), and why.
 - renames: up to 2 renames in all, of a place (not Home or the Workshop) or of a work you have made: its id, the new name (up to 40 characters) and why. Leave it empty if nothing deserves a new name.

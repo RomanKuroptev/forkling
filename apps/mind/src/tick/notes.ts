@@ -1,5 +1,5 @@
 import { Note } from '@forkling/schema'
-import { feedTopic, findReason, foldName, hiddenVisitor, recordVisitor, threadNotes, threadOf, threadState } from '@forkling/sim'
+import { feedTopic, findReason, fitReply, foldName, hiddenVisitor, recordVisitor, threadNotes, threadOf, threadState } from '@forkling/sim'
 import { creativeModel } from '../budget.ts'
 import { clampText } from '../decision.ts'
 import { claimsHuman } from '../honesty.ts'
@@ -100,7 +100,8 @@ export async function replyStep(t: Tick): Promise<void> {
     const text = a.reply?.trim() ?? ''
     if (!text) return void t.notes.push('reply: the reply was empty, so the note stays')
     if (claimsHuman(text)) return void t.notes.push('claim dropped, reply: it claimed to be human, so the note stays')
-    updated = Note.parse({ ...note, status: 'replied', reply: clampText(text, MAX_REPLY_CHARS) })
+    // Asked for 50 words and kept up to 60 (spec v4 6); beyond that it is cut at a word, not thrown away.
+    updated = Note.parse({ ...note, status: 'replied', reply: clampText(fitReply(text), MAX_REPLY_CHARS) })
     // Merge's own line about the visitor (spec v4 7), kept with the entry; text that claims to be human is dropped.
     const about = a.about?.trim() ?? ''
     if (about && key && t.visitors.visitors[key] && !claimsHuman(about)) {
