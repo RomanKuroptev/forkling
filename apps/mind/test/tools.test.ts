@@ -72,16 +72,30 @@ describe('the planner is shown what it can do (spec v4 8)', () => {
 })
 
 describe('a new tool is announced once (spec v4 8)', () => {
-  it('the first look records what is there and announces nothing', () => {
+  it('a file added later with the abilities Merge already has (old entries) is recorded and announces nothing', () => {
     const t = tick([tool()])
     toolStep(t)
     expect(t.remember).toEqual([])
     expect(t.mind.toolsSeen).toEqual(['read-sites'])
   })
+  it('a world with no file: no tools, nothing announced, nothing written to the mind', () => {
+    const t = tick([])
+    const before = JSON.stringify(t.mind)
+    toolStep(t)
+    expect(t.remember).toEqual([])
+    expect(JSON.stringify(t.mind)).toBe(before)
+  })
+  it('a tool dated within the last 7 days is announced even when the file has just been added; an older one next to it is not', () => {
+    const t = tick([tool(), tool({ id: 'lemmy', name: 'Lemmy', what: 'Read a Lemmy community.', since: '2026-11-22', gift: true })])
+    toolStep(t)
+    expect(t.remember).toHaveLength(1)
+    expect(t.remember[0]!.text).toContain('Read a Lemmy community.')
+    expect(t.mind.toolsSeen).toEqual(['read-sites', 'lemmy'])
+  })
   it('a tool added later is one stream event of importance 8 with the text Roman wrote, once', () => {
     const first = tick([tool()])
     toolStep(first)
-    const later = tick([tool(), tool({ id: 'lemmy', name: 'Lemmy', what: 'Read a Lemmy community.', gift: true })], { toolsSeen: first.mind.toolsSeen })
+    const later = tick([tool(), tool({ id: 'lemmy', name: 'Lemmy', what: 'Read a Lemmy community.', since: '2026-11-23', gift: true })], { toolsSeen: first.mind.toolsSeen })
     toolStep(later)
     expect(later.remember).toHaveLength(1)
     expect(later.remember[0]).toMatchObject({ kind: 'event', importance: 8 })
