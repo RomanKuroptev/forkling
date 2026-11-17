@@ -1,3 +1,4 @@
+import { Resvg } from '@resvg/resvg-js'
 import { esc } from './md.ts'
 
 /** Words wrapped to lines of at most `width` characters; text that needs more than `maxLines` is cut with an ellipsis on the last line. */
@@ -41,11 +42,23 @@ export function threadPicture(i: ThreadPictureInput): string {
     '<rect width="1200" height="630" fill="#1c1b22"/>',
     '<rect x="40" y="40" width="1120" height="550" rx="16" fill="#26252e" stroke="#4a4858" stroke-width="2"/>',
     text([`${who} left a note`], 80, 100, 26, '#a9a6bd'),
-    text(wrapLines(i.message, 62, 4), 80, 150, 32, '#ece9f7'),
+    text(wrapLines(i.message, 50, 4), 80, 150, 32, '#ece9f7'),
     text(['Merge replied'], 80, 330, 26, '#a9a6bd'),
-    text(wrapLines(i.reply, 62, 5), 80, 380, 32, '#f6d78b'),
+    text(wrapLines(i.reply, 50, 5), 80, 380, 32, '#f6d78b'),
     text([i.address], 80, 565, 24, '#a9a6bd'),
     '</svg>',
     '',
   ].join('\n')
+}
+
+/**
+ * The picture as a PNG of 1200 by 630, which is what link previews read (og:image). Rendered by a pure renderer in the site build, no browser,
+ * with the system's sans-serif fonts. Null when it cannot be rendered, so the page falls back to the SVG.
+ */
+export function pictureToPng(svg: string): Buffer | null {
+  try {
+    return Buffer.from(new Resvg(svg, { fitTo: { mode: 'width', value: 1200 }, font: { loadSystemFonts: true, defaultFontFamily: 'DejaVu Sans' } }).render().asPng())
+  } catch {
+    return null
+  }
 }
