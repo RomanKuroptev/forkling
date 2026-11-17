@@ -1,5 +1,5 @@
 import type { PlanStep } from '@forkling/schema'
-import { MIND_VERBS, daysSinceCare, foundsInWeek, overdueNotes, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
+import { MIND_VERBS, daysSinceCare, foundsInWeek, livePrices, overdueNotes, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { Tick } from './context.ts'
@@ -62,6 +62,7 @@ export function planContext(t: Tick): MindPlanContext {
     canFound: foundGate(t).check.ok,
     notes: new Set(t.visitorNotes.filter((n) => n.status === 'found').map((n) => n.id)),
     wants: t.wants,
+    prices: livePrices(t.mind.prices),
     longGoal: t.goals.long != null,
     recent: t.mind.recent,
     used: { repliesToday: t.mind.replies?.date === t.today ? t.mind.replies.count : 0, foundThisWeek: foundsInWeek(t.mind.founds ?? [], t.nowMs) },
@@ -106,7 +107,7 @@ export function startStep(t: Tick, index: number, reason?: string): void {
   t.started = started
   // A step spends its points when it starts, so the next plan is made with what is left.
   if ((MIND_VERBS as readonly string[]).includes(step.verb) && t.mind.allowance) {
-    const cost = stepCost({ verb: step.verb as MindVerb, ...(step.size ? { size: step.size } : {}), ...(step.deep ? { deep: true } : {}) })
+    const cost = stepCost({ verb: step.verb as MindVerb, ...(step.size ? { size: step.size } : {}), ...(step.deep ? { deep: true } : {}) }, livePrices(t.mind.prices))
     t.mind.allowance = { ...t.mind.allowance, points: Math.max(0, t.mind.allowance.points - cost) }
   }
   t.mind.recent = [...t.mind.recent, { verb: step.verb, ...(step.targetId ? { targetId: step.targetId } : {}), at: t.nowIso }].slice(-MAX_RECENT)

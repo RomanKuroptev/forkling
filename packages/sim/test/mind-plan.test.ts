@@ -112,6 +112,13 @@ describe('validateMindPlan', () => {
     expect(reasons([wander({ wantId: 'w99' }), write({ wantId: 'w1' }), rest()], young)).toEqual([expect.stringContaining('"w99"')])
   })
 
+  it('prices a plan with the prices in force when the context carries them (the weekly reset)', () => {
+    const sketches = [wander(), { ...write(), verb: 'tinker', size: 'sketch', target: 'a lamp' } as MindStep, { ...write(), verb: 'tinker', size: 'sketch', target: 'a door' } as MindStep]
+    // At 50 points each two sketches plus a trip cost 103; at 23 they cost 49.
+    expect(reasons(sketches, ctx({ pointsInHand: 60 }))).toEqual([expect.stringContaining('costs 103 points')])
+    expect(reasons(sketches, ctx({ pointsInHand: 60, prices: { fullWork: 240, expand: 50, trip: 3, tend: 2, sketch: 23, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 } }))).toEqual([])
+  })
+
   it('rejects a step that starts in the 45 minutes before bed', () => {
     const late = ctx({ startMs: BED - 100 * 60_000 })
     // 30 minutes each: the third starts 60 minutes in, which is 40 minutes before bed.

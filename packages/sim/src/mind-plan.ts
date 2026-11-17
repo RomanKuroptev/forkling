@@ -2,7 +2,7 @@
  * The nine mind verbs and the validation of a plan made of them (spec 2.4 and 2.6). Pure. Code checks a plan and gives
  * its reasons back to the next decide call; it never chooses a step.
  */
-import { planCost, type PricedStep } from './allowance.ts'
+import { planCost, type PricedStep, type Prices } from './allowance.ts'
 import { tiredLimits, type MoodState } from './mood.ts'
 import { sameSubject, writesOnTopic, type WrittenPage } from './topic-cluster.ts'
 
@@ -82,6 +82,8 @@ export interface MindPlanContext {
   /** Visitor notes found and not yet answered. */
   notes: ReadonlySet<string>
   wants: readonly { id: string }[]
+  /** The prices in force (the weekly reset); the starting prices when absent. */
+  prices?: Prices
   /** Whether Merge has a long goal: a step may then name it as want "long". */
   longGoal?: boolean
   /** The latest steps from before this plan, oldest first. */
@@ -243,7 +245,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
   }
 
   const valid = steps.filter((s): s is MindStep => isVerb(s.verb))
-  const cost = planCost(valid)
+  const cost = planCost(valid, c.prices)
   if (cost > c.pointsInHand) reasons.push(`the plan costs ${cost} points and you have ${c.pointsInHand} in hand`)
 
   return reasons.length > 0 ? { ok: false, reasons } : { ok: true, steps: valid }

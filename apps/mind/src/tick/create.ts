@@ -12,7 +12,7 @@ import {
 import { monthOf, recordCall, rollLedger } from '../budget.ts'
 import { buildSystem } from '../prompts.ts'
 import { readWorld } from '../world.ts'
-import { visibleNotes } from '@forkling/sim'
+import { livePrices, visibleNotes } from '@forkling/sim'
 import { createFetcher } from '../web/fetch.ts'
 import { readPlaces } from '../places.ts'
 import { readWanderState } from '../web/wander-state.ts'
@@ -121,7 +121,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     page: w.page,
     pageWrite: null,
     beliefIds: new Set(liveBeliefs(w.beliefs).map((b) => b.id)),
-    system: buildSystem({ seed: w.seed, page: w.page }),
+    system: buildSystem({ seed: w.seed, page: w.page, prices: livePrices(w.mindState.prices) }),
     prompt: undefined,
     ask: undefined as never,
 

@@ -23,6 +23,7 @@ import { boredomStep } from './tick/boredom.ts'
 import { logTick } from './ticklog.ts'
 import { findNotes, replyStep } from './tick/notes.ts'
 import { reflectionStep } from './tick/reflection.ts'
+import { pricesStep } from './tick/prices.ts'
 import { goalReviewStep, weeklyStep } from './tick/weekly.ts'
 import { sleepRewriteStep } from './tick/sleep.ts'
 import { think } from './tick/think.ts'
@@ -64,6 +65,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   await weeklyStep(t)
   // The long goal is looked at again every 3 days, between the Sundays.
   await goalReviewStep(t)
+  // The prices of the allowance are set again from the ledger on Sundays.
+  pricesStep(t)
   await think(t)
   await sleepRewriteStep(t)
   applyDecision(t)

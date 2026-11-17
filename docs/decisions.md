@@ -2,6 +2,12 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+## 2026-11-17: Prices are reset every Sunday from the ledger (audit 6)
+- **Why.** A sketch was priced at 50 points ($0.05) but the day's four Sonnet sketches cost $0.093 in all, about $0.023 each, so the allowance (150 a day) ran dry on money that was never spent. The allowance header always said prices would be reset from the ledger each Sunday; it was not built.
+- **What.** On a Sunday, awake, once (`pricesStep`, `pricesDue`, `pricesFromLedger`): each price becomes the average real cost of its calls over the last 7 days, in points of $0.001, rounded up, never below 1, and **a sketch never below 20** (Roman). A sketch and a rework are both sketches; the write step is the `art` kind; a full work is its build (`tinker`) plus its share of the `repair` calls; a trip is up to 6 reads at the average `read` cost; replies and rest stay 0. The daily 150 and the 450 cap are not touched. The old and new prices go to the tick log.
+- **The ledger keeps only its last 500 calls** (about 3 days at ~160 thoughts a day), so the window is whatever is left of the 7 days. A kind with fewer than 3 calls there keeps its old price (Roman), instead of being reset from noise.
+- **Where the prices are read.** `mind.prices` (absent until the first reset: the starting table stands) feeds the plan check, the points a step spends, the decide prompt's price line and the numbers in the system prompt's verb list. The system prompt text is the same, so the golden files do not change, but its numbers change on a Sunday, which writes the prompt cache once.
+
 ## 2026-11-16: Creative pieces on Sonnet, notes answered the same day, a $15 model cap (make Merge fun, slice 4)
 - **Models.** Sketches and memes, reworks and replies run on Sonnet 5.5 (they were Haiku). **The write step stays on Haiku**, and notebook pages are 80 words (the model is asked for 80, and a page up to 100 is kept, so a page of 85 is not thrown away): text is the caption now and the main products are visual. Thoughts, decide, reads, looks and tend stay Haiku. The diary was already Sonnet (the sleep rewrite).
 - **A fallback, not a stop.** Within $1.50 of the monthly cap the creative calls run on Haiku (`creativeModel`), so the end of a month is plainer sketches for a few days and not a silent Merge.
