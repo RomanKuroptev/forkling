@@ -10,11 +10,16 @@ import { disposeParts, partsGroup } from '../world/primitives.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { live } from './live.ts'
 import { createFaceScreen } from './FaceScreen.ts'
-import { faceState } from './face.ts'
+import { faceState, type FaceState } from './face.ts'
 import { ThoughtBubble } from './ThoughtBubble.tsx'
 
 const params = new URLSearchParams(location.search)
 /** `?clip=Sit` pins the forkling in front of the visitor looping one clip, to check animation by eye. */
+/** `?face=awake|step|asleep|nosignal` shows that face whatever the state is, to look at it. */
+const FORCED_FACE = ((): FaceState | null => {
+  const f = params.get('face')
+  return f === 'awake' || f === 'step' || f === 'asleep' || f === 'nosignal' ? f : null
+})()
 const FORCED_CLIP = params.get('clip')
 /** Slots whose clip plays once and holds, instead of looping. */
 const ONCE_SLOTS = new Set(['stretch'])
@@ -48,14 +53,21 @@ export function Forkling() {
   }, [gltf])
 
   // A body may have a screen: a mesh named `Face` is painted with the face (awake, in a step, asleep, no signal) from what the viewer has.
-  const screen = useMemo(() => {
+  // Made in an effect, not in render: React may render twice and keep the first result, which would paint a canvas the mesh does not show.
+  const screen = useRef<ReturnType<typeof createFaceScreen> | null>(null)
+  useEffect(() => {
     let face: THREE.Mesh | null = null
     model.traverse((o) => {
       if (o.name === 'Face' && (o as THREE.Mesh).isMesh) face = o as THREE.Mesh
     })
-    return face ? createFaceScreen(face) : null
+    if (!face) return
+    const made = createFaceScreen(face)
+    screen.current = made
+    return () => {
+      made.dispose()
+      screen.current = null
+    }
   }, [model])
-  useEffect(() => () => screen?.dispose(), [screen])
 
   const rig = useMemo(() => {
     const mixer = new THREE.AnimationMixer(model)
@@ -153,10 +165,10 @@ export function Forkling() {
     }
     body.current?.setNextKinematicTranslation({ x: view.shown.x, y, z: view.shown.z })
 
-    if (screen) {
+    if (screen.current) {
       const now = clock.now()
       const goal = world.goals.now
-      screen.paint(faceState({ stale: !clock.synced, asleep: Boolean(pb.ctx.asleep), inStep: Boolean(goal && now < Date.parse(goal.until)) }), now / 1000)
+      screen.current.paint(FORCED_FACE ?? faceState({ stale: !clock.synced, asleep: Boolean(pb.ctx.asleep), inStep: Boolean(goal && now < Date.parse(goal.until)) }), now / 1000)
     }
 
     rig.mixer.update(dt)
