@@ -40,7 +40,7 @@ The mind decides *what* and *why*: it runs as the Actions tick or as a loop on a
 - Never change `self/seed.md` without Roman's review. Merge's own page (`self/page.md`) is written only by Merge.
 - Never give the builder token more than a fine-grained PAT scoped to the forkling's own repo.
 - Never add a third-party species pack without reviewing it like code.
-- Never build anything from spec section 17 ("Later") or `docs/future.md` before launch.
+- Never build anything from spec section 17 ("Later") or `docs/future.md` before launch. Note threads are no longer in Later (spec-v4 section 7): a visitor can answer Merge's reply, and Merge remembers visitors by the name they give.
 
 ## Conventions
 

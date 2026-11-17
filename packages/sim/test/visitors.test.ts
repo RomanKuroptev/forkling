@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Visitors } from '@forkling/schema'
-import { MAX_VISITORS, foldName, hiddenVisitor, recordVisitor } from '../src/visitors.ts'
+import { MAX_VISITORS, foldName, hiddenVisitor, reconcileMade, recordVisitor } from '../src/visitors.ts'
 
 const T = (d: number) => new Date(Date.parse('2026-11-01T10:00:00Z') + d * 86_400_000).toISOString()
 const empty: Visitors = { visitors: {} }
@@ -51,5 +51,24 @@ describe('hiddenVisitor', () => {
     expect(hiddenVisitor('roman', { hidden: [], names: ['roman'] })).toBe(true)
     expect(hiddenVisitor('anna', { hidden: [], names: ['roman'] })).toBe(false)
     expect(hiddenVisitor('anna', { hidden: [] })).toBe(false)
+  })
+})
+
+describe('reconcileMade (the visitor entry lists what was made after them)', () => {
+  const base = recordVisitor(empty, { name: 'Anna', at: T(0) })
+  const work = (id: string, name: string | null) => ({ id, inspiredBy: name === null ? null : { noteId: 'n-1', name } })
+  it('adds the id of a work credited to a remembered name, once', () => {
+    const once = reconcileMade(base, [work('fog-thing', 'Anna'), work('other', null)])
+    expect(once.visitors.anna!.made).toEqual(['fog-thing'])
+    expect(reconcileMade(once, [work('fog-thing', ' anna ')])).toBe(once)
+  })
+  it('ignores a work credited to a name with no entry or no name, and changes nothing then', () => {
+    expect(reconcileMade(base, [work('x', 'Bob'), work('y', '')])).toBe(base)
+  })
+  it('keeps the newest 100', () => {
+    const many = Array.from({ length: 105 }, (_, i) => work(`w${i}`, 'Anna'))
+    const out = reconcileMade(base, many)
+    expect(out.visitors.anna!.made).toHaveLength(100)
+    expect(out.visitors.anna!.made.at(-1)).toBe('w104')
   })
 })

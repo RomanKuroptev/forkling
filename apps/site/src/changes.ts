@@ -21,7 +21,7 @@ export function defaultGitLog(world: string): string {
  * the stream) are not changes. A work counts as shelved by its thumbnail, which only a work that passed its check has, so a scrap
  * and a change of status are not. Newest first, at most 50.
  */
-export function parseChanges(log: string, o: { titleOf: (workId: string) => string | undefined; placeAt?: (placeId: string, commitIso: string) => { name: string; text: string } | undefined }): Change[] {
+export function parseChanges(log: string, o: { titleOf: (workId: string) => string | undefined; inspiredOf?: (workId: string) => string | undefined; placeAt?: (placeId: string, commitIso: string) => { name: string; text: string } | undefined }): Change[] {
   const changes: Change[] = []
   let at = ''
   let souvenirs = 0
@@ -56,7 +56,8 @@ export function parseChanges(log: string, o: { titleOf: (workId: string) => stri
       const work = /^works\/([^/]+)\/thumb\.png$/.exec(path)
       if (work) {
         const title = o.titleOf(work[1]!)
-        batch.push({ at, text: title ? `shelved a work: ${title}` : 'shelved a work', href: `workshop/${work[1]}.html` })
+        const by = o.inspiredOf?.(work[1]!)
+        batch.push({ at, text: `${title ? `shelved a work: ${title}` : 'shelved a work'}${by !== undefined ? ` (made after a note from ${by})` : ''}`, href: `workshop/${work[1]}.html` })
         continue
       }
       const diary = /^journal\/([^/]+)\.md$/.exec(path)

@@ -74,7 +74,7 @@ export interface WorkshopInput {
   add: (rel: string, input: { title: string; active: string; body: string }) => void
 }
 
-const kindLine = (m: WorkMeta) => `${esc(m.kind)}${m.size === 'sketch' ? ', a sketch' : ''}`
+const kindLine = (m: WorkMeta) => `${esc(m.kind)}${m.size === 'sketch' ? ', a sketch' : ''}${m.inspiredBy ? `, made after a note from ${esc(m.inspiredBy.name || 'a visitor')}` : ''}`
 
 /** The workshop of the site (spec 8): the shelf, the daily strip of sketches, the scrap bin, each work in its sandbox, and the retired ones. */
 export function renderWorkshop(o: WorkshopInput): void {
