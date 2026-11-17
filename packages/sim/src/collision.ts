@@ -2,6 +2,9 @@ import { drawPrng } from './prng.ts'
 
 /** Spec 12.4, item 5: souvenirs from two places at least 2 chunks apart (the grid distance of 4.2, Manhattan). */
 export const COLLISION_MIN_DISTANCE = 2
+/** A souvenir kept in the last 3 days is preferred for a collision, and one used in a collision is not offered again for 7 (audit 17 Nov). */
+export const COLLISION_FRESH_DAYS = 3
+export const COLLISION_REUSE_DAYS = 7
 
 export interface CollisionPlace {
   id: string
@@ -13,6 +16,8 @@ export interface CollisionSouvenir {
   /** The place whose exhibit holds it, or null while it is in the pile. */
   placedIn: string | null
   topics: readonly string[]
+  /** When it was kept (an ISO time). Without it a souvenir is never fresh. */
+  at?: string
 }
 
 /** Two souvenirs to put side by side: from two far places, or from two interests that share no place. */
@@ -25,6 +30,10 @@ export interface CollisionInput {
   souvenirs: readonly CollisionSouvenir[]
   /** The interests that exist, by name. */
   interests: readonly string[]
+  /** The time of the draw: with it, souvenirs kept in the last 3 days are preferred. */
+  nowMs?: number
+  /** The souvenirs that were in a collision in the last 7 days: never offered again. */
+  usedRecently?: readonly string[]
 }
 
 const lower = (s: string) => s.toLowerCase()
@@ -39,7 +48,15 @@ const byId = <T extends { id: string }>(a: T, b: T) => (a.id < b.id ? -1 : a.id 
 export function drawCollision(input: CollisionInput, seed: number, key: string): Collision | null {
   const rng = drawPrng(seed, key)
   const places = [...input.places].sort(byId)
-  const souvenirs = [...input.souvenirs].sort(byId)
+  const used = new Set(input.usedRecently ?? [])
+  const souvenirs = input.souvenirs.filter((s) => !used.has(s.id)).sort(byId)
+  const freshFrom = input.nowMs === undefined ? Infinity : input.nowMs - COLLISION_FRESH_DAYS * 86_400_000
+  const fresh = new Set(souvenirs.filter((s) => s.at !== undefined && Date.parse(s.at) >= freshFrom).map((s) => s.id))
+  /** The ones with a fresh souvenir in them when there are any, otherwise all of them. */
+  const preferFresh = <T>(list: readonly T[], has: (x: T) => boolean): readonly T[] => {
+    const f = list.filter(has)
+    return f.length > 0 ? f : list
+  }
   const placeOf = new Map(places.map((p) => [p.id, p]))
 
   const farPairs: Extract<Collision, { how: 'places' }>[] = []
@@ -69,11 +86,16 @@ export function drawCollision(input: CollisionInput, seed: number, key: string):
     }
   }
 
-  const useInterests = farPairs.length === 0 ? interestPairs.length > 0 : interestPairs.length > 0 && rng.int(2) === 1
-  if (!useInterests) return farPairs.length > 0 ? farPairs[rng.int(farPairs.length)]! : null
+  const farChoice = preferFresh(farPairs, (p) => fresh.has(p.a.souvenir) || fresh.has(p.b.souvenir))
+  const carryingFresh = (x: string, y: string) => carrying(x).some((a) => carrying(y).some((b) => b.id !== a.id && (fresh.has(a.id) || fresh.has(b.id))))
+  const interestChoice = preferFresh(interestPairs, ([x, y]) => carryingFresh(x, y))
 
-  const [x, y] = interestPairs[rng.int(interestPairs.length)]!
-  const both = carrying(x).flatMap((a) => carrying(y).filter((b) => b.id !== a.id).map((b) => [a, b] as const))
+  const useInterests = farPairs.length === 0 ? interestPairs.length > 0 : interestPairs.length > 0 && rng.int(2) === 1
+  if (!useInterests) return farChoice.length > 0 ? farChoice[rng.int(farChoice.length)]! : null
+
+  const [x, y] = interestChoice[rng.int(interestChoice.length)]!
+  const pairs = carrying(x).flatMap((a) => carrying(y).filter((b) => b.id !== a.id).map((b) => [a, b] as const))
+  const both = preferFresh(pairs, ([a, b]) => fresh.has(a.id) || fresh.has(b.id))
   const [a, b] = both[rng.int(both.length)]!
   return { how: 'interests', a: { souvenir: a.id, interest: x }, b: { souvenir: b.id, interest: y } }
 }

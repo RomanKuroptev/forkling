@@ -1,9 +1,9 @@
 import type { Interests, Souvenir } from '@forkling/schema'
-import { drawCollision, type Collision } from '@forkling/sim'
+import { COLLISION_REUSE_DAYS, drawCollision, type Collision } from '@forkling/sim'
 import { readPlaces } from '../places.ts'
 import { drawConstraint } from '../prompts/constraints.ts'
 import type { TinkerCollision, TinkerSouvenir } from './tinker.ts'
-import { readAllSouvenirs } from './works.ts'
+import { readAllSouvenirs, readWorks } from './works.ts'
 
 /** What a tinker, expand or found call is offered besides its task (spec 12.4, items 4 and 5): a constraint, and maybe two souvenirs. */
 export interface BuildDraw {
@@ -14,18 +14,32 @@ export interface BuildDraw {
 const asTinker = (s: Souvenir): TinkerSouvenir => ({ id: s.id, kind: s.kind, content: s.content, source: { title: s.source.title, url: s.source.url } })
 
 /**
+ * What the last works were offered, so the next draw does not repeat it (audit 17 Nov): the souvenirs that were in a collision in the
+ * last 7 days (never offered again), and the constraint of the newest work (never offered twice in a row). Pure, over work metas.
+ */
+export function recentDraws(works: readonly { made: string; collision: readonly string[] | null; constraint: { text: string } | null }[], nowMs: number): { usedIds: string[]; lastConstraint: string | undefined } {
+  const since = nowMs - COLLISION_REUSE_DAYS * 86_400_000
+  const usedIds = [...new Set(works.filter((w) => w.collision && Date.parse(w.made) >= since).flatMap((w) => [...w.collision!]))]
+  const newest = [...works].filter((w) => w.constraint).sort((a, b) => b.made.localeCompare(a.made))[0]
+  return { usedIds, lastConstraint: newest?.constraint?.text }
+}
+
+/**
  * The draw for one call: the constraint and the collision, both fixed by the forkling's seed and a key naming the call
  * (`sketch:<date>:<step>`, `tinker:<job id>`), so the same call always gets the same draw. It reads the world (places and
  * souvenirs on disk) and the interests, and calls no model.
  */
-export function drawForBuild(dir: string, o: { seed: number; key: string; interests: Interests }): BuildDraw {
+export function drawForBuild(dir: string, o: { seed: number; key: string; interests: Interests; nowMs?: number }): BuildDraw {
   const souvenirs = readAllSouvenirs(dir)
+  // With the time of the draw, fresh souvenirs are preferred and used ones are left out; without it the draw is as it was.
+  const recent = o.nowMs === undefined ? null : recentDraws(readWorks(dir), o.nowMs)
   const places = readPlaces(dir)
   const drawn: Collision | null = drawCollision(
     {
       places: places.map((p) => ({ id: p.id, chunk: p.chunk, tags: p.tags })),
-      souvenirs: souvenirs.map((s) => ({ id: s.id, placedIn: s.placedIn, topics: s.topics })),
+      souvenirs: souvenirs.map((s) => ({ id: s.id, placedIn: s.placedIn, topics: s.topics, at: s.source.fetchedAt })),
       interests: Object.keys(o.interests.topics),
+      ...(o.nowMs !== undefined && recent ? { nowMs: o.nowMs, usedRecently: recent.usedIds } : {}),
     },
     o.seed,
     o.key,
@@ -42,5 +56,5 @@ export function drawForBuild(dir: string, o: { seed: number; key: string; intere
           : { how: 'interests', a: { souvenir: asTinker(a), from: drawn.a.interest }, b: { souvenir: asTinker(b), from: drawn.b.interest } }
     }
   }
-  return { constraint: drawConstraint(o.seed, o.key), collision }
+  return { constraint: drawConstraint(o.seed, o.key, recent?.lastConstraint), collision }
 }

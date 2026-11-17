@@ -57,7 +57,7 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
     const manuals = o.web && untried.length > 0 ? await manualPagesFor(createFetcher({ ...o.web, verb: 'tinker' }), untried) : []
     const interests = Interests.safeParse(readJson(o.dir, 'brain/interests.json'))
     const seedNumber = (readJson(o.dir, 'forkling.json') as { seed?: number } | null)?.seed ?? 0
-    const draw = drawForBuild(o.dir, { seed: seedNumber, key: `tinker:${job.id}`, interests: interests.success ? interests.data : Interests.parse({}) })
+    const draw = drawForBuild(o.dir, { seed: seedNumber, key: `tinker:${job.id}`, interests: interests.success ? interests.data : Interests.parse({}), nowMs })
     const input: TinkerInput = {
       idea: job.idea,
       reason: job.reason,

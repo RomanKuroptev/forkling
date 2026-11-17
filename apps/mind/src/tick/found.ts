@@ -67,7 +67,7 @@ export async function foundStep(t: Tick): Promise<void> {
     .slice(-KEPT_SHOWN)
     .reverse()
     .map((s) => ({ id: s.id, kind: s.kind, content: s.content, why: s.why }))
-  const draw = drawForBuild(t.dir, { seed: t.forkling.seed, key: `found:${t.today}:${index}`, interests: t.interests })
+  const draw = drawForBuild(t.dir, { seed: t.forkling.seed, key: `found:${t.today}:${index}`, interests: t.interests, nowMs: t.nowMs })
   const interests = Object.keys(t.interests.topics)
   const known = new Map(readWishes(t.dir).map((w) => [w.id, w]))
   for (const w of t.wishUpdates) known.set(w.id, w)

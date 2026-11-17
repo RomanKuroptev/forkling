@@ -76,6 +76,8 @@ export const CONSTRAINTS: readonly string[] = [
 ]
 
 /** The constraint a call is offered: one rule, fixed by the forkling's seed and a key naming the call (`tinker:<id>`). */
-export function drawConstraint(seed: number, key: string): string {
-  return CONSTRAINTS[drawPrng(seed, key).int(CONSTRAINTS.length)]!
+export function drawConstraint(seed: number, key: string, last?: string): string {
+  // The one just offered is left out, so the same rule never comes twice in a row (audit 17 Nov). With no last one the draw is as it was.
+  const pool = last !== undefined && CONSTRAINTS.includes(last) ? CONSTRAINTS.filter((c) => c !== last) : CONSTRAINTS
+  return pool[drawPrng(seed, key).int(pool.length)]!
 }

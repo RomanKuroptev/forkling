@@ -126,7 +126,7 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
   const untried = untriedLibraries(works)
   // The manuals are for tinker only, read by code, and a page that cannot be read is just left out. (A pause from a 429 on one is not kept.)
   const manuals = t.deps.web && untried.length > 0 ? await manualPagesFor(createFetcher({ ...t.deps.web, verb: 'tinker' }), untried) : []
-  const draw = drawForBuild(t.dir, { seed: t.forkling.seed, key: `sketch:${t.today}:${index}`, interests: t.interests })
+  const draw = drawForBuild(t.dir, { seed: t.forkling.seed, key: `sketch:${t.today}:${index}`, interests: t.interests, nowMs: t.nowMs })
   const drawn = { constraint: draw.constraint, collision: draw.collision ?? undefined }
   const input: TinkerInput = {
     idea: o.idea,
