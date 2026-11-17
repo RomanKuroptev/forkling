@@ -23,6 +23,7 @@ import type {
   ExpandJob,
   FoundJob,
   PlaceRequest,
+  Visitors,
   Want,
   Wish,
   WorkMeta,
@@ -172,6 +173,8 @@ export interface Tick {
   aboutWrite: { text: string; changes: { what: string; why: string }[]; at: string } | null
   /** The notes visitors left that Roman has not hidden (spec 10.1), as the tick leaves them. */
   visitorNotes: Note[]
+  /** `memory/visitors.json` as the tick leaves it (spec v4 7). */
+  visitors: Visitors
   /** `mind/config.json`: which variety switches Roman has turned on (every one is off without it). */
   config: MindConfig
   /** Notes that changed this tick (found, replied, declined, kept): written to `notes/<id>.json`. */

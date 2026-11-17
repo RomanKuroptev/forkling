@@ -1,5 +1,5 @@
 import { Note } from '@forkling/schema'
-import { feedTopic, findReason, threadOf, threadState } from '@forkling/sim'
+import { feedTopic, findReason, foldName, hiddenVisitor, recordVisitor, threadNotes, threadOf, threadState } from '@forkling/sim'
 import { creativeModel } from '../budget.ts'
 import { clampText } from '../decision.ts'
 import { claimsHuman } from '../honesty.ts'
@@ -13,6 +13,7 @@ const MAX_WAITING = 20
 const MAX_REPLY_CHARS = 600
 const MAX_DECLINE_CHARS = 80
 const RECENT_REPLIES = 3
+const MAX_ABOUT_CHARS = 200
 
 const placeName = (t: Pick<Tick, 'places'>, id: string): string => t.places.find((p) => p.id === id)?.name ?? id
 
@@ -35,6 +36,8 @@ export function findNotes(t: Tick, opts: { thought?: boolean } = {}): void {
     const updated = Note.parse({ ...note, status: 'found', foundAt: t.nowIso })
     t.noteUpdates.push(updated)
     t.visitorNotes = t.visitorNotes.map((n) => (n.id === note.id ? updated : n))
+    // Spec v4 7: a note with a name is remembered by that name; one with none is not.
+    t.visitors = recordVisitor(t.visitors, { name: note.name, at: t.nowIso })
     rememberScored(t, { at: t.nowIso, kind: 'note', text: clampText(`Found a note at ${placeName(t, note.placeId)}: "${note.message}"`, 300) }, 'noteFound')
     const topic = note.topics[0]
     if (topic) {
@@ -71,7 +74,17 @@ export async function replyStep(t: Tick): Promise<void> {
     .filter((n) => n.status === 'replied' && n.reply)
     .slice(-RECENT_REPLIES)
     .map((n) => clampText(n.reply!, 120))
-  const user = buildReplyUser({ note: { id: note.id, place: placeName(t, note.placeId), name: note.name, message: note.message }, reason: clampText(step.reason, 200), recent })
+  const key = foldName(note.name)
+  const entry = key && !hiddenVisitor(key, t.w.notesHidden) ? t.visitors.visitors[key] : undefined
+  const before = threadNotes(t.visitorNotes, threadOf(note)).filter((n) => n.id !== note.id && n.at < note.at)
+  const user = buildReplyUser({
+    note: { id: note.id, place: placeName(t, note.placeId), name: note.name, message: note.message },
+    reason: clampText(step.reason, 200),
+    recent,
+    visitor: entry ? { name: entry.name, notes: entry.notes, firstSeen: entry.firstSeen, about: entry.about } : null,
+    thread: before.map((n) => ({ name: n.name, message: clampText(n.message, 500), reply: n.reply ? clampText(n.reply, MAX_REPLY_CHARS) : null })),
+    threadReplies: before.filter((n) => n.status === 'replied').length,
+  })
   const result = await t.ask('reply', creativeModel(t.budget), user, ReplyAnswer, REPLY_MAX_TOKENS)
   const answer = ReplyAnswer.safeParse(result?.parsed)
   if (!result || !answer.success) {
@@ -88,6 +101,11 @@ export async function replyStep(t: Tick): Promise<void> {
     if (!text) return void t.notes.push('reply: the reply was empty, so the note stays')
     if (claimsHuman(text)) return void t.notes.push('claim dropped, reply: it claimed to be human, so the note stays')
     updated = Note.parse({ ...note, status: 'replied', reply: clampText(text, MAX_REPLY_CHARS) })
+    // Merge's own line about the visitor (spec v4 7), kept with the entry; text that claims to be human is dropped.
+    const about = a.about?.trim() ?? ''
+    if (about && key && t.visitors.visitors[key] && !claimsHuman(about)) {
+      t.visitors = { visitors: { ...t.visitors.visitors, [key]: { ...t.visitors.visitors[key]!, about: clampText(about, MAX_ABOUT_CHARS) } } }
+    }
     line = `Replied to a note at ${placeName(t, note.placeId)}.`
   } else if (a.action === 'decline') {
     const why = a.reason?.trim() ?? ''

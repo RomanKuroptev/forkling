@@ -32,7 +32,7 @@ export function findReason(note: Pick<Note, 'status' | 'placeId' | 'at'>, c: Fin
 }
 
 /** Roman hides a note by adding its id to `mind/notes-hidden.json`; it is gone from the site and from Merge's prompts. */
-export function visibleNotes<N extends Pick<Note, 'id'> & { thread?: string | null }>(notes: readonly N[], hidden: NotesHidden): N[] {
+export function visibleNotes<N extends Pick<Note, 'id'> & { thread?: string | null }>(notes: readonly N[], hidden: Pick<NotesHidden, 'hidden'>): N[] {
   const gone = new Set(hidden.hidden)
   // A hidden note hides the rest of its thread too (spec v4 step 5).
   const goneThreads = new Set(notes.filter((n) => gone.has(n.id)).map((n) => n.thread ?? n.id))

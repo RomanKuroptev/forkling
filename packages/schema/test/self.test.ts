@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_WANTS, MindState, Note, NotesHidden, NotesResponse, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants, WeeklyReview, WorkMeta, formatSelfRequest, parseSelfRequest } from '../src/index.ts'
+import { MAX_WANTS, MindState, Note, NotesHidden, Visitors, NotesResponse, ReflectionAnswer, SelfRequest, SleepRewriteAnswer, StreamKind, Want, Wants, WeeklyReview, WorkMeta, formatSelfRequest, parseSelfRequest } from '../src/index.ts'
 
 const want = {
   id: 'w1',
@@ -120,9 +120,24 @@ describe('NotesResponse (what GET /notes.json says)', () => {
 
 describe('NotesHidden (spec 10.1)', () => {
   it('is a list of note ids, empty by default', () => {
-    expect(NotesHidden.parse({})).toEqual({ hidden: [] })
-    expect(NotesHidden.parse({ hidden: ['n-1'] })).toEqual({ hidden: ['n-1'] })
+    expect(NotesHidden.parse({})).toEqual({ hidden: [], names: [] })
+    expect(NotesHidden.parse({ hidden: ['n-1'] })).toEqual({ hidden: ['n-1'], names: [] })
     expect(NotesHidden.safeParse({ hidden: [''] }).success).toBe(false)
+  })
+})
+
+describe('Visitors (spec v4 7)', () => {
+  const entry = { name: 'Roman', firstSeen: '2026-11-10T10:00:00.000Z', lastSeen: '2026-11-11T10:00:00.000Z', notes: 2 }
+  it('an empty file parses; an entry gets an empty about and no made', () => {
+    expect(Visitors.parse({})).toEqual({ visitors: {} })
+    expect(Visitors.parse({ visitors: { roman: entry } }).visitors.roman).toMatchObject({ about: '', made: [] })
+  })
+  it('about is up to 200 characters', () => {
+    expect(Visitors.safeParse({ visitors: { roman: { ...entry, about: 'x'.repeat(201) } } }).success).toBe(false)
+    expect(Visitors.safeParse({ visitors: { roman: { ...entry, about: 'x'.repeat(200) } } }).success).toBe(true)
+  })
+  it('NotesHidden also holds folded names', () => {
+    expect(NotesHidden.parse({ names: ['roman'] })).toEqual({ hidden: [], names: ['roman'] })
   })
 })
 

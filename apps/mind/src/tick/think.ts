@@ -3,7 +3,7 @@ import { Decision } from '../decision.ts'
 import { buildUser } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { readRecentPast } from '../past.ts'
-import { livePrices, moodWords, openPlaceRequests } from '@forkling/sim'
+import { foldName, hiddenVisitor, livePrices, moodWords, openPlaceRequests } from '@forkling/sim'
 import { expandablePlaces } from './expand.ts'
 import { unreadSeen } from '../web/lookup.ts'
 import { foundGate, foundableInterest } from './found.ts'
@@ -15,7 +15,11 @@ const MAX_SHOWN_KEPT = 5
 
 /** The notes shown to a decide call: those found and not answered (oldest first, so none waits for ever) and the latest it kept, to quote or build from. */
 function noteLines(t: Tick) {
-  const line = (n: Tick['visitorNotes'][number]) => ({ id: n.id, status: n.status === 'found' ? 'found' : n.status, place: n.placeId, name: n.name, message: n.message })
+  const line = (n: Tick['visitorNotes'][number]) => {
+    const key = foldName(n.name)
+    const entry = key && !hiddenVisitor(key, t.w.notesHidden) ? t.visitors.visitors[key] : undefined
+    return { id: n.id, status: n.status === 'found' ? 'found' : n.status, place: n.placeId, name: n.name, message: n.message, ...(entry && entry.notes >= 2 ? { talkedBefore: true } : {}) }
+  }
   return [...t.visitorNotes.filter((n) => n.status === 'found').slice(0, MAX_SHOWN_FOUND).map(line), ...t.visitorNotes.filter((n) => n.status === 'kept').slice(-MAX_SHOWN_KEPT).map(line)]
 }
 
