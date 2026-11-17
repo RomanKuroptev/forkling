@@ -20,6 +20,7 @@ import type {
   TickCall,
   TimelineEntry,
   TinkerJob,
+  SessionJob,
   ExpandJob,
   FoundJob,
   PlaceRequest,
@@ -215,7 +216,7 @@ export interface Tick {
   /** Works whose meta changed this tick (put away, brought back), written to `works/<id>/meta.json`. */
   workUpdates: WorkMeta[]
   /** Requests for the build worker made this tick, written to `mind/builds/<id>.json` (spec 10.2). */
-  newJobs: (TinkerJob | ExpandJob | FoundJob)[]
+  newJobs: (TinkerJob | ExpandJob | FoundJob | SessionJob)[]
   /** Wishes written or counted up this tick, written to `wishes/<id>.json` (spec 5.3). */
   wishUpdates: Wish[]
   arts: NonNullable<MindState['arts']>

@@ -1,19 +1,19 @@
 /**
- * The nine mind verbs and the validation of a plan made of them (spec 2.4 and 2.6). Pure. Code checks a plan and gives
+ * The ten mind verbs and the validation of a plan made of them (spec 2.4 and 2.6). Pure. Code checks a plan and gives
  * its reasons back to the next decide call; it never chooses a step.
  */
-import { planCost, type PricedStep, type Prices } from './allowance.ts'
+import { planCost, stepCost, type PricedStep, type Prices } from './allowance.ts'
 import { tiredLimits, type MoodState } from './mood.ts'
 import { sameSubject, writesOnTopic, type WrittenPage } from './topic-cluster.ts'
 
-export const MIND_VERBS = ['wander', 'tend', 'revisit', 'expand', 'found', 'tinker', 'write', 'reply', 'rest'] as const
+export const MIND_VERBS = ['wander', 'tend', 'revisit', 'expand', 'found', 'tinker', 'write', 'reply', 'rest', 'build'] as const
 export type MindVerb = (typeof MIND_VERBS)[number]
 
 /**
  * Minutes a step may take. The decide call chooses within the range and code clamps. Expand takes no range in the spec,
  * only "starts a 3 h construction"; 20 to 40 minutes to issue the request is an assumption, the same as found's.
  */
-export const VERB_MINUTES: Record<MindVerb, readonly [number, number]> = {
+export const VERB_MINUTES: Record<Exclude<MindVerb, 'build'>, readonly [number, number]> = {
   wander: [20, 40],
   tend: [20, 60],
   revisit: [15, 30],
@@ -25,7 +25,18 @@ export const VERB_MINUTES: Record<MindVerb, readonly [number, number]> = {
   rest: [30, 90],
 }
 
+/**
+ * A build step has no minute range (spec-v4 3.2): the plan holds while its session runs, and the steps after it start when it ends.
+ * Its minutes are the most it can hold the plan, the session's wall-clock stop; the step closes as soon as the session does.
+ */
+export const BUILD_HOLD_MINUTES = 90
+/** A build step needs this many points in hand to start (spec-v4 3.3). */
+export const BUILD_START_POINTS = 300
+/** At most this many projects are building at once (spec-v4 3.1, a storage rail). */
+export const MAX_PROJECTS_BUILDING = 3
+
 export function clampMinutes(verb: MindVerb, minutes: number): number {
+  if (verb === 'build') return BUILD_HOLD_MINUTES
   const [lo, hi] = VERB_MINUTES[verb]
   if (!Number.isFinite(minutes)) return lo
   return Math.min(hi, Math.max(lo, Math.round(minutes)))
@@ -65,6 +76,13 @@ export interface StartingPointsContext {
   takenToday: boolean
 }
 
+/** Merge's projects, for a build step's target (spec-v4 3.2). */
+export interface ProjectsContext {
+  building: readonly { id: string; name: string }[]
+  /** Done and abandoned. */
+  ended: readonly { id: string; name: string }[]
+}
+
 export interface MindPlanContext {
   /** When the first step starts, and when it is bed time. */
   startMs: number
@@ -96,6 +114,10 @@ export interface MindPlanContext {
   points?: StartingPointsContext
   /** Found notes that have waited 3 hours or more for their reply step: the plan must make room for each (spec 16: answered the same day). */
   overdueNotes?: ReadonlySet<string>
+  /** Merge's projects; none when absent. */
+  projects?: ProjectsContext
+  /** Spending is ahead of the month's pace (spec 13), which holds build steps. */
+  paceAhead?: boolean
 }
 
 export type MindPlanResult = { ok: true; steps: MindStep[] } | { ok: false; reasons: string[] }
@@ -116,7 +138,7 @@ const STARTING_POINT_MIN_LEFT_MS = 3 * 3_600_000
 const REPLY_MIN_LEFT_MS = 3_600_000
 const MAX_REPLIES_PER_DAY = 5
 export const MAX_FOUND_PER_WEEK = 1
-const BUILD_VERBS = new Set<MindVerb>(['expand', 'found', 'tinker'])
+const BUILD_VERBS = new Set<MindVerb>(['expand', 'found', 'tinker', 'build'])
 const isVerb = (v: unknown): v is MindVerb => (MIND_VERBS as readonly unknown[]).includes(v)
 
 export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext): MindPlanResult {
@@ -137,6 +159,10 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
   // Pages and tinkers the plan itself adds count against the later steps of the same plan.
   const plannedPages: WrittenPage[] = []
   const plannedTinkers: string[] = []
+  const projects = c.projects ?? { building: [], ended: [] }
+  const matches = (list: readonly { id: string; name: string }[], target: string) => list.find((p) => p.id === target.toLowerCase() || p.name.toLowerCase() === target.toLowerCase())
+  let building = projects.building.length
+  let spent = 0
 
   steps.forEach((s, i) => {
     const n = `step ${i + 1}`
@@ -146,7 +172,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
     verbs.push(s.verb)
 
     if (!isVerb(s.verb)) {
-      reasons.push(`${n}: "${String(s.verb)}" is not one of the nine verbs (${MIND_VERBS.join(', ')})`)
+      reasons.push(`${n}: "${String(s.verb)}" is not one of the ten verbs (${MIND_VERBS.join(', ')})`)
       return
     }
     const verb = s.verb
@@ -165,6 +191,8 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
       here.push(minutes >= 0 ? `${n}: it would start ${minutes} minutes before bed, and nothing starts in the last 45` : `${n}: it would start after bed time`)
     }
 
+    const handBefore = c.pointsInHand - spent
+    spent += stepCost(s.verb === 'expand' && target && c.expandEarned?.has(target) ? { ...s, earned: true } : s, c.prices)
     if (BUILD_VERBS.has(verb) && !limits.allowBuilds) {
       here.push(`${n}: you are too tired for ${verb} today`)
       reasons.push(...here)
@@ -227,6 +255,22 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
       case 'rest':
         if (target) here.push(`${n}: rest takes no target`)
         break
+      case 'build': {
+        if (!target) {
+          here.push(`${n}: build needs the name of a new project or the id of one you are building`)
+          break
+        }
+        const ended = matches(projects.ended, target)
+        if (ended && !matches(projects.building, target)) here.push(`${n}: "${ended.name}" is no longer building; give a new project a name of its own`)
+        else if (!matches(projects.building, target)) {
+          if (target.length < 3 || target.length > 40) here.push(`${n}: the name of a new project must be 3 to 40 characters`)
+          else if (building >= MAX_PROJECTS_BUILDING) here.push(`${n}: ${MAX_PROJECTS_BUILDING} projects are building, and ${MAX_PROJECTS_BUILDING} is the most at once: finish or drop one first`)
+          building++
+        }
+        if (c.paceAhead) here.push(`${n}: spending is ahead of the month's pace, so building waits`)
+        if (handBefore < BUILD_START_POINTS) here.push(`${n}: a build session needs ${BUILD_START_POINTS} points in hand to start, and you would have ${Math.max(0, handBefore)}`)
+        break
+      }
     }
     reasons.push(...here)
   })

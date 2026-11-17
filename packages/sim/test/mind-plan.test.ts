@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampMinutes, MIND_VERBS, VERB_MINUTES, validateMindPlan, type MindPlanContext, type MindStep } from '../src/mind-plan.ts'
+import { BUILD_HOLD_MINUTES, BUILD_START_POINTS, clampMinutes, MIND_VERBS, VERB_MINUTES, validateMindPlan, type MindPlanContext, type MindStep } from '../src/mind-plan.ts'
 
 const HOUR = 3_600_000
 /** 10:00 in a world whose bed time is 23:00, so the last step may start at 22:15. */
@@ -37,9 +37,9 @@ const reasons = (steps: MindStep[], c: MindPlanContext = ctx()) => {
   return r.ok ? [] : r.reasons
 }
 
-describe('the nine verbs', () => {
-  it('are wander, tend, revisit, expand, found, tinker, write, reply and rest', () => {
-    expect([...MIND_VERBS]).toEqual(['wander', 'tend', 'revisit', 'expand', 'found', 'tinker', 'write', 'reply', 'rest'])
+describe('the ten verbs', () => {
+  it('are wander, tend, revisit, expand, found, tinker, write, reply, rest and build', () => {
+    expect([...MIND_VERBS]).toEqual(['wander', 'tend', 'revisit', 'expand', 'found', 'tinker', 'write', 'reply', 'rest', 'build'])
   })
 
   it('have the durations in spec 2.4, and code clamps what the model chooses', () => {
@@ -351,5 +351,61 @@ describe('the price of an expand (spec v4 2.2)', () => {
     expect(reasons([wander(), expand, rest()], { ...base, pointsInHand: 40 })).toEqual([expect.stringContaining('costs 53 points')])
     expect(reasons([wander(), expand, rest()], { ...base, pointsInHand: 40, expandEarned: new Set(['workshop']) })).toEqual([])
     expect(reasons([wander(), expand, rest()], { ...base, pointsInHand: 10, expandEarned: new Set(['workshop']) })).toEqual([expect.stringContaining('costs 23 points')])
+  })
+})
+
+describe('build (spec-v4 3.2): a new project, or one that is building', () => {
+  const projects = { building: [{ id: 'tide-clock', name: 'Tide clock' }], ended: [{ id: 'sand-clock', name: 'Sand clock' }] }
+  const c = (over: Partial<MindPlanContext> = {}) => ctx({ pointsInHand: 400, projects, ...over })
+  const build = (target: string | null, over: Partial<MindStep> = {}): MindStep => ({ verb: 'build', target, reason: 'I want the pool to fill with the hours.', minutes: 30, ...over })
+
+  it('takes the id or the name of a project that is building, and a new name', () => {
+    expect(reasons([wander(), build('tide-clock'), rest()], c())).toEqual([])
+    expect(reasons([wander(), build('Tide clock'), rest()], c())).toEqual([])
+    expect(reasons([wander(), build('A machine for clouds'), rest()], c())).toEqual([])
+  })
+
+  it('has no minute range: the plan holds while it runs, up to the 90-minute stop', () => {
+    expect(VERB_MINUTES).not.toHaveProperty('build')
+    expect(BUILD_HOLD_MINUTES).toBe(90)
+    expect(clampMinutes('build', 10)).toBe(90)
+    const r = validateMindPlan([wander(), build('tide-clock'), rest()], c())
+    expect(r.ok && r.steps[1]!.minutes).toBe(90)
+  })
+
+  it('needs a target, and a new name of 3 to 40 characters', () => {
+    expect(reasons([wander(), build(null), rest()], c())).toEqual([expect.stringContaining('build needs')])
+    expect(reasons([wander(), build('ab'), rest()], c())).toEqual([expect.stringContaining('3 to 40')])
+    expect(reasons([wander(), build('x'.repeat(41)), rest()], c())).toEqual([expect.stringContaining('3 to 40')])
+  })
+
+  it('refuses a project that is done or abandoned', () => {
+    expect(reasons([wander(), build('sand-clock'), rest()], c())).toEqual([expect.stringContaining('no longer building')])
+  })
+
+  it('refuses a new project while 3 are building, counting the ones the plan starts', () => {
+    const three = { building: [1, 2, 3].map((n) => ({ id: `p-${n}`, name: `Project ${n}` })), ended: [] }
+    expect(reasons([wander(), build('a fourth one'), rest()], c({ projects: three }))).toEqual([expect.stringContaining('3 projects')])
+    expect(reasons([wander(), build('p-2'), rest()], c({ projects: three }))).toEqual([])
+    const two = { building: three.building.slice(0, 2), ended: [] }
+    expect(reasons([build('one more'), wander(), build('and another'), rest()], c({ projects: two }))).toEqual([expect.stringContaining('3 projects')])
+  })
+
+  it('needs 300 points in hand', () => {
+    expect(BUILD_START_POINTS).toBe(300)
+    expect(reasons([wander(), build('tide-clock'), rest()], c({ pointsInHand: 299 }))).toEqual([expect.stringContaining('300 points')])
+  })
+
+  it('is a build verb: not when tired, and held while spending is ahead of the pace', () => {
+    expect(reasons([wander(), build('tide-clock'), rest()], c({ mood: { mood: 0, energy: -0.6 } }))).toEqual([expect.stringContaining('too tired')])
+    expect(reasons([wander(), build('tide-clock'), rest()], c({ paceAhead: true }))).toEqual([expect.stringContaining('pace')])
+  })
+
+  it('costs nothing up front: a session is metered as it runs', () => {
+    expect(reasons([build('tide-clock'), wander(), rest()], c({ pointsInHand: 300 }))).toEqual([])
+  })
+
+  it('has no limit on build steps in a plan or a day', () => {
+    expect(reasons([build('tide-clock'), wander(), build('tide-clock'), rest()], c())).toEqual([])
   })
 })

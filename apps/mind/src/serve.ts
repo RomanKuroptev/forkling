@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
+import Anthropic from '@anthropic-ai/sdk'
 import { createBuildWorker } from './build-worker.ts'
+import { createSessionHandler } from './builds/session-job.ts'
+import { anthropicSessionModel } from './builds/session.ts'
 import { createBrowserChecker } from './builds/browser-check.ts'
 import { createLocalSandbox, createSandbox, sandboxSelfTest } from './builds/sandbox-run.ts'
 import { createGithubClient, repoFromUrl } from './builds/github.ts'
@@ -97,9 +100,10 @@ async function main(): Promise<void> {
   const repo = env.FORKLING_GITHUB_REPO ?? repoFromUrl(values.repo ?? env.FORKLING_REPO_URL ?? '')
   const github = env.GITHUB_TOKEN && repo ? createGithubClient({ token: env.GITHUB_TOKEN, repo }) : null
   if (!github) console.log('full works wait: they need GITHUB_TOKEN and the world repository (FORKLING_REPO_URL or FORKLING_GITHUB_REPO)')
-  const worker = createBuildWorker({ dir, now: Date.now, handlers: { expand: createExpandHandler({ dir, llm, now: Date.now }), found: createFoundBuildHandler({ dir, llm, now: Date.now }), ...(github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now, web }) } : {}) } })
-
   const timezone = (JSON.parse(readFileSync(join(dir, 'forkling.json'), 'utf8')) as { timezone?: string }).timezone ?? 'Europe/Stockholm'
+  // A build session (spec-v4 3.3) runs here only inside the sandbox unit: with `sandbox: missing` it refuses, and Merge is told.
+  const session = createSessionHandler({ model: llm ? anthropicSessionModel(new Anthropic()) : null, sandbox, requireSandbox: true, git, now: Date.now, timezone })
+  const worker = createBuildWorker({ dir, now: Date.now, handlers: { expand: createExpandHandler({ dir, llm, now: Date.now }), found: createFoundBuildHandler({ dir, llm, now: Date.now }), session, ...(github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now, web }) } : {}) } })
   if (env.TURNSTILE_SECRET && llm) {
     intake = createNotesIntake({
       dir,

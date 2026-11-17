@@ -8,6 +8,7 @@ import { expandablePlaces } from './expand.ts'
 import { unreadSeen } from '../web/lookup.ts'
 import { canFoundNow, foundGate } from './found.ts'
 import { checkPlan, placeIds } from './plan.ts'
+import { readProjects } from '../builds/projects.ts'
 import { clock, weekday } from './util.ts'
 
 const MAX_SHOWN_FOUND = 10
@@ -21,6 +22,15 @@ function noteLines(t: Tick) {
     return { id: n.id, status: n.status === 'found' ? 'found' : n.status, place: n.placeId, name: n.name, message: n.message, ...(entry && entry.notes >= 2 ? { talkedBefore: true } : {}) }
   }
   return [...t.visitorNotes.filter((n) => n.status === 'found').slice(0, MAX_SHOWN_FOUND).map(line), ...t.visitorNotes.filter((n) => n.status === 'kept').slice(-MAX_SHOWN_KEPT).map(line)]
+}
+
+/** Its projects for a decide call (spec-v4 3.2): building ones with their aims and last 3 captions, finished and dropped ones by name. */
+function projectLines(t: Tick) {
+  const { projects } = readProjects(t.dir)
+  return {
+    building: projects.filter((p) => p.status === 'building').map((p) => ({ id: p.id, name: p.name, aim: p.aim, captions: p.sessions.slice(-3).map((s) => s.caption) })),
+    ended: projects.filter((p) => p.status !== 'building').slice(-10).map((p) => ({ name: p.name, status: p.status })),
+  }
 }
 
 /** The morning plan or a decision: one call, and one more if the body cannot carry out the plan. */
@@ -53,6 +63,7 @@ export async function think(t: Tick): Promise<void> {
     startingPoints: t.startingPoints,
     seenPages: unreadSeen(t.mind.seen ?? [], { not: t.startingPoints.map((p) => p.url), readRecently: t.wander.readRecently }),
     notes: noteLines(t),
+    projects: projectLines(t),
   })
   let asking = user
   // A plan the body cannot carry out gets one more chance, with the reasons, before the body falls back on itself.
