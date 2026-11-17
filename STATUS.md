@@ -2,6 +2,15 @@
 
 Read this first. Update it before every commit and before you stop.
 
+## Spec v4, parallel build (started 17 November)
+
+Plan: [`docs/spec/v4/parallel-plan.md`](docs/spec/v4/parallel-plan.md). One coordinator session (lane 0) on Roman's PC runs four helper agents in worktrees; each lane writes its progress to `docs/spec/v4/lanes/<lane>.md` and the coordinator folds it in here when a slice is merged. Roman's "Decided ahead" rules replace the reviews that used to stop a lane.
+
+- **Checked at the start (17 November, 21:15Z):** `deploy.yml` with tag v0.16.0 succeeded ("up on v0.16.0"), `/health` up with no "push failing" (warnings: 18 decide calls today, 4 plans turned down), Merge's four workflows pin v0.16.0.
+- **Lane 0:** spec v4 and the look committed (this PR); next, the fast-forward command and step 8's run report.
+- **Lane A (steps 1, 2), lane B (steps 3, 4), lane C (steps 5, 6), lane D (look L3, L1, L1b, L2, L4, then step 7):** starting after this PR is merged.
+- **Releases:** R1 when lanes A and C are done, step 3's code and look L3 to L4 are merged and a fast-forward run passes; R2 when step 4 and step 7 are merged and `/health` says `sandbox: ok`.
+
 ## v0.16.0 (audit fixes, release of 17 November)
 
 - **v0.16.0 is the release of the eight audit fixes and the review PR (#176, Roman approved the prompt text).** The four template workflows (`mind.yml`, `pages.yml`, `validate.yml`, `watchdog.yml`) pin it. Steps: release PR, tag on its merge commit, `deploy.yml` with the tag, `/health`, then **one commit to `RomanKuroptev/merge`** that changes only `FORKLING_REF` in those four workflows (nothing in `brain/budget.json`, `mind/config.json`, `self/` or `memory/`). Nothing was added to the allowlist. The first Sunday after it (22 November) runs the first price reset.

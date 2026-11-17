@@ -1,0 +1,391 @@
+diff --git a/apps/viewer/package.json b/apps/viewer/package.json
+index 1c7ef35..83c068c 100644
+--- a/apps/viewer/package.json
++++ b/apps/viewer/package.json
+@@ -15,6 +15,7 @@
+     "@forkling/species-cat": "workspace:*",
+     "@react-three/drei": "^10.7.9",
+     "@react-three/fiber": "^9.8.2",
++    "@react-three/postprocessing": "^3.2.2",
+     "@react-three/rapier": "^2.2.0",
+     "ecctrl": "^2.0.2",
+     "leva": "^0.10.1",
+diff --git a/apps/viewer/src/App.tsx b/apps/viewer/src/App.tsx
+index acadc5e..0b9bb44 100644
+--- a/apps/viewer/src/App.tsx
++++ b/apps/viewer/src/App.tsx
+@@ -2,6 +2,7 @@ import { KeyboardControls, Stats, useProgress, type KeyboardControlsEntry } from
+ import { Canvas } from '@react-three/fiber'
+ import { Physics } from '@react-three/rapier'
+ import { Suspense } from 'react'
++import { Bloom, EffectComposer, Scanline, Vignette } from '@react-three/postprocessing'
+ import { debugEnabled } from './debugEnabled.ts'
+ import { DebugOverlay } from './forkling/DebugOverlay.tsx'
+ import { Forkling } from './forkling/Forkling.tsx'
+@@ -44,7 +45,7 @@ export function App() {
+   return (
+     <>
+       <KeyboardControls map={keyboardMap}>
+-        <Canvas shadows="percentage" dpr={touchUi ? [1, 1.25] : [1, 1.5]} camera={{ fov: 55, near: 0.1, far: 400 }}>
++        <Canvas flat shadows="percentage" dpr={touchUi ? [1, 1.25] : [1, 1.5]} camera={{ fov: 55, near: 0.1, far: 400 }}>
+           <Suspense fallback={null}>
+             <Environment />
+             <Physics debug={physicsDebug}>
+@@ -57,6 +58,11 @@ export function App() {
+               <Player />
+             </Physics>
+           </Suspense>
++          <EffectComposer>
++            <Bloom intensity={0.45} luminanceThreshold={0.9} luminanceSmoothing={0.2} mipmapBlur />
++            <Scanline density={1.6} opacity={0.035} />
++            <Vignette offset={0.25} darkness={0.5} />
++          </EffectComposer>
+           {debug && <Stats />}
+         </Canvas>
+       </KeyboardControls>
+diff --git a/apps/viewer/src/player/Player.tsx b/apps/viewer/src/player/Player.tsx
+index 885297e..95b07a9 100644
+--- a/apps/viewer/src/player/Player.tsx
++++ b/apps/viewer/src/player/Player.tsx
+@@ -19,6 +19,7 @@ const CAPSULE_HALF_HEIGHT = 0.45
+ const EYE_OFFSET = 0.5
+ 
+ /** `?clip=Sit` pins the forkling in front of the visitor, so this camera frames it from the side instead. */
++const fpMode = new URLSearchParams(location.search).has('fp')
+ const clipMode = new URLSearchParams(location.search).has('clip')
+ 
+ /** The visitor: a simple capsule avatar driven by ecctrl, with an orbiting follow camera. */
+@@ -96,6 +97,10 @@ export function Player() {
+     shown.current = next
+     state.camera.position.set(next[0], next[1], next[2])
+     state.camera.lookAt(target)
++    if (fpMode) {
++      state.camera.position.set(p.x, p.y + 1.1, p.z)
++      state.camera.lookAt(p.x + Math.sin(spawn.yaw) * 10, p.y + 1.9, p.z + Math.cos(spawn.yaw) * 10)
++    }
+   })
+ 
+   return (
+@@ -119,12 +124,12 @@ export function Player() {
+         jumpVel={6.5}
+         enableToggleRun={false}
+       >
+-        <mesh castShadow>
++        <mesh castShadow visible={!fpMode}>
+           <capsuleGeometry args={[CAPSULE_RADIUS, CAPSULE_HALF_HEIGHT * 2, 4, 8]} />
+           <meshStandardMaterial color="#f2a65a" flatShading />
+         </mesh>
+         {/* A little visor so you can tell which way the visitor faces. */}
+-        <mesh position={[0, CAPSULE_HALF_HEIGHT * 0.8, CAPSULE_RADIUS * 0.85]} castShadow>
++        <mesh position={[0, CAPSULE_HALF_HEIGHT * 0.8, CAPSULE_RADIUS * 0.85]} castShadow visible={!fpMode}>
+           <boxGeometry args={[0.32, 0.12, 0.12]} />
+           <meshStandardMaterial color="#2d3a4a" />
+         </mesh>
+diff --git a/apps/viewer/src/world/Environment.tsx b/apps/viewer/src/world/Environment.tsx
+index b0e731e..202c800 100644
+--- a/apps/viewer/src/world/Environment.tsx
++++ b/apps/viewer/src/world/Environment.tsx
+@@ -1,80 +1,127 @@
+ import { sunDirection } from '@forkling/sim'
+-import { Sky } from '@react-three/drei'
+ import { useFrame, useThree } from '@react-three/fiber'
+ import { useLayoutEffect, useMemo, useRef } from 'react'
+ import * as THREE from 'three'
+ import { touchUi } from '../touch.ts'
+ import { useWorld } from './WorldContext.tsx'
+ 
+-const DAY = new THREE.Color('#bcd7e6')
+-const DUSK = new THREE.Color('#e9a77c')
+-const NIGHT = new THREE.Color('#1a2c52')
+-const SUN_LOW = new THREE.Color('#ffb27a')
+-const SUN_HIGH = new THREE.Color('#fff3dc')
+-const SKY_DAY = new THREE.Color('#dff1ff')
+-const SKY_NIGHT = new THREE.Color('#6479b8')
+-const GROUND_DAY = new THREE.Color('#6b8f4e')
+-const GROUND_NIGHT = new THREE.Color('#2c4234')
+-
+ const smoothstep = (e0: number, e1: number, x: number) => {
+   const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)))
+   return t * t * (3 - 2 * t)
+ }
+ 
+-/** Sky, fog and lights driven by the time of day: the sun crosses the sky, and nights are dim and moonlit. */
++const skyVertex = /* glsl */ `
++  varying vec3 vDir;
++  void main() {
++    vDir = normalize(position);
++    vec4 p = projectionMatrix * mat4(mat3(modelViewMatrix)) * vec4(position, 1.0);
++    gl_Position = p.xyww;
++  }
++`
++const skyFragment = /* glsl */ `
++  uniform vec3 uSun;
++  uniform float uNight;
++  varying vec3 vDir;
++  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
++  void main() {
++    vec3 d = normalize(vDir);
++    float h = d.y;
++    // Day: deep purple, hot pink, peach at the horizon. Night: near black, purple, a thin pink line.
++    vec3 top = mix(vec3(0.17, 0.04, 0.37), vec3(0.02, 0.008, 0.10), uNight);
++    vec3 mid = mix(vec3(1.0, 0.25, 0.64), vec3(0.17, 0.04, 0.37), uNight);
++    vec3 low = mix(vec3(1.0, 0.70, 0.42), vec3(0.55, 0.12, 1.0), uNight);
++    vec3 c = mix(low, mid, smoothstep(0.0, 0.10, h));
++    c = mix(c, mix(vec3(0.55, 0.12, 1.0), top, uNight), smoothstep(0.08, 0.26, h));
++    c = mix(c, top, smoothstep(0.22, 0.5, h));
++    // Below the horizon: the deep ground colour.
++    c = mix(vec3(0.07, 0.016, 0.18), c, smoothstep(-0.02, 0.0, h));
++    // Stars at night.
++    vec2 g = floor(d.xz / max(0.15, d.y + 0.3) * 220.0);
++    float star = step(0.996, hash(g)) * smoothstep(0.05, 0.3, h) * uNight;
++    c += vec3(star);
++    // The striped sun, always big and low, on the side the real sun is.
++    vec3 s = normalize(vec3(uSun.x, 0.0, uSun.z)); s = normalize(vec3(s.x, 0.13, s.z));
++    float ang = acos(clamp(dot(d, s), -1.0, 1.0));
++    float R = 0.24;
++    float disc = 1.0 - smoothstep(R - 0.004, R, ang);
++    float y = (d.y - s.y) / R;
++    float gap = 0.22 + 0.5 * clamp(0.15 - y, 0.0, 1.0);
++    float stripe = y > 0.15 ? 1.0 : step(gap, fract((0.15 - y) * 4.0));
++    vec3 sunCol = mix(vec3(1.0, 0.31, 0.60), vec3(1.0, 0.95, 0.48), smoothstep(-0.9, 0.9, y));
++    float show = disc * stripe * step(0.0, h) * (1.0 - uNight);
++    c = mix(c, sunCol, show);
++    gl_FragColor = vec4(c, 1.0);
++    #include <colorspace_fragment>
++  }
++`
++const gridVertex = /* glsl */ `
++  varying vec3 vWorld;
++  void main() { vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }
++`
++const gridFragment = /* glsl */ `
++  uniform float uNight;
++  varying vec3 vWorld;
++  void main() {
++    vec2 p = vWorld.xz / 8.0;
++    vec2 w = fwidth(p);
++    vec2 a = abs(fract(p - 0.5) - 0.5) / max(w, vec2(0.0001));
++    float line = 1.0 - min(min(a.x, a.y), 1.0);
++    float fade = 1.0 - smoothstep(120.0, 900.0, length(vWorld.xz - cameraPosition.xz));
++    vec3 base = vec3(0.07, 0.016, 0.18);
++    vec3 c = mix(base, vec3(1.0, 0.25, 0.82) * 1.3, line * fade);
++    gl_FragColor = vec4(c, 1.0);
++    #include <colorspace_fragment>
++  }
++`
++
++/** Sky, grid, fog and lights in the MergeOS look, driven by the time of day. */
+ export function Environment() {
+   const { scene } = useThree()
+   const { clock } = useWorld()
+-  const sky = useRef<THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>>(null)
+   const sun = useRef<THREE.DirectionalLight>(null)
+-  const moon = useRef<THREE.DirectionalLight>(null)
++  const rim = useRef<THREE.DirectionalLight>(null)
+   const hemi = useRef<THREE.HemisphereLight>(null)
+-  const fog = useMemo(() => new THREE.Fog(DAY, 40, 160), [])
+-  const background = useMemo(() => new THREE.Color(DAY), [])
++  const fog = useMemo(() => new THREE.Fog('#ff7ab8', 60, 260), [])
++  const sky = useMemo(() => new THREE.ShaderMaterial({ vertexShader: skyVertex, fragmentShader: skyFragment, side: THREE.BackSide, depthWrite: false, fog: false, uniforms: { uSun: { value: new THREE.Vector3(0, 0.2, -1) }, uNight: { value: 0 } } }), [])
++  const grid = useMemo(() => new THREE.ShaderMaterial({ vertexShader: gridVertex, fragmentShader: gridFragment, fog: false, uniforms: { uNight: { value: 0 } } }), [])
+ 
+   useLayoutEffect(() => {
+     scene.fog = fog
+-    scene.background = background
+     return () => {
+       scene.fog = null
+-      scene.background = null
+     }
+-  }, [scene, fog, background])
++  }, [scene, fog])
+ 
+   useFrame(() => {
+     const dir = sunDirection(clock.hour())
+-    const elevation = dir[1]
+-    const day = smoothstep(0.02, 0.3, elevation)
+-
+-    // Horizon colour: night, then a warm dusk, then day.
+-    background.copy(NIGHT).lerp(DUSK, smoothstep(-0.12, 0.04, elevation)).lerp(DAY, smoothstep(0.04, 0.4, elevation))
+-    fog.color.copy(background)
+-
+-    if (sky.current) {
+-      sky.current.visible = elevation > -0.03
+-      sky.current.material.uniforms.sunPosition!.value.set(dir[0], dir[1], dir[2])
+-    }
++    const night = 1 - smoothstep(0.02, 0.3, dir[1])
++    sky.uniforms.uSun!.value.set(dir[0], dir[1], dir[2])
++    sky.uniforms.uNight!.value = night
++    fog.color.set('#ff7ab8').lerp(new THREE.Color('#3a1280'), night)
+     if (sun.current) {
+-      sun.current.position.set(dir[0] * 80, Math.max(dir[1], 0.05) * 80, dir[2] * 80)
+-      sun.current.intensity = 2.2 * day
+-      sun.current.color.copy(SUN_LOW).lerp(SUN_HIGH, smoothstep(0.05, 0.5, elevation))
++      sun.current.position.set(dir[0] * 80, Math.max(dir[1], 0.25) * 80, dir[2] * 80)
++      sun.current.intensity = 1.5 * (1 - night) + 0.35 * night
++      sun.current.color.set('#fff0f8').lerp(new THREE.Color('#9db4ff'), night)
+     }
+-    if (moon.current) moon.current.intensity = 1.1 * (1 - day)
++    if (rim.current) rim.current.intensity = 0.9 * (1 - night) + 0.5 * night
+     if (hemi.current) {
+-      hemi.current.intensity = 0.95 + 0.25 * day
+-      hemi.current.color.copy(SKY_NIGHT).lerp(SKY_DAY, day)
+-      hemi.current.groundColor.copy(GROUND_NIGHT).lerp(GROUND_DAY, day)
++      hemi.current.intensity = 1.9 - 1.0 * night
++      hemi.current.color.set('#ffc0f0').lerp(new THREE.Color('#8a7bff'), night)
+     }
+   })
+ 
+   return (
+     <>
+-      <Sky ref={sky as never} turbidity={4} rayleigh={1.2} mieCoefficient={0.004} />
+-      <hemisphereLight ref={hemi} args={['#dff1ff', '#6b8f4e', 1.1]} />
++      <mesh material={sky} frustumCulled={false} renderOrder={-10}>
++        <sphereGeometry args={[1, 32, 16]} />
++      </mesh>
++      <mesh material={grid} rotation={[-Math.PI / 2, 0, 0]} position={[0, -9, 0]}>
++        <planeGeometry args={[4000, 4000]} />
++      </mesh>
++      <hemisphereLight ref={hemi} args={['#ffd0f4', '#b48cff', 1.9]} />
+       <directionalLight
+         ref={sun}
+-        intensity={2.2}
+-        color="#fff3dc"
++        intensity={2}
+         castShadow
+         shadow-mapSize={touchUi ? [1024, 1024] : [2048, 2048]}
+         shadow-camera-left={-55}
+@@ -86,7 +133,7 @@ export function Environment() {
+         shadow-bias={-0.0005}
+         shadow-normalBias={0.04}
+       />
+-      <directionalLight ref={moon} position={[-30, 50, -20]} intensity={0} color="#9db4ff" />
++      <directionalLight ref={rim} position={[40, 20, -30]} intensity={0.9} color="#01cdfe" />
+     </>
+   )
+ }
+diff --git a/apps/viewer/src/world/Land.tsx b/apps/viewer/src/world/Land.tsx
+index 043ae4e..e952daa 100644
+--- a/apps/viewer/src/world/Land.tsx
++++ b/apps/viewer/src/world/Land.tsx
+@@ -5,9 +5,28 @@ import * as THREE from 'three'
+ import { landMesh, visibleChunks } from './landGeometry.ts'
+ import { useWorld } from './WorldContext.tsx'
+ 
+-const GRASS = new THREE.Color('#86b95c')
+-const DARK_GRASS = new THREE.Color('#5f9a46')
+-const MEADOW = new THREE.Color('#a3c46a')
++const GRASS = new THREE.Color('#7fe3d8')
++const DARK_GRASS = new THREE.Color('#5fd0e8')
++const MEADOW = new THREE.Color('#a6f0df')
++/** Faint grid lines on the ground itself, every 4 meters, fading with distance. */
++function gridOnLand(shader: { vertexShader: string; fragmentShader: string }) {
++  shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGridPos;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvGridPos = (modelMatrix * vec4(position, 1.0)).xyz;')
++  shader.fragmentShader = shader.fragmentShader
++    .replace('#include <common>', '#include <common>\nvarying vec3 vGridPos;')
++    .replace(
++      '#include <color_fragment>',
++      `#include <color_fragment>
++      {
++        vec2 gp = vGridPos.xz / 4.0;
++        vec2 gw = fwidth(gp);
++        vec2 ga = abs(fract(gp - 0.5) - 0.5) / max(gw, vec2(0.0001));
++        float gl = 1.0 - min(min(ga.x, ga.y) / 1.5, 1.0);
++        float gf = 1.0 - smoothstep(40.0, 220.0, length(vGridPos.xz - cameraPosition.xz));
++        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.42, 0.86), gl * gf * 0.75);
++      }`,
++    )
++}
++
+ /** Squares of 2 meters: gentle terrain, and few enough triangles for a world of 64 places. */
+ const SEGMENTS = 16
+ 
+@@ -60,7 +79,7 @@ export function Land() {
+     <RigidBody type="fixed" colliders={false}>
+       <TrimeshCollider args={[vertices, indices]} />
+       <mesh geometry={geometry} receiveShadow>
+-        <meshStandardMaterial vertexColors flatShading roughness={0.95} />
++        <meshStandardMaterial vertexColors flatShading roughness={0.55} metalness={0.05} onBeforeCompile={gridOnLand} />
+       </mesh>
+     </RigidBody>
+   )
+diff --git a/apps/viewer/src/world/Paths.tsx b/apps/viewer/src/world/Paths.tsx
+index af4cff8..94c3a01 100644
+--- a/apps/viewer/src/world/Paths.tsx
++++ b/apps/viewer/src/world/Paths.tsx
+@@ -52,7 +52,7 @@ export function Paths() {
+ 
+   return (
+     <mesh geometry={geometry} receiveShadow>
+-      <meshStandardMaterial ref={material} color="#c9b588" emissive="#c9b588" emissiveIntensity={0} roughness={1} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
++      <meshStandardMaterial ref={material} color="#ffd6f1" emissive="#ff9ad8" emissiveIntensity={0} roughness={1} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
+     </mesh>
+   )
+ }
+diff --git a/apps/viewer/src/world/Places.tsx b/apps/viewer/src/world/Places.tsx
+index 473f731..f954bf3 100644
+--- a/apps/viewer/src/world/Places.tsx
++++ b/apps/viewer/src/world/Places.tsx
+@@ -33,7 +33,7 @@ const nightUniform = { value: 0 }
+ 
+ /** A matte standard material that adds a warm glow to the instances marked to glow (a window's glass, a lamp that is on), at night. */
+ function glowMaterial(): THREE.MeshStandardMaterial {
+-  const material = new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.9 })
++  const material = new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.45, metalness: 0.05 })
+   material.onBeforeCompile = (shader) => {
+     shader.uniforms.uNight = nightUniform
+     shader.vertexShader = shader.vertexShader
+@@ -42,7 +42,7 @@ function glowMaterial(): THREE.MeshStandardMaterial {
+     // The warm glow is added to the light the surface gives off, so it shows in the dark and is lost in daylight.
+     shader.fragmentShader = shader.fragmentShader
+       .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;')
+-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(1.0, 0.78, 0.4) * vGlow * uNight * 1.4;')
++      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * vGlow * (0.9 + uNight * 1.6);')
+   }
+   return material
+ }
+diff --git a/apps/viewer/src/world/mistGeometry.ts b/apps/viewer/src/world/mistGeometry.ts
+index 678a142..b652667 100644
+--- a/apps/viewer/src/world/mistGeometry.ts
++++ b/apps/viewer/src/world/mistGeometry.ts
+@@ -74,6 +74,6 @@ const smoothstep = (e0: number, e1: number, x: number) => {
+  */
+ export function mistColor(fog: string): string {
+   const day = smoothstep(0.05, 0.5, luminance(fog))
+-  const target = mix('#cfdcf0', '#ffffff', day)
++  const target = mix('#b48cff', '#ffd6f1', day)
+   return mix(fog, target, 0.75 - 0.4 * day)
+ }
+diff --git a/apps/viewer/src/world/modelStyle.ts b/apps/viewer/src/world/modelStyle.ts
+index 5480a1a..f9455b4 100644
+--- a/apps/viewer/src/world/modelStyle.ts
++++ b/apps/viewer/src/world/modelStyle.ts
+@@ -5,13 +5,13 @@ import * as THREE from 'three'
+  * colours that render black without an environment map, so every material is restyled to this.
+  */
+ const PALETTE: Record<string, string> = {
+-  woodBark: '#7a5636',
+-  woodBarkDark: '#6a4a2f',
+-  leafsGreen: '#6fa94a',
+-  leafsDark: '#3f7d4a',
+-  dirt: '#9a958b',
+-  grass: '#8aa37a',
+-  _defaultMat: '#8a867d',
++  woodBark: '#8f5bff',
++  woodBarkDark: '#7a4cf0',
++  leafsGreen: '#ff71ce',
++  leafsDark: '#d94fd0',
++  dirt: '#d8d8ff',
++  grass: '#7fe3d8',
++  _defaultMat: '#d8d8ff',
+ }
+ 
+ /** A matte copy of a loaded material in the palette. The loaded material is left untouched. */
+@@ -20,7 +20,7 @@ export function restyleMaterial(source: THREE.Material): THREE.MeshStandardMater
+   const material = new THREE.MeshStandardMaterial({
+     color: PALETTE[source.name] ?? base.color ?? '#ffffff',
+     metalness: 0,
+-    roughness: 0.9,
++    roughness: 0.5,
+     flatShading: true,
+   })
+   material.name = source.name
