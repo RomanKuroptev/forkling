@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CONSTRAINTS, drawConstraint } from '../src/prompts/constraints.ts'
+import { recentDraws } from '../src/builds/draw.ts'
 
 describe('the constraint list (spec 12.4, item 4)', () => {
   it('has about 60 rules, each different, each short enough to store with a work', () => {
@@ -46,5 +47,36 @@ describe('drawConstraint (seeded, never Math.random)', () => {
       counts.set(c, (counts.get(c) ?? 0) + 1)
     }
     for (const count of counts.values()) expect(count).toBeLessThan((n / CONSTRAINTS.length) * 4)
+  })
+})
+
+describe('drawConstraint never offers the one just offered (audit 17 Nov)', () => {
+  it('never returns the last constraint, over many keys, and is still the same for the same seed, key and last', () => {
+    const last = CONSTRAINTS[7]!
+    for (let i = 0; i < 300; i++) expect(drawConstraint(5, `k${i}`, last)).not.toBe(last)
+    expect(drawConstraint(5, 'k1', last)).toBe(drawConstraint(5, 'k1', last))
+  })
+  it('draws as before when there is no last one, or it is not one of the rules', () => {
+    for (let i = 0; i < 20; i++) {
+      expect(drawConstraint(5, `k${i}`)).toBe(drawConstraint(5, `k${i}`, undefined))
+      expect(drawConstraint(5, `k${i}`, 'not a rule')).toBe(drawConstraint(5, `k${i}`))
+    }
+  })
+})
+
+describe('recentDraws (what the last works were offered)', () => {
+  const NOW = Date.parse('2026-11-17T12:00:00Z')
+  const work = (daysAgo: number, collision: [string, string] | null, text: string | null) => ({
+    made: new Date(NOW - daysAgo * 86_400_000).toISOString(),
+    collision,
+    constraint: text ? { text, refused: false, reason: null } : null,
+  })
+  it('lists the souvenirs used in a collision in the last 7 days, and the constraint of the newest work', () => {
+    const r = recentDraws([work(9, ['old-1', 'old-2'], 'Use only two colours.'), work(5, ['a', 'b'], 'Make it look handmade.'), work(1, ['c', 'd'], 'Use no words at all.'), work(0.5, null, null)], NOW)
+    expect(r.usedIds.sort()).toEqual(['a', 'b', 'c', 'd'])
+    expect(r.lastConstraint).toBe('Use no words at all.')
+  })
+  it('has nothing when there are no works', () => {
+    expect(recentDraws([], NOW)).toEqual({ usedIds: [], lastConstraint: undefined })
   })
 })

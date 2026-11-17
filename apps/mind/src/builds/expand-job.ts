@@ -73,7 +73,7 @@ export function createExpandHandler(o: ExpandHandlerOptions): BuildHandler {
       .map((s) => ({ id: s.id, kind: s.kind, content: s.content, why: s.why }))
 
     const seed = (readJson(o.dir, 'forkling.json') as { seed?: number } | null)?.seed ?? 0
-    const draw = drawForBuild(o.dir, { seed, key: `expand:${job.id}`, interests })
+    const draw = drawForBuild(o.dir, { seed, key: `expand:${job.id}`, interests, nowMs })
     const user = buildExpandUser({
       place,
       kit,
