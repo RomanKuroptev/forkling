@@ -107,7 +107,7 @@ export function writeWorld(t: Tick): TickResult {
     for (const n of t.noteUpdates) if (writeJson(dir, `notes/${n.id}.json`, n)) written.push(`notes/${n.id}.json`)
     if (t.selfRequest) {
       const request = `self/requests/${t.selfRequest.date}.md`
-      if (writeText(dir, request, formatSelfRequest({ body: t.selfRequest.body }))) written.push(request)
+      if (writeText(dir, request, formatSelfRequest({ body: t.selfRequest.body, kind: t.selfRequest.kind, title: t.selfRequest.title, status: 'open' }))) written.push(request)
     }
     if (t.pageWrite) {
       const body = `${t.pageWrite.text}\n`

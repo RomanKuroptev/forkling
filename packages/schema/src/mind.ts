@@ -165,6 +165,8 @@ export const MindState = z.object({
   /** The notes found and not yet shown to a decide call, and when the `note` trigger last fired: at most once every 30 minutes (spec 2.3, 10.1). */
   notesWaiting: z.array(z.string().max(60)).max(20).optional(),
   lastNoteTriggerAt: Timestamp.optional(),
+  /** Spec v4 8: the status of each request file (by date) at the last look, so a change Roman made is one stream event. */
+  requestStatuses: z.record(z.string().max(10), z.string().max(10)).optional(),
   /** Replies (answers, declines and keeps) made on `date`, for the 5 a day (spec 9.8). */
   replies: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   lastWeeklyDate: z.iso.date().optional(),

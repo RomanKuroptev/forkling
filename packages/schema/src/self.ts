@@ -96,9 +96,20 @@ export type NotesHidden = z.infer<typeof NotesHidden>
  * `self/requests/<date>.md` (spec 9.5): the one optional request Merge makes to Roman in the weekly review, up to 120 words in its
  * own voice. Nothing changes because of it; Roman answers with a line, which Merge reads as data at the next review.
  */
+export const SelfRequestKind = z.enum(['tool', 'setting', 'other'])
+export type SelfRequestKind = z.infer<typeof SelfRequestKind>
+export const SelfRequestStatus = z.enum(['open', 'yes', 'no', 'later', 'built'])
+export type SelfRequestStatus = z.infer<typeof SelfRequestStatus>
+
 export const SelfRequest = z
   .object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'like 2026-11-22'),
+    /** Spec v4 8: a tool Merge wishes it had, a number or rule it finds wrong, or something else. An old file reads as `other`. */
+    kind: SelfRequestKind.default('other'),
+    /** Up to 60 characters; empty for an old file. */
+    title: z.string().max(60).default(''),
+    /** Roman sets it in the file's front matter. */
+    status: SelfRequestStatus.default('open'),
     body: z.string().min(1).max(1200),
     answer: z.string().min(1).max(800).nullable().default(null),
   })
@@ -107,17 +118,38 @@ export const SelfRequest = z
 export type SelfRequest = z.infer<typeof SelfRequest>
 
 /** The request as a file: Merge's words, and if Roman answered, a line that starts `Roman:` (spec 9.5). */
-export function formatSelfRequest(r: { body: string; answer?: string | null }): string {
-  return `${r.body.trim()}\n${r.answer ? `\nRoman: ${r.answer.trim()}\n` : ''}`
+export function formatSelfRequest(r: { body: string; answer?: string | null; kind?: SelfRequestKind; title?: string; status?: SelfRequestStatus }): string {
+  const front = r.kind || r.title || r.status ? `---\nkind: ${r.kind ?? 'other'}\ntitle: ${(r.title ?? '').replace(/[\r\n]+/g, ' ').trim()}\nstatus: ${r.status ?? 'open'}\n---\n` : ''
+  return `${front}${r.body.trim()}\n${r.answer ? `\nRoman: ${r.answer.trim()}\n` : ''}`
+}
+
+const ANSWER_WORDS = 80
+/** Roman's answer as the next review sees it: up to 80 words, and whether it had to be cut (the tick tells Roman). */
+export function requestAnswerForPrompt(answer: string): { text: string; cut: boolean } {
+  const parts = answer.trim().split(/\s+/).filter(Boolean)
+  return parts.length > ANSWER_WORDS ? { text: parts.slice(0, ANSWER_WORDS).join(' '), cut: true } : { text: parts.join(' '), cut: false }
 }
 
 /** `self/requests/<date>.md` read back: everything before the line that starts `Roman:` is the request, what follows is his answer. A file that is not a request is null. */
 export function parseSelfRequest(date: string, text: string): SelfRequest | null {
-  const lines = text.split(/\r?\n/)
+  let lines = text.split(/\r?\n/)
+  const front: Record<string, string> = {}
+  if (lines[0]?.trim() === '---') {
+    const end = lines.findIndex((l, n) => n > 0 && l.trim() === '---')
+    if (end > 0) {
+      for (const l of lines.slice(1, end)) {
+        const m = /^([a-z]+):\s*(.*)$/.exec(l.trim())
+        if (m) front[m[1]!] = m[2]!
+      }
+      lines = lines.slice(end + 1)
+    }
+  }
+  const kind = SelfRequestKind.safeParse(front.kind)
+  const status = SelfRequestStatus.safeParse(front.status)
   const at = lines.findIndex((l) => l.startsWith('Roman:'))
   const body = (at < 0 ? lines : lines.slice(0, at)).join('\n').trim()
   const answer = at < 0 ? null : ([lines[at]!.slice('Roman:'.length), ...lines.slice(at + 1)].join('\n').trim() || null)
-  const parsed = SelfRequest.safeParse({ date, body, answer })
+  const parsed = SelfRequest.safeParse({ date, body, answer, kind: kind.success ? kind.data : 'other', title: (front.title ?? '').slice(0, 60), status: status.success ? status.data : 'open' })
   return parsed.success ? parsed.data : null
 }
 

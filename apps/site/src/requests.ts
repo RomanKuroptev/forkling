@@ -130,8 +130,9 @@ export function renderRequests(i: RequestsInput): void {
     ].join('')
   }
 
+  const SELF_STATUS_WORDS: Record<SelfRequest['status'], string> = { open: 'No answer yet.', yes: 'Roman said yes.', no: 'Roman said no.', later: 'Roman said later.', built: 'Roman built it.' }
   const ownItem = (r: SelfRequest) =>
-    `<li class="request" data-self-request="${esc(r.date)}"><strong>${esc(r.date)}</strong>${paragraphs(r.body)}<p><em>${r.answer ? `Roman answered: ${esc(r.answer)}` : 'No answer yet.'}</em></p></li>`
+    `<li class="request" data-self-request="${esc(r.date)}" data-kind="${esc(r.kind)}" data-status="${esc(r.status)}"><strong>${esc(r.title || r.date)}</strong> <span class="quiet">${esc(r.kind)}, asked ${esc(r.date)}</span>${paragraphs(r.body)}<p><em>${esc(SELF_STATUS_WORDS[r.status])}</em>${r.answer ? ` Roman answered: ${esc(r.answer)}` : ''}</p></li>`
 
   const waiting = listed.filter(isOpenRequest).sort((a, b) => Number(b.status === 'building') - Number(a.status === 'building'))
   const answered = listed.filter((r) => !isOpenRequest(r)).reverse()
@@ -151,7 +152,7 @@ export function renderRequests(i: RequestsInput): void {
       ...(own.length > 0
         ? [
             '<h2>Asked about its own setup</h2>',
-            '<p class="quiet">Once a week Merge may ask Roman about its own setup: one change to a limit, a site, a part the kit lacks or a rule. Nothing changes because of a request. Roman may answer, and Merge reads his answer the next week.</p>',
+            '<p class="quiet">Once a week Merge may ask Roman about its own setup: for something it wishes it could do, or for a number or a rule it finds wrong. Nothing changes because of a request alone, and nothing is promised. Roman sets a status (yes, no, later or built) and may answer, and Merge reads both the next week.</p>',
             `<ul class="requests">${own.map(ownItem).join('')}</ul>`,
           ]
         : []),

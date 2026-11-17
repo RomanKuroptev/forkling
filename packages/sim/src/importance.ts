@@ -14,6 +14,8 @@ const FIXED = {
   buildFailed: 6,
   buildLanded: 5,
   noteFound: 4,
+  /** Roman set the status of a request of Merge's (spec v4 8). */
+  requestAnswered: 6,
   souvenirKept: 3,
   /** An insight from a reflection is stored in the stream with importance 5 so later reflections can build on it. */
   insight: 5,
