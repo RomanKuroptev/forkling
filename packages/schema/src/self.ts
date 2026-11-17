@@ -60,6 +60,10 @@ export const Note = z
     position: NotePosition.nullable().default(null),
     /** Why Merge declined it, up to 80 characters, shown on the board (spec 9.9). */
     declineReason: z.string().min(1).max(80).nullable().default(null),
+    /** Spec v4 7: the id of the thread's first note (a first note's own id). An old note has none and is its own thread. */
+    thread: z.string().min(1).max(60).nullable().optional(),
+    /** The id of the note this one answers (a note of Merge's with a reply), or none for a first note. */
+    replyTo: z.string().min(1).max(60).nullable().optional(),
   })
   .strict()
   .superRefine((n, ctx) => {

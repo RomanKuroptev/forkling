@@ -12,6 +12,21 @@ export const NOTES_SCRIPT = `(function () {
   var messageEl = document.getElementById('note-message')
   var sendEl = document.getElementById('note-send')
   var statusEl = document.getElementById('note-status')
+  var answeringEl = document.getElementById('note-answering')
+  var replyTo = null
+
+  // An "Answer" button under Merge's latest reply in an open thread makes the next note an answer to it.
+  var buttons = document.querySelectorAll ? document.querySelectorAll('[data-answer]') : []
+  for (var b = 0; b < buttons.length; b++) {
+    buttons[b].addEventListener('click', function (event) {
+      replyTo = this.getAttribute('data-answer')
+      if (answeringEl) {
+        answeringEl.textContent = 'You are answering Merge in a thread. Reload the page to leave a new note instead.'
+        answeringEl.hidden = false
+      }
+      if (messageEl.scrollIntoView) messageEl.scrollIntoView()
+    })
+  }
 
   function say(text, ok) {
     statusEl.textContent = text
@@ -35,10 +50,12 @@ export const NOTES_SCRIPT = `(function () {
     if (!check) return say('Please complete the check first.', false)
     sendEl.disabled = true
     say('Sending...', true)
+    var payload = { name: nameEl.value, message: message, placeId: 'home', token: check }
+    if (replyTo) payload.replyTo = replyTo
     fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: nameEl.value, message: message, placeId: 'home', token: check })
+      body: JSON.stringify(payload)
     })
       .then(function (response) {
         return response.json().catch(function () { return {} }).then(function (body) { return { status: response.status, body: body } })
@@ -47,6 +64,8 @@ export const NOTES_SCRIPT = `(function () {
         if (result.status === 202 && result.body && result.body.ok) {
           say('Thank you. Your note is in the mailbox. Merge will find it when it comes by.', true)
           messageEl.value = ''
+          replyTo = null
+          if (answeringEl) answeringEl.hidden = true
         } else {
           say(result.body && typeof result.body.error === 'string' ? result.body.error : 'Something went wrong. Try again in a moment.', false)
         }

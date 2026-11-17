@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Note, NotesHidden, type Place } from '@forkling/schema'
-import { NOTE_DISCLOSURE, noteFate, notesEndpoint, validSiteKey } from '@forkling/sim'
+import { NOTE_DISCLOSURE, noteFate, notesEndpoint, threadNotes, threadOf, threadState, validSiteKey, visibleNotes } from '@forkling/sim'
 
 export { notesEndpoint, validSiteKey }
 import { esc } from './md.ts'
@@ -17,16 +17,18 @@ export function loadNotes(world: string): Note[] {
   } catch {
     hidden = new Set()
   }
-  return readdirSync(folder)
+  const all = readdirSync(folder)
     .filter((f) => f.endsWith('.json'))
     .flatMap((f) => {
       try {
         const parsed = Note.safeParse(JSON.parse(readFileSync(join(folder, f), 'utf8')))
-        return parsed.success && !hidden.has(parsed.data.id) ? [parsed.data] : []
+        return parsed.success ? [parsed.data] : []
       } catch {
         return []
       }
     })
+  // A hidden note hides the rest of its thread too (spec v4 step 5).
+  return visibleNotes(all, { hidden: [...hidden] })
     .sort((a, b) => b.at.localeCompare(a.at) || b.id.localeCompare(a.id))
 }
 
@@ -47,6 +49,8 @@ export interface NotesInput {
   stamp: (iso: string) => string
   /** The zone in words, like `Stockholm time`: said once on the page. */
   zone: string
+  /** The time the page is built at, to tell whether a thread is still open. */
+  nowMs?: number
   add: (rel: string, input: { title: string; active: string; body: string }) => void
 }
 
@@ -54,6 +58,7 @@ const FORM = (m: { endpoint: string; siteKey: string }) =>
   [
     `<form id="note-form" data-endpoint="${esc(m.endpoint)}" autocomplete="off">`,
     '<p><label for="note-name">Your name (optional, up to 40 characters)</label><br><input id="note-name" type="text" maxlength="40"></p>',
+    '<p id="note-answering" class="quiet" hidden></p>',
     '<p><label for="note-message">Your note (up to 500 characters)</label><br><textarea id="note-message" maxlength="500" rows="5" required></textarea></p>',
     `<div class="cf-turnstile" data-sitekey="${esc(m.siteKey)}"></div>`,
     '<p><button id="note-send" type="submit" class="play">Leave the note</button></p>',
@@ -75,8 +80,18 @@ export function renderNotes(i: NotesInput): void {
     if (n.status === 'replied') return `<p><em>${esc(lead)}</em></p><blockquote>${paragraphs(detail ?? '')}</blockquote>`
     return `<p><em>${esc(lead)}</em>${detail ? ` ${esc(detail)}` : ''}</p>`
   }
-  const item = (n: Note) =>
-    `<li class="note" data-note="${esc(n.id)}" data-status="${esc(n.status)}"><p class="quiet"><strong>${esc(n.name || 'A visitor')}</strong> left this on ${esc(i.stamp(n.at))}, at ${esc(placeName(n.placeId))}.</p>${paragraphs(n.message)}${fate(n)}</li>`
+  const nowMs = i.nowMs ?? Date.now()
+  // Threads (spec v4 7): the notes of a thread sit together, oldest first; threads go newest first (a lone note is a thread of one).
+  const threadIds = [...new Set(i.notes.map(threadOf))]
+  const order: Note[] = threadIds.flatMap((id) => threadNotes(i.notes, id))
+  const item = (n: Note) => {
+    const id = threadOf(n)
+    const state = threadState(i.notes, id, nowMs)
+    const newest = state.newestId === n.id
+    const answers = n.replyTo ? ` data-reply-to="${esc(n.replyTo)}"` : ''
+    const foot = !newest || n.status !== 'replied' ? '' : state.open ? (i.mailbox ? `<p><button type="button" class="note-answer-btn" data-answer="${esc(n.id)}">Answer</button></p>` : '') : '<p class="quiet">This thread is closed. Leave a new note above.</p>'
+    return `<li class="note" data-note="${esc(n.id)}" data-thread="${esc(id)}"${answers} data-status="${esc(n.status)}"><p class="quiet"><strong>${esc(n.name || 'A visitor')}</strong> ${n.replyTo ? 'answered' : 'left this'} on ${esc(i.stamp(n.at))}, at ${esc(placeName(n.placeId))}.</p>${paragraphs(n.message)}${fate(n)}${foot}</li>`
+  }
 
   i.add('notes/index.html', {
     title: 'Notes',
@@ -88,7 +103,7 @@ export function renderNotes(i: NotesInput): void {
       i.mailbox ? `${DISCLOSURE}\n${FORM(i.mailbox)}` : '<p><strong>The mailbox is closed for now.</strong> Notes cannot be left at the moment.</p>',
       '<h2>On the board</h2>',
       ...(i.notes.length > 0 ? [`<p class="quiet">Times are ${esc(i.zone)}.</p>`] : []),
-      i.notes.length > 0 ? `<ul class="requests notes">${i.notes.map(item).join('')}</ul>` : '<p class="quiet">No notes have been left yet.</p>',
+      i.notes.length > 0 ? `<ul class="requests notes">${order.map(item).join('')}</ul>` : '<p class="quiet">No notes have been left yet.</p>',
     ].join('\n'),
   })
 }

@@ -1,5 +1,5 @@
 import { Note } from '@forkling/schema'
-import { feedTopic, findReason } from '@forkling/sim'
+import { feedTopic, findReason, threadOf, threadState } from '@forkling/sim'
 import { creativeModel } from '../budget.ts'
 import { clampText } from '../decision.ts'
 import { claimsHuman } from '../honesty.ts'
@@ -59,6 +59,12 @@ export async function replyStep(t: Tick): Promise<void> {
   if (!note) {
     t.notes.push(`reply: there is no note to answer (${step.targetId ?? 'no target'}), so it rested`)
     t.remember.push({ at: t.nowIso, kind: 'event', text: 'There was no note to answer, so I rested.', verb: 'reply', engine: true })
+    return
+  }
+  // Spec v4 7: a thread closes after Merge's 3rd reply. Intake never lets such an answer in, so this is only a plain skip, not a plan check.
+  if (!threadState(t.visitorNotes, threadOf(note), t.nowMs).open) {
+    t.notes.push(`reply: the thread is closed (${note.id}), so it rested`)
+    t.remember.push({ at: t.nowIso, kind: 'event', text: 'That note belongs to a thread that is closed, so I rested.', verb: 'reply', engine: true })
     return
   }
   const recent = t.visitorNotes
