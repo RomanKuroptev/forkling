@@ -1,5 +1,5 @@
-import { connect } from 'node:net'
-import { mkdirSync } from 'node:fs'
+import { fstatSync, mkdirSync } from 'node:fs'
+import { connect, Socket } from 'node:net'
 import { fileURLToPath } from 'node:url'
 import type { Browser, BrowserType, Frame, Page } from 'playwright'
 
@@ -332,15 +332,43 @@ async function serverLaunch(): Promise<Browser> {
   return chromium.launch({ chromiumSandbox: true })
 }
 
-async function readInput(): Promise<string> {
-  const chunks: Buffer[] = []
-  let size = 0
-  for await (const chunk of process.stdin as AsyncIterable<Buffer>) {
-    size += chunk.length
-    if (size > MAX_REQUEST_BYTES) throw new Error('the request is too big')
-    chunks.push(chunk)
+/** Reads one line (a request is one line of JSON) from `input`, up to `MAX_REQUEST_BYTES`. */
+export function readLine(input: NodeJS.ReadableStream): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+    let size = 0
+    const done = (error: Error | null) => {
+      input.removeListener('data', onData)
+      input.removeListener('end', onEnd)
+      input.removeListener('error', onError)
+      if (error) reject(error)
+      else resolve(Buffer.concat(chunks).toString('utf8').split('\n')[0] ?? '')
+    }
+    const onData = (chunk: Buffer | string) => {
+      const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk
+      size += buf.length
+      chunks.push(buf)
+      if (size > MAX_REQUEST_BYTES) done(new Error('the request is too big'))
+      else if (buf.includes(10)) done(null)
+    }
+    const onEnd = () => done(null)
+    const onError = (error: Error) => done(error)
+    input.on('data', onData)
+    input.on('end', onEnd)
+    input.on('error', onError)
+  })
+}
+
+/**
+ * The program's input and output. Under the unit both are the one connection from the socket (`StandardInput=socket`), so it is
+ * opened once as a socket that may be half-closed; run by hand they are the ordinary stdin and stdout.
+ */
+function io(): { input: NodeJS.ReadableStream; write: (text: string) => Promise<void> } {
+  if (fstatSync(0).isSocket()) {
+    const socket = new Socket({ fd: 0, readable: true, writable: true, allowHalfOpen: true })
+    return { input: socket, write: (text) => new Promise((resolve) => socket.end(text, () => resolve())) }
   }
-  return Buffer.concat(chunks).toString('utf8')
+  return { input: process.stdin, write: (text) => new Promise((resolve) => process.stdout.write(text, () => resolve())) }
 }
 
 /** The program on the server: `node runner.ts --browsers <dir> --scratch <dir>`; one request in, one answer out. */
@@ -358,9 +386,10 @@ async function main(argv: string[]): Promise<void> {
   process.env.TMPDIR = tmp
   process.env.PLAYWRIGHT_BROWSERS_PATH = browsers
 
+  const channel = io()
   let answer: unknown
   try {
-    const req = parseRequest(await readInput())
+    const req = parseRequest(await readLine(channel.input))
     if (req.mode === 'probe') answer = await runProbe(req, serverLaunch)
     else {
       const browser = await serverLaunch()
@@ -371,7 +400,7 @@ async function main(argv: string[]): Promise<void> {
   } catch (error) {
     answer = { failed: clean(error instanceof Error ? error.message : String(error), 300) }
   }
-  await new Promise<void>((resolve) => process.stdout.write(`${JSON.stringify(answer)}\n`, () => resolve()))
+  await channel.write(`${JSON.stringify(answer)}\n`)
   process.exit(0)
 }
 

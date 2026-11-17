@@ -18,6 +18,8 @@ export interface HealthResponse {
   lastThoughtAt: string | null
   lastTickAt: string | null
   warnings: string[]
+  /** Spec-v4 step 3: `ok` when the self-test at start passed inside the sandbox unit; `missing` otherwise (and off the server). */
+  sandbox: 'ok' | 'missing'
 }
 
 const readState = (dir: string): MindState | null => {
@@ -30,7 +32,7 @@ const readState = (dir: string): MindState | null => {
 }
 
 /** Read from the world on disk, which the loop keeps current, so it works without reaching into the loop. */
-export function buildHealthResponse(dir: string, nowMs: number): HealthResponse {
+export function buildHealthResponse(dir: string, nowMs: number, sandbox: 'ok' | 'missing' = 'missing'): HealthResponse {
   const forkling = Forkling.parse(JSON.parse(readFileSync(join(dir, 'forkling.json'), 'utf8')))
   const today = localDate(forkling.timezone, nowMs)
   const asleep = isAsleepAt(nowMs, { seed: forkling.seed, timezone: forkling.timezone, lateNight: forkling.lateNight })
@@ -44,5 +46,6 @@ export function buildHealthResponse(dir: string, nowMs: number): HealthResponse 
     lastThoughtAt: readState(dir)?.thought?.lastAt ?? null,
     lastTickAt: health?.lastTick.at ?? null,
     warnings: health?.warnings ?? [],
+    sandbox,
   }
 }
