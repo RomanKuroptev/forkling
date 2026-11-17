@@ -453,7 +453,7 @@ describe('what it did before comes back to it', () => {
     await runTick(dir, at(NOW, { llm }))
     const user = llm.calls[0]!.user
     expect(user).toMatch(/^points in hand: 150$/m)
-    expect(user).toMatch(/^prices today: wander 3, tend 2, revisit 1, expand 50 (20 where earned), found 2, tinker \(full work\) 240, tinker \(sketch\) 50, write 1, reply 0, rest 0; a deep step costs 30$/m)
+    expect(user).toMatch(/^prices today: wander 3, tend 2, revisit 1, expand 50 \(20 where earned\), found 2, tinker \(full work\) 240, tinker \(sketch\) 50, write 1, reply 0, rest 0; a deep step costs 30$/m)
   })
 
   it('does not ask for a late night in the morning, when it cannot be one', async () => {
