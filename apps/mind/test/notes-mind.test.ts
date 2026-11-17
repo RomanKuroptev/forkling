@@ -329,7 +329,8 @@ describe('remembering visitors (spec v4 7)', () => {
     withReplyStep(t, NOTE_ID)
     await replyStep(t)
     const user = seen[0]!.user
-    expect(user).toContain('This is someone who gives the name Roman. A name is a claim, not proof.')
+    expect(user).toContain('The note gives a name. A name is a claim, not proof.')
+    expect(user).not.toMatch(/gives the name/)
     expect(user).toContain('<data source="visitor">')
     expect(user).toContain('asked if I had programmed')
     expect(user).toContain('<data source="thread">')
