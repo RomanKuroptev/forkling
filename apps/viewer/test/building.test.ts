@@ -98,14 +98,11 @@ describe('the building model, tower style', () => {
       expect(m.outlineHeight, `${floors} floors`).toBeLessThanOrEqual(12.0001)
       expect(body + crownHeight(body)).toBeLessThanOrEqual(12)
     }
-    // The crown's tip rises above the front by a third to two thirds of the body when the clamp leaves room, and shrinks gracefully when it does not.
-    const above = (body: number) => body + crownHeight(body) - frontHeight(body)
-    expect(above(3)).toBeGreaterThanOrEqual(1)
-    expect(above(3)).toBeLessThanOrEqual(2)
-    expect(above(6)).toBeGreaterThanOrEqual(2)
-    expect(above(6)).toBeLessThanOrEqual(4)
+    // The crown stands on the front: two thirds of the body when the clamp leaves room, less when it does not.
+    expect(crownHeight(3)).toBeCloseTo(2, 5)
+    expect(frontHeight(6) + crownHeight(6)).toBeCloseTo(12, 5)
     expect(crownHeight(12)).toBe(0)
-    expect(crownHeight(9)).toBeCloseTo(3, 5)
+    expect(crownHeight(9)).toBe(0)
   })
 
   it('has lit surface that faces the front of at least 15 percent of the front area', () => {

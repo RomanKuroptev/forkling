@@ -27,14 +27,20 @@ export const WIDE_BUILDING = 16
 export const NARROW_FRONT = 8
 /** The title bar along the top of the front. */
 export const TITLE_BAR = 1
+/** The glowing band round the body (the hero) is at least this tall. */
+export const RING_HEIGHT = 0.3
+/** The crown is this wide at its foot: steep and narrow. */
+export const CROWN_WIDTH = 3.2
 
 const WALL_THICKNESS = 0.4
 /** How far inside the footprint's edge a wall's middle stands (the body cannot walk on the outer 0.8 m). */
 const INSET = 0.4
 const DOOR_WIDTH = 2
 const DOOR_HEIGHT = 2.2
-/** Each floor of a tower stands this far in from the one below, on every side: it narrows a little as it rises. */
+/** Each floor of a tower stands this far in from the one below, on every side. */
 const TAPER = 0.35
+/** How far the top of every wall leans in, on a floor, in meters: the outline reads as a trapezoid. */
+const LEAN = 0.7
 
 export interface BuildingModel {
   slots: { base: Instance[]; body: Instance[]; front: Instance[]; crown: Instance[]; hero: Instance[]; glow: Instance[] }
@@ -45,6 +51,8 @@ export interface BuildingModel {
   frontGlowArea: number
   /** The highest point of the outline above the ground slab's bottom. */
   outlineHeight: number
+  /** Where the place's name is written on the title bar (the viewer paints the text): its middle, and its size. Null when the front has no bar. */
+  titleBar: { text: string; position: [number, number, number]; width: number; height: number } | null
 }
 
 type Colors = { body: string; accent: string; glow: string; chrome: string; marble: string }
@@ -63,12 +71,11 @@ export function frontHeight(bodyHeight: number): number {
 }
 
 /**
- * How tall the crown stands on the roof, in meters. It is behind the front, so to give the outline its tip must rise above the front by
- * half the body (a third to two thirds); the clamp cuts it to the 12 m limit.
+ * How tall the crown is, in meters: two thirds of the body, standing on top of the front over the door; the clamp cuts it to the
+ * 12 m limit. (So the tip is at the front's height plus this.)
  */
 export function crownHeight(bodyHeight: number): number {
-  const tip = Math.min(MAX_OUTLINE_HEIGHT, frontHeight(bodyHeight) + bodyHeight * 0.5)
-  return Math.max(0, tip - bodyHeight)
+  return Math.max(0, Math.min((bodyHeight * 2) / 3, MAX_OUTLINE_HEIGHT - frontHeight(bodyHeight)))
 }
 
 /** The width of the front: the whole building, or the middle 8 m of one wider than 16 m. */
@@ -86,17 +93,22 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   const bodyH = h * floors
 
   const slots: BuildingModel['slots'] = { base: [], body: [], front: [], crown: [], hero: [], glow: [] }
-  const add = (slot: keyof BuildingModel['slots'], shape: Shape, at: [number, number, number], size: [number, number, number], color: string, glow = false): void => {
-    slots[slot].push({ shape, matrix: compose(at, [0, 0, 0], size), color, ...(glow ? { glow: true } : {}) })
+  const add = (slot: keyof BuildingModel['slots'], shape: Shape, at: [number, number, number], size: [number, number, number], color: string, glow = false, rot: [number, number, number] = [0, 0, 0]): void => {
+    slots[slot].push({ shape, matrix: compose(at, rot, size), color, ...(glow ? { glow: true } : {}) })
   }
 
   // Base: a low marble slab, wider than the footprint, with a thin glowing edge.
   add('base', 'box', [px, baseY + BASE_HEIGHT / 2, pz], [fw + 2 * BASE_REACH, BASE_HEIGHT, fd + 2 * BASE_REACH], c.marble)
   add('base', 'box', [px, baseY + 0.025, pz], [fw + 2 * BASE_REACH + 0.2, 0.05, fd + 2 * BASE_REACH + 0.2], c.glow, true)
 
-  // Body: smooth wall panels on every floor, each floor a little narrower than the one below, with few big glowing windows.
+  // Body: smooth wall panels on every floor, each leaning in a little and each floor a little narrower than the one below, with few
+  // big glowing windows. `dir` is +1 for a wall whose inside is towards +x or +z (back and left), -1 for the front and right.
   let frontWindows = 0
+  const tilt = Math.atan2(LEAN, h)
+  const lean = Math.sin(tilt)
   const taper = (f: number) => Math.min(TAPER * f, Math.min(fw, fd) / 4)
+  const windowTop = h / 2 + WINDOW_SIZE[1] / 2
+  const ringUp = Math.min(h - RING_HEIGHT / 2 - 0.1, windowTop + 0.15 + RING_HEIGHT / 2)
   for (let f = 0; f < floors; f++) {
     const y = baseY + f * h
     const t = taper(f)
@@ -104,54 +116,73 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     const x1 = px + fw / 2 - INSET - t
     const z0 = pz - fd / 2 + INSET + t
     const z1 = pz + fd / 2 - INSET - t
-    const wall = (a: number, b: number, fixed: number, alongZ: boolean, windows: boolean, front = false) => {
+    const wall = (a: number, b: number, fixed: number, alongZ: boolean, dir: 1 | -1, windows: boolean, front = false, gap: 'none' | 'before' | 'after' = 'none') => {
       const length = b - a
       if (length < 0.5) return
       const mid = (a + b) / 2
-      const at = (along: number, up: number): [number, number, number] => (alongZ ? [fixed, y + up, along] : [along, y + up, fixed])
-      const size = (length: number, up: number, thick: number): [number, number, number] => (alongZ ? [thick, up, length] : [length, up, thick])
-      add('body', 'box', at(mid, h / 2), size(length, h, WALL_THICKNESS), c.body)
-      if (f === 0) add('body', 'box', at(mid, 0.125), size(length + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent)
-      if (f === floors - 1) add('body', 'box', at(mid, h - 0.125), size(length + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent)
+      // A wall piece reaches 0.25 m past each end to cover the leaning corners, but never into the door gap.
+      const bodyLen = length + (gap === 'before' ? 0 : 0.25) + (gap === 'after' ? 0 : 0.25)
+      const bodyMid = mid + (gap === 'after' ? -0.125 : gap === 'before' ? 0.125 : 0)
+      /** A point on the wall `up` meters above its foot, `out` meters outward, along the wall at `along`. The wall leans in as it rises. */
+      const at = (along: number, up: number, out = 0): [number, number, number] => {
+        const plane = fixed + dir * up * lean - dir * out
+        return alongZ ? [plane, y + up * Math.cos(tilt), along] : [along, y + up * Math.cos(tilt), plane]
+      }
+      const size = (len: number, up: number, thick: number): [number, number, number] => (alongZ ? [thick, up, len] : [len, up, thick])
+      const rot: [number, number, number] = alongZ ? [0, 0, -dir * tilt] : [dir * tilt, 0, 0]
+      add('body', 'box', at(bodyMid, h / 2), size(bodyLen, h / Math.cos(tilt), WALL_THICKNESS), c.body, false, rot)
+      if (f === 0) add('body', 'box', at(bodyMid, 0.125), size(bodyLen + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent, false, rot)
+      if (f === floors - 1) add('body', 'box', at(bodyMid, h - 0.125), size(bodyLen + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent, false, rot)
+      // The glowing band round the body (the hero), above the windows, on the top floor, on every side.
+      if (f === floors - 1) add('hero', 'box', at(mid, ringUp, WALL_THICKNESS / 2 + 0.15), size(length + 1.1, RING_HEIGHT, 0.3), c.glow, true, rot)
       if (!windows) return
       const n = Math.floor(length / WINDOW_EVERY)
       if (front) frontWindows += n
-      for (let k = 0; k < n; k++) add('glow', 'box', at(a + (length * (k + 0.5)) / n, h / 2), size(WINDOW_SIZE[0], WINDOW_SIZE[1], WALL_THICKNESS + 0.5), c.glow, true)
+      for (let k = 0; k < n; k++) {
+        const along = a + (length * (k + 0.5)) / n
+        const centre = at(along, h / 2)
+        add('glow', 'box', centre, size(WINDOW_SIZE[0], WINDOW_SIZE[1], WALL_THICKNESS + 0.5), c.glow, true)
+      }
     }
-    wall(x0, x1, z0, false, true)
-    wall(z0, z1, x0, true, true)
-    wall(z0, z1, x1, true, true)
+    wall(x0, x1, z0, false, 1, true)
+    wall(z0, z1, x0, true, 1, true)
+    wall(z0, z1, x1, true, -1, true)
     if (f === 0) {
       // The door is in the middle of the front (+z) wall, as wide a gap as the body's own world leaves, with a lintel over it.
-      wall(x0, px - DOOR_HALF, z1, false, true, true)
-      wall(px + DOOR_HALF, x1, z1, false, true, true)
+      wall(x0, px - DOOR_HALF, z1, false, -1, true, true, 'after')
+      wall(px + DOOR_HALF, x1, z1, false, -1, true, true, 'before')
       add('body', 'box', [px, y + DOOR_HEIGHT / 2, z1], [DOOR_WIDTH, DOOR_HEIGHT, 0.3], c.accent)
+      // The band goes on over the door too, above it.
+      if (floors === 1) add('hero', 'box', [px, y + ringUp * Math.cos(tilt), z1 - ringUp * lean + WALL_THICKNESS / 2 + 0.15], [DOOR_HALF * 2 + 1, RING_HEIGHT, 0.3], c.glow, true, [-tilt, 0, 0])
       const lintel = h - DOOR_HEIGHT
-      if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1], [DOOR_HALF * 2, lintel, WALL_THICKNESS], c.body)
+      if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1 - lean * (DOOR_HEIGHT + lintel / 2)], [DOOR_HALF * 2, lintel, WALL_THICKNESS], c.body)
       // A closed place has its door boarded: chrome planks nailed across the gap, a little crooked.
       if (place.state.closed) {
         const planks: [number, number][] = [[0.55, 0.05], [1.1, -0.06], [1.65, 0.04]]
-        for (const [up, tilt] of planks) slots.body.push({ shape: 'box', matrix: compose([px, y + up, z1 + 0.22], [0, 0, tilt], [DOOR_HALF * 2 + 0.5, 0.26, 0.16]), color: c.chrome })
+        for (const [up, tiltPlank] of planks) slots.body.push({ shape: 'box', matrix: compose([px, y + up, z1 + 0.22], [0, 0, tiltPlank], [DOOR_HALF * 2 + 0.5, 0.26, 0.16]), color: c.chrome })
       }
     } else {
-      wall(x0, x1, z1, false, false, true)
+      wall(x0, x1, z1, false, -1, false, true)
     }
   }
   // A flat chrome roof over the top floor.
   const top = taper(floors - 1)
-  add('body', 'box', [px, baseY + bodyH - 0.1, pz], [fw - 2 * INSET - 2 * top + WALL_THICKNESS, 0.2, fd - 2 * INSET - 2 * top + WALL_THICKNESS], c.chrome)
+  add('body', 'box', [px, baseY + bodyH - 0.1, pz], [fw - 2 * INSET - 2 * top - 0.2, 0.2, fd - 2 * INSET - 2 * top - 0.2], c.chrome)
 
   // Front: the door wall as a window on the desktop. It rises above the roof as a false front: a title bar in the accent colour with
-  // three small buttons, and a glowing screen below it.
+  // three small buttons and the place's name, and a glowing screen below it.
   const fh = frontHeight(bodyH)
   const fwid = frontWidth(fw)
-  const frontZ = pz + fd / 2 - INSET + 0.1
+  const frontZ = pz + fd / 2 - INSET - lean * bodyH + 0.1
   const panel = fh - bodyH
   let screen = 0
+  let titleBar: BuildingModel['titleBar'] = null
   if (panel >= TITLE_BAR + 0.5) {
     add('front', 'box', [px, baseY + bodyH + panel / 2, frontZ], [fwid, panel, 0.5], c.body)
     add('front', 'box', [px, baseY + fh - TITLE_BAR / 2, frontZ + 0.05], [fwid, TITLE_BAR, 0.6], c.accent)
     for (let k = 0; k < 3; k++) add('front', 'box', [px + fwid / 2 - 0.55 - k * 0.6, baseY + fh - TITLE_BAR / 2, frontZ + 0.4], [0.4, 0.4, 0.3], c.marble)
+    const nameW = Math.max(1, fwid - 2.6)
+    titleBar = { text: place.name.toUpperCase().slice(0, 24), position: [px - fwid / 2 + 0.3 + nameW / 2, baseY + fh - TITLE_BAR / 2, frontZ + 0.37], width: nameW, height: TITLE_BAR * 0.6 }
     const screenW = Math.max(1, fwid - 1.5)
     // The screen fills the panel under the title bar and, when that is too little for 16 percent of the front, runs down over the front wall.
     const barTop = fh - TITLE_BAR - 0.1
@@ -160,30 +191,11 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     add('glow', 'box', [px, baseY + barTop - screenH / 2, frontZ + 0.05], [screenW, screenH, 0.55], c.glow, true)
     screen = screenW * screenH
   }
-  // The windows in the front wall face the same way.
   const frontGlowArea = screen + frontWindows * WINDOW_SIZE[0] * WINDOW_SIZE[1]
 
-  // Crown: a glowing pyramid tip on the roof behind the front.
+  // Crown: a steep, narrow glowing pyramid standing on the front over the door, two thirds of the body high.
   const ch = crownHeight(bodyH)
-  if (ch > 0.2) {
-    // It stands right behind the front, so its tip is seen above the front's top and not hidden behind it.
-    const r = Math.max(1.5, Math.min(fw, fd) * 0.3 - top)
-    add('crown', 'cone', [px, baseY + bodyH + ch / 2, frontZ - 0.3 - r], [r * 2, ch, r * 2], c.glow, true)
-  }
-
-  // Hero: one glowing ring around the tower, above the door.
-  const ringY = baseY + Math.min(bodyH - 0.5, Math.max(DOOR_HEIGHT + 0.4, bodyH * 0.65))
-  const t1 = taper(Math.min(floors - 1, Math.floor((ringY - baseY) / h)))
-  const hx = fw / 2 - INSET - t1 + WALL_THICKNESS / 2 + 0.2
-  const hz = fd / 2 - INSET - t1 + WALL_THICKNESS / 2 + 0.2
-  const RING = MIN_THICKNESS + 0.01
-  add('hero', 'box', [px, ringY, pz - hz], [2 * hx + RING, RING, RING], c.glow, true)
-  add('hero', 'box', [px - hx, ringY, pz], [RING, RING, 2 * hz + RING], c.glow, true)
-  add('hero', 'box', [px + hx, ringY, pz], [RING, RING, 2 * hz + RING], c.glow, true)
-  if (ringY - baseY > DOOR_HEIGHT + 0.1) add('hero', 'box', [px, ringY, pz + hz], [2 * hx + RING, RING, RING], c.glow, true)
-  else {
-    for (const s of [-1, 1]) add('hero', 'box', [px + (s * (hx + DOOR_HALF)) / 2, ringY, pz + hz], [hx - DOOR_HALF + RING, RING, RING], c.glow, true)
-  }
+  if (ch > 0.2) add('crown', 'cone', [px, baseY + fh + ch / 2, frontZ], [CROWN_WIDTH, ch, CROWN_WIDTH], c.glow, true)
 
   const instances = [...slots.base, ...slots.body, ...slots.front, ...slots.crown, ...slots.hero, ...slots.glow]
   return {
@@ -191,6 +203,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     instances,
     front: { width: fwid, height: fh, area: fwid * fh },
     frontGlowArea,
-    outlineHeight: Math.max(fh, bodyH + ch),
+    outlineHeight: fh + ch,
+    titleBar,
   }
 }

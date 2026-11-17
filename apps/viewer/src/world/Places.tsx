@@ -2,7 +2,7 @@ import { kit } from '@forkling/schema/kit'
 import { neglectFor, openPlaceRequests, placeCentre, toLandPlace } from '@forkling/sim'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { visitor } from '../visitor.ts'
@@ -15,6 +15,7 @@ import { kitModelUrl } from './kitModels.ts'
 import { restyleMaterial } from './modelStyle.ts'
 import { nightFactor } from './night.ts'
 import { Signs } from './Signs.tsx'
+import { TitleBars } from './TitleBars.tsx'
 import { signBoards } from './signGeometry.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
@@ -42,7 +43,7 @@ function glowMaterial(): THREE.MeshStandardMaterial {
     // The warm glow is added to the light the surface gives off, so it shows in the dark and is lost in daylight.
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * (0.14 + vGlow * (0.9 + uNight * 1.6));')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * (0.22 + vGlow * (1.6 + uNight * 1.6));')
   }
   return material
 }
@@ -172,6 +173,7 @@ export function Places() {
 
   const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots }), [world, land, interiors, loadedFiles, nowMs, plots])
   // The board of each place's sign: its name and its sign text, painted on one texture.
+  const baseOfPlace = useCallback((p: (typeof world.places)[number]) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, [land])
   const boards = useMemo(() => signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit), [world, land])
   const walls = useMemo(
     () =>
@@ -238,6 +240,7 @@ export function Places() {
         </mesh>
       ))}
       <Signs boards={boards} />
+      <TitleBars places={world.places} baseOf={baseOfPlace} />
       <Shapes shape="box" data={scene.box} />
       <Shapes shape="sphere" data={scene.sphere} />
       <Shapes shape="cylinder" data={scene.cylinder} />
