@@ -276,3 +276,49 @@ describe('a meme in a pull request (spec 7.7)', () => {
     expect((await run(work())).problems.join(' ')).toMatch(/looked at/)
   })
 })
+
+describe('projects/ in a pull request (spec-v4 3.1: the server commits it; a person\'s pull request is checked against 3.1)', () => {
+  const STARTED = '2026-11-18T09:00:00.000Z'
+  const putProject = (id = 'tide-clock', over: Record<string, unknown> = {}) =>
+    put(`projects/${id}/project.json`, JSON.stringify({ id, name: 'Tide clock', aim: 'a clock', started: STARTED, status: 'building', reason: null, sessions: [], inspiredBy: null, installedIn: null, ...over }))
+
+  it('passes a person\'s pull request with a project that fits 3.1', async () => {
+    putProject()
+    put('projects/tide-clock/src/index.html', '<p>hi</p>')
+    put('projects/tide-clock/shots/1.png', PNG)
+    const r = await run(added('projects/tide-clock/project.json', 'projects/tide-clock/src/index.html', 'projects/tide-clock/shots/1.png'))
+    expect(r.problems).toEqual([])
+  })
+
+  it('never lets the build worker\'s branch touch projects/', async () => {
+    putProject()
+    const r = await run(added('projects/tide-clock/project.json'), { branch: 'work/tide-clock' })
+    expect(r.ok).toBe(false)
+    expect(r.problems.join(' ')).toMatch(/may change only works\/tide-clock\//)
+  })
+
+  it.each([
+    ['a project.json that does not fit', () => putProject('tide-clock', { status: 'done' }), 'projects/tide-clock/project.json', /reason/],
+    ['an id that is not its folder', () => putProject('tide-clock', { id: 'sand-clock' }), 'projects/tide-clock/project.json', /sand-clock/],
+    ['a .sh file in src/', () => put('projects/tide-clock/src/run.sh', 'x'), 'projects/tide-clock/src/run.sh', /\.sh/],
+    ['a file outside src/ and shots/', () => put('projects/tide-clock/notes.txt', 'x'), 'projects/tide-clock/notes.txt', /src\/|shots\//],
+    ['a shot that is not a PNG', () => put('projects/tide-clock/shots/1.png', 'not a png'), 'projects/tide-clock/shots/1.png', /PNG/],
+    ['a shot with a strange name', () => put('projects/tide-clock/shots/a.png', PNG), 'projects/tide-clock/shots/a.png', /shots\/<n>\.png/],
+    ['a file over 500 KB', () => put('projects/tide-clock/src/big.js', Buffer.alloc(501 * 1024, 97)), 'projects/tide-clock/src/big.js', /500 KB/],
+  ])('refuses %s', async (_, setup, path, reason) => {
+    putProject()
+    setup()
+    const r = await run(added(path))
+    expect(r.ok).toBe(false)
+    expect(r.problems.join(' ')).toMatch(reason)
+  })
+
+  it('refuses a 41st file and more than 2 MB in all', async () => {
+    putProject()
+    for (let i = 0; i < 41; i++) put(`projects/tide-clock/src/f${i}.js`, 'x')
+    expect((await run(added('projects/tide-clock/src/f0.js'))).problems.join(' ')).toMatch(/41 files/)
+    rmSync(join(dir, 'projects/tide-clock/src'), { recursive: true })
+    for (let i = 0; i < 5; i++) put(`projects/tide-clock/src/f${i}.js`, Buffer.alloc(450 * 1024, 97))
+    expect((await run(added('projects/tide-clock/src/f0.js'))).problems.join(' ')).toMatch(/2 MB/)
+  })
+})

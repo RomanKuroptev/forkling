@@ -1,11 +1,12 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { Wish, WorkMeta } from '@forkling/schema'
+import { Project, PROJECT_LIMITS, Wish, WorkMeta } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { validatePlace } from '@forkling/sim'
 import type { WorkChecker } from './builds/browser-check.ts'
 import { refFile } from './builds/tend.ts'
 import { memeSeeds, verifyMemeSources } from './builds/memes.ts'
+import { checkProjectPath, listProjectFiles, resolveProjectPath } from './builds/project-files.ts'
 import { staticCheck } from './builds/work-check.ts'
 import type { GitRunner } from './tick/git.ts'
 
@@ -112,7 +113,15 @@ export async function validatePullRequest(o: ValidateOptions): Promise<ValidateR
   }
 
   const byWork = new Map<string, Change[]>()
+  const byProject = new Map<string, Change[]>()
   for (const c of o.changes) {
+    // projects/ is committed by the server after a session (spec-v4 3.3). A person's pull request may change it, checked against
+    // 3.1; the build worker's (work/<id>) may not, which the branch rule above already says.
+    const project = /^projects\/([^/]+)\/(.+)$/.exec(c.path)
+    if (project && !branchId && !c.path.includes('..') && !c.path.includes('\\')) {
+      byProject.set(project[1]!, [...(byProject.get(project[1]!) ?? []), c])
+      continue
+    }
     if (!ALLOWED.some((prefix) => c.path.startsWith(prefix)) || c.path.includes('..') || c.path.includes('\\')) {
       problems.push(`${c.path} is outside places/, works/ and wishes/, which a build may not change`)
       continue
@@ -179,5 +188,54 @@ export async function validatePullRequest(o: ValidateOptions): Promise<ValidateR
     }
   }
 
+  for (const [id, changes] of byProject) checkProject(o.world, id, changes, problems)
+
   return { ok: problems.length === 0, problems }
+}
+
+const PROJECT_ID = /^[a-z0-9][a-z0-9-]{0,47}$/
+const SHOT = /^shots\/\d{1,5}\.png$/
+
+/**
+ * A project in a person's pull request (spec-v4 3.1): `project.json` that fits its schema with its folder's id, files in `src/`
+ * under the name rule (no link anywhere), at most 40 of them, 500 KB each and 2 MB in all, and screenshots `shots/<n>.png` that
+ * are PNGs of at most 300 KB. Nothing else in the folder.
+ */
+function checkProject(world: string, id: string, changes: readonly Change[], problems: string[]) {
+  const here = (message: string) => problems.push(`projects/${id}: ${message}`)
+  if (!PROJECT_ID.test(id)) return here('the folder name is not a plain id')
+  const folder = join(world, 'projects', id)
+  for (const c of changes) {
+    const name = c.path.slice(`projects/${id}/`.length)
+    if (c.status === 'D' || name === 'project.json') continue
+    if (name.startsWith('src/')) {
+      const r = resolveProjectPath(folder, name)
+      if (!r.ok) here(r.reason)
+    } else if (name.startsWith('shots/')) {
+      if (!SHOT.test(name)) here(`${name} is not named shots/<n>.png`)
+      else {
+        const bytes = readFileSync(join(folder, name))
+        if (!bytes.subarray(0, 8).equals(PNG_SIGNATURE)) here(`${name} is not a PNG`)
+        else if (bytes.length > MAX_THUMB_BYTES) here(`${name} is over ${MAX_THUMB_BYTES / 1000} KB`)
+      }
+    } else here(`${name} is outside project.json, src/ and shots/`)
+  }
+
+  const read = existsSync(join(folder, 'project.json')) ? readJson(join(folder, 'project.json')) : { ok: false as const }
+  if (!read.ok) here('project.json is missing or is not JSON')
+  else {
+    const parsed = Project.safeParse(read.value)
+    if (!parsed.success) here(`project.json does not fit the project schema (${parsed.error.issues.map((i) => `${i.path.join('.') || 'project'}: ${i.message}`).slice(0, 3).join('; ')})`)
+    else if (parsed.data.id !== id) here(`its id is "${parsed.data.id}", not "${id}"`)
+  }
+
+  const files = listProjectFiles(folder)
+  for (const f of files) {
+    const named = checkProjectPath(f.path)
+    if (!named.ok) here(named.reason)
+    if (f.bytes > PROJECT_LIMITS.fileBytes) here(`src/${f.path} is ${Math.ceil(f.bytes / 1024)} KB, over the 500 KB a file may be`)
+  }
+  if (files.length > PROJECT_LIMITS.files) here(`src/ holds ${files.length} files, over the ${PROJECT_LIMITS.files} files a project may hold`)
+  const total = files.reduce((sum, f) => sum + f.bytes, 0)
+  if (total > PROJECT_LIMITS.totalBytes) here(`src/ is ${Math.ceil(total / 1024)} KB in all, over the 2 MB a project may be`)
 }
