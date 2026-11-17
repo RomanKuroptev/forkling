@@ -1,11 +1,13 @@
 import { ownNotes } from './page.ts'
-import { PRICES, VERB_MINUTES, DAILY_POINTS, MAX_POINTS_IN_HAND, DEEP_COST, BUILDING_HOLD_DAYS, EXPAND_MIN_SOUVENIRS, EXPAND_MIN_WEIGHT, FALLBACK_DAYS, FOUND_STREAK_DAYS, WAKE_TOP_MIN, type MindVerb } from '@forkling/sim'
+import { PRICES as STARTING_PRICES, VERB_MINUTES, DAILY_POINTS, MAX_POINTS_IN_HAND, DEEP_COST, type Prices, BUILDING_HOLD_DAYS, EXPAND_MIN_SOUVENIRS, EXPAND_MIN_WEIGHT, FALLBACK_DAYS, FOUND_STREAK_DAYS, WAKE_TOP_MIN, type MindVerb } from '@forkling/sim'
 
 export interface SystemInput {
   /** The seed: the only authored personality text (`self/seed.md`). */
   seed: string
   /** Merge's own page (`self/page.md`, spec 9.7), placed right after the seed. Nothing is added when it is empty. */
   page?: string | undefined
+  /** The prices in force (the Sunday reset); the starting prices when absent. The text is the same, only the numbers differ. */
+  prices?: Prices | undefined
 }
 
 const range = (verb: MindVerb) => {
@@ -18,6 +20,7 @@ const range = (verb: MindVerb) => {
  * Nothing in here may change from tick to tick (no times, no counts, no state).
  */
 export function buildSystem(input: SystemInput): string {
+  const PRICES = input.prices ?? STARTING_PRICES
   return [
     ownNotes(input.page ?? '', input.seed),
     '',

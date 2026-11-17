@@ -90,6 +90,23 @@ export const MindState = z.object({
   lateNightReason: z.string().max(200).optional(),
   /** Points of the daily allowance (spec 9.8) in hand, and the local date they were last topped up for. */
   allowance: z.object({ points: z.number().min(0), day: z.iso.date() }).optional(),
+  /** The prices of the allowance, set again each Sunday from the ledger (audit 17 Nov). Absent until the first reset: the starting prices stand. */
+  prices: z
+    .object({
+      fullWork: z.number().int().min(1),
+      expand: z.number().int().min(1),
+      trip: z.number().int().min(1),
+      tend: z.number().int().min(1),
+      sketch: z.number().int().min(1),
+      foundRequest: z.number().int().min(1),
+      revisit: z.number().int().min(1),
+      write: z.number().int().min(1),
+      reply: z.number().int().min(0),
+      rest: z.number().int().min(0),
+    })
+    .optional(),
+  /** The local date the prices were last set, so it is once a Sunday. */
+  pricesSetOn: z.iso.date().optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */
   recent: z.array(z.object({ verb: z.string(), targetId: z.string().optional(), at: Timestamp })).max(20).default([]),
   /**

@@ -1,8 +1,10 @@
 /**
  * The daily allowance (spec 9.8). Merge decides how to spend its effort: each wake it gets 150 points, a point is $0.001
  * of expected model cost, and a plan may not cost more than the points in hand. Pure. The prices are the starting ones;
- * each Sunday code sets them again from the real average cost in the ledger (not built yet).
+ * each Sunday code sets them again from the real average cost in the ledger (`pricesFromLedger`, `pricesDue`).
  */
+import { localDate } from './sleep.ts'
+import { localWeekday } from './weekly.ts'
 
 export type PricedVerb = 'wander' | 'tend' | 'revisit' | 'expand' | 'found' | 'tinker' | 'write' | 'reply' | 'rest'
 
@@ -77,4 +79,65 @@ export function stepCost(step: PricedStep, prices: Prices = PRICES): number {
 
 export function planCost(steps: readonly PricedStep[], prices: Prices = PRICES): number {
   return steps.reduce((sum, s) => sum + stepCost(s, prices), 0)
+}
+
+/** A sketch is never priced under this many points, however cheap the week's sketches were (Roman, 17 Nov). */
+export const SKETCH_PRICE_FLOOR = 20
+/** A price is only reset from a kind of call that has at least this many calls in the window; fewer keep the old price. */
+export const MIN_CALLS_FOR_PRICE = 3
+const PRICE_WINDOW_MS = 7 * 86_400_000
+/** A trip is up to this many reads, so it is priced as that many reads at the average read cost. */
+const READS_PER_TRIP = 6
+
+export interface LedgerCall {
+  at: string
+  kind: string
+  usd: number
+}
+
+/** Which ledger call kinds make up each price. A sketch and a rework are both made as sketches; the write step's calls are `art`. */
+const PRICE_KINDS: Partial<Record<keyof Prices, readonly string[]>> = {
+  sketch: ['sketch', 'rework'],
+  tend: ['tend'],
+  expand: ['expand'],
+  foundRequest: ['found'],
+  revisit: ['revisit'],
+  write: ['art'],
+}
+
+const points = (usd: number): number => Math.max(1, Math.ceil(usd * 1000 - 1e-9))
+
+/**
+ * The prices set again from what the calls really cost: for each price, the average cost of its kind of call over the last 7 days,
+ * in points of $0.001, rounded up, never below 1, and a sketch never below 20. A price whose kind has fewer than 3 calls in the window
+ * keeps its old value (the ledger keeps only its last 500 calls, so a quiet kind may have none). A full work is its build call plus its
+ * share of the repair calls; a trip is up to 6 reads at the average read cost; replies and rest stay free. Pure.
+ */
+export function pricesFromLedger(calls: readonly LedgerCall[], nowMs: number, current: Prices): Prices {
+  const since = nowMs - PRICE_WINDOW_MS
+  const recent = calls.filter((c) => Date.parse(c.at) >= since)
+  const of = (...kinds: readonly string[]) => recent.filter((c) => kinds.includes(c.kind))
+  const mean = (list: readonly LedgerCall[]) => list.reduce((n, c) => n + c.usd, 0) / list.length
+  const next: Prices = { ...current }
+  for (const [key, kinds] of Object.entries(PRICE_KINDS) as [keyof Prices, readonly string[]][]) {
+    const list = of(...kinds)
+    if (list.length >= MIN_CALLS_FOR_PRICE) next[key] = points(mean(list))
+  }
+  const builds = of('tinker')
+  if (builds.length >= MIN_CALLS_FOR_PRICE) next.fullWork = points(mean(builds) + of('repair').reduce((n, c) => n + c.usd, 0) / builds.length)
+  const reads = of('read')
+  if (reads.length >= MIN_CALLS_FOR_PRICE) next.trip = points(mean(reads) * READS_PER_TRIP)
+  next.sketch = Math.max(SKETCH_PRICE_FLOOR, next.sketch)
+  return next
+}
+
+/** Whether the prices are set again now: awake, on a Sunday in the forkling's time zone, and not already done that Sunday. Pure. */
+export function pricesDue(a: { timezone: string; nowMs: number; asleep: boolean; today: string; pricesSetOn?: string | undefined }): boolean {
+  if (a.asleep) return false
+  return localWeekday(a.timezone, a.nowMs) === 0 && a.pricesSetOn !== a.today && localDate(a.timezone, a.nowMs) === a.today
+}
+
+/** The prices in force: the starting ones until a Sunday reset has set others. Anything a stored table lacks comes from the starting ones. */
+export function livePrices(stored: Partial<Prices> | undefined): Prices {
+  return { ...PRICES, ...stored }
 }

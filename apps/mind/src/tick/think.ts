@@ -3,7 +3,7 @@ import { Decision } from '../decision.ts'
 import { buildUser } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { readRecentPast } from '../past.ts'
-import { moodWords, openPlaceRequests, PRICES } from '@forkling/sim'
+import { livePrices, moodWords, openPlaceRequests } from '@forkling/sim'
 import { expandablePlaces } from './expand.ts'
 import { unreadSeen } from '../web/lookup.ts'
 import { foundGate, foundableInterest } from './found.ts'
@@ -39,7 +39,7 @@ export async function think(t: Tick): Promise<void> {
     wakeTime: clock(tz, window.wakeMs),
     bedTime: clock(tz, window.bedMs),
     hoursLeft: Math.max(0, Math.round((window.bedMs - nowMs) / 3_600_000)),
-    allowance: { points: t.mind.allowance?.points ?? 0, prices: PRICES },
+    allowance: { points: t.mind.allowance?.points ?? 0, prices: livePrices(t.mind.prices) },
     mood: moodWords({ mood: t.mood, energy: t.energy }),
     justNow: t.justNow,
     beliefs: t.beliefs,
