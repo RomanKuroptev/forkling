@@ -123,7 +123,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     page: w.page,
     pageWrite: null,
     beliefIds: new Set(liveBeliefs(w.beliefs).map((b) => b.id)),
-    system: buildSystem({ seed: w.seed, page: w.page, prices: livePrices(w.mindState.prices) }),
+    system: buildSystem({ seed: w.seed, page: w.page, prices: livePrices(w.mindState.prices), tools: w.tools.tools }),
     prompt: undefined,
     ask: undefined as never,
 

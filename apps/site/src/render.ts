@@ -13,7 +13,7 @@ import { loadRequests, loadWishes, renderRequests } from './requests.ts'
 import { hasPage, loadPage, renderPage } from './page.ts'
 import { loadNotes, notesEndpoint, renderNotes, validSiteKey } from './notes.ts'
 import { NOTES_SCRIPT } from './notes-script.ts'
-import { hasAbout, loadAbout, loadSelfRequests, renderAbout } from './self.ts'
+import { hasAbout, loadAbout, loadSelfRequests, loadTools, renderAbout } from './self.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
 
 /** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
@@ -385,7 +385,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     readSouvenir: (id) => souvenirs.get(id) ?? null,
     add,
   })
-  renderRequests({ requests, wishes, places, selfRequests, timezone: forkling.timezone, add })
+  renderRequests({ requests, wishes, places, selfRequests, tools: loadTools(world), timezone: forkling.timezone, add })
   renderAbout({ about: mergeAbout, add })
   const endpoint = notesEndpoint(opts.mindUrl)
   const siteKey = validSiteKey(opts.turnstileSiteKey)

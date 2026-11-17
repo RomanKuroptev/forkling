@@ -159,7 +159,7 @@ describe('what the review is shown', () => {
       warnings: ['one verb was more than half of the week\'s steps: wander'],
       longGoal: { text: 'Map the fog.', reason: 'It keeps coming back.', since: '2026-11-01' },
       about: 'I am patient.\n- patient\n- curious',
-      asked: [{ date: '2026-11-08', body: 'Could I read one more site? It keeps blocking me.', answer: 'Not yet. Ask again after the run.' }, { date: '2026-11-01', body: 'Could the kit have a lighthouse lamp?', answer: null }],
+      asked: [{ date: '2026-11-15', body: 'I wish I could read what people say on Lemmy.', answer: 'Yes, I will build it this week.', kind: 'tool', title: 'Read a Lemmy community', status: 'yes' }, { date: '2026-11-08', body: 'Could I read one more site? It keeps blocking me.', answer: 'Not yet. Ask again after the run.' }, { date: '2026-11-01', body: 'Could the kit have a lighthouse lamp?', answer: null }],
     })
     await expect(text).toMatchFileSnapshot('golden/user-weekly.txt')
   })
@@ -388,6 +388,19 @@ describe('the request to Roman (spec 9.5)', () => {
     const none = tick(review({ request: 'Something.' }))
     await weeklyStep(none.t)
     expect(none.t.selfRequest).toMatchObject({ kind: 'other', title: '' })
+  })
+  it('also tells Roman when an answer of under 80 words is over 700 characters, and cuts it', async () => {
+    mkdirSync(join(dir, 'self/requests'), { recursive: true })
+    const long = Array.from({ length: 60 }, (_, i) => `longword${String(i).padStart(3, '0')}`).join(' ')
+    writeFileSync(join(dir, 'self/requests/2026-11-08.md'), `Could I read one more site?
+
+Roman: ${long}
+`)
+    const { t, seen } = tick(review())
+    await weeklyStep(t)
+    expect(t.notes.join(' ')).toMatch(/over 80 words or 700 characters/)
+    expect(seen[0]!.user).toContain('longword050')
+    expect(seen[0]!.user).not.toContain('longword059')
   })
   it('shows the kind, title and status of an earlier request, and cuts an answer over 80 words, telling Roman', async () => {
     mkdirSync(join(dir, 'self/requests'), { recursive: true })

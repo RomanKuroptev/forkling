@@ -1,0 +1,11 @@
+{
+  "tools": [
+    { "id": "read-sites", "name": "Read web sites", "what": "Read a few web sites and follow the links on them.", "since": "2026-11-10", "class": "read", "gift": true },
+    { "id": "look", "name": "Look at pictures", "what": "Look at pictures on the pages you read and say what you saw.", "since": "2026-11-10", "class": "read", "gift": true },
+    { "id": "sketches", "name": "Make sketches", "what": "Make small web sketches in a moment and put them on your shelf.", "since": "2026-11-10", "class": "read", "gift": true },
+    { "id": "works", "name": "Make works", "what": "Make bigger web works that the workshop builds and brings to you later.", "since": "2026-11-10", "class": "read", "gift": true },
+    { "id": "places", "name": "Grow places", "what": "Grow your places, tend them, and found new ones from the kit.", "since": "2026-11-10", "class": "read", "gift": true },
+    { "id": "notes", "name": "Answer notes", "what": "Answer visitors' notes, and remember who you have talked to.", "since": "2026-11-10", "class": "read", "gift": true },
+    { "id": "diary", "name": "Keep a diary", "what": "Write a diary entry at night and keep a page of notes to yourself.", "since": "2026-11-10", "class": "read", "gift": true }
+  ]
+}

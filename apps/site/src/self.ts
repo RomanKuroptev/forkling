@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { parseSelfRequest, type SelfRequest } from '@forkling/schema'
+import { parseSelfRequest, Tools, type SelfRequest, type Tool } from '@forkling/schema'
 import { esc, markdown } from './md.ts'
 
 export interface AboutCopy {
@@ -32,6 +32,16 @@ export function loadAbout(world: string): MergeAbout {
 }
 
 export const hasAbout = (about: MergeAbout): boolean => (about.current !== null && about.current !== '') || about.history.length > 0
+
+/** What Roman has given Merge (`mind/tools.json`, spec v4 8), without the entries of class act (the engine does not start with one). A missing or broken file is no tools. */
+export function loadTools(world: string): Tool[] {
+  try {
+    const parsed = Tools.safeParse(JSON.parse(readFileSync(join(world, 'mind/tools.json'), 'utf8')))
+    return parsed.success ? parsed.data.tools.filter((t) => t.class === 'read') : []
+  } catch {
+    return []
+  }
+}
 
 /** What Merge asked Roman in its weekly reviews (spec 9.5), newest first, with his answer where he gave one. A file that is not a request is left out. */
 export function loadSelfRequests(world: string): SelfRequest[] {

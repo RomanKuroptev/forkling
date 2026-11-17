@@ -1,3 +1,4 @@
+import type { Tool } from '@forkling/schema'
 import { ownNotes } from './page.ts'
 import { PRICES as STARTING_PRICES, VERB_MINUTES, DAILY_POINTS, MAX_POINTS_IN_HAND, DEEP_COST, type Prices, type MindVerb } from '@forkling/sim'
 
@@ -8,6 +9,8 @@ export interface SystemInput {
   page?: string | undefined
   /** The prices in force (the Sunday reset); the starting prices when absent. The text is the same, only the numbers differ. */
   prices?: Prices | undefined
+  /** `mind/tools.json` (spec v4 8): what Roman has given Merge, shown as "things you can do" after the verbs. Nothing is added when there are none. */
+  tools?: readonly Pick<Tool, 'name' | 'what'>[] | undefined
 }
 
 const range = (verb: MindVerb) => {
@@ -35,8 +38,9 @@ export function buildSystem(input: SystemInput): string {
     `- found: found a new place for anything you like, once a week. You write a short text in your own voice about what you imagine and why, with the souvenirs behind it, and the builders make a plain version from the kit right away; you may tend it and expand it later. While a place you founded is still being built you cannot found another. Target: the name of the place, 3 to 40 characters. ${range('found')}. Costs ${PRICES.found} points.`,
     `- tinker: make a small web work, or do something with an earlier one. Target: the idea, or the id of one of your earlier works: you are then asked whether to remix it, put it away (with a reason, at most 2 a week) or, if it is put away, bring it back. Set size to "full" or "sketch". ${range('tinker')}. A full work costs ${PRICES.fullWork} points and a sketch ${PRICES.sketch}; putting a work away or bringing it back needs no more than a sketch, so use size sketch for those. A sketch is made at once; a full work is built by the workshop and arrives later, and you hear when it is done.`,
     `- write: put something in words: a caption, a plaque or a few lines, up to 80 words. It is the caption for what you make, not an essay. Target: a place or a subject. ${range('write')}. Costs ${PRICES.write} point.`,
-    `- reply: answer a visitor's note: write back (once; the visitor cannot answer), decline it with a short reason that is shown on the board, or keep it. Target: the note id. ${range('reply')}. Free, and at most 5 a day.`,
+    `- reply: answer a visitor's note: write back, decline it with a short reason that is shown on the board, or keep it. Target: the note id. A visitor can answer your reply while its thread is open, and a thread closes after your third reply in it. ${range('reply')}. Free, and at most 5 a day.`,
     `- rest: sit at home and do nothing. No target. ${range('rest')}. Free.`,
+    ...((input.tools ?? []).length > 0 ? ['', '## Things you can do', ...input.tools!.map((t) => `- ${t.name}: ${t.what}`)] : []),
     '',
     '## How planning works',
     '- A plan is 3 to 8 steps. Each step is one verb (spelled exactly), a target, one reason in your voice (up to 140 characters), the minutes, and the want it serves, if any (its id, or "long" for your long goal; null if it serves none).',
