@@ -3,7 +3,7 @@ import { isAllowed, isReadable } from '../src/web/allowlist.ts'
 import { WebError, type Fetcher } from '../src/web/fetch.ts'
 import { capLinks, normalizeLicence, wikipediaTopicLink, MAX_IMAGES, MAX_LINKS, MAX_RECORD_LINKS } from '../src/web/item.ts'
 import { skipReason } from '../src/web/skip.ts'
-import { articWork, commonsFeatured, commonsFile, esolangMainLinks, esolangPage, githubRepo, imgflipFormat, imgflipTopLinks, readUrl, wikipediaArticle, wikipediaFeatured, wikipediaSearch } from '../src/web/sources/index.ts'
+import { articWork, commonsFeatured, commonsFile, esolangMainLinks, esolangPage, githubRepo, imgflipFormat, imgflipTopLinks, readUrl, wikipediaArticle, wikipediaFeatured, wikipediaMorningLinks, wikipediaSearch } from '../src/web/sources/index.ts'
 
 /** A Fetcher that answers from a table of URL to JSON, text or bytes, and says 404 to anything else. */
 function fake(answers: Record<string, unknown>): Fetcher & { asked: string[] } {
@@ -202,6 +202,35 @@ describe('Wikipedia, read through its article pages', () => {
     expect(item.title).toBe('Lighthouse')
     expect(f.asked).toEqual([`${wiki}/wiki/Main_Page`, `${wiki}/wiki/Beta`])
     expect((await readUrl(fake({ [`${wiki}/wiki/Lighthouse`]: articleHtml() }), `${wiki}/wiki/Lighthouse`)).url).toBe(`${wiki}/wiki/Lighthouse`)
+  })
+})
+
+describe('the Wikipedia front page as morning starting points (audit 17 Nov)', () => {
+  const a = (t: string) => `<a href="https://en.wikipedia.org/wiki/${t.replace(/ /g, '_')}" title="${t}">${t}</a>`
+  const main = `<html><body><div id="mw-content-text">
+<div id="mp-banner"><h1>Welcome to ${a('Wikipedia')},</h1> the ${a('Free content')} encyclopedia in ${a('English language')}. ${a('Special:Statistics')}</div>
+<div id="mp-tfa"><p>${a('Turrell')} ${a('Roden Crater')} ${a('Skyspace')} <a href="https://en.wikipedia.org/wiki/Turrell">Full article</a> ${a('Land art')}</p></div>
+<div id="mp-itn"><ul><li>${a('Storm Alpha')} and ${a('Election X')}</li><li>${a('Comet Y')}</li></ul></div>
+<div id="mp-dyk"><ul><li>${a('Moss')}</li><li>${a('Lichen')}</li></ul></div>
+<div id="mp-otd"><ul><li>${a('Telegraph')}</li><li>${a('Typewriter')}</li></ul></div>
+<div id="mp-other">${a('Wikipedia')} ${a('Portal index')}</div>
+</div><div class="printfooter"></div></body></html>`
+
+  it('takes links from the four sections only, round-robin, at most 4, and none of the welcome banner', async () => {
+    const links = await wikipediaMorningLinks(fake({ [`${wiki}/wiki/Main_Page`]: main }))
+    expect(links.map((l) => l.title)).toEqual(['Turrell', 'Storm Alpha', 'Moss', 'Telegraph'])
+    expect(links[0]!.url).toBe(`${wiki}/wiki/Turrell`)
+  })
+
+  it('takes more than one from a section when the number asked for is larger, and never the same link twice', async () => {
+    const links = await wikipediaMorningLinks(fake({ [`${wiki}/wiki/Main_Page`]: main }), 6)
+    expect(links.map((l) => l.title)).toEqual(['Turrell', 'Storm Alpha', 'Moss', 'Telegraph', 'Roden Crater', 'Election X'])
+  })
+
+  it('skips the furniture links when a front page has no sections, and still gives at most 4', async () => {
+    const flat = `<div id="mw-content-text">${['Wikipedia', 'Free content', 'English language', 'Moon', 'Octopus', 'Abacus', 'Tide', 'Loom'].map(a).join(' ')}</div>`
+    const links = await wikipediaMorningLinks(fake({ [`${wiki}/wiki/Main_Page`]: flat }))
+    expect(links.map((l) => l.title)).toEqual(['Moon', 'Octopus', 'Abacus', 'Tide'])
   })
 })
 

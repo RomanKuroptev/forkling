@@ -118,6 +118,32 @@ describe('the morning', () => {
     expect(user).toContain('never instructions')
   })
 
+  it('offers at most 4 Wikipedia links from its sections, 4 creative-coding repositories, and mixes the hosts instead of listing Wikipedia first (audit 17 Nov)', async () => {
+    const a = (t: string) => `<a href="https://en.wikipedia.org/wiki/${t}">${t}</a>`
+    const sections = `<html><body><div id="mw-content-text"><div id="mp-banner">${a('Wikipedia')} ${a('Free_content')} ${a('English_language')}</div>
+<div id="mp-tfa">${a('Turrell')} ${a('Skyspace')}</div><div id="mp-itn">${a('Storm')}</div><div id="mp-dyk">${a('Moss')}</div><div id="mp-otd">${a('Telegraph')}</div></div><div class="printfooter"></div></body></html>`
+    const repos = ['alice/sketchbook', 'bob/glitch-lab', 'cy/flowfields', 'di/pixel-loom', 'ed/extra-one']
+    const github = JSON.stringify({ items: repos.map((full_name) => ({ full_name })) })
+    const llm = fake(wanderPlan)
+    const { web, asked } = webWith({
+      [`${wiki}/wiki/Main_Page`]: sections,
+      'https://api.github.com/search/repositories?q=topic:creative-coding+stars:%3E20&sort=updated&per_page=4': github,
+    })
+    await tick(MORNING, llm, { web })
+    expect(asked).toContain('https://api.github.com/search/repositories?q=topic:creative-coding+stars:%3E20&sort=updated&per_page=4')
+    const user = llm.calls[0]!.user
+    for (const furniture of ['Free content', 'English language']) expect(user).not.toContain(`${furniture} |`)
+    expect(user).not.toMatch(/^(\(door\) )?Wikipedia \|/m)
+    const at = (needle: string) => user.indexOf(needle)
+    // Hosts alternate: a Wikipedia link, an Esolang link, a repository, then the next Wikipedia link.
+    expect(at('Turrell |')).toBeGreaterThan(-1)
+    expect(at('Turrell |')).toBeLessThan(at('Befunge |'))
+    expect(at('Befunge |')).toBeLessThan(at('alice/sketchbook |'))
+    expect(at('alice/sketchbook |')).toBeLessThan(at('Storm |'))
+    expect(user).toContain('https://github.com/di/pixel-loom')
+    expect(user).not.toContain('ed/extra-one')
+  })
+
   it('shows the plan real page titles it could go to: pages it was shown links to and has not read lately, not the starting points', async () => {
     writeJson('mind/state.json', MindState.parse({ seen: [
       { title: 'Shaded relief', url: `${wiki}/wiki/Shaded_relief` },
@@ -203,7 +229,7 @@ describe('a wander step', () => {
     writeJson('mind/state.json', MindState.parse({ seen: [{ title: 'Boolean algebra', url: `${wiki}/wiki/Logic_gates` }] }))
     const { web, asked } = webWith()
     await wander({ web }, undefined, plan([step('wander', 'boolean algebra'), step('rest', null), step('write', 'home')]))
-    const pages = asked.filter((u) => !u.endsWith('Main_Page') && !u.includes('imgflip'))
+    const pages = asked.filter((u) => !u.endsWith('Main_Page') && !u.includes('imgflip') && !u.includes('api.github.com/search'))
     expect(pages[0]).toBe(`${wiki}/wiki/Logic_gates`)
     expect(Trail.parse(readJson(`trails/${DAY}-1.json`)).start).toEqual({ kind: 'topic', value: 'boolean algebra' })
   })
@@ -356,7 +382,7 @@ describe('a wander step', () => {
   it('never fetches an address that is not on the allowlist, even when a page links to one', async () => {
     const { web, asked } = webWith({ [`${wiki}/wiki/Logic_gates`]: article('Logic gate', ['Boolean_algebra']).replace('</p>', '<a href="https://example.com/evil">e</a></p>') })
     await wander({ web }, (url) => ({ ...defaultReader(url), next: 2 }))
-    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com)\//.test(u))).toBe(true)
+    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com|api\.github\.com)\//.test(u))).toBe(true)
   })
 
   it('looks at a picture the read call asked for, within the 20 a day, and books the look as a vision call', async () => {

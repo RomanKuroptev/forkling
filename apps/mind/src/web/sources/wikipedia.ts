@@ -1,6 +1,6 @@
 import { WebError, type Fetcher } from '../fetch.ts'
 import type { Item, ItemLink } from '../item.ts'
-import { frontPageLinks, mediawikiPage, topicTitle } from './mediawiki.ts'
+import { frontPageLinks, frontPageSectionLinks, mediawikiPage, topicTitle } from './mediawiki.ts'
 
 const at = <T>(xs: readonly T[], n: number): T => xs[((n % xs.length) + xs.length) % xs.length]!
 
@@ -40,3 +40,6 @@ export async function esolangFeatured(f: Fetcher, seed: number): Promise<Item> {
   const link = await pick(f, 'esolangs.org', seed)
   return esolangPage(f, decodeURIComponent(new URL(link.url).pathname.replace(/^\/wiki\//, '')).replace(/_/g, ' '))
 }
+
+/** The morning's Wikipedia starting points: at most `max` links, spread over the front page sections, with no furniture. */
+export const wikipediaMorningLinks = (f: Fetcher, max = 4): Promise<ItemLink[]> => frontPageSectionLinks(f, 'en.wikipedia.org', max)
