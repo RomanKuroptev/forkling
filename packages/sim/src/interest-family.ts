@@ -1,7 +1,7 @@
 /**
  * Interest families (spec v4 2.1): topics that count together. Computed, never stored. Two topics are linked when their names are
  * the same subject, or when both have a history entry from the same trip (the same non-null `trail` id). A family is a linked group.
- * Used only for the planner's interest list, the "earned" check on expand, and the tags of a new place. Pure.
+ * Used only for the planner's interest list, the lower price of an expand when a place has "earned" it (a price only, never a gate), and the tags of a new place. Pure.
  */
 import type { Interests } from '@forkling/schema'
 import { sameSubject } from './topic-cluster.ts'

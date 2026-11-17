@@ -59,6 +59,7 @@ export function planContext(t: Tick): MindPlanContext {
     // Revisiting a place not cared for in 7 days; growth is the conditions of spec 2.5; founding arrives with requests (W6, slice 6) and notes with W7 (slice 9).
     revisitable: new Set(t.places.filter((p) => p.state.closed === null && daysSinceCare({ lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) >= 7).map((p) => p.id)),
     expandable: new Set(expandablePlaces(t).map((e) => e.id)),
+    expandEarned: new Set(expandablePlaces(t).filter((e) => e.earned.earned).map((e) => e.id)),
     canFound: foundGate(t).check.ok,
     notes: new Set(t.visitorNotes.filter((n) => n.status === 'found').map((n) => n.id)),
     wants: t.wants,
@@ -107,7 +108,7 @@ export function startStep(t: Tick, index: number, reason?: string): void {
   t.started = started
   // A step spends its points when it starts, so the next plan is made with what is left.
   if ((MIND_VERBS as readonly string[]).includes(step.verb) && t.mind.allowance) {
-    const cost = stepCost({ verb: step.verb as MindVerb, ...(step.size ? { size: step.size } : {}), ...(step.deep ? { deep: true } : {}) }, livePrices(t.mind.prices))
+    const cost = stepCost({ verb: step.verb as MindVerb, ...(step.size ? { size: step.size } : {}), ...(step.deep ? { deep: true } : {}), ...(step.verb === 'expand' && expandablePlaces(t).some((e) => e.id === step.targetId && e.earned.earned) ? { earned: true } : {}) }, livePrices(t.mind.prices))
     t.mind.allowance = { ...t.mind.allowance, points: Math.max(0, t.mind.allowance.points - cost) }
   }
   t.mind.recent = [...t.mind.recent, { verb: step.verb, ...(step.targetId ? { targetId: step.targetId } : {}), at: t.nowIso }].slice(-MAX_RECENT)

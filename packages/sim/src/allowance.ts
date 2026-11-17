@@ -12,6 +12,8 @@ export interface Prices {
   /** A tinker that makes a whole work: the build plus the average repair. */
   fullWork: number
   expand: number
+  /** An expand on a place that has earned it (spec v4 2.2). Fixed; the weekly reset leaves it. */
+  expandEarned: number
   /** A wander: one trip of up to 6 reads. */
   trip: number
   tend: number
@@ -26,7 +28,7 @@ export interface Prices {
   rest: number
 }
 
-export const PRICES: Prices = { fullWork: 240, expand: 50, trip: 3, tend: 2, sketch: 50, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 }
+export const PRICES: Prices = { fullWork: 240, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 50, foundRequest: 2, revisit: 1, write: 1, reply: 0, rest: 0 }
 
 /** Points at each wake. */
 export const DAILY_POINTS = 150
@@ -41,6 +43,8 @@ export interface PricedStep {
   size?: 'full' | 'sketch'
   /** Marks a tend, write or found request as one to think harder about. */
   deep?: boolean
+  /** Only an expand: the place has earned the lower price. */
+  earned?: boolean
 }
 
 /** Points in hand after waking: what was saved, plus the day's 150, up to the most that may be held. */
@@ -63,7 +67,7 @@ export function stepCost(step: PricedStep, prices: Prices = PRICES): number {
     case 'revisit':
       return prices.revisit
     case 'expand':
-      return prices.expand
+      return step.earned ? prices.expandEarned : prices.expand
     case 'found':
       return prices.foundRequest
     case 'tinker':

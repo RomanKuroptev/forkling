@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ExpandJob, Interests, isOpenWish, type Place, type WishDraft, type WorkConstraint } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import { expandCheck, lastSizeChange, validatePlacePatch } from '@forkling/sim'
+import { expandAllowed, expandEarned, interestFamilies, lastSizeChange, validatePlacePatch } from '@forkling/sim'
 import type { BuildHandler } from '../build-worker.ts'
 import { clampText } from '../decision.ts'
 import { claimsHuman } from '../honesty.ts'
@@ -60,17 +60,24 @@ export function createExpandHandler(o: ExpandHandlerOptions): BuildHandler {
     const interestsRead = Interests.safeParse(readJson(o.dir, 'brain/interests.json'))
     const interests = interestsRead.success ? interestsRead.data : Interests.parse({})
     const souvenirs = readAllSouvenirs(o.dir)
-    const weights = Object.fromEntries(Object.entries(interests.topics).map(([topic, t]) => [topic, t.weight]))
-    const check = expandCheck(place, weights, souvenirs)
-    if (!check.ok || check.tag === null) return fail(check.reasons.join('; '))
-    const tag = check.tag
+    const check = expandAllowed(place, null)
+    if (!check.ok) return fail(check.reasons.join('; '))
+    const earned = expandEarned(place, interestFamilies(interests), souvenirs, place.exhibits)
 
+    // What the room is for (spec v4 2.2): the works behind a made expand, the family behind a read one, otherwise only the step's reason.
     const since = lastSizeChange(place)
+    const sinceDay = new Date(since).toISOString().slice(0, 10)
+    const tag = earned.by === 'read' ? earned.family : null
+    const familyNames = new Set((interestFamilies(interests).find((f) => f.name === tag)?.members ?? []).map((m) => m.toLowerCase()))
     const kept = souvenirs
-      .filter((s) => Date.parse(s.source.fetchedAt) > since && s.topics.some((t) => t.toLowerCase() === tag.toLowerCase()))
+      .filter((s) => Date.parse(s.source.fetchedAt) > since && s.topics.some((t) => familyNames.has(t.toLowerCase())))
       .slice(-KEPT_SHOWN)
       .reverse()
       .map((s) => ({ id: s.id, kind: s.kind, content: s.content, why: s.why }))
+    const works =
+      earned.by === 'made'
+        ? place.exhibits.filter((e) => e.kind === 'work' && e.added > sinceDay).map((e) => ({ ref: e.ref ?? '', label: e.label }))
+        : []
 
     const seed = (readJson(o.dir, 'forkling.json') as { seed?: number } | null)?.seed ?? 0
     const draw = drawForBuild(o.dir, { seed, key: `expand:${job.id}`, interests, nowMs })
@@ -80,6 +87,7 @@ export function createExpandHandler(o: ExpandHandlerOptions): BuildHandler {
       reason: job.reason,
       tag,
       kept,
+      works,
       others: places.filter((p) => p.id !== place.id).map((p) => ({ id: p.id, name: p.name, chunk: p.chunk })),
       openWishes: readWishes(o.dir).filter(isOpenWish).map((w) => ({ name: w.name, count: w.count })),
       constraint: draw.constraint,
