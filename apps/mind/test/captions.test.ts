@@ -73,14 +73,14 @@ describe('a write step is a caption or a page, by its target (spec v4 6)', () =>
     expect(notebook()).toEqual([])
   })
 
-  it('keeps a caption of 50 words and drops one of 51', async () => {
-    await land(step('write', 'the-lamp', 25, 'A label.'), words(50))
-    expect(workMeta().caption).toBe(words(50))
+  it('keeps a caption of 40 words whole and cuts a longer one at 40 words, not throwing it away', async () => {
+    await land(step('write', 'the-lamp', 25, 'A label.'), words(40))
+    expect(workMeta().caption).toBe(words(40))
     rmSync(file('works/the-lamp/meta.json'))
     put('works/the-lamp/meta.json', WorkMeta.parse({ id: 'the-lamp', title: 'The Lamp', kind: 'art', about: 'A lamp that dims when alone.', interest: null, made: '2026-11-02T10:00:00Z', status: 'shelf', size: 'sketch' }))
     rmSync(file('mind'), { recursive: true, force: true })
     await land(step('write', 'the-lamp', 25, 'A label.'), words(51))
-    expect(workMeta().caption).toBeUndefined()
+    expect(workMeta().caption).toBe(words(40))
   })
 
   it('makes a caption for a place a plaque text, as it always was, of up to 40 words', async () => {

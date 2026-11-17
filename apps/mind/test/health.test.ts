@@ -187,7 +187,7 @@ describe('buildHealth', () => {
     const h = run([{ min: 0, ctx: { mind } }])
     expect(h.quotas.readings).toEqual({ used: 7, max: 40 })
     expect(h.quotas.creative).toBeUndefined()
-    expect(h.allowance).toEqual({ points: 120, max: 450 })
+    expect(h.allowance).toEqual({ points: 120, max: 1500, daily: 300 })
   })
 
   it('keeps count of how long the mood has lasted', () => {

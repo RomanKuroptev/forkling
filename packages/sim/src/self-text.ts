@@ -1,11 +1,10 @@
 import { cutAtWord } from './cut-at-word.ts'
-/** Spec v4 6: `self/about.md` is up to 80 words with up to 8 traits as a list, and it changes at most once a week (the 30% rule cannot work on 80 words). */
+/** Spec v4 6: `self/about.md` is up to 80 words with up to 8 traits as a list, and it changes at most once a week: at least 6 days since the last change, so a review that ran a day late last week does not block this Sunday's (the 30% rule cannot work on 80 words). */
 export const ABOUT_MAX_WORDS = 80
 export const ABOUT_MAX_TRAITS = 8
-export const ABOUT_CHANGE_DAYS = 7
-/** Spec v4 6: a caption is asked for at this many words and kept up to the second number; a write whose target is a place, a work or a project. */
+export const ABOUT_CHANGE_DAYS = 6
+/** Spec v4 6: a caption is up to 40 words (asked for, and cut at a word beyond it); a write whose target is a place, a work or a project. */
 export const CAPTION_WORDS = 40
-export const CAPTION_WORDS_KEPT = 50
 /** Spec v4 6: a reply is asked for at this many words and kept up to the second number (cut at a word beyond it). */
 export const REPLY_WORDS = 50
 export const REPLY_WORDS_KEPT = 60
@@ -50,7 +49,7 @@ export function checkAbout(prev: string, next: string, ctx?: { lastChangeDate: s
   if (traits > ABOUT_MAX_TRAITS) reasons.push(`about.md lists ${traits} traits; up to ${ABOUT_MAX_TRAITS}`)
   if (ctx?.lastChangeDate && linesOf(prev).length > 0 && next.trim() && next.trim() !== prev.trim()) {
     const days = (Date.parse(`${ctx.today}T00:00:00Z`) - Date.parse(`${ctx.lastChangeDate}T00:00:00Z`)) / 86_400_000
-    if (days < ABOUT_CHANGE_DAYS) reasons.push(`about.md already changed on ${ctx.lastChangeDate}; at most one change a week`)
+    if (days < ABOUT_CHANGE_DAYS) reasons.push(`about.md already changed on ${ctx.lastChangeDate}; at most one change a week (at least ${ABOUT_CHANGE_DAYS} days apart)`)
   }
   return { ok: reasons.length === 0, reasons }
 }
@@ -84,8 +83,20 @@ export function fitDiaryLines(lines: readonly string[]): { lines: string[]; cut:
   return { lines: out, cut: kept.length > DIARY_LINES || out.some((l, i) => l !== kept[i]) }
 }
 
-/** A reply as it is kept: up to 60 words, cut at a word beyond that (spec v4 6). */
+/** A text of up to `max` words as it is kept: untouched (line breaks and all) when it fits, cut at the last whole word otherwise. */
+export function cutWords(text: string, max: number): { text: string; cut: boolean } {
+  const trimmed = text.trim()
+  const words = trimmed.split(/\s+/).filter(Boolean)
+  if (words.length <= max) return { text: trimmed, cut: false }
+  return { text: words.slice(0, max).join(' '), cut: true }
+}
+
+/** A caption as it is kept: up to 40 words, cut at a word beyond that (spec v4 6). */
+export function fitCaption(text: string): { text: string; cut: boolean } {
+  return cutWords(text, CAPTION_WORDS)
+}
+
+/** A reply as it is kept: up to 60 words, cut at a word beyond that, with its line breaks kept when it is not cut (spec v4 6). */
 export function fitReply(text: string): string {
-  const words = text.trim().split(/\s+/).filter(Boolean)
-  return words.length <= REPLY_WORDS_KEPT ? words.join(' ') : words.slice(0, REPLY_WORDS_KEPT).join(' ')
+  return cutWords(text, REPLY_WORDS_KEPT).text
 }

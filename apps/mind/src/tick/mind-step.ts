@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
 import type { PlanStep } from '@forkling/schema'
-import { CAPTION_WORDS, CAPTION_WORDS_KEPT, MIND_VERBS } from '@forkling/sim'
+import { CAPTION_WORDS, fitCaption, MIND_VERBS } from '@forkling/sim'
 import { readWorks } from '../builds/works.ts'
 import { clampText } from '../decision.ts'
 import { claimsHuman, wordCount } from '../honesty.ts'
@@ -167,14 +167,18 @@ export async function noteStep(t: Tick): Promise<void> {
     return
   }
   const title = clampText(written.data.title.trim() || 'Untitled', 60)
-  const text = written.data.text.trim()
+  let text = written.data.text.trim()
   if (!text) {
     t.notes.push('write: the model wrote nothing')
     return
   }
-  const kept = kind === 'caption' ? CAPTION_WORDS_KEPT : NOTE_WORDS_KEPT
-  if (wordCount(text) > kept) {
-    t.notes.push(`write: ${wordCount(text)} words is over the ${kept} word limit for a ${kind}, so it was dropped`)
+  if (kind === 'caption') {
+    // A caption is up to 40 words: more is cut at a word, not thrown away (spec v4 6).
+    const fitted = fitCaption(text)
+    if (fitted.cut) t.notes.push(`write: the caption was over ${CAPTION_WORDS} words, so it was cut at a word`)
+    text = fitted.text
+  } else if (wordCount(text) > NOTE_WORDS_KEPT) {
+    t.notes.push(`write: ${wordCount(text)} words is over the ${NOTE_WORDS_KEPT} word limit for a page, so it was dropped`)
     return
   }
   if (claimsHuman(text) || claimsHuman(title)) {

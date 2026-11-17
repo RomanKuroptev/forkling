@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -198,19 +198,19 @@ describe('the nine verbs in the tick', () => {
 
   it('tops up the allowance at the first awake tick of the day and spends a step when it starts', async () => {
     await runTick(dir, at(NOW))
-    expect(stateOf().allowance).toEqual({ points: 147, day: '2026-11-03' })
-    // The next morning: what was saved, plus 150, and the first step's 3 points.
+    expect(stateOf().allowance).toEqual({ points: 297, day: '2026-11-03' })
+    // The next morning: what was saved, plus 300, and the first step's 3 points.
     await runTick(dir, at('2026-11-04T08:30:00Z'))
-    expect(stateOf().allowance).toEqual({ points: 294, day: '2026-11-04' })
+    expect(stateOf().allowance).toEqual({ points: 594, day: '2026-11-04' })
   })
 
   it('turns down a plan that costs more than the points in hand, and says how much', async () => {
-    const dear = [llmStep('tinker', 'a clock that is always early', 90, 'I want to make one properly.', { size: 'full' }), llmStep('wander', 'clocks', 30, 'a'), llmStep('write', 'home', 25, 'b')]
+    const dear = [llmStep('tinker', 'a clock that is always early', 90, 'I want to make one properly.', { size: 'full' }), llmStep('tinker', 'a second clock that is always late', 90, 'And its twin.', { size: 'full' }), llmStep('wander', 'clocks', 30, 'a'), llmStep('write', 'home', 25, 'b')]
     const llm = fakeLlm({ ...morning, plan: dear })
     await runTick(dir, at(NOW, { llm }))
     expect(llm.calls).toHaveLength(2)
-    expect(llm.calls[1]!.user).toMatch(/costs 244 points and you have 150 in hand/)
-    expect(stateOf().rejections[0]!.reasons.join(' ')).toMatch(/costs 244 points/)
+    expect(llm.calls[1]!.user).toMatch(/costs 304 points and you have 300 in hand/)
+    expect(stateOf().rejections[0]!.reasons.join(' ')).toMatch(/costs 304 points/)
   })
 
   it('holds a tired plan to 4 steps', async () => {
@@ -250,7 +250,7 @@ describe('the nine verbs in the tick', () => {
     expect(Forkling.parse(readJson('forkling.json')).energy).toBeCloseTo(0.45)
   })
 
-  it('throws away writing that claims a human life, or runs well over the 40 words a caption was asked for (50)', async () => {
+  it('throws away writing that claims a human life, or runs over the 40 words a caption is cut to', async () => {
     await runTick(dir, at(NOW))
     writeJson('mind/goals.json', { ...goalsOf(), now: { index: 1, startedAt: NOW, until: '2026-11-03T09:10:00Z' } })
     const human = fakeLlm(byKind({ title: 'Home', text: 'When I was a kid I kept a lamp.' }))
@@ -263,8 +263,11 @@ describe('the nine verbs in the tick', () => {
     writeJson('mind/state.json', { ...stateOf(), appliedStepAt: undefined })
     const long = fakeLlm(byKind({ title: 'Long', text: 'word '.repeat(101) }))
     const second = await runTick(dir, at(minutesAfter(16), { llm: long }))
-    expect(existsSync(file('notebook/writing'))).toBe(false)
-    expect(second.notes.join(' ')).toMatch(/over the 50 word limit for a caption/)
+    // A caption over 40 words is cut at a word, not thrown away (spec v4 6).
+    expect(second.notes.join(' ')).toMatch(/cut at a word/)
+    const pages = readdirSync(file('notebook/writing'))
+    expect(pages).toHaveLength(1)
+    expect(readFileSync(file(`notebook/writing/${pages[0]}`), 'utf8').match(/word/g)).toHaveLength(40)
   })
 })
 
@@ -452,8 +455,8 @@ describe('what it did before comes back to it', () => {
     const llm = fakeLlm()
     await runTick(dir, at(NOW, { llm }))
     const user = llm.calls[0]!.user
-    expect(user).toMatch(/^points in hand: 150$/m)
-    expect(user).toMatch(/^prices today: wander 3, tend 2, revisit 1, expand 50 \(20 where earned\), found 80, tinker \(full work\) 240, tinker \(sketch\) 50, write 1, reply 0, rest 0; a deep step costs 30$/m)
+    expect(user).toMatch(/^points in hand: 300$/m)
+    expect(user).toMatch(/^prices today: wander 3, tend 2, revisit 1, expand 50 \(20 where earned\), found 80, tinker \(full work\) 150, tinker \(sketch\) 30, caption 1, page 10, reply 0, rest 0; a deep step costs 30$/m)
   })
 
   it('does not ask for a late night in the morning, when it cannot be one', async () => {

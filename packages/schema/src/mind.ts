@@ -103,13 +103,20 @@ export const MindState = z.object({
       /** The price before v4 (a found was a request to Roman). Read and ignored. */
       foundRequest: z.number().int().min(1).optional(),
       revisit: z.number().int().min(1),
-      write: z.number().int().min(1),
+      caption: z.number().int().min(1).optional(),
+      page: z.number().int().min(1).optional(),
+      /** The one price of a write before v4 (a caption and a page are priced apart now). Read and ignored. */
+      write: z.number().int().min(1).optional(),
       reply: z.number().int().min(0),
       rest: z.number().int().min(0),
     })
     .optional(),
   /** The local date the prices were last set, so it is once a Sunday. */
   pricesSetOn: z.iso.date().optional(),
+  /** The daily points the Sunday formula set (spec v4 5.2), and the date. Absent until 7 full days of overhead are on record: the starting 300 stands. */
+  dailyPoints: z.object({ value: z.number().int().min(100), setOn: z.iso.date() }).optional(),
+  /** The overhead spend of each past local date, read from the ledger the day after while its calls are still there (it keeps only 500). Last 14 days. */
+  overheadDays: z.array(z.object({ date: z.iso.date(), usd: z.number().min(0) })).max(14).optional(),
   /** Steps it took recently, newest last, for the anti-fixation check. */
   recent: z.array(z.object({ verb: z.string(), targetId: z.string().optional(), at: Timestamp })).max(20).default([]),
   /**

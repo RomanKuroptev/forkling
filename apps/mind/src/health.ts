@@ -1,5 +1,5 @@
 import { SourceStats, TOTAL_CAP_USD, type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
-import { MAX_POINTS_IN_HAND, doorStats, drawStats, placeNovelty, textNovelty, weeklyHealthWarnings, workNovelty, type DiaryLike, type DoorDay, type PlaceNudgeLike, type PlaceNudgeRequest, type PlaceNudgeStep, type TextLike, type WorkLike } from '@forkling/sim'
+import { DAILY_POINTS, MAX_POINTS_IN_HAND, doorStats, drawStats, placeNovelty, textNovelty, weeklyHealthWarnings, workNovelty, type DiaryLike, type DoorDay, type PlaceNudgeLike, type PlaceNudgeRequest, type PlaceNudgeStep, type TextLike, type WorkLike } from '@forkling/sim'
 import { daysInMonth, paceAhead, paceUsd } from './budget.ts'
 import { topHostShare } from './web/stats.ts'
 import { MAX_READS_PER_DAY } from './web/trip.ts'
@@ -157,7 +157,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     today: { ticks: (before?.ticks ?? 0) + 1, decideCalls, callsByKind, spendByKind, triggersByKind, failures, rejections, refusals, cutOff, stepsStarted, longestGapMinutes },
     quotas,
     web,
-    allowance: { points: Math.round(mind.allowance?.points ?? 0), max: MAX_POINTS_IN_HAND },
+    allowance: { points: Math.round(mind.allowance?.points ?? 0), max: MAX_POINTS_IN_HAND, daily: mind.dailyPoints?.value ?? DAILY_POINTS, ...(mind.dailyPoints ? { dailySetOn: mind.dailyPoints.setOn } : {}) },
     mood,
     needsCritical: {},
     spend,
