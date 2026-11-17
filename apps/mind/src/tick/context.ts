@@ -182,7 +182,7 @@ export interface Tick {
   /** Set when a reply step finishes: the note is answered after the step is applied (spec 10.1). */
   pendingReply: { step: PlanStep; index: number } | null
   /** Set when the weekly review made a request to Roman: written to `self/requests/<date>.md` (spec 9.5). */
-  selfRequest: { date: string; body: string } | null
+  selfRequest: { date: string; body: string; kind: 'tool' | 'setting' | 'other'; title: string } | null
   /** `self/page.md` as the tick leaves it (spec 9.7). */
   page: string
   /** Set when the page changed this tick: written to `self/page.md` and kept in `self/page-history/`. */
