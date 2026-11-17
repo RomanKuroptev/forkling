@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { hoverStore } from './hoverStore.ts'
+import { hoverStore, opens } from './hoverStore.ts'
 import { noteMarks } from './noteMarks.ts'
 import { notesStore, useNotes } from './notesStore.ts'
 import { useWorld } from './WorldContext.tsx'
@@ -25,7 +25,7 @@ export function Notes() {
             <meshStandardMaterial color={m.color} emissive={m.color} emissiveIntensity={0.55} />
           </mesh>
           {/* A roomy invisible target, so a small paper is easy to point at and to click. */}
-          <mesh position={[0, 0.2, 0]} onClick={() => notesStore.open(m.id)} onPointerOver={() => hoverStore.set({ title: m.title, text: m.text })} onPointerOut={() => hoverStore.set(null)}>
+          <mesh position={[0, 0.2, 0]} onClick={opens(() => notesStore.open(m.id))} onPointerOver={() => hoverStore.set({ title: m.title, text: m.text })} onPointerOut={() => hoverStore.set(null)}>
             <boxGeometry args={[1.4, 0.6, 1.4]} />
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>

@@ -1,0 +1,82 @@
+/* Merge 95: first person, the centre cursor and the taskbar (look slice L3). Loaded after styles.css. */
+:root {
+  --taskbar-h: 40px;
+  --face: #ffd6f1;
+  --ink: #1a0b3b;
+  --purple: #8c1eff;
+}
+
+canvas {
+  touch-action: none;
+  cursor: none;
+}
+
+.cursor {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  /* The arrow's tip is near its top left corner, and the tip is what points. */
+  transform: translate(-3px, -3px);
+  pointer-events: none;
+  z-index: 9;
+  image-rendering: pixelated;
+}
+
+.taskbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--taskbar-h);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+  background: var(--face);
+  border-top: 2px solid #fff;
+  box-shadow: 0 -2px 0 var(--purple);
+  color: var(--ink);
+  font: 18px/1 'VT323', monospace;
+  pointer-events: none;
+  user-select: none;
+  z-index: 10;
+}
+
+.taskbar-start {
+  flex: none;
+  padding: 7px 10px 5px;
+  background: var(--face);
+  border: 2px solid var(--ink);
+  box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 var(--purple);
+  font: 10px/1 'Press Start 2P', monospace;
+}
+
+.taskbar-hint {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.touch-controls button {
+  background: var(--face);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 var(--purple);
+  font: 10px/1 'Press Start 2P', monospace;
+}
+
+.touch-controls .touch-text[aria-pressed='true'],
+.touch-controls .touch-mind[aria-pressed='true'] {
+  background: var(--purple);
+  color: #fff;
+}
+
+/* On a phone the note button stands above Hide text, clear of the stick and Jump. */
+html[data-input="touch"] .note-btn {
+  bottom: calc(var(--taskbar-h) + 168px) !important;
+}

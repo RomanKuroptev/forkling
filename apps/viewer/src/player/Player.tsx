@@ -1,134 +1,119 @@
-import { CameraControls, CameraControlsImpl, useKeyboardControls } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
-import { kit } from '@forkling/schema/kit'
+import { useKeyboardControls } from '@react-three/drei'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Ecctrl, type EcctrlHandle } from 'ecctrl'
 import { useButtonStore, useJoystickStore } from 'ecctrl/input'
-import { useEffect, useMemo, useRef } from 'react'
-import * as THREE from 'three'
+import { useEffect, useRef } from 'react'
 import { parseStand } from '../world/at.ts'
-import { clampCamera, easeCamera, nearSolids, worldSolids, type Vec3 } from '../world/cameraClamp.ts'
 import { useWorld } from '../world/WorldContext.tsx'
-import { worldLand } from '../world/worldLand.ts'
 import { touchUi } from '../touch.ts'
 import { visitor } from '../visitor.ts'
+import { applyLookDrag, lookEuler, type Look } from './look.ts'
 import { mergeMovement } from './touchInput.ts'
 
 const CAPSULE_RADIUS = 0.3
 const CAPSULE_HALF_HEIGHT = 0.45
-/** Camera looks slightly above the body centre, roughly at head height. */
-const EYE_OFFSET = 0.5
+/** Eyes sit this far above the capsule's centre, about 1.6 m above the ground. */
+const EYE_OFFSET = 0.7
 
 /** `?clip=Sit` pins the forkling in front of the visitor, so this camera frames it from the side instead. */
 const clipMode = new URLSearchParams(location.search).has('clip')
 
-/** The visitor: a simple capsule avatar driven by ecctrl, with an orbiting follow camera. */
+/**
+ * The visitor: an invisible capsule driven by ecctrl. The camera is its eyes, in first person. Ecctrl walks the way the camera
+ * faces, so turning the view turns the walk. Dragging on the canvas (mouse or one finger) looks around.
+ */
 export function Player() {
-  const { simWorld, world } = useWorld()
-  // What the camera may not go into: the walls, floors and roofs of the places, and the ground.
-  const ground = useMemo(() => {
-    const land = worldLand(world)
-    return (x: number, z: number) => land.heightAt(x, z)
-  }, [world])
-  const solids = useMemo(() => worldSolids(world.places, kit, ground), [world, ground])
-  const shown = useRef<Vec3 | null>(null)
-  const lookAt = useRef(new THREE.Vector3())
+  const { simWorld } = useWorld()
   // `?stand=x,z,yaw` starts the visitor somewhere else, to look at a part of the world.
   const at = parseStand(location.search)
   const spawn = at ? { x: at.x, z: at.z, y: simWorld.heightAt(at.x, at.z), yaw: at.yaw } : simWorld.visitorSpawn
   const body = useRef<EcctrlHandle>(null)
-  const camera = useRef<CameraControlsImpl>(null)
+  const look = useRef<Look>({ yaw: spawn.yaw, pitch: 0 })
+  const frame = useRef(0)
   const [, getKeys] = useKeyboardControls()
+  const gl = useThree((s) => s.gl)
+  const camera = useThree((s) => s.camera)
+  const events = useThree((s) => s.events)
 
   useEffect(() => {
-    const c = camera.current
-    if (!c) return
-    // Lets browser tests read the visitor's position (`?debug` only).
+    // Lets browser tests read the visitor's position and view (`?debug` only).
     if (new URLSearchParams(location.search).has('debug')) {
-      Object.assign(window, { __forklingPlayer: () => body.current?.currPos.toArray() })
+      Object.assign(window, { __forklingPlayer: () => body.current?.currPos.toArray(), __forklingLook: () => look.current })
     }
-    c.mouseButtons.right = CameraControlsImpl.ACTION.NONE
-    c.mouseButtons.middle = CameraControlsImpl.ACTION.NONE
-    if (touchUi) {
-      // One finger turns the camera. Two pinch to zoom, and must not pan: the camera follows the visitor.
-      c.touches.two = CameraControlsImpl.ACTION.TOUCH_DOLLY
-      c.touches.three = CameraControlsImpl.ACTION.NONE
+    // The cursor is the middle of the screen: every pointer event aims its ray there, wherever the pointer really is.
+    events.compute = (_event, state) => {
+      state.pointer.set(0, 0)
+      state.raycaster.setFromCamera(state.pointer, state.camera)
     }
     if (clipMode) {
       const forward = { x: Math.sin(spawn.yaw), z: Math.cos(spawn.yaw) }
       const cat = { x: spawn.x + forward.x * 3.5, z: spawn.z + forward.z * 3.5 }
       const y = simWorld.heightAt(cat.x, cat.z)
-      c.setLookAt(cat.x + forward.z * 1.4, y + 0.5, cat.z - forward.x * 1.4, cat.x, y + 0.2, cat.z, false)
-      return
+      camera.position.set(cat.x + forward.z * 1.4, y + 0.5, cat.z - forward.x * 1.4)
+      camera.lookAt(cat.x, y + 0.2, cat.z)
     }
-    // Start behind the visitor, looking inland.
-    const back = 7
-    c.setLookAt(
-      spawn.x - Math.sin(spawn.yaw) * back,
-      spawn.y + 4,
-      spawn.z - Math.cos(spawn.yaw) * back,
-      spawn.x,
-      spawn.y + 1,
-      spawn.z,
-      false,
-    )
   }, [])
 
-  useFrame((state, delta) => {
+  // Dragging looks around. Only the first pointer that lands on the canvas does; the stick and buttons are other elements.
+  useEffect(() => {
+    if (clipMode) return
+    const el = gl.domElement
+    let id: number | null = null
+    let lastX = 0
+    let lastY = 0
+    const down = (e: PointerEvent) => {
+      if (id !== null || (e.pointerType === 'mouse' && e.button !== 0)) return
+      id = e.pointerId
+      lastX = e.clientX
+      lastY = e.clientY
+    }
+    const move = (e: PointerEvent) => {
+      if (e.pointerId !== id) return
+      look.current = applyLookDrag(look.current, e.clientX - lastX, e.clientY - lastY)
+      lastX = e.clientX
+      lastY = e.clientY
+    }
+    const up = (e: PointerEvent) => {
+      if (e.pointerId === id) id = null
+    }
+    el.addEventListener('pointerdown', down)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+    return () => {
+      el.removeEventListener('pointerdown', down)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+    }
+  }, [gl])
+
+  useFrame(() => {
     const b = body.current
-    const c = camera.current
-    if (!b || !c) return
+    if (!b) return
     // The touch controls add to the keyboard; with nothing touched this is the keyboard's state unchanged.
     const stick = touchUi ? (useJoystickStore.getState().joysticks.default ?? { x: 0, y: 0, active: false }) : undefined
     b.setMovement(mergeMovement(getKeys(), stick, { jump: useButtonStore.getState().buttons.jump }))
     const p = b.currPos
     visitor.position = { x: p.x, z: p.z }
     if (clipMode) return
-    c.moveTo(p.x, p.y + EYE_OFFSET, p.z, true)
-    // The controls have just put the camera where the visitor's own orbit wants it (they run first). Work out where it may really
-    // stand: in front of any wall, floor or roof between it and the visitor, under the ceiling indoors, above the ground.
-    const target = c.getTarget(lookAt.current)
-    const here: Vec3 = [target.x, target.y, target.z]
-    const [d, polar, azimuth] = [c.distance, c.polarAngle, c.azimuthAngle]
-    const wanted: Vec3 = [here[0] + d * Math.sin(polar) * Math.sin(azimuth), here[1] + d * Math.cos(polar), here[2] + d * Math.sin(polar) * Math.cos(azimuth)]
-    const near = nearSolids(solids, here, 45)
-    const clamped = clampCamera(here, wanted, near, { ground })
-    const next = easeCamera({ shown: shown.current ?? clamped, target: here, wanted: clamped, solids: near, dt: delta, ground })
-    shown.current = next
-    state.camera.position.set(next[0], next[1], next[2])
-    state.camera.lookAt(target)
+    camera.position.set(p.x, p.y + EYE_OFFSET, p.z)
+    camera.quaternion.setFromEuler(lookEuler(look.current))
+    // The cursor is the middle of the screen, so what it points at changes as the visitor walks and turns, with no pointer move.
+    if (++frame.current % 3 === 0) events.update?.()
   })
 
   return (
-    <>
-      <CameraControls
-        ref={camera}
-        makeDefault
-        minDistance={2.5}
-        maxDistance={18}
-        maxPolarAngle={Math.PI * 0.49}
-        smoothTime={0.12}
-      />
-      <Ecctrl
-        ref={body}
-        position={[spawn.x, spawn.y + 1.5, spawn.z]}
-        rotation={[0, spawn.yaw, 0]}
-        capsuleRadius={CAPSULE_RADIUS}
-        capsuleHalfHeight={CAPSULE_HALF_HEIGHT}
-        maxWalkVel={2.5}
-        maxRunVel={6}
-        jumpVel={6.5}
-        enableToggleRun={false}
-      >
-        <mesh castShadow>
-          <capsuleGeometry args={[CAPSULE_RADIUS, CAPSULE_HALF_HEIGHT * 2, 4, 8]} />
-          <meshStandardMaterial color="#f2a65a" flatShading />
-        </mesh>
-        {/* A little visor so you can tell which way the visitor faces. */}
-        <mesh position={[0, CAPSULE_HALF_HEIGHT * 0.8, CAPSULE_RADIUS * 0.85]} castShadow>
-          <boxGeometry args={[0.32, 0.12, 0.12]} />
-          <meshStandardMaterial color="#2d3a4a" />
-        </mesh>
-      </Ecctrl>
-    </>
+    <Ecctrl
+      ref={body}
+      position={[spawn.x, spawn.y + 1.5, spawn.z]}
+      rotation={[0, spawn.yaw, 0]}
+      capsuleRadius={CAPSULE_RADIUS}
+      capsuleHalfHeight={CAPSULE_HALF_HEIGHT}
+      maxWalkVel={2.5}
+      maxRunVel={6}
+      jumpVel={6.5}
+      enableToggleRun={false}
+    />
   )
 }

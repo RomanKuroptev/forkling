@@ -8,7 +8,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { visitor } from '../visitor.ts'
 import { SIGN_W, exhibitSpots, signSpot } from './exhibitGeometry.ts'
 import { signHoverText } from './panelContent.ts'
-import { hoverStore } from './hoverStore.ts'
+import { hoverStore, opens } from './hoverStore.ts'
 import { panelStore } from './panelStore.ts'
 import { plotSign } from './plotGeometry.ts'
 import { kitModelUrl } from './kitModels.ts'
@@ -220,19 +220,19 @@ export function Places() {
   return (
     <>
       {targets.exhibits.map((t) => (
-        <mesh key={t.key} position={t.position} rotation={[0, t.rotY, 0]} onClick={t.open} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
+        <mesh key={t.key} position={t.position} rotation={[0, t.rotY, 0]} onClick={opens(t.open)} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
           <boxGeometry args={[0.7, 0.55, 0.45]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}
       {targets.plots.map((t) => (
-        <mesh key={t.key} position={[t.position[0], t.position[1] + 1.2, t.position[2]]} onClick={t.open} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
+        <mesh key={t.key} position={[t.position[0], t.position[1] + 1.2, t.position[2]]} onClick={opens(t.open)} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
           <boxGeometry args={[2.6, 2.4, 0.8]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}
       {targets.signs.map((t) => (
-        <mesh key={t.key} position={[t.position[0], t.position[1] + 1.15, t.position[2]]} onClick={t.open} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
+        <mesh key={t.key} position={[t.position[0], t.position[1] + 1.15, t.position[2]]} onClick={opens(t.open)} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
           <boxGeometry args={[SIGN_W, 2.3, 0.7]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
