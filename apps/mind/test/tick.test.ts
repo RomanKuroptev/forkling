@@ -509,6 +509,10 @@ describe('the validator', () => {
     expect(state.lastPlanDate).toBe('2026-11-03')
     expect(Forkling.parse(readJson('forkling.json')).intention.type).not.toBe('fish')
     expect(result.notes.join(' ')).toMatch(/rejected/i)
+    // A turned-down plan is the engine's business: it is in the tick log and in the state, never a line of Merge's day.
+    const stream = existsSync(file('memory/stream/2026-11-03.jsonl')) ? readFileSync(file('memory/stream/2026-11-03.jsonl'), 'utf8') : ''
+    expect(stream).not.toMatch(/turned down/)
+    expect(stream).not.toMatch(/"kind":"rejected"/)
   })
 
   it('does not ask again the same morning after a rejected plan', async () => {

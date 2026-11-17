@@ -82,7 +82,6 @@ export function applyDecision(t: Tick): void {
       mind.planRejects = { count: fresh ? 1 : prev.count + 1, lastAt: nowIso }
       if (check.reasons.some((r) => r.includes(SAME_TOPIC_REASON))) flagGoalClosed(t)
       notes.push(`plan rejected: ${check.reasons.join('; ')}`)
-      remember.push({ at: nowIso, kind: 'rejected', text: `A plan was turned down: ${check.reasons[0] ?? 'it could not be carried out'}` })
       parts.push('plan rejected')
       mind.replanAfter = replanAfter
       // The body goes on with the plan it has, unless that is from another day: then it falls back on its own judgement.

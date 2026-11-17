@@ -86,6 +86,26 @@ describe('turning the answer into a patch', () => {
     }
     expect(toTendPatch(answer({ exhibits: [{ op: 'move', id: 'a', kind: null, ref: null, slot: null, label: null }] })).ok).toBe(false)
   })
+  it('cuts text that is over its limit at a word boundary instead of turning the tend down (audit 17 Nov)', () => {
+    const long = `${'word '.repeat(40)}end`
+    const r = toTendPatch(answer({ summary: long, sign: 'THE HOUSE BY THE HARBOUR LAMP', exhibits: [add({ label: long })], labels: [{ id: 'a', label: long }] }))
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.patch.summary.length).toBeLessThanOrEqual(TEND_LIMITS.summary)
+    expect(r.patch.sign!.length).toBeLessThanOrEqual(TEND_LIMITS.sign)
+    expect(r.patch.sign).toBe('THE HOUSE BY THE HARBOUR')
+    const added = r.patch.exhibits[0]
+    expect(added && 'exhibit' in added && added.exhibit.label.length).toBeLessThanOrEqual(TEND_LIMITS.label)
+    expect(r.patch.labels![0]!.label.length).toBeLessThanOrEqual(TEND_LIMITS.label)
+    expect(TendPatch.safeParse(r.patch).success).toBe(true)
+  })
+  it('cuts the reason for closing a place or putting something away, too', () => {
+    const long = `${'reason '.repeat(30)}end`
+    const closing = toTendPatch(answer({ door: 'close', doorReason: long }))
+    expect(closing.ok && closing.patch.door && 'reason' in closing.patch.door && closing.patch.door.reason.length).toBeLessThanOrEqual(TEND_LIMITS.reason)
+    const away = toTendPatch(answer({ putAwayId: 'fog', putAwayReason: long }))
+    expect(away.ok && away.patch.putAway?.reason.length).toBeLessThanOrEqual(TEND_LIMITS.reason)
+  })
   it('wants a gallery with no ref, and anything else with one', () => {
     expect(toTendPatch(answer({ exhibits: [add({ kind: 'gallery', ref: null })] })).ok).toBe(true)
     expect(toTendPatch(answer({ exhibits: [add({ ref: null })] })).ok).toBe(false)
@@ -106,8 +126,8 @@ describe('closing and opening a place from a tend (spec 9.9)', () => {
     const none = toTendPatch(answer())
     expect(none.ok && 'door' in none.patch).toBe(false)
   })
-  it('refuses a close with no reason or one over 140 characters, in words Merge can read', () => {
-    for (const doorReason of [null, '   ', 'x'.repeat(141)]) {
+  it('refuses a close with no reason, in words Merge can read (one over 140 characters is cut, not refused)', () => {
+    for (const doorReason of [null, '   ']) {
       const r = toTendPatch(answer({ door: 'close', doorReason }))
       expect(r.ok).toBe(false)
       expect(!r.ok && r.reason).toMatch(/reason/)
@@ -142,8 +162,8 @@ describe('putting an object away from a tend (spec 9.9)', () => {
     const none = toTendPatch(answer())
     expect(none.ok && 'putAway' in none.patch).toBe(false)
   })
-  it('refuses an id with no reason, a reason with no id, and a reason over 140 characters', () => {
-    for (const over of [{ putAwayId: 'fog', putAwayReason: null }, { putAwayId: 'fog', putAwayReason: '  ' }, { putAwayId: null, putAwayReason: 'Why.' }, { putAwayId: 'fog', putAwayReason: 'x'.repeat(141) }]) {
+  it('refuses an id with no reason and a reason with no id (a reason over 140 characters is cut, not refused)', () => {
+    for (const over of [{ putAwayId: 'fog', putAwayReason: null }, { putAwayId: 'fog', putAwayReason: '  ' }, { putAwayId: null, putAwayReason: 'Why.' }]) {
       const r = toTendPatch(answer(over))
       expect(r.ok, JSON.stringify(over)).toBe(false)
       expect(!r.ok && r.reason).toMatch(/put away|reason/)

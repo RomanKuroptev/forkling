@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { Souvenir, TendPatch, WorkMeta, SLOT_ACCEPTS, type Kit, type Place } from '@forkling/schema'
+import { cutAtWord } from '@forkling/sim'
 import { clampText } from '../decision.ts'
 import { dataBlock } from '../web/read.ts'
 
@@ -117,18 +118,17 @@ export type PatchConversion = { ok: true; patch: z.infer<typeof TendPatch> } | {
 export function toTendPatch(answer: TendAnswer): PatchConversion {
   let putAway: { id: string; reason: string } | undefined
   const awayId = answer.putAwayId?.trim() ?? ''
-  const awayReason = (answer.putAwayReason ?? '').trim()
+  // Text over its limit is cut at a word boundary, never a reason to turn the tend down (audit 17 Nov).
+  const awayReason = cutAtWord(answer.putAwayReason ?? '', TEND_LIMITS.reason)
   if (awayId || awayReason) {
     if (!awayId) return { ok: false, reason: 'a reason to put something away needs the id of the exhibit' }
     if (!awayReason) return { ok: false, reason: `putting "${awayId}" away needs a reason` }
-    if (awayReason.length > TEND_LIMITS.reason) return { ok: false, reason: `the reason for putting something away is up to ${TEND_LIMITS.reason} characters (it is ${awayReason.length})` }
     putAway = { id: awayId, reason: awayReason }
   }
   let door: { op: 'close'; reason: string } | { op: 'open' } | undefined
   if (answer.door === 'close') {
-    const reason = (answer.doorReason ?? '').trim()
+    const reason = cutAtWord(answer.doorReason ?? '', TEND_LIMITS.reason)
     if (!reason) return { ok: false, reason: 'closing a place needs a reason' }
-    if (reason.length > TEND_LIMITS.reason) return { ok: false, reason: `the reason for closing is up to ${TEND_LIMITS.reason} characters (it is ${reason.length})` }
     door = { op: 'close', reason }
   } else if (answer.door === 'open') {
     door = { op: 'open' }
@@ -145,15 +145,15 @@ export function toTendPatch(answer: TendAnswer): PatchConversion {
       if (!e.slot) return { ok: false, reason: `add "${e.id}" needs a slot` }
       if (e.label === null || e.label.trim() === '') return { ok: false, reason: `add "${e.id}" needs a label` }
       if (e.kind === 'gallery' ? e.ref !== null : e.ref === null) return { ok: false, reason: e.kind === 'gallery' ? `add "${e.id}": a gallery has no ref` : `add "${e.id}": a ${e.kind} needs a ref` }
-      exhibits.push({ op: 'add', exhibit: { id: e.id, kind: e.kind, ref: e.ref, slot: e.slot, label: e.label.trim() } })
+      exhibits.push({ op: 'add', exhibit: { id: e.id, kind: e.kind, ref: e.ref, slot: e.slot, label: cutAtWord(e.label, TEND_LIMITS.label) } })
     }
   }
   const parsed = TendPatch.safeParse({
     verb: 'tend',
     exhibits,
-    labels: answer.labels.map((l) => ({ id: l.id, label: l.label.trim() })),
-    summary: answer.summary.trim(),
-    ...(answer.sign !== null ? { sign: answer.sign } : {}),
+    labels: answer.labels.map((l) => ({ id: l.id, label: cutAtWord(l.label, TEND_LIMITS.label) })),
+    summary: cutAtWord(answer.summary, TEND_LIMITS.summary),
+    ...(answer.sign !== null ? { sign: cutAtWord(answer.sign, TEND_LIMITS.sign) } : {}),
     ...(answer.lamps !== null ? { lamps: answer.lamps } : {}),
     ...(door ? { door } : {}),
     ...(putAway ? { putAway } : {}),
