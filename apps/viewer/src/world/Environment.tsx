@@ -74,6 +74,7 @@ const gridVertex = /* glsl */ `
 `
 const gridFragment = /* glsl */ `
   uniform vec3 uGround;
+  uniform vec3 uFogColor;
   uniform vec3 uLine;
   uniform float uSpacing;
   uniform vec2 uFade;
@@ -84,7 +85,9 @@ const gridFragment = /* glsl */ `
     vec2 a = abs(fract(p - 0.5) - 0.5) / max(w, vec2(0.0001));
     float line = 1.0 - min(min(a.x, a.y), 1.0);
     float fade = 1.0 - smoothstep(uFade.x, uFade.y, length(vWorld.xz - cameraPosition.xz));
-    gl_FragColor = vec4(mix(uGround, uLine * 1.3, line * fade), 1.0);
+    float far = length(vWorld.xz - cameraPosition.xz);
+    vec3 ground = mix(uGround, uFogColor, smoothstep(20.0, 380.0, far));
+    gl_FragColor = vec4(mix(ground, uLine * 1.3, line * fade), 1.0);
     #include <colorspace_fragment>
   }
 `
@@ -130,6 +133,7 @@ export function Environment() {
         fog: false,
         uniforms: {
           uGround: { value: color(GRID.ground) },
+          uFogColor: { value: new THREE.Color() },
           uLine: { value: color(GRID.line) },
           uSpacing: { value: GRID.farSpacing },
           uFade: { value: new THREE.Vector2(...GRID.farFade) },
@@ -155,6 +159,7 @@ export function Environment() {
     sky.uniforms.uSun!.value.set(dir[0], dir[1], dir[2])
     sky.uniforms.uNight!.value = night
     fog.color.copy(fogDay).lerp(fogNight, night)
+    grid.uniforms.uFogColor!.value.copy(fog.color)
     if (sun.current) {
       sun.current.position.set(dir[0] * 80, Math.max(dir[1], 0.25) * 80, dir[2] * 80)
       sun.current.intensity = 2.2 * (1 - night) + 0.4 * night

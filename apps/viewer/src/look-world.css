@@ -12,6 +12,7 @@
     repeating-linear-gradient(to bottom, rgb(255 64 209 / 70%) 0 2px, transparent 2px 24px) 0 100% / 100% 30% no-repeat,
     linear-gradient(to bottom, #3a1280, var(--deep)) 0 100% / 100% 30% no-repeat,
     linear-gradient(to bottom, var(--deep) 0%, var(--purple) 25%, var(--hot-pink) 50%, #ffb36b 70%);
+  box-sizing: border-box;
   min-height: 100dvh;
   color: var(--face);
 }
