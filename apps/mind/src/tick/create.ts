@@ -112,6 +112,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     beliefs: w.beliefs,
     wants: structuredClone(w.wants.wants),
     visitorNotes: visibleNotes(w.notes, w.notesHidden),
+    visitors: structuredClone(w.visitors),
     config: mindConfig.config,
     noteUpdates: [],
     pendingReply: null,

@@ -83,7 +83,13 @@ export const Note = z
 export type Note = z.infer<typeof Note>
 
 /** `mind/notes-hidden.json`: Roman hides a note by adding its id. A hidden note is gone from the site and from Merge's prompts. */
-export const NotesHidden = z.object({ hidden: z.array(z.string().min(1).max(60)).default([]) }).strict()
+export const NotesHidden = z
+  .object({
+    hidden: z.array(z.string().min(1).max(60)).default([]),
+    /** Folded names (lowercase, trimmed, spaces collapsed) whose entry in `memory/visitors.json` is left out of every prompt. */
+    names: z.array(z.string().min(1).max(40)).default([]),
+  })
+  .strict()
 export type NotesHidden = z.infer<typeof NotesHidden>
 
 /**
@@ -118,3 +124,20 @@ export function parseSelfRequest(date: string, text: string): SelfRequest | null
 /** What `GET /notes.json` says (spec 10.1): the notes that are not hidden, newest first, up to 100. They are public already: the board shows them. */
 export const NotesResponse = z.object({ notes: z.array(Note).max(100) }).strict()
 export type NotesResponse = z.infer<typeof NotesResponse>
+
+/** `memory/visitors.json` (spec v4 7): who Merge has talked to, keyed by the folded name they gave. A name is a claim, not proof. At most 200 entries (`MAX_VISITORS` in sim). */
+export const Visitor = z
+  .object({
+    name: z.string().min(1).max(40),
+    firstSeen: Timestamp,
+    lastSeen: Timestamp,
+    notes: z.number().int().min(1),
+    /** Up to 200 characters, written by Merge in the reply call. */
+    about: z.string().max(200).default(''),
+    /** Ids of the things made because of this visitor. */
+    made: z.array(z.string().min(1).max(80)).max(100).default([]),
+  })
+  .strict()
+export type Visitor = z.infer<typeof Visitor>
+export const Visitors = z.object({ visitors: z.record(z.string().min(1).max(40), Visitor).default({}) }).strict()
+export type Visitors = z.infer<typeof Visitors>

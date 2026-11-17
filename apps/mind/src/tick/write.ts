@@ -35,6 +35,7 @@ export function writeWorld(t: Tick): TickResult {
   const beliefsChanged = !same(beliefs, w.beliefs)
   const interestsChanged = !same(interests, w.interests)
   const wantsChanged = !same(t.wants, w.wants.wants)
+  const visitorsChanged = !same(t.visitors, w.visitors)
   const sourcesChanged = !same(t.sources, w.sources)
   const writeBody =
     t.started !== null ||
@@ -102,6 +103,7 @@ export function writeWorld(t: Tick): TickResult {
       const history = aboutHistoryPath(today)
       if (writeText(dir, history, renderAboutHistory(today, t.aboutWrite))) written.push(history)
     }
+    if (visitorsChanged && writeJson(dir, 'memory/visitors.json', t.visitors)) written.push('memory/visitors.json')
     for (const n of t.noteUpdates) if (writeJson(dir, `notes/${n.id}.json`, n)) written.push(`notes/${n.id}.json`)
     if (t.selfRequest) {
       const request = `self/requests/${t.selfRequest.date}.md`

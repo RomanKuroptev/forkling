@@ -24,9 +24,9 @@ export function readNotes(dir: string): Note[] {
 export function readNotesHidden(dir: string): NotesHidden {
   try {
     const parsed = NotesHidden.safeParse(JSON.parse(readFileSync(join(dir, 'mind/notes-hidden.json'), 'utf8')))
-    return parsed.success ? parsed.data : { hidden: [] }
+    return parsed.success ? parsed.data : { hidden: [], names: [] }
   } catch {
-    return { hidden: [] }
+    return { hidden: [], names: [] }
   }
 }
 

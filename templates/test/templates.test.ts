@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, NotesHidden, SpeciesPack } from '@forkling/schema'
+import { Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, NotesHidden, SpeciesPack, Visitors } from '@forkling/schema'
 import { bodyWorldFor, isWalkable } from '@forkling/sim'
 import catSpecies from '@forkling/species-cat/species.json'
 
@@ -39,6 +39,11 @@ for (const template of ['forkling-world', 'merge']) {
       expect(Array.isArray(read(join(dir, 'memory/people.json')))).toBe(true)
     })
 
+    it('starts with no remembered visitors (spec v4 7)', () => {
+      if (!paths.includes('memory/visitors.json')) return
+      expect(Visitors.parse(read(join(dir, 'memory/visitors.json')))).toEqual({ visitors: {} })
+    })
+
     it('starts with no beliefs, and a place for the memory stream', () => {
       if (!paths.includes('memory/beliefs.json')) return
       expect(Beliefs.parse(read(join(dir, 'memory/beliefs.json')))).toEqual([])
@@ -56,7 +61,7 @@ for (const template of ['forkling-world', 'merge']) {
       if (!paths.includes('souvenirs/.gitkeep')) return
       expect(paths).toContain('notes/.gitkeep')
       expect(paths.filter((p) => p.startsWith('notes/'))).toHaveLength(1)
-      expect(NotesHidden.parse(read(join(dir, 'mind/notes-hidden.json')))).toEqual({ hidden: [] })
+      expect(NotesHidden.parse(read(join(dir, 'mind/notes-hidden.json')))).toEqual({ hidden: [], names: [] })
     })
 
     it('only contains files a world repo is allowed to have', () => {

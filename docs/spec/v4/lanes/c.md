@@ -1,6 +1,6 @@
 # Lane C: visitors and tools (steps 5, 6)
 
-State: step 5 slice A (threads) in PR; slices B and C next. Coordinator approved the plan, minus any new plan-validation reason: the 3-reply close is enforced at intake and by threadState only, and a reply step on a closed-thread note skips plainly in code.
+State: slice A merged (#183). Slice B (remembering) in a prompt-review PR, waiting for the reviewer. Next: slice C (credit), then sharing S5, then step 6.
 
 ## Plan for step 5 (one PR each, branches claude/v4-c-<slice>)
 
