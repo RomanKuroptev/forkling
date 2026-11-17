@@ -1,0 +1,1234 @@
+{
+  "version": 2,
+  "topics": {
+    "lidar finds of lost maya sites": {
+      "weight": 17.05,
+      "firstSeen": "2026-11-11T17:13:17.731Z",
+      "lastFed": "2026-11-11T17:13:17.731Z",
+      "sources": [
+        {
+          "id": "hn:50452455",
+          "title": "Google SWE points 48 AI agents at NASA Lidar, finds unmapped Maya pyramid in 72h",
+          "url": "https://pietromiotti.com/latest/maya-site/?maya",
+          "at": "2026-11-11T17:13:17.731Z"
+        }
+      ],
+      "history": []
+    },
+    "hyper-realistic sand in webgl": {
+      "weight": 9.743,
+      "firstSeen": "2026-11-11T17:13:17.731Z",
+      "lastFed": "2026-11-11T17:13:17.731Z",
+      "sources": [
+        {
+          "id": "hn:50453288",
+          "title": "Hyper-Realistic Sand with WebGL2",
+          "url": "https://av.github.io/safe-sand/",
+          "at": "2026-11-11T17:13:17.731Z"
+        }
+      ],
+      "history": []
+    },
+    "absurd rigorous joke papers": {
+      "weight": 9.743,
+      "firstSeen": "2026-11-12T06:03:13.068Z",
+      "lastFed": "2026-11-12T06:03:13.068Z",
+      "sources": [
+        {
+          "id": "hn:50459745",
+          "title": "93% of paint splatters are valid Perl programs (2019)",
+          "url": "https://www.mcmillen.dev/sigbovik/",
+          "at": "2026-11-12T06:03:13.068Z"
+        }
+      ],
+      "history": []
+    },
+    "digital elevation model": {
+      "weight": 18.533,
+      "firstSeen": "2026-11-13T06:25:44.992Z",
+      "lastFed": "2026-11-13T06:25:44.992Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-13-1",
+          "title": "Airborne lidar",
+          "url": "https://en.wikipedia.org/wiki/Airborne_lidar",
+          "at": "2026-11-13T06:25:44.992Z"
+        },
+        {
+          "id": "2026-11-13-airborne-lidar",
+          "title": "Airborne lidar",
+          "url": "https://en.wikipedia.org/wiki/Airborne_lidar",
+          "at": "2026-11-13T06:25:44.992Z"
+        },
+        {
+          "id": "2026-11-13-digital-elevation-model",
+          "title": "Digital elevation model",
+          "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+          "at": "2026-11-13T06:25:44.992Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-13-1"
+        }
+      ]
+    },
+    "lidar": {
+      "weight": 9.267,
+      "firstSeen": "2026-11-13T06:25:44.992Z",
+      "lastFed": "2026-11-13T06:25:44.992Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-13-1",
+          "title": "Digital elevation model",
+          "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+          "at": "2026-11-13T06:25:44.992Z"
+        },
+        {
+          "id": "2026-11-13-digital-elevation-model",
+          "title": "Digital elevation model",
+          "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+          "at": "2026-11-13T06:25:44.992Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-13-1"
+        }
+      ]
+    },
+    "terrain rendering": {
+      "weight": 9.267,
+      "firstSeen": "2026-11-13T06:25:44.992Z",
+      "lastFed": "2026-11-13T06:25:44.992Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-13-1",
+          "title": "Digital elevation model",
+          "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+          "at": "2026-11-13T06:25:44.992Z"
+        },
+        {
+          "id": "2026-11-13-digital-elevation-model",
+          "title": "Digital elevation model",
+          "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+          "at": "2026-11-13T06:25:44.992Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-13-1"
+        }
+      ]
+    },
+    "forest canopy": {
+      "weight": 9.267,
+      "firstSeen": "2026-11-13T06:25:44.992Z",
+      "lastFed": "2026-11-13T06:25:44.992Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-13-1",
+          "title": "Canopy (botany)",
+          "url": "https://en.wikipedia.org/wiki/Canopy_(botany)",
+          "at": "2026-11-13T06:25:44.992Z"
+        },
+        {
+          "id": "2026-11-13-canopy-botany",
+          "title": "Canopy (botany)",
+          "url": "https://en.wikipedia.org/wiki/Canopy_(botany)",
+          "at": "2026-11-13T06:25:44.992Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-13-1"
+        }
+      ]
+    },
+    "leaf area index": {
+      "weight": 11.914,
+      "firstSeen": "2026-11-13T06:25:44.992Z",
+      "lastFed": "2026-11-13T06:25:44.992Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-13-1",
+          "title": "Canopy (botany)",
+          "url": "https://en.wikipedia.org/wiki/Canopy_(botany)",
+          "at": "2026-11-13T06:25:44.992Z"
+        },
+        {
+          "id": "2026-11-13-canopy-botany",
+          "title": "Canopy (botany)",
+          "url": "https://en.wikipedia.org/wiki/Canopy_(botany)",
+          "at": "2026-11-13T06:25:44.992Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        }
+      ]
+    },
+    "canopy interception": {
+      "weight": 9.267,
+      "firstSeen": "2026-11-13T06:25:44.992Z",
+      "lastFed": "2026-11-13T06:25:44.992Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-13-1",
+          "title": "Canopy (botany)",
+          "url": "https://en.wikipedia.org/wiki/Canopy_(botany)",
+          "at": "2026-11-13T06:25:44.992Z"
+        },
+        {
+          "id": "2026-11-13-canopy-botany",
+          "title": "Canopy (botany)",
+          "url": "https://en.wikipedia.org/wiki/Canopy_(botany)",
+          "at": "2026-11-13T06:25:44.992Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-13-1"
+        }
+      ]
+    },
+    "terrain cartography": {
+      "weight": 10.073,
+      "firstSeen": "2026-11-14T18:49:24.196Z",
+      "lastFed": "2026-11-14T18:49:24.196Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-14-4",
+          "title": "Terrain cartography",
+          "url": "https://en.wikipedia.org/wiki/Terrain_cartography",
+          "at": "2026-11-14T18:49:24.196Z"
+        },
+        {
+          "id": "2026-11-14-terrain-cartography",
+          "title": "Terrain cartography",
+          "url": "https://en.wikipedia.org/wiki/Terrain_cartography",
+          "at": "2026-11-14T18:49:24.196Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-14T18:49:24.196Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-14-4"
+        },
+        {
+          "at": "2026-11-14T18:49:24.196Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-14-4"
+        }
+      ]
+    },
+    "shaded relief": {
+      "weight": 10.073,
+      "firstSeen": "2026-11-14T18:49:24.196Z",
+      "lastFed": "2026-11-14T18:49:24.196Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-14-4",
+          "title": "Terrain cartography",
+          "url": "https://en.wikipedia.org/wiki/Terrain_cartography",
+          "at": "2026-11-14T18:49:24.196Z"
+        },
+        {
+          "id": "2026-11-14-terrain-cartography",
+          "title": "Terrain cartography",
+          "url": "https://en.wikipedia.org/wiki/Terrain_cartography",
+          "at": "2026-11-14T18:49:24.196Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-14T18:49:24.196Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-14-4"
+        },
+        {
+          "at": "2026-11-14T18:49:24.196Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-14-4"
+        }
+      ]
+    },
+    "multi-directional shading": {
+      "weight": 10.073,
+      "firstSeen": "2026-11-14T18:49:24.196Z",
+      "lastFed": "2026-11-14T18:49:24.196Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-14-4",
+          "title": "Terrain cartography",
+          "url": "https://en.wikipedia.org/wiki/Terrain_cartography",
+          "at": "2026-11-14T18:49:24.196Z"
+        },
+        {
+          "id": "2026-11-14-terrain-cartography",
+          "title": "Terrain cartography",
+          "url": "https://en.wikipedia.org/wiki/Terrain_cartography",
+          "at": "2026-11-14T18:49:24.196Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-14T18:49:24.196Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-14-4"
+        },
+        {
+          "at": "2026-11-14T18:49:24.196Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-14-4"
+        }
+      ]
+    },
+    "new media art": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T07:59:47.308Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "New media art",
+          "url": "https://en.wikipedia.org/wiki/New_media_art",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-new-media-art",
+          "title": "New media art",
+          "url": "https://en.wikipedia.org/wiki/New_media_art",
+          "at": "2026-11-17T07:59:47.308Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        }
+      ]
+    },
+    "video games as art": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T07:59:47.308Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "New media art",
+          "url": "https://en.wikipedia.org/wiki/New_media_art",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-new-media-art",
+          "title": "New media art",
+          "url": "https://en.wikipedia.org/wiki/New_media_art",
+          "at": "2026-11-17T07:59:47.308Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        }
+      ]
+    },
+    "interactive art": {
+      "weight": 28,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "New media art",
+          "url": "https://en.wikipedia.org/wiki/New_media_art",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-new-media-art",
+          "title": "New media art",
+          "url": "https://en.wikipedia.org/wiki/New_media_art",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Interactive art",
+          "url": "https://en.wikipedia.org/wiki/Interactive_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-interactive-art",
+          "title": "Interactive art",
+          "url": "https://en.wikipedia.org/wiki/Interactive_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "new media": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T07:59:47.308Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "New media",
+          "url": "https://en.wikipedia.org/wiki/New_media",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-new-media",
+          "title": "New media",
+          "url": "https://en.wikipedia.org/wiki/New_media",
+          "at": "2026-11-17T07:59:47.308Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        }
+      ]
+    },
+    "media theory": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T07:59:47.308Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "New media",
+          "url": "https://en.wikipedia.org/wiki/New_media",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-new-media",
+          "title": "New media",
+          "url": "https://en.wikipedia.org/wiki/New_media",
+          "at": "2026-11-17T07:59:47.308Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        }
+      ]
+    },
+    "interactivity": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T07:59:47.308Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "New media",
+          "url": "https://en.wikipedia.org/wiki/New_media",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-new-media",
+          "title": "New media",
+          "url": "https://en.wikipedia.org/wiki/New_media",
+          "at": "2026-11-17T07:59:47.308Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        }
+      ]
+    },
+    "desktop metaphor": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T07:59:47.308Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "Desktop metaphor",
+          "url": "https://en.wikipedia.org/wiki/Desktop_metaphor",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-desktop-metaphor",
+          "title": "Desktop metaphor",
+          "url": "https://en.wikipedia.org/wiki/Desktop_metaphor",
+          "at": "2026-11-17T07:59:47.308Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        }
+      ]
+    },
+    "early gui history": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T07:59:47.308Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "Desktop metaphor",
+          "url": "https://en.wikipedia.org/wiki/Desktop_metaphor",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-desktop-metaphor",
+          "title": "Desktop metaphor",
+          "url": "https://en.wikipedia.org/wiki/Desktop_metaphor",
+          "at": "2026-11-17T07:59:47.308Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        }
+      ]
+    },
+    "paper paradigm": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T07:59:47.308Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "Desktop metaphor",
+          "url": "https://en.wikipedia.org/wiki/Desktop_metaphor",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-desktop-metaphor",
+          "title": "Desktop metaphor",
+          "url": "https://en.wikipedia.org/wiki/Desktop_metaphor",
+          "at": "2026-11-17T07:59:47.308Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        }
+      ]
+    },
+    "installation art": {
+      "weight": 28,
+      "firstSeen": "2026-11-17T10:45:20.534Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Installation art",
+          "url": "https://en.wikipedia.org/wiki/Installation_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-installation-art",
+          "title": "Installation art",
+          "url": "https://en.wikipedia.org/wiki/Installation_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-interactive-art",
+          "title": "Interactive art",
+          "url": "https://en.wikipedia.org/wiki/Interactive_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "immersive environments": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T10:45:20.534Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Installation art",
+          "url": "https://en.wikipedia.org/wiki/Installation_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-installation-art",
+          "title": "Installation art",
+          "url": "https://en.wikipedia.org/wiki/Installation_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "viewer experience": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T10:45:20.534Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Installation art",
+          "url": "https://en.wikipedia.org/wiki/Installation_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-installation-art",
+          "title": "Installation art",
+          "url": "https://en.wikipedia.org/wiki/Installation_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "viewer participation": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T10:45:20.534Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Interactive art",
+          "url": "https://en.wikipedia.org/wiki/Interactive_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-interactive-art",
+          "title": "Interactive art",
+          "url": "https://en.wikipedia.org/wiki/Interactive_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "sensors": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T10:45:20.534Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Sensor",
+          "url": "https://en.wikipedia.org/wiki/Sensor",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-sensor",
+          "title": "Sensor",
+          "url": "https://en.wikipedia.org/wiki/Sensor",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "light sensing": {
+      "weight": 18,
+      "firstSeen": "2026-11-17T10:45:20.534Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Sensor",
+          "url": "https://en.wikipedia.org/wiki/Sensor",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-sensor",
+          "title": "Sensor",
+          "url": "https://en.wikipedia.org/wiki/Sensor",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "signal measurement": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T10:45:20.534Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Sensor",
+          "url": "https://en.wikipedia.org/wiki/Sensor",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-sensor",
+          "title": "Sensor",
+          "url": "https://en.wikipedia.org/wiki/Sensor",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "liminality": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T13:10:46.979Z",
+      "lastFed": "2026-11-17T13:10:46.979Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-3",
+          "title": "Liminality",
+          "url": "https://en.wikipedia.org/wiki/Liminality",
+          "at": "2026-11-17T13:10:46.979Z"
+        },
+        {
+          "id": "2026-11-17-liminality",
+          "title": "Liminality",
+          "url": "https://en.wikipedia.org/wiki/Liminality",
+          "at": "2026-11-17T13:10:46.979Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T13:10:46.979Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-3"
+        },
+        {
+          "at": "2026-11-17T13:10:46.979Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-3"
+        }
+      ]
+    },
+    "rites of passage": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T13:10:46.979Z",
+      "lastFed": "2026-11-17T13:10:46.979Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-3",
+          "title": "Liminality",
+          "url": "https://en.wikipedia.org/wiki/Liminality",
+          "at": "2026-11-17T13:10:46.979Z"
+        },
+        {
+          "id": "2026-11-17-liminality",
+          "title": "Liminality",
+          "url": "https://en.wikipedia.org/wiki/Liminality",
+          "at": "2026-11-17T13:10:46.979Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T13:10:46.979Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-3"
+        },
+        {
+          "at": "2026-11-17T13:10:46.979Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-3"
+        }
+      ]
+    },
+    "threshold": {
+      "weight": 14,
+      "firstSeen": "2026-11-17T13:10:46.979Z",
+      "lastFed": "2026-11-17T13:10:46.979Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-3",
+          "title": "Liminality",
+          "url": "https://en.wikipedia.org/wiki/Liminality",
+          "at": "2026-11-17T13:10:46.979Z"
+        },
+        {
+          "id": "2026-11-17-liminality",
+          "title": "Liminality",
+          "url": "https://en.wikipedia.org/wiki/Liminality",
+          "at": "2026-11-17T13:10:46.979Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T13:10:46.979Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-3"
+        },
+        {
+          "at": "2026-11-17T13:10:46.979Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-3"
+        }
+      ]
+    },
+    "gap year": {
+      "weight": 10,
+      "firstSeen": "2026-11-17T13:10:46.979Z",
+      "lastFed": "2026-11-17T13:10:46.979Z",
+      "sources": [
+        {
+          "id": "2026-11-17-gap-year",
+          "title": "Gap year",
+          "url": "https://en.wikipedia.org/wiki/Gap_year",
+          "at": "2026-11-17T13:10:46.979Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T13:10:46.979Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-3"
+        }
+      ]
+    },
+    "in-between stages": {
+      "weight": 10,
+      "firstSeen": "2026-11-17T13:10:46.979Z",
+      "lastFed": "2026-11-17T13:10:46.979Z",
+      "sources": [
+        {
+          "id": "2026-11-17-gap-year",
+          "title": "Gap year",
+          "url": "https://en.wikipedia.org/wiki/Gap_year",
+          "at": "2026-11-17T13:10:46.979Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T13:10:46.979Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-3"
+        }
+      ]
+    },
+    "student travel": {
+      "weight": 10,
+      "firstSeen": "2026-11-17T13:10:46.979Z",
+      "lastFed": "2026-11-17T13:10:46.979Z",
+      "sources": [
+        {
+          "id": "2026-11-17-gap-year",
+          "title": "Gap year",
+          "url": "https://en.wikipedia.org/wiki/Gap_year",
+          "at": "2026-11-17T13:10:46.979Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T13:10:46.979Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-3"
+        }
+      ]
+    },
+    "road verge": {
+      "weight": 10,
+      "firstSeen": "2026-11-17T15:05:58.004Z",
+      "lastFed": "2026-11-17T15:05:58.004Z",
+      "sources": [
+        {
+          "id": "2026-11-17-road-verge",
+          "title": "Road verge",
+          "url": "https://en.wikipedia.org/wiki/Road_verge",
+          "at": "2026-11-17T15:05:58.004Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T15:05:58.004Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-4"
+        }
+      ]
+    },
+    "urban planning": {
+      "weight": 10,
+      "firstSeen": "2026-11-17T15:05:58.004Z",
+      "lastFed": "2026-11-17T15:05:58.004Z",
+      "sources": [
+        {
+          "id": "2026-11-17-road-verge",
+          "title": "Road verge",
+          "url": "https://en.wikipedia.org/wiki/Road_verge",
+          "at": "2026-11-17T15:05:58.004Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T15:05:58.004Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-4"
+        }
+      ]
+    },
+    "biodiversity": {
+      "weight": 10,
+      "firstSeen": "2026-11-17T15:05:58.004Z",
+      "lastFed": "2026-11-17T15:05:58.004Z",
+      "sources": [
+        {
+          "id": "2026-11-17-road-verge",
+          "title": "Road verge",
+          "url": "https://en.wikipedia.org/wiki/Road_verge",
+          "at": "2026-11-17T15:05:58.004Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T15:05:58.004Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-4"
+        }
+      ]
+    },
+    "light art": {
+      "weight": 10,
+      "firstSeen": "2026-11-17T16:35:57.385Z",
+      "lastFed": "2026-11-17T16:35:57.385Z",
+      "sources": [
+        {
+          "id": "2026-11-17-james-turrell",
+          "title": "James Turrell",
+          "url": "https://en.wikipedia.org/wiki/James_Turrell",
+          "at": "2026-11-17T16:35:57.385Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T16:35:57.385Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-5"
+        }
+      ]
+    },
+    "skyspace": {
+      "weight": 10,
+      "firstSeen": "2026-11-17T16:35:57.385Z",
+      "lastFed": "2026-11-17T16:35:57.385Z",
+      "sources": [
+        {
+          "id": "2026-11-17-james-turrell",
+          "title": "James Turrell",
+          "url": "https://en.wikipedia.org/wiki/James_Turrell",
+          "at": "2026-11-17T16:35:57.385Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T16:35:57.385Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-5"
+        }
+      ]
+    },
+    "james turrell": {
+      "weight": 10,
+      "firstSeen": "2026-11-17T16:35:57.385Z",
+      "lastFed": "2026-11-17T16:35:57.385Z",
+      "sources": [
+        {
+          "id": "2026-11-17-james-turrell",
+          "title": "James Turrell",
+          "url": "https://en.wikipedia.org/wiki/James_Turrell",
+          "at": "2026-11-17T16:35:57.385Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T16:35:57.385Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-5"
+        }
+      ]
+    }
+  },
+  "current": null,
+  "past": []
+}
