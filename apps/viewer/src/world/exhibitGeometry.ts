@@ -1,4 +1,5 @@
 import type { Kit, KitPalette, Place, SlotKind } from '@forkling/schema'
+import { EXHIBIT } from './theme.ts'
 import { createPrng, placeCentre, toLandPlace, type NeglectLevel } from '@forkling/sim'
 import { floorHeight, type Instance } from './kitBase.ts'
 import { compose } from './matrix.ts'
@@ -40,8 +41,8 @@ export function exhibitSpots(place: Place, kit: Kit, baseY: number): ExhibitSpot
   return spots
 }
 
-const BRASS = '#c8a24a'
-const PAPER = '#e9dfc4'
+const BRASS = EXHIBIT.brass
+const PAPER = EXHIBIT.paper
 
 /** What an exhibit looks like at its spot: a lit screen, a canvas in a frame, a brass plaque, a keepsake on a shelf or in a case. */
 export function exhibitInstances(spot: ExhibitSpot, colors: KitPalette['colors']): Instance[] {
@@ -79,10 +80,10 @@ export function neglectLook(level: NeglectLevel, lamps: boolean): NeglectLook {
   return { lampsOn: false, dust: 24, cobwebs: 4, vines: 12, grass: 24 }
 }
 
-const DUST = '#b9ad94'
-const WEB = '#ececec'
-const VINE = '#3f7d3a'
-const LEAF = '#5a9a46'
+const DUST = EXHIBIT.dust
+const WEB = EXHIBIT.web
+const VINE = EXHIBIT.vine
+const LEAF = EXHIBIT.leaf
 
 /** A number from a place's id, so the same place always gets the same dust. */
 function seedOf(id: string): number {

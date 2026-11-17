@@ -1,4 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber'
+import { MIST } from './theme.ts'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { MIST_FADE_FAR, MIST_FADE_NEAR, mistColor, mistPuffs } from './mistGeometry.ts'
@@ -74,7 +75,7 @@ export function Fog() {
     geometry.setAttribute('aShape', new THREE.InstancedBufferAttribute(new Float32Array(puffs.flatMap((p) => [p.size, p.alpha])), 2))
     geometry.instanceCount = puffs.length
     const material = new THREE.ShaderMaterial({
-      uniforms: { uMap: { value: cloudTexture() }, uColor: { value: new THREE.Color('#d7e6f0') }, uNear: { value: MIST_FADE_NEAR }, uFar: { value: MIST_FADE_FAR } },
+      uniforms: { uMap: { value: cloudTexture() }, uColor: { value: new THREE.Color(MIST.cloud) }, uNear: { value: MIST_FADE_NEAR }, uFar: { value: MIST_FADE_FAR } },
       vertexShader,
       fragmentShader,
       transparent: true,

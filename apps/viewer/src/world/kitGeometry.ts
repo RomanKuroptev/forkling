@@ -1,4 +1,5 @@
 import type { Kit, KitColor, KitPalette, KitPart, Place, PlaceRequest } from '@forkling/schema'
+import { DARK_GLOW, repaint } from './theme.ts'
 import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
 import { constructionInstances } from './constructionGeometry.ts'
 import { plotInstances } from './plotGeometry.ts'
@@ -34,7 +35,7 @@ export const MODEL_LIMITS = { meshes: 2, triangles: 2000 } as const
 export const modelFiles = (kit: Kit): string[] => [...new Set(kit.parts.flatMap((p) => (p.model ? [p.model.file] : [])))].sort()
 
 export function resolveColor(color: KitColor, palette: KitPalette): string {
-  return color.startsWith('#') ? color : palette.colors[color as keyof KitPalette['colors']]
+  return color.startsWith('#') ? repaint(color) : palette.colors[color as keyof KitPalette['colors']]
 }
 
 /**
@@ -135,7 +136,7 @@ export interface ModelInstance {
 export function interiorParts(place: Place, kit: Kit, baseY: number, models: ReadonlySet<string> = new Set(), opts: { lampsOn?: boolean } = {}): { instances: Instance[]; models: ModelInstance[] } {
   const { palette } = look(place, kit)
   // Lamps that are off are dark: the glow of their palette is replaced by a dull grey.
-  const dark: KitPalette = { ...palette, colors: { ...palette.colors, glow: '#4a4a4a' } }
+  const dark: KitPalette = { ...palette, colors: { ...palette.colors, glow: DARK_GLOW } }
   const [px, pz] = placeCentre(toLandPlace(place))
   const [fw, fd] = place.exterior.footprint
   const height = floorHeight(place)

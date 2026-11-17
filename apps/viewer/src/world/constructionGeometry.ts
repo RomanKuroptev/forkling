@@ -1,4 +1,5 @@
 import type { Place } from '@forkling/schema'
+import { WIREFRAME } from './theme.ts'
 import { DOOR_HALF, isBuilding, placeCentre, toLandPlace } from '@forkling/sim'
 import { SIGN_W, signSpot } from './exhibitGeometry.ts'
 import { floorHeight, type Instance } from './kitBase.ts'
@@ -12,9 +13,9 @@ export const SCAFFOLD_HEAD = 2
 const LEVEL = 1.4
 /** Clear room beside the door and the sign, on each side of the way in, in meters. */
 const FRONT_MARGIN = 0.4
-const POLE = '#a98a5a'
-const RAIL = '#cdb888'
-const PLANK = '#7c633f'
+const POLE = WIREFRAME.pole
+const RAIL = WIREFRAME.rail
+const PLANK = WIREFRAME.plank
 
 /**
  * The scaffolding round a place that is being built (spec 4.5): poles at the corners and along each side, rails at every level up
