@@ -29,6 +29,7 @@ Everything here needs `?debug`. Press **F3** for the overlay: mood and energy, a
 | `?fx=0` | No glow and no scanlines |
 | `?boot` | Pin the boot screen |
 | `?look=forkling` with `&dist=1&camy=1.3` | Put the camera that far in front of Merge and that high, to look at its face (add `&clip=Idle` to pin it in the open) |
+| `?clipat=x,z` | With `?clip=`, put Merge there, to see it on open land |
 | `?face=awake` (or `step`, `asleep`, `nosignal`) | Show that face whatever the state is |
 
 GitHub can take up to a minute to serve a new commit. The repo state counts from the forkling's own `lastTickAt`, not the commit time, so commits that leave `forkling.json` alone (works, souvenirs, the tick log) do not move it.

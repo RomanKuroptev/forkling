@@ -20,6 +20,11 @@ const FORCED_FACE = ((): FaceState | null => {
   const f = params.get('face')
   return f === 'awake' || f === 'step' || f === 'asleep' || f === 'nosignal' ? f : null
 })()
+/** `?clipat=x,z` puts the pinned forkling there (with `?clip=`), to see it on open land. */
+const CLIP_AT = ((): { x: number; z: number } | null => {
+  const v = (params.get('clipat') ?? '').split(',').map(Number)
+  return v.length === 2 && v.every(Number.isFinite) ? { x: v[0]!, z: v[1]! } : null
+})()
 const FORCED_CLIP = params.get('clip')
 /** Slots whose clip plays once and holds, instead of looping. */
 const ONCE_SLOTS = new Set(['stretch'])
@@ -28,7 +33,7 @@ const FADE = 0.25
 const SNAP_DISTANCE = 3
 
 /** The body is drawn this much bigger than the sim's own size, so it is easy to spot and its face can be read from across a place. A drawing scale only: the sim's sizes are unchanged. */
-const DRAW_SCALE = 1.5
+const DRAW_SCALE = 2.5
 
 const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a))
 
@@ -131,7 +136,7 @@ export function Forkling() {
 
     if (FORCED_CLIP) {
       // In front of the visitor spawn, facing it.
-      pb.state.pos = { x: spawn.x + Math.sin(spawn.yaw) * 3.5, z: spawn.z + Math.cos(spawn.yaw) * 3.5 }
+      pb.state.pos = CLIP_AT ?? { x: spawn.x + Math.sin(spawn.yaw) * 3.5, z: spawn.z + Math.cos(spawn.yaw) * 3.5 }
       pb.state.heading = Math.atan2(-Math.sin(spawn.yaw), -Math.cos(spawn.yaw))
       if (view.currentSlot !== FORCED_CLIP) {
         const clip = rig.clips.get(FORCED_CLIP)
