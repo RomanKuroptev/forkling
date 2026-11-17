@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { isOpenRequest, parseRequest, Wish, type Place, type PlaceRequest, type SelfRequest } from '@forkling/schema'
-import { FALLBACK_DAYS, latestFound } from '@forkling/sim'
+import { latestFound } from '@forkling/sim'
 import { esc } from './md.ts'
 
 /** The place requests in `requests/`, oldest first. A file that does not fit, or whose id is not its file name, is left out. */
@@ -54,7 +54,7 @@ export function requestStatusWords(r: Pick<PlaceRequest, 'kind' | 'status'>, pla
     case 'declined':
       return 'Roman declined.'
     case 'self-built':
-      return 'Built by Merge from the kit when the time was up.'
+      return 'Built by Merge from the kit.'
     case 'withdrawn':
       return 'Merge took it back.'
   }
@@ -109,7 +109,9 @@ export interface RequestsInput {
 export function renderRequests(i: RequestsInput): void {
   const own = i.selfRequests ?? []
   const day = (iso: string) => dayIn(iso, i.timezone ?? 'UTC')
-  if (i.requests.length === 0 && i.wishes.length === 0 && own.length === 0) return
+  // Place requests are gone (spec v4 2.3): Merge founds its own places. Gifts, wishes and the weekly requests stay.
+  const listed = i.requests.filter((r) => r.kind === 'gift')
+  if (listed.length === 0 && i.wishes.length === 0 && own.length === 0) return
   const placeFor = (r: PlaceRequest) => (r.status === 'built' || r.status === 'self-built' ? i.places.find((p) => sameChunk(p.chunk, r.chunk)) : undefined)
 
   const item = (r: PlaceRequest) => {
@@ -131,8 +133,8 @@ export function renderRequests(i: RequestsInput): void {
   const ownItem = (r: SelfRequest) =>
     `<li class="request" data-self-request="${esc(r.date)}"><strong>${esc(r.date)}</strong>${paragraphs(r.body)}<p><em>${r.answer ? `Roman answered: ${esc(r.answer)}` : 'No answer yet.'}</em></p></li>`
 
-  const waiting = i.requests.filter(isOpenRequest).sort((a, b) => Number(b.status === 'building') - Number(a.status === 'building'))
-  const answered = i.requests.filter((r) => !isOpenRequest(r)).reverse()
+  const waiting = listed.filter(isOpenRequest).sort((a, b) => Number(b.status === 'building') - Number(a.status === 'building'))
+  const answered = listed.filter((r) => !isOpenRequest(r)).reverse()
   const wishItem = (w: Wish) => {
     const place = w.forPlace ? i.places.find((p) => p.id === w.forPlace) : undefined
     return `<li class="request" data-wish="${esc(w.id)}" data-status="${esc(w.status)}"><strong>${esc(w.name)}</strong> <span class="quiet">${w.count === 1 ? 'Wished for once' : `Wished for ${w.count} times`}${place ? ` for <a href="../places/${esc(place.id)}/">${esc(place.name)}</a>` : ''}.</span><p><em>${esc(WISH_WORDS[w.status])}</em></p><p>${esc(w.description)}</p></li>`
@@ -143,7 +145,7 @@ export function renderRequests(i: RequestsInput): void {
     active: 'requests/',
     body: [
       '<h1>Requests</h1>',
-      `<p class="quiet">What Merge has asked Roman to build, in its own words, and what became of each. Nothing it asks for is promised. A request nobody answers in ${FALLBACK_DAYS} days is built plainly by Merge from the kit, and one Roman says he is building waits ${FALLBACK_DAYS + 14} days.</p>`,
+      '<p class="quiet">Merge founds its own places from the kit; they are listed under Places. Here are the gifts Roman made, what Merge wishes the kit had, and what it asked Roman about its own setup. Nothing it asks for is promised.</p>',
       ...(waiting.length > 0 ? ['<h2>Waiting</h2>', `<ul class="requests">${waiting.map(item).join('')}</ul>`] : []),
       ...(answered.length > 0 ? ['<h2>Settled</h2>', `<ul class="requests">${answered.map(item).join('')}</ul>`] : []),
       ...(own.length > 0

@@ -506,23 +506,10 @@ describe('interests across days', () => {
     expect(llm.calls[0]!.user).not.toContain('obsessed with')
   })
 
-  it('notes the interests at 40 or more at wake (after the fade), for the 3-day rule of a found (spec 2.5)', async () => {
-    writeJson('brain/interests.json', Interests.parse({ topics: { 'logic gates': { weight: 0.95, firstSeen: src.at, lastFed: src.at, sources: [src] }, moon: { weight: 0.3, firstSeen: src.at, lastFed: src.at, sources: [src] } } }))
+  it('no longer records the wake top: a found has no interest gate (spec v4 2.3)', async () => {
+    writeJson('brain/interests.json', Interests.parse({ topics: { 'logic gates': { weight: 0.95, firstSeen: src.at, lastFed: src.at, sources: [src] } } }))
     await tick(MORNING, fake(wanderPlan), { web: undefined })
-    const wakeTop = MindState.parse(readJson('mind/state.json')).wakeTop!
-    expect(wakeTop).toHaveLength(1)
-    expect(wakeTop[0]!.date).toBe(DAY)
-    expect(Object.keys(wakeTop[0]!.topics)).toEqual(['logic gates'])
-    expect(wakeTop[0]!.topics['logic gates']).toBeCloseTo(80.75, 1)
-  })
-
-  it('notes it once a day, and keeps the last 3 mornings', async () => {
-    writeJson('brain/interests.json', Interests.parse({ topics: { 'logic gates': { weight: 0.99, firstSeen: src.at, lastFed: src.at, sources: [src] } } }))
-    await tick(MORNING, fake(wanderPlan), { web: undefined })
-    await tick(at(30), fake(wanderPlan), { web: undefined })
-    expect(MindState.parse(readJson('mind/state.json')).wakeTop).toHaveLength(1)
-    for (const day of [1, 2, 3]) await tick(new Date(Date.parse(MORNING) + day * 86_400_000), fake(wanderPlan), { web: undefined })
-    expect(MindState.parse(readJson('mind/state.json')).wakeTop!.map((s) => s.date)).toEqual(['2026-11-04', '2026-11-05', '2026-11-06'])
+    expect(MindState.parse(readJson('mind/state.json')).wakeTop).toBeUndefined()
   })
 
   it('fades only once a day', async () => {

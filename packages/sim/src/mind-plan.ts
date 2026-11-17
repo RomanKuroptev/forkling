@@ -79,7 +79,7 @@ export interface MindPlanContext {
   expandable: ReadonlySet<string>
   /** Places that have earned the lower price of an expand (spec v4 2.2). */
   expandEarned?: ReadonlySet<string>
-  /** Whether an interest has earned a new place and fewer than 2 place requests are open (spec 2.5). */
+  /** Whether the rails of a found hold: no founded place under construction, room in the world (spec v4 2.3). */
   canFound: boolean
   /** Visitor notes found and not yet answered. */
   notes: ReadonlySet<string>
@@ -193,7 +193,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
         break
       case 'found':
         if (!target || target.length < 3 || target.length > 40) here.push(`${n}: the name of a new place must be 3 to 40 characters`)
-        if (!c.canFound) here.push(`${n}: no interest has earned a new place yet, or two requests are already open`)
+        if (!c.canFound) here.push(`${n}: a place you founded is still being built, or the world is full`)
         else if (found >= MAX_FOUND_PER_WEEK) here.push(`${n}: found is ${MAX_FOUND_PER_WEEK} a week`)
         found++
         break

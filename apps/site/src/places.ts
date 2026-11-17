@@ -73,6 +73,8 @@ export interface PlacesInput {
   works: readonly SiteWork[]
   nowMs: number
   tz: string
+  /** Foundings whose place is not on the land yet (the kit build is on its way): shown as being built (spec v4 2.3). */
+  foundings?: readonly { id: string; name: string; purpose: string }[]
   /** The souvenir as the rest of the site shows it (words, why, source link). */
   souvenirHtml: (s: Souvenir) => string
   readText: (rel: string) => string | null
@@ -166,6 +168,9 @@ export function renderPlaces(i: PlacesInput): void {
         return `<li><strong><a href="${esc(p.id)}/">${esc(p.name)}</a></strong> <span class="quiet">${esc(p.tags.join(', '))}; ${p.state.closed ? 'closed' : NEGLECT_WORDS[level(p)]}${isBuilding(p.state, i.nowMs) ? '; under construction' : ''}</span><p>${esc(p.purpose)}</p>${last ? `<p class="quiet">Last change, ${esc(stamp(last.at, i.tz))}: ${esc(last.summary)}</p>` : ''}</li>`
       }),
       '</ul>',
+      ...((i.foundings ?? []).length > 0
+        ? ['<h2>Being built</h2>', '<ul class="places">', ...i.foundings!.map((f) => `<li data-founding="${esc(f.id)}"><strong>${esc(f.name)}</strong> <span class="quiet">being built</span><p>${esc(f.purpose)}</p></li>`), '</ul>']
+        : []),
     ].join('\n'),
   })
 

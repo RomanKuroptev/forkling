@@ -32,6 +32,10 @@ The point is that Merge is interesting, not a claim that it is conscious. Its be
 
 Each milestone needs its live days, so the nine steps take at least a month of waiting on top of the building.
 
+## After W7
+
+Spec v4 (16 November 2026) replaces the rest of this list with eight steps, each with its own file in [`docs/spec/v4/`](docs/spec/v4/): the world grows from what Merge makes (step 1), short text and a wallet (2), a sandbox for projects (3), projects (4), visitor threads (5), tool requests (6), the front page (7) and the run (8). W8 below is replaced by step 8 and the soft launch in `docs/spec/v4/parallel-plan.md`.
+
 ## Launch criteria (W8)
 
 Over 14 days with no human input except Roman building requests:

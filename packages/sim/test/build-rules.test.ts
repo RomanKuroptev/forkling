@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_OPEN_WISHES, Place } from '@forkling/schema'
 import {
-  BUILDING_HOLD_DAYS,
   EXPAND_MIN_WEIGHT,
   FALLBACK_DAYS,
-  FOUND_STREAK_DAYS,
-  WAKE_TOP_MIN,
   addWishes,
   expandAllowed,
   expandEarned,
@@ -15,9 +12,7 @@ import {
   lastSizeChange,
   openPlaceRequests,
   openWishes,
-  recordWake,
   wishId,
-  type WakeSnapshot,
 } from '../src/build-rules.ts'
 import { base } from './helpers/place-fixture.ts'
 
@@ -111,79 +106,36 @@ describe('expandEarned (spec v4 2.2)', () => {
   })
 })
 
-describe('recordWake (the weights at wake that the 3-day rule reads)', () => {
-  it('keeps only the interests at 40 or more (Roman, 14 November: it was 70)', () => {
-    expect(WAKE_TOP_MIN).toBe(40)
-    expect(recordWake([], '2026-11-13', { 'maya lidar': 82, tides: 39.9, knots: 40 })).toEqual([{ date: '2026-11-13', topics: { 'maya lidar': 82, knots: 40 } }])
-  })
-
-  it('replaces the same date, so a second morning tick changes nothing new', () => {
-    const once = recordWake([], '2026-11-13', { a: 80 })
-    expect(recordWake(once, '2026-11-13', { a: 85 })).toEqual([{ date: '2026-11-13', topics: { a: 85 } }])
-  })
-
-  it('keeps the last 3 dates, oldest dropped, in date order', () => {
-    let w: WakeSnapshot[] = []
-    for (const d of ['2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13']) w = recordWake(w, d, { a: 80 })
-    expect(w.map((s) => s.date)).toEqual(['2026-11-11', '2026-11-12', '2026-11-13'])
-  })
-
-  it('records a day with nothing at 70 (it breaks a streak)', () => {
-    expect(recordWake([], '2026-11-13', { a: 10 })).toEqual([{ date: '2026-11-13', topics: {} }])
-  })
-})
-
-describe('foundCheck (spec 2.5, 10.3)', () => {
-  const days = (topic: string, weights: [number, number, number]): WakeSnapshot[] =>
-    [['2026-11-11', weights[0]], ['2026-11-12', weights[1]], ['2026-11-13', weights[2]]].map(([date, w]) => ({ date: date as string, topics: (w as number) >= WAKE_TOP_MIN ? { [topic]: w as number } : {} }))
+describe('foundCheck (spec v4 2.3: the rails only)', () => {
+  const standing = { tags: ['lighthouses'], state: { construction: null } }
   const input = (over: Record<string, unknown> = {}) => ({
-    today: '2026-11-13',
-    wakeTop: days('maya lidar', [75, 80, 82]),
-    places: [{ tags: ['lighthouses'] }],
-    requests: [] as { kind: 'place' | 'gift'; status: 'open' | 'building' | 'built' | 'declined' | 'self-built' | 'withdrawn'; tags: string[] }[],
+    places: [standing],
+    requests: [] as { kind: 'place' | 'gift'; status: 'open' | 'building' | 'built' | 'declined' | 'self-built' | 'withdrawn' }[],
     ...over,
   })
 
-  it('allows a found for an interest at 40 or more on 3 days in a row that no place carries as a tag', () => {
-    expect(FOUND_STREAK_DAYS).toBe(3)
-    expect(foundCheck(input())).toEqual({ ok: true, interest: 'maya lidar', reasons: [] })
+  it('allows a found with no strong interest at all, when the rails hold', () => {
+    expect(foundCheck(input())).toEqual({ ok: true, reasons: [] })
   })
 
-  it('wants every one of the 3 days: a dip, a gap or only 2 days refuses', () => {
-    expect(foundCheck(input({ wakeTop: days('maya lidar', [75, 30, 82]) })).ok).toBe(false)
-    expect(foundCheck(input({ wakeTop: days('maya lidar', [75, 80, 82]).slice(1) })).ok).toBe(false)
-    const gap = [{ date: '2026-11-10', topics: { 'maya lidar': 80 } }, ...days('maya lidar', [75, 80, 82]).slice(1)]
-    expect(foundCheck(input({ wakeTop: gap })).ok).toBe(false)
+  it('refuses while a place from an earlier found is still being built, but not for an expand under way', () => {
+    const founding = { tags: ['x'], state: { construction: { kind: 'found' } } }
+    expect(foundCheck(input({ places: [standing, founding] })).reasons.join(' ')).toMatch(/still being built/)
+    expect(foundCheck(input({ places: [standing, { tags: ['x'], state: { construction: { kind: 'expand' } } }] })).ok).toBe(true)
   })
 
-  it('refuses an interest a place already carries as a tag, and one an open request already asks for', () => {
-    expect(foundCheck(input({ places: [{ tags: ['Maya Lidar'] }] })).ok).toBe(false)
-    expect(foundCheck(input({ requests: [{ kind: 'place', status: 'open', tags: ['maya lidar'] }] })).ok).toBe(false)
-    expect(foundCheck(input({ requests: [{ kind: 'place', status: 'built', tags: ['maya lidar'] }] })).ok).toBe(true)
+  it('has no limit on open requests any more, and no interest, tag or streak condition', () => {
+    const open = { kind: 'place' as const, status: 'open' as const }
+    expect(foundCheck(input({ requests: [open, open, open] })).ok).toBe(true)
+    expect(foundCheck(input({ places: [{ tags: ['Maya Lidar'], state: { construction: null } }] })).ok).toBe(true)
   })
 
-  it('refuses with 2 place requests open, and counts building as open', () => {
-    const open = { kind: 'place' as const, status: 'open' as const, tags: ['x'] }
-    expect(foundCheck(input({ requests: [open, { ...open, status: 'building' as const, tags: ['y'] }] })).ok).toBe(false)
-    expect(foundCheck(input({ requests: [open] })).ok).toBe(true)
-  })
-
-  it('refuses when the world is full (64 places, open requests included)', () => {
-    const many = Array.from({ length: 64 }, () => ({ tags: ['z'] }))
+  it('refuses when the world is full (64 places, open foundings included)', () => {
+    const many = Array.from({ length: 64 }, () => standing)
     expect(foundCheck(input({ places: many })).ok).toBe(false)
-    const near = Array.from({ length: 63 }, () => ({ tags: ['z'] }))
-    expect(foundCheck(input({ places: near, requests: [{ kind: 'place', status: 'open', tags: ['q'] }] })).ok).toBe(false)
-  })
-
-  it('chooses the heaviest interest today, the first by name on a tie', () => {
-    const wakeTop = [11, 12, 13].map((d) => ({ date: `2026-11-${d}`, topics: { 'maya lidar': 80, knots: d === 13 ? 90 : 75 } }))
-    expect(foundCheck(input({ wakeTop })).interest).toBe('knots')
-    const tie = [11, 12, 13].map((d) => ({ date: `2026-11-${d}`, topics: { b: 80, a: 80 } }))
-    expect(foundCheck(input({ wakeTop: tie })).interest).toBe('a')
-  })
-
-  it('says why, in plain words', () => {
-    expect(foundCheck(input({ wakeTop: [] })).reasons.join(' ')).toMatch(/40 or more on 3 days in a row/)
+    const near = Array.from({ length: 63 }, () => standing)
+    expect(foundCheck(input({ places: near, requests: [{ kind: 'place', status: 'open' }] })).ok).toBe(false)
+    expect(foundCheck(input({ places: near })).ok).toBe(true)
   })
 })
 
@@ -266,23 +218,20 @@ describe('addWishes (spec 5.3, 10.3: wishing the same part again adds to its cou
   })
 })
 
-describe('fallbackDue (spec 10.3: 7 days with no status, and building holds it off for 14 more)', () => {
+describe('fallbackDue (spec v4 2.3: the kit build is due as soon as the founding is written)', () => {
   const written = '2026-11-01T10:00:00Z'
   const at = (days: number, extra = 0) => Date.parse(written) + days * 86_400_000 + extra
   const req = (status: 'open' | 'building' | 'built' | 'declined' | 'self-built' | 'withdrawn', kind: 'place' | 'gift' = 'place') => ({ kind, status, written })
 
-  it('is due 7 days after an open place request was written, not a moment before', () => {
-    expect(FALLBACK_DAYS).toBe(7)
-    expect(fallbackDue(req('open'), at(7, -1))).toBe(false)
-    expect(fallbackDue(req('open'), at(7))).toBe(true)
+  it('is due the moment an open place request is written', () => {
+    expect(FALLBACK_DAYS).toBe(0)
+    expect(fallbackDue(req('open'), at(0))).toBe(true)
+    expect(fallbackDue(req('open'), at(0, -1))).toBe(false)
     expect(fallbackDue(req('open'), at(30))).toBe(true)
   })
 
-  it('is held off 14 more days while Roman says he is building it', () => {
-    expect(BUILDING_HOLD_DAYS).toBe(14)
-    expect(fallbackDue(req('building'), at(7))).toBe(false)
-    expect(fallbackDue(req('building'), at(20, 86_399_000))).toBe(false)
-    expect(fallbackDue(req('building'), at(21))).toBe(true)
+  it('is not held off by the old status building', () => {
+    expect(fallbackDue(req('building'), at(0))).toBe(true)
   })
 
   it('is never due for an answered, declined, withdrawn or self-built request, or for a gift', () => {

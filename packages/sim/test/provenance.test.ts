@@ -6,7 +6,7 @@ const line = (at: string, summary: string, verb = 'found') => ({ at, verb, summa
 describe('the founding lines (spec 10.3: who had the idea and who built it)', () => {
   it('has the three phrasings of the spec, word for word', () => {
     expect(ROMAN_BUILT_LINE).toBe('Asked for by Merge, built by Roman with Claude Code.')
-    expect(KIT_BUILT_LINE).toBe('Asked for by Merge, built by Merge from the kit.')
+    expect(KIT_BUILT_LINE).toBe('Founded by Merge, built by Merge from the kit.')
     expect(GIFT_LINE).toBe('A gift from Roman.')
   })
 

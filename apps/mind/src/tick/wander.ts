@@ -1,5 +1,5 @@
 import type { BudgetCall, InterestSource } from '@forkling/schema'
-import { createPrng, fadeInterests, feedTopic, isStrangerStart, recordWake, recordWakeMood, SPARK_GAIN, updatePhases } from '@forkling/sim'
+import { createPrng, fadeInterests, feedTopic, isStrangerStart, recordWakeMood, SPARK_GAIN, updatePhases } from '@forkling/sim'
 import { canSpend, recordCall, type Usage } from '../budget.ts'
 import { pickDoors } from '../web/doors.ts'
 import { addStats } from '../web/stats.ts'
@@ -53,10 +53,9 @@ export async function morningStep(t: Tick): Promise<void> {
     mind.interestsFadedOn = today
   }
   t.interests = updatePhases(t.interests, nowIso)
-  // What it is into at wake, for the found rule of 3 days in a row (spec 2.5). The same morning twice changes nothing.
+  // What it is into at wake. The same morning twice changes nothing.
   mind.wakeMoods = recordWakeMood(mind.wakeMoods ?? [], today, t.mood)
   mind.wakeFive = { date: today, topics: Object.entries(t.interests.topics).sort((a, b) => b[1].weight - a[1].weight).slice(0, 5).map(([topic]) => topic) }
-  mind.wakeTop = recordWake(mind.wakeTop ?? [], today, Object.fromEntries(Object.entries(t.interests.topics).map(([topic, v]) => [topic, v.weight])))
 
   if (deps.dryRun) {
     notes.push('dry run: would look at the front pages')

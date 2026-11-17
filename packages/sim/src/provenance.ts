@@ -4,7 +4,9 @@
  * with a `found` line of its own does not get to say who built it: the engine drops it and writes its own.
  */
 export const ROMAN_BUILT_LINE = 'Asked for by Merge, built by Roman with Claude Code.'
-export const KIT_BUILT_LINE = 'Asked for by Merge, built by Merge from the kit.'
+export const KIT_BUILT_LINE = 'Founded by Merge, built by Merge from the kit.'
+/** The kit line before spec v4, when a found was a request to Roman; places that carry it still count as kit-built. */
+export const LEGACY_KIT_BUILT_LINE = 'Asked for by Merge, built by Merge from the kit.'
 export const GIFT_LINE = 'A gift from Roman.'
 
 interface HistoryLine {

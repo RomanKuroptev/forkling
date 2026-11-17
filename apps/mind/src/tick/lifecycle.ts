@@ -1,5 +1,5 @@
 import { PlaceRequest, isOpenRequest, type Place, type Wish } from '@forkling/schema'
-import { capHistory, GIFT_LINE, KIT_BUILT_LINE, PLACE_LIMITS, ROMAN_BUILT_LINE } from '@forkling/sim'
+import { capHistory, GIFT_LINE, KIT_BUILT_LINE, LEGACY_KIT_BUILT_LINE, PLACE_LIMITS, ROMAN_BUILT_LINE } from '@forkling/sim'
 import { readRequests } from '../requests.ts'
 import { readWishes } from '../wishes.ts'
 import { requestId } from '../builds/found.ts'
@@ -64,7 +64,7 @@ export function lifecycleStep(t: Tick): void {
     // Roman's full build: a place on a self-built request's chunk that no longer says the kit built it.
     for (const r of requests.filter((x) => x.kind === 'place' && x.status === 'self-built')) {
       const place = t.places.find((p) => seen.has(p.id) && !landed.has(p.id) && sameChunk(p.chunk, r.chunk))
-      if (place && !place.history.some((h) => h.verb === 'found' && h.summary === KIT_BUILT_LINE)) landPlace(place, r)
+      if (place && !place.history.some((h) => h.verb === 'found' && (h.summary === KIT_BUILT_LINE || h.summary === LEGACY_KIT_BUILT_LINE))) landPlace(place, r)
     }
     mind.placesSeen = placeIds
   }
