@@ -194,6 +194,7 @@ export async function validatePullRequest(o: ValidateOptions): Promise<ValidateR
 }
 
 const PROJECT_ID = /^[a-z0-9][a-z0-9-]{0,47}$/
+const MAX_VIDEO_BYTES = 20_000_000
 const SHOT = /^shots\/\d{1,5}\.png$/
 
 /**
@@ -218,7 +219,10 @@ function checkProject(world: string, id: string, changes: readonly Change[], pro
         if (!bytes.subarray(0, 8).equals(PNG_SIGNATURE)) here(`${name} is not a PNG`)
         else if (bytes.length > MAX_THUMB_BYTES) here(`${name} is over ${MAX_THUMB_BYTES / 1000} KB`)
       }
-    } else here(`${name} is outside project.json, src/ and shots/`)
+    } else if (name === 'share/timelapse.mp4') {
+      // The timelapse the server makes after a session (sharing S4): only that one file, of a sane size.
+      if (readFileSync(join(folder, name)).length > MAX_VIDEO_BYTES) here(`${name} is over ${MAX_VIDEO_BYTES / 1_000_000} MB`)
+    } else here(`${name} is outside project.json, src/, shots/ and share/timelapse.mp4`)
   }
 
   const read = existsSync(join(folder, 'project.json')) ? readJson(join(folder, 'project.json')) : { ok: false as const }

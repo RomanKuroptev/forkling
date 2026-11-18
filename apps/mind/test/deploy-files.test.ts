@@ -293,3 +293,18 @@ describe('the sandbox unit (spec v4 section 4, step 3)', () => {
     expect(setup).not.toMatch(/forkling ALL=|polkit/)
   })
 })
+
+describe('ffmpeg for the timelapse video (sharing S4)', () => {
+  it('setup installs it from Ubuntu, and the runbook has the step and its undo', () => {
+    expect(read('deploy/setup.sh')).toMatch(/^apt-get -y install ffmpeg$/m)
+    const runbook = read('docs/spec/v4/step-3-runbook.md')
+    expect(runbook).toContain('apt-get install -y ffmpeg')
+    expect(runbook).toContain('apt-get remove -y ffmpeg')
+  })
+
+  it('the engine runs ffmpeg with an argument list and no shell', () => {
+    const code = read('apps/mind/src/builds/timelapse.ts')
+    expect(code).toMatch(/execFile\(file, \[\.\.\.args\]/)
+    expect(code).not.toMatch(/\bexec\(|execSync\(|shell: true|spawn\(/)
+  })
+})

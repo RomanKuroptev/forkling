@@ -332,6 +332,28 @@ journalctl -u 'forkling-sandbox@*' --since today --no-pager | grep -c 'Started'
 
 You should see a number above 0. The sketch must also show on the site after the next Pages build. Step 3's "done when", item 4, asks for that.
 
+## 11. ffmpeg, for the projects' timelapse video
+
+After each build session the mind makes a short vertical video of the project's screenshots (sharing S4). It draws the frames itself and hands them to `ffmpeg`, a standard video tool from Ubuntu's own packages. `ffmpeg` never runs anything Merge wrote. Without it, no video is made, and the project page simply has no video link. This step is independent of the sandbox: it can be run at any time, and Merge does not need to be asleep.
+
+**11.1** Install it.
+
+```bash
+apt-get install -y ffmpeg
+```
+
+You should see apt list the packages it adds and end without an error. The last lines look like `Setting up ffmpeg (7:6.1.1-3ubuntu5) ...` and `Processing triggers for libc-bin ...`; the version may differ.
+
+**11.2** Check that it runs for the mind's user.
+
+```bash
+sudo -u forkling ffmpeg -hide_banner -version | head -1
+```
+
+You should see one line that starts with `ffmpeg version`.
+
+Undo for step 11: `apt-get remove -y ffmpeg`. Expected: apt lists `ffmpeg` as removed and ends without an error. Videos already made stay where they are; new ones are skipped.
+
 ## Undo everything, in one place
 
 Run these in this order, from the top down. Each is one step's undo from above:
@@ -341,6 +363,7 @@ Run these in this order, from the top down. Each is one step's undo from above:
 3. `rm /etc/systemd/system/forkling-sandbox.socket '/etc/systemd/system/forkling-sandbox@.service' && systemctl daemon-reload`
 4. `find /var/lib/forkling-build/scratch -mindepth 1 -delete` (only if it is not empty), then `rmdir /var/lib/forkling-build/scratch /var/lib/forkling-build`
 5. `userdel forkling-build`
+6. `apt-get remove -y ffmpeg` (step 11, if it was run)
 
 `/opt/forkling/sandbox` belongs to the deploy user and holds only the runner and `playwright-core` of each release. It is harmless and is left in place. The next deploy updates it.
 

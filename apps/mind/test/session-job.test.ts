@@ -87,6 +87,15 @@ describe('the session handler', () => {
     expect(existsSync(join(world, 'projects/sand-clock'))).toBe(false)
   })
 
+  it('asks for the timelapse after the session, and goes on quietly where ffmpeg is missing', async () => {
+    const asked: string[][] = []
+    const h = createSessionHandler({ model: model([[use('write_file', { path: 'index.html', content: PAGE })], [use('finish', { caption: 'a first pool', outcome: 'continue' })]]), sandbox: sandbox(), requireSandbox: true, git: git().run, now: () => NOW, timezone: 'Europe/Stockholm', timelapse: { address: (id) => `https://x.github.io/merge/projects/${id}/`, run: async (file, args) => (asked.push([file, ...args]), { code: 127 }) } })
+    const out = await h(job('Tide clock'), { dir: world, nowMs: NOW })
+    expect(out.status).toBe('done')
+    expect(asked).toEqual([['ffmpeg', '-hide_banner', '-version']])
+    expect(existsSync(join(world, 'projects/tide-clock/share'))).toBe(false)
+  })
+
   it('waits when there is no model key', async () => {
     expect((await handler(null)(job('Tide clock'), { dir: world, nowMs: NOW })).status).toBe('later')
   })
