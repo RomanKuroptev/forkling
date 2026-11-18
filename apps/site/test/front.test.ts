@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import vm from 'node:vm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Note, Project } from '@forkling/schema'
-import { FRONT_SCRIPT, viewerAddress } from '../src/front.ts'
+import { FRONT_SCRIPT } from '../src/front.ts'
 import { NOTES_SCRIPT } from '../src/notes-script.ts'
 import { renderSite } from '../src/render.ts'
 
@@ -83,9 +83,10 @@ describe('the front page /', () => {
     expect(html).not.toMatch(/<canvas|three|viewer|\.glb|webgl/i)
     const scripts = [...html.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map((m) => m[1])
     expect(scripts.sort()).toEqual(['https://challenges.cloudflare.com/turnstile/v0/api.js', 'front.js', 'notes.js', 'since.js'].sort())
-    expect(html).toContain(`href="${viewerAddress(BASE)}"`)
-    expect(viewerAddress(BASE)).toBe('https://owner.github.io/forkling/owner/merge')
-    expect(viewerAddress(undefined)).toBeNull()
+    // One address: the world is built into the site's own /world/, so the way in is a relative link.
+    expect(html).toContain('<a class="btn go" href="world/">')
+    build({ viewer: false })
+    expect(front()).not.toContain('ENTER WORLD')
   })
 
   it('shows today\'s picture cards from today.json, each a link with a caption, and no <img> tag', () => {

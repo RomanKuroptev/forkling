@@ -11,19 +11,6 @@ import type { Today, TodayCard } from './today.ts'
  * Pictures are backgrounds on spans, never `<img>` tags.
  */
 
-/** The address of the 3D viewer for the world of this site: `https://owner.github.io/repo/` is viewed at `https://owner.github.io/forkling/owner/repo`. */
-export function viewerAddress(baseUrl: string | undefined): string | null {
-  if (!baseUrl) return null
-  try {
-    const url = new URL(baseUrl)
-    const m = /^([^.]+)\.github\.io$/.exec(url.hostname)
-    const repo = url.pathname.split('/').filter(Boolean)[0]
-    return m && repo ? `https://${url.hostname}/forkling/${m[1]}/${repo}` : null
-  } catch {
-    return null
-  }
-}
-
 /** A picture as a background, for a path from the site root. Anything that could break out of the `url()` is escaped. */
 const bg = (path: string) => `style="background-image:url('${esc(encodeURI(path).replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29'))}')"`
 

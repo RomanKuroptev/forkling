@@ -12,7 +12,7 @@ import { loadFixtureWorld } from './world/fixtureWorld.ts'
 import templateForkling from '../../../templates/forkling-world/forkling.json'
 import { loadWorld, placesOrStarter, type LoadedWorld, type LoadResult, type WorldError } from './world/loadWorld.ts'
 import { LOCAL_REF, localFetch } from './world/localWorld.ts'
-import { parseRoute, type WorldRef } from './world/route.ts'
+import { fixedRoute, parseRoute, worldSiteRedirect, type WorldRef } from './world/route.ts'
 import { WorldErrorPanel } from './world/WorldErrorPanel.tsx'
 import { WorldProvider } from './world/WorldContext.tsx'
 
@@ -54,7 +54,16 @@ export function Root() {
       setState({ status: 'ready', world: loadFixtureWorld(Number(query.get('fixture')) || 10, speciesPacks.cat!, nowMs) })
       return
     }
-    let route: ReturnType<typeof parseRoute> = local ? { kind: 'world', ref: LOCAL_REF } : parseRoute(location.pathname, base, location.search)
+    // Inside a forkling's own site (`<site>/world/`, built with VITE_WORLD) the one world is fixed; on the engine's own address a visit for Merge's world goes to Merge's site.
+    const fixed = import.meta.env.VITE_WORLD as string | undefined
+    let route: ReturnType<typeof parseRoute> = local ? { kind: 'world', ref: LOCAL_REF } : fixed ? fixedRoute(fixed, location.search) : parseRoute(location.pathname, base, location.search)
+    if (!fixed && !local) {
+      const to = worldSiteRedirect(route, location.search, import.meta.env.VITE_WORLD_SITE as string | undefined)
+      if (to) {
+        location.replace(to)
+        return
+      }
+    }
     if (route.kind === 'home') {
       history.replaceState(null, '', `${base}${DEFAULT_WORLD}${location.search}`)
       route = parseRoute(location.pathname, base, location.search)
