@@ -58,7 +58,11 @@ describe('the favicon and the share picture', () => {
       const html = readFileSync(f, 'utf8')
       expect(html, f).toContain('<meta property="og:title"')
       expect(html, f).toContain('<meta property="og:description"')
-      expect(html, f).toContain('<meta property="og:image" content="https://merge.example/share.png">')
+      const image = /<meta property="og:image" content="https:\/\/merge\.example\/([^"]+)">/.exec(html)?.[1]
+      expect(image, f).toBeTruthy()
+      expect(existsSync(join(out, image ?? 'missing')), `${f}: ${image}`).toBe(true)
+      expect(html, f).toMatch(/<meta property="og:url" content="https:\/\/merge\.example\//)
+      expect(html, f).toMatch(/<meta name="twitter:image" content="https:\/\/merge\.example\//)
       expect(html, f).toContain('<meta name="twitter:card" content="summary_large_image">')
     }
   })
