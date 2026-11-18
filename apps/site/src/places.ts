@@ -114,15 +114,24 @@ function mapSvg(places: readonly Place[], nowMs: number): string {
   const toZ = (m: number) => ((m - minZ * 32) * CELL) / 32
   const squares = [...chunks.values()].map(([cx, cz]) => `<rect class="chunk" x="${(cx - minX) * CELL}" y="${(cz - minZ) * CELL}" width="${CELL}" height="${CELL}" fill="none" stroke="currentColor" stroke-opacity="0.2"/>`)
   const tracks = paths.map((path) => `<polyline data-kind="${path.kind ?? 'founding'}" points="${path.chunks.map((c) => `${(c[0] - minX + 0.5) * CELL},${(c[1] - minZ + 0.5) * CELL}`).join(' ')}" fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-width="3"/>`)
+  const boxes: [number, number, number, number][] = []
   const houses = places.map((p, i) => {
     const [x, z] = placeCentre(land[i]!)
     const w = (p.exterior.footprint[0] * CELL) / 32
     const d = (p.exterior.footprint[1] * CELL) / 32
     const level = neglectFor({ id: p.id, lastCareAt: p.state.lastCareAt, founded: p.founded, closed: p.state.closed !== null }, nowMs)
     const building = isBuilding(p.state, nowMs)
+    boxes.push([toX(x) - w / 2, toZ(z) - d / 2, toX(x) + w / 2, toZ(z) + d / 2])
     return `<a href="${esc(p.id)}/"><rect data-place="${esc(p.id)}" data-neglect="${level}"${building ? ' data-building="true"' : ''} x="${(toX(x) - w / 2).toFixed(1)}" y="${(toZ(z) - d / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${d.toFixed(1)}" fill="${NEGLECT_FILL[level]}" stroke="currentColor"><title>${esc(p.name)}: ${p.state.closed ? 'closed' : NEGLECT_WORDS[level]}${building ? ', under construction' : ''}</title></rect></a>`
   })
-  return `<svg role="img" aria-label="Top-down map of the places" viewBox="0 0 ${cols * CELL} ${rows * CELL}" width="${Math.min(Math.max(cols * CELL, Math.min(cols * 140, 420)), 640)}" style="max-width:100%;height:auto">${[...squares, ...tracks, ...houses].join('')}</svg>`
+  // Cropped to the places and a small margin, and drawn big enough to see: about 160 px tall for a few places, so the list is above the fold.
+  const MARGIN = 12
+  const [x0, z0, x1, z1] = [Math.min(...boxes.map((b) => b[0])) - MARGIN, Math.min(...boxes.map((b) => b[1])) - MARGIN, Math.max(...boxes.map((b) => b[2])) + MARGIN, Math.max(...boxes.map((b) => b[3])) + MARGIN]
+  const [vw, vh] = [x1 - x0, z1 - z0]
+  const scale = Math.min(Math.max(160 / vh, 1), 6)
+  void cols
+  void rows
+  return `<svg role="img" aria-label="Top-down map of the places" viewBox="${x0.toFixed(1)} ${z0.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" width="${Math.round(Math.min(vw * scale, 640))}" style="max-width:100%;height:auto">${[...squares, ...tracks, ...houses].join('')}</svg>`
 }
 
 function exhibitHtml(place: Place, ex: Place['exhibits'][number], i: PlacesInput, works: Map<string, SiteWork>): string {

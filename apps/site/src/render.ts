@@ -145,7 +145,7 @@ function layout(p: PageInput): string {
   const cur = (c: boolean) => (c ? ' aria-current="page"' : '')
   const icons = links.map((l) => `<a class="icon" href="${l.href}"${cur(l.current)}><span class="icon-img ic-${iconFor(l.label)}" aria-hidden="true"></span><span>${esc(l.label)}</span></a>`).join('')
   const menu = links.map((l) => `<a href="${l.href}"${cur(l.current)}>${esc(l.label)}</a>`).join('')
-  const taskbar = `<footer class="taskbar"><div class="start"><input type="checkbox" id="start-toggle" class="start-toggle" aria-label="Open the start menu"><label class="start-btn" for="start-toggle"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Merge 95</label><nav class="menu" aria-label="Pages">${menu}</nav></div><span class="tray">${esc(p.name)}${p.timezone ? ` · <time class="clock" data-tz="${esc(p.timezone)}">${clockAt(p.timezone, p.nowMs ?? 0)}</time>` : ''}</span></footer>`
+  const taskbar = `<footer class="taskbar"><div class="start"><input type="checkbox" id="start-toggle" class="start-toggle" aria-label="Open the start menu"><label class="start-btn" for="start-toggle"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Merge 95</label><nav class="menu" aria-label="Pages">${menu}</nav></div><span class="tray">${esc(p.name)}${p.timezone ? ` · <time class="clock" data-tz="${esc(p.timezone)}">${clockAt(p.timezone, p.nowMs ?? 0)}</time> ${esc((p.timezone.split('/').pop() ?? p.timezone).replaceAll('_', ' '))}` : ''}</span></footer>`
   const win = `<div class="window"><div class="title"><span>${esc(p.title)} - ${esc(p.name)}</span><span class="btns" aria-hidden="true"><i></i><i></i><i></i></span></div>
 <main>
 ${p.body}
