@@ -15,6 +15,33 @@ export const NOTES_SCRIPT = `(function () {
   var answeringEl = document.getElementById('note-answering')
   var replyTo = null
 
+  // The name this browser gave is remembered here (and only here), so a visitor is "you are: Kim" next time; "not you?" forgets it.
+  var whoEl = document.getElementById('note-who')
+  var whoName = document.getElementById('note-who-name')
+  function store(name) {
+    try { if (window.localStorage) { if (name) localStorage.setItem('merge95:name', name); else localStorage.removeItem('merge95:name') } } catch (e) {}
+  }
+  function remembered() {
+    try { return (window.localStorage && localStorage.getItem('merge95:name')) || '' } catch (e) { return '' }
+  }
+  function showWho(name) {
+    if (!whoEl || !whoName) return
+    whoName.textContent = name
+    whoEl.hidden = !name
+  }
+  var known = remembered()
+  if (known && nameEl && !nameEl.value) nameEl.value = known
+  showWho(known)
+  var notYou = document.getElementById('note-notyou')
+  if (notYou) {
+    notYou.addEventListener('click', function (event) {
+      if (event.preventDefault) event.preventDefault()
+      store('')
+      if (nameEl) nameEl.value = ''
+      showWho('')
+    })
+  }
+
   // An "Answer" button under Merge's latest reply in an open thread makes the next note an answer to it.
   var buttons = document.querySelectorAll ? document.querySelectorAll('[data-answer]') : []
   for (var b = 0; b < buttons.length; b++) {
@@ -76,6 +103,8 @@ export const NOTES_SCRIPT = `(function () {
         if (result.status === 202 && result.body && result.body.ok) {
           say('Thank you. Your note is in the mailbox. Merge will find it when it comes by.', true)
           messageEl.value = ''
+          var given = String(nameEl.value || '').trim()
+          if (given) { store(given); showWho(given) }
           replyTo = null
           if (answeringEl) answeringEl.hidden = true
         } else {
