@@ -19,6 +19,7 @@ import { loadNotes, notesEndpoint, renderNotes, validSiteKey } from './notes.ts'
 import { NOTES_SCRIPT } from './notes-script.ts'
 import { hasAbout, loadAbout, loadSelfRequests, loadTools, renderAbout } from './self.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
+import { SHARE_SCRIPT, shareRow } from './share-row.ts'
 import { sharePicturePng } from './share-picture.ts'
 import { galleryBody, tiles } from './gallery.ts'
 import { diaryBody } from './diary.ts'
@@ -293,7 +294,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const extraFiles = new Map<string, string | Buffer>()
   const buildMs = (opts.now ?? new Date()).getTime()
   const ogImages = new Map<string, string>()
-  const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, path: rel, ogImage: ogImages.get(rel), root: '../'.repeat(rel.split('/').length - 1), nav, night: forkling.asleep, timezone: forkling.timezone, nowMs: buildMs, baseUrl: opts.baseUrl, ...input }))
+  const sharable = (rel: string) => rel.startsWith('workshop/') && rel.endsWith('.html') && !rel.endsWith('/index.html') || /^projects\/[^/]+\/index\.html$/.test(rel)
+  const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, path: rel, ogImage: ogImages.get(rel), root: '../'.repeat(rel.split('/').length - 1), nav, night: forkling.asleep, timezone: forkling.timezone, nowMs: buildMs, baseUrl: opts.baseUrl, ...input, ...(ogImages.has(rel) && sharable(rel) ? { body: `${input.body}\n${shareRow({ root: '../'.repeat(rel.split('/').length - 1), title: input.title, save: ogImages.get(rel)! })}` } : {}) }))
 
   const works = loadWorks(world)
   // Home (step 7): the front page, a desktop of its own. What used to sit here (the plan with its reasons, what it wants) moved to /under-the-hood/.
@@ -351,6 +353,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
       viewerUrl: opts.viewer === false ? null : 'world/',
       mindUrl: endpoint0 ? endpoint0.slice(0, -'/notes'.length) : null,
       aboutHref: hasAbout(mergeAbout) ? 'about/' : 'why/',
+      saveFor: (c) => (c.kind === 'work' ? ogImages.get(`workshop/${/^works\/([^/]+)\//.exec(c.image)?.[1] ?? ''}.html`) : ogImages.get(`projects/${/^projects\/([^/]+)\//.exec(c.image)?.[1] ?? ''}/index.html`)),
       wakeMs: nextWake,
       boot: [
         'MERGE 95 BIOS (c) nobody',
@@ -565,6 +568,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   write('notes.js', NOTES_SCRIPT)
   write('front.js', FRONT_SCRIPT)
   write('cards.js', CARDS_SCRIPT)
+  write('share.js', SHARE_SCRIPT)
   written.push(...publishWorks(world, out, works))
   written.push(...publishProjects(world, out, projects))
   return { pages: written }

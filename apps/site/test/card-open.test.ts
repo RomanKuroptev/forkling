@@ -22,7 +22,7 @@ const mk = (attrs: Record<string, string> = {}) => {
 }
 
 const page = () => {
-  const ids = ['card-open', 'co-title', 'co-pic', 'co-meta', 'co-cap', 'co-count', 'co-share', 'co-prev', 'co-next', 'co-close']
+  const ids = ['card-open', 'co-title', 'co-pic', 'co-meta', 'co-cap', 'co-count', 'co-share', 'co-save', 'co-prev', 'co-next', 'co-close']
   const byId = Object.fromEntries(ids.map((k) => [k, mk()]))
   const cards = [1, 2, 3].map((n) => mk({ href: `works/w${n}/index.html`, 'data-title': `Title ${n}`, 'data-caption': `Caption ${n}`, 'data-when': '09:14', 'data-kind': 'work', 'data-image': `works/w${n}/thumb.png` }))
   const doc: Record<string, unknown> = {

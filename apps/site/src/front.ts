@@ -49,15 +49,17 @@ export interface FrontInput {
   /** The server's address (no trailing slash) when Merge live can ask it. */
   mindUrl: string | null
   aboutHref: string
+  /** The framed picture of a card's page to save (a path from the site root), when the build made one. */
+  saveFor?: (c: TodayCard) => string | undefined
   /** The next time Merge wakes (Unix ms), from the sleep schedule the mind itself uses. */
   wakeMs: number
   /** The lines of the boot screen, from Merge's own files. */
   boot: string[]
 }
 
-function card(c: TodayCard, tz: string): string {
+function card(c: TodayCard, tz: string, save?: string): string {
   const when = c.day ? new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: 'numeric', month: 'short' }).format(new Date(c.at)) : clock(tz, c.at)
-  return `<a class="tcard" href="${esc(c.href)}" data-title="${esc(c.title)}" data-caption="${esc(c.caption)}" data-when="${esc(when)}" data-kind="${esc(c.kind)}" data-image="${esc(encodeURI(c.image))}"><span class="pic" role="img" aria-label="${esc(c.title)}" ${bg(c.image)}></span><span class="tmeta"><time datetime="${esc(c.at)}">${esc(when)}</time> · ${esc(c.kind)}</span><span class="tcap">${esc(c.caption)}</span></a>`
+  return `<a class="tcard" href="${esc(c.href)}" data-title="${esc(c.title)}" data-caption="${esc(c.caption)}" data-when="${esc(when)}" data-kind="${esc(c.kind)}" data-image="${esc(encodeURI(c.image))}"${save ? ` data-save="${esc(encodeURI(save))}"` : ''}><span class="pic" role="img" aria-label="${esc(c.title)}" ${bg(c.image)}></span><span class="tmeta"><time datetime="${esc(c.at)}">${esc(when)}</time> · ${esc(c.kind)}</span><span class="tcap">${esc(c.caption)}</span></a>`
 }
 
 /** The newest note that Merge answered, as the two chat rows of the notes page. */
@@ -89,8 +91,8 @@ export function frontBody(i: FrontInput): string {
   const dialog = `<div id="sleep-dialog" class="w95 dialog" role="dialog" aria-label="${esc(name)} is asleep" hidden><div class="title"><h2>${esc(name.toLowerCase())}.exe</h2><span class="btns" aria-hidden="true"><i></i><i></i><i></i></span></div><div class="w95-body"><p class="dlg-text"><span class="dlg-icon" aria-hidden="true"></span><span id="sleep-text">${esc(name)} is asleep.</span></p><p class="quiet">You can still walk around its world and read what it made today.</p><p class="actions"><button id="sleep-ok" type="button">OK</button>${i.viewerUrl ? `<a class="btn go" href="${esc(i.viewerUrl)}">walk around anyway</a>` : ''}<button id="sleep-note" type="button">leave a note for morning</button></p></div></div>`
   const boot = `<div id="boot" class="boot" aria-hidden="true"><div class="boot-in"><div class="boot-logo">MERGE 95</div><p class="boot-sub">an AI lives here</p><div class="boot-lines">${i.boot.map((l) => `<p>${esc(l)}</p>`).join('')}</div><div class="boot-bar"><i></i></div><p class="boot-key">press any key (or don't, it loads anyway)</p></div></div>
 <script>${bootScript(i.timezone)}</script>`
-  const opened = `<div id="card-open" class="w95 cardopen" role="dialog" aria-label="A card from today" hidden><div class="title"><h2 id="co-title">card</h2><span class="btns"><i aria-hidden="true"></i><i aria-hidden="true"></i><button type="button" id="co-close" class="x" aria-label="Close">x</button></span></div><div class="w95-body co-body"><span id="co-pic" class="co-pic" role="img" aria-label=""></span><div class="co-text"><p class="co-meta" id="co-meta"></p><p class="co-cap" id="co-cap"></p><div class="co-btns"><button type="button" id="co-prev" class="btn">&#9664; prev</button><button type="button" id="co-next" class="btn">next &#9654;</button><button type="button" id="co-share" class="btn go">share</button>${i.viewerUrl ? `<a id="co-world" class="btn" href="${esc(i.viewerUrl)}">see it in the world</a>` : ''}</div><p class="quiet" id="co-count"></p></div></div></div>`
-  const cards = win('today', `today.txt - Today ${name}...`, today.cards.length > 0 ? `<div class="cards">${today.cards.map((c) => card(c, i.timezone)).join('')}</div><p class="swipe quiet">swipe for more &rarr;</p>` : `<p class="quiet">Nothing made yet. When ${esc(name)} makes something, it shows here.</p>`)
+  const opened = `<div id="card-open" class="w95 cardopen" role="dialog" aria-label="A card from today" hidden><div class="title"><h2 id="co-title">card</h2><span class="btns"><i aria-hidden="true"></i><i aria-hidden="true"></i><button type="button" id="co-close" class="x" aria-label="Close">x</button></span></div><div class="w95-body co-body"><span id="co-pic" class="co-pic" role="img" aria-label=""></span><div class="co-text"><p class="co-meta" id="co-meta"></p><p class="co-cap" id="co-cap"></p><div class="co-btns"><button type="button" id="co-prev" class="btn">&#9664; prev</button><button type="button" id="co-next" class="btn">next &#9654;</button><button type="button" id="co-share" class="btn go">share</button><a id="co-save" class="btn" href="#" download hidden>save picture</a>${i.viewerUrl ? `<a id="co-world" class="btn" href="${esc(i.viewerUrl)}">see it in the world</a>` : ''}</div><p class="quiet" id="co-count"></p></div></div></div>`
+  const cards = win('today', `today.txt - Today ${name}...`, today.cards.length > 0 ? `<div class="cards">${today.cards.map((c) => card(c, i.timezone, i.saveFor?.(c))).join('')}</div><p class="swipe quiet">swipe for more &rarr;</p>` : `<p class="quiet">Nothing made yet. When ${esc(name)} makes something, it shows here.</p>`)
 
   let project = ''
   if (i.project) {
@@ -230,6 +232,11 @@ export const CARDS_SCRIPT = `(function () {
     $('co-cap').textContent = c.getAttribute('data-caption') || ''
     $('co-count').textContent = (at + 1) + ' of ' + cards.length + ' \\u00b7 arrow keys or swipe'
     $('co-share').textContent = 'share'
+    var save = c.getAttribute('data-save')
+    if ($('co-save')) {
+      $('co-save').hidden = !save
+      if (save) $('co-save').setAttribute('href', save)
+    }
     $('co-prev').hidden = $('co-next').hidden = cards.length < 2
   }
   function open(n, from) {
