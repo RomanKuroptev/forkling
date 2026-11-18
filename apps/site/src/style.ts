@@ -201,6 +201,24 @@ main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-re
 .dlg-text { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 8px; }
 .dlg-icon { flex: none; width: 40px; height: 40px; background: url('icons/error.svg') center / contain no-repeat; image-rendering: pixelated; }
 .dialog .actions .btn, .dialog .actions button { flex: 1 1 auto; }
+/* An opened card: a window over the page. Full screen above the taskbar on a phone; on a laptop the picture on the left and the words on the right. */
+.cardopen { position: fixed; z-index: 50; left: 0; right: 0; top: 0; bottom: var(--taskbar); display: flex; flex-direction: column; overflow-y: auto; box-shadow: none; }
+.cardopen[hidden] { display: none; }
+.cardopen .btns .x { position: relative; display: block; width: 18px; height: 16px; padding: 0; font-size: 0; color: transparent; cursor: pointer; background-color: var(--face); border: 2px solid; border-color: var(--white) var(--ink) var(--ink) var(--white); background-image: linear-gradient(45deg, transparent 42%, var(--ink) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--ink) 42% 58%, transparent 58%); background-size: 9px 9px; background-position: center; background-repeat: no-repeat; }
+.cardopen .btns .x::before { content: ""; position: absolute; inset: -14px; }
+.co-body { display: grid; gap: 12px; flex: 1; grid-template-columns: minmax(0, 1fr); align-content: start; }
+.co-pic { display: block; aspect-ratio: 4 / 3; background: var(--deep) center / cover no-repeat; border: 2px solid var(--ink); border-color: var(--ink) var(--white) var(--white) var(--ink); }
+.co-meta { margin: 0; color: var(--purple); font-size: 24px; }
+.co-cap { margin: 4px 0 12px; font: 13px/1.6 var(--pixel); overflow-wrap: anywhere; }
+.co-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.co-btns .btn { flex: 1 1 40%; min-width: 0; cursor: pointer; }
+.co-btns [hidden] { display: none; }
+@media (min-width: 900px) {
+  .cardopen { left: 50%; right: auto; top: 90px; bottom: auto; transform: translateX(-50%); width: min(1100px, 92vw); max-height: calc(100vh - var(--taskbar) - 110px); box-shadow: 4px 4px 0 var(--ink); }
+  .co-body { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-content: start; }
+  .co-text { display: flex; flex-direction: column; }
+  .co-btns { margin-top: auto; }
+}
 /* The boot screen: only for a visitor whose first visit of the day this is (front.js's inline script adds .booting). */
 .boot { display: none; }
 html.booting .boot { display: grid; place-items: center; position: fixed; inset: 0; z-index: 100; background: radial-gradient(circle at 50% 40%, #2b0b5e, #05021a 70%); color: var(--green); font: 24px/1.2 var(--read); }

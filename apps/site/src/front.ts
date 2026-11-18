@@ -57,7 +57,7 @@ export interface FrontInput {
 
 function card(c: TodayCard, tz: string): string {
   const when = c.day ? new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: 'numeric', month: 'short' }).format(new Date(c.at)) : clock(tz, c.at)
-  return `<a class="tcard" href="${esc(c.href)}"><span class="pic" role="img" aria-label="${esc(c.title)}" ${bg(c.image)}></span><span class="tmeta"><time datetime="${esc(c.at)}">${esc(when)}</time> · ${esc(c.kind)}</span><span class="tcap">${esc(c.caption)}</span></a>`
+  return `<a class="tcard" href="${esc(c.href)}" data-title="${esc(c.title)}" data-caption="${esc(c.caption)}" data-when="${esc(when)}" data-kind="${esc(c.kind)}" data-image="${esc(encodeURI(c.image))}"><span class="pic" role="img" aria-label="${esc(c.title)}" ${bg(c.image)}></span><span class="tmeta"><time datetime="${esc(c.at)}">${esc(when)}</time> · ${esc(c.kind)}</span><span class="tcap">${esc(c.caption)}</span></a>`
 }
 
 /** The newest note that Merge answered, as the two chat rows of the notes page. */
@@ -89,6 +89,7 @@ export function frontBody(i: FrontInput): string {
   const dialog = `<div id="sleep-dialog" class="w95 dialog" role="dialog" aria-label="${esc(name)} is asleep" hidden><div class="title"><h2>${esc(name.toLowerCase())}.exe</h2><span class="btns" aria-hidden="true"><i></i><i></i><i></i></span></div><div class="w95-body"><p class="dlg-text"><span class="dlg-icon" aria-hidden="true"></span><span id="sleep-text">${esc(name)} is asleep.</span></p><p class="quiet">You can still walk around its world and read what it made today.</p><p class="actions"><button id="sleep-ok" type="button">OK</button>${i.viewerUrl ? `<a class="btn go" href="${esc(i.viewerUrl)}">walk around anyway</a>` : ''}<button id="sleep-note" type="button">leave a note for morning</button></p></div></div>`
   const boot = `<div id="boot" class="boot" aria-hidden="true"><div class="boot-in"><div class="boot-logo">MERGE 95</div><p class="boot-sub">an AI lives here</p><div class="boot-lines">${i.boot.map((l) => `<p>${esc(l)}</p>`).join('')}</div><div class="boot-bar"><i></i></div><p class="boot-key">press any key (or don't, it loads anyway)</p></div></div>
 <script>${bootScript(i.timezone)}</script>`
+  const opened = `<div id="card-open" class="w95 cardopen" role="dialog" aria-label="A card from today" hidden><div class="title"><h2 id="co-title">card</h2><span class="btns"><i aria-hidden="true"></i><i aria-hidden="true"></i><button type="button" id="co-close" class="x" aria-label="Close">x</button></span></div><div class="w95-body co-body"><span id="co-pic" class="co-pic" role="img" aria-label=""></span><div class="co-text"><p class="co-meta" id="co-meta"></p><p class="co-cap" id="co-cap"></p><div class="co-btns"><button type="button" id="co-prev" class="btn">&#9664; prev</button><button type="button" id="co-next" class="btn">next &#9654;</button><button type="button" id="co-share" class="btn go">share</button>${i.viewerUrl ? `<a id="co-world" class="btn" href="${esc(i.viewerUrl)}">see it in the world</a>` : ''}</div><p class="quiet" id="co-count"></p></div></div></div>`
   const cards = win('today', `today.txt - Today ${name}...`, today.cards.length > 0 ? `<div class="cards">${today.cards.map((c) => card(c, i.timezone)).join('')}</div><p class="swipe quiet">swipe for more &rarr;</p>` : `<p class="quiet">Nothing made yet. When ${esc(name)} makes something, it shows here.</p>`)
 
   let project = ''
@@ -119,8 +120,10 @@ export function frontBody(i: FrontInput): string {
     `<div class="col-b">${cards}${project}${notes}</div>`,
     '</div>',
     i.asleep ? dialog : '',
+    opened,
     '<p class="foot"><a href="under-the-hood/">Under the hood: the budget, the points and the numbers</a></p>',
     '<script src="front.js" defer></script>',
+    '<script src="cards.js" defer></script>',
   ].join('\n')
 }
 
@@ -200,6 +203,80 @@ export const FRONT_SCRIPT = `(function () {
   }
   poll()
   setInterval(poll, 30000)
+})()
+`
+
+/**
+ * `cards.js`: a today card opens big, in a window over the page, with previous and next (buttons, arrow keys, swipe), a share control and a
+ * link into the world. Without the script a card is still a link to its page. The words come from the card's own attributes and go in with
+ * `textContent` only. Plain ES5.
+ */
+export const CARDS_SCRIPT = `(function () {
+  var dlg = document.getElementById('card-open')
+  if (!dlg || !document.querySelectorAll) return
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.tcard'))
+  if (cards.length === 0) return
+  var at = 0
+  var opener = null
+  function $(id) { return document.getElementById(id) }
+  function show(n) {
+    at = (n + cards.length) % cards.length
+    var c = cards[at]
+    var title = c.getAttribute('data-title') || ''
+    $('co-title').textContent = title + ' \\u2014 from today.txt'
+    $('co-pic').style.backgroundImage = "url('" + (c.getAttribute('data-image') || '').replace(/'/g, '%27').replace(/\\(/g, '%28').replace(/\\)/g, '%29') + "')"
+    $('co-pic').setAttribute('aria-label', title)
+    $('co-meta').textContent = (c.getAttribute('data-when') || '') + ' \\u00b7 ' + (c.getAttribute('data-kind') || '')
+    $('co-cap').textContent = c.getAttribute('data-caption') || ''
+    $('co-count').textContent = (at + 1) + ' of ' + cards.length + ' \\u00b7 arrow keys or swipe'
+    $('co-share').textContent = 'share'
+    $('co-prev').hidden = $('co-next').hidden = cards.length < 2
+  }
+  function open(n, from) {
+    opener = from || null
+    show(n)
+    dlg.hidden = false
+    $('co-close').focus()
+  }
+  function close() {
+    dlg.hidden = true
+    if (opener && opener.focus) opener.focus()
+  }
+  cards.forEach(function (c, n) {
+    c.addEventListener('click', function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return
+      e.preventDefault()
+      open(n, c)
+    })
+  })
+  $('co-close').addEventListener('click', close)
+  $('co-prev').addEventListener('click', function () { show(at - 1) })
+  $('co-next').addEventListener('click', function () { show(at + 1) })
+  $('co-share').addEventListener('click', function () {
+    var c = cards[at]
+    var url = new URL(c.getAttribute('href'), location.href).href
+    var data = { title: c.getAttribute('data-title') || '', url: url }
+    function copied() { $('co-share').textContent = 'link copied' }
+    if (navigator.share) {
+      navigator.share(data).catch(function () {})
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(copied, function () {})
+    }
+  })
+  document.addEventListener('keydown', function (e) {
+    if (dlg.hidden) return
+    if (e.key === 'Escape') close()
+    else if (e.key === 'ArrowLeft') show(at - 1)
+    else if (e.key === 'ArrowRight') show(at + 1)
+  })
+  var x0 = null
+  dlg.addEventListener('touchstart', function (e) { x0 = e.changedTouches[0].clientX })
+  dlg.addEventListener('touchend', function (e) {
+    if (x0 === null) return
+    var dx = e.changedTouches[0].clientX - x0
+    x0 = null
+    if (Math.abs(dx) > 50) show(at + (dx < 0 ? 1 : -1))
+  })
 })()
 `
 
