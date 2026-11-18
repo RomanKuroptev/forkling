@@ -190,6 +190,29 @@ main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-re
 @media (min-width: 1100px) {
   .desk { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
 }
+/* Asleep: the still is a dark screen with NO SIGNAL; the friendly window opens over the page. */
+.still.asleep { background: #0b0224 center / cover no-repeat; display: grid; place-items: center; align-content: center; gap: 4px; text-align: center; color: var(--white); }
+.still.asleep .badge { background: var(--deep); }
+.zface { display: block; width: 64px; height: 64px; background: url('icons/asleep-face.svg') center / contain no-repeat; image-rendering: pixelated; }
+.nosig { font: 14px/1.2 var(--pixel); }
+.nosig-sub { font-size: 24px; }
+.dialog { position: fixed; z-index: 40; left: 50%; top: 22%; transform: translateX(-50%); width: min(520px, 94vw); }
+.dialog[hidden] { display: none; }
+.dlg-text { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 8px; }
+.dlg-icon { flex: none; width: 40px; height: 40px; background: url('icons/error.svg') center / contain no-repeat; image-rendering: pixelated; }
+.dialog .actions .btn, .dialog .actions button { flex: 1 1 auto; }
+/* The boot screen: only for a visitor whose first visit of the day this is (front.js's inline script adds .booting). */
+.boot { display: none; }
+html.booting .boot { display: grid; place-items: center; position: fixed; inset: 0; z-index: 100; background: radial-gradient(circle at 50% 40%, #2b0b5e, #05021a 70%); color: var(--green); font: 24px/1.2 var(--read); }
+html.booting body { overflow: hidden; }
+.boot-in { width: min(640px, 90vw); }
+.boot-logo { font: 40px/1.2 var(--pixel); color: var(--white); text-align: center; text-shadow: 3px 3px 0 var(--hot), -2px -2px 0 var(--cyan); }
+.boot-sub { text-align: center; color: var(--pink); margin: 6px 0 28px; }
+.boot-lines p { margin: 2px 0; }
+.boot-bar { height: 30px; margin: 16px 0 12px; border: 2px solid var(--green); padding: 3px; }
+.boot-bar i { display: block; height: 100%; width: 0; background: repeating-linear-gradient(90deg, var(--green) 0 14px, transparent 14px 18px); animation: boot-fill 1.4s steps(24) forwards; }
+@keyframes boot-fill { to { width: 100%; } }
+.boot-key { margin: 0; color: var(--green); }
 /* Night: while Merge sleeps the wallpaper is the starry night sky, with the same grid floor. */
 body.night {
   background:

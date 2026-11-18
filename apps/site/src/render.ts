@@ -2,11 +2,12 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { dirname, join } from 'node:path'
 import type { z } from 'zod'
 import { Beliefs, BudgetLedger, Forkling, Goals, Health, Interests, isOpenRequest, MindState, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
+import { localDate } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { buildToday } from './today.ts'
-import { FRONT_SCRIPT, frontBody, hoodBody } from './front.ts'
+import { FRONT_SCRIPT, frontBody, hoodBody, wakeInfo } from './front.ts'
 import { desktopPicturePng } from './desktop-picture.ts'
-import { faviconSvg, ICONS, iconFor, iconSvg } from './icons.ts'
+import { asleepFaceSvg, errorIconSvg, faviconSvg, ICONS, iconFor, iconSvg } from './icons.ts'
 import { esc, markdown } from './md.ts'
 import { defaultGitLog, parseChanges } from './changes.ts'
 import { renderFeed, type FeedItem } from './feed.ts'
@@ -285,6 +286,11 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const endpoint0 = notesEndpoint(opts.mindUrl)
   const siteKey0 = validSiteKey(opts.turnstileSiteKey)
   const i = forkling.intention
+  // When Merge wakes next, from the sleep schedule the mind itself uses; the page counts down to it. The boot screen's "days" are the days since its first diary entry.
+  const today0 = localDate(tz, buildMs)
+  const nextWake = wakeInfo({ nowMs: buildMs, seed: forkling.seed, timezone: tz, lateNight: forkling.lateNight, asleep: forkling.asleep })
+  const firstEntry = journal.at(-1)?.date
+  const memoryDays = firstEntry ? Math.max(1, Math.round((Date.parse(`${today0}T00:00:00Z`) - Date.parse(`${firstEntry}T00:00:00Z`)) / 86_400_000) + 1) : 0
   add('index.html', {
     title: 'Home',
     active: 'index.html',
@@ -302,6 +308,14 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
       viewerUrl: opts.viewer === false ? null : 'world/',
       mindUrl: endpoint0 ? endpoint0.slice(0, -'/notes'.length) : null,
       aboutHref: hasAbout(mergeAbout) ? 'about/' : 'why/',
+      wakeMs: nextWake,
+      boot: [
+        'MERGE 95 BIOS (c) nobody',
+        memoryDays > 0 ? `checking memory ......... ${memoryDays} ${memoryDays === 1 ? 'day' : 'days'} OK` : 'checking memory ......... OK',
+        `loading ${forkling.species} body ........ OK`,
+        `loading opinions ........ ${beliefs.length} OK`,
+        `connecting to ${name} ...... ${forkling.asleep ? 'asleep' : 'awake'}`,
+      ],
     }),
   })
   add('under-the-hood/index.html', {
@@ -493,6 +507,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   write('style.css', STYLE)
   for (const name of Object.keys(ICONS)) write(`icons/${name}.svg`, iconSvg(name))
   write('favicon.svg', faviconSvg())
+  write('icons/asleep-face.svg', asleepFaceSvg())
+  write('icons/error.svg', errorIconSvg())
   write('share.png', desktopPicturePng())
   write('today.json', `${JSON.stringify(today, null, 2)}
 `)
