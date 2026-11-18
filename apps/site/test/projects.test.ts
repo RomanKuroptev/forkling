@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { Project, withPolicy } from '@forkling/schema'
 import { parseChanges } from '../src/changes.ts'
 import { loadProjects, projectChangeLookup } from '../src/projects.ts'
+import { dayOfProject } from '../src/projects.ts'
 import { renderSite } from '../src/render.ts'
 
 /** Step 4, slice D: `/projects/` and `/projects/<id>/` (spec-v4 3.4), from the template world with one project in each status. */
@@ -42,15 +43,27 @@ beforeEach(() => {
 })
 
 describe('the projects pages', () => {
-  it('list every project with its latest screenshot, status and last caption', () => {
+  it('list every project beside a detail with its day pictures, status and the log of its sessions, one chosen with no script', () => {
     renderSite(world, out, { gitLog: () => '' })
     const list = page('projects/index.html')
-    for (const id of ['tide-clock', 'sand-clock', 'cloud-loom', 'new-thing']) expect(list).toContain(`href="${id}/"`)
-    expect(list).toContain('src="tide-clock/shots/2.png"')
-    expect(list).toMatch(/sand clock<\/a><\/strong> <span class="quiet">done, 2 sessions/)
-    expect(list).toMatch(/cloud loom<\/a><\/strong> <span class="quiet">dropped/)
-    expect(list).toContain('Last: the glass turns')
+    for (const id of ['tide-clock', 'sand-clock', 'cloud-loom', 'new-thing']) {
+      expect(list).toContain(`href="${id}/"`)
+      expect(list).toContain(`id="wp-${id}"`)
+      expect(list).toContain(`#wp-${id}:checked ~ .wdetail .wd-${id}{display:block}`)
+    }
+    expect(list.match(/<input type="radio"[^>]* checked>/g)?.length).toBe(1)
+    expect(list).toContain("background-image:url('tide-clock/shots/2.png')")
+    expect(list).toMatch(/<strong>sand clock<\/strong><small>day \d+ · done, 2 sessions/)
+    expect(list).toMatch(/<strong>cloud loom<\/strong><small>day \d+ · dropped/)
+    expect(list).toMatch(/day [0-9]+ &gt; /)
+    expect(list).toContain('the glass turns')
     expect(page('index.html')).toContain('href="projects/"')
+  })
+
+  it('counts days from the day a project started, in the time zone of the forkling', () => {
+    expect(dayOfProject('Europe/Stockholm', '2026-11-16T22:30:00Z', '2026-11-16T22:30:00Z')).toBe(1)
+    expect(dayOfProject('Europe/Stockholm', '2026-11-16T22:30:00Z', '2026-11-17T08:00:00Z')).toBe(2)
+    expect(dayOfProject('Europe/Stockholm', '2026-11-16T08:00:00Z', '2026-11-18T08:00:00Z')).toBe(3)
   })
 
   it('show the timelapse in order, with the captions and which sessions were broken', () => {

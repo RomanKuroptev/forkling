@@ -71,6 +71,8 @@ export function publishProjects(world: string, out: string, projects: readonly S
 export interface ProjectsInput {
   projects: readonly SiteProject[]
   stamp: (iso: string) => string
+  /** Merge's time zone, for "day 3". */
+  tz?: string
   add: (rel: string, input: { title: string; active: string; body: string }) => void
 }
 
@@ -79,19 +81,45 @@ const latest = (p: SiteProject) => {
   return i === undefined ? null : { shot: p.shots[i]!, caption: p.project.sessions[i]!.caption }
 }
 
+const dayKey = (tz: string, iso: string) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso))
+
+/** "day 3": the day of a session counted from the day the project started, in Merge's time zone. */
+export function dayOfProject(tz: string, started: string, at: string): number {
+  return Math.round((Date.parse(`${dayKey(tz, at)}T00:00:00Z`) - Date.parse(`${dayKey(tz, started)}T00:00:00Z`)) / 86_400_000) + 1
+}
+
+const bgUrl = (path: string) => `style="background-image:url('${esc(encodeURI(path).replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29'))}')"`
+
+/**
+ * The workshop in the look of the workshop mockup (docs/spec/v4/look/site/workshop.png): the projects as a list with a detail beside it, one
+ * project chosen at a time with no script (radio buttons and a little CSS made from the project ids, which are plain slugs). The detail has the
+ * goal, the day pictures and the log of what each session did. Points spent and the world link of the mockup are left out: no such data here.
+ */
 export function renderProjects(o: ProjectsInput): void {
-  const card = (p: SiteProject) => {
-    const last = latest(p)
-    const caption = p.project.sessions.at(-1)?.caption
-    return `<li class="project" data-status="${p.project.status}">${last ? `<a href="${esc(p.project.id)}/"><img src="${esc(p.project.id)}/${esc(last.shot)}" alt="" loading="lazy" width="240" height="180"></a> ` : ''}<strong><a href="${esc(p.project.id)}/">${esc(p.project.name)}</a></strong> <span class="quiet">${STATUS_WORDS[p.project.status]}, ${p.project.sessions.length} ${p.project.sessions.length === 1 ? 'session' : 'sessions'}</span><p>${esc(p.project.aim)}</p>${caption ? `<p class="quiet">Last: ${esc(caption)}</p>` : ''}</li>`
+  const tz = o.tz ?? 'UTC'
+  const detail = (p: SiteProject) => {
+    const { project } = p
+    const days = project.sessions.flatMap((s, n) => (p.shots[n] ? [{ s, shot: p.shots[n] as string }] : [])).slice(-3)
+    const pics = days.map(({ s, shot }) => `<a class="wshot" href="${esc(project.id)}/" aria-label="${esc(s.caption)}"><span class="pic" ${bgUrl(`${project.id}/${shot}`)}></span><span class="day">day ${dayOfProject(tz, project.started, s.at)}</span></a>`).join('')
+    const log = project.sessions.map((s) => `day ${dayOfProject(tz, project.started, s.at)} &gt; ${esc(s.caption)}`).join('\n')
+    return `<section class="wd wd-${esc(project.id)}"><h2>${esc(project.name)}</h2><p>${esc(project.aim)}</p>${pics ? `<div class="wshots">${pics}</div>` : ''}${log ? `<pre class="wlog">${log}</pre>` : '<p class="quiet">No session yet.</p>'}<p class="actions"><a class="play" href="${esc(project.id)}/">open the project</a>${p.video ? ` <a class="play" href="${esc(project.id)}/share/timelapse.mp4" download>save the video</a>` : ''}</p></section>`
   }
+  const radio = (p: SiteProject, n: number) => `<input type="radio" name="wp" id="wp-${esc(p.project.id)}" class="wp"${n === 0 ? ' checked' : ''}>`
+  const label = (p: SiteProject) => {
+    const { project } = p
+    const day = project.sessions.length > 0 ? `day ${dayOfProject(tz, project.started, project.sessions.at(-1)!.at)} \u00b7 ` : ''
+    return `<label class="wp-item st-${project.status}" for="wp-${esc(project.id)}"><span class="sw" aria-hidden="true"></span><strong>${esc(project.name)}</strong><small>${day}${STATUS_WORDS[project.status]}, ${project.sessions.length} ${project.sessions.length === 1 ? 'session' : 'sessions'}</small></label>`
+  }
+  // The detail that shows is the one whose radio button is checked: one small rule for each project, made from its id.
+  const rules = o.projects.map((p) => `#wp-${p.project.id}:checked ~ .wdetail .wd-${p.project.id}{display:block}#wp-${p.project.id}:checked ~ .wlist label[for="wp-${p.project.id}"]{background:var(--purple);color:var(--white)}`).join('')
+  const list = `<div class="wshop"><style>${rules}</style>${o.projects.map(radio).join('')}<nav class="wlist" aria-label="Projects">${o.projects.map(label).join('')}</nav><div class="wdetail">${o.projects.map(detail).join('')}</div></div>`
   o.add('projects/index.html', {
     title: 'Projects',
     active: 'projects/',
     body: [
       '<h1>Projects</h1>',
       '<p class="quiet">Things built over more than one sitting: code written, run and looked at, session by session.</p>',
-      o.projects.length > 0 ? `<ul class="projects">${o.projects.map(card).join('')}</ul>` : '<p class="quiet">Nothing yet. A project shows here once it is started.</p>',
+      o.projects.length > 0 ? list : '<p class="quiet">Nothing yet. A project shows here once it is started.</p>',
     ].join('\n'),
   })
 

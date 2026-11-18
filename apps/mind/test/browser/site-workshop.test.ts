@@ -81,7 +81,7 @@ describe.skipIf(!browser)('the workshop of the built site, in a browser', () => 
     expect(await page.locator('a[href="humming-lamp.html"]').count()).toBeGreaterThan(0)
     expect(await page.locator('iframe').count()).toBe(0)
     // A sketch is on the shelf and in the strip of its day.
-    expect(await page.locator('img[src="../works/humming-lamp/thumb.png"]').count()).toBe(2)
+    expect(await page.locator('.pic[style*="../works/humming-lamp/thumb.png"]').count()).toBe(2)
     await page.close()
   })
 

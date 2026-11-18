@@ -510,7 +510,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   // The workshop is always there (spec 8): an empty shelf says so. A work is shown only through its own page, in its sandbox.
   renderWorkshop({ works, tz, goals, add })
   if (galleryTiles.length > 0) add('gallery/index.html', { title: 'Gallery', active: 'gallery/', body: galleryBody(galleryTiles, tz) })
-  renderProjects({ projects, stamp: (iso) => localStamp(iso, tz), add })
+  renderProjects({ projects, tz, stamp: (iso) => localStamp(iso, tz), add })
   renderPlaces({
     places,
     works,
