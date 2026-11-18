@@ -1,7 +1,7 @@
-import { Souvenir, WorkMeta, type Place, type PlaceRequest } from '@forkling/schema'
+import { Project, Souvenir, WorkMeta, type Place, type PlaceRequest } from '@forkling/schema'
 import type { LoadedWorld } from './loadWorld.ts'
 import { LOCAL_REF } from './localWorld.ts'
-import { galleryPanel, noteOnly, plaquePanel, plotPanel, safeUrl, signPanel, siteBase, souvenirPanel, workPanel, type PanelContent } from './panelContent.ts'
+import { galleryPanel, noteOnly, plaquePanel, projectPanel, plotPanel, safeUrl, signPanel, siteBase, souvenirPanel, workPanel, type PanelContent } from './panelContent.ts'
 
 /** Reads one file of a world at its commit. Null when it is not there, would not load, or the world has no network to read from. */
 export interface WorldFiles {
@@ -63,6 +63,10 @@ export async function loadPanel(target: PanelTarget, ctx: { world: Pick<LoadedWo
     case 'work': {
       const parsed = ref ? WorkMeta.safeParse(await ctx.files.json(`${ref}/meta.json`)) : null
       return parsed?.success ? workPanel(parsed.data, base) : missing(local)
+    }
+    case 'project': {
+      const parsed = ref ? Project.safeParse(await ctx.files.json(`${ref}/project.json`)) : null
+      return parsed?.success && parsed.data.status === 'done' ? projectPanel(parsed.data, base) : missing(local)
     }
     case 'plaque': {
       const text = ref ? await ctx.files.text(ref) : null

@@ -40,7 +40,7 @@ export type PartCategory = z.infer<typeof PartCategory>
 export const SlotKind = z.enum(['frame', 'screen', 'terminal', 'plaque', 'shelf', 'case'])
 export type SlotKind = z.infer<typeof SlotKind>
 
-export const ExhibitKind = z.enum(['souvenir', 'work', 'plaque', 'trail', 'gallery'])
+export const ExhibitKind = z.enum(['souvenir', 'work', 'plaque', 'trail', 'gallery', 'project'])
 export type ExhibitKind = z.infer<typeof ExhibitKind>
 
 export const SouvenirKindName = z.enum(['quote', 'fact', 'image'])
@@ -49,7 +49,7 @@ export type SouvenirKindName = z.infer<typeof SouvenirKindName>
 /** Which exhibits each slot takes, and which kinds of souvenir where it takes souvenirs. */
 export const SLOT_ACCEPTS: Record<SlotKind, { exhibits: ExhibitKind[]; souvenirs?: SouvenirKindName[] }> = {
   frame: { exhibits: ['souvenir', 'trail'], souvenirs: ['image'] },
-  screen: { exhibits: ['work'] },
+  screen: { exhibits: ['work', 'project'] },
   terminal: { exhibits: ['gallery'] },
   plaque: { exhibits: ['plaque', 'souvenir'], souvenirs: ['quote'] },
   shelf: { exhibits: ['souvenir'], souvenirs: ['image', 'quote', 'fact'] },

@@ -1,4 +1,4 @@
-import { workFrame, type Place, type PlaceRequest, type Souvenir, type WorkMeta } from '@forkling/schema'
+import { workFrame, type Place, type PlaceRequest, type Project, type Souvenir, type WorkMeta } from '@forkling/schema'
 import { LOCAL_REF } from './localWorld.ts'
 import type { WorldRef } from './route.ts'
 
@@ -45,6 +45,12 @@ export function souvenirPanel(sv: Souvenir): PanelContent {
 export function workPanel(meta: WorkMeta, base: string | null): PanelContent {
   const url = workUrl(base, meta.id)
   return { kind: 'work', heading: meta.title, about: meta.about, frameHtml: url ? workFrame(url, meta.title) : null }
+}
+
+/** A done project on a screen (spec-v4 3.4): shown as a work is, running from its page on the site. A plain fallback; lane D styles it. */
+export function projectPanel(project: Project, base: string | null): PanelContent {
+  const url = base ? `${base}projects/${project.id}/src/index.html` : null
+  return { kind: 'work', heading: project.name, about: project.aim, frameHtml: url ? workFrame(url, project.name) : null }
 }
 
 export function plaquePanel(heading: string, markdown: string): PanelContent {

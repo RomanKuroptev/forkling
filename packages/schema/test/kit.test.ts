@@ -76,7 +76,7 @@ describe('what each slot takes (spec 5.3)', () => {
   it('lists, for every slot kind, the exhibit kinds it accepts', () => {
     expect(Object.keys(SLOT_ACCEPTS).sort()).toEqual([...SlotKind.options].sort())
     expect(SLOT_ACCEPTS.frame).toEqual({ exhibits: ['souvenir', 'trail'], souvenirs: ['image'] })
-    expect(SLOT_ACCEPTS.screen).toEqual({ exhibits: ['work'] })
+    expect(SLOT_ACCEPTS.screen).toEqual({ exhibits: ['work', 'project'] })
     expect(SLOT_ACCEPTS.terminal).toEqual({ exhibits: ['gallery'] })
     expect(SLOT_ACCEPTS.plaque).toEqual({ exhibits: ['plaque', 'souvenir'], souvenirs: ['quote'] })
     expect(SLOT_ACCEPTS.shelf).toEqual({ exhibits: ['souvenir'], souvenirs: ['image', 'quote', 'fact'] })
