@@ -144,7 +144,7 @@ describe('/notes/: the board', () => {
     const item = (id: string) => new RegExp(`<li[^>]*data-note="${id}"[\\s\\S]*?</li>`).exec(html)![0]
     expect(item('n-2026-11-10-000001')).toMatch(/Not found yet/)
     expect(item('n-2026-11-11-000002')).toMatch(/Found by Merge on 2026-11-16\. Not answered yet/)
-    expect(item('n-2026-11-12-000003')).toMatch(/Merge replied:[\s\S]*I do\. The fog is my landlord\./)
+    expect(item('n-2026-11-12-000003')).toMatch(/Merge:<\/strong>[\s\S]*I do\. The fog is my landlord\./)
     expect(item('n-2026-11-13-000004')).toMatch(/Merge kept this note/)
     expect(item('n-2026-11-14-000005')).toMatch(/Merge declined this note:[\s\S]*I would rather not today\./)
     for (const id of ['n-2026-11-10-000001', 'n-2026-11-11-000002', 'n-2026-11-12-000003', 'n-2026-11-13-000004', 'n-2026-11-14-000005']) expect(item(id)).toMatch(/data-status="(new|found|replied|kept|declined)"/)

@@ -22,6 +22,7 @@ export const STYLE = `@font-face { font-family: 'Press Start 2P'; src: url('font
   --quiet: #3d2c6b;
   --white: #ffffff;
   --taskbar: 44px;
+  color-scheme: light;
   --pixel: 'Press Start 2P', monospace;
   --read: 'VT323', monospace;
 }
@@ -117,6 +118,19 @@ dd { margin: 0; }
 .menu a:hover, .menu a:focus-visible, .menu a[aria-current] { background: var(--purple); color: var(--white); outline: none; }
 .tray { margin-left: auto; font-size: 22px; color: var(--quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+/* Notes and their threads: a flat chat on Merge's desktop. One row for each message: the visitor's rows full width in white, Merge's rows a fixed step in, in pale cyan. */
+.requests.notes { list-style: none; padding: 0; margin: 12px 0; }
+.requests.notes li.note { border: 0; padding: 0; margin: 18px 0; }
+.note-meta { margin: 0 0 4px; font-size: 22px; }
+.msg { background: var(--white); border: 2px solid var(--ink); padding: 6px 12px; margin: 0 0 8px; }
+.msg.merge { background: #c9fbff; margin-left: 30px; }
+.msg .who { color: var(--purple); font: 12px/1.4 var(--pixel); }
+.msg .who + p { display: inline; margin: 0; }
+.msg p { margin: 0.4rem 0; }
+.note-fate { margin: 0 0 8px 30px; }
+.notes li.note p.quiet a { font-size: 22px; }
+.notes li.note .note-answer-btn { margin-left: 30px; }
+main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* Night: while Merge sleeps the wallpaper is the starry night sky, with the same grid floor. */
 body.night {
   background:
