@@ -51,7 +51,7 @@ const file = (rel: string) => join(dir, rel)
 const goalsOf = () => Goals.parse(JSON.parse(readFileSync(file('mind/goals.json'), 'utf8')))
 const stateOf = () => MindState.parse(JSON.parse(readFileSync(file('mind/state.json'), 'utf8')))
 const jobs = () => (existsSync(file('mind/builds')) ? readdirSync(file('mind/builds')).filter((f) => !f.endsWith('.result.json')) : [])
-const deps = (llm: LlmClient, now: string) => ({ now: new Date(now), llm, pack: cat.pack, behaviors: cat.behaviors, speciesPersona: cat.persona })
+const deps = (llm: LlmClient, now: string, sessions = true) => ({ now: new Date(now), llm, pack: cat.pack, behaviors: cat.behaviors, speciesPersona: cat.persona, sessions })
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'build-step-'))
@@ -68,6 +68,30 @@ function finishSession(id: string, usd: number, at: string) {
     JSON.stringify(JobResult.parse({ id, kind: 'session', status: 'done', projectId: 'tide-clock', title: 'Tide clock', caption: 'the pool fills', calls: [{ at, kind: 'session', model: 'claude-sonnet-5-5', input: 1000, cacheRead: 0, cacheWrite: 0, output: 500, usd }], at })),
   )
 }
+
+describe('where build sessions cannot run (the Actions tick, or sandbox: missing)', () => {
+  it('shows nine verbs and no projects, and turns a build step down with a plain reason', async () => {
+    mkdirSync(file('projects/tide-clock'), { recursive: true })
+    writeFileSync(file('projects/tide-clock/project.json'), JSON.stringify({ id: 'tide-clock', name: 'Tide clock', aim: 'a pool', started: '2026-11-01T10:00:00.000Z', status: 'building' }))
+    const fake = fakeLlm()
+    await runTick(dir, deps(fake.llm, NOW, false))
+    const first = fake.calls[0]!
+    expect(first.system).toContain('## Your nine verbs')
+    expect(first.system).not.toMatch(/^- build:/m)
+    expect(first.user).not.toContain('<projects>')
+    expect(fake.calls[1]!.user).toContain('build is not available yet: build sessions cannot run here')
+    expect(jobs()).toHaveLength(0)
+  })
+
+  it('shows ten verbs and the projects where they can', async () => {
+    mkdirSync(file('projects/tide-clock'), { recursive: true })
+    writeFileSync(file('projects/tide-clock/project.json'), JSON.stringify({ id: 'tide-clock', name: 'Tide clock', aim: 'a pool', started: '2026-11-01T10:00:00.000Z', status: 'building' }))
+    const fake = fakeLlm()
+    await runTick(dir, deps(fake.llm, NOW))
+    expect(fake.calls[0]!.system).toContain('## Your ten verbs')
+    expect(fake.calls[0]!.user).toContain('<projects>')
+  })
+})
 
 describe('a build step in the tick', () => {
   it('asks the worker for a session with the target, the reason and the points in hand, and costs nothing when it starts', async () => {

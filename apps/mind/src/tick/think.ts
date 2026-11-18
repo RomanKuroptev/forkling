@@ -63,7 +63,7 @@ export async function think(t: Tick): Promise<void> {
     startingPoints: t.startingPoints,
     seenPages: unreadSeen(t.mind.seen ?? [], { not: t.startingPoints.map((p) => p.url), readRecently: t.wander.readRecently }),
     notes: noteLines(t),
-    projects: projectLines(t),
+    ...(t.deps.sessions ? { projects: projectLines(t) } : {}),
   })
   let asking = user
   // A plan the body cannot carry out gets one more chance, with the reasons, before the body falls back on itself.

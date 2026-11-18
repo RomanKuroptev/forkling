@@ -356,7 +356,7 @@ describe('the price of an expand (spec v4 2.2)', () => {
 
 describe('build (spec-v4 3.2): a new project, or one that is building', () => {
   const projects = { building: [{ id: 'tide-clock', name: 'Tide clock' }], ended: [{ id: 'sand-clock', name: 'Sand clock' }] }
-  const c = (over: Partial<MindPlanContext> = {}) => ctx({ pointsInHand: 400, projects, ...over })
+  const c = (over: Partial<MindPlanContext> = {}) => ctx({ pointsInHand: 400, projects, buildAvailable: true, ...over })
   const build = (target: string | null, over: Partial<MindStep> = {}): MindStep => ({ verb: 'build', target, reason: 'I want the pool to fill with the hours.', minutes: 30, ...over })
 
   it('takes the id or the name of a project that is building, and a new name', () => {
@@ -403,6 +403,13 @@ describe('build (spec-v4 3.2): a new project, or one that is building', () => {
 
   it('costs nothing up front: a session is metered as it runs', () => {
     expect(reasons([build('tide-clock'), wander(), rest()], c({ pointsInHand: 300 }))).toEqual([])
+  })
+
+  it('is not a verb where build sessions cannot run (a capability, not a plan rule): refused with a plain reason, and the other verbs say nine', () => {
+    expect(reasons([wander(), build('tide-clock'), rest()], c({ buildAvailable: false }))).toEqual(['step 2: build is not available yet: build sessions cannot run here'])
+    expect(reasons([wander(), build('tide-clock'), rest()], ctx({ pointsInHand: 400, projects }))).toEqual(['step 2: build is not available yet: build sessions cannot run here'])
+    expect(reasons([wander(), { ...rest(), verb: 'dance' as never }, rest()], ctx())).toEqual([expect.stringMatching(/not one of the nine verbs \(wander, tend, revisit, expand, found, tinker, write, reply, rest\)$/)])
+    expect(reasons([wander(), { ...rest(), verb: 'dance' as never }, rest()], ctx({ buildAvailable: true }))).toEqual([expect.stringMatching(/not one of the ten verbs .*rest, build\)$/)])
   })
 
   it('has no limit on build steps in a plan or a day', () => {
