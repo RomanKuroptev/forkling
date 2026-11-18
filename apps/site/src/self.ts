@@ -79,6 +79,14 @@ export function statTiles(s: NonNullable<AboutInput['stats']>): string {
   return tiles.length > 0 ? `<div class="stats">${tiles.map(([k, v]) => `<div class="stat"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join('')}</div>` : ''
 }
 
+/** Merge's own first sentence (the hero of the who-am-i page) and the rest of the text. A leading `# heading` line is dropped. */
+export function splitHero(text: string): { hero: string; rest: string } {
+  const body = text.replace(/^# .*\n+/, '').trim()
+  const first = /^(.+?[.!?])(\s|$)/s.exec(body)?.[1] ?? ''
+  if (!first || first.length > 200 || first.includes('\n')) return { hero: '', rest: body }
+  return { hero: first, rest: body.slice(first.length).trim() }
+}
+
 /** A weekly copy is a heading the code wrote, the text as it became, and `## Why it changed` with a line for each change. */
 function splitCopy(text: string): { body: string; reasons: string } {
   const withoutHeading = text.replace(/^# .*\n+/, '')
@@ -106,14 +114,15 @@ export function renderAbout(i: AboutInput): void {
   const latest = current && newest && splitCopy(newest.text).body === current ? newest : null
   const history = latest ? i.about.history.slice(1) : i.about.history
   const why = latest ? splitCopy(latest.text).reasons : ''
+  const hero = current ? splitHero(current) : { hero: '', rest: '' }
   i.add('about/index.html', {
     title: 'About',
     active: 'about/',
     body: [
-      '<h1 class="about-head"><span class="aface" aria-hidden="true"></span>About</h1>',
-      '<p class="quiet">Who Merge says it is now, in its own words. Only Merge writes it: on Sunday evening it may rewrite it, at most once a week, and every version is kept below with the reasons it changed.</p>',
+      '<h1 class="about-head"><span class="aface" aria-hidden="true"></span><span class="ahero">' + (hero.hero ? esc(hero.hero) : 'About') + '</span></h1>',
+      current ? `<div class="about-body">${markdown(hero.rest)}</div>` : '<p class="quiet">Nothing current: there is only the history.</p>',
       ...(i.stats ? [statTiles(i.stats)] : []),
-      current ? `<div class="about-body">${markdown(current)}</div>` : '<p class="quiet">Nothing current: there is only the history.</p>',
+      '<p class="quiet">Who Merge says it is now, in its own words. Only Merge writes it: on Sunday evening it may rewrite it, at most once a week, and every version is kept below with the reasons it changed.</p>',
       ...builtLines(i.built),
       ...(latest && why ? [`<h2>Why it last changed</h2>`, `<p class="quiet">Changed on ${esc(latest.date)}.</p>`, markdown(why)] : []),
       ...(history.length > 0

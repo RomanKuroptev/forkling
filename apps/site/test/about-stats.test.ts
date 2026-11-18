@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Note } from '@forkling/schema'
 import { renderSite } from '../src/render.ts'
-import { statTiles } from '../src/self.ts'
+import { splitHero, statTiles } from '../src/self.ts'
 
 /** Step 7C: the who-am-i page's tiles, from numbers the world repo already has. */
 
@@ -35,6 +35,14 @@ describe('statTiles', () => {
     expect(all).toContain('&lt;b&gt;toasters&lt;/b&gt;')
     expect(all).toContain('visitors met')
     expect(statTiles({ alive: 0, made: 0, into: null, visitors: 0 })).toBe('')
+  })
+})
+
+describe('splitHero', () => {
+  it('takes Merge\'s first sentence as the hero and leaves the rest, dropping a leading heading', () => {
+    expect(splitHero('# About me\n\nI am Merge. I make things.\n\n- kind\n')).toEqual({ hero: 'I am Merge.', rest: 'I make things.\n\n- kind' })
+    expect(splitHero('no end mark here')).toEqual({ hero: '', rest: 'no end mark here' })
+    expect(splitHero(`${'x'.repeat(250)}. y`).hero).toBe('')
   })
 })
 
