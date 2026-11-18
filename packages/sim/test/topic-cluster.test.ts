@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contentWords, sameSubject, topicClusters, writesOnTopic, type WrittenPage } from '../src/topic-cluster.ts'
+import { contentWords, sameSubject, sameWorkStreak, topicClusters, topicWriteCounts, writesOnTopic, type WrittenPage } from '../src/topic-cluster.ts'
 
 const DAY = 86_400_000
 const NOW = Date.parse('2026-11-16T12:00:00Z')
@@ -90,5 +90,32 @@ describe('sameSubject', () => {
   })
   it('is false for different subjects', () => {
     expect(sameSubject('Sand in WebGL', 'Leaf area index')).toBe(false)
+  })
+})
+
+describe('topicWriteCounts (what the prompt shows against the limit)', () => {
+  it('counts each subject within the days, most written first, and leaves out older pages', () => {
+    const old = page('What the laser found long ago', 20, lidar.slice(0, 5))
+    const counts = topicWriteCounts([old, ...lidarPages, ...sandPages], { nowMs: NOW, days: 7 })
+    expect(counts.map((c) => c.count)).toEqual([5, 2])
+    expect(counts[0]!.titles.at(-1)).toBe('Leaf area index')
+    expect(counts[1]!.titles).toEqual(['What the sand taught me', 'Grain and ripples'])
+  })
+  it('is empty with no pages', () => {
+    expect(topicWriteCounts([], { nowMs: NOW, days: 7 })).toEqual([])
+  })
+  it('agrees with writesOnTopic on the size of a cluster', () => {
+    const [top] = topicWriteCounts(lidarPages, { nowMs: NOW, days: 7 })
+    expect(top!.count).toBe(writesOnTopic({ target: 'Leaf area index', reason: 'lidar' }, lidarPages, { nowMs: NOW, days: 7 }).length)
+  })
+})
+
+describe('sameWorkStreak', () => {
+  it('is the run of latest tinkers that are the same subject as the last one', () => {
+    expect(sameWorkStreak(['Rain clock', 'Live coding loop', 'Live coding loop again'])).toEqual({ count: 2, title: 'Live coding loop again' })
+  })
+  it('is 1 for a single tinker and null for none', () => {
+    expect(sameWorkStreak(['Rain clock'])).toEqual({ count: 1, title: 'Rain clock' })
+    expect(sameWorkStreak([])).toBeNull()
   })
 })

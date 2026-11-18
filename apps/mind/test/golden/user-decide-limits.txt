@@ -1,0 +1,46 @@
+<situation>
+time: Tuesday 2026-11-03 10:00 (Europe/Stockholm); woke at 07:10; bedtime 23:05
+mood: steady, rested
+doing now: sit ("New island. I will allow it.")
+points in hand: 150
+prices today: wander 3, tend 2, revisit 1, expand 50 (20 where earned), found 80, tinker (full work) 150, tinker (sketch) 30, caption 1, page 10, reply 0, rest 0; a deep step costs 30
+</situation>
+
+<interests>
+You are not especially into anything yet.
+</interests>
+
+<goals>
+{"long":null,"today":null,"currentStep":null}
+</goals>
+
+<places>
+home, workshop
+</places>
+
+<limits>
+What a plan is checked against, and where you stand now:
+- Writing: at most 3 writes on one subject in 7 days; a write that would be one more is turned down. Pages in the last 7 days, by subject:
+  - 15 pages (closed for writing): "Leaf area index", "Ground without the trees"
+  - 2 pages: "Grain and ripples"
+- Tinker: the same work at most 2 times in a row. Your latest run is 2 on "Live coding loop", so another tinker on it is turned down.
+- Tired: a plan has at most 4 steps today, and no expand, found, tinker.
+- Each step's reason is at most 140 characters; a longer one is turned down.
+- Trips already started today from: https://example.com/front; lighthouse. A wander starting from one of these again is left out of the plan.
+</limits>
+
+<recent>
+{"steps":[],"rejectedPlans":[]}
+</recent>
+
+<triggers>
+- newDay: a new day
+</triggers>
+
+## Your task
+Something has come up (see the triggers). Decide what to do next. A plan has 3 to 8 steps.
+- To carry on as planned, set plan to null.
+- To change course, set plan to the new steps for the rest of today; the first starts now. Say why in planReason.
+- Put in thought one sentence about why you do what you do next.
+- You may set or change the long goal if what just happened changes what you want; otherwise longGoal stays null.
+Set stayUpLate only if it is evening and there is something you truly want to stay up for; otherwise null.
