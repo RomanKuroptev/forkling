@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, realpathSync } from 'node:fs'
 import { join } from 'node:path/posix'
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
@@ -176,7 +176,8 @@ async function main(): Promise<void> {
   process.exit(failed === 0 ? 0 : 1)
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+// Compared after resolving symlinks, as Node resolves them for the main module.
+if (process.argv[1] && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) {
   main().catch((error: unknown) => {
     console.error(`FAIL: ${error instanceof Error ? error.message : String(error)}`)
     process.exit(1)
