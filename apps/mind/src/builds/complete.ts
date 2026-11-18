@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { BudgetLedger, type BudgetCall } from '@forkling/schema'
-import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger } from '../budget.ts'
+import { readCredits } from '../credits.ts'
+import { canSpend, guardLedger, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, monthOf, recordCall, rollLedger } from '../budget.ts'
 import { effortFor, stopFailure, thinkingFor, type LlmClient, type LlmResult } from '../llm.ts'
 import { buildSystem } from '../prompts.ts'
 import { DEFAULT_SEED } from '../seed.ts'
@@ -27,7 +28,8 @@ export function createWorkerComplete(o: { dir: string; llm: LlmClient; nowMs: nu
   const system = buildSystem({ seed, page })
   const timezone = (readJson(o.dir, 'forkling.json') as { timezone?: string } | null)?.timezone ?? 'Europe/Stockholm'
   const stored = BudgetLedger.safeParse(readJson(o.dir, 'brain/budget.json'))
-  let ledger = rollLedger(stored.success ? stored.data : BudgetLedger.parse({ month: monthOf(timezone, o.nowMs) }), monthOf(timezone, o.nowMs))
+  // The guard reads the effective cap (spec v4 5.3): the ledger here is read-only, so its cap may carry this month's credits.
+  let ledger = guardLedger(rollLedger(stored.success ? stored.data : BudgetLedger.parse({ month: monthOf(timezone, o.nowMs) }), monthOf(timezone, o.nowMs)), readCredits(o.dir))
   const calls: BudgetCall[] = []
 
   const complete: Complete = async (kind, model, user, schema, maxTokens) => {

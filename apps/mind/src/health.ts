@@ -1,11 +1,13 @@
-import { SourceStats, TOTAL_CAP_USD, type BudgetLedger, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
+import { SourceStats, TOTAL_CAP_USD, type BudgetLedger, type Credit, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
 import { DAILY_POINTS, MAX_POINTS_IN_HAND, doorStats, drawStats, placeNovelty, textNovelty, weeklyHealthWarnings, workNovelty, type DiaryLike, type DoorDay, type PlaceNudgeLike, type PlaceNudgeRequest, type PlaceNudgeStep, type TextLike, type WorkLike } from '@forkling/sim'
-import { daysInMonth, paceAhead, paceUsd } from './budget.ts'
+import { daysInMonth, effectiveCapUsd, moneyInUsd, paceAhead, paceUsd } from './budget.ts'
 import { topHostShare } from './web/stats.ts'
 import { MAX_READS_PER_DAY } from './web/trip.ts'
 
 /** What the health summary needs besides the tick line: the world as the tick left it. */
 export interface HealthContext {
+  /** Money Roman has added (spec v4 5.3), or none. */
+  credits?: readonly Credit[]
   /** The forkling's local date. */
   today: string
   nowMs: number
@@ -124,7 +126,9 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   const quotas: Health['quotas'] = { readings: { used: mind.trips?.date === ctx.today ? mind.trips.reads : 0, max: MAX_READS_PER_DAY } }
   const pausedHosts = Object.fromEntries(Object.entries(mind.pausedHosts).filter(([, until]) => Date.parse(until) > ctx.nowMs))
   const web: Health['web'] = { pausedHosts, topHost: topHostShare(ctx.sources ?? SourceStats.parse({}), ctx.today) }
-  const spend = { monthUsd: budget.spentUsd, capUsd: budget.capUsd, paceUsd: paceUsd(budget, ctx.today) }
+  // The cap shown is the effective one (spec v4 5.3); money that came in this month is its own line, and absent when none did.
+  const moneyIn = moneyInUsd(budget, ctx.credits)
+  const spend = { monthUsd: budget.spentUsd, capUsd: effectiveCapUsd(budget, ctx.credits), paceUsd: paceUsd(budget, ctx.today, ctx.credits), ...(moneyIn > 0 ? { moneyInUsd: moneyIn } : {}) }
   // The one that has waited longest: an object, or a coded project waiting for a person to read it.
   const waiting = [mind.openBuild, mind.openCode].filter((b) => b !== null).sort((a, b) => Date.parse(a.requestedAt) - Date.parse(b.requestedAt))[0]
   const openBuild = waiting ? { id: waiting.id, kind: waiting.kind, ageHours: Math.max(0, Math.round((ctx.nowMs - Date.parse(waiting.requestedAt)) / 3_600_000)) } : null
@@ -140,7 +144,7 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   if (cutOff >= WARN_CUT_OFF) warnings.push(`${cutOff} answers cut off at the output limit today (the limit may be too low)`)
   if (rejections >= WARN_REJECTIONS) warnings.push(`${rejections} plans turned down today`)
   if (longestGapMinutes > WARN_GAP_MINUTES) warnings.push(`longest wait between ticks today was ${longestGapMinutes} minutes (they should come every 10)`)
-  if (paceAhead(budget, ctx.today)) warnings.push(`spent $${spend.monthUsd.toFixed(2)} of $${spend.capUsd}, ahead of the pace ($${spend.paceUsd.toFixed(2)} by today)`)
+  if (paceAhead(budget, ctx.today, ctx.credits)) warnings.push(`spent $${spend.monthUsd.toFixed(2)} of $${spend.capUsd}, ahead of the pace ($${spend.paceUsd.toFixed(2)} by today)`)
   for (const [host, until] of Object.entries(pausedHosts)) warnings.push(`${host} is paused until ${until.slice(0, 16)}Z (it answered 429 or 403)`)
   const w7Warning = w7SpendWarning(budget, ctx.today)
   if (w7Warning) warnings.push(w7Warning)

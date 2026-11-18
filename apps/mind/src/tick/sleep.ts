@@ -1,6 +1,6 @@
 import { SleepRewriteAnswer, type BudgetCall, type StreamEntry } from '@forkling/schema'
 import { applyBeliefOps, checkReflection, fitDiaryLines, rewriteWants, wantsFromRewrite } from '@forkling/sim'
-import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, recordCall } from '../budget.ts'
+import { canSpend, effectiveCapUsd, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, recordCall } from '../budget.ts'
 import { claimsHuman } from '../honesty.ts'
 import { stopFailure, thinkingFor } from '../llm.ts'
 import { buildSleepUser } from '../prompts/sleep.ts'
@@ -66,7 +66,7 @@ async function send(t: Tick): Promise<void> {
   if (tokens > MAX_PROMPT_TOKENS) notes.push(`prompt too long (about ${tokens} tokens): no sleep rewrite`)
   else if (deps.dryRun) notes.push(`dry run: sleep rewrite on the Batch API, about ${tokens} tokens, at most $${maxUsd.toFixed(4)}`)
   else if (!deps.llm) notes.push('no credentials: no sleep rewrite')
-  else if (!canSpend(t.budget, maxUsd)) notes.push(`monthly budget reached ($${t.budget.spentUsd.toFixed(2)} of $${t.budget.capUsd}): no sleep rewrite`)
+  else if (!canSpend(t.budget, maxUsd, t.credits)) notes.push(`monthly budget reached ($${t.budget.spentUsd.toFixed(2)} of $${effectiveCapUsd(t.budget, t.credits)}): no sleep rewrite`)
   else {
     try {
       const id = await deps.llm.submitBatch({ kind: 'sleep', model: MODEL, system, user, maxTokens: SLEEP_OUTPUT_TOKENS, effort: 'low', thinking: thinkingFor(MODEL, 'low'), schema: SleepRewriteAnswer })

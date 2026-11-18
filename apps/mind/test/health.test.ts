@@ -69,6 +69,14 @@ describe('buildHealth', () => {
     expect(h.spend).toMatchObject({ monthUsd: 0, capUsd: 15.51 })
   })
 
+  it('shows no money-in line without credits, and the effective cap with them (spec v4 5.3)', () => {
+    expect(run([{ min: 0 }]).spend).not.toHaveProperty('moneyInUsd')
+    const credits = [{ at: '2026-11-01T10:00:00Z', usd: 5, source: 'roman', note: '' }]
+    const h = run([{ min: 0, ctx: { credits } }])
+    expect(h.spend).toMatchObject({ moneyInUsd: 5, capUsd: 20.51 })
+    expect(h.spend.paceUsd).toBeCloseTo((20.51 * 3) / 30, 2)
+  })
+
   it('counts triggers and calls by kind, and the decide calls, for the day', () => {
     const h = run([
       { min: 0, line: { triggers: [{ kind: 'newDay', score: 1 }], think: 'morning', calls: [okCall('morning')] } },

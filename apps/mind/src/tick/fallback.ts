@@ -31,7 +31,7 @@ function currentRequests(t: Tick): PlaceRequest[] {
 export function fallbackStep(t: Tick): void {
   if (t.asleep) return
   if (pendingJobs(t.dir).some((j) => j.kind === 'found') || t.newJobs.some((j) => j.kind === 'found')) return
-  if (paceAhead(t.budget, t.today)) return
+  if (paceAhead(t.budget, t.today, t.credits)) return
   const tries = t.mind.fallbackTries ?? {}
   const next = currentRequests(t)
     .filter((r) => fallbackDue(r, t.nowMs))

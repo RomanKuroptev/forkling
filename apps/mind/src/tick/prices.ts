@@ -1,5 +1,5 @@
 import { DAILY_POINTS, dailyPointsFor, livePrices, localDate, pricesDue, pricesFromLedger, PRICES, recordOverheadDays } from '@forkling/sim'
-import { daysInMonth } from '../budget.ts'
+import { daysInMonth, effectiveCapUsd } from '../budget.ts'
 import type { Tick } from './context.ts'
 
 /**
@@ -21,7 +21,7 @@ export function pricesStep(t: Tick): void {
   const changed = (Object.keys(PRICES) as (keyof typeof PRICES)[]).filter((k) => before[k] !== after[k])
   mind.prices = after
   mind.pricesSetOn = t.today
-  const daily = dailyPointsFor({ capUsd: t.budget.capUsd, daysInMonth: daysInMonth(t.today), overheadDays: mind.overheadDays ?? [] })
+  const daily = dailyPointsFor({ capUsd: effectiveCapUsd(t.budget, t.credits), daysInMonth: daysInMonth(t.today), overheadDays: mind.overheadDays ?? [] })
   const dailyBefore = mind.dailyPoints?.value ?? DAILY_POINTS
   mind.dailyPoints = { value: daily, setOn: t.today }
   const parts = [

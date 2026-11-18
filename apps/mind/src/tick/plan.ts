@@ -88,7 +88,7 @@ export function planContext(t: Tick): MindPlanContext {
     ...withPoints(t),
     overdueNotes: new Set(overdueNotes(t.visitorNotes, t.nowMs)),
     projects: projectsContext(t.dir),
-    paceAhead: paceAhead(t.budget, t.today),
+    paceAhead: paceAhead(t.budget, t.today, t.credits),
   }
 }
 

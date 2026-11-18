@@ -1,4 +1,4 @@
-import { canSpend, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, recordCall } from '../budget.ts'
+import { canSpend, effectiveCapUsd, costUsd, estimateCallUsd, estimateTokens, MAX_PROMPT_TOKENS, recordCall } from '../budget.ts'
 import type { BudgetCall } from '@forkling/schema'
 import { effortFor, stopFailure, thinkingFor } from '../llm.ts'
 import { clampText } from '../decision.ts'
@@ -28,8 +28,8 @@ export function makeAsk(t: Tick): Ask {
     } else if (!deps.llm) {
       notes.push('no credentials: no call')
       tried(false, 'no credentials')
-    } else if (!canSpend(t.budget, maxUsd)) {
-      notes.push(`monthly budget reached ($${t.budget.spentUsd.toFixed(2)} of $${t.budget.capUsd}): no call`)
+    } else if (!canSpend(t.budget, maxUsd, t.credits)) {
+      notes.push(`monthly budget reached ($${t.budget.spentUsd.toFixed(2)} of $${effectiveCapUsd(t.budget, t.credits)}): no call`)
       tried(false, 'monthly budget reached')
     } else {
       try {

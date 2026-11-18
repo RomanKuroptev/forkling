@@ -83,7 +83,7 @@ export function expandStep(t: Tick): void {
     t.justNow.push(text)
   }
   if (pendingJobs(t.dir).some((j) => j.kind === 'expand') || t.newJobs.some((j) => j.kind === 'expand')) return rest('an expansion is already being built')
-  if (paceAhead(t.budget, t.today)) return rest("spending is ahead of the month's pace, so building waits")
+  if (paceAhead(t.budget, t.today, t.credits)) return rest("spending is ahead of the month's pace, so building waits")
   if (t.mind.lastExpandedPlace === place.id) return rest('it was the last place I expanded')
   const check = expandAllowed(place, null)
   if (!check.ok) return rest(check.reasons.join('; '))

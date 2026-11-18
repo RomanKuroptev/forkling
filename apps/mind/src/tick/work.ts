@@ -68,7 +68,7 @@ async function reworkStep(t: Tick, step: PlanStep, index: number, work: WorkMeta
     return
   }
   const user = buildReworkUser({ title: work.title, kind: work.kind, about: work.about, status: work.status, retireReason: work.retireReason, reason: step.reason })
-  const result = await t.ask('rework', creativeModel(t.budget), user, ReworkAnswer, REWORK_MAX_TOKENS)
+  const result = await t.ask('rework', creativeModel(t.budget, t.credits), user, ReworkAnswer, REWORK_MAX_TOKENS)
   if (!result) return
   const answer = result.parsed
   if (!answer) {

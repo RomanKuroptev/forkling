@@ -64,7 +64,7 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   await replyStep(t)
   installStep(t)
   // The loop's own thought tick (spec 2.2); the Actions tick has none. It writes only to the stream.
-  if (deps.thoughts && thoughtDue({ timezone: t.tz, nowMs: t.nowMs, asleep: t.asleep, paceAhead: paceAhead(t.budget, t.today), thought: t.mind.thought })) await thoughtTick(t)
+  if (deps.thoughts && thoughtDue({ timezone: t.tz, nowMs: t.nowMs, asleep: t.asleep, paceAhead: paceAhead(t.budget, t.today, t.credits), thought: t.mind.thought })) await thoughtTick(t)
   // Reflection (spec 9.3) runs on its own clock, after the thought tick has added its scores; it too is the loop's alone.
   await reflectionStep(t)
   // The weekly review (spec 9.5) is on Sunday at 20:00, by its own clock.

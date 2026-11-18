@@ -12,7 +12,8 @@ import { createExpandHandler } from './builds/expand-job.ts'
 import { createFoundBuildHandler } from './builds/found-build-job.ts'
 import { createTinkerHandler } from './builds/tinker-job.ts'
 import { BudgetLedger } from '@forkling/schema'
-import { monthOf, rollLedger } from './budget.ts'
+import { guardLedger, monthOf, rollLedger } from './budget.ts'
+import { readCredits } from './credits.ts'
 import { hasCredentials } from './credentials.ts'
 import { createNotesIntake, type NotesIntake } from './notes-intake.ts'
 import { createPublicNotes } from './notes.ts'
@@ -124,7 +125,7 @@ async function main(): Promise<void> {
         }
         const month = monthOf(timezone, Date.now())
         const parsed = BudgetLedger.safeParse(stored)
-        return rollLedger(parsed.success ? parsed.data : BudgetLedger.parse({ month }), month)
+        return guardLedger(rollLedger(parsed.success ? parsed.data : BudgetLedger.parse({ month }), month), readCredits(dir))
       },
     })
     console.log('the mailbox is open: notes are screened before Merge reads them')
