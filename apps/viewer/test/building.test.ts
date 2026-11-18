@@ -47,6 +47,16 @@ describe('the building model, every style', () => {
   })
 })
 
+describe('the glass of a glass house', () => {
+  it('goes to its own see-through draw call, and only a glass house has any', () => {
+    for (const style of STYLES) {
+      const scene = sceneInstances([{ ...home, exterior: { ...home.exterior, style } }], kit, { heightAt: () => 0, interiors: new Set(), nowMs: 0 })
+      if (style === 'glass') expect(scene.glassBox.count).toBeGreaterThan(0)
+      else expect(scene.glassBox.count, style).toBe(0)
+    }
+  })
+})
+
 describe.each(STYLES)('the building model, %s style', (style) => {
   const tower = (p: Place, floors = 1, footprint: [number, number] = p.exterior.footprint, palette = p.exterior.palette): Place => ({ ...p, exterior: { ...p.exterior, style, floors, footprint, palette } })
 

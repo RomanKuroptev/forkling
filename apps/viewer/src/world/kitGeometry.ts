@@ -250,10 +250,17 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     // A closed place (spec 9.9) has its lamps off, whatever its own switch says.
     const lampsOn = place.state.closed ? false : opts.litAlways ? true : neglectLook(level, place.state.lamps).lampsOn
     // A place whose lamps are on (or that is cared for, spec 4.4) has lit windows; one with its lamps off, or neglected, is dark.
-    for (const i of exteriorInstances(place, kit, baseY)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
-    for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
-    // A place that is being built is wrapped in scaffolding until its finish time (spec 4.5).
-    for (const i of constructionInstances(place, baseY, opts.nowMs)) lists[i.shape].push(i)
+    // A place that is being built is its finished model as cyan wireframe until its finish time (spec 4.5); a style the building model
+    // does not draw keeps the scaffolding.
+    const wire = wireframeInstances(place, kit, baseY, opts.nowMs, opts.wireAlways)
+    if (wire && wire.length > 0) {
+      for (const i of wire) lists[i.shape].push(i)
+    } else {
+      // The tinted see-through glass of a glass house goes to its own draw call.
+      for (const i of exteriorInstances(place, kit, baseY)) (i.glass ? glassList : lists[i.shape]).push(lampsOn || !i.glow ? i : { ...i, glow: false })
+      for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
+      for (const i of constructionInstances(place, baseY, opts.nowMs)) lists[i.shape].push(i)
+    }
     if (opts.interiors.has(place.id)) {
       const inside = interiorParts(place, kit, baseY, opts.models, { lampsOn })
       for (const i of inside.instances) lists[i.shape].push(i)

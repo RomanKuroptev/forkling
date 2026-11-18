@@ -134,10 +134,10 @@ describe('the scene with scaffolding', () => {
     expect(s(ends + 1).box.count).toBeGreaterThan(s(NOW).box.count)
   })
 
-  it('stays within the render budget: 10 places with one being built, at most 4 draw calls and 80,000 triangles', () => {
+  it('stays within the render budget: 10 places with one being built, at most 5 draw calls (four shapes and the see-through glass) and 80,000 triangles', () => {
     const near = interiorsToLoad(fixture.places, { x: 8, z: 16 })
     const budget = renderBudget(sceneInstances(fixture.places, kit, { heightAt, interiors: near, nowMs: NOW }))
-    expect(budget.drawCalls).toBeLessThanOrEqual(4)
+    expect(budget.drawCalls).toBeLessThanOrEqual(5)
     expect(budget.triangles).toBeLessThanOrEqual(80_000)
   })
 
@@ -146,7 +146,7 @@ describe('the scene with scaffolding', () => {
     const all = big.places.map((p) => ({ ...p, state: { ...p.state, construction: { kind: 'expand' as const, finishesAt: new Date(NOW + 3_600_000).toISOString() } } }))
     const bigLand = createLand(3, all.map(toLandPlace))
     const budget = renderBudget(sceneInstances(all, kit, { heightAt: (x, z) => bigLand.heightAt(x, z), interiors: interiorsToLoad(all, { x: 8, z: 16 }), nowMs: NOW }))
-    expect(budget.drawCalls).toBeLessThanOrEqual(4)
+    expect(budget.drawCalls).toBeLessThanOrEqual(5)
     expect(budget.triangles).toBeLessThanOrEqual(300_000)
   })
 })
