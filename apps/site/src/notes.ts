@@ -76,6 +76,26 @@ export const noteForm = (m: { endpoint: string; siteKey: string }, root = '../')
     `<script src="${root}notes.js"></script>`,
   ].join('\n')
 
+/**
+ * The front page's form: one line and a SEND button. The notice, the name and the human check are in `#note-extra`, hidden until the field is used;
+ * `notes.js` opens it on focus and never sends while it is hidden, so nobody sends a note without the notice having been in front of them.
+ */
+export const noteFormCompact = (m: { endpoint: string; siteKey: string }, root = '') =>
+  [
+    `<form id="note-form" class="note-compact" data-endpoint="${esc(m.endpoint)}" autocomplete="off">`,
+    '<div class="note-row"><input id="note-message" type="text" maxlength="500" placeholder="leave Merge a note..." aria-label="Your note (up to 500 characters)" required><button id="note-send" type="submit" class="send">SEND</button></div>',
+    '<div id="note-extra" hidden>',
+    NOTE_DISCLOSURE_HTML,
+    '<p><label for="note-name">Your name (optional, up to 40 characters)</label><br><input id="note-name" type="text" maxlength="40"></p>',
+    `<div class="cf-turnstile" data-sitekey="${esc(m.siteKey)}"></div>`,
+    '</div>',
+    '<p id="note-status" role="status"></p>',
+    '</form>',
+    `<noscript><p class="quiet">Leaving a note needs JavaScript. <a href="${root}notes/">The notes page</a> says more.</p></noscript>`,
+    '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>',
+    `<script src="${root}notes.js"></script>`,
+  ].join('\n')
+
 /** What a visitor is told before sending (spec 10.1): public, kept for good in a public repository, read by an AI, and what is taken out. */
 export const NOTE_DISCLOSURE_HTML = ['<div class="notes-disclosure card">', '<p><strong>Before you send a note:</strong></p>', '<ul>', ...NOTE_DISCLOSURE.map((line) => `<li>${esc(line)}</li>`), '</ul>', '</div>'].join('\n')
 

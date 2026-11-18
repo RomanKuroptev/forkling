@@ -56,14 +56,18 @@ ${Object.keys(ICONS).map((k) => `.ic-${k} { background-image: url('icons/${k}.sv
 .title { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 8px; background: linear-gradient(to right, var(--purple), var(--hot)); color: var(--white); font: 10px/1.4 var(--pixel); }
 .title span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .btns { display: flex; gap: 4px; flex: none; }
-.btns i { display: block; width: 16px; height: 14px; background: var(--face); border: 2px solid; border-color: var(--white) var(--ink) var(--ink) var(--white); }
+.btns i { position: relative; display: block; width: 18px; height: 16px; background: var(--face); border: 2px solid; border-color: var(--white) var(--ink) var(--ink) var(--white); }
+/* _ minimize, a box to maximize and a cross to close, drawn in the squares. */
+.btns i:nth-child(1) { background-image: linear-gradient(var(--ink), var(--ink)); background-size: 8px 2px; background-position: 50% 78%; background-repeat: no-repeat; }
+.btns i:nth-child(2)::after { content: ''; position: absolute; left: 3px; top: 2px; width: 8px; height: 7px; border: 2px solid var(--ink); border-top-width: 3px; }
+.btns i:nth-child(3) { background-image: linear-gradient(45deg, transparent 42%, var(--ink) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--ink) 42% 58%, transparent 58%); background-size: 9px 9px; background-position: center; background-repeat: no-repeat; }
 .window main { padding: 0 16px; }
 .window main { padding-bottom: 20px; overflow-wrap: anywhere; }
 a { color: var(--purple); text-underline-offset: 3px; }
 a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 h1 { font: 16px/1.5 var(--pixel); margin: 1rem 0 0.5rem; }
 h2 { font: 12px/1.5 var(--pixel); margin: 1.4rem 0 0.4rem; }
-h3 { font: 11px/1.5 var(--pixel); margin: 0 0 0.3rem; }
+h3 { font: 11px/1.5 var(--pixel); margin: 1.2rem 0 0.3rem; }
 p { margin: 0.5rem 0; }
 .quiet { color: var(--quiet); font-size: 24px; }
 .provenance { color: var(--quiet); font-style: italic; margin-top: -0.2rem; }
@@ -161,7 +165,14 @@ main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-re
 .thumb { position: relative; display: block; text-decoration: none; border: 2px solid var(--ink); }
 .thumb .pic { aspect-ratio: 4 / 3; border: 0; }
 .thumb .day { position: absolute; left: 0; bottom: 0; padding: 2px 4px; font: 8px/1.2 var(--pixel); color: var(--white); background: rgb(26 11 59 / 80%); }
-#notebox .msg { font-size: 24px; }
+.note-row { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
+.note-row input { flex: 1; min-width: 0; min-height: 48px; font: inherit; color: var(--ink); background: var(--white); border: 2px solid; border-color: var(--ink) var(--white) var(--white) var(--ink); border-radius: 0; padding: 4px 10px; }
+.note-row .send { flex: none; min-width: 84px; }
+.note-compact #note-extra { margin-top: 8px; }
+.note-compact #note-extra input { width: 100%; max-width: 32rem; font: inherit; color: var(--ink); background: var(--white); border: 2px solid; border-color: var(--ink) var(--white) var(--white) var(--ink); border-radius: 0; padding: 6px 8px; }
+.note-compact #note-status:empty { display: none; }
+#notebox .msg { font-size: 22px; padding: 4px 10px; margin-bottom: 6px; }
+#notebox .note-row { margin-top: 6px; }
 #notebox .notes-disclosure { font-size: 22px; padding: 8px 12px; }
 .foot { margin: 20px 0 0; text-align: center; }
 .foot a { color: var(--white); text-shadow: 2px 2px 0 var(--deep); }

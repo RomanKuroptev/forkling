@@ -1,6 +1,6 @@
 import type { BudgetLedger, Goals, Health, Interests, Note } from '@forkling/schema'
 import { esc } from './md.ts'
-import { NOTE_DISCLOSURE_HTML, noteForm } from './notes.ts'
+import { noteFormCompact } from './notes.ts'
 import type { SiteProject } from './projects.ts'
 import type { Today, TodayCard } from './today.ts'
 
@@ -60,7 +60,7 @@ function card(c: TodayCard, tz: string): string {
 function chat(notes: readonly Note[], merge: string): string {
   const n = notes.find((x) => x.status === 'replied' && x.reply)
   if (!n) return ''
-  return `<div class="msg visitor"><strong class="who">${esc(n.name || 'A visitor')}:</strong> ${esc(cut(n.message, 200))}</div><div class="msg merge"><strong class="who">${esc(merge)}:</strong> ${esc(cut(n.reply ?? '', 240))}</div>`
+  return `<div class="msg visitor"><strong class="who">${esc(n.name || 'A visitor')}:</strong> ${esc(cut(n.message, 110))}</div><div class="msg merge"><strong class="who">${esc(merge)}:</strong> ${esc(cut(n.reply ?? "", 120))}</div>`
 }
 
 export function frontBody(i: FrontInput): string {
@@ -97,7 +97,7 @@ export function frontBody(i: FrontInput): string {
 
   const noteBody = [
     chat(i.notes, name),
-    i.mailbox ? `<p class="quiet">${esc(NOTE_LINE)}</p>${NOTE_DISCLOSURE_HTML}\n${noteForm(i.mailbox, '')}` : '<p><strong>The mailbox is closed for now.</strong> Notes cannot be left at the moment.</p>',
+    i.mailbox ? noteFormCompact(i.mailbox, '') : '<p><strong>The mailbox is closed for now.</strong> Notes cannot be left at the moment.</p>',
     '<p class="quiet"><a href="notes/">All the notes</a></p>',
   ].join('\n')
   const notes = win('notebox', `notes.exe - say hi to ${name}`, noteBody)
@@ -112,8 +112,6 @@ export function frontBody(i: FrontInput): string {
     '<script src="front.js" defer></script>',
   ].join('\n')
 }
-
-const NOTE_LINE = 'Leave a note. It is public and Merge may answer.'
 
 /**
  * `front.js`: Merge live. Reads `now.json` from the server every 30 seconds and shows the step in progress, the last thought and awake or

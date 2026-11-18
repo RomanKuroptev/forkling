@@ -6,6 +6,7 @@ import vm from 'node:vm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Note, Project } from '@forkling/schema'
 import { FRONT_SCRIPT, viewerAddress } from '../src/front.ts'
+import { NOTES_SCRIPT } from '../src/notes-script.ts'
 import { renderSite } from '../src/render.ts'
 
 /** Step 7, slice B: the front page `/` and `/under-the-hood/`, from the Merge template world with a project, a work, a note and a budget. */
@@ -132,6 +133,25 @@ describe('the front page /', () => {
     expect(part).toContain('id="note-form"')
     expect(part).toContain('Before you send a note')
     expect(part).toContain('src="notes.js"')
+  })
+
+  it('is one line and a SEND button, with the notice, the name and the human check in a part that opens when the field is used', () => {
+    build(MAILBOX)
+    const part = front().slice(front().indexOf('id="notebox"'))
+    expect(part).not.toContain('<textarea')
+    expect(part).toMatch(/<input id="note-message" type="text"[^>]*placeholder="leave Merge a note\.\.\."/)
+    expect(part).toMatch(/<button id="note-send" type="submit" class="send">SEND<\/button>/)
+    const extra = /<div id="note-extra" hidden>([\s\S]*?)<\/div>\s*<p id="note-status"/.exec(part)?.[1] ?? ''
+    // Everything a visitor must see before sending is inside the part that is hidden until the field is used, and the field is before it.
+    expect(extra).toContain('Before you send a note')
+    expect(extra).toContain('id="note-name"')
+    expect(extra).toContain('cf-turnstile')
+    expect(part.indexOf('id="note-message"')).toBeLessThan(part.indexOf('id="note-extra"'))
+  })
+
+  it('has nothing that sends a note before the notice has been shown: the shared script holds the form back until it is open', () => {
+    expect(NOTES_SCRIPT).toContain("document.getElementById('note-extra')")
+    expect(NOTES_SCRIPT).toMatch(/extraEl && extraEl\.hidden/)
   })
 
   it('says the mailbox is closed when there is no server to post to, and still shows the chat', () => {
