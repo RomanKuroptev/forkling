@@ -142,6 +142,25 @@ dd { margin: 0; }
 .pips i.on { background: var(--hot); }
 .note-who { margin: 4px 0; font-size: 22px; }
 .note-who a { color: var(--purple); }
+/* The diary: a card for each entry, and the last two weeks at the side. */
+.diary { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+.dlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.dcard { display: flex; gap: 12px; padding: 8px 10px; text-decoration: none; color: var(--ink); background: var(--white); border: 2px solid var(--ink); box-shadow: 0 3px 0 var(--hot); }
+.dcard:hover, .dcard:focus-visible { outline: 2px dotted var(--ink); outline-offset: 2px; }
+.dface { flex: none; width: 40px; height: 40px; background: var(--ink) url('favicon.svg') center / 80% no-repeat; border: 2px solid var(--ink); image-rendering: pixelated; }
+.dtext { display: grid; gap: 2px; min-width: 0; }
+.dday { color: var(--purple); font: 11px/1.4 var(--pixel); }
+.dtitle { font-size: 26px; line-height: 1.1; }
+.dpre { font-size: 22px; line-height: 1.15; color: var(--quiet); overflow-wrap: anywhere; }
+.dside { display: grid; gap: 12px; align-content: start; }
+.dside-box { background: var(--white); border: 2px solid var(--hot); padding: 8px 10px; }
+.dside-box h2 { margin: 0 0 6px; font: 11px/1.4 var(--pixel); }
+.dside-box p { margin: 0; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+.cal-day { display: block; padding: 4px 0; min-height: 28px; color: var(--quiet); background: var(--face); }
+.cal-day.has { color: var(--ink); background: var(--white); border: 2px solid var(--ink); padding: 2px 0; text-decoration: none; }
+.cal-day.today { color: var(--white); background: var(--hot); }
+@media (min-width: 900px) { .diary { grid-template-columns: minmax(0, 1fr) 260px; align-items: start; } }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
 .bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto var(--taskbar); overflow-wrap: anywhere; }
