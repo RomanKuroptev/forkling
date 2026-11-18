@@ -208,9 +208,9 @@ describe('the whole scene as instanced shapes (a draw call per shape, however ma
     expect(Math.min(...ys)).toBeGreaterThanOrEqual(ground - 0.01)
   })
 
-  it('stays within the render budget for the 10-place fixture: at most 4 draw calls and 80,000 triangles for all the buildings', () => {
+  it('stays within the render budget for the 10-place fixture: at most 5 draw calls (four shapes and the see-through glass) and 80,000 triangles for all the buildings', () => {
     const budget = renderBudget(sceneInstances(fixture.places, kit, { heightAt, interiors: near }))
-    expect(budget.drawCalls).toBeLessThanOrEqual(4)
+    expect(budget.drawCalls).toBeLessThanOrEqual(5)
     expect(budget.triangles).toBeLessThanOrEqual(80_000)
   })
 
@@ -218,7 +218,7 @@ describe('the whole scene as instanced shapes (a draw call per shape, however ma
     const big = makeFixtureWorld(3, 64)
     const bigLand = createLand(3, big.places.map(toLandPlace))
     const budget = renderBudget(sceneInstances(big.places, kit, { heightAt: (x, z) => bigLand.heightAt(x, z), interiors: interiorsToLoad(big.places, { x: 8, z: 16 }) }))
-    expect(budget.drawCalls).toBeLessThanOrEqual(4)
+    expect(budget.drawCalls).toBeLessThanOrEqual(5)
     expect(budget.triangles).toBeLessThanOrEqual(300_000)
   })
 

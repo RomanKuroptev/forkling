@@ -29,6 +29,7 @@ Everything here needs `?debug`. Press **F3** for the overlay: mood and energy, a
 | `?fx=0` | No glow and no scanlines |
 | `?boot` | Pin the boot screen |
 | `?bubble=0` | No thought pop-up |
+| `?wire` | Draw every place as being built (cyan wireframe) |
 | `?lit` | Draw every place as cared for with its lamps on, to look at the glow |
 | `?look=forkling` with `&dist=1&camy=1.3` | Put the camera that far in front of Merge and that high, to look at its face (add `&clip=Idle` to pin it in the open) |
 | `?clipat=x,z` | With `?clip=`, put Merge there, to see it on open land |

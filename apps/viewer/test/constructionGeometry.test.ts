@@ -3,6 +3,7 @@ import type { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { DOOR_HALF, createLand, placeCentre, toLandPlace } from '@forkling/sim'
 import { FIXTURE_NOW, makeFixtureWorld } from '@forkling/sim/fixture'
+import { wireframeInstances } from '../src/world/wireframe.ts'
 import { constructionInstances, SCAFFOLD_HEAD, SCAFFOLD_REACH } from '../src/world/constructionGeometry.ts'
 import { SIGN_W, signSpot } from '../src/world/exhibitGeometry.ts'
 import { floorHeight } from '../src/world/kitBase.ts'
@@ -124,21 +125,19 @@ describe('the scene with scaffolding', () => {
     return s.box.count + s.cylinder.count
   }
 
-  it('draws more for a place being built than for the same place standing finished', () => {
-    expect(count([building])).toBeGreaterThan(count([idle(building)]))
-    expect(count([building]) - count([idle(building)])).toBe(constructionInstances(building, 0, NOW).length)
-  })
-
-  it('stops drawing it once the clock passes the finish time', () => {
+  it('draws a place being built as its finished model in glowing lines, and the whole exterior again once it is done', () => {
+    // The building model draws every style, so the scaffolding is no longer in the scene: the lines of the wireframe take its place.
+    const lines = wireframeInstances(building, kit, 0, NOW)!
+    expect(lines.length).toBeGreaterThan(12)
     const ends = Date.parse(building.state.construction!.finishesAt)
     const s = (nowMs: number) => sceneInstances([building], kit, { heightAt, interiors: new Set(), nowMs })
-    expect(s(ends + 1).box.count).toBeLessThan(s(NOW).box.count)
+    expect(s(ends + 1).box.count).not.toBe(s(NOW).box.count)
   })
 
-  it('stays within the render budget: 10 places with one being built, at most 4 draw calls and 80,000 triangles', () => {
+  it('stays within the render budget: 10 places with one being built, at most 5 draw calls (four shapes and the see-through glass) and 80,000 triangles', () => {
     const near = interiorsToLoad(fixture.places, { x: 8, z: 16 })
     const budget = renderBudget(sceneInstances(fixture.places, kit, { heightAt, interiors: near, nowMs: NOW }))
-    expect(budget.drawCalls).toBeLessThanOrEqual(4)
+    expect(budget.drawCalls).toBeLessThanOrEqual(5)
     expect(budget.triangles).toBeLessThanOrEqual(80_000)
   })
 
@@ -147,7 +146,7 @@ describe('the scene with scaffolding', () => {
     const all = big.places.map((p) => ({ ...p, state: { ...p.state, construction: { kind: 'expand' as const, finishesAt: new Date(NOW + 3_600_000).toISOString() } } }))
     const bigLand = createLand(3, all.map(toLandPlace))
     const budget = renderBudget(sceneInstances(all, kit, { heightAt: (x, z) => bigLand.heightAt(x, z), interiors: interiorsToLoad(all, { x: 8, z: 16 }), nowMs: NOW }))
-    expect(budget.drawCalls).toBeLessThanOrEqual(4)
+    expect(budget.drawCalls).toBeLessThanOrEqual(5)
     expect(budget.triangles).toBeLessThanOrEqual(300_000)
   })
 })

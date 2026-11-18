@@ -202,10 +202,10 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   const front0 = pz + fd / 2 - INSET - lean * bodyH
   let heroGlow = 0
   if (style === 'tower') {
-    if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ], [CROWN_WIDTH, ch, CROWN_WIDTH], c.glow, true)
+    if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ - 0.3 - CROWN_WIDTH / 2], [CROWN_WIDTH, ch, CROWN_WIDTH], c.glow, true)
   } else if (style === 'timber') {
     // A pastel villa: a low chrome pyramid, and a porch of four thick white marble columns standing forward under a porch slab, clear of the door.
-    if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ], [Math.min(6, fwid * 0.5), ch, Math.min(6, fwid * 0.5)], c.chrome)
+    if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ - 0.3 - Math.min(6, fwid * 0.5) / 2], [Math.min(6, fwid * 0.5), ch, Math.min(6, fwid * 0.5)], c.chrome)
     const inner = Math.max(DOOR_HALF + 1.2, fw * 0.18)
     const outer = Math.max(inner + 1.2, fw / 2 - 1)
     for (const x of [-outer, -inner, inner, outer]) add('hero', 'cylinder', [px + x, baseY + bodyH / 2, front0 + 1.5], [0.8, bodyH, 0.8], c.marble)

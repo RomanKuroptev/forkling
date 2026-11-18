@@ -76,10 +76,10 @@ describe('the scene with plots', () => {
     expect(count(fixture.requests.map((r) => withStatus(r, 'built')))).toBe(count())
   })
 
-  it('stays within the render budget: 10 places with their plots, at most 4 draw calls and 80,000 triangles', () => {
+  it('stays within the render budget: 10 places with their plots, at most 5 draw calls (four shapes and the see-through glass) and 80,000 triangles', () => {
     const near = interiorsToLoad(fixture.places, { x: 8, z: 16 })
     const budget = renderBudget(sceneInstances(fixture.places, kit, { heightAt, interiors: near, nowMs: NOW, plots: fixture.requests }))
-    expect(budget.drawCalls).toBeLessThanOrEqual(4)
+    expect(budget.drawCalls).toBeLessThanOrEqual(5)
     expect(budget.triangles).toBeLessThanOrEqual(80_000)
   })
 
@@ -87,7 +87,7 @@ describe('the scene with plots', () => {
     const big = makeFixtureWorld(3, 62)
     const bigLand = createLand(3, big.places.map(toLandPlace), big.requests.map((r) => r.chunk))
     const budget = renderBudget(sceneInstances(big.places, kit, { heightAt: (x, z) => bigLand.heightAt(x, z), interiors: interiorsToLoad(big.places, { x: 8, z: 16 }), nowMs: NOW, plots: big.requests }))
-    expect(budget.drawCalls).toBeLessThanOrEqual(4)
+    expect(budget.drawCalls).toBeLessThanOrEqual(5)
     expect(budget.triangles).toBeLessThanOrEqual(300_000)
   })
 })
