@@ -5,7 +5,7 @@ import { esc } from './md.ts'
  * with the page and needs nothing else (no 3D world). The picture is the framed one the site build made for the page.
  */
 export function shareRow(i: { root: string; title: string; save: string }): string {
-  return `<p class="share-row"><button type="button" class="js-share" data-title="${esc(i.title)}">share</button> <a class="save-pic" href="${esc(i.root + i.save)}" download>save picture</a></p>\n<script src="${esc(i.root)}share.js" defer></script>`
+  return `<p class="share-row"><button type="button" class="js-share" data-title="${esc(i.title)}">share</button> <a class="play save-pic" href="${esc(i.root + i.save)}" download>save picture</a></p>\n<script src="${esc(i.root)}share.js" defer></script>`
 }
 
 /** `share.js`: the Web Share sheet where the browser has one (a phone), else the page's address is copied. Plain ES5; words go in with `textContent`. */

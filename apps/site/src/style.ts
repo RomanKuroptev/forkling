@@ -291,6 +291,9 @@ main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-re
 .co-btns { display: flex; flex-wrap: wrap; gap: 10px; }
 .co-btns .btn { flex: 1 1 40%; min-width: 0; cursor: pointer; }
 .co-btns [hidden] { display: none; }
+.share-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.share-row .play { display: inline-flex; align-items: center; text-decoration: none; }
+@media (min-width: 900px) { .co-btns .btn { flex: 1 1 auto; } }
 @media (min-width: 900px) {
   .cardopen { left: 50%; right: auto; top: 90px; bottom: auto; transform: translateX(-50%); width: min(1100px, 92vw); max-height: calc(100vh - var(--taskbar) - 110px); box-shadow: 4px 4px 0 var(--ink); }
   .co-body { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-content: start; }

@@ -32,7 +32,7 @@ describe('shareRow', () => {
   it('has a share button, a download link to the picture, and the script, all escaped', () => {
     const html = shareRow({ root: '../', title: 'A "title" <b>', save: 'og/work-a.png' })
     expect(html).toContain('class="js-share" data-title="A &quot;title&quot; &lt;b&gt;"')
-    expect(html).toContain('<a class="save-pic" href="../og/work-a.png" download>')
+    expect(html).toContain('<a class="play save-pic" href="../og/work-a.png" download>')
     expect(html).toContain('<script src="../share.js" defer></script>')
   })
 })
