@@ -61,7 +61,7 @@ export interface NotesInput {
   add: (rel: string, input: { title: string; active: string; body: string; head?: string }) => void
 }
 
-const FORM = (m: { endpoint: string; siteKey: string }) =>
+export const noteForm = (m: { endpoint: string; siteKey: string }, root = '../') =>
   [
     `<form id="note-form" data-endpoint="${esc(m.endpoint)}" autocomplete="off">`,
     '<p><label for="note-name">Your name (optional, up to 40 characters)</label><br><input id="note-name" type="text" maxlength="40"></p>',
@@ -73,11 +73,11 @@ const FORM = (m: { endpoint: string; siteKey: string }) =>
     '</form>',
     '<noscript><p class="quiet">Leaving a note needs JavaScript.</p></noscript>',
     '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>',
-    '<script src="../notes.js"></script>',
+    `<script src="${root}notes.js"></script>`,
   ].join('\n')
 
 /** What a visitor is told before sending (spec 10.1): public, kept for good in a public repository, read by an AI, and what is taken out. */
-const DISCLOSURE = ['<div class="notes-disclosure card">', '<p><strong>Before you send a note:</strong></p>', '<ul>', ...NOTE_DISCLOSURE.map((line) => `<li>${esc(line)}</li>`), '</ul>', '</div>'].join('\n')
+export const NOTE_DISCLOSURE_HTML = ['<div class="notes-disclosure card">', '<p><strong>Before you send a note:</strong></p>', '<ul>', ...NOTE_DISCLOSURE.map((line) => `<li>${esc(line)}</li>`), '</ul>', '</div>'].join('\n')
 
 /** `/notes/` (spec 10.1, 9.9): the form with what a visitor is told before sending, and the board of every note that was left, with what became of it. */
 export function renderNotes(i: NotesInput): void {
@@ -153,7 +153,7 @@ export function renderNotes(i: NotesInput): void {
       '<h1>Notes</h1>',
       '<p class="quiet">Anyone can leave Merge a note. Merge finds it when it comes by, and may reply, keep it or decline it, with a reason. What was left, and what became of it, is below.</p>',
       '<h2>Leave a note</h2>',
-      i.mailbox ? `${DISCLOSURE}\n${FORM(i.mailbox)}` : '<p><strong>The mailbox is closed for now.</strong> Notes cannot be left at the moment.</p>',
+      i.mailbox ? `${NOTE_DISCLOSURE_HTML}\n${noteForm(i.mailbox)}` : '<p><strong>The mailbox is closed for now.</strong> Notes cannot be left at the moment.</p>',
       '<h2>On the board</h2>',
       ...(i.notes.length > 0 ? [`<p class="quiet">Times are ${esc(i.zone)}.</p>`] : []),
       i.notes.length > 0 ? `<ul class="requests notes">${order.map(item).join('')}</ul>` : '<p class="quiet">No notes have been left yet.</p>',

@@ -12,6 +12,7 @@ export const ICONS: Record<string, readonly string[]> = {
   obsessions: ['.hh..hh.', 'hhhhhhhh', 'hhhhhhhh', 'hhhhhhhh', '.hhhhhh.', '..hhhh..', '...hh...', '........'],
   notes: ['########', '#oooooo#', '##oooo##', '#o#oo#o#', '#oo##oo#', '#oooooo#', '########', '........'],
   workshop: ['..#..#..', '.######.', '##cccc##', '#cc##cc#', '#cc##cc#', '##cccc##', '.######.', '..#..#..'],
+  underthehood: ['.######.', '#pppppp#', '#p#..#p#', '#p.##.p#', '#p.##.p#', '#p#..#p#', '#pppppp#', '.######.'],
   why: ['.######.', '##pppp##', '#pp..pp#', '....pp..', '...pp...', '...pp...', '........', '...pp...'],
   places: ['..hhhh..', '.hhhhhh.', '.hh##hh.', '.hhhhhh.', '..hhhh..', '...hh...', '...hh...', '........'],
   projects: ['###.....', '#ss####.', '#ssssss#', '#ssssss#', '#ssssss#', '#ssssss#', '########', '........'],

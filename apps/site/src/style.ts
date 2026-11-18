@@ -131,6 +131,54 @@ dd { margin: 0; }
 .notes li.note p.quiet a { font-size: 22px; }
 .notes li.note .note-answer-btn { margin-left: 30px; }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
+/* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
+.bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto; overflow-wrap: anywhere; }
+.headline { font: 15px/1.6 var(--pixel); color: var(--white); text-shadow: 3px 3px 0 var(--deep); margin: 0 0 16px; }
+.desk { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.col-a, .col-b { display: grid; gap: 20px; min-width: 0; }
+.w95 { background: var(--face); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink), inset 2px 2px 0 var(--white); min-width: 0; }
+.w95 > .title h2 { margin: 0; font: inherit; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w95-body { padding: 12px; }
+.w95-body > p:first-child { margin-top: 0; }
+.still { position: relative; aspect-ratio: 1200 / 630; background: var(--deep) center / cover no-repeat; border: 2px solid var(--ink); border-color: var(--ink) var(--white) var(--white) var(--ink); }
+.badge { position: absolute; left: 10px; top: 10px; padding: 4px 8px; font: 10px/1 var(--pixel); color: var(--white); background: var(--hot); border: 2px solid var(--white); }
+.right-now { margin: 12px 0 4px; }
+.right-now strong { color: var(--purple); }
+.thought:empty { display: none; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 0; }
+.btn { display: flex; align-items: center; justify-content: center; flex: 1 1 100%; min-height: 48px; padding: 8px 14px; font: 10px/1.4 var(--pixel); color: var(--ink); text-decoration: none; text-align: center; background: var(--face); border: 2px solid; border-color: var(--white) var(--ink) var(--ink) var(--white); box-shadow: inset -2px -2px 0 var(--purple); }
+.btn.go { background: var(--cyan); }
+.btn:active { border-color: var(--ink) var(--white) var(--white) var(--ink); box-shadow: inset 2px 2px 0 var(--purple); }
+.btn:focus-visible { outline: 2px dotted var(--ink); outline-offset: 2px; }
+.cards { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+.tcard { flex: 0 0 82%; display: flex; flex-direction: column; scroll-snap-align: start; text-decoration: none; color: var(--ink); background: var(--white); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+.tcard:focus-visible { outline: 2px dotted var(--ink); outline-offset: 2px; }
+.pic { display: block; aspect-ratio: 4 / 3; background: var(--deep) center / cover no-repeat; border-bottom: 2px solid var(--ink); }
+.tmeta { display: block; padding: 6px 8px 0; color: var(--quiet); font-size: 20px; }
+.tcap { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; margin: 0 8px 8px; font-size: 22px; line-height: 1.15; }
+.swipe { margin: 4px 0 0; font-size: 22px; }
+.thumbs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.thumb { position: relative; display: block; text-decoration: none; border: 2px solid var(--ink); }
+.thumb .pic { aspect-ratio: 4 / 3; border: 0; }
+.thumb .day { position: absolute; left: 0; bottom: 0; padding: 2px 4px; font: 8px/1.2 var(--pixel); color: var(--white); background: rgb(26 11 59 / 80%); }
+#notebox .msg { font-size: 24px; }
+#notebox .notes-disclosure { font-size: 22px; padding: 8px 12px; }
+.foot { margin: 20px 0 0; text-align: center; }
+.foot a { color: var(--white); text-shadow: 2px 2px 0 var(--deep); }
+@media (min-width: 900px) {
+  .headline { font-size: 22px; }
+  .actions .btn { flex: 0 1 auto; }
+  .cards { overflow: visible; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tcard { flex: none; }
+  .swipe { display: none; }
+}
+.shell:has(> .bare) { max-width: 1440px; }
+@media (min-width: 900px) {
+  .shell:has(> .bare) .icons { grid-template-rows: repeat(6, max-content); grid-auto-columns: 96px; }
+}
+@media (min-width: 1100px) {
+  .desk { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+}
 /* Night: while Merge sleeps the wallpaper is the starry night sky, with the same grid floor. */
 body.night {
   background:
