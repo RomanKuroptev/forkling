@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { readdirSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /**
@@ -39,7 +39,7 @@ export function viewerBuildEnv(i: ViewerBuildInput): Record<string, string> | nu
   const host = /^([^.]+)\.github\.io$/.exec(url.hostname)
   const repoFromPath = url.pathname.split('/').filter(Boolean)[0]
   const fromAddress = host && repoFromPath && OWNER.test(host[1]!) && REPO.test(repoFromPath) ? `${host[1]}/${repoFromPath}` : null
-  const world = fromAddress ?? fromRepository
+  const world = fromRepository ?? fromAddress
   if (!world) return null
   return { VITE_BASE: `${path}world/`, VITE_WORLD: world, VITE_MIND_URL: i.mindUrl ?? '', VITE_TURNSTILE_SITE_KEY: i.siteKey ?? '' }
 }
@@ -49,7 +49,7 @@ const sizeOf = (dir: string): number => readdirSync(dir, { withFileTypes: true }
 /** Builds the viewer into `<out>/world/`. Returns how long it took and how big it is, for the log. Throws if the build fails: a site with a dead way in must not be published. */
 export function buildViewer(out: string, env: Record<string, string>): { seconds: number; bytes: number } {
   const viewerDir = fileURLToPath(new URL('../../viewer', import.meta.url))
-  const vite = createRequire(join(viewerDir, 'package.json')).resolve('vite/bin/vite.js')
+  const vite = join(dirname(createRequire(join(viewerDir, 'package.json')).resolve('vite/package.json')), 'bin', 'vite.js')
   const target = join(out, 'world')
   const started = Date.now()
   execFileSync(process.execPath, [vite, 'build', '--outDir', target, '--emptyOutDir'], { cwd: viewerDir, env: { ...process.env, ...env }, stdio: ['ignore', 'ignore', 'inherit'] })

@@ -31,7 +31,7 @@ const health = {
   updatedAt: '2026-11-18T09:50:00Z',
   engine: 'v0.15.0',
   date: '2026-11-18',
-  lastTick: { at: '2026-11-18T09:50:00Z', asleep: false, summary: 'read a page', think: null, triggers: [], callsFailed: 0 },
+  lastTick: { at: '2026-11-18T09:50:00Z', asleep: false, summary: '', think: null, triggers: [], callsFailed: 0 },
   plan: { planId: 'p1', stepsLeft: 3, current: null, lastReplanAt: null, idleMinutes: 0 },
   today: { ticks: 41, decideCalls: 2, callsByKind: {}, triggersByKind: {}, failures: 0, rejections: 0, stepsStarted: {}, longestGapMinutes: 12 },
   quotas: { readings: { used: 3, max: 20 } },
@@ -51,7 +51,7 @@ beforeEach(() => {
   const p = Project.parse({ id: 'toaster', name: 'toaster.api', aim: 'toast responds to GET /toast', started: '2026-11-16T08:00:00Z', status: 'building', reason: null, inspiredBy: null, installedIn: null, sessions: [1, 2, 3].map((n) => ({ at: `2026-11-1${5 + n}T09:00:00Z`, caption: `session ${n} <i>caption</i>`, usd: 0.2, turns: 5, shot: `shots/${n}.png`, broken: false, engine: false })) })
   put('projects/toaster/project.json', JSON.stringify(p))
   for (const s of p.sessions) put(`projects/toaster/${s.shot}`, PNG)
-  put('brain/budget.json', JSON.stringify({ month: '2026-11', serverUsd: 8, capUsd: 15, spentUsd: 4.2, calls: [], byKind: { reflect: { calls: 3, input: 100, cacheRead: 0, cacheWrite: 0, output: 50, usd: 1.5 } }, history: [{ month: '2026-10', spentUsd: 9.1, calls: 400 }] }))
+  put('brain/budget.json', JSON.stringify({ month: '2026-11', serverUsd: 8, capUsd: 15, spentUsd: 4.2, calls: [], byKind: { reflect: { calls: 3, input: 100, cacheRead: 0, cacheWrite: 0, output: 50, usd: 1.5 }, reply: { calls: 1, input: 1, cacheRead: 0, cacheWrite: 0, output: 1, usd: 0 } }, history: [{ month: '2026-10', spentUsd: 9.1, calls: 400 }, { month: '2026-11', spentUsd: 0, calls: 0 }] }))
   put('mind/health.json', JSON.stringify(health))
   const n = Note.parse({ id: 'n-a', name: 'Anna', message: 'can the toaster make waffles?', placeId: 'home', topics: [], at: '2026-11-17T09:00:00Z', status: 'replied', foundAt: '2026-11-17T10:00:00Z', reply: 'not yet, it is on a roadmap I do not have' })
   put('notes/n-a.json', JSON.stringify(n))
@@ -266,6 +266,27 @@ describe('/under-the-hood/', () => {
     expect(hood()).toMatch(/no budget file/i)
     expect(hood()).toMatch(/no health file/i)
     expect(front()).toContain('href="under-the-hood/"')
+  })
+})
+
+describe('/under-the-hood/ details', () => {
+  it('lists only earlier months, says "1 call", and has no stray colon after the last tick', () => {
+    build()
+    const html = hood()
+    const earlier = html.slice(html.indexOf('Earlier months'))
+    expect(earlier).toContain('2026-10')
+    expect(earlier.slice(0, earlier.indexOf('</table>'))).not.toContain('2026-11')
+    expect(html).toContain('1 call, $0.00')
+    expect(html).not.toContain('1 calls')
+    expect(html).toContain('2026-11-18T09:50:00Z</td>')
+    expect(html).not.toMatch(/09:50:00Z:/)
+  })
+})
+
+describe('the page bottom', () => {
+  it('leaves the height of the taskbar below the last window, so nothing slips under it', async () => {
+    const { STYLE } = await import('../src/style.ts')
+    expect(STYLE).toMatch(/\.bare \{[^}]*margin: 0 auto var\(--taskbar\)/)
   })
 })
 
