@@ -19,6 +19,7 @@ import { loadNotes, notesEndpoint, renderNotes, validSiteKey } from './notes.ts'
 import { NOTES_SCRIPT } from './notes-script.ts'
 import { hasAbout, loadAbout, loadSelfRequests, loadTools, renderAbout } from './self.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
+import { sharePicturePng } from './share-picture.ts'
 import { galleryBody, tiles } from './gallery.ts'
 import { diaryBody } from './diary.ts'
 import { loadProjects, projectChangeLookup, projectFeedItems, publishProjects, renderProjects } from './projects.ts'
@@ -33,6 +34,8 @@ function localStamp(iso: string, timeZone: string): string {
 
 const MAX_WHY_ENTRIES = 400
 const MAX_NOTES_SHOWN = 20
+const MAX_FRAMED_WORKS = 6
+const MAX_FRAMED_PROJECTS = 3
 const MAX_PLANS_SHOWN = 7
 const MAX_WRITINGS_SHOWN = 10
 const MAX_PILE_SHOWN = 100
@@ -110,6 +113,10 @@ interface PageInput {
   nowMs?: number
   /** The address of the site, for the share picture's full address in the share tags. */
   baseUrl?: string | undefined
+  /** The page's own picture for a link preview (a path from the site root); the desktop picture when left out. */
+  ogImage?: string | undefined
+  /** The page's own path from the site root, for its address in the share tags. */
+  path?: string | undefined
 }
 
 /** A page's one-line description for link previews: its first paragraph without tags, cut to 200 characters. */
@@ -127,10 +134,14 @@ function shareTags(p: PageInput): string {
   return [
     `<meta property="og:title" content="${esc(p.title)} · ${esc(p.name)}">`,
     `<meta property="og:description" content="${esc(description)}">`,
-    `<meta property="og:image" content="${esc(base)}share.png">`,
+    `<meta property="og:image" content="${esc(base)}${esc(p.ogImage ?? 'share.png')}">`,
+    ...(p.path !== undefined ? [`<meta property="og:url" content="${esc(base)}${esc(p.path.replace(/index\.html$/, ''))}">`] : []),
     '<meta property="og:image:width" content="1200">',
     '<meta property="og:image:height" content="630">',
     '<meta name="twitter:card" content="summary_large_image">',
+    `<meta name="twitter:title" content="${esc(p.title)} · ${esc(p.name)}">`,
+    `<meta name="twitter:description" content="${esc(description)}">`,
+    `<meta name="twitter:image" content="${esc(base)}${esc(p.ogImage ?? 'share.png')}">`,
     `<meta name="description" content="${esc(description)}">`,
   ].join('\n')
 }
@@ -281,11 +292,40 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const nav: [string, string][] = [...NAV, ...(galleryTiles.length > 0 ? [['Gallery', 'gallery/'] as [string, string]] : []), ...(projects.length > 0 ? [['Projects', 'projects/'] as [string, string]] : []), ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
   const extraFiles = new Map<string, string | Buffer>()
   const buildMs = (opts.now ?? new Date()).getTime()
-  const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, night: forkling.asleep, timezone: forkling.timezone, nowMs: buildMs, baseUrl: opts.baseUrl, ...input }))
+  const ogImages = new Map<string, string>()
+  const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, path: rel, ogImage: ogImages.get(rel), root: '../'.repeat(rel.split('/').length - 1), nav, night: forkling.asleep, timezone: forkling.timezone, nowMs: buildMs, baseUrl: opts.baseUrl, ...input }))
 
   const works = loadWorks(world)
   // Home (step 7): the front page, a desktop of its own. What used to sit here (the plan with its reasons, what it wants) moved to /under-the-hood/.
   const today = buildToday({ projects, works, about: mergeAbout, nowMs: buildMs, tz })
+  // Link previews (sharing S2): the front page's picture is made from today's first card, a work's and a project's from their own picture. Pages with no picture of their own keep the desktop one.
+  const address = (opts.baseUrl ?? '').replace(/^https?:\/\//, '').replace(/\/+$/, '') || name
+  const readPng = (rel: string): Buffer | null => {
+    try {
+      return readFileSync(join(world, rel))
+    } catch {
+      return null
+    }
+  }
+  const makeOg = (rel: string, file: string, heading: string, caption: string, image: string | null) => {
+    const png = sharePicturePng({ heading, caption, address, image: image ? readPng(image) : null })
+    if (!png) return
+    extraFiles.set(file, png)
+    ogImages.set(rel, file)
+  }
+  const firstCard = today.cards[0]
+  makeOg('index.html', 'og/today.png', `Today ${name}`, firstCard ? `${firstCard.title}: ${firstCard.caption}` : `${name} is an AI. It lives here and makes things.`, firstCard?.image ?? null)
+  // Each framed picture costs about 0.2 s, so only the newest works and projects get one; an older page uses its own picture as it is.
+  let framed = 0
+  for (const { meta, hasThumb } of works) {
+    if (meta.status === 'scrap' || !hasThumb) continue
+    if (framed++ < MAX_FRAMED_WORKS) makeOg(`workshop/${meta.id}.html`, `og/work-${meta.id}.png`, meta.title, meta.caption ?? meta.about, `works/${meta.id}/thumb.png`)
+    else ogImages.set(`workshop/${meta.id}.html`, `works/${meta.id}/thumb.png`)
+  }
+  projects.slice(0, MAX_FRAMED_PROJECTS).forEach(({ project, shots }) => {
+    const shot = [...shots].reverse().find((x): x is string => Boolean(x))
+    if (shot) makeOg(`projects/${project.id}/index.html`, `og/project-${project.id}.png`, project.name, project.sessions.at(-1)?.caption ?? project.aim, `projects/${project.id}/${shot}`)
+  })
   const endpoint0 = notesEndpoint(opts.mindUrl)
   const siteKey0 = validSiteKey(opts.turnstileSiteKey)
   const i = forkling.intention
