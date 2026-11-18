@@ -19,6 +19,7 @@ import { loadNotes, notesEndpoint, renderNotes, validSiteKey } from './notes.ts'
 import { NOTES_SCRIPT } from './notes-script.ts'
 import { hasAbout, loadAbout, loadSelfRequests, loadTools, renderAbout } from './self.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
+import { diaryBody } from './diary.ts'
 import { loadProjects, projectChangeLookup, projectFeedItems, publishProjects, renderProjects } from './projects.ts'
 
 /** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
@@ -331,7 +332,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   add('journal/index.html', {
     title: 'Journal',
     active: 'journal/',
-    body: `<h1>Journal</h1>\n${writing ? `<p class="quiet">The entry for ${esc(writing.date)} is still being written.</p>\n` : ''}${journal.length > 0 ? `<ul>${journal.map((j) => `<li><a href="${esc(j.date)}.html">${esc(j.date)}</a> ${esc(titleOf(j.text))}</li>`).join('')}</ul>` : writing ? '' : empty('It writes a diary entry each night, while it sleeps.')}`,
+    body: diaryBody({ journal, tz, nowMs: buildMs, made: works.filter((w) => w.meta.status !== 'scrap').length + projects.reduce((n, p) => n + p.project.sessions.length, 0), retired: works.filter((w) => w.meta.status === 'retired').length, writing }),
   })
   journal.forEach((j, n) => {
     const newer = journal[n - 1]
