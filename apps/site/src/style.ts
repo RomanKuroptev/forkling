@@ -3,6 +3,8 @@
  * same content as before. Press Start 2P for the title bars, buttons and headings, VT323 for everything read, both from this site's own
  * `fonts/` folder. Colours are the look's own and are named once, in the first block. No script is needed to read a page.
  */
+import { ICONS } from './icons.ts'
+
 export const STYLE = `@font-face { font-family: 'Press Start 2P'; src: url('fonts/press-start-2p.woff2') format('woff2'); font-display: swap; }
 @font-face { font-family: 'VT323'; src: url('fonts/vt323.woff2') format('woff2'); font-display: swap; }
 :root {
@@ -44,8 +46,10 @@ body {
   .icons { display: grid; grid-template-rows: repeat(5, max-content); grid-auto-flow: column; grid-auto-columns: 112px; gap: 12px 8px; flex: none; position: sticky; top: 16px; align-content: start; }
 }
 .icon { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; text-decoration: none; color: var(--white); text-shadow: 2px 2px 0 var(--ink); font-size: 24px; line-height: 1; }
-.icon-img { display: grid; place-items: center; width: 64px; height: 64px; background: var(--face); color: var(--ink); border: 2px solid; border-color: var(--white) var(--ink) var(--ink) var(--white); box-shadow: inset -2px -2px 0 var(--purple); font: 16px var(--pixel); text-shadow: none; image-rendering: pixelated; }
-.icon[aria-current] .icon-img { background: var(--sun); }
+.icon-img { display: grid; place-items: center; width: 72px; height: 72px; background: var(--face); border: 2px solid; border-color: var(--white) var(--ink) var(--ink) var(--white); box-shadow: inset -2px -2px 0 var(--purple); }
+.icon-img { background-repeat: no-repeat; background-position: center; background-size: 64px 64px; image-rendering: pixelated; }
+${Object.keys(ICONS).map((k) => `.ic-${k} { background-image: url('icons/${k}.svg'); }`).join('\n')}
+.icon[aria-current] .icon-img { background-color: var(--sun); }
 .icon:focus-visible, .icon:hover { outline: 2px dotted var(--white); outline-offset: 4px; }
 .window { flex: 1; min-width: 0; max-width: 780px; margin: 0 auto; background: var(--face); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink), inset 2px 2px 0 var(--white); }
 .title { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 8px; background: linear-gradient(to right, var(--purple), var(--hot)); color: var(--white); font: 10px/1.4 var(--pixel); }
@@ -123,4 +127,49 @@ dd { margin: 0; }
 .notes li.note blockquote { background: #c9fbff; border: 2px solid var(--ink); margin: 8px 0 8px 18px; padding: 8px 12px; }
 .notes li.note p.quiet a { font-size: 22px; }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
+/* Night: while Merge sleeps the wallpaper is the starry night sky, with the same grid floor. */
+body.night {
+  background:
+    radial-gradient(1.5px 1.5px at 8% 12%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 21% 30%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 37% 8%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 52% 24%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 64% 10%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 78% 33%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 91% 17%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 14% 44%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 45% 41%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 86% 46%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 3% 6%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 11% 22%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 17% 4%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 29% 36%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 33% 14%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 43% 28%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 47% 5%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 55% 40%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 59% 19%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 68% 9%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 72% 31%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 81% 16%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 88% 42%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 94% 8%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 97% 27%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 6% 38%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 25% 11%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 51% 20%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 76% 3%, #fff 98%, transparent) fixed,
+    radial-gradient(1.5px 1.5px at 90% 35%, #fff 98%, transparent) fixed,
+    repeating-linear-gradient(to right, rgb(255 64 209 / 40%) 0 2px, transparent 2px 64px) 0 100% / 100% 34% no-repeat fixed,
+    repeating-linear-gradient(to bottom, rgb(255 64 209 / 40%) 0 2px, transparent 2px 28px) 0 100% / 100% 34% no-repeat fixed,
+    linear-gradient(to bottom, #1a0640, #0b0224) 0 100% / 100% 34% no-repeat fixed,
+    linear-gradient(to bottom, #05021a 0%, #2b0b5e 45%, #8c1eff 66%) fixed;
+}
+/* A slow drift of the grid, only for visitors who have not asked for less motion. */
+@keyframes drift {
+  to { background-position: 64px 100%, 0 calc(100% + 28px), 0 100%, 0 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  body:not(.night) { animation: drift 8s linear infinite; }
+}
 `

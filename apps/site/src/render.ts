@@ -2,8 +2,9 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { dirname, join } from 'node:path'
 import type { z } from 'zod'
 import { Beliefs, Forkling, Goals, Interests, isOpenRequest, MindState, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
-import { moodWords } from '@forkling/sim'
 import { STYLE } from './style.ts'
+import { desktopPicturePng } from './desktop-picture.ts'
+import { faviconSvg, ICONS, iconFor, iconSvg } from './icons.ts'
 import { esc, markdown } from './md.ts'
 import { defaultGitLog, parseChanges } from './changes.ts'
 import { renderFeed, type FeedItem } from './feed.ts'
@@ -96,10 +97,43 @@ interface PageInput {
   head?: string
   /** `bare`: no window round the body (a page that is a desktop of its own). */
   shell?: 'window' | 'bare'
+  /** The wallpaper is the starry night sky while Merge sleeps. */
+  night?: boolean
+  /** The time zone of the clock in the taskbar, and the build time it starts from. */
+  timezone?: string
+  nowMs?: number
+  /** The address of the site, for the share picture's full address in the share tags. */
+  baseUrl?: string | undefined
 }
 
-/** The one-letter picture on a desktop icon until L4b's pixel icons: the first letter of the page's name. */
-const glyph = (label: string) => esc(label.slice(0, 1))
+/** A page's one-line description for link previews: its first paragraph without tags, cut to 200 characters. */
+function descriptionOf(body: string): string {
+  const first = /<p[^>]*>([\s\S]*?)<\/p>/.exec(body)?.[1] ?? ''
+  const text = first.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim()
+  return text.length > 200 ? `${text.slice(0, 199)}…` : text
+}
+
+/** Title, description and the picture for a link preview: a large card, with the desktop picture. Only with the site's address, which a preview needs in full. */
+function shareTags(p: PageInput): string {
+  if (!p.baseUrl) return ''
+  const base = p.baseUrl.endsWith('/') ? p.baseUrl : `${p.baseUrl}/`
+  const description = descriptionOf(p.body) || `${p.name} lives here and makes things.`
+  return [
+    `<meta property="og:title" content="${esc(p.title)} · ${esc(p.name)}">`,
+    `<meta property="og:description" content="${esc(description)}">`,
+    `<meta property="og:image" content="${esc(base)}share.png">`,
+    '<meta property="og:image:width" content="1200">',
+    '<meta property="og:image:height" content="630">',
+    '<meta name="twitter:card" content="summary_large_image">',
+    `<meta name="description" content="${esc(description)}">`,
+  ].join('\n')
+}
+
+const clockAt = (tz: string, ms: number) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms))
+
+/** The taskbar's clock keeps time in Merge's time zone. The page already shows the time it was built; this only moves it on. */
+const CLOCK_SCRIPT = `<script>(function(){var c=document.querySelector('.clock');if(!c||!window.Intl)return;function t(){c.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:c.dataset.tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date())}t();setInterval(t,20000)})()</script>
+`
 
 /**
  * Every page is a window on Merge's desktop (docs/spec/v4/look.md): the links are desktop icons on a laptop and the start menu of the
@@ -109,9 +143,9 @@ const glyph = (label: string) => esc(label.slice(0, 1))
 function layout(p: PageInput): string {
   const links = p.nav.map(([label, path]) => ({ label, href: `${p.root}${path}`, current: path === p.active }))
   const cur = (c: boolean) => (c ? ' aria-current="page"' : '')
-  const icons = links.map((l) => `<a class="icon" href="${l.href}"${cur(l.current)}><span class="icon-img" aria-hidden="true">${glyph(l.label)}</span><span>${esc(l.label)}</span></a>`).join('')
+  const icons = links.map((l) => `<a class="icon" href="${l.href}"${cur(l.current)}><span class="icon-img ic-${iconFor(l.label)}" aria-hidden="true"></span><span>${esc(l.label)}</span></a>`).join('')
   const menu = links.map((l) => `<a href="${l.href}"${cur(l.current)}>${esc(l.label)}</a>`).join('')
-  const taskbar = `<footer class="taskbar"><div class="start"><input type="checkbox" id="start-toggle" class="start-toggle" aria-label="Open the start menu"><label class="start-btn" for="start-toggle"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Merge 95</label><nav class="menu" aria-label="Pages">${menu}</nav></div><span class="tray">${esc(p.name)}</span></footer>`
+  const taskbar = `<footer class="taskbar"><div class="start"><input type="checkbox" id="start-toggle" class="start-toggle" aria-label="Open the start menu"><label class="start-btn" for="start-toggle"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Merge 95</label><nav class="menu" aria-label="Pages">${menu}</nav></div><span class="tray">${esc(p.name)}${p.timezone ? ` · <time class="clock" data-tz="${esc(p.timezone)}">${clockAt(p.timezone, p.nowMs ?? 0)}</time> ${esc((p.timezone.split('/').pop() ?? p.timezone).replaceAll('_', ' '))}` : ''}</span></footer>`
   const win = `<div class="window"><div class="title"><span>${esc(p.title)} - ${esc(p.name)}</span><span class="btns" aria-hidden="true"><i></i><i></i><i></i></span></div>
 <main>
 ${p.body}
@@ -124,15 +158,17 @@ ${p.body}
 <title>${esc(p.title)} · ${esc(p.name)}</title>
 <link rel="stylesheet" href="${p.root}style.css">
 <link rel="alternate" type="application/rss+xml" title="${esc(p.name)}" href="${p.root}feed.xml">
+<link rel="icon" type="image/svg+xml" href="${p.root}favicon.svg">
 ${p.head ? `${p.head}
+` : p.baseUrl ? `${shareTags(p)}
 ` : ''}</head>
-<body>
+<body${p.night ? ' class="night"' : ''}>
 <div class="shell">
 <nav class="icons" aria-label="Desktop">${icons}</nav>
 ${p.shell === 'bare' ? `<main class="bare">\n${p.body}\n</main>` : win}
 </div>
 ${taskbar}
-</body>
+${p.timezone ? CLOCK_SCRIPT : ''}</body>
 </html>
 `
 }
@@ -235,7 +271,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const projects = loadProjects(world)
   const nav: [string, string][] = [...NAV, ...(projects.length > 0 ? [['Projects', 'projects/'] as [string, string]] : []), ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
   const extraFiles = new Map<string, string | Buffer>()
-  const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, ...input }))
+  const buildMs = (opts.now ?? new Date()).getTime()
+  const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, night: forkling.asleep, timezone: forkling.timezone, nowMs: buildMs, baseUrl: opts.baseUrl, ...input }))
 
   // Home: who it is, what it wants, what it is doing and why.
   const step = goals.now ? goals.today?.steps[goals.now.index] : undefined
@@ -245,7 +282,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     active: 'index.html',
     body: [
       `<h1>${esc(name)}</h1>`,
-      `<p class="quiet">${esc(forkling.species)}, feeling ${esc(moodWords({ mood: forkling.mood, energy: forkling.energy }))}${forkling.asleep ? ', asleep' : ''}. Last seen ${esc(localStamp(forkling.lastTickAt, forkling.timezone))}.</p>`,
+      `<p class="quiet">${forkling.asleep ? 'Asleep' : 'Awake'}. Last seen ${esc(localStamp(forkling.lastTickAt, forkling.timezone))}.</p>`,
       '<h2>Right now</h2>',
       `<p><strong>${esc(i.type.replaceAll('_', ' '))}</strong>${i.targetId ? ` at ${esc(i.targetId)}` : ''}: <em>${esc(i.reason)}</em></p>`,
       ...(step?.topic ? [`<p class="quiet">About ${esc(step.topic)}.</p>`] : []),
@@ -442,6 +479,9 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   for (const [rel, html] of pages) write(rel, html)
   for (const [rel, text] of extraFiles) write(rel, text)
   write('style.css', STYLE)
+  for (const name of Object.keys(ICONS)) write(`icons/${name}.svg`, iconSvg(name))
+  write('favicon.svg', faviconSvg())
+  write('share.png', desktopPicturePng())
   write('feed.xml', renderFeed({ name, items: feedItems, baseUrl: opts.baseUrl }))
   write('changes.json', `${JSON.stringify(changes)}
 `)
