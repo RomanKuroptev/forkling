@@ -188,6 +188,18 @@ dd { margin: 0; }
 .about-body ul { margin: 12px 0; }
 @media (min-width: 700px) { .ahero { font-size: 18px; } .aface { width: 96px; height: 96px; } }
 @media (min-width: 700px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* The retired folder: a listing, then the pictures. */
+.path { margin: 8px 0; padding: 4px 8px; background: var(--white); border: 2px solid var(--hot); font-size: 22px; }
+.ftable { overflow-x: auto; background: var(--white); border: 2px solid var(--ink); }
+.ftable table { width: 100%; border-collapse: collapse; }
+.ftable th { text-align: left; padding: 4px 10px; font: 10px/1.4 var(--pixel); background: var(--face); border-bottom: 2px solid var(--ink); }
+.ftable td { padding: 4px 10px; vertical-align: top; }
+.ftable tr:first-child td { }
+.ftable td a { color: var(--ink); text-decoration: none; }
+.ftable tr:hover td { background: var(--purple); color: var(--white); }
+.ftable tr:hover td a { color: var(--white); }
+.folder { display: inline-block; width: 22px; height: 14px; margin-right: 8px; vertical-align: -1px; background: var(--sun); border: 2px solid var(--ink); }
+.rtiles { margin-top: 12px; }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
 .bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto var(--taskbar); overflow-wrap: anywhere; }

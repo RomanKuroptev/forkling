@@ -123,13 +123,20 @@ export function renderWorkshop(o: WorkshopInput): void {
   })
 
   if (retired.length > 0) {
+    // The look of the retired mockup (docs/spec/v4/look/site/retired.png): a folder listing (name, made, why it ended), then pictures of what was put away.
+    const day = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: o.tz, day: 'numeric', month: 'short' }).format(new Date(iso))
+    const rows = retired.map((w) => `<tr><td><a href="../${w.meta.id}.html"><span class="folder" aria-hidden="true"></span>${esc(w.meta.title)}</a></td><td>${esc(day(w.meta.made))}</td><td>${esc(w.meta.retireReason ?? '')}</td></tr>`).join('')
+    const pics = retired.filter((w) => w.hasThumb).map((w) => `<li class="gt"><a href="../${w.meta.id}.html"><span class="pic" role="img" aria-label="${esc(w.meta.title)}" style="background-image:url('../../works/${esc(encodeURIComponent(w.meta.id))}/thumb.png')"></span><span class="tmeta"><time datetime="${esc(w.meta.made)}">${esc(day(w.meta.made))}</time></span><span class="gname">${esc(w.meta.title)}</span></a></li>`).join('')
     o.add('workshop/retired/index.html', {
       title: 'Put away',
       active: 'workshop/',
       body: [
         '<h1>Put away</h1>',
         '<p><a href="../../workshop/">Back to the workshop</a></p>',
-        `<ul class="shelf">${retired.map((w) => `<li class="work">${w.hasThumb ? `<a href="../${w.meta.id}.html"><img src="../../works/${w.meta.id}/thumb.png" alt="" loading="lazy" width="240" height="180"></a> ` : ''}<strong><a href="../${w.meta.id}.html">${esc(w.meta.title)}</a></strong> <span class="quiet">${kindLine(w.meta)}</span><p>${esc(w.meta.about)}</p><p class="quiet">Put away: ${esc(w.meta.retireReason ?? '')}</p></li>`).join('')}</ul>`,
+        '<p class="quiet">Every phase ends. The things stay. This folder keeps them.</p>',
+        `<div class="path" aria-hidden="true">C:\\MERGE\\retired\\</div>`,
+        `<div class="ftable"><table><thead><tr><th>name</th><th>made</th><th>why it ended</th></tr></thead><tbody>${rows}</tbody></table></div>`,
+        ...(pics ? [`<ul class="gtiles rtiles">${pics}</ul>`] : []),
       ].join('\n'),
     })
   }
