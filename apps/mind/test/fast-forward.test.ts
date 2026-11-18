@@ -5,7 +5,8 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, it } from 'vitest'
 import type { WorkChecker } from '../src/builds/browser-check.ts'
-import { fakeFetch, fakeModel } from '../src/fast-forward-fakes.ts'
+import type { SessionModel } from '../src/builds/session.ts'
+import { fakeFetch, fakeModel, fakeSandbox, fakeSessionModel } from '../src/fast-forward-fakes.ts'
 import { cappedModel, localMidnight, remotesOf, runFastForward, watchedFetch, type FastForwardOptions } from '../src/fast-forward.ts'
 import type { LlmRequest } from '../src/llm.ts'
 import { loadSpecies } from '../src/species.ts'
@@ -157,4 +158,49 @@ describe('a short run with the fakes', () => {
     expect(result.pass).toBe(false)
     expect(result.reasons).toContain('2026-11-03: nothing visual made')
   }, 300_000)
+})
+
+describe('a run with build sessions', () => {
+  const sessionOptions = (dir: string, over: Partial<FastForwardOptions> = {}) =>
+    options(dir, { llm: fakeModel({ build: true }), sessions: { model: fakeSessionModel(), sandbox: fakeSandbox() }, ...over })
+
+  it('is off by default: the plain run has no build sessions in its summary', async () => {
+    const result = await runFastForward(options(world()))
+    expect(result.sessions).toBeNull()
+    expect(readFileSync(result.summaryPath, 'utf8')).not.toContain('## Build sessions')
+  }, 300_000)
+
+  it('gives Merge the build verb, runs the sessions, and counts them in the summary', async () => {
+    const dir = world()
+    const result = await runFastForward(sessionOptions(dir, { durationMs: 14 * HOUR, days: 1 }))
+    expect(result.crashes).toBe(0)
+    expect(result.sessions).not.toBeNull()
+    expect(result.sessions!.count).toBeGreaterThan(0)
+    expect(result.sessions!.made).toContain('Colour clock')
+    expect(result.sessions!.perSessionUsd).toBeGreaterThan(0)
+    expect(result.sessions!.maxUsd).toBeLessThan(1)
+    const summary = readFileSync(result.summaryPath, 'utf8')
+    expect(summary).toMatch(/## Build sessions: [1-9]/)
+    expect(summary).toContain('Projects made: Colour clock')
+    expect(summary).toContain('Roman')
+    expect(existsSync(join(dir, 'projects/colour-clock/project.json'))).toBe(true)
+  }, 300_000)
+
+  it('fails the run when a single session costs over $1', async () => {
+    const dear: SessionModel = { turn: async (r) => ({ ...(await fakeSessionModel().turn(r)), usage: { input: 700_000, cacheRead: 0, cacheWrite: 0, output: 40_000 } }) }
+    const result = await runFastForward(sessionOptions(world(), { durationMs: 14 * HOUR, days: 1, capUsd: 3, sessions: { model: dear, sandbox: fakeSandbox() } }))
+    expect(result.sessions!.maxUsd).toBeGreaterThan(1)
+    expect(result.pass).toBe(false)
+    expect(result.reasons.join(' ')).toMatch(/build session.*over \$1/)
+  }, 300_000)
+
+  it('counts the session model under the run cap', async () => {
+    const capped = cappedModel(fakeModel(), 0.01)
+    const session = capped.session(fakeSessionModel())
+    const req = { model: 'claude-sonnet-5-5', system: '', messages: [], tools: [], maxTokens: 10 } as unknown as Parameters<SessionModel['turn']>[0]
+    await session.turn(req)
+    expect(capped.spentUsd).toBeGreaterThan(0)
+    expect(capped.reached).toBe(true)
+    await expect(session.turn(req)).rejects.toThrow(/cap/)
+  })
 })
