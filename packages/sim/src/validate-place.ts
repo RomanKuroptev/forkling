@@ -33,7 +33,7 @@ export interface PlaceContext {
 }
 
 /** The folder each kind of exhibit points into. A gallery points at nothing. */
-const REF_PREFIX = { souvenir: 'souvenirs/', work: 'works/', trail: 'trails/', plaque: 'notebook/writing/' } as const
+const REF_PREFIX = { souvenir: 'souvenirs/', work: 'works/', trail: 'trails/', plaque: 'notebook/writing/', project: 'projects/' } as const
 
 const SLOT_PATTERN = /^([a-z0-9][a-z0-9-]*)\/(\d+)\/(\d+)$/
 

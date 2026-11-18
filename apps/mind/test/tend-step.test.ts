@@ -319,3 +319,41 @@ describe('putting an object away with a tend (spec 9.9)', () => {
     expect(placeOf('home').exhibits.some((e) => e.id === 'fog')).toBe(true)
   })
 })
+
+describe('a done project on a screen (spec-v4 3.4)', () => {
+  const putProject = (id: string, status: 'building' | 'done') => {
+    mkdirSync(file(`projects/${id}/src`), { recursive: true })
+    writeFileSync(file(`projects/${id}/project.json`), JSON.stringify({ id, name: `Project ${id}`, aim: 'an aim', started: '2026-11-01T10:00:00.000Z', status, reason: status === 'done' ? 'it works' : null, sessions: [], inspiredBy: null, installedIn: null }))
+  }
+  const onScreen = (ref: string) => add({ id: 'proj', kind: 'project', ref, slot: 'bench-room/4/0', label: 'It runs.' })
+  const tendWorkshop = (ref: string) => fakeLlm(planFor(step('tend', 'workshop', 30, 'Show what I finished.')), answer({ summary: 'Put it on a screen.', exhibits: [onScreen(ref)] }))
+
+  it('lists the done projects in the tend prompt, and only those', async () => {
+    putProject('tide-clock', 'done')
+    putProject('sand-clock', 'building')
+    const fake = tendWorkshop('projects/tide-clock')
+    await landOn(fake)
+    const user = fake.calls.find((c) => c.kind === 'tend')!.user
+    expect(user).toContain('tide-clock | Project tide-clock')
+    expect(user).not.toContain('sand-clock')
+  })
+
+  it('puts a done project on a free screen, and the project says where it is shown', async () => {
+    putProject('tide-clock', 'done')
+    await landOn(tendWorkshop('projects/tide-clock'))
+    expect(placeOf('workshop').exhibits.find((e) => e.id === 'proj')).toMatchObject({ kind: 'project', ref: 'projects/tide-clock', slot: 'bench-room/4/0' })
+    expect(read('projects/tide-clock/project.json').installedIn).toBe('workshop/bench-room/4/0')
+  })
+
+  it('turns down a project that is still building, with the reason', async () => {
+    putProject('sand-clock', 'building')
+    await landOn(tendWorkshop('projects/sand-clock'))
+    expect(placeOf('workshop').exhibits.some((e) => e.id === 'proj')).toBe(false)
+    expect(streamText()).toMatch(/only a done project can go on a screen/)
+  })
+
+  it('turns down a project that does not exist', async () => {
+    await landOn(tendWorkshop('projects/nothing-here'))
+    expect(placeOf('workshop').exhibits.some((e) => e.id === 'proj')).toBe(false)
+  })
+})

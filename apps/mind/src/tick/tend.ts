@@ -6,6 +6,7 @@ import { daysSinceCare, validatePlacePatch } from '@forkling/sim'
 import { clampText } from '../decision.ts'
 import { claimsHuman } from '../honesty.ts'
 import { TEND_MAX_TOKENS, TendAnswer, buildTendUser, pileSouvenirs, refFile, shelvedWorks, toTendPatch } from '../builds/tend.ts'
+import { readProjects, writeProject } from '../builds/projects.ts'
 import type { Tick } from './context.ts'
 
 const readSouvenir = (dir: string, id: string): Souvenir | null => {
@@ -37,6 +38,7 @@ export async function tendStep(t: Tick): Promise<void> {
     daysSinceCare: daysSinceCare({ lastCareAt: place.state.lastCareAt, founded: place.founded }, t.nowMs),
     pile: pileSouvenirs(t.dir),
     works: shelvedWorks(t.dir),
+    projects: readProjects(t.dir).projects.filter((p) => p.status === 'done').map((p) => ({ id: p.id, name: p.name })),
   })
   const model = step.deep ? 'claude-sonnet-5-5' : 'claude-haiku-5-5'
   const result = await t.ask('tend', model, user, TendAnswer, TEND_MAX_TOKENS)
@@ -51,6 +53,13 @@ export async function tendStep(t: Tick): Promise<void> {
   if (words.some((w) => claimsHuman(w))) return fail('the words claimed to be human')
   const converted = toTendPatch(answer.data)
   if (!converted.ok) return fail(converted.reason)
+  // Only a done project goes on a screen (spec-v4 3.4).
+  const projects = readProjects(t.dir).projects
+  for (const op of converted.patch.exhibits) {
+    if (op.op !== 'add' || op.exhibit.kind !== 'project') continue
+    const project = projects.find((p) => `projects/${p.id}` === op.exhibit.ref)
+    if (project && project.status !== 'done') return fail(`${project.name} is not done yet: only a done project can go on a screen`)
+  }
   const checked = validatePlacePatch(place, converted.patch, {
     kit,
     nowIso: t.nowIso,
@@ -71,6 +80,15 @@ export async function tendStep(t: Tick): Promise<void> {
   const after = placed(checked.place)
   for (const id of after) if (!before.has(id)) setPlaced(t, id, place.id)
   for (const id of before) if (!after.has(id)) setPlaced(t, id, null)
+
+  // A project on a screen says where it is shown (spec-v4 3.1 installedIn); one taken off says it is shown nowhere.
+  const shown = (p: { exhibits: { kind: string; ref: string | null; slot: string }[] }) => new Map(p.exhibits.filter((e) => e.kind === 'project' && e.ref).map((e) => [e.ref!.slice('projects/'.length), `${place.id}/${e.slot}`]))
+  const shownAfter = shown(checked.place)
+  for (const id of new Set([...shown(place).keys(), ...shownAfter.keys()])) {
+    const project = projects.find((p) => p.id === id)
+    const at = shownAfter.get(id) ?? null
+    if (project && project.installedIn !== at) writeProject(t.dir, { ...project, installedIn: at })
+  }
 
   t.placeUpdates.push(checked.place)
   t.places = t.places.map((p) => (p.id === place.id ? checked.place : p))
