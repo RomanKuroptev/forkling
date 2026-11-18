@@ -19,6 +19,7 @@ import { loadNotes, notesEndpoint, renderNotes, validSiteKey } from './notes.ts'
 import { NOTES_SCRIPT } from './notes-script.ts'
 import { hasAbout, loadAbout, loadSelfRequests, loadTools, renderAbout } from './self.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
+import { galleryBody, tiles } from './gallery.ts'
 import { diaryBody } from './diary.ts'
 import { loadProjects, projectChangeLookup, projectFeedItems, publishProjects, renderProjects } from './projects.ts'
 
@@ -276,7 +277,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const mergeAbout = loadAbout(world)
   const selfRequests = loadSelfRequests(world)
   const projects = loadProjects(world)
-  const nav: [string, string][] = [...NAV, ...(projects.length > 0 ? [['Projects', 'projects/'] as [string, string]] : []), ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
+  const galleryTiles = tiles(projects, loadWorks(world))
+  const nav: [string, string][] = [...NAV, ...(galleryTiles.length > 0 ? [['Gallery', 'gallery/'] as [string, string]] : []), ...(projects.length > 0 ? [['Projects', 'projects/'] as [string, string]] : []), ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
   const extraFiles = new Map<string, string | Buffer>()
   const buildMs = (opts.now ?? new Date()).getTime()
   const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, night: forkling.asleep, timezone: forkling.timezone, nowMs: buildMs, baseUrl: opts.baseUrl, ...input }))
@@ -457,6 +459,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
 
   // The workshop is always there (spec 8): an empty shelf says so. A work is shown only through its own page, in its sandbox.
   renderWorkshop({ works, tz, goals, add })
+  if (galleryTiles.length > 0) add('gallery/index.html', { title: 'Gallery', active: 'gallery/', body: galleryBody(galleryTiles, tz) })
   renderProjects({ projects, stamp: (iso) => localStamp(iso, tz), add })
   renderPlaces({
     places,

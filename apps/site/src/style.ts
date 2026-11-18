@@ -161,6 +161,17 @@ dd { margin: 0; }
 .cal-day.has { color: var(--ink); background: var(--white); border: 2px solid var(--ink); padding: 2px 0; text-decoration: none; }
 .cal-day.today { color: var(--white); background: var(--hot); }
 @media (min-width: 900px) { .diary { grid-template-columns: minmax(0, 1fr) 260px; align-items: start; } }
+/* The gallery: tabs are radio buttons, so the filter works with no script. */
+.gallery { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 4px; }
+.gf { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.gtab { min-height: 44px; display: inline-flex; align-items: center; padding: 4px 12px; cursor: pointer; font: 10px/1 var(--pixel); background: var(--face); border: 2px solid var(--ink); border-bottom: 0; }
+.gf:checked + .gtab { background: var(--white); }
+.gf:focus-visible + .gtab { outline: 2px dotted var(--ink); outline-offset: 2px; }
+.gtiles { flex: 1 0 100%; list-style: none; margin: 0; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; background: var(--white); border: 2px solid var(--ink); }
+.gt a { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: var(--ink); background: var(--white); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--hot); }
+.gt a:focus-visible { outline: 2px dotted var(--ink); outline-offset: 2px; }
+.gname { margin: 0 8px 8px; font-size: 24px; line-height: 1.1; overflow-wrap: anywhere; }
+#gf-sketch:checked ~ .gtiles .gt:not([data-k="sketch"]), #gf-work:checked ~ .gtiles .gt:not([data-k="work"]), #gf-build:checked ~ .gtiles .gt:not([data-k="build"]) { display: none; }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
 .bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto var(--taskbar); overflow-wrap: anywhere; }

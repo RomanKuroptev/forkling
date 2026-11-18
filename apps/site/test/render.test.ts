@@ -174,7 +174,7 @@ describe('renderSite', () => {
     expect(html).toContain('A lamp is a small argument with the dark.')
   })
 
-  it('has no gallery any more', () => {
+  it('has no gallery page or link while nothing has a picture yet', () => {
     renderSite(world, out)
     expect(existsSync(join(out, 'gallery/index.html'))).toBe(false)
     expect(page('index.html')).not.toContain('gallery/')
