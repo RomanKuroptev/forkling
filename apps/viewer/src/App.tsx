@@ -2,18 +2,18 @@ import { KeyboardControls, Stats, useProgress, type KeyboardControlsEntry } from
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { Suspense } from 'react'
-import { debugEnabled } from './debugEnabled.ts'
 import { DebugOverlay } from './forkling/DebugOverlay.tsx'
 import { Forkling } from './forkling/Forkling.tsx'
 import { Player } from './player/Player.tsx'
 import { Boot } from './ui/Boot.tsx'
 import { Cursor } from './ui/Cursor.tsx'
 import { Taskbar } from './ui/Taskbar.tsx'
+import { TopBar } from './ui/TopBar.tsx'
+import { shortHint } from './ui/topbar.ts'
 import { ExhibitPanel } from './ui/ExhibitPanel.tsx'
 import { NoteButton } from './ui/NoteForm.tsx'
 import { NotePanel } from './ui/NotePanel.tsx'
 import { HoverLabel } from './ui/HoverLabel.tsx'
-import { desktopHint } from './ui/hint.ts'
 import { touchUi } from './touch.ts'
 import { useWorld } from './world/WorldContext.tsx'
 import { TouchControls } from './ui/TouchControls.tsx'
@@ -81,14 +81,14 @@ export function App() {
       <NotePanel />
       <NoteButton />
       {touchUi && <TouchControls />}
+      <TopBar touch={touchUi} />
       <Cursor />
       {touchUi ? <Taskbar touch hint="Stick to walk · drag to look" /> : <DesktopHud />}
     </>
   )
 }
 
-/** The key hints. With `?debug`, F3 opens the mind of whichever forkling is being watched. */
+/** The one line of key hints on a laptop; the rest is behind the "?" button of the top bar (and F3 with `?debug`). */
 function DesktopHud() {
-  const { world } = useWorld()
-  return <Taskbar touch={false} hint={desktopHint(world.forkling.name, debugEnabled(location.search))} />
+  return <Taskbar touch={false} hint={shortHint()} />
 }

@@ -57,3 +57,8 @@ Plan approved by the coordinator on 17 November 2026: L3, L1, L1b, L2, L4, then 
 - `/under-the-hood/` holds the old home content (wants, today's plan with reasons, obsessed, latest diary) plus budget (month, spent, cap, server, by kind, earlier months), points and health (engine, ticks, failures, warnings). Linked from the menu, the icons and the front page footer.
 - Missing data, shown empty: Merge has no `self/about.md` (headline falls back), no project in progress (window left out), no `now.json` in a static build, no progress bar for the project (no data), the still is the share picture (no 3D screenshot file), no visit counter note.
 - Not done in 7B: viewer and site on one address and redirects from viewer addresses (a deploy change, needs coordinator), "since your last visit" as picture cards (changes.json has no pictures), world overlay (own PR).
+
+## Step 7 world overlay notes
+
+- Top bar in the viewer (mockup world-overlay): a "desktop" button (the folder above when inside the site's own /world/, else the world's Pages site, none for a made-up world), the title chip "WORLD.exe - Merge's island · N places" (hidden under 760 px), and "?" which opens the full key list in a window. The bottom line is now short ("WASD to walk · drag to look · ? for the rest"); the taskbar stays (panels are sized to it).
+- Not done from the mockup: the dark "click to say hi to Merge" chip near the cursor (no such interaction exists), the "toaster_lab.wip" status window for a place being built, and removing the taskbar.

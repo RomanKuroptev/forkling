@@ -115,3 +115,52 @@ canvas {
 html[data-input="touch"] .note-btn {
   bottom: calc(var(--taskbar-h) + 168px) !important;
 }
+
+/* The top of the world (mockup world-overlay): the desktop button, the title chip and the help button. */
+.topbar {
+  position: fixed;
+  z-index: 15;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+.topbar-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 8px 14px;
+  font: 11px/1 'Press Start 2P', monospace;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--face);
+  border: 2px solid;
+  border-color: #fff var(--ink) var(--ink) #fff;
+  box-shadow: inset -2px -2px 0 var(--purple);
+  border-radius: 0;
+  cursor: pointer;
+}
+.topbar-btn:active { border-color: var(--ink) #fff #fff var(--ink); box-shadow: inset 2px 2px 0 var(--purple); }
+.topbar-help { margin-left: auto; min-width: 44px; justify-content: center; }
+.topbar-title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 6px 10px;
+  background: #fff;
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  font: 20px/1.1 'VT323', monospace;
+  display: none;
+}
+@media (min-width: 760px) { .topbar-title { display: block; } }
+.taskbar-hint { flex: 1; text-align: center; }
+
+.win.win-help { top: 66px; width: min(520px, 94vw); }

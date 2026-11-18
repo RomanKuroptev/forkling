@@ -164,7 +164,7 @@
 /* Hover labels and the Leave a note button. */
 .win.win-hover {
   width: min(460px, 90vw);
-  top: 12px;
+  top: 66px;
   pointer-events: none;
 }
 
