@@ -8,6 +8,8 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@fontsource/press-start-2p": "^5.3.0",
+    "@fontsource/vt323": "^5.3.0",
     "@forkling/schema": "workspace:*",
     "@forkling/sim": "workspace:*",
     "@resvg/resvg-js": "2.6.2",
