@@ -68,7 +68,7 @@ describe.each(STYLES)('the building model, %s style', (style) => {
   it('uses only the body, accent and glow of its palette, chrome and white marble', () => {
     for (const palette of kit.palettes) {
       const c = palette.colors
-      const allowed = new Set([c.wall, c.accent, c.glow, c.metal, COLORS.white])
+      const allowed = new Set([c.wall, c.accent, c.glow, c.metal, COLORS.white, COLORS.metal])
       for (const floors of [1, 2, 3]) for (const i of model(tower(home, floors, [12, 10], palette.id)).instances) expect(allowed.has(i.color), `${palette.id} ${i.color}`).toBe(true)
     }
   })

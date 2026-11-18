@@ -90,7 +90,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
   const c = colorsOf(palette)
   // The body is the palette's pastel wall, white marble (stone) or chrome (tin-shack).
-  const bodyColor = style === 'stone' ? c.marble : style === 'tin-shack' ? c.chrome : c.body
+  const bodyColor = style === 'stone' ? c.marble : style === 'tin-shack' ? COLORS.metal : c.body
   const [px, pz] = placeCentre(toLandPlace(place))
   const [fw, fd] = place.exterior.footprint
   const h = floorHeight(place)
@@ -99,7 +99,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
 
   const slots: BuildingModel['slots'] = { base: [], body: [], front: [], crown: [], hero: [], glow: [] }
   const add = (slot: keyof BuildingModel['slots'], shape: Shape, at: [number, number, number], size: [number, number, number], color: string, glow = false, rot: [number, number, number] = [0, 0, 0]): void => {
-    slots[slot].push({ shape, matrix: compose(at, rot, size), color, ...(glow ? { glow: true } : {}) })
+    slots[slot].push({ shape, matrix: compose(at, rot, size), color, ...(glow ? { glow: true } : {}), ...(style === 'glass' && color === bodyColor && shape === 'box' ? { glass: true } : {}) })
   }
 
   // Base: a low marble slab, wider than the footprint, with a thin glowing edge.
@@ -204,37 +204,47 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   if (style === 'tower') {
     if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ], [CROWN_WIDTH, ch, CROWN_WIDTH], c.glow, true)
   } else if (style === 'timber') {
-    // A pastel villa: a low chrome pyramid, and a porch of four white marble columns across the front, clear of the door.
+    // A pastel villa: a low chrome pyramid, and a porch of four thick white marble columns standing forward under a porch slab, clear of the door.
     if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ], [Math.min(6, fwid * 0.5), ch, Math.min(6, fwid * 0.5)], c.chrome)
-    const inner = Math.max(DOOR_HALF + 0.9, fw * 0.16)
-    const outer = Math.max(inner + 1, fw / 2 - 1)
-    for (const x of [-outer, -inner, inner, outer]) add('hero', 'cylinder', [px + x, baseY + bodyH / 2, front0 + 1.1], [0.7, bodyH, 0.7], c.marble)
-    add('hero', 'box', [px, baseY + bodyH + 0.15, front0 + 0.9], [outer * 2 + 1.4, 0.3, 2.0], c.marble)
+    const inner = Math.max(DOOR_HALF + 1.2, fw * 0.18)
+    const outer = Math.max(inner + 1.2, fw / 2 - 1)
+    for (const x of [-outer, -inner, inner, outer]) add('hero', 'cylinder', [px + x, baseY + bodyH / 2, front0 + 1.5], [0.8, bodyH, 0.8], c.marble)
+    add('hero', 'box', [px, baseY + bodyH + 0.2, front0 + 1.1], [outer * 2 + 1.8, 0.4, 3.0], c.marble)
   } else if (style === 'stone') {
-    // A marble temple: a dome, and one tall arch round the door.
-    if (ch > 0.2) add('crown', 'sphere', [px, crownY, frontZ], [Math.min(5, fwid * 0.5), ch * 2, Math.min(5, fwid * 0.5)], c.marble)
-    const archH = Math.min(bodyH - 0.1, Math.max(DOOR_HEIGHT + 0.3, 3.6))
-    for (const s2 of [-1, 1]) add('hero', 'box', [px + s2 * (DOOR_HALF + 0.55), baseY + archH / 2, front0 + 0.5], [0.6, archH, 0.7], c.marble)
-    add('hero', 'box', [px, baseY + archH + 0.3, front0 + 0.5], [DOOR_HALF * 2 + 1.7, 0.6, 0.7], c.marble)
-  } else if (style === 'glass') {
-    // A screen house: a flat chrome slab with a neon edge, and a screen that fills the front beside the door.
+    // A marble temple: a dome set back behind the front so the whole name shows, and one tall round arch round the door, 0.4 m out from the wall.
     if (ch > 0.2) {
-      const slabW = Math.min(8, fwid * 0.6)
-      add('crown', 'box', [px, crownY + 0.3, frontZ - 0.8], [slabW, 0.6, 3], c.chrome)
-      add('crown', 'box', [px, crownY + 0.05, frontZ - 0.8], [slabW + 0.3, 0.08, 3.3], c.glow, true)
+      const r = Math.min(5, fwid * 0.5)
+      add('crown', 'sphere', [px, crownY, frontZ - 0.4 - r / 2], [r, Math.min(ch * 2, r * 1.1), r], c.marble)
     }
-    const w = Math.max(1.2, fw / 2 - DOOR_HALF - 1.6)
-    const hh = Math.min(bodyH - 0.6, 2.4)
-    add('hero', 'box', [px - (DOOR_HALF + 0.8 + w / 2), baseY + 0.4 + hh / 2, front0 + 0.3], [w, hh, 0.5], c.glow, true)
+    const R = DOOR_HALF + 0.4
+    const archZ = front0 + 0.4 + 0.3
+    const springY = baseY + Math.max(DOOR_HEIGHT + 0.3, 2.6)
+    for (const s2 of [-1, 1]) add('hero', 'box', [px + s2 * R, (baseY + springY) / 2, archZ], [0.6, springY - baseY, 0.6], c.marble)
+    // The round top: eight short marble pieces on a semicircle, each turned to follow it.
+    const pieces = 8
+    for (let k = 0; k < pieces; k++) {
+      const a = (Math.PI * (k + 0.5)) / pieces
+      add('hero', 'box', [px + Math.cos(a) * R, springY + Math.sin(a) * R, archZ], [(Math.PI * R) / pieces + 0.15, 0.6, 0.6], c.marble, false, [0, 0, a - Math.PI / 2])
+    }
+  } else if (style === 'glass') {
+    // A screen house: tinted see-through walls, a tall glowing screen beside the door from the foot band to the top band, and a flat
+    // chrome lid that overhangs by 0.8 m with a neon edge.
+    const w = Math.max(1.2, fw / 2 - DOOR_HALF - 0.3)
+    const hh = Math.max(1, bodyH - 0.5)
+    add('hero', 'box', [px - (DOOR_HALF + 0.1 + w / 2), baseY + 0.25 + hh / 2, front0 + 0.3], [w, hh, 0.5], c.glow, true)
     heroGlow = w * hh
+    add('crown', 'box', [px, baseY + bodyH + 0.25, pz], [fw + 1.6, 0.5, fd + 1.6], c.chrome)
+    add('crown', 'box', [px, baseY + bodyH + 0.04, pz], [fw + 1.7, 0.08, fd + 1.7], c.glow, true)
   } else {
-    // An arcade: three stepped blocks, each smaller than the one below, and a neon sign on the roof.
+    // An arcade: a pale shiny metal body, three stepped blocks each smaller than the one below, and a neon sign standing above the top step.
+    let signY = crownY + 0.6
     if (ch > 0.2) {
       const step = ch / 3
       const widths = [Math.min(7, fwid * 0.55), Math.min(5, fwid * 0.4), Math.min(3, fwid * 0.25)]
       widths.forEach((w, k) => add('crown', 'box', [px, crownY + step * (k + 0.5), frontZ - 0.6], [w, step, 2.4 - k * 0.5], c.chrome))
+      signY = crownY + ch + 0.6
     }
-    add('hero', 'box', [px, baseY + bodyH + 0.7, frontZ - 0.1], [Math.min(7, fwid * 0.5), 0.9, 0.35], c.glow, true)
+    add('hero', 'box', [px, Math.min(baseY + MAX_OUTLINE_HEIGHT - 0.5, signY), frontZ - 0.6], [Math.min(6, fwid * 0.5), 0.9, 0.35], c.glow, true)
   }
 
   const frontGlowArea = screen + heroGlow + frontWindows * WINDOW_SIZE[0] * WINDOW_SIZE[1]

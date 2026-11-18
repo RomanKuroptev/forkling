@@ -7,6 +7,9 @@ import { live } from './live.ts'
 import { clampPopup, fitPopup } from './popup.ts'
 import { bubbleLines, type BubbleLine } from './thoughts.ts'
 
+/** `?bubble=0` keeps the pop-up away, to look at what is behind it (a debug flag). */
+const NO_BUBBLE = new URLSearchParams(location.search).get('bubble') === '0'
+
 /** How often the bubble re-reads the body. The sim runs at 10 Hz, but nobody reads a thought that fast. */
 const REFRESH_MS = 1000
 
@@ -38,7 +41,7 @@ export function ThoughtBubble() {
     return () => clearInterval(id)
   }, [world, clock])
 
-  if (!lines || hidden) return null
+  if (!lines || hidden || NO_BUBBLE) return null
   const shown = fitPopup(lines)
   return (
     <Html position={[0, ANCHOR_HEIGHT, 0]} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }} calculatePosition={popupPosition}>

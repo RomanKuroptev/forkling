@@ -29,6 +29,9 @@ const GEOMETRIES: Record<Shape, THREE.BufferGeometry> = {
   cone: new THREE.ConeGeometry(0.5, 1, ROUND_SEGMENTS),
 }
 
+/** `?lit` draws every place as cared for with its lamps on, to look at the glow (a debug flag). */
+const LIT_ALWAYS = new URLSearchParams(location.search).has('lit')
+
 /** How night it is, shared by every shape's material: windows and lamps glow in proportion to it. */
 const nightUniform = { value: 0 }
 
@@ -49,7 +52,7 @@ function glowMaterial(): THREE.MeshStandardMaterial {
 }
 
 /** One draw call for all the instances of a shape, each with its own matrix, colour and glow. */
-function Shapes({ shape, data }: { shape: Shape; data: ShapeInstances }) {
+function Shapes({ shape, data, glass = false }: { shape: Shape; data: ShapeInstances; glass?: boolean }) {
   const mesh = useRef<THREE.InstancedMesh>(null)
   // Its own copy of the unit shape, because the glow of each instance is an attribute of the geometry.
   const geometry = useMemo(() => {
@@ -57,7 +60,15 @@ function Shapes({ shape, data }: { shape: Shape; data: ShapeInstances }) {
     g.setAttribute('aGlow', new THREE.InstancedBufferAttribute(data.glow, 1))
     return g
   }, [shape, data])
-  const material = useMemo(glowMaterial, [])
+  const material = useMemo(() => {
+    const m = glowMaterial()
+    if (glass) {
+      m.transparent = true
+      m.opacity = 0.55
+      m.depthWrite = false
+    }
+    return m
+  }, [glass])
   useEffect(
     () => () => {
       geometry.dispose()
@@ -75,7 +86,7 @@ function Shapes({ shape, data }: { shape: Shape; data: ShapeInstances }) {
   if (data.count === 0) return null
   // The capacity is fixed when the mesh is made, so a different number of instances is a new mesh.
   return (
-    <instancedMesh key={data.count} ref={mesh} args={[geometry, material, data.count]} castShadow receiveShadow frustumCulled={false} />
+    <instancedMesh key={data.count} ref={mesh} args={[geometry, material, data.count]} castShadow={!glass} receiveShadow frustumCulled={false} />
   )
 }
 
@@ -171,7 +182,7 @@ export function Places() {
     if (new URLSearchParams(location.search).has('debug')) Object.assign(window, { __forklingModels: () => [...loadedFiles].sort() })
   }, [loadedFiles])
 
-  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots }), [world, land, interiors, loadedFiles, nowMs, plots])
+  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS }), [world, land, interiors, loadedFiles, nowMs, plots])
   // The board of each place's sign: its name and its sign text, painted on one texture.
   const baseOfPlace = useCallback((p: (typeof world.places)[number]) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, [land])
   const boards = useMemo(() => signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit), [world, land])
@@ -245,6 +256,7 @@ export function Places() {
       <Shapes shape="sphere" data={scene.sphere} />
       <Shapes shape="cylinder" data={scene.cylinder} />
       <Shapes shape="cone" data={scene.cone} />
+      <Shapes shape="box" data={scene.glassBox} glass />
       {Object.entries(scene.models).map(([file, matrices]) => (loaded[file] ? <ModelShapes key={file} model={loaded[file]} matrices={matrices} /> : null))}
       <RigidBody type="fixed" colliders={false}>
         {walls.map((w, i) => (
