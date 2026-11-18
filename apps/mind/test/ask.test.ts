@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { BudgetLedger } from '@forkling/schema'
 import type { LlmClient, LlmRequest, LlmResult } from '../src/llm.ts'
-import { makeAsk } from '../src/tick/ask.ts'
+import { DECIDE_MAX_TOKENS, makeAsk } from '../src/tick/ask.ts'
+import { TEND_MAX_TOKENS } from '../src/builds/tend.ts'
 import type { Tick } from '../src/tick/context.ts'
 
 const Answer = z.object({ a: z.string() })
@@ -47,6 +48,22 @@ describe('makeAsk: effort and thinking by call kind', () => {
     expect(seen[0]).toMatchObject({ effort: 'low', thinking: 'off' })
     expect(seen[1]).toMatchObject({ effort: 'medium' })
     expect(seen[1]!.thinking).toBeUndefined()
+  })
+})
+
+describe('output limits for the Haiku calls that think (spec 13: thinking must not cut the answer short)', () => {
+  // R1 fast-forward ledgers: a morning used 2,000 to 2,300 output tokens at the median and its tail reached 3,000, the old
+  // limit, so 4 mornings and a decide were cut off; a tend used about 900 and 5 of 37 stopped at its old 1,500.
+  it('gives decide and morning room for thinking: twice the old 3,000', async () => {
+    const { t, seen } = stubTick({ parsed: { a: 'x' }, usage, stopReason: 'end_turn' })
+    await makeAsk(t)('decide', 'claude-haiku-5-5', 'u', Answer)
+    await makeAsk(t)('morning', 'claude-haiku-5-5', 'u', Answer)
+    expect(DECIDE_MAX_TOKENS).toBe(6000)
+    expect(seen.map((r) => r.maxTokens)).toEqual([6000, 6000])
+  })
+
+  it('gives a tend twice its answer size in the table (1.5K)', () => {
+    expect(TEND_MAX_TOKENS).toBe(3000)
   })
 })
 

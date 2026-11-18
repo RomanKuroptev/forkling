@@ -8,7 +8,8 @@ import { dataBlock } from '../web/read.ts'
 
 /** The limits of a tend (spec 5.4), said to the model and held by `validatePlacePatch`. */
 export const TEND_LIMITS = { exhibitChanges: 3, labels: 2, sign: 24, label: 120, summary: 140, reason: 140 } as const
-export const TEND_MAX_TOKENS = 1500
+/** Twice the answer size in spec 13 (1.5K): a tend is Haiku at medium effort, so it thinks, and 5 of 37 tends in the R1 ledgers stopped at 1,500. */
+export const TEND_MAX_TOKENS = 3000
 
 const Op = z.object({
   op: z.enum(['add', 'move', 'remove']),

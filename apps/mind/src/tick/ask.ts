@@ -4,14 +4,20 @@ import { effortFor, stopFailure, thinkingFor } from '../llm.ts'
 import { clampText } from '../decision.ts'
 import type { Ask, Tick } from './context.ts'
 
-export const MAX_OUTPUT_TOKENS = 3000
+/**
+ * The output limit of a decide or morning call (Haiku at medium effort, so it thinks, and thinking is billed as output).
+ * Spec 13 sizes the answer at 1.5K and keeps thinking from cutting it short. The R1 fast-forward ledgers measured the real
+ * output: a morning at 2,000 to 2,300 tokens at the median with its tail at the old limit of 3,000 (4 mornings and a decide
+ * cut off). Twice that keeps the tail whole; a full answer still costs only what it uses.
+ */
+export const DECIDE_MAX_TOKENS = 6000
 
 /** Why a call was not made at all, as `ask` records it. Anything else on a failed attempt means the call was made and failed. */
 export const NO_CALL_REASONS: ReadonlySet<string> = new Set(['prompt too long', 'no credentials', 'monthly budget reached'])
 
 /** Every call to a model goes through here, so every one meets the same guards: prompt size, dry run, key, budget. */
 export function makeAsk(t: Tick): Ask {
-  return async (kind, model, user, schema, maxTokens = MAX_OUTPUT_TOKENS) => {
+  return async (kind, model, user, schema, maxTokens = DECIDE_MAX_TOKENS) => {
     const { deps, system, notes } = t
     // A thought tick and a reflection run on their own clocks: their failures and times must not hold back or restart the decide cool-down.
     const decides = kind !== 'thought' && kind !== 'reflection'
