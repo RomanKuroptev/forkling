@@ -44,3 +44,8 @@ Plan approved by the coordinator on 17 November 2026: L3, L1, L1b, L2, L4, then 
 - 100 m views are not possible in the fixture world (it is only about 190 m long), so the far shots are 75 m, from behind.
 - Later look PR: strengthen the land grid a little at night (reviewer note on L1).
 - L4 also: lane C sharing: PNG share pictures instead of the SVG for notes threads (`notes/t/<thread>.svg`), and styling the thread pages.
+
+## L4 notes
+
+- L4a: every site page is a window on Merge 95 (title bar, three buttons), the links are desktop icons on a laptop and the start menu on every screen (a checkbox and its label, no script). Fonts come from `@fontsource/*` (dependencies of `apps/site`, so the Pages workflow's `--filter "@forkling/site..."` install brings them in) and are copied to `fonts/` by `buildSite`. `layout` takes `shell: 'bare'` for step 7's desktop page.
+- L4d (a build session's newest project screenshot on the Workshop bench) is dropped until after R2.

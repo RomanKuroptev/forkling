@@ -94,9 +94,28 @@ interface PageInput {
   nav: [string, string][]
   /** Extra tags for the head (share tags), already escaped. */
   head?: string
+  /** `bare`: no window round the body (a page that is a desktop of its own). */
+  shell?: 'window' | 'bare'
 }
 
+/** The one-letter picture on a desktop icon until L4b's pixel icons: the first letter of the page's name. */
+const glyph = (label: string) => esc(label.slice(0, 1))
+
+/**
+ * Every page is a window on Merge's desktop (docs/spec/v4/look.md): the links are desktop icons on a laptop and the start menu of the
+ * taskbar (a checkbox and its label, so it works with no script) on any screen. `shell: 'bare'` leaves the window out, for a page that is a desktop
+ * of its own (the front page, step 7): its `body` then fills the desktop.
+ */
 function layout(p: PageInput): string {
+  const links = p.nav.map(([label, path]) => ({ label, href: `${p.root}${path}`, current: path === p.active }))
+  const cur = (c: boolean) => (c ? ' aria-current="page"' : '')
+  const icons = links.map((l) => `<a class="icon" href="${l.href}"${cur(l.current)}><span class="icon-img" aria-hidden="true">${glyph(l.label)}</span><span>${esc(l.label)}</span></a>`).join('')
+  const menu = links.map((l) => `<a href="${l.href}"${cur(l.current)}>${esc(l.label)}</a>`).join('')
+  const taskbar = `<footer class="taskbar"><div class="start"><input type="checkbox" id="start-toggle" class="start-toggle" aria-label="Open the start menu"><label class="start-btn" for="start-toggle"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Merge 95</label><nav class="menu" aria-label="Pages">${menu}</nav></div><span class="tray">${esc(p.name)}</span></footer>`
+  const win = `<div class="window"><div class="title"><span>${esc(p.title)} - ${esc(p.name)}</span><span class="btns" aria-hidden="true"><i></i><i></i><i></i></span></div>
+<main>
+${p.body}
+</main></div>`
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -108,13 +127,11 @@ function layout(p: PageInput): string {
 ${p.head ? `${p.head}
 ` : ''}</head>
 <body>
-<header>
-<a class="name" href="${p.root}index.html">${esc(p.name)}</a>
-<nav>${p.nav.map(([label, path]) => `<a href="${p.root}${path}"${path === p.active ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
-</header>
-<main>
-${p.body}
-</main>
+<div class="shell">
+<nav class="icons" aria-label="Desktop">${icons}</nav>
+${p.shell === 'bare' ? `<main class="bare">\n${p.body}\n</main>` : win}
+</div>
+${taskbar}
 </body>
 </html>
 `

@@ -58,7 +58,7 @@ export function placeChangeLookup(places: readonly Place[]): (id: string, commit
 }
 
 const NEGLECT_WORDS = ['kept up', 'a little dusty', 'dusty and cobwebbed', 'overgrown']
-const NEGLECT_FILL = ['#8fbf7f', '#d6c46a', '#d38b4f', '#9b5a4a']
+const NEGLECT_FILL = ['#39ff88', '#fff27a', '#ffb36b', '#ff3fa4']
 const HEX = /^#[0-9a-fA-F]{6}$/
 
 const accentOf = (place: Place): string | null => {
