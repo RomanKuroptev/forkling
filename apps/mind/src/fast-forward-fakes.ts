@@ -1,3 +1,6 @@
+import type { Sandbox, SandboxRun } from './builds/sandbox-run.ts'
+import { emptyPageResult } from './builds/sandbox-runner.ts'
+import type { SessionBlock, SessionModel } from './builds/session.ts'
 import type { BatchOutcome, LlmClient, LlmRequest } from './llm.ts'
 import type { FetchImpl } from './web/fetch.ts'
 
@@ -24,7 +27,7 @@ const WORDS = [
 /** A different line every time, since a repeated thought is thrown away. */
 const line = (n: number) => `${WORDS[0]![n % 7]} ${WORDS[1]![Math.floor(n / 7) % 7]} ${WORDS[2]![Math.floor(n / 49) % 11]} (${n}).`
 
-export function fakeModel(): LlmClient & { calls: LlmRequest[] } {
+export function fakeModel(opts: { build?: boolean } = {}): LlmClient & { calls: LlmRequest[] } {
   const calls: LlmRequest[] = []
   let sketches = 0
   let thoughts = 0
@@ -38,7 +41,7 @@ export function fakeModel(): LlmClient & { calls: LlmRequest[] } {
           thought: 'A small thing first.',
           longGoal: null,
           dropLongGoal: false,
-          plan: [step('tinker', `a colour field ${sketches + 1}`, 45, 'I want to make a small thing to look at.', { size: 'sketch' }), step('rest', null, 30, 'Rest after.'), step('rest', null, 30, 'Rest some more.')],
+          plan: [opts.build ? step('build', 'Colour clock', 45, 'I want to make a clock out of colour, a bit at a time.') : step('tinker', `a colour field ${sketches + 1}`, 45, 'I want to make a small thing to look at.', { size: 'sketch' }), step('rest', null, 30, 'Rest after.'), step('rest', null, 30, 'Rest some more.')],
           planReason: 'A day with one small thing in it.',
           stayUpLate: null,
         }
@@ -65,3 +68,31 @@ export function fakeModel(): LlmClient & { calls: LlmRequest[] } {
 
 /** Every page is missing: the mind reads nothing and says so. */
 export const fakeFetch: FetchImpl = async () => new Response('not here', { status: 404, headers: { 'content-type': 'text/plain' } })
+
+const PAGE = '<!doctype html><html><head><meta charset="utf-8"><title>Colour clock</title></head><body><canvas id="c" width="320" height="240"></canvas><script>const g=document.getElementById("c").getContext("2d");g.fillStyle="teal";g.fillRect(0,0,320,240)</script></body></html>'
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7])
+
+/** A build session in two turns: it writes the page and finishes. Each turn costs a few cents; it says nothing a voice would. */
+export function fakeSessionModel(): SessionModel & { turns: number } {
+  const use = (name: string, input: unknown): SessionBlock => ({ type: 'tool_use', id: `fake-${Math.random().toString(36).slice(2, 10)}`, name, input })
+  const model = {
+    turns: 0,
+    async turn(req: Parameters<SessionModel['turn']>[0]) {
+      model.turns++
+      const wrote = JSON.stringify(req.messages).includes('write_file')
+      const content = wrote ? [use('finish', { caption: 'a teal page for the clock to live on', outcome: 'continue' })] : [use('write_file', { path: 'index.html', content: PAGE })]
+      return { content, stopReason: 'tool_use', usage: { input: 3000, cacheRead: 0, cacheWrite: 0, output: 800 } }
+    },
+  }
+  return model
+}
+
+/** A runner with no browser: every page loads and renders, and the screenshot is a stub. Not sandboxed, as a local run is. */
+export function fakeSandbox(): Sandbox {
+  return {
+    sandboxed: false,
+    run: async (): Promise<SandboxRun> => ({ ...emptyPageResult({ loaded: true, rendered: true }), screenshotPng: PNG, sandboxed: false }),
+    available: async () => true,
+    close: async () => undefined,
+  }
+}

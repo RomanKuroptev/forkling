@@ -3,11 +3,15 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFi
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { BudgetLedger, Health } from '@forkling/schema'
 import { localDate } from '@forkling/sim'
-import { createBuildWorker } from './build-worker.ts'
+import { createBuildWorker, type BuildHandler } from './build-worker.ts'
 import type { WorkChecker } from './builds/browser-check.ts'
 import { createExpandHandler } from './builds/expand-job.ts'
 import { createFoundBuildHandler } from './builds/found-build-job.ts'
 import type { GithubClient } from './builds/github.ts'
+import { readProject, readProjects } from './builds/projects.ts'
+import type { Sandbox } from './builds/sandbox-run.ts'
+import type { SessionModel } from './builds/session.ts'
+import { createSessionHandler } from './builds/session-job.ts'
 import { createTinkerHandler } from './builds/tinker-job.ts'
 import { costUsd, daysInMonth, type ModelId } from './budget.ts'
 import type { LlmClient } from './llm.ts'
@@ -34,7 +38,12 @@ const MODELS: ReadonlySet<string> = new Set<ModelId>(['claude-haiku-5-5', 'claud
 /** Calls a sleeping mind may make: the sleep rewrite and its late call (spec 2.3). */
 const ASLEEP_KINDS: ReadonlySet<string> = new Set(['sleep', 'sleeplate'])
 
+/** Roman's limit for the live server (18 November 2026): a single build session that costs more than this fails the run. */
+export const SESSION_FAIL_USD = 1
+
 export interface FastForwardOptions {
+  /** Build sessions (step 4): the `build` verb is on and sessions run through this model and runner, never a sandbox unit (`requireSandbox` is false). Off when absent. */
+  sessions?: { model: SessionModel | null; sandbox: Sandbox }
   /** The throwaway world. It must have no git remote. */
   dir: string
   days: number
@@ -76,6 +85,8 @@ export interface FastForwardResult {
   stoppedAtCap: boolean
   ticks: number
   report: RunReport
+  /** Build sessions, when the run had them on. */
+  sessions: SessionSummary | null
 }
 
 /** No remote, no push: the world is a throwaway copy, or not a repository at all. */
@@ -131,8 +142,21 @@ export function cappedModel(llm: LlmClient, capUsd: number) {
     },
     cancelBatch: (id) => llm.cancelBatch(id),
   }
+  /** The session model under the same cap: a turn is refused once the run has spent it, and its cost counts. */
+  const session = (inner: SessionModel): SessionModel => ({
+    async turn(req) {
+      if (over()) {
+        refused++
+        throw new Error(`the fast-forward cap of $${capUsd} is reached`)
+      }
+      const result = await inner.turn(req)
+      spent += costUsd(req.model, result.usage)
+      return result
+    },
+  })
   return {
     client,
+    session,
     get spentUsd() {
       return spent
     },
@@ -218,12 +242,18 @@ export async function runFastForward(o: FastForwardOptions): Promise<FastForward
     dir: o.dir,
     clock,
     git: null,
-    deps: { llm: capped.client, pack: o.pack, behaviors: o.behaviors, speciesPersona: o.speciesPersona, workCheck: o.workCheck, web, outsideCalls: () => [], engine: o.engine },
+    deps: { llm: capped.client, ...(o.sessions ? { sessions: o.sessions.model !== null } : {}), pack: o.pack, behaviors: o.behaviors, speciesPersona: o.speciesPersona, workCheck: o.workCheck, web, outsideCalls: () => [], engine: o.engine },
   })
+  const stats: SessionStats = { runs: [], failures: [], waited: 0 }
+  const projectsBefore = new Set(readProjects(o.dir).projects.map((p) => p.id))
+  const sessionHandler = o.sessions?.model
+    ? countSessions(createSessionHandler({ model: capped.session(o.sessions.model), sandbox: o.sessions.sandbox, requireSandbox: false, git: null, now: clock, timezone, timelapse: null }), stats)
+    : null
   const worker = createBuildWorker({
     dir: o.dir,
     now: clock,
     handlers: {
+      ...(sessionHandler ? { session: sessionHandler } : {}),
       expand: createExpandHandler({ dir: o.dir, llm: capped.client, now: clock }),
       found: createFoundBuildHandler({ dir: o.dir, llm: capped.client, now: clock }),
       tinker: createTinkerHandler({ dir: o.dir, llm: capped.client, checker: o.workCheck, github: localGithub(o.dir, railsBroken), now: clock, web }),
@@ -274,6 +304,7 @@ export async function runFastForward(o: FastForwardOptions): Promise<FastForward
     now += loop.nextDelayMs()
   }
   await o.workCheck.close().catch(() => undefined)
+  await o.sessions?.sandbox.close().catch(() => undefined)
 
   const from = localDate(timezone, o.startMs)
   const to = localDate(timezone, Math.min(now, endMs) - 1)
@@ -312,7 +343,10 @@ export async function runFastForward(o: FastForwardOptions): Promise<FastForward
   const madeOn = (date: string) => report.made.items.filter((m) => localDate(timezone, Date.parse(m.at)) === date).length + report.shape.filter((s) => localDate(timezone, Date.parse(s.at)) === date).length
   for (const date of simulatedDays) if (madeOn(date) === 0) reasons.push(`${date}: nothing visual made`)
   if (capped.reached && now < endMs) reasons.push(`stopped at the cap after ${((now - o.startMs) / DAY).toFixed(1)} of ${o.days} days`)
+  // Build sessions are information, except Roman's rule of 18 November 2026: none may cost over $1 on the live server.
+  for (const r of stats.runs) if (r.usd > SESSION_FAIL_USD + 1e-9) reasons.push(`a build session on ${r.projectId} cost $${r.usd.toFixed(2)}, over $${SESSION_FAIL_USD} (Roman's limit of 18 November)`)
   const pass = reasons.length === 0
+  const sessions = o.sessions ? sessionSummary(stats, projectsBefore, o.dir) : null
 
   // Screenshots: the thumbnails the browser check took of each work made, and each project's session shots.
   const shots: string[] = []
@@ -330,10 +364,10 @@ export async function runFastForward(o: FastForwardOptions): Promise<FastForward
 
   const reportText = formatRunReport(report)
   writeFileSync(join(outDir, 'run-report.txt'), `${reportText}\n`)
-  const summary = summaryText({ o, from, to, pass, reasons, crashes, crashCount, railsBroken, report, capped, ticks, shots, stoppedEarly: now < endMs, monthCap })
+  const summary = summaryText({ o, from, to, pass, reasons, crashes, crashCount, railsBroken, report, capped, ticks, shots, stoppedEarly: now < endMs, monthCap, sessions })
   const summaryPath = join(outDir, 'summary.md')
   writeFileSync(summaryPath, summary)
-  return { summaryPath, pass, reasons, crashes: crashCount, railsBroken, spentUsd: capped.spentUsd, stoppedAtCap: capped.reached, ticks, report }
+  return { summaryPath, pass, reasons, sessions, crashes: crashCount, railsBroken, spentUsd: capped.spentUsd, stoppedAtCap: capped.reached, ticks, report }
 }
 
 function listShots(dir: string, projectId: string): string[] {
@@ -360,6 +394,50 @@ interface SummaryInput {
   shots: string[]
   stoppedEarly: boolean
   monthCap: number
+  sessions: SessionSummary | null
+}
+
+/** What the build worker's session handler did in the run. */
+interface SessionStats {
+  runs: { projectId: string; usd: number }[]
+  failures: string[]
+  waited: number
+}
+
+export interface SessionSummary {
+  count: number
+  totalUsd: number
+  perSessionUsd: number
+  maxUsd: number
+  made: string[]
+  changed: string[]
+  failures: string[]
+}
+
+/** Wraps the session handler to count what each job came to: the cost of its calls, the project, and why one failed or waited. */
+function countSessions(inner: BuildHandler, stats: SessionStats): BuildHandler {
+  return async (job, ctx) => {
+    const out = await inner(job, ctx)
+    if (out.status === 'done') stats.runs.push({ projectId: out.extra?.projectId ?? '?', usd: (out.extra?.calls ?? []).reduce((n, c) => n + c.usd, 0) })
+    else if (out.status === 'failed') stats.failures.push(`${out.extra?.projectId ?? 'a new project'}: ${out.reason ?? 'failed'}`)
+    else stats.waited++
+    return out
+  }
+}
+
+function sessionSummary(stats: SessionStats, before: ReadonlySet<string>, dir: string): SessionSummary {
+  const ids = [...new Set(stats.runs.map((r) => r.projectId))]
+  const total = stats.runs.reduce((n, r) => n + r.usd, 0)
+  const names = (list: string[]) => list.map((id) => readProject(dir, id)?.name ?? id)
+  return {
+    count: stats.runs.length,
+    totalUsd: total,
+    perSessionUsd: stats.runs.length ? total / stats.runs.length : 0,
+    maxUsd: stats.runs.reduce((m, r) => Math.max(m, r.usd), 0),
+    made: names(ids.filter((id) => !before.has(id))),
+    changed: names(ids.filter((id) => before.has(id))),
+    failures: stats.failures,
+  }
 }
 
 function summaryText(s: SummaryInput): string {
@@ -414,6 +492,14 @@ function summaryText(s: SummaryInput): string {
   for (const x of repeatedSteps) out.push(`- ${x}`)
   out.push('', '## Spend per simulated day', '')
   for (const d of r.spend.byDay) out.push(`- ${d.date}: ${d.usd === null ? 'unknown' : `$${d.usd.toFixed(3)}`}`)
+  if (s.sessions) {
+    const b = s.sessions
+    out.push('', `## Build sessions: ${b.count}`, '')
+    out.push(`- Cost: $${b.totalUsd.toFixed(3)} in all, $${b.perSessionUsd.toFixed(3)} a session, the dearest $${b.maxUsd.toFixed(3)} (a session over $${SESSION_FAIL_USD} fails the run: Roman's rule of 18 November 2026 for the live server)`)
+    out.push(`- Projects made: ${b.made.length ? b.made.join(', ') : 'none'}; changed: ${b.changed.length ? b.changed.join(', ') : 'none'}`)
+    out.push(`- Session failures: ${b.failures.length}`)
+    for (const f of b.failures.slice(0, 10)) out.push(`  - ${f}`)
+  }
   out.push('', `## What got made: ${r.made.items.length}${r.made.scrapped ? ` (and ${r.made.scrapped} scrapped)` : ''}`, '')
   for (const m of r.made.items) out.push(`- ${m.at.slice(0, 16)} ${m.kind}: ${m.title}`)
   for (const c of r.shape) out.push(`- ${c.at.slice(0, 16)} ${c.verb} ${c.placeName}: ${c.summary}`)

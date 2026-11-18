@@ -6,14 +6,17 @@ import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { TOTAL_CAP_USD } from '@forkling/schema'
 import { localDate } from '@forkling/sim'
+import Anthropic from '@anthropic-ai/sdk'
 import { createBrowserChecker } from './builds/browser-check.ts'
+import { createSandbox } from './builds/sandbox-run.ts'
+import { anthropicSessionModel } from './builds/session.ts'
 import { hasCredentials } from './credentials.ts'
-import { fakeFetch, fakeModel } from './fast-forward-fakes.ts'
+import { fakeFetch, fakeModel, fakeSandbox, fakeSessionModel } from './fast-forward-fakes.ts'
 import { localMidnight, remotesOf, runFastForward } from './fast-forward.ts'
 import { anthropicClient } from './llm.ts'
 import { loadSpecies } from './species.ts'
 
-const USAGE = `usage: pnpm --filter @forkling/mind fast-forward (--world <copy> | --clone-from <url> [--world <new dir>]) [--days 7] [--cap 3] [--start <YYYY-MM-DD>] [--out <dir>] [--dry-run]
+const USAGE = `usage: pnpm --filter @forkling/mind fast-forward (--world <copy> | --clone-from <url> [--world <new dir>]) [--days 7] [--cap 3] [--start <YYYY-MM-DD>] [--out <dir>] [--sessions] [--dry-run]
 
 The fast-forward test: createLoop and the build worker on a fake clock over a throwaway copy of a world, real Haiku and
 Sonnet calls through the budget guard with a hard cap for the run, the real web allowlist and fetcher (read-only). At the
@@ -25,6 +28,8 @@ end it writes the run report and a short summary (path printed). Exit code 0 on 
   --cap         the most the run may spend, in US dollars (default 3)
   --start       the local date the run starts at midnight (default tomorrow in the world's time zone)
   --out         where the summary goes (default a new temp dir)
+  --sessions    give the loop build sessions (step 4): the build verb is on, and sessions run in this process with a local browser, not the
+                sandbox unit. They count against --cap, and a session over $1 fails the run (Roman's rule of 18 November). Default off
   --dry-run     a smoke run with a fake model and a fake web: no key needed, nothing spent
 
 The model key comes from ANTHROPIC_API_KEY; without it only --dry-run runs.`
@@ -51,6 +56,7 @@ async function main(): Promise<number> {
       cap: { type: 'string', default: '3' },
       start: { type: 'string' },
       out: { type: 'string' },
+      sessions: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
     },
@@ -90,13 +96,14 @@ async function main(): Promise<number> {
   const outDir = values.out ? resolve(base, values.out) : mkdtempSync(join(tmpdir(), 'forkling-fast-forward-'))
   const engine = engineCommit()
 
-  console.log(`${dryRun ? 'dry run (fake model, fake web)' : 'real run'}: ${days} days from ${startDate}, cap $${cap}, engine ${engine}`)
+  console.log(`${dryRun ? 'dry run (fake model, fake web)' : 'real run'}${values.sessions ? ' with build sessions' : ''}: ${days} days from ${startDate}, cap $${cap}, engine ${engine}`)
   const result = await runFastForward({
     dir,
     days,
     capUsd: cap,
     startMs: localMidnight(timezone, startDate),
-    llm: dryRun ? fakeModel() : anthropicClient(),
+    llm: dryRun ? fakeModel({ build: values.sessions }) : anthropicClient(),
+    ...(values.sessions ? { sessions: dryRun ? { model: fakeSessionModel(), sandbox: fakeSandbox() } : { model: anthropicSessionModel(new Anthropic()), sandbox: createSandbox() } } : {}),
     fetchImpl: dryRun ? fakeFetch : (url, init) => fetch(url, init),
     workCheck: createBrowserChecker(),
     pack: species.pack,
