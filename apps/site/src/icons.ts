@@ -20,6 +20,7 @@ export const ICONS: Record<string, readonly string[]> = {
   trails: ['.gg..gg.', '.gg..gg.', '........', '..gg..gg', '..gg..gg', '........', 'gg......', 'gg......'],
   about: ['..oooo..', '.o#oo#o.', '.oooooo.', '..#oo#..', '..####..', '.######.', '########', '........'],
   page: ['########', '#hhhhhh#', '########', '#oooooo#', '#o####o#', '#oooooo#', '########', '........'],
+  gallery: ['########', '#cccccc#', '#c#cc#c#', '#cchhcc#', '#cchhhc#', '#cccccc#', '########', '........'],
   archive: ['########', '#hhhhhh#', '########', '#oooooo#', '#oo##oo#', '#oooooo#', '########', '........'],
 }
 
