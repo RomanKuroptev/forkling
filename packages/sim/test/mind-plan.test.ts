@@ -274,6 +274,12 @@ describe('the variety switches (spec 12.3), when Roman has turned them on', () =
     expect(reasons([wander(), tinker('Grain under a low sun'), rest()], ctx({ variety: mixed }))).toEqual([])
   })
 
+  it('compares names, not ideas: a second Contour Lamp may follow Terrain Forgets Itself (R1 fast-forward)', () => {
+    const tinker = (target: string): MindStep => ({ verb: 'tinker', target, reason: 'Hills as a map.', minutes: 60, wantId: 'w1', size: 'sketch' })
+    const on = { sameWorkTinker: { limit: 2, recent: ['Noise Terrain Lamp: noise grows into shapes over a terrain,…', 'Contour Lamp: noise rings drawn over a hill, with one small…'] } }
+    expect(reasons([wander(), tinker('Contour Lamp: noise rings drawn over a hill, with one small lamp'), rest()], ctx({ variety: on }))).toEqual([])
+  })
+
   it('counts tinkers earlier in the same plan', () => {
     const tinker = (target: string): MindStep => ({ verb: 'tinker', target, reason: 'Sand again.', minutes: 60, wantId: 'w1', size: 'sketch' })
     const on = { sameWorkTinker: { limit: 2, recent: ['Ripples breathing as one'] } }

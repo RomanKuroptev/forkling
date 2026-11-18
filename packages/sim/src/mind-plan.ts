@@ -4,7 +4,7 @@
  */
 import { planCost, stepCost, type PricedStep, type Prices } from './allowance.ts'
 import { tiredLimits, type MoodState } from './mood.ts'
-import { sameSubject, writesOnTopic, type WrittenPage } from './topic-cluster.ts'
+import { sameWork, writesOnTopic, type WrittenPage } from './topic-cluster.ts'
 
 export const MIND_VERBS = ['wander', 'tend', 'revisit', 'expand', 'found', 'tinker', 'write', 'reply', 'rest', 'build'] as const
 export type MindVerb = (typeof MIND_VERBS)[number]
@@ -248,7 +248,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
         else if (c.variety?.sameWorkTinker) {
           const { limit, recent } = c.variety.sameWorkTinker
           const last = [...recent, ...plannedTinkers].slice(-limit)
-          if (last.length >= limit && last.every((r) => sameSubject(r, target))) here.push(`${n}: you have made the same work ${limit} times in a row ("${last.at(-1)!.slice(0, 50)}"): make or change something else this time`)
+          if (last.length >= limit && last.every((r) => sameWork(r, target))) here.push(`${n}: you have made the same work ${limit} times in a row ("${last.at(-1)!.slice(0, 50)}"): make or change something else this time`)
           plannedTinkers.push(target)
         }
         break

@@ -119,6 +119,21 @@ export function sameSubject(a: string, b: string): boolean {
 }
 
 /**
+ * Whether two tinker targets are the same work. A target reads "Name: idea". When both have a name, the names decide (the same name,
+ * or two words in common): Merge's ideas share words like "noise" and "lamp" across different works, so comparing the whole text
+ * counted "Terrain Forgets Itself" and "Contour Lamp" as one work (R1 fast-forward, 22 to 25 Nov). With no name, the whole text is compared.
+ */
+export function sameWork(a: string, b: string): boolean {
+  const name = (t: string): string => {
+    const i = t.indexOf(':')
+    return i > 0 ? t.slice(0, i) : ''
+  }
+  const na = name(a)
+  const nb = name(b)
+  return na && nb ? sameSubject(na, nb) : sameSubject(a, b)
+}
+
+/**
  * How many pages each subject has in the last `days` days, most written first, with the titles (oldest first). It is the same
  * clustering `writesOnTopic` counts with, so the numbers shown to Merge are the ones the `sameTopicWrites` rule compares to its limit. Pure.
  */
@@ -141,6 +156,6 @@ export function sameWorkStreak(tinkers: readonly string[]): { count: number; tit
   const last = tinkers.at(-1)
   if (last === undefined) return null
   let count = 1
-  for (let i = tinkers.length - 2; i >= 0 && sameSubject(tinkers[i]!, last); i--) count++
+  for (let i = tinkers.length - 2; i >= 0 && sameWork(tinkers[i]!, last); i--) count++
   return { count, title: last }
 }
