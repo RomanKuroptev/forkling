@@ -1,5 +1,6 @@
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { createConnection, createServer, type Socket } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -34,12 +35,44 @@ function deployed(): { root: string; runner: string } {
 const run = (runner: string, args: string[], input: string) =>
   spawnSync(process.execPath, [runner, ...args], { input, encoding: 'utf8', timeout: 20_000 })
 
+/**
+ * As the socket unit starts it (`Accept=yes`, `StandardInput=socket`, `StandardOutput=socket`): one accepted connection is both
+ * its input and its output. Returns what came back on the connection.
+ */
+async function overSocket(runner: string, args: string[], request: string, root: string): Promise<string> {
+  const path = join(root, 's.sock')
+  const server = createServer({ pauseOnConnect: true })
+  const accepted = new Promise<Socket>((resolve) => server.once('connection', resolve))
+  await new Promise<void>((resolve) => server.listen(path, resolve))
+  const client = createConnection(path)
+  const conn = await accepted
+  server.close()
+  const child = spawn(process.execPath, [runner, ...args], { stdio: [conn, conn, 'pipe'] })
+  conn.destroy()
+  const chunks: Buffer[] = []
+  client.on('data', (c: Buffer) => chunks.push(c))
+  client.write(request)
+  await new Promise<void>((resolve, reject) => {
+    client.on('end', () => resolve())
+    client.on('error', reject)
+    child.on('exit', () => setTimeout(resolve, 200))
+  })
+  client.destroy()
+  return Buffer.concat(chunks).toString('utf8')
+}
+
 describe('the runner started through the current symlink', () => {
-  it('answers a request (one that does not parse, so no browser starts)', () => {
+  it('answers a request (one that does not parse, so no browser starts)', async () => {
     const { root, runner } = deployed()
-    const r = run(runner, ['--browsers', join(root, 'browsers'), '--scratch', join(root, 'scratch')], 'not json\n')
-    expect(r.status).toBe(0)
-    const answer = JSON.parse(r.stdout.trim()) as { failed?: string }
+    const args = ['--browsers', join(root, 'browsers'), '--scratch', join(root, 'scratch')]
+    let out: string
+    if (process.platform === 'win32') {
+      // No Unix socket can be handed to a child here; stdin is a pipe, so the runner answers on stdout.
+      const r = run(runner, args, 'not json\n')
+      expect(r.status).toBe(0)
+      out = r.stdout
+    } else out = await overSocket(runner, args, 'not json\n', root)
+    const answer = JSON.parse(out.trim()) as { failed?: string }
     expect(answer.failed).toBeTruthy()
   })
 
