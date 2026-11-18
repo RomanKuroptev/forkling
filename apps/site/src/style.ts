@@ -200,6 +200,18 @@ dd { margin: 0; }
 .ftable tr:hover td a { color: var(--white); }
 .folder { display: inline-block; width: 22px; height: 14px; margin-right: 8px; vertical-align: -1px; background: var(--sun); border: 2px solid var(--ink); }
 .rtiles { margin-top: 12px; }
+.ftable th + th { border-left: 2px solid var(--ink); }
+.ftable td:nth-child(2) { white-space: nowrap; color: var(--purple); }
+@media (max-width: 520px) {
+  .ftable thead { display: none; }
+  .ftable table, .ftable tbody, .ftable tr, .ftable td { display: block; }
+  .ftable tr { padding: 8px 10px; border-bottom: 2px dotted var(--ink); }
+  .ftable td { padding: 0; }
+  .ftable td:first-child { font-weight: bold; }
+  .ftable td:nth-child(3)::before { content: '\\201c'; }
+  .ftable td:nth-child(3)::after { content: '\\201d'; }
+  .ftable tr:hover td { background: none; color: inherit; }
+}
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
 .bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto var(--taskbar); overflow-wrap: anywhere; }
