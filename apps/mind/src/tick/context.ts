@@ -66,6 +66,12 @@ export interface TickDeps {
   outsideCalls?: () => BudgetCall[]
   /** The loop's last push failed 3 times: health.json says `push failing` until one goes through (spec 2.2). */
   pushFailing?: boolean
+  /**
+   * Build sessions can run here (spec-v4 3.3): the server's sandbox self-test passed and there is a model key. Only then does Merge
+   * have the `build` verb; anywhere else (the Actions tick, `sandbox: missing`) it has the nine verbs it had before. A capability,
+   * like a tool, not a rule of plans.
+   */
+  sessions?: boolean
 }
 
 /** What a tick gives back to the loop: the result, and `now.json` as the tick left the world. */

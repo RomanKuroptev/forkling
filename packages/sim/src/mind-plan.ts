@@ -120,6 +120,8 @@ export interface MindPlanContext {
   projects?: ProjectsContext
   /** Spending is ahead of the month's pace (spec 13), which holds build steps. */
   paceAhead?: boolean
+  /** Build sessions can run here (spec-v4 3.3: the sandbox is ready). Without it Merge has the nine verbs, and `build` is not one of them. */
+  buildAvailable?: boolean
 }
 
 export type MindPlanResult = { ok: true; steps: MindStep[] } | { ok: false; reasons: string[] }
@@ -180,7 +182,12 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
     verbs.push(s.verb)
 
     if (!isVerb(s.verb)) {
-      reasons.push(`${n}: "${String(s.verb)}" is not one of the ten verbs (${MIND_VERBS.join(', ')})`)
+      const verbsHere = MIND_VERBS.filter((v) => v !== 'build' || c.buildAvailable)
+      reasons.push(`${n}: "${String(s.verb)}" is not one of the ${verbsHere.length === 10 ? 'ten' : 'nine'} verbs (${verbsHere.join(', ')})`)
+      return
+    }
+    if (s.verb === 'build' && !c.buildAvailable) {
+      reasons.push(`${n}: build is not available yet: build sessions cannot run here`)
       return
     }
     const verb = s.verb

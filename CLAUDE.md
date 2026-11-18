@@ -12,7 +12,7 @@ The mind decides *what* and *why*: it runs as the Actions tick or as a loop on a
 
 ## Autonomy rules
 
-1. **Ten mind verbs, no activity lists.** The verbs are wander, tend, revisit, expand, found, tinker, write, reply, rest and build (spec v4 3.2: a build session on a project of Merge's own). What Merge does with them comes from its own plans. The species pack gives only the body.
+1. **Ten mind verbs, no activity lists.** The verbs are wander, tend, revisit, expand, found, tinker, write, reply, rest and build (spec v4 3.2: a build session on a project of Merge's own). `build` exists only where its sessions can run (the server, with `/health` `sandbox: ok`); elsewhere Merge has the other nine. What Merge does with them comes from its own plans. The species pack gives only the body.
 2. **Plans are written by the mind.** A plan is 3 to 8 steps, each a verb, a target and a one-sentence reason in Merge's words. Code validates plans (spec 2.6) but never chooses them.
 3. **Code ticks, models think at set moments.** A reflex tick runs in code every 10 seconds. A Haiku thought tick runs every 2 to 5 minutes while awake (in the server loop). Decide calls happen only at the triggers in spec 2.3, and each step that produces a file gets one step call. Sonnet reflects when the importance scores add up to the threshold.
 4. **Memory changes behaviour.** Reflections, beliefs and the wants list feed later decisions, and they may be revised or dropped.
