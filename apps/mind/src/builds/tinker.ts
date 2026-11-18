@@ -323,6 +323,6 @@ function unpack(result: LlmResult<TinkerOutput> | null): { kind: 'output'; outpu
   const failure = stopFailure(result.stopReason, result.parsed)
   if (failure === 'refusal') return { kind: 'failed', reason: 'the model refused' }
   if (failure === 'cut_off') return { kind: 'failed', reason: 'the page was cut off at the output limit' }
-  if (!result.parsed) return { kind: 'failed', reason: 'the model gave no usable answer' }
+  if (!result.parsed) return { kind: 'failed', reason: `the model gave no usable answer${result.parseError ? ` (${clampText(result.parseError, 200)})` : ''}` }
   return { kind: 'output', output: result.parsed }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { anthropicClient, effortFor, requestParams, stopFailure, thinkingFor, userContent } from '../src/llm.ts'
+import { anthropicClient, effortFor, outputFormat, requestParams, stopFailure, thinkingFor, userContent } from '../src/llm.ts'
 
 describe('userContent', () => {
   it('is the plain text when there is no picture', () => {
@@ -87,5 +87,63 @@ describe('anthropicClient: an answer cut off in the middle still comes back as a
     const r = await clientWith({ content: [{ type: 'text', text: '{"title": 7}' }], stop_reason: 'end_turn', usage }).complete(request)
     expect(r.parsed).toBeNull()
     expect(stopFailure(r.stopReason, r.parsed)).toBe('unparsed')
+  })
+})
+
+describe('outputFormat: the schema sent keeps its enums (the SDK turned them into a description, and sketches with a kind outside the list were lost)', () => {
+  const Answer = z.object({
+    kind: z.enum(['art', 'game']),
+    mode: z.literal('one'),
+    tag: z.enum(['a', 'b']).nullable(),
+    items: z.array(z.object({ role: z.enum(['looked', 'read']), url: z.url().max(500) })),
+    title: z.string().describe('Up to 40 characters.'),
+  })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type Node = Record<string, any>
+  const schema = outputFormat(Answer).schema as Node
+  const defOf = (node: Node): Node => (node.$ref ? schema.$defs[String(node.$ref).split('/').pop() as string] : node)
+
+  it('sends enum and const as the API enforces them, not as text in the description', () => {
+    expect(schema.properties.kind.enum).toEqual(['art', 'game'])
+    expect(schema.properties.kind.description ?? '').not.toContain('enum')
+    expect(schema.properties.mode.const).toBe('one')
+    const tag = (schema.properties.tag.anyOf as Node[]).map(defOf)
+    expect(tag.some((n) => JSON.stringify(n.enum) === '["a","b"]')).toBe(true)
+    expect(defOf(schema.properties.items.items).properties.role.enum).toEqual(['looked', 'read'])
+  })
+
+  it('keeps everything else as the SDK makes it: unsupported limits go to the description, objects are closed', () => {
+    const url = defOf(schema.properties.items.items).properties.url
+    expect(url.format).toBe('uri')
+    expect(url.description).toContain('maxLength')
+    expect(schema.additionalProperties).toBe(false)
+    expect(schema.properties.title.description).toBe('Up to 40 characters.')
+  })
+
+  it('is what requestParams sends', () => {
+    const params = requestParams({ kind: 'sketch', model: 'claude-sonnet-5-5', system: 's', user: 'u', maxTokens: 100, effort: 'medium', schema: Answer })
+    expect(params.output_config.format.schema).toEqual(outputFormat(Answer).schema)
+  })
+})
+
+describe('anthropicClient: an answer that does not fit the schema says why', () => {
+  const usage = { input_tokens: 1, output_tokens: 1 }
+  const request = { kind: 'sketch' as const, model: 'claude-sonnet-5-5' as const, system: 's', user: 'u', maxTokens: 600, effort: 'medium' as const, schema: z.object({ kind: z.enum(['art', 'game']) }) }
+  const clientWith = (text: string) => anthropicClient({ messages: { create: async () => ({ content: [{ type: 'text', text }], stop_reason: 'end_turn', usage }), batches: {} } } as never)
+
+  it('names the field and the problem', async () => {
+    const r = await clientWith('{"kind": "toy"}').complete(request)
+    expect(r.parsed).toBeNull()
+    expect(r.parseError).toContain('kind')
+  })
+
+  it('says when the text is not JSON', async () => {
+    const r = await clientWith('not json').complete(request)
+    expect(r.parseError).toMatch(/JSON/)
+  })
+
+  it('has no parse error when it parsed', async () => {
+    const r = await clientWith('{"kind": "art"}').complete(request)
+    expect(r.parseError).toBeUndefined()
   })
 })
