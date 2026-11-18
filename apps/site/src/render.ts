@@ -353,7 +353,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
       viewerUrl: opts.viewer === false ? null : 'world/',
       mindUrl: endpoint0 ? endpoint0.slice(0, -'/notes'.length) : null,
       aboutHref: hasAbout(mergeAbout) ? 'about/' : 'why/',
-      saveFor: (c) => (c.kind === 'work' ? ogImages.get(`workshop/${/^works\/([^/]+)\//.exec(c.image)?.[1] ?? ''}.html`) : ogImages.get(`projects/${/^projects\/([^/]+)\//.exec(c.image)?.[1] ?? ''}/index.html`)),
+      nowMs: buildMs,
       wakeMs: nextWake,
       boot: [
         'MERGE 95 BIOS (c) nobody',

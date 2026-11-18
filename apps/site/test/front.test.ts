@@ -117,6 +117,8 @@ describe('the front page /', () => {
     expect(part).toContain('toast responds to GET /toast')
     expect(part).toContain('day 1')
     expect(part).toContain('day 3')
+    // Sharing S6: where it stands, from the sessions (the last one was on 18 Nov, the day the page is built).
+    expect(part).toContain('session 3, last worked on today.')
     expect(part).toContain('href="projects/toaster/"')
   })
 
