@@ -66,9 +66,9 @@ const FORM = (m: { endpoint: string; siteKey: string }) =>
     `<form id="note-form" data-endpoint="${esc(m.endpoint)}" autocomplete="off">`,
     '<p><label for="note-name">Your name (optional, up to 40 characters)</label><br><input id="note-name" type="text" maxlength="40"></p>',
     '<p id="note-answering" class="quiet" hidden></p>',
-    '<p><label for="note-message">Your note (up to 500 characters)</label><br><textarea id="note-message" maxlength="500" rows="5" required></textarea></p>',
+    '<p><label for="note-message">Your note (up to 500 characters)</label><br><textarea id="note-message" maxlength="500" rows="5" placeholder="say something…" required></textarea></p>',
     `<div class="cf-turnstile" data-sitekey="${esc(m.siteKey)}"></div>`,
-    '<p><button id="note-send" type="submit" class="play">Leave the note</button></p>',
+    '<p><button id="note-send" type="submit" class="play">Send</button></p>',
     '<p id="note-status" role="status"></p>',
     '</form>',
     '<noscript><p class="quiet">Leaving a note needs JavaScript.</p></noscript>',
@@ -82,10 +82,12 @@ const DISCLOSURE = ['<div class="notes-disclosure card">', '<p><strong>Before yo
 /** `/notes/` (spec 10.1, 9.9): the form with what a visitor is told before sending, and the board of every note that was left, with what became of it. */
 export function renderNotes(i: NotesInput): void {
   const placeName = (id: string) => i.places.find((p) => p.id === id)?.name ?? (id === 'home' ? 'Home' : id === 'workshop' ? 'Workshop' : id)
+  // A flat chat: a small line with the date and place, then the visitor's row full width, then Merge's reply as a row a step in.
+  const merge = i.name ?? 'Merge'
   const fate = (n: Note): string => {
     const { lead, detail } = noteFate(n, n.foundAt ? i.stamp(n.foundAt).slice(0, 10) : '')
-    if (n.status === 'replied') return `<p><em>${esc(lead)}</em></p><blockquote>${paragraphs(detail ?? '')}</blockquote>`
-    return `<p><em>${esc(lead)}</em>${detail ? ` ${esc(detail)}` : ''}</p>`
+    if (n.status === 'replied') return `<div class="msg merge"><strong class="who">${esc(merge)}:</strong> ${paragraphs(detail ?? '')}</div>`
+    return `<p class="quiet note-fate"><em>${esc(lead)}</em>${detail ? ` ${esc(detail)}` : ''}</p>`
   }
   const nowMs = i.nowMs ?? Date.now()
   // Threads (spec v4 7): the notes of a thread sit together, oldest first; threads go newest first (a lone note is a thread of one).
@@ -99,7 +101,7 @@ export function renderNotes(i: NotesInput): void {
     const shareable = newest && threadNotes(i.notes, id).some((t) => t.status === 'replied')
     const share = shareable ? `<p class="quiet"><a href="t/${esc(id)}.html">Share this thread</a></p>` : ''
     const foot = share + (!newest || n.status !== 'replied' ? '' : state.open ? (i.mailbox ? `<p><button type="button" class="note-answer-btn" data-answer="${esc(n.id)}">Answer</button></p>` : '') : '<p class="quiet">This thread is closed. Leave a new note above.</p>')
-    return `<li class="note" data-note="${esc(n.id)}" data-thread="${esc(id)}"${answers} data-status="${esc(n.status)}"><p class="quiet"><strong>${esc(n.name || 'A visitor')}</strong> ${n.replyTo ? 'answered' : 'left this'} on ${esc(i.stamp(n.at))}, at ${esc(placeName(n.placeId))}.</p>${paragraphs(n.message)}${fate(n)}${foot}</li>`
+    return `<li class="note" data-note="${esc(n.id)}" data-thread="${esc(id)}"${answers} data-status="${esc(n.status)}"><p class="quiet note-meta">${esc(n.name || 'A visitor')} ${n.replyTo ? 'answered' : 'left this'} on ${esc(i.stamp(n.at))}, at ${esc(placeName(n.placeId))}.</p><div class="msg visitor"><strong class="who">${esc(n.name || 'A visitor')}:</strong> ${paragraphs(n.message)}</div>${fate(n)}${foot}</li>`
   }
 
   // Sharing S5: a thread that has a reply from Merge gets its own page and picture. A hidden note took its thread out of `i.notes` already.

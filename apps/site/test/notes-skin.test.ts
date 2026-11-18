@@ -27,11 +27,13 @@ beforeEach(() => {
 })
 
 describe('the notes page and the thread pages are a chat on the desktop (look L4c)', () => {
-  it('draws a visitor\'s note as a white box, Merge\'s reply as a pale cyan one and an answer a step in, in the stylesheet', () => {
-    expect(STYLE).toMatch(/\.requests\.notes li\.note \{[^}]*background: var\(--white\)/)
-    expect(STYLE).toMatch(/\.notes li\.note blockquote \{[^}]*background: #c9fbff/)
-    expect(STYLE).toMatch(/li\.note\[data-reply-to\] \{[^}]*margin-left: 22px/)
+  it('is a flat chat in the stylesheet: a white row for the visitor, a pale cyan row a fixed step in for Merge, bold purple prefixes', () => {
+    expect(STYLE).toMatch(/\.msg \{[^}]*background: var\(--white\)/)
+    expect(STYLE).toMatch(/\.msg\.merge \{[^}]*background: #c9fbff; margin-left: 30px/)
+    expect(STYLE).toMatch(/\.msg \.who \{[^}]*color: var\(--purple\)/)
     expect(STYLE).toMatch(/main img \{[^}]*border: 2px solid var\(--ink\)/)
+    // Nothing nests: an answer is not inside the box before it.
+    expect(STYLE).not.toMatch(/data-reply-to\] \{[^}]*margin-left/)
   })
 
   it('keeps the markup the rules hang on: the list, each note with its thread, the reply in a quote, and the closed-thread line', () => {
@@ -43,7 +45,10 @@ describe('the notes page and the thread pages are a chat on the desktop (look L4
     const index = readFileSync(join(out, 'notes/index.html'), 'utf8')
     expect(index).toContain('<ul class="requests notes">')
     expect(index).toMatch(/<li class="note" data-note="n-b" data-thread="n-a" data-reply-to="n-a"/)
-    expect(index).toMatch(/<blockquote>[\s\S]*a second reply/)
+    // One flat row for each message, never one box inside another: the visitor's row, then Merge's.
+    expect(index).toMatch(/<div class="msg visitor"><strong class="who">Kim:<\/strong> <p>my answer<\/p><\/div><div class="msg merge"><strong class="who">[^<]*:<\/strong> <p>a second reply<\/p><\/div>/)
+    expect(index).not.toMatch(/<div class="msg[^>]*>(?:(?!<\/div>).)*<div class="msg/s)
+    expect(index).toMatch(/<p class="quiet note-meta">Kim answered on /)
     expect(index).toContain('This thread is closed.')
     // The thread page is a window of its own, in the same skin, with its picture under the chat.
     const thread = readFileSync(join(out, 'notes/t/n-a.html'), 'utf8')
