@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import vm from 'node:vm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Note, Project } from '@forkling/schema'
-import { FRONT_SCRIPT } from '../src/front.ts'
+import { bootScript, FRONT_SCRIPT } from '../src/front.ts'
 import { NOTES_SCRIPT } from '../src/notes-script.ts'
 import { renderSite } from '../src/render.ts'
 
@@ -296,5 +296,132 @@ describe('old addresses', () => {
     for (const rel of ['index.html', 'journal/index.html', 'notebook/index.html', 'obsessions/index.html', 'notes/index.html', 'workshop/index.html', 'why/index.html', 'projects/index.html', 'about/index.html']) {
       expect(existsSync(join(out, rel)), rel).toBe(true)
     }
+  })
+})
+
+describe('Merge asleep (step 7C): from the real asleep state, never from clock hours', () => {
+  const sleeping = () => {
+    const f = JSON.parse(readFileSync(join(world, 'forkling.json'), 'utf8'))
+    put('forkling.json', JSON.stringify({ ...f, asleep: true }))
+  }
+
+  it('shows NO SIGNAL in the still and the friendly window, when forkling.json says asleep', () => {
+    sleeping()
+    build(MAILBOX)
+    const html = front()
+    expect(html).toContain('NO SIGNAL')
+    expect(html).toContain('Merge is asleep. zzz')
+    expect(html).toMatch(/id="live"[^>]*data-asleep="1"/)
+    const dlg = html.slice(html.indexOf('id="sleep-dialog"'))
+    expect(dlg).toContain('hidden')
+    for (const words of ['OK', 'walk around anyway', 'leave a note for morning']) expect(dlg).toContain(words)
+    expect(dlg).toContain('href="world/"')
+  })
+
+  it('shows nothing of the kind while it is awake, whatever the hour', () => {
+    build(MAILBOX)
+    const html = front()
+    expect(html).not.toContain('NO SIGNAL')
+    expect(html).toMatch(/id="live"[^>]*data-asleep="0"/)
+  })
+
+  it('carries the next wake time from the sleep schedule, as milliseconds, for the window to count down', () => {
+    sleeping()
+    build(MAILBOX)
+    const wake = Number(/data-wake="(\d+)"/.exec(front())?.[1])
+    expect(wake).toBeGreaterThan(NOW)
+    expect(wake - NOW).toBeLessThan(26 * 3_600_000)
+  })
+
+  const run = (over: { asleep: string; wake?: string; stored?: string | 'throws' } = { asleep: '1' }) => {
+    const attrs: Record<string, string> = { 'data-asleep': over.asleep, 'data-wake': over.wake ?? String(Date.now() + (5 * 60 + 12) * 60_000 + 30_000), 'data-tz': 'Europe/Stockholm' }
+    const el = (extra: Record<string, unknown> = {}) => ({ textContent: '', hidden: true, className: '', listeners: {} as Record<string, () => void>, addEventListener(t: string, f: () => void) { this.listeners[t] = f }, focus() { (this as { focused?: boolean }).focused = true }, getAttribute: (k: string) => attrs[k] ?? null, classList: { toggle() {} }, ...extra })
+    const nodes: Record<string, ReturnType<typeof el>> = { live: el({ hidden: false }), 'sleep-dialog': el(), 'sleep-text': el({ hidden: false }), 'sleep-ok': el({ hidden: false }), 'sleep-note': el({ hidden: false }), 'note-message': el({ hidden: false }) }
+    const store: Record<string, string> = {}
+    const sessionStorage = over.stored === 'throws' ? { getItem() { throw new Error('blocked') }, setItem() { throw new Error('blocked') } } : { getItem: (k: string) => store[k] ?? null, setItem(k: string, v: string) { store[k] = v } }
+    vm.runInNewContext(FRONT_SCRIPT, { document: { getElementById: (id: string) => nodes[id] ?? null, body: { classList: { toggle() {} } } }, fetch: () => Promise.reject(new Error('x')), setInterval() {}, Date, String, Number, Intl, sessionStorage })
+    return nodes
+  }
+
+  it('opens the window once when it is asleep, with the wake time and the minutes left, and OK closes it', () => {
+    const n = run()
+    expect(n['sleep-dialog']!.hidden).toBe(false)
+    expect(n['sleep-text']!.textContent).toMatch(/^Merge is asleep until \d\d:\d\d Stockholm time \(in 5 h 1[23] min\)\.$/)
+    n['sleep-ok']!.listeners.click!()
+    expect(n['sleep-dialog']!.hidden).toBe(true)
+  })
+
+  it('"leave a note for morning" closes it and puts the visitor in the note field', () => {
+    const n = run()
+    n['sleep-note']!.listeners.click!()
+    expect(n['sleep-dialog']!.hidden).toBe(true)
+    expect((n['note-message'] as unknown as { focused?: boolean }).focused).toBe(true)
+  })
+
+  it('does not open when it is awake', () => {
+    expect(run({ asleep: '0' })['sleep-dialog']!.hidden).toBe(true)
+  })
+
+  it('still opens when the browser blocks storage', () => {
+    expect(run({ asleep: '1', stored: 'throws' })['sleep-dialog']!.hidden).toBe(false)
+  })
+})
+
+describe('the boot screen (step 7C)', () => {
+  const html = () => {
+    build(MAILBOX)
+    return front()
+  }
+  const run = (over: { reduced?: boolean; stored?: string | null | 'throws'; setThrows?: boolean } = {}) => {
+    const classes = new Set<string>()
+    const listeners: Record<string, () => void> = {}
+    const timers: { fn: () => void; ms: number }[] = []
+    let stored = over.stored === 'throws' ? null : (over.stored ?? null)
+    const localStorage = {
+      getItem() {
+        if (over.stored === 'throws') throw new Error('blocked')
+        return stored
+      },
+      setItem(_k: string, v: string) {
+        if (over.setThrows) throw new Error('blocked')
+        stored = v
+      },
+    }
+    vm.runInNewContext(bootScript('Europe/Stockholm'), {
+      document: { documentElement: { classList: { add: (c: string) => classes.add(c), remove: (c: string) => classes.delete(c) } }, addEventListener: (t: string, f: () => void) => (listeners[t] = f), removeEventListener() {} },
+      window: { matchMedia: () => ({ matches: Boolean(over.reduced) }) },
+      localStorage, Intl, Date, setTimeout: (fn: () => void, ms: number) => void timers.push({ fn, ms }),
+    })
+    return { classes, listeners, timers, get stored() { return stored } }
+  }
+
+  it('is in the front page, hidden until the script shows it, with lines from Merge\'s own files', () => {
+    const h = html()
+    expect(h).toContain('id="boot"')
+    expect(h).toContain('MERGE 95')
+    expect(h).toContain('an AI lives here')
+    expect(h).toContain('connecting to Merge')
+    expect(h).toContain('press any key')
+  })
+
+  it('shows on the first visit of the day for about 1.5 seconds, and any key ends it', () => {
+    const r = run()
+    expect(r.classes.has('booting')).toBe(true)
+    expect(r.timers.map((t) => t.ms)).toEqual([1500])
+    expect(r.stored).toMatch(/^\d{4}-\d\d-\d\d$/)
+    r.listeners.keydown!()
+    expect(r.classes.has('booting')).toBe(false)
+  })
+
+  it('is skipped on the second visit of the same day', () => {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Stockholm' }).format(new Date())
+    expect(run({ stored: today }).classes.has('booting')).toBe(false)
+    expect(run({ stored: '2020-01-01' }).classes.has('booting')).toBe(true)
+  })
+
+  it('is skipped when motion is turned down, and never shown when storage is blocked (it could not be once a day)', () => {
+    expect(run({ reduced: true }).classes.has('booting')).toBe(false)
+    expect(run({ stored: 'throws' }).classes.has('booting')).toBe(false)
+    expect(run({ setThrows: true }).classes.has('booting')).toBe(false)
   })
 })
