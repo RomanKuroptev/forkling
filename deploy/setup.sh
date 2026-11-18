@@ -73,6 +73,9 @@ visudo -cf /etc/sudoers.d/forkling-deploy
 # Chromium, for the work check (spec 7.3): a work is opened in a real browser before it goes up. The system libraries it needs
 # come from the Playwright version the engine pins (keep this the same as apps/mind/package.json; a test holds them together).
 # The browsers themselves are fetched by each deploy, as the deploy user, into one shared folder the service reads.
+# ffmpeg, for a project's vertical timelapse video (sharing S4): the mind draws the frames and ffmpeg only encodes them.
+apt-get -y install ffmpeg
+
 PLAYWRIGHT_VERSION=1.65.0
 npx --yes "playwright@$PLAYWRIGHT_VERSION" install-deps chromium
 mkdir -p /opt/forkling/browsers

@@ -102,7 +102,9 @@ async function main(): Promise<void> {
   if (!github) console.log('full works wait: they need GITHUB_TOKEN and the world repository (FORKLING_REPO_URL or FORKLING_GITHUB_REPO)')
   const timezone = (JSON.parse(readFileSync(join(dir, 'forkling.json'), 'utf8')) as { timezone?: string }).timezone ?? 'Europe/Stockholm'
   // A build session (spec-v4 3.3) runs here only inside the sandbox unit: with `sandbox: missing` it refuses, and Merge is told.
-  const session = createSessionHandler({ model: llm ? anthropicSessionModel(new Anthropic()) : null, sandbox, requireSandbox: true, git, now: Date.now, timezone })
+  // The site's address, for the last second of a project's timelapse (sharing S4): the Pages origin and the world repo's name.
+  const site = `${pagesOrigin.replace(/\/$/, '')}/${repo?.split('/')[1] ?? ''}`.replace(/\/$/, '')
+  const session = createSessionHandler({ model: llm ? anthropicSessionModel(new Anthropic()) : null, sandbox, requireSandbox: true, git, now: Date.now, timezone, timelapse: { address: (id) => `${site}/projects/${id}/` } })
   const worker = createBuildWorker({ dir, now: Date.now, handlers: { expand: createExpandHandler({ dir, llm, now: Date.now }), found: createFoundBuildHandler({ dir, llm, now: Date.now }), session, ...(github ? { tinker: createTinkerHandler({ dir, llm, checker: workCheck, github, now: Date.now, web }) } : {}) } })
   if (env.TURNSTILE_SECRET && llm) {
     intake = createNotesIntake({

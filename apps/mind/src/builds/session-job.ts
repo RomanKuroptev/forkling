@@ -7,7 +7,8 @@ import { monthOf, recordCall, rollLedger } from '../budget.ts'
 import { clampText } from '../decision.ts'
 import { DEFAULT_SEED } from '../seed.ts'
 import type { GitRunner } from '../tick/git.ts'
-import { createProject, findProject, PROJECTS_DIR, readProjects } from './projects.ts'
+import { createProject, findProject, PROJECTS_DIR, readProject, readProjects } from './projects.ts'
+import { makeTimelapse, type TimelapseOptions } from './timelapse.ts'
 import type { Sandbox } from './sandbox-run.ts'
 import { commitSession, runSession, type SessionModel } from './session.ts'
 
@@ -26,6 +27,8 @@ export interface SessionHandlerOptions {
   git: GitRunner | null
   now: () => number
   timezone: string
+  /** The vertical timelapse (sharing S4), made after each session where ffmpeg is installed; null makes none. */
+  timelapse?: { address: (projectId: string) => string } & Omit<TimelapseOptions, 'address'> | null
 }
 
 const readText = (dir: string, rel: string) => {
@@ -111,6 +114,13 @@ export function createSessionHandler(o: SessionHandlerOptions): BuildHandler {
       const target = join(world, PROJECTS_DIR, project.id)
       putBack(join(scratch, PROJECTS_DIR, project.id), target)
       const caption = r.session?.caption ?? 'a session'
+      // The timelapse goes in the same commit. A video that cannot be made is skipped quietly: the page then has no link.
+      const saved = readProject(world, project.id)
+      if (o.timelapse && saved) {
+        const { address, ...rest } = o.timelapse
+        const video = await makeTimelapse(target, saved, { ...rest, address: address(project.id) })
+        if (!video.ok) console.log(`timelapse of ${project.id}: ${video.reason}`)
+      }
       if (o.git) await commitSession(o.git, project.id, caption)
       return {
         status: 'done',
