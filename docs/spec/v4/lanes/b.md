@@ -29,3 +29,9 @@ Plan approved by the coordinator on 17 November: 4A to 4D, then 5E (the seed sen
 - Session 2: `done` after 3 turns, $0.031. Caption: "The cat now chases a dot, a toy mouse, a fly and a cucumber…"
 - The screenshot shows the page running. Total $0.05.
 - Observation, not a fix: the sessions end early by choice, at 2 to 3 turns. That is Merge's call.
+
+## R1 fix: sketches lost as "the model gave no usable answer" (18 November)
+
+The R1 fast-forward (main at 7033303) lost 8 of 28 sketches (from 20 November on, 8 of 13) with this note, among them every sketch on 22 and 25 November. Each call was whole (about $0.01 to $0.024 on Sonnet, far under the 10,000-token limit, stop reason neither `refusal` nor `max_tokens`), so the JSON came back and failed the Zod check. Cause: the SDK's `zodOutputFormat` (`@anthropic-ai/sdk` 1.3.0) does not keep `enum` or `const`; it writes them into the description as text (`"{enum: [\"art\",\"game\",...]}"`), so the API never held the model to them. A sketch's `meta.kind` outside the six (the ideas then were "toys" and "sketches") parsed as nothing. This held for every enum in every call the mind makes, plan verbs included.
+
+Fix (`apps/mind/src/llm.ts`): `outputFormat(schema)` runs the SDK's own transform and puts each `enum` and `const` back where the zod schema has them (the API supports both); `requestParams` sends it. An answer that does not fit now carries `parseError` (not JSON, or the first three issues), and the tinker note shows it: "the model gave no usable answer (meta.kind: ...)". No prompt text, retry, limit or effort changed. Tests in `test/llm.test.ts` and `test/tinker.test.ts`. The cause is inferred from the costs and the schema sent: the tick log does not keep the answers, so the next fast-forward's notes are the check.

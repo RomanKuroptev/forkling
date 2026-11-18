@@ -281,6 +281,12 @@ describe('runTinker: when the model gives no work', () => {
     }
   })
 
+  it('says why an answer that came back whole did not fit, so the tick log shows it', async () => {
+    const { complete } = fakeComplete([{ parsed: null, parseError: 'meta.kind: Invalid option', usage, stopReason: 'end_turn' }])
+    const out = await runTinker(deps(complete, fakeChecker([]).checker), input())
+    expect(out.status === 'failed' && out.reason).toBe('the model gave no usable answer (meta.kind: Invalid option)')
+  })
+
   it('is failed when the repair call gives nothing, and keeps the first failure as the reason', async () => {
     const { complete } = fakeComplete([answer(output()), null])
     const out = await runTinker(deps(complete, fakeChecker([{ ok: false, reasons: ['uses fetch, and a work has no network'] }]).checker), input())

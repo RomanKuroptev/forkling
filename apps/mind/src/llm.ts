@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod'
-import type { z } from 'zod'
+import { transformJSONSchema } from '@anthropic-ai/sdk/lib/transform-json-schema'
+import { z } from 'zod'
 import type { ModelId, Usage } from './budget.ts'
 
 /** What a call is for. Goes into the ledger, and lets a test fake answer each kind in turn. */
@@ -50,6 +50,8 @@ export function stopFailure(stopReason: string | null, parsed: unknown): StopFai
 export interface LlmResult<T = unknown> {
   /** Null when the model refused, ran out of tokens or returned something that doesn't fit the schema. */
   parsed: T | null
+  /** Why the text did not parse (not JSON, or the first schema issues), for the tick log. Absent when it parsed. */
+  parseError?: string
   usage: Usage
   stopReason: string | null
 }
@@ -84,6 +86,59 @@ function usageOf(u: { input_tokens: number; cache_read_input_tokens?: number | n
   return { input: u.input_tokens, cacheRead: u.cache_read_input_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0, output: u.output_tokens }
 }
 
+type SchemaNode = Record<string, unknown>
+const isNode = (v: unknown): v is SchemaNode => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+/** Calls `visit` on each pair of nodes the SDK's transform keeps in the same place (`oneOf` becomes `anyOf`). */
+function walkPairs(raw: SchemaNode, strict: SchemaNode, visit: (raw: SchemaNode, strict: SchemaNode) => void): void {
+  visit(raw, strict)
+  const defs = raw.$defs
+  if (isNode(defs) && isNode(strict.$defs)) for (const [name, def] of Object.entries(defs)) if (isNode(def) && isNode(strict.$defs[name])) walkPairs(def, strict.$defs[name] as SchemaNode, visit)
+  if (raw.$ref !== undefined) return
+  const variants = (raw.anyOf ?? raw.oneOf ?? raw.allOf) as unknown
+  const strictVariants = (strict.anyOf ?? strict.allOf) as unknown
+  if (Array.isArray(variants) && Array.isArray(strictVariants)) variants.forEach((v, i) => isNode(v) && isNode(strictVariants[i]) && walkPairs(v, strictVariants[i] as SchemaNode, visit))
+  if (isNode(raw.properties) && isNode(strict.properties)) {
+    for (const [key, prop] of Object.entries(raw.properties)) if (isNode(prop) && isNode(strict.properties[key])) walkPairs(prop, strict.properties[key] as SchemaNode, visit)
+  }
+  if (isNode(raw.items) && isNode(strict.items)) walkPairs(raw.items, strict.items, visit)
+}
+
+/**
+ * The structured-output format for a schema. The SDK's `zodOutputFormat` (1.3.0) moves `enum` and `const` into the
+ * description as text, so the API never enforced them: a sketch whose kind was not one of the six parsed as nothing and was
+ * lost (R1 fast-forward, 22 and 25 November). The API supports both, so they are put back where the zod schema has them.
+ */
+export function outputFormat(schema: z.ZodType): { type: 'json_schema'; schema: SchemaNode } {
+  const raw = z.toJSONSchema(schema, { reused: 'ref' }) as SchemaNode
+  const stripped = structuredClone(raw)
+  // Taken out before the transform, so it does not write them into the description, and put back after.
+  walkPairs(stripped, stripped, (node) => {
+    delete node.enum
+    delete node.const
+  })
+  const strict = transformJSONSchema(stripped) as SchemaNode
+  walkPairs(raw, strict, (from, to) => {
+    if (Array.isArray(from.enum)) to.enum = from.enum
+    if (from.const !== undefined) to.const = from.const
+  })
+  return { type: 'json_schema', schema: strict }
+}
+
+/** The answer's text checked against the schema, or why it does not fit (the first three issues). */
+export function parseAnswer<T>(text: string, schema: z.ZodType<T>): { parsed: T | null; error?: string } {
+  let json: unknown
+  try {
+    json = JSON.parse(text)
+  } catch {
+    return { parsed: null, error: 'the answer is not JSON' }
+  }
+  const checked = schema.safeParse(json)
+  if (checked.success) return { parsed: checked.data }
+  const issues = checked.error.issues.slice(0, 3).map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+  return { parsed: null, error: issues.join('; ') }
+}
+
 /** The request body shared by a live call and a batched one. The prefix is identical on every call, so cache it. */
 export function requestParams(request: LlmRequest) {
   return {
@@ -91,7 +146,7 @@ export function requestParams(request: LlmRequest) {
     max_tokens: request.maxTokens,
     system: [{ type: 'text' as const, text: request.system, cache_control: { type: 'ephemeral' as const } }],
     messages: [{ role: 'user' as const, content: userContent(request.user, request.images) }],
-    output_config: { effort: request.effort, format: zodOutputFormat(request.schema) },
+    output_config: { effort: request.effort, format: outputFormat(request.schema) },
     ...(request.thinking === 'off' ? { thinking: { type: 'disabled' as const } } : {}),
   }
 }
@@ -106,14 +161,8 @@ export function anthropicClient(client: Anthropic = new Anthropic()): LlmClient 
       // a batch result is: a cut-off answer is a null with its stop reason and usage.
       const response = await client.messages.create(params(request))
       const text = response.content.flatMap((block) => (block.type === 'text' ? [block.text] : [])).join('')
-      let parsed: T | null = null
-      try {
-        const checked = request.schema.safeParse(JSON.parse(text))
-        parsed = checked.success ? checked.data : null
-      } catch {
-        parsed = null
-      }
-      return { parsed, stopReason: response.stop_reason, usage: usageOf(response.usage) }
+      const { parsed, error } = parseAnswer(text, request.schema)
+      return { parsed, ...(error ? { parseError: error } : {}), stopReason: response.stop_reason, usage: usageOf(response.usage) }
     },
     async submitBatch(request) {
       const batch = await client.messages.batches.create({ requests: [{ custom_id: BATCH_REQUEST_ID, params: params(request) }] })
@@ -129,14 +178,7 @@ export function anthropicClient(client: Anthropic = new Anthropic()): LlmClient 
         if (item.result.type !== 'succeeded') return { status: 'failed', reason: item.result.type }
         const message = item.result.message
         const text = message.content.flatMap((block) => (block.type === 'text' ? [block.text] : [])).join('')
-        let parsed: unknown = null
-        try {
-          const checked = schema.safeParse(JSON.parse(text))
-          parsed = checked.success ? checked.data : null
-        } catch {
-          parsed = null
-        }
-        return { status: 'done', parsed, usage: usageOf(message.usage) }
+        return { status: 'done', parsed: parseAnswer(text, schema).parsed, usage: usageOf(message.usage) }
       }
       return { status: 'failed', reason: 'no result' }
     },
