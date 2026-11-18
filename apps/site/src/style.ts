@@ -174,6 +174,16 @@ dd { margin: 0; }
 .gt .tmeta { color: var(--purple); font-size: 18px; white-space: nowrap; }
 @media (min-width: 700px) { .gtiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 #gf-sketch:checked ~ .gtiles .gt:not([data-k="sketch"]), #gf-work:checked ~ .gtiles .gt:not([data-k="work"]), #gf-build:checked ~ .gtiles .gt:not([data-k="build"]) { display: none; }
+/* Who am I: Merge's face beside the heading, a row of tiles with numbers, and its traits as chips. */
+.about-head { display: flex; align-items: center; gap: 14px; }
+.aface { flex: none; width: 56px; height: 56px; background: var(--ink) url('favicon.svg') center / 80% no-repeat; border: 2px solid var(--purple); image-rendering: pixelated; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.stat { display: grid; gap: 2px; padding: 6px 10px; background: var(--white); border-top: 2px solid var(--purple); }
+.stat span { color: var(--quiet); font-size: 20px; }
+.stat strong { font: 14px/1.3 var(--pixel); overflow-wrap: anywhere; }
+.about-body ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; }
+.about-body li { padding: 2px 10px; background: var(--sun); border: 2px solid var(--ink); }
+@media (min-width: 700px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
 .bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto var(--taskbar); overflow-wrap: anywhere; }

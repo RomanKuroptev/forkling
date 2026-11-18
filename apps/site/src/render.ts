@@ -473,7 +473,9 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     add,
   })
   renderRequests({ requests, wishes, places, selfRequests, tools: loadTools(world), timezone: forkling.timezone, add })
-  renderAbout({ about: mergeAbout, built: { places: places.map((p) => ({ id: p.id, name: p.name })), works: works.filter((w) => w.meta.status !== 'scrap').map((w) => ({ id: w.meta.id, title: w.meta.title })) }, add })
+  const metNames = new Set(loadNotes(world).map((n) => n.name.trim().toLowerCase()).filter((n) => n && n !== 'a visitor'))
+  const aliveFrom = journal.at(-1)?.date
+  renderAbout({ about: mergeAbout, stats: { alive: aliveFrom ? Math.max(1, Math.round((Date.parse(`${localDate(tz, buildMs)}T00:00:00Z`) - Date.parse(`${aliveFrom}T00:00:00Z`)) / 86_400_000) + 1) : 0, made: works.filter((w) => w.meta.status !== 'scrap').length + projects.reduce((n, p) => n + p.project.sessions.length, 0), into: interests.current?.topic ?? null, visitors: metNames.size }, built: { places: places.map((p) => ({ id: p.id, name: p.name })), works: works.filter((w) => w.meta.status !== 'scrap').map((w) => ({ id: w.meta.id, title: w.meta.title })) }, add })
   const endpoint = notesEndpoint(opts.mindUrl)
   const siteKey = validSiteKey(opts.turnstileSiteKey)
   renderNotes({ notes: loadNotes(world), places, mailbox: endpoint && siteKey ? { endpoint, siteKey } : null, stamp: (iso) => localStamp(iso, forkling.timezone).replace(/ \([^)]*\)$/, ''), zone: zoneWords(forkling.timezone), nowMs: (opts.now ?? new Date()).getTime(), baseUrl: opts.baseUrl, name, addFile: (rel, text) => void extraFiles.set(rel, text), add })
