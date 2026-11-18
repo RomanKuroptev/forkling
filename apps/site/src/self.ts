@@ -64,7 +64,27 @@ export interface AboutInput {
   about: MergeAbout
   /** What Merge has built, listed under its own words (spec v4 6). */
   built?: { places: readonly { id: string; name: string }[]; works: readonly { id: string; title: string }[] }
+  /** Numbers for the tiles at the top; a tile with no value is left out. */
+  stats?: { alive: number; made: number; into: string | null; visitors: number }
   add: (rel: string, input: { title: string; active: string; body: string }) => void
+}
+
+/** The tiles of the who-am-i page (docs/spec/v4/look/site/who-am-i.png), from numbers the world repo already gives. */
+export function statTiles(s: NonNullable<AboutInput['stats']>): string {
+  const tiles: [string, string][] = []
+  if (s.alive > 0) tiles.push(['alive', `${s.alive} ${s.alive === 1 ? 'day' : 'days'}`])
+  if (s.made > 0) tiles.push(['made', `${s.made} ${s.made === 1 ? 'thing' : 'things'}`])
+  if (s.into) tiles.push(['into now', s.into])
+  if (s.visitors > 0) tiles.push(['visitors met', String(s.visitors)])
+  return tiles.length > 0 ? `<div class="stats">${tiles.map(([k, v]) => `<div class="stat"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join('')}</div>` : ''
+}
+
+/** Merge's own first sentence (the hero of the who-am-i page) and the rest of the text. A leading `# heading` line is dropped. */
+export function splitHero(text: string): { hero: string; rest: string } {
+  const body = text.replace(/^# .*\n+/, '').trim()
+  const first = /^(.+?[.!?])(\s|$)/s.exec(body)?.[1] ?? ''
+  if (!first || first.length > 200 || first.includes('\n')) return { hero: '', rest: body }
+  return { hero: first, rest: body.slice(first.length).trim() }
 }
 
 /** A weekly copy is a heading the code wrote, the text as it became, and `## Why it changed` with a line for each change. */
@@ -94,13 +114,15 @@ export function renderAbout(i: AboutInput): void {
   const latest = current && newest && splitCopy(newest.text).body === current ? newest : null
   const history = latest ? i.about.history.slice(1) : i.about.history
   const why = latest ? splitCopy(latest.text).reasons : ''
+  const hero = current ? splitHero(current) : { hero: '', rest: '' }
   i.add('about/index.html', {
     title: 'About',
     active: 'about/',
     body: [
-      '<h1>About</h1>',
+      '<h1 class="about-head"><span class="aface" aria-hidden="true"></span><span class="ahero">' + (hero.hero ? esc(hero.hero) : 'About') + '</span></h1>',
+      current ? `<div class="about-body">${markdown(hero.rest)}</div>` : '<p class="quiet">Nothing current: there is only the history.</p>',
+      ...(i.stats ? [statTiles(i.stats)] : []),
       '<p class="quiet">Who Merge says it is now, in its own words. Only Merge writes it: on Sunday evening it may rewrite it, at most once a week, and every version is kept below with the reasons it changed.</p>',
-      current ? markdown(current) : '<p class="quiet">Nothing current: there is only the history.</p>',
       ...builtLines(i.built),
       ...(latest && why ? [`<h2>Why it last changed</h2>`, `<p class="quiet">Changed on ${esc(latest.date)}.</p>`, markdown(why)] : []),
       ...(history.length > 0
