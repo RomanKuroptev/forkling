@@ -53,13 +53,17 @@ export const PROOF_PAGES = {
 } as const
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
-const line = (test: string, pass: boolean, what: string, detail: string): ProofLine => ({ test, pass, what, detail })
 
 /** Runs the proof. Never throws for what the sandbox does: each test is a line. */
 export async function runProof(d: ProofDeps): Promise<ProofLine[]> {
   const now = d.now ?? Date.now
   const sleep = d.sleep ?? delay
   const lines: ProofLine[] = []
+  // A failing line carries what the client last saw go wrong (no answer, the runner's own `failed` words), so a run says why.
+  const line = (test: string, pass: boolean, what: string, detail: string): ProofLine => {
+    const problem = pass ? null : (d.sandbox.lastProblem?.() ?? null)
+    return { test, pass, what, detail: problem ? `${detail}; sandbox: ${problem}` : detail }
+  }
   const runOf = async (html: string): Promise<{ run: SandboxRun; ms: number }> => {
     const started = now()
     const run = await d.sandbox.run(one(html))
@@ -77,7 +81,7 @@ export async function runProof(d: ProofDeps): Promise<ProofLine[]> {
     )
   }
   const draws = await runOf(PROOF_PAGES.draws)
-  lines.push(line('0', draws.run.sandboxed && draws.run.rendered && !!draws.run.screenshotPng && !draws.run.blank && draws.run.errors.length === 0, 'a page that draws runs and is photographed', `rendered ${draws.run.rendered}, screenshot ${draws.run.screenshotPng ? `${draws.run.screenshotPng.length} bytes` : 'none'}, blank ${draws.run.blank}, errors ${JSON.stringify(draws.run.errors)}`))
+  lines.push(line('0', draws.run.sandboxed && draws.run.rendered && !!draws.run.screenshotPng && !draws.run.blank && draws.run.errors.length === 0, 'a page that draws runs and is photographed', `rendered ${draws.run.rendered}, crashed ${draws.run.crashed}, timedOut ${draws.run.timedOut}, screenshot ${draws.run.screenshotPng ? `${draws.run.screenshotPng.length} bytes` : 'none'}, blank ${draws.run.blank}, errors ${JSON.stringify(draws.run.errors)}`))
 
   // 4. A page cannot reach example.com, and no connection can be opened from the unit at all.
   const image = await runOf(PROOF_PAGES.image)

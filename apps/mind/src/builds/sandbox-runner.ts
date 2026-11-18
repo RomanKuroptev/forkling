@@ -382,13 +382,20 @@ export function readLine(input: NodeJS.ReadableStream): Promise<string> {
  * The program's input and output. Under the unit both are the one connection from the socket (`StandardInput=socket`), so it is
  * opened once as a socket that may be half-closed; run by hand they are the ordinary stdin and stdout.
  */
-function io(): { input: NodeJS.ReadableStream; write: (text: string) => Promise<void> } {
+function io(): { input: NodeJS.ReadableStream; ready: () => void; write: (text: string) => Promise<void> } {
   if (fstatSync(0).isSocket()) {
     const socket = new Socket({ fd: 0, readable: true, writable: true, allowHalfOpen: true })
-    return { input: socket, write: (text) => new Promise((resolve) => socket.end(text, () => resolve())) }
+    return { input: socket, ready: () => socket.write(READY), write: (text) => new Promise((resolve) => socket.end(text, () => resolve())) }
   }
-  return { input: process.stdin, write: (text) => new Promise((resolve) => process.stdout.write(text, () => resolve())) }
+  return { input: process.stdin, ready: () => process.stdout.write(READY), write: (text) => new Promise((resolve) => process.stdout.write(text, () => resolve())) }
 }
+
+/**
+ * The first line the runner writes, before it reads. systemd (`Accept=yes`, `MaxConnections=1`) accepts a connection made while
+ * the last run's unit is still stopping and closes it at once with nothing written; this line tells the client that a run really
+ * started, so a dropped connection is tried again and never taken for a crash.
+ */
+export const READY = 'ready\n'
 
 /** The program on the server: `node runner.ts --browsers <dir> --scratch <dir>`; one request in, one answer out. */
 async function main(argv: string[]): Promise<void> {
@@ -406,6 +413,7 @@ async function main(argv: string[]): Promise<void> {
   process.env.PLAYWRIGHT_BROWSERS_PATH = browsers
 
   const channel = io()
+  channel.ready()
   let answer: unknown
   try {
     const req = parseRequest(await readLine(channel.input))

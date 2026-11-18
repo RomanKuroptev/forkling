@@ -72,7 +72,10 @@ describe('the runner started through the current symlink', () => {
       expect(r.status).toBe(0)
       out = r.stdout
     } else out = await overSocket(runner, args, 'not json\n', root)
-    const answer = JSON.parse(out.trim()) as { failed?: string }
+    // The runner says "ready" before it reads, so the socket's client can tell a run that started from a dropped connection.
+    const lines = out.trim().split('\n')
+    expect(lines[0]).toBe('ready')
+    const answer = JSON.parse(lines.at(-1)!) as { failed?: string }
     expect(answer.failed).toBeTruthy()
   })
 

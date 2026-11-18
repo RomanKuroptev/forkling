@@ -7,7 +7,7 @@ import { copyLibs, VENDORED_FILES } from '@forkling/site/libs'
 import { launchChromium } from './browser.ts'
 import { listProjectFiles, resolveProjectPath } from './project-files.ts'
 import { workFrame } from './sandbox.ts'
-import { clean, emptyPageResult, MAX_CONSOLE_LINES, runPage, type PageRequest, type PageResult, type ProbeRequest, type ProbeResult, type RunnerRequest } from './sandbox-runner.ts'
+import { clean, emptyPageResult, MAX_CONSOLE_LINES, READY, runPage, type PageRequest, type PageResult, type ProbeRequest, type ProbeResult, type RunnerRequest } from './sandbox-runner.ts'
 
 /**
  * One path for every page Merge wrote (spec-v4 section 4, step 3): works in the work check and, from step 4, projects in a build
@@ -173,20 +173,34 @@ const KILLED_AFTER_MS = UNIT_LIMIT_MS - 3_000
 /** The socket takes one connection at a time; one that is just ending can refuse the next for a moment. */
 const CONNECT_TRIES = 5
 const CONNECT_GAP_MS = 400
+/**
+ * How long the client keeps trying while the socket drops its connections at once. systemd (`Accept=yes`, `MaxConnections=1`)
+ * does that while the last run's unit is still stopping (Chromium's processes going, `ExecStopPost` emptying the scratch folder).
+ */
+const BUSY_MS = 20_000
+const BUSY_GAP_MS = 300
 /** The most an answer may be: a screenshot in base64 and the lines around it. */
 const MAX_ANSWER_BYTES = 8 * 1024 * 1024
+/** What `exchange` says when every connection was dropped before the runner said ready. */
+export const STAYED_BUSY = 'the sandbox stayed busy (every connection was dropped before the runner started)'
 
 export interface SocketSandbox extends Sandbox {
   /** Asks the unit to try the things a probe names (spec-v4 step 3, tests 4 to 6). Null when the unit could not be reached. */
   probe(req: Omit<ProbeRequest, 'mode'>): Promise<ProbeResult | null>
+  /** What went wrong in the last exchange (no answer, the runner's `failed`, a wrong shape), or null. For the proof to print. */
+  lastProblem?(): string | null
 }
 
+/** `ms` counts from the runner's ready line (or the connection, when it never came), so time spent waiting for a busy unit is not the page's. */
 export type Exchange = { answer: unknown; ms: number } | { answer: null; ms: number; error: string }
 
-/** One request, one answer (each one line of JSON), over one connection. Never throws. */
-export function exchange(socketPath: string, request: RunnerRequest, opts: { limitMs?: number } = {}): Promise<Exchange> {
+/**
+ * One request, one answer, over one connection. The runner writes `ready` first, then one line of JSON. A connection that ends
+ * with nothing written was dropped by the socket (the unit busy) and is tried again for up to `busyMs`. Never throws.
+ */
+export function exchange(socketPath: string, request: RunnerRequest, opts: { limitMs?: number; busyMs?: number } = {}): Promise<Exchange> {
   const started = Date.now()
-  const elapsed = () => Date.now() - started
+  const busyUntil = started + (opts.busyMs ?? BUSY_MS)
   const attempt = (tries: number): Promise<Exchange> =>
     new Promise((resolve) => {
       const socket = createConnection(socketPath)
@@ -194,6 +208,8 @@ export function exchange(socketPath: string, request: RunnerRequest, opts: { lim
       let size = 0
       let connected = false
       let settled = false
+      let since = Date.now()
+      const elapsed = () => Date.now() - since
       const finish = (x: Exchange) => {
         if (settled) return
         settled = true
@@ -201,18 +217,30 @@ export function exchange(socketPath: string, request: RunnerRequest, opts: { lim
         socket.destroy()
         resolve(x)
       }
+      const again = (gap: number, next: number) => {
+        settled = true
+        clearTimeout(timer)
+        socket.destroy()
+        void delay(gap).then(() => attempt(next).then(resolve))
+      }
+      // Dropped with nothing written: the unit is still busy with the last run.
+      const dropped = () => (Date.now() + BUSY_GAP_MS < busyUntil ? again(BUSY_GAP_MS, tries) : finish({ answer: null, ms: elapsed(), error: STAYED_BUSY }))
       const timer = setTimeout(() => finish({ answer: null, ms: elapsed(), error: 'no answer in time' }), opts.limitMs ?? CLIENT_LIMIT_MS)
       socket.on('connect', () => {
         connected = true
+        since = Date.now()
         socket.write(`${JSON.stringify(request)}\n`)
       })
       socket.on('data', (chunk: Buffer) => {
+        if (size === 0) since = Date.now()
         size += chunk.length
         if (size > MAX_ANSWER_BYTES) return finish({ answer: null, ms: elapsed(), error: 'the answer was too big' })
         chunks.push(chunk)
       })
       socket.on('end', () => {
-        const text = Buffer.concat(chunks).toString('utf8').split('\n')[0] ?? ''
+        if (size === 0) return dropped()
+        const lines = Buffer.concat(chunks).toString('utf8').split('\n')
+        const text = (lines[0] === READY.trim() ? lines[1] : lines[0]) ?? ''
         try {
           finish({ answer: JSON.parse(text) as unknown, ms: elapsed() })
         } catch {
@@ -221,13 +249,8 @@ export function exchange(socketPath: string, request: RunnerRequest, opts: { lim
       })
       socket.on('error', (error: NodeJS.ErrnoException) => {
         if (settled) return
-        if (!connected && tries > 1 && ['ECONNREFUSED', 'EAGAIN', 'ECONNRESET'].includes(error.code ?? '')) {
-          settled = true
-          clearTimeout(timer)
-          socket.destroy()
-          void delay(CONNECT_GAP_MS).then(() => attempt(tries - 1).then(resolve))
-          return
-        }
+        if (connected && size === 0) return dropped()
+        if (!connected && tries > 1 && ['ECONNREFUSED', 'EAGAIN', 'ECONNRESET'].includes(error.code ?? '')) return again(CONNECT_GAP_MS, tries - 1)
         finish({ answer: null, ms: elapsed(), error: connected ? 'the connection broke' : `the sandbox cannot be reached (${error.code ?? 'error'})` })
       })
     })
@@ -246,7 +269,7 @@ export function readPageAnswer(x: Exchange): SandboxRun {
     }
     return unavailable('the sandbox gave an answer of the wrong shape')
   }
-  if ('error' in x && x.error.startsWith('the sandbox cannot be reached')) return unavailable(x.error)
+  if ('error' in x && (x.error.startsWith('the sandbox cannot be reached') || x.error === STAYED_BUSY)) return unavailable(x.error)
   // No answer: the unit was killed. At its time limit the page was stuck; before it, the page took the memory or crashed it.
   if (x.ms >= KILLED_AFTER_MS) return fromPageResult(emptyPageResult({ loaded: true, timedOut: true }), true)
   return fromPageResult(emptyPageResult({ loaded: true, crashed: true }), true)
@@ -259,30 +282,41 @@ const isProbeResult = (a: unknown): a is ProbeResult => {
 }
 
 /** The client of the sandbox unit on the server. Runs go one at a time, as the socket takes one connection at a time. */
-export function createSocketSandbox(opts: { socketPath?: string; libsDir?: string; limitMs?: number } = {}): SocketSandbox {
+export function createSocketSandbox(opts: { socketPath?: string; libsDir?: string; limitMs?: number; busyMs?: number } = {}): SocketSandbox & { lastProblem(): string | null } {
   const socketPath = opts.socketPath ?? SANDBOX_SOCKET
-  const limit = opts.limitMs === undefined ? {} : { limitMs: opts.limitMs }
+  const limit = { ...(opts.limitMs === undefined ? {} : { limitMs: opts.limitMs }), ...(opts.busyMs === undefined ? {} : { busyMs: opts.busyMs }) }
   let libs: Map<string, Buffer> | null = null
   let tail: Promise<unknown> = Promise.resolve()
+  let problem: string | null = null
   const queued = <T>(job: () => Promise<T>): Promise<T> => {
     const next = tail.then(job)
     tail = next.catch(() => undefined)
     return next
+  }
+  /** What went wrong in an exchange, in words, or null when it gave an answer that is not `failed`. */
+  const problemOf = (x: Exchange): string | null => {
+    if ('error' in x) return x.error
+    const failed = (x.answer as { failed?: unknown } | null)?.failed
+    return typeof failed === 'string' ? `the runner failed: ${clean(failed)}` : null
   }
   return {
     sandboxed: true,
     run(page, o = {}) {
       return queued(async () => {
         libs ??= libraryFiles(opts.libsDir)
-        return readPageAnswer(await exchange(socketPath, pageRequest(page, libs, o.durationMs ?? RUN_MS), limit))
+        const x = await exchange(socketPath, pageRequest(page, libs, o.durationMs ?? RUN_MS), limit)
+        problem = problemOf(x)
+        return readPageAnswer(x)
       })
     },
     probe(req) {
       return queued(async () => {
         const x = await exchange(socketPath, { mode: 'probe', ...req }, limit)
+        problem = problemOf(x) ?? (isProbeResult(x.answer) ? null : 'the probe answer had the wrong shape')
         return isProbeResult(x.answer) ? x.answer : null
       })
     },
+    lastProblem: () => problem,
     async available() {
       return existsSync(socketPath)
     },
