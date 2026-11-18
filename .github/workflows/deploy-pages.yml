@@ -29,6 +29,8 @@ jobs:
       - run: pnpm --filter @forkling/viewer build
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
+          # A visit for Merge's world goes to Merge's own site, where the world is built in at /world/ (step 7, one address).
+          VITE_WORLD_SITE: https://romankuroptev.github.io/merge/
           # The mind server's address, so the viewer can keep the places current. Empty until Roman sets the MIND_URL variable.
           VITE_MIND_URL: ${{ vars.MIND_URL }}
           # The public Turnstile site key for the note form. Empty until Roman sets the TURNSTILE_SITE_KEY variable; without it there is no button.
