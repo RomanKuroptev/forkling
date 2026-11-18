@@ -21,3 +21,6 @@ export function desktopHref(i: { fixed: boolean; href: string; ref: WorldRef }):
 
 /** The one line at the bottom of the screen on a laptop: the rest is behind the "?" button. */
 export const shortHint = (): string => 'WASD to walk · drag to look · ? for the rest'
+
+/** The same line on a narrow screen, where the long one would be cut off. */
+export const narrowHint = (): string => 'drag to look · ? help'

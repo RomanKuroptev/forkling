@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { desktopHref, shortHint, worldTitle } from '../src/ui/topbar.ts'
+import { desktopHref, narrowHint, shortHint, worldTitle } from '../src/ui/topbar.ts'
 
 /** Step 7, the world overlay (mockup world-overlay.png): "desktop" button, the WORLD.exe title chip, and the "?" help. */
 
@@ -29,5 +30,21 @@ describe('desktopHref: the way back to the forkling\'s site', () => {
 describe('shortHint', () => {
   it('is the one line at the bottom: walk and look, and where the rest is', () => {
     expect(shortHint()).toBe('WASD to walk · drag to look · ? for the rest')
+  })
+})
+
+describe('narrowHint', () => {
+  it('fits a phone-width taskbar beside the start button, and keeps the way to the help', () => {
+    expect(narrowHint()).toBe('drag to look · ? help')
+    expect(narrowHint().length).toBeLessThan(shortHint().length)
+  })
+})
+
+describe('the title-bar buttons are drawn', () => {
+  const css = readFileSync(new URL('../src/look-windows.css', import.meta.url), 'utf8')
+  it('has a minimize bar, a maximize box and a close cross, and the cross is the close button', () => {
+    expect(css).toMatch(/\.win-buttons i:nth-child\(1\)[^}]*linear-gradient/)
+    expect(css).toMatch(/\.win-buttons i:nth-child\(2\)::after/)
+    expect(css).toMatch(/\.win \.win-title button\.win-close \{[^}]*45deg/)
   })
 })

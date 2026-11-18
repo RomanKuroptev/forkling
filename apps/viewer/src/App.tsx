@@ -9,7 +9,7 @@ import { Boot } from './ui/Boot.tsx'
 import { Cursor } from './ui/Cursor.tsx'
 import { Taskbar } from './ui/Taskbar.tsx'
 import { TopBar } from './ui/TopBar.tsx'
-import { shortHint } from './ui/topbar.ts'
+import { narrowHint, shortHint } from './ui/topbar.ts'
 import { ExhibitPanel } from './ui/ExhibitPanel.tsx'
 import { NoteButton } from './ui/NoteForm.tsx'
 import { NotePanel } from './ui/NotePanel.tsx'
@@ -90,5 +90,5 @@ export function App() {
 
 /** The one line of key hints on a laptop; the rest is behind the "?" button of the top bar (and F3 with `?debug`). */
 function DesktopHud() {
-  return <Taskbar touch={false} hint={shortHint()} />
+  return <Taskbar touch={false} hint={shortHint()} short={narrowHint()} />
 }

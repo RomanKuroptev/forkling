@@ -182,3 +182,18 @@
   border-radius: 0;
   font: 10px/1 'Press Start 2P', monospace;
 }
+
+/* The three title-bar buttons carry _ (minimize), a box (maximize) and x (close), as on the site. They are drawn, so they work at any size. */
+.win-buttons i,
+.win .win-title button.win-close { position: relative; }
+.win-buttons i:nth-child(1) { background-image: linear-gradient(var(--ink), var(--ink)); background-size: 50% 2px; background-position: 50% 78%; background-repeat: no-repeat; }
+.win-buttons i:nth-child(2)::after { content: ''; position: absolute; inset: 22% 24% 22% 24%; border: 1px solid var(--ink); border-top-width: 2px; }
+.win-buttons i:nth-child(3),
+.win .win-title button.win-close { background-image: linear-gradient(45deg, transparent 42%, var(--ink) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--ink) 42% 58%, transparent 58%); background-size: 55% 70%; background-position: center; background-repeat: no-repeat; }
+.win .win-title button.win-close { cursor: pointer; }
+/* Taskbar hint: the long line on a laptop, a short one when the screen is narrow. */
+.hint-short { display: none; }
+@media (max-width: 560px) {
+  .hint-long { display: none; }
+  .hint-short { display: inline; }
+}
