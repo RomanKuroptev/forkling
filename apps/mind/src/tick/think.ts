@@ -1,15 +1,16 @@
 import type { ModelId } from '../budget.ts'
 import { Decision } from '../decision.ts'
-import { buildUser } from '../prompts.ts'
+import { buildUser, type PlanLimits } from '../prompts.ts'
 import type { Tick } from './context.ts'
 import { readRecentPast } from '../past.ts'
-import { foldName, hiddenVisitor, livePrices, moodWords, openPlaceRequests } from '@forkling/sim'
+import { foldName, hiddenVisitor, livePrices, moodWords, openPlaceRequests, sameWorkStreak, tiredLimits, topicWriteCounts } from '@forkling/sim'
 import { expandablePlaces } from './expand.ts'
 import { unreadSeen } from '../web/lookup.ts'
 import { canFoundNow, foundGate } from './found.ts'
 import { checkPlan, placeIds } from './plan.ts'
 import { readProjects } from '../builds/projects.ts'
 import { clock, weekday } from './util.ts'
+import { readWrittenPages } from './variety.ts'
 
 const MAX_SHOWN_FOUND = 10
 const MAX_SHOWN_KEPT = 5
@@ -33,6 +34,20 @@ function projectLines(t: Tick) {
   }
 }
 
+/** The limits plan validation applies, as facts about now: only the ones that are on, or that hold for every plan. Data already read for validation. */
+function planLimits(t: Tick): PlanLimits {
+  const { sameTopicWrites, sameWorkTinker } = t.config.variety
+  const tired = tiredLimits({ mood: t.mood, energy: t.energy })
+  const streak = sameWorkTinker.on ? sameWorkStreak(t.mind.recent.filter((r) => r.verb === 'tinker' && r.targetId).map((r) => r.targetId!)) : null
+  return {
+    ...(sameTopicWrites.on ? { writes: { limit: sameTopicWrites.limit, days: sameTopicWrites.days, topics: topicWriteCounts(readWrittenPages(t.dir, t.today, sameTopicWrites.days * 2), { nowMs: t.nowMs, days: sameTopicWrites.days }) } } : {}),
+    ...(streak ? { sameWork: { limit: sameWorkTinker.limit, count: streak.count, title: streak.title } } : {}),
+    ...(tired.maxSteps !== null ? { tired: { maxSteps: tired.maxSteps, blocked: t.deps.sessions ? ['expand', 'found', 'tinker', 'build'] : ['expand', 'found', 'tinker'] } } : {}),
+    reasonChars: 140,
+    ...(t.trips.date === t.today && t.trips.starts.length > 0 ? { tripsToday: t.trips.starts } : {}),
+  }
+}
+
 /** The morning plan or a decision: one call, and one more if the body cannot carry out the plan. */
 export async function think(t: Tick): Promise<void> {
   const { thinkKind, tz, nowMs, notes, window } = t
@@ -53,6 +68,7 @@ export async function think(t: Tick): Promise<void> {
     wakeTime: clock(tz, window.wakeMs),
     bedTime: clock(tz, window.bedMs),
     hoursLeft: Math.max(0, Math.round((window.bedMs - nowMs) / 3_600_000)),
+    limits: planLimits(t),
     allowance: { points: t.mind.allowance?.points ?? 0, prices: livePrices(t.mind.prices) },
     mood: moodWords({ mood: t.mood, energy: t.energy }),
     justNow: t.justNow,

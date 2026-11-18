@@ -104,6 +104,26 @@ describe('prompt golden files', () => {
     const replan = { ...input('decide'), triggers: [{ kind: 'replan' as const, score: 0.45, detail: 'there is no step in progress and nothing planned next' }] }
     await expect(buildUser(replan)).toMatchFileSnapshot('golden/user-replan.txt')
   })
+  it('decide user prompt with the limits it plans within, as plain facts about now', async () => {
+    const withLimits = {
+      ...input('decide'),
+      limits: {
+        writes: { limit: 3, days: 7, topics: [{ count: 15, titles: ['Leaf area index', 'Ground without the trees'] }, { count: 2, titles: ['Grain and ripples'] }] },
+        sameWork: { limit: 2, count: 2, title: 'Live coding loop' },
+        tired: { maxSteps: 4, blocked: ['expand', 'found', 'tinker'] },
+        reasonChars: 140,
+        tripsToday: ['https://example.com/front', 'lighthouse'],
+      },
+    }
+    await expect(buildUser(withLimits)).toMatchFileSnapshot('golden/user-decide-limits.txt')
+  })
+  it('shows only the reason cap when nothing else limits it', () => {
+    const text = buildUser({ ...input('decide'), limits: { reasonChars: 140 } })
+    expect(text).toContain('at most 140 characters')
+    expect(text).not.toContain('Writing:')
+    expect(text).not.toContain('Tired')
+    expect(buildUser(input('decide'))).not.toContain('<limits>')
+  })
   it('tend user prompt', async () => {
     const home = Place.parse(JSON.parse(readFileSync(join(templates, '../forkling-world/places/home.json'), 'utf8')))
     const user = buildTendUser({

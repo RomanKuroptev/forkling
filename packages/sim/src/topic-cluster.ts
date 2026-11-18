@@ -117,3 +117,30 @@ export function sameSubject(a: string, b: string): boolean {
   const need = Math.min(2, wa.size, wb.size)
   return need > 0 && shared(wa, wb) >= need
 }
+
+/**
+ * How many pages each subject has in the last `days` days, most written first, with the titles (oldest first). It is the same
+ * clustering `writesOnTopic` counts with, so the numbers shown to Merge are the ones the `sameTopicWrites` rule compares to its limit. Pure.
+ */
+export function topicWriteCounts(pages: readonly WrittenPage[], opts: { nowMs: number; days: number }): { count: number; titles: string[] }[] {
+  const clusters = topicClusters(pages)
+  const since = opts.nowMs - opts.days * 86_400_000
+  const byCluster = new Map<number, string[]>()
+  pages.forEach((p, i) => {
+    if (Date.parse(p.at) < since) return
+    byCluster.set(clusters[i]!, [...(byCluster.get(clusters[i]!) ?? []), p.title])
+  })
+  return [...byCluster.values()].map((titles) => ({ count: titles.length, titles })).sort((a, b) => b.count - a.count)
+}
+
+/**
+ * The run of latest tinkers (targets, oldest first) that are the same subject as the last one: what `sameWorkTinker` compares to its
+ * limit. Null with no tinkers. Pure.
+ */
+export function sameWorkStreak(tinkers: readonly string[]): { count: number; title: string } | null {
+  const last = tinkers.at(-1)
+  if (last === undefined) return null
+  let count = 1
+  for (let i = tinkers.length - 2; i >= 0 && sameSubject(tinkers[i]!, last); i--) count++
+  return { count, title: last }
+}
