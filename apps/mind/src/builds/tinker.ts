@@ -274,8 +274,13 @@ export async function runTinker(deps: TinkerDeps, input: TinkerInput): Promise<T
     return { kind: 'ok', draft, page, thumb: checked.thumb }
   }
 
-  const meta = (draft: Draft, page: string, status: 'shelf' | 'scrap', scrapReason?: string): WorkMeta =>
-    WorkMeta.parse({
+  /**
+   * The work's meta, or why the answer cannot make one. An answer the check turns down is kept as a scrap, but a scrap is a
+   * work too: one with an empty about or too many sources cannot be kept at all (R1 fast-forward, 21 November: that threw out
+   * of the tick), so it is `failed`, as an answer that did not parse is.
+   */
+  const meta = (draft: Draft, page: string, status: 'shelf' | 'scrap', scrapReason?: string): WorkMeta | { unusable: string } => {
+    const made = WorkMeta.safeParse({
       ...draft,
       id: uniqueId(draft.title || 'work', deps.existingIds),
       made: deps.nowIso,
@@ -289,10 +294,16 @@ export async function runTinker(deps: TinkerDeps, input: TinkerInput): Promise<T
       installedIn: null,
       libraries: librariesOf(page),
     })
+    if (made.success) return made.data
+    const issues = made.error.issues.slice(0, 3).map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+    return { unusable: `the model gave no usable answer (${clampText(issues.join('; '), 200)})` }
+  }
+  const kept = (m: WorkMeta | { unusable: string }, outcome: (meta: WorkMeta) => TinkerOutcome): TinkerOutcome =>
+    'unusable' in m ? { status: 'failed', reason: m.unusable } : outcome(m)
 
   const finish = (a: Assessment): TinkerOutcome | null => {
     if (a.kind === 'unavailable') return { status: 'unavailable', reason: a.reason }
-    if (a.kind === 'ok') return { status: 'shelf', meta: meta(a.draft, a.page, 'shelf'), html: a.page, thumb: a.thumb }
+    if (a.kind === 'ok') return kept(meta(a.draft, a.page, 'shelf'), (m) => ({ status: 'shelf', meta: m, html: a.page, thumb: a.thumb }))
     return null
   }
 
@@ -304,7 +315,7 @@ export async function runTinker(deps: TinkerDeps, input: TinkerInput): Promise<T
   if (done) return done
   // Not on the shelf and not unavailable, so the check failed.
   const bad = one as Extract<Assessment, { kind: 'bad' }>
-  const scrap = (a: { draft: Draft; page: string; reasons: string[] }): TinkerOutcome => ({ status: 'scrap', meta: meta(a.draft, a.page, 'scrap', a.reasons.join('; ')), html: a.page })
+  const scrap = (a: { draft: Draft; page: string; reasons: string[] }): TinkerOutcome => kept(meta(a.draft, a.page, 'scrap', a.reasons.join('; ')), (m) => ({ status: 'scrap', meta: m, html: a.page }))
   if (sketch) return scrap(bad)
 
   const second = await deps.complete('repair', SONNET, buildRepairUser({ reasons: bad.reasons, html: bad.page, size }), TinkerOutput, TINKER_MAX_TOKENS)
