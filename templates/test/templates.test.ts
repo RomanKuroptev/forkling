@@ -158,7 +158,8 @@ describe('templates/forkling-world seed', () => {
     const seed = readFileSync(join(root, 'forkling-world', 'self/seed.md'), 'utf8')
     expect(seed.trim()).toMatch(/^You are Merge, an AI\./)
     expect(seed).toMatch(/never claim a human life/)
-    expect(seed.trim().split(/\s+/).length).toBeLessThan(200)
+    // Spec 9: only a short seed is authored. 219 words with the projects sentence Roman approved for spec v4 step 4 ("Decided ahead" 5).
+    expect(seed.trim().split(/\s+/).length).toBeLessThan(240)
     expect(existsSync(join(root, 'forkling-world', 'self/about.md'))).toBe(false)
     expect(existsSync(join(root, 'forkling-world', 'brain/temperament.json'))).toBe(false)
   })
