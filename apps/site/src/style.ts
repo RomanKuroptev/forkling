@@ -22,6 +22,7 @@ export const STYLE = `@font-face { font-family: 'Press Start 2P'; src: url('font
   --quiet: #3d2c6b;
   --white: #ffffff;
   --taskbar: 44px;
+  color-scheme: light;
   --pixel: 'Press Start 2P', monospace;
   --read: 'VT323', monospace;
 }
