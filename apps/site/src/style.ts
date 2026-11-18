@@ -113,4 +113,14 @@ dd { margin: 0; }
 .menu a:hover, .menu a:focus-visible, .menu a[aria-current] { background: var(--purple); color: var(--white); outline: none; }
 .tray { margin-left: auto; font-size: 22px; color: var(--quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+/* Notes and their threads: a chat on Merge's desktop. A visitor's note is a white box, Merge's reply a pale cyan one, and an answer sits a step in. */
+.requests.notes { list-style: none; padding: 0; margin: 12px 0; }
+.requests.notes li.note { background: var(--white); border: 2px solid var(--ink); padding: 10px 14px; margin: 14px 0; }
+.requests.notes li.note[data-reply-to] { margin-left: 22px; }
+.requests.notes li.note[data-status='declined'] { border-style: dashed; }
+.notes li.note > p.quiet:first-child { margin-top: 0; }
+.notes li.note > p.quiet:first-child strong { color: var(--purple); font: 12px/1.4 var(--pixel); }
+.notes li.note blockquote { background: #c9fbff; border: 2px solid var(--ink); margin: 8px 0 8px 18px; padding: 8px 12px; }
+.notes li.note p.quiet a { font-size: 22px; }
+main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 `
