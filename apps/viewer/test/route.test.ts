@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fixedRoute, parseRoute, worldSiteRedirect } from '../src/world/route.ts'
+import { fixedRoute, parseRoute, siteWorldExists, worldSiteRedirect } from '../src/world/route.ts'
 
 describe('parseRoute', () => {
   it('reads owner and repo after the base path', () => {
@@ -59,5 +59,28 @@ describe("one address: the viewer inside a forkling's site (step 7)", () => {
   it('reads ?world=owner/repo as a visit for that world', () => {
     expect(worldSiteRedirect({ kind: 'home' }, '?world=RomanKuroptev/merge', SITE)).toBe(`${SITE}world/`)
     expect(worldSiteRedirect({ kind: 'home' }, '?world=someone/cat', SITE)).toBeNull()
+  })
+})
+
+describe('siteWorldExists: only go where the world really is', () => {
+  const T = 'https://romankuroptev.github.io/merge/world/?time=22'
+  it('asks for the world page itself with HEAD and no query, and says yes on a 2xx', async () => {
+    const seen: { url: string; method: string }[] = []
+    const there = await siteWorldExists(T, async (url, init) => {
+      seen.push({ url, method: init.method })
+      return { ok: true }
+    })
+    expect(there).toBe(true)
+    expect(seen).toEqual([{ url: 'https://romankuroptev.github.io/merge/world/', method: 'HEAD' }])
+  })
+
+  it('says no on a 404, on a network error and when nothing answers in time, so the visitor stays', async () => {
+    expect(await siteWorldExists(T, async () => ({ ok: false }))).toBe(false)
+    expect(
+      await siteWorldExists(T, async () => {
+        throw new Error('offline')
+      }),
+    ).toBe(false)
+    expect(await siteWorldExists(T, () => new Promise(() => {}), 10)).toBe(false)
   })
 })

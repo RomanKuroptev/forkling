@@ -58,3 +58,21 @@ export function worldSiteRedirect(route: Route, search: string, site: string | u
   if (route.kind === 'world' && `${route.ref.owner}/${route.ref.repo}`.toLowerCase() === MERGE_WORLD) return target
   return null
 }
+
+/**
+ * Whether the page at a redirect target is really there: a HEAD request for the world's own page (no query), with a short timeout, and only a 2xx counts.
+ * Anything else (a 404, an error, no answer in time) means "stay here", so a visitor is never sent to a dead address.
+ */
+export async function siteWorldExists(target: string, fetchFn: (input: string, init: { method: string; cache: 'no-store'; signal: AbortSignal }) => Promise<{ ok: boolean }>, timeoutMs = 3000): Promise<boolean> {
+  const page = target.split('?')[0]!
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await Promise.race([fetchFn(page, { method: 'HEAD', cache: 'no-store', signal: controller.signal }), new Promise<never>((_, reject) => controller.signal.addEventListener('abort', () => reject(new Error('timeout'))))])
+    return res.ok
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timer)
+  }
+}
