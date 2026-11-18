@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { Timestamp } from './intention.ts'
+import { POINTS_HELD_MAX } from './credits.ts'
 
 /** The tick log keeps this many days of `mind/ticks/YYYY-MM-DD.jsonl`. */
 export const TICK_KEEP_DAYS = 14
@@ -109,13 +110,13 @@ export const Health = z.object({
   /** What is left of the limits that still exist. The pet-era quotas (creative, photos, builds, code) are only read from old files. */
   quotas: z.object({ readings: Quota, creative: Quota.optional(), photos: Quota.optional(), builds: Quota.optional(), codeThisWeek: Quota.optional() }),
   /** Points of the daily allowance in hand (spec 9.8), and the most that can be held. */
-  allowance: z.object({ points: z.number().nonnegative(), max: z.number().positive(), daily: z.number().positive().optional(), dailySetOn: z.string().optional() }).default({ points: 0, max: 1500 }),
+  allowance: z.object({ points: z.number().nonnegative(), max: z.number().positive(), daily: z.number().positive().optional(), dailySetOn: z.string().optional() }).default({ points: 0, max: POINTS_HELD_MAX }),
   /** Hosts paused after a 429 or a 403 (spec 6.1), and the host that gave most of this week's reads (spec 12.3, "one host"). */
   web: z.object({ pausedHosts: z.record(z.string(), Timestamp).default({}), topHost: z.object({ host: z.string(), share: z.number() }).nullable().default(null) }).default({ pausedHosts: {}, topHost: null }),
   /** Pet-era health files have it; nothing writes it any more. */
   needsCritical: z.record(z.string(), z.number().int().nonnegative()).default({}),
   mood: z.object({ label: z.string(), minutes: z.number().int().nonnegative() }),
-  spend: z.object({ monthUsd: z.number(), capUsd: z.number(), paceUsd: z.number() }),
+  spend: z.object({ monthUsd: z.number(), capUsd: z.number(), paceUsd: z.number(), moneyInUsd: z.number().optional() }),
   openBuild: z.object({ id: z.string(), kind: z.string(), ageHours: z.number().nonnegative() }).nullable(),
   /** What is measured about sameness, and never enforced (spec 12.3, 12.6). Only the work numbers so far; W7 adds the rest. */
   novelty: z

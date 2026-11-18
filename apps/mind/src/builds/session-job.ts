@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { BudgetLedger, SessionJob, type BudgetCall } from '@forkling/schema'
 import type { BuildHandler } from '../build-worker.ts'
-import { monthOf, recordCall, rollLedger } from '../budget.ts'
+import { guardLedger, monthOf, recordCall, rollLedger } from '../budget.ts'
+import { readCredits } from '../credits.ts'
 import { clampText } from '../decision.ts'
 import { DEFAULT_SEED } from '../seed.ts'
 import type { GitRunner } from '../tick/git.ts'
@@ -48,7 +49,8 @@ function ledgerOnDisk(dir: string, month: string): BudgetLedger {
     // no ledger yet: an empty month
   }
   const parsed = BudgetLedger.safeParse(stored)
-  return rollLedger(parsed.success ? parsed.data : BudgetLedger.parse({ month }), month)
+  // For the guard only: its cap is the effective one, with this month's credits (spec v4 5.3).
+  return guardLedger(rollLedger(parsed.success ? parsed.data : BudgetLedger.parse({ month }), month), readCredits(dir))
 }
 
 /** Every file under `dir`, relative to it, with `/`. */

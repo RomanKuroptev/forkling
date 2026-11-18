@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { Artifact, Beliefs, BudgetLedger, Forkling, Goals, Interests, MindState, SourceStats, Tools, Visitors, Wants, actTools, type Note, type NotesHidden } from '@forkling/schema'
+import { Artifact, Beliefs, BudgetLedger, type Credit, Forkling, Goals, Interests, MindState, SourceStats, Tools, Visitors, Wants, actTools, type Note, type NotesHidden } from '@forkling/schema'
+import { readCredits } from './credits.ts'
 import { readNotes, readNotesHidden } from './notes.ts'
 import { DEFAULT_SEED } from './seed.ts'
 
@@ -12,6 +13,8 @@ export interface WorldFiles {
   goals: Goals
   mindState: MindState
   budget: BudgetLedger
+  /** `brain/credits.json` (spec v4 5.3): money Roman has added, or none. The effective cap is `budget.capUsd` plus this month's. */
+  credits: Credit[]
   /** `mind/sources.json`: each source's weekly numbers. */
   sources: SourceStats
   /** The forkling's own `brain/persona.md`, or empty. Pet era: nothing reads it any more. */
@@ -100,6 +103,7 @@ export function readWorld(dir: string, monthFor: (forkling: Forkling) => string)
     goals: readJson(dir, 'mind/goals.json', Goals, {}),
     mindState: readJson(dir, 'mind/state.json', MindState, {}),
     budget: readJson(dir, 'brain/budget.json', BudgetLedger, { month: monthFor(forkling) }),
+    credits: readCredits(dir),
     sources: readJson(dir, 'mind/sources.json', SourceStats, {}),
     persona: existsSync(personaPath) ? readFileSync(personaPath, 'utf8') : '',
     seed: existsSync(join(dir, 'self/seed.md')) ? readFileSync(join(dir, 'self/seed.md'), 'utf8') : DEFAULT_SEED,

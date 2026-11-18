@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { Beliefs, BudgetLedger, Forkling, forklingPackIssues, Goals, Interests, MindState, NotesHidden, SpeciesPack, Visitors } from '@forkling/schema'
+import { Beliefs, BudgetLedger, Credits, Forkling, forklingPackIssues, Goals, Interests, MindState, NotesHidden, SpeciesPack, Visitors } from '@forkling/schema'
 import { bodyWorldFor, isWalkable } from '@forkling/sim'
 import catSpecies from '@forkling/species-cat/species.json'
 
@@ -75,7 +75,7 @@ for (const template of ['forkling-world', 'merge']) {
     })
 
     it('has mind files that fit their schemas', () => {
-      const schemas = { 'mind/goals.json': Goals, 'mind/state.json': MindState, 'brain/budget.json': BudgetLedger, 'brain/interests.json': Interests }
+      const schemas = { 'mind/goals.json': Goals, 'mind/state.json': MindState, 'brain/budget.json': BudgetLedger, 'brain/credits.json': Credits, 'brain/interests.json': Interests }
       for (const [path, schema] of Object.entries(schemas)) {
         if (paths.includes(path)) expect(schema.safeParse(read(join(dir, path))).success, path).toBe(true)
       }

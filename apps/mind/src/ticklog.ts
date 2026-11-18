@@ -154,6 +154,6 @@ export function logTick(t: Tick, result: TickResult): TickResult {
   pruneTicks(t.dir, t.today)
   // The last 7 days of the timeline are read once for both the place nudges and the weekly check.
   const timeline = readTimelineSince(t.dir, t.today, 7)
-  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir), badRequests: unreadableRequests(t.dir), texts: { writings: readWritings(t.dir), diaries: readDiaries(t.dir) }, doorDays: t.mind.doorDays ?? [], placeNudges: placeNudgeInputs(t, timeline), week: weekInputs(t, timeline) }))
+  writeJson(t.dir, HEALTH_PATH, buildHealth(previous, line, { today: t.today, nowMs: t.nowMs, goals: t.goals, mind: t.mind, budget: t.budget, credits: t.credits, sources: t.sources, pushFailing: !!t.deps.pushFailing, works: readWorks(t.dir), badRequests: unreadableRequests(t.dir), texts: { writings: readWritings(t.dir), diaries: readDiaries(t.dir) }, doorDays: t.mind.doorDays ?? [], placeNudges: placeNudgeInputs(t, timeline), week: weekInputs(t, timeline) }))
   return { ...result, logged: true }
 }

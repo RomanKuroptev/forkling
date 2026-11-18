@@ -85,7 +85,7 @@ export async function replyStep(t: Tick): Promise<void> {
     thread: before.map((n) => ({ name: n.name, message: clampText(n.message, 500), reply: n.reply ? clampText(n.reply, MAX_REPLY_CHARS) : null })),
     threadReplies: before.filter((n) => n.status === 'replied').length,
   })
-  const result = await t.ask('reply', creativeModel(t.budget), user, ReplyAnswer, REPLY_MAX_TOKENS)
+  const result = await t.ask('reply', creativeModel(t.budget, t.credits), user, ReplyAnswer, REPLY_MAX_TOKENS)
   const answer = ReplyAnswer.safeParse(result?.parsed)
   if (!result || !answer.success) {
     t.notes.push('reply: no usable answer, so the note stays to answer another time')
