@@ -14,11 +14,12 @@ describe('viewerBuildEnv', () => {
       VITE_WORLD: 'owner/merge',
       VITE_MIND_URL: 'https://mind.example.org',
       VITE_TURNSTILE_SITE_KEY: '0x4AAAAAAGDF-jzbhPC47urx',
+      VITE_GOATCOUNTER_CODE: '',
     })
   })
 
   it('leaves the server and the key empty when there are none, and the world from the repository name when the address is not a github.io one', () => {
-    expect(viewerBuildEnv({ baseUrl: 'https://merge.example.org/', repository: 'owner/merge' })).toEqual({ VITE_BASE: '/world/', VITE_WORLD: 'owner/merge', VITE_MIND_URL: '', VITE_TURNSTILE_SITE_KEY: '' })
+    expect(viewerBuildEnv({ baseUrl: 'https://merge.example.org/', repository: 'owner/merge' })).toEqual({ VITE_BASE: '/world/', VITE_WORLD: 'owner/merge', VITE_MIND_URL: '', VITE_TURNSTILE_SITE_KEY: '', VITE_GOATCOUNTER_CODE: '' })
   })
 
   it('has no viewer to build when it cannot tell the world or the path', () => {

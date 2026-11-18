@@ -70,3 +70,10 @@ Plan approved by the coordinator on 17 November 2026: L3, L1, L1b, L2, L4, then 
 - A today card opens big in a window (`cards.js`, `CARDS_SCRIPT` in `apps/site/src/front.ts`): picture, time and kind, caption, prev and next (buttons, arrow keys, swipe), share (system share sheet, else copies the link, label "link copied"), "see it in the world" (when the viewer address is known), "n of 3". Without script the card is still a link. Full screen above the taskbar under 900 px.
 - Missing data, left out: the "why" box and the source line of the mockup (cards have no such field), the taskbar buttons for open windows. Screenshots `d-shots/7c-card-open-*`.
 - Still to do in 7C: notes-chat extras, diary, gallery, workshop, who-am-i and retired pages; then 7D (S2, S3, S6, S7).
+
+## Step 7D notes
+
+- S2 (#250): og and twitter tags with title, description, image and url on every page; `og/today.png` from today's first card, a day with no card still gets one; the newest 6 works and 3 projects get a framed picture (0.2 s each), older ones use their own picture. The site's vitest timeout is 20 s because builds draw pictures.
+- S3 (#251): share button plus save picture on work and project pages; the opened card keeps one control (share).
+- S6 (#252): the project window says "session N, last worked on today/yesterday/N days ago". The asleep wake time is from 7C.
+- S7 (this PR): the counter is built switched off. `GOATCOUNTER_CODE` (or `--counter-code`) turns it on: GoatCounter script on every page and in the viewer (`VITE_GOATCOUNTER_CODE`), share and save-picture taps as events, a "Visits" paragraph on /under-the-hood/. The Pages workflows are not changed here: to switch it on, pass `GOATCOUNTER_CODE: ${{ vars.GOATCOUNTER_CODE }}` to the site build step (engine and Merge's own workflow). Needs Roman's GoatCounter account.

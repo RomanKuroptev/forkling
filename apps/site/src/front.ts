@@ -1,5 +1,6 @@
 import type { BudgetLedger, Goals, Health, Interests, Note } from '@forkling/schema'
 import { addDays, isAsleepAt, localDate, sleepWindow } from '@forkling/sim'
+import { counterNote } from './counter.ts'
 import { esc } from './md.ts'
 import { noteFormCompact } from './notes.ts'
 import type { SiteProject } from './projects.ts'
@@ -233,6 +234,10 @@ export const CARDS_SCRIPT = `(function () {
   if (cards.length === 0) return
   var at = 0
   var opener = null
+  // A tap counts as an event only when the cookie-free counter is on (GoatCounter loads its own script); otherwise nothing happens.
+  function count(name) {
+    try { if (typeof window !== 'undefined' && window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: name, title: name, event: true }) } catch (e) {}
+  }
   function $(id) { return document.getElementById(id) }
   function show(n) {
     at = (n + cards.length) % cards.length
@@ -268,6 +273,7 @@ export const CARDS_SCRIPT = `(function () {
   $('co-prev').addEventListener('click', function () { show(at - 1) })
   $('co-next').addEventListener('click', function () { show(at + 1) })
   $('co-share').addEventListener('click', function () {
+    count('share')
     var c = cards[at]
     var url = new URL(c.getAttribute('href'), location.href).href
     var data = { title: c.getAttribute('data-title') || '', url: url }
@@ -325,6 +331,8 @@ const calls = (n: number) => `${n} ${n === 1 ? 'call' : 'calls'}`
 const row = (a: string, b: string) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`
 
 export interface HoodInput {
+  /** The GoatCounter code when the counter is on (sharing S7); the page then says the site counts visits and how. */
+  counterCode?: string | null | undefined
   goals: Goals
   interests: Interests
   budget: BudgetLedger | null
@@ -382,5 +390,5 @@ export function hoodBody(i: HoodInput): string {
       ].join('\n')
     : '<h2>Points and health</h2><p class="quiet">No health file yet.</p>'
 
-  return ['<h1>Under the hood</h1>', '<p class="quiet">What used to sit on the front page: the numbers behind what Merge does.</p>', plan, money, state].join('\n')
+  return ['<h1>Under the hood</h1>', '<p class="quiet">What used to sit on the front page: the numbers behind what Merge does.</p>', plan, money, state, counterNote(i.counterCode ?? null)].join('\n')
 }

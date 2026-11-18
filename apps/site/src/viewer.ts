@@ -20,6 +20,8 @@ export interface ViewerBuildInput {
   repository?: string | undefined
   mindUrl?: string | undefined
   siteKey?: string | undefined
+  /** The GoatCounter code (sharing S7), when the counter is on. */
+  counterCode?: string | null | undefined
 }
 
 /** The environment of the viewer's build: its path, its one world, and the server and check key it shares with the notes form. Null when the path or the world is not known. */
@@ -41,7 +43,7 @@ export function viewerBuildEnv(i: ViewerBuildInput): Record<string, string> | nu
   const fromAddress = host && repoFromPath && OWNER.test(host[1]!) && REPO.test(repoFromPath) ? `${host[1]}/${repoFromPath}` : null
   const world = fromRepository ?? fromAddress
   if (!world) return null
-  return { VITE_BASE: `${path}world/`, VITE_WORLD: world, VITE_MIND_URL: i.mindUrl ?? '', VITE_TURNSTILE_SITE_KEY: i.siteKey ?? '' }
+  return { VITE_BASE: `${path}world/`, VITE_WORLD: world, VITE_MIND_URL: i.mindUrl ?? '', VITE_TURNSTILE_SITE_KEY: i.siteKey ?? '', VITE_GOATCOUNTER_CODE: i.counterCode ?? '' }
 }
 
 const sizeOf = (dir: string): number => readdirSync(dir, { withFileTypes: true }).reduce((sum, e) => sum + (e.isDirectory() ? sizeOf(join(dir, e.name)) : statSync(join(dir, e.name)).size), 0)

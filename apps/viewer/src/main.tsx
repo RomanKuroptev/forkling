@@ -3,6 +3,7 @@ import '@fontsource/vt323/index.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Root } from './Root.tsx'
+import { startCounter } from './counter.ts'
 import { touchUi } from './touch.ts'
 import './styles.css'
 import './look.css'
@@ -11,6 +12,8 @@ import './look-windows.css'
 
 // Lets the stylesheet switch on how the page is being used.
 document.documentElement.dataset.input = touchUi ? 'touch' : 'pointer'
+
+startCounter(import.meta.env.VITE_GOATCOUNTER_CODE as string | undefined)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
