@@ -104,7 +104,7 @@ export function checkPlan(t: Tick, plan: LlmStep[]) {
   if (made.length !== steps.length) return { usable: made, droppedStarts: [] as string[], check: { ok: false, reasons: ['a step was missing its verb or its reason'] } as const }
   const rail = dropRepeatedStarts(made, t.trips.date === t.today ? t.trips.starts : [])
   const usable = rail.steps
-  const check = validateMindPlan(usable.map(mindStepOf), planContext(t))
+  const check = validateMindPlan(usable.map(mindStepOf), { ...planContext(t), removedSteps: rail.dropped.length })
   if (!check.ok) return { usable, droppedStarts: rail.dropped, check }
   return { usable: usable.map((s, i) => ({ ...s, minutes: check.steps[i]!.minutes })), droppedStarts: rail.dropped, check }
 }
