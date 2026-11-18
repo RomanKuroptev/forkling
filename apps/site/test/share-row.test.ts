@@ -41,7 +41,7 @@ describe('share.js', () => {
   const run = (nav: Record<string, unknown>) => {
     const handlers: (() => void)[] = []
     const b = { textContent: 'share', getAttribute: (k: string) => (k === 'data-title' ? 'T' : null), addEventListener: (_t: string, f: () => void) => void handlers.push(f) }
-    vm.runInNewContext(SHARE_SCRIPT, { document: { querySelectorAll: () => [b], title: 'D' }, location: { href: 'https://x.test/p/' }, navigator: nav, Array })
+    vm.runInNewContext(SHARE_SCRIPT, { document: { querySelectorAll: (q: string) => (q === '.js-share' ? [b] : []), title: 'D' }, location: { href: 'https://x.test/p/' }, navigator: nav, Array })
     return { b, click: () => handlers[0]?.() }
   }
   it('opens the share sheet with the page address, or copies it where there is no sheet', async () => {

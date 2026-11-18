@@ -19,6 +19,7 @@ import { loadNotes, notesEndpoint, renderNotes, validSiteKey } from './notes.ts'
 import { NOTES_SCRIPT } from './notes-script.ts'
 import { hasAbout, loadAbout, loadSelfRequests, loadTools, renderAbout } from './self.ts'
 import { loadWorks, publishWorks, renderWorkshop } from './workshop.ts'
+import { counterScript, validCounterCode } from './counter.ts'
 import { SHARE_SCRIPT, shareRow } from './share-row.ts'
 import { sharePicturePng } from './share-picture.ts'
 import { galleryBody, tiles } from './gallery.ts'
@@ -116,6 +117,8 @@ interface PageInput {
   baseUrl?: string | undefined
   /** The page's own picture for a link preview (a path from the site root); the desktop picture when left out. */
   ogImage?: string | undefined
+  /** The counter's script tag, or empty. */
+  counter?: string | undefined
   /** The page's own path from the site root, for its address in the share tags. */
   path?: string | undefined
 }
@@ -186,7 +189,7 @@ ${p.head ? `${p.head}
 ${p.shell === 'bare' ? `<main class="bare">\n${p.body}\n</main>` : win}
 </div>
 ${taskbar}
-${p.timezone ? CLOCK_SCRIPT : ''}</body>
+${p.timezone ? CLOCK_SCRIPT : ''}${p.counter ?? ''}</body>
 </html>
 `
 }
@@ -226,6 +229,8 @@ export interface RenderOptions {
   turnstileSiteKey?: string | undefined
   /** The address of the site, for the links in the feed, like `https://owner.github.io/merge/`. Without it the feed links are relative. */
   baseUrl?: string | undefined
+  /** The GoatCounter code (sharing S7). Without a valid one the counter is off: no script, no request, no line under the hood. */
+  counterCode?: string | null | undefined
   /** `false`: the viewer is not built into `world/`, so the front page has no way in. Default: it is (the CLI builds it). */
   viewer?: boolean
   /** The world's history for `changes.json` (see `defaultGitLog`). Injected by a test; a world with no history gives an empty list. */
@@ -293,9 +298,11 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const nav: [string, string][] = [...NAV, ...(galleryTiles.length > 0 ? [['Gallery', 'gallery/'] as [string, string]] : []), ...(projects.length > 0 ? [['Projects', 'projects/'] as [string, string]] : []), ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
   const extraFiles = new Map<string, string | Buffer>()
   const buildMs = (opts.now ?? new Date()).getTime()
+  const counterCode = validCounterCode(opts.counterCode)
+  const counterTag = counterScript(counterCode)
   const ogImages = new Map<string, string>()
   const sharable = (rel: string) => rel.startsWith('workshop/') && rel.endsWith('.html') && !rel.endsWith('/index.html') || /^projects\/[^/]+\/index\.html$/.test(rel)
-  const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, path: rel, ogImage: ogImages.get(rel), root: '../'.repeat(rel.split('/').length - 1), nav, night: forkling.asleep, timezone: forkling.timezone, nowMs: buildMs, baseUrl: opts.baseUrl, ...input, ...(ogImages.has(rel) && sharable(rel) ? { body: `${input.body}\n${shareRow({ root: '../'.repeat(rel.split('/').length - 1), title: input.title, save: ogImages.get(rel)! })}` } : {}) }))
+  const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, path: rel, counter: counterTag, ogImage: ogImages.get(rel), root: '../'.repeat(rel.split('/').length - 1), nav, night: forkling.asleep, timezone: forkling.timezone, nowMs: buildMs, baseUrl: opts.baseUrl, ...input, ...(ogImages.has(rel) && sharable(rel) ? { body: `${input.body}\n${shareRow({ root: '../'.repeat(rel.split('/').length - 1), title: input.title, save: ogImages.get(rel)! })}` } : {}) }))
 
   const works = loadWorks(world)
   // Home (step 7): the front page, a desktop of its own. What used to sit here (the plan with its reasons, what it wants) moved to /under-the-hood/.
@@ -367,7 +374,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   add('under-the-hood/index.html', {
     title: 'Under the hood',
     active: 'under-the-hood/',
-    body: hoodBody({ goals, interests, budget: readJson(world, 'brain/budget.json', BudgetLedger), health: readJson(world, 'mind/health.json', Health), latestDiary: journal[0]?.date, sourceLink }),
+    body: hoodBody({ counterCode, goals, interests, budget: readJson(world, 'brain/budget.json', BudgetLedger), health: readJson(world, 'mind/health.json', Health), latestDiary: journal[0]?.date, sourceLink }),
   })
 
   // Journal.

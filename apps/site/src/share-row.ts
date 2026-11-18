@@ -10,9 +10,18 @@ export function shareRow(i: { root: string; title: string; save: string }): stri
 
 /** `share.js`: the Web Share sheet where the browser has one (a phone), else the page's address is copied. Plain ES5; words go in with `textContent`. */
 export const SHARE_SCRIPT = `(function () {
+  // A tap counts as an event only when the cookie-free counter is on (GoatCounter loads its own script); otherwise nothing happens.
+  function count(name) {
+    try { if (typeof window !== 'undefined' && window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: name, title: name, event: true }) } catch (e) {}
+  }
   var buttons = document.querySelectorAll ? document.querySelectorAll('.js-share') : []
+  var saves = document.querySelectorAll ? document.querySelectorAll('.save-pic') : []
+  Array.prototype.forEach.call(saves, function (a) {
+    a.addEventListener('click', function () { count('save-picture') })
+  })
   Array.prototype.forEach.call(buttons, function (b) {
     b.addEventListener('click', function () {
+      count('share')
       var data = { title: b.getAttribute('data-title') || document.title, url: location.href }
       if (navigator.share) {
         navigator.share(data).catch(function () {})
