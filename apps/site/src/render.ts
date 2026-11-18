@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import type { z } from 'zod'
 import { Beliefs, Forkling, Goals, Interests, isOpenRequest, MindState, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
 import { STYLE } from './style.ts'
+import { buildToday } from './today.ts'
 import { desktopPicturePng } from './desktop-picture.ts'
 import { faviconSvg, ICONS, iconFor, iconSvg } from './icons.ts'
 import { esc, markdown } from './md.ts'
@@ -482,6 +483,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   for (const name of Object.keys(ICONS)) write(`icons/${name}.svg`, iconSvg(name))
   write('favicon.svg', faviconSvg())
   write('share.png', desktopPicturePng())
+  write('today.json', `${JSON.stringify(buildToday({ projects, works, about: mergeAbout, nowMs: buildMs, tz }), null, 2)}
+`)
   write('feed.xml', renderFeed({ name, items: feedItems, baseUrl: opts.baseUrl }))
   write('changes.json', `${JSON.stringify(changes)}
 `)
