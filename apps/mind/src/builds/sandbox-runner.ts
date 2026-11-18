@@ -1,4 +1,4 @@
-import { fstatSync, mkdirSync } from 'node:fs'
+import { fstatSync, mkdirSync, realpathSync } from 'node:fs'
 import { connect, Socket } from 'node:net'
 import { fileURLToPath } from 'node:url'
 import type { Browser, BrowserType, Frame, Page } from 'playwright'
@@ -420,10 +420,33 @@ async function main(argv: string[]): Promise<void> {
     answer = { failed: clean(error instanceof Error ? error.message : String(error), 300) }
   }
   await channel.write(`${JSON.stringify(answer)}\n`)
+  answered = true
   process.exit(0)
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+/** Set once the answer is written; the exit hook reports a run that ended before it. */
+let answered = false
+
+/**
+ * Whether this file is the program Node was started with. The unit runs it through `/opt/forkling/sandbox/current`, a symlink to
+ * `releases/<tag>`, and Node resolves symlinks for the main module, so both paths are compared after resolving them. v0.17.0
+ * compared them as given, never ran `main`, and every run ended at once with exit 0 and no answer.
+ */
+function isProgram(): boolean {
+  const started = process.argv[1]
+  if (!started) return false
+  try {
+    return realpathSync(started) === realpathSync(fileURLToPath(import.meta.url))
+  } catch {
+    return false
+  }
+}
+
+if (isProgram()) {
+  // A run that ends before its answer is written says so in the journal, never silently.
+  process.on('exit', (code) => {
+    if (!answered) process.stderr.write(`runner: ended (code ${code}) without writing an answer\n`)
+  })
   main(process.argv.slice(2)).catch((error: unknown) => {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
     process.exit(1)
