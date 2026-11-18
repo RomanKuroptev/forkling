@@ -191,7 +191,7 @@ describe('the front page /', () => {
 
 describe('the live line (front.js)', () => {
   const run = (fetchImpl: (url: string) => Promise<{ ok: boolean; json: () => Promise<unknown> }>) => {
-    const el = (extra: Record<string, string> = {}) => ({ textContent: '', className: '', attrs: extra, getAttribute(k: string) { return this.attrs[k] ?? null }, classList: { toggle() {} } })
+    const el = (extra: Record<string, string> = {}) => ({ textContent: '', className: '', attrs: extra, getAttribute(k: string) { return this.attrs[k] ?? null }, setAttribute(k: string, v: string) { this.attrs[k] = v }, classList: { toggle() {} } })
     const nodes: Record<string, ReturnType<typeof el>> = {
       live: el({ 'data-mind': 'https://m.example', 'data-seen': '2026-11-18 09:50' }),
       'live-badge': el(),
@@ -334,7 +334,7 @@ describe('Merge asleep (step 7C): from the real asleep state, never from clock h
   })
 
   const run = (over: { asleep: string; wake?: string; stored?: string | 'throws' } = { asleep: '1' }) => {
-    const attrs: Record<string, string> = { 'data-asleep': over.asleep, 'data-wake': over.wake ?? String(Date.now() + (5 * 60 + 12) * 60_000 + 30_000), 'data-tz': 'Europe/Stockholm' }
+    const attrs: Record<string, string> = { 'data-asleep': over.asleep, 'data-wake': over.wake ?? String(Date.now() + (5 * 60 + 12) * 60_000 + 30_000), 'data-tz': 'Europe/Stockholm', 'data-city': 'Stockholm' }
     const el = (extra: Record<string, unknown> = {}) => ({ textContent: '', hidden: true, className: '', listeners: {} as Record<string, () => void>, addEventListener(t: string, f: () => void) { this.listeners[t] = f }, focus() { (this as { focused?: boolean }).focused = true }, getAttribute: (k: string) => attrs[k] ?? null, classList: { toggle() {} }, ...extra })
     const nodes: Record<string, ReturnType<typeof el>> = { live: el({ hidden: false }), 'sleep-dialog': el(), 'sleep-text': el({ hidden: false }), 'sleep-ok': el({ hidden: false }), 'sleep-note': el({ hidden: false }), 'note-message': el({ hidden: false }) }
     const store: Record<string, string> = {}

@@ -36,6 +36,10 @@ export interface FrontInput {
   /** The server's address (no trailing slash) when Merge live can ask it. */
   mindUrl: string | null
   aboutHref: string
+  /** The next time Merge wakes (Unix ms), from the sleep schedule the mind itself uses. */
+  wakeMs: number
+  /** The lines of the boot screen, from Merge's own files. */
+  boot: string[]
 }
 
 function card(c: TodayCard, tz: string): string {
@@ -58,15 +62,20 @@ export function frontBody(i: FrontInput): string {
     'live',
     `${name.toLowerCase()}.exe`,
     [
-      `<div class="still" role="img" aria-label="${esc(name)}'s desktop" style="background-image:url('share.png')"><span class="badge" id="live-badge">${i.asleep ? 'ASLEEP' : 'LAST SEEN'}</span></div>`,
+      i.asleep
+        ? `<div class="still asleep" role="img" aria-label="${esc(name)} is asleep: no signal"><span class="badge" id="live-badge">ASLEEP</span><span class="zface" aria-hidden="true"></span><strong class="nosig">NO SIGNAL</strong><span class="nosig-sub">${esc(name)} is asleep. zzz</span></div>`
+        : `<div class="still" role="img" aria-label="${esc(name)}'s desktop" style="background-image:url('share.png')"><span class="badge" id="live-badge">LAST SEEN</span></div>`,
       `<p class="right-now" id="live-line">Right now: ${doing}</p>`,
       '<p class="thought quiet" id="live-thought"></p>',
       `<p class="quiet" id="live-status">${i.asleep ? 'Asleep' : 'Awake'}. Last seen ${esc(i.lastSeen)}.</p>`,
       `<p class="actions">${i.viewerUrl ? `<a class="btn go" href="${esc(i.viewerUrl)}">&#9654; ENTER WORLD</a>` : ''}<a class="btn" href="${esc(i.aboutHref)}">who is ${esc(name)}?</a></p>`,
     ].join('\n'),
     'live',
-    i.mindUrl ? ` data-mind="${esc(i.mindUrl)}" data-seen="${esc(i.lastSeen)}"` : '',
+    ` data-asleep="${i.asleep ? '1' : '0'}" data-wake="${i.wakeMs}" data-tz="${esc(i.timezone)}" data-name="${esc(i.name)}" data-city="${esc((i.timezone.split('/').pop() ?? i.timezone).replaceAll('_', ' '))}" data-seen="${esc(i.lastSeen)}"${i.mindUrl ? ` data-mind="${esc(i.mindUrl)}"` : ''}`,
   )
+  const dialog = `<div id="sleep-dialog" class="w95 dialog" role="dialog" aria-label="${esc(name)} is asleep" hidden><div class="title"><h2>${esc(name.toLowerCase())}.exe</h2><span class="btns" aria-hidden="true"><i></i><i></i><i></i></span></div><div class="w95-body"><p class="dlg-text"><span class="dlg-icon" aria-hidden="true"></span><span id="sleep-text">${esc(name)} is asleep.</span></p><p class="quiet">You can still walk around its world and read what it made today.</p><p class="actions"><button id="sleep-ok" type="button">OK</button>${i.viewerUrl ? `<a class="btn go" href="${esc(i.viewerUrl)}">walk around anyway</a>` : ''}<button id="sleep-note" type="button">leave a note for morning</button></p></div></div>`
+  const boot = `<div id="boot" class="boot" aria-hidden="true"><div class="boot-in"><div class="boot-logo">MERGE 95</div><p class="boot-sub">an AI lives here</p><div class="boot-lines">${i.boot.map((l) => `<p>${esc(l)}</p>`).join('')}</div><div class="boot-bar"><i></i></div><p class="boot-key">press any key (or don't, it loads anyway)</p></div></div>
+<script>${bootScript(i.timezone)}</script>`
   const cards = win('today', `today.txt - Today ${name}...`, today.cards.length > 0 ? `<div class="cards">${today.cards.map((c) => card(c, i.timezone)).join('')}</div><p class="swipe quiet">swipe for more &rarr;</p>` : `<p class="quiet">Nothing made yet. When ${esc(name)} makes something, it shows here.</p>`)
 
   let project = ''
@@ -90,11 +99,13 @@ export function frontBody(i: FrontInput): string {
   const notes = win('notebox', `notes.exe - say hi to ${name}`, noteBody)
 
   return [
+    boot,
     `<h1 class="headline">${esc(who)}</h1>`,
     '<div class="desk">',
     `<div class="col-a">${live}</div>`,
     `<div class="col-b">${cards}${project}${notes}</div>`,
     '</div>',
+    i.asleep ? dialog : '',
     '<p class="foot"><a href="under-the-hood/">Under the hood: the budget, the points and the numbers</a></p>',
     '<script src="front.js" defer></script>',
   ].join('\n')
@@ -108,6 +119,33 @@ export function frontBody(i: FrontInput): string {
 export const FRONT_SCRIPT = `(function () {
   var box = document.getElementById('live')
   if (!box) return
+  // Asleep (from the real state: the page's own, and the server's below): a friendly window, once a session, with the wake time from the sleep schedule.
+  var dlg = document.getElementById('sleep-dialog')
+  function wakeText() {
+    var wake = Number(box.getAttribute('data-wake'))
+    if (!wake) return 'asleep.'
+    var t = new Intl.DateTimeFormat('en-GB', { timeZone: box.getAttribute('data-tz'), hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(wake))
+    var left = Math.max(0, Math.round((wake - Date.now()) / 60000))
+    return 'asleep until ' + t + ' ' + (box.getAttribute('data-city') || '') + ' time (in ' + Math.floor(left / 60) + ' h ' + (left % 60) + ' min).'
+  }
+  function openSleepDialog() {
+    if (!dlg) return
+    try {
+      if (window.sessionStorage && sessionStorage.getItem('merge95:sleepdlg')) return
+      sessionStorage.setItem('merge95:sleepdlg', '1')
+    } catch (e) {}
+    document.getElementById('sleep-text').textContent = (box.getAttribute('data-name') || 'Merge') + ' is ' + wakeText()
+    dlg.hidden = false
+  }
+  if (dlg) {
+    document.getElementById('sleep-ok').addEventListener('click', function () { dlg.hidden = true })
+    document.getElementById('sleep-note').addEventListener('click', function () {
+      dlg.hidden = true
+      var field = document.getElementById('note-message')
+      if (field && field.focus) field.focus()
+    })
+    if (box.getAttribute('data-asleep') === '1') openSleepDialog()
+  }
   var mind = box.getAttribute('data-mind')
   if (!mind) return
   var badge = document.getElementById('live-badge')
@@ -119,6 +157,10 @@ export const FRONT_SCRIPT = `(function () {
     var asleep = !!now.asleep
     badge.textContent = asleep ? 'ASLEEP' : 'LIVE'
     if (document.body && document.body.classList) document.body.classList.toggle('night', asleep)
+    if (asleep && box.getAttribute('data-asleep') !== '1') {
+      box.setAttribute('data-asleep', '1')
+      openSleepDialog()
+    }
     if (asleep || !now.step) {
       line.textContent = asleep ? 'Right now: asleep.' : 'Right now: resting.'
     } else {
@@ -128,7 +170,7 @@ export const FRONT_SCRIPT = `(function () {
     status.textContent = 'Live from the server' + (now.updatedAt ? ', updated ' + String(now.updatedAt).slice(11, 16) + ' UTC' : '') + '.'
   }
   function stale() {
-    badge.textContent = 'LAST SEEN'
+    badge.textContent = box.getAttribute('data-asleep') === '1' ? 'ASLEEP' : 'LAST SEEN'
     status.textContent = 'The server did not answer. This is the last state saved in the repo, from ' + seen + '.'
   }
   function poll() {
@@ -144,6 +186,31 @@ export const FRONT_SCRIPT = `(function () {
   setInterval(poll, 30000)
 })()
 `
+
+/**
+ * The boot screen: shown for about 1.5 s on the first visit of the day (counted in Merge's time zone, kept in `localStorage`), skipped when motion is turned
+ * down, and never shown when the browser blocks storage (it could not be once a day). Any key or tap ends it. It runs before the page paints.
+ */
+export const bootScript = (tz: string): string => `(function () {
+  var root = document.documentElement
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    var day = new Intl.DateTimeFormat('en-CA', { timeZone: ${JSON.stringify(tz)} }).format(new Date())
+    if (localStorage.getItem('merge95:boot') === day) return
+    localStorage.setItem('merge95:boot', day)
+  } catch (e) {
+    return
+  }
+  root.classList.add('booting')
+  function end() {
+    root.classList.remove('booting')
+    document.removeEventListener('keydown', end)
+    document.removeEventListener('pointerdown', end)
+  }
+  document.addEventListener('keydown', end)
+  document.addEventListener('pointerdown', end)
+  setTimeout(end, 1500)
+})()`
 
 const usd = (n: number) => `$${n.toFixed(2)}`
 const calls = (n: number) => `${n} ${n === 1 ? 'call' : 'calls'}`
