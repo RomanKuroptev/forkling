@@ -422,3 +422,37 @@ describe('a write is a caption or a page in the price (spec v4 5.1)', () => {
     expect(reasons([wander(), caption, rest()], { ...c, pointsInHand: 3 })).toEqual([expect.stringContaining('costs 4 points')])
   })
 })
+
+describe('nothing breaks at three times the points (spec v4 5.3, rule 4)', () => {
+  const rich = ctx({ pointsInHand: 900, canFound: true, expandable: new Set(['home', 'workshop']), expandEarned: new Set(['home', 'workshop']), used: { repliesToday: 0, foundThisWeek: 0 } })
+
+  it('keeps every rail of the plan check with 900 points in hand: the steps, the verbs in a row, the replies and the found of a week', () => {
+    const reply = (n: number): MindStep => ({ verb: 'reply', target: `n${n}`, reason: 'Answering.', minutes: 10, wantId: null })
+    const notes = new Set(['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7'])
+    // Nine steps: the most is 8, however many points there are.
+    expect(reasons(plan(9), rich).join(' ')).toMatch(/3 to 8 steps/)
+    // Three of one verb in a row is still turned down.
+    expect(reasons([wander(), wander(), wander(), rest()], rich).join(' ')).toMatch(/three times in a row|in a row/)
+    // Six replies in a day: the 5 a day rail does not grow with the points.
+    expect(reasons([reply(1), reply(2), reply(3), reply(4), reply(5), reply(6), rest()].map((s, i) => (i % 2 ? { ...s, minutes: 10 } : s)), { ...rich, notes }).join(' ')).toMatch(/replies|5 a day|a day/)
+    // A second found inside a week is turned down.
+    const found: MindStep = { verb: 'found', target: 'The Lamp Room', reason: 'The lights keep pointing at each other.', minutes: 30, wantId: 'w1' }
+    expect(reasons([wander(), found, rest()], { ...rich, used: { repliesToday: 0, foundThisWeek: 1 } })).toEqual([expect.stringContaining('1 a week')])
+    // No expand twice in a row, nothing in the last 45 minutes before bed.
+    const expand: MindStep = { ...tend({ wantId: null }), verb: 'expand', target: 'home', minutes: 20 }
+    expect(reasons([wander(), expand, rest()], { ...rich, lastExpandedPlace: 'home' })).toEqual([expect.stringContaining('twice in a row')])
+    expect(reasons(basic, { ...rich, startMs: BED - 100 * 60_000 })).toEqual([expect.stringContaining('before bed')])
+  })
+
+  it('a week at 900 points a day, saved up to the 1500 held, never lets a plan past a rail', () => {
+    // Seven mornings: 900 more each day, held at 1500, and a full day of the heaviest steps costs less than the grant.
+    let held = 0
+    for (let day = 0; day < 7; day++) {
+      held = Math.min(1500, held + 900)
+      const heavy = [wander(), tend(), write(), wander({ target: 'radio' }), tend({ deep: true }), rest(), write({ target: 'joke' }), rest()]
+      const r = validateMindPlan(heavy, { ...rich, pointsInHand: held })
+      expect(r.ok, `day ${day}`).toBe(true)
+    }
+    expect(held).toBe(1500)
+  })
+})

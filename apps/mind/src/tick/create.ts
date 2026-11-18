@@ -5,7 +5,8 @@ import {
   liveBeliefs,
   localDate,
   playbackStateTime,
-  pointsAtWake,
+  grantPoints,
+  DAILY_POINTS,
   sleepWindow,
   startPlayback,
 } from '@forkling/sim'
@@ -53,7 +54,11 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   const body = playback.state
   const mind = structuredClone(w.mindState)
   // The daily allowance is topped up at the first awake tick of each day: what was saved, plus the daily points (300 until the Sunday formula sets another figure), up to the most that may be held (spec v4 5.2).
-  if (!asleep && mind.allowance?.day !== today) mind.allowance = { points: pointsAtWake(mind.allowance?.points ?? 0, mind.dailyPoints?.value), day: today }
+  if (!asleep && mind.allowance?.day !== today) {
+    const granted = grantPoints(mind.allowance?.points ?? 0, { at: nowIso, points: mind.dailyPoints?.value ?? DAILY_POINTS, source: 'daily' }, mind.grants ?? [])
+    mind.allowance = { points: granted.points, day: today }
+    mind.grants = granted.grants
+  }
 
   const mindConfig = readMindConfig(dir)
   const t: Tick = {
@@ -78,6 +83,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
     asleep,
     window,
     budget,
+    credits: w.credits,
 
 
     world,

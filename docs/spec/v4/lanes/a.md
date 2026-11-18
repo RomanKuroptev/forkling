@@ -11,3 +11,5 @@
 - Points for a founding refused for having no real tag are not refunded: a step spends its points when it starts, and no refused job output (tinker, expand, found) gets points back today. Kept consistent.
 - Step 2 slice A: merged (#207).
 - Step 2 slice B, prices and points: PR open with prompt-review. Daily points: 300 at the stored cap 12.6, 370 at 15 (rule 7). Fixes folded in from review: caption is 40 words and cut at a word (not 50, not dropped), fitReply keeps line breaks unless it cuts, about.md once a week is a 6-day minimum since the newest copy.
+- Step 2 slice B: merged (#210).
+- Step 2 slice C, ready for income: PR open (no prompt text changes). Credits file and schema, effectiveCapUsd read by the guard, pace rule, Haiku fallback, daily points formula and health file; grants carry a source; an earned expand is min(20, expand). The `session` call kind of lane B is untouched. Fast-forward and run-report still read `capUsd` from a ledger on disk (lane 0's files); they run on throwaway copies with no credits file, so nothing changes for them.

@@ -3,6 +3,7 @@ import type {
   Artifact,
   ArtifactKind,
   BudgetCall,
+  Credit,
   BuildRequest,
   Goals,
   Intention,
@@ -120,6 +121,8 @@ export interface Tick {
   asleep: boolean
   window: ReturnType<typeof sleepWindow>
   budget: ReturnType<typeof rollLedger>
+  /** Money Roman has added (spec v4 5.3): the guards read `effectiveCapUsd(budget, credits)`, never `budget.capUsd` alone. */
+  credits: readonly Credit[]
 
   world: BodyWorld
   /** The places in the world (`places/*.json`), in id order. Empty in a world that has none yet. */

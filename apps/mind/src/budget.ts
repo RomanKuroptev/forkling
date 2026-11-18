@@ -1,4 +1,4 @@
-import { BudgetLedger, type BudgetCall } from '@forkling/schema'
+import { BudgetLedger, type BudgetCall, type Credit } from '@forkling/schema'
 import { localDate } from '@forkling/sim'
 
 export type ModelId = 'claude-haiku-5-5' | 'claude-sonnet-5-5'
@@ -52,28 +52,48 @@ export function daysInMonth(date: string): number {
   return new Date(Date.UTC(y, m, 0)).getUTCDate()
 }
 
+/**
+ * The model cap of a month (spec v4 5.3): `capUsd` plus the credits that arrived in that month. A credit counts for its own month
+ * only, so next month starts from `capUsd` again. Every place that reads the cap reads this one: the guard, the pace rule, the fallback
+ * to Haiku, the daily points formula and the health file. The check that `capUsd` plus the server stays within $23 reads `capUsd` alone.
+ * A credit's month is the first 7 characters of its time (UTC).
+ */
+export function effectiveCapUsd(ledger: Pick<BudgetLedger, 'capUsd' | 'month'>, credits: readonly Credit[] = [], month: string = ledger.month): number {
+  const extra = credits.filter((c) => c.at.slice(0, 7) === month).reduce((n, c) => n + c.usd, 0)
+  return Math.round((ledger.capUsd + extra) * 1e8) / 1e8
+}
+
+/** What came in this month, in dollars (zero with no credits). */
+export const moneyInUsd = (ledger: Pick<BudgetLedger, 'month'>, credits: readonly Credit[] = []): number => effectiveCapUsd({ capUsd: 0, month: ledger.month }, credits)
+
+/**
+ * The ledger as the guards read it: the same, with `capUsd` replaced by the effective cap. For reading only, by the places that read the
+ * ledger from disk to guard a call; never written back, because the file keeps the real `capUsd`.
+ */
+export const guardLedger = (ledger: BudgetLedger, credits: readonly Credit[] = []): BudgetLedger => (credits.length === 0 ? ledger : { ...ledger, capUsd: effectiveCapUsd(ledger, credits) })
+
 /** The model cap spread evenly over the month, counting the whole of today. */
-export function paceUsd(ledger: BudgetLedger, today: string): number {
-  return (ledger.capUsd * Number(today.slice(8, 10))) / daysInMonth(today)
+export function paceUsd(ledger: BudgetLedger, today: string, credits: readonly Credit[] = []): number {
+  return (effectiveCapUsd(ledger, credits) * Number(today.slice(8, 10))) / daysInMonth(today)
 }
 
 /** Spend more than this share over the month's pace slows the thought tick and holds tinker and expand (spec 13). */
 export const PACE_AHEAD_SHARE = 0.15
 
-export function paceAhead(ledger: BudgetLedger, today: string): boolean {
-  return ledger.spentUsd > paceUsd(ledger, today) * (1 + PACE_AHEAD_SHARE) + 1e-9
+export function paceAhead(ledger: BudgetLedger, today: string, credits: readonly Credit[] = []): boolean {
+  return ledger.spentUsd > paceUsd(ledger, today, credits) * (1 + PACE_AHEAD_SHARE) + 1e-9
 }
 
 /** Creative calls run on Sonnet until spend is this close to the monthly cap, and then on Haiku, so the end of a month is plainer sketches, not a silent Merge. */
 export const CREATIVE_FALLBACK_USD = 1.5
 
 /** The model for a creative call (a sketch, a meme, a rework, a reply): Sonnet, or Haiku when the month is nearly spent. */
-export function creativeModel(ledger: Pick<BudgetLedger, 'capUsd' | 'spentUsd'>): ModelId {
-  return ledger.capUsd - ledger.spentUsd <= CREATIVE_FALLBACK_USD ? 'claude-haiku-5-5' : 'claude-sonnet-5-5'
+export function creativeModel(ledger: Pick<BudgetLedger, 'capUsd' | 'spentUsd' | 'month'>, credits: readonly Credit[] = []): ModelId {
+  return effectiveCapUsd(ledger, credits) - ledger.spentUsd <= CREATIVE_FALLBACK_USD ? 'claude-haiku-5-5' : 'claude-sonnet-5-5'
 }
 
-export function canSpend(ledger: BudgetLedger, estimateUsd: number): boolean {
-  return ledger.spentUsd + estimateUsd <= ledger.capUsd + 1e-9
+export function canSpend(ledger: BudgetLedger, estimateUsd: number, credits: readonly Credit[] = []): boolean {
+  return ledger.spentUsd + estimateUsd <= effectiveCapUsd(ledger, credits) + 1e-9
 }
 
 export function recordCall(ledger: BudgetLedger, call: BudgetCall): BudgetLedger {

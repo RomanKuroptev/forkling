@@ -113,6 +113,8 @@ export const MindState = z.object({
     .optional(),
   /** The local date the prices were last set, so it is once a Sunday. */
   pricesSetOn: z.iso.date().optional(),
+  /** The last 30 grants of points and where each came from (spec v4 5.3): `daily` today. */
+  grants: z.array(z.object({ at: Timestamp, points: z.number().min(0), source: z.string().min(1).max(40) })).max(30).optional(),
   /** The daily points the Sunday formula set (spec v4 5.2), and the date. Absent until 7 full days of overhead are on record: the starting 300 stands. */
   dailyPoints: z.object({ value: z.number().int().min(100), setOn: z.iso.date() }).optional(),
   /** The overhead spend of each past local date, read from the ledger the day after while its calls are still there (it keeps only 500). Last 14 days. */

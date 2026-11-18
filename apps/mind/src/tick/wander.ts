@@ -123,11 +123,11 @@ export async function tripStep(t: Tick): Promise<void> {
     {
       open: (url) => readUrl(fetcher, url),
       read: (item) =>
-        performRead({ llm, fetcher, seed: ownNotes(t.page, t.w.seed), purpose: step.reason, interests: t.interests, mayCall: (usd) => canSpend(t.budget, usd), readRecently: t.wander.readRecently }, item),
+        performRead({ llm, fetcher, seed: ownNotes(t.page, t.w.seed), purpose: step.reason, interests: t.interests, mayCall: (usd) => canSpend(t.budget, usd, t.credits), readRecently: t.wander.readRecently }, item),
       now: () => nowIso,
       known: { souvenirs: t.wander.souvenirs, readRecently: t.wander.readRecently },
       readsLeft,
-      look: (item, picture, reaction) => performLook({ llm, fetcher, seed: ownNotes(t.page, t.w.seed), mayCall: (usd) => canSpend(t.budget, usd) }, item, picture, reaction),
+      look: (item, picture, reaction) => performLook({ llm, fetcher, seed: ownNotes(t.page, t.w.seed), mayCall: (usd) => canSpend(t.budget, usd, t.credits) }, item, picture, reaction),
       looksLeft: MAX_LOOKS_PER_DAY - t.trips.looks,
       // Booked at once, so the guard sees the cost before the next call.
       onRead: (_item, outcome) => book('read', outcome.usage, outcome.usd, outcome.answer !== null, outcome.note),

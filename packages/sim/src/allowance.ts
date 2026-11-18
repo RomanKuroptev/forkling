@@ -3,6 +3,7 @@
  * of expected model cost, and a plan may not cost more than the points in hand. Pure. The prices are the starting ones;
  * each Sunday code sets them again from the real average cost in the ledger (`pricesFromLedger`, `pricesDue`).
  */
+import { POINTS_HELD_MAX } from '@forkling/schema'
 import { localDate } from './sleep.ts'
 import { localHour, localWeekday, WEEKLY_REVIEW_HOUR } from './weekly.ts'
 
@@ -36,7 +37,7 @@ export const PRICES: Prices = { fullWork: 150, expand: 50, expandEarned: 20, tri
 /** Points at each wake until the first Sunday formula has set another figure (spec v4 5.2). */
 export const DAILY_POINTS = 300
 /** What may be saved up (spec v4 5.2). */
-export const MAX_POINTS_IN_HAND = 1500
+export const MAX_POINTS_IN_HAND = POINTS_HELD_MAX
 /** A deep step runs its step call on Sonnet at medium effort. */
 export const DEEP_COST = 30
 
@@ -57,6 +58,24 @@ export function pointsAtWake(inHand: number, daily: number = DAILY_POINTS): numb
   return Math.min(MAX_POINTS_IN_HAND, Math.max(0, inHand) + daily)
 }
 
+/** Where a grant of points came from (spec v4 5.3). `daily` is the only source today; donations and the like would add their own. */
+export interface PointGrant {
+  at: string
+  points: number
+  source: string
+}
+
+/** How many grants are remembered. */
+export const MAX_GRANTS_KEPT = 30
+
+/**
+ * Gives points from a source: what was in hand plus `points`, up to the most that may be held, and the grant added to the record of
+ * the last 30. The source is an argument: no code assumes the only source is the daily grant (spec v4 5.3). Pure.
+ */
+export function grantPoints(inHand: number, grant: PointGrant, grants: readonly PointGrant[]): { points: number; grants: PointGrant[] } {
+  return { points: Math.min(MAX_POINTS_IN_HAND, Math.max(0, inHand) + grant.points), grants: [...grants, grant].slice(-MAX_GRANTS_KEPT) }
+}
+
 /** Whether a step may be deep: the ones whose step call is a Haiku call that Merge may choose to run on Sonnet. A sketch is not one: it is always Sonnet. */
 function mayBeDeep(step: PricedStep): boolean {
   return step.verb === 'tend' || step.verb === 'write' || step.verb === 'found'
@@ -72,7 +91,8 @@ export function stepCost(step: PricedStep, prices: Prices = PRICES): number {
     case 'revisit':
       return prices.revisit
     case 'expand':
-      return step.earned ? prices.expandEarned : prices.expand
+      // Earning gives a lower price, never a higher one: the expand price floats with the Sunday reset, the earned one is fixed (spec v4 2.2).
+      return step.earned ? Math.min(prices.expandEarned, prices.expand) : prices.expand
     case 'found':
       return prices.found
     case 'tinker':

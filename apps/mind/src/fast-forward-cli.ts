@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
+import { TOTAL_CAP_USD } from '@forkling/schema'
 import { localDate } from '@forkling/sim'
 import { createBrowserChecker } from './builds/browser-check.ts'
 import { hasCredentials } from './credentials.ts'
@@ -61,7 +62,7 @@ async function main(): Promise<number> {
   const days = Number(values.days)
   const cap = Number(values.cap)
   if (!Number.isInteger(days) || days < 1 || days > 31) throw new Error(`--days is a whole number from 1 to 31\n\n${USAGE}`)
-  if (!Number.isFinite(cap) || cap <= 0 || cap > 23) throw new Error(`--cap is dollars, more than 0 and at most 23\n\n${USAGE}`)
+  if (!Number.isFinite(cap) || cap <= 0 || cap > TOTAL_CAP_USD) throw new Error(`--cap is dollars, more than 0 and at most ${TOTAL_CAP_USD}\n\n${USAGE}`)
   const dryRun = values['dry-run']
   if (!dryRun && !hasCredentials(process.env)) throw new Error('no ANTHROPIC_API_KEY: set it for a real run, or pass --dry-run for a smoke run with the fakes')
 
