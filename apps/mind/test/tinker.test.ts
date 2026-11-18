@@ -287,6 +287,38 @@ describe('runTinker: when the model gives no work', () => {
     expect(out.status === 'failed' && out.reason).toBe('the model gave no usable answer (meta.kind: Invalid option)')
   })
 
+  // R1 fast-forward, 21 November: a sketch with an empty about went to the scrap bin, and the scrap's meta threw out of the tick.
+  it('is failed, never a crash, when a sketch has an empty about and so cannot be kept even as a scrap', async () => {
+    for (const over of [{ about: '' }, { about: '   ' }, { title: '' }]) {
+      const { complete, calls } = fakeComplete([answer(output(over))])
+      const out = await runTinker(deps(complete, fakeChecker([]).checker), input({ size: 'sketch' }))
+      expect(out.status).toBe('failed')
+      expect(out.status === 'failed' && out.reason).toMatch(/^the model gave no usable answer \((about|title): /)
+      expect(calls).toHaveLength(1)
+    }
+  })
+
+  it('is failed when a full work and its repair both have an empty about, with no third call', async () => {
+    const { complete, calls } = fakeComplete([answer(output({ about: '' })), answer(output({ about: '' }))])
+    const out = await runTinker(deps(complete, fakeChecker([]).checker), input())
+    expect(out.status === 'failed' && out.reason).toMatch(/^the model gave no usable answer \(about: /)
+    expect(calls).toHaveLength(2)
+  })
+
+  it('shelves a full work whose repair mends an empty about', async () => {
+    const { complete } = fakeComplete([answer(output({ about: '' })), answer(output())])
+    const out = await runTinker(deps(complete, fakeChecker([{ ok: true }]).checker), input())
+    expect(out.status).toBe('shelf')
+  })
+
+  it('is failed, never a crash, when a meme names more sources than a meta keeps', async () => {
+    const url = 'https://en.wikipedia.org/wiki/Distracted_boyfriend_meme'
+    const sources = Array.from({ length: 7 }, () => ({ role: 'read' as const, url }))
+    const { complete } = fakeComplete([answer(output({ kind: 'meme', sources }))])
+    const out = await runTinker(deps(complete, fakeChecker([]).checker), input({ size: 'sketch' }))
+    expect(out.status === 'failed' && out.reason).toMatch(/^the model gave no usable answer \(sources: /)
+  })
+
   it('is failed when the repair call gives nothing, and keeps the first failure as the reason', async () => {
     const { complete } = fakeComplete([answer(output()), null])
     const out = await runTinker(deps(complete, fakeChecker([{ ok: false, reasons: ['uses fetch, and a work has no network'] }]).checker), input())
