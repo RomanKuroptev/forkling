@@ -6,7 +6,7 @@ import vm from 'node:vm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Note, Project } from '@forkling/schema'
 import { sleepWindow } from '@forkling/sim'
-import { bootScript, FRONT_SCRIPT, wakeInfo } from '../src/front.ts'
+import { bootScript, CARDS_SCRIPT, FRONT_SCRIPT, wakeInfo } from '../src/front.ts'
 import { NOTES_SCRIPT } from '../src/notes-script.ts'
 import { renderSite } from '../src/render.ts'
 
@@ -83,7 +83,7 @@ describe('the front page /', () => {
     const html = front()
     expect(html).not.toMatch(/<canvas|three|viewer|\.glb|webgl/i)
     const scripts = [...html.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map((m) => m[1])
-    expect(scripts.sort()).toEqual(['https://challenges.cloudflare.com/turnstile/v0/api.js', 'front.js', 'notes.js', 'since.js'].sort())
+    expect(scripts.sort()).toEqual(['cards.js', 'https://challenges.cloudflare.com/turnstile/v0/api.js', 'front.js', 'notes.js', 'since.js'].sort())
     // One address: the world is built into the site's own /world/, so the way in is a relative link.
     expect(html).toContain('<a class="btn go" href="world/">')
     build({ viewer: false })
@@ -98,6 +98,15 @@ describe('the front page /', () => {
     expect(html).toContain('session 3 &lt;i&gt;caption&lt;/i&gt;')
     expect(html).not.toContain('<i>caption</i>')
     expect(html).not.toContain('<img')
+  })
+
+  it('gives every card its words and picture as escaped data, and the page a hidden window for the opened card with its script', () => {
+    build()
+    const html = front()
+    expect(html).toMatch(/class="tcard"[^>]*data-caption="session 3 &lt;i&gt;caption&lt;\/i&gt;"[^>]*data-image="projects\/toaster\/shots\/3.png"/)
+    expect(html).toMatch(/<div id="card-open" class="w95 cardopen" role="dialog"[^>]* hidden>/)
+    expect(html).toContain('<script src="cards.js" defer></script>')
+    expect(readFileSync(join(out, 'cards.js'), 'utf8')).toBe(CARDS_SCRIPT)
   })
 
   it('shows the project with its screenshots as days, its aim and its latest caption', () => {

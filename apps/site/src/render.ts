@@ -5,7 +5,7 @@ import { Beliefs, BudgetLedger, Forkling, Goals, Health, Interests, isOpenReques
 import { localDate } from '@forkling/sim'
 import { STYLE } from './style.ts'
 import { buildToday } from './today.ts'
-import { FRONT_SCRIPT, frontBody, hoodBody, wakeInfo } from './front.ts'
+import { CARDS_SCRIPT, FRONT_SCRIPT, frontBody, hoodBody, wakeInfo } from './front.ts'
 import { desktopPicturePng } from './desktop-picture.ts'
 import { asleepFaceSvg, errorIconSvg, faviconSvg, ICONS, iconFor, iconSvg } from './icons.ts'
 import { esc, markdown } from './md.ts'
@@ -518,6 +518,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   write('since.js', SINCE_SCRIPT)
   write('notes.js', NOTES_SCRIPT)
   write('front.js', FRONT_SCRIPT)
+  write('cards.js', CARDS_SCRIPT)
   written.push(...publishWorks(world, out, works))
   written.push(...publishProjects(world, out, projects))
   return { pages: written }
