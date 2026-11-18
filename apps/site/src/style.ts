@@ -199,7 +199,7 @@ main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-re
 .dialog { position: fixed; z-index: 40; left: 50%; top: 22%; transform: translateX(-50%); width: min(520px, 94vw); }
 .dialog[hidden] { display: none; }
 .dlg-text { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 8px; }
-.dlg-icon { flex: none; width: 36px; height: 36px; background: var(--hot); border: 2px solid var(--ink); box-shadow: inset 0 0 0 2px var(--white); }
+.dlg-icon { flex: none; width: 40px; height: 40px; background: url('icons/error.svg') center / contain no-repeat; image-rendering: pixelated; }
 .dialog .actions .btn, .dialog .actions button { flex: 1 1 auto; }
 /* The boot screen: only for a visitor whose first visit of the day this is (front.js's inline script adds .booting). */
 .boot { display: none; }

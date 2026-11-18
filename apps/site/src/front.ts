@@ -1,4 +1,5 @@
 import type { BudgetLedger, Goals, Health, Interests, Note } from '@forkling/schema'
+import { addDays, isAsleepAt, localDate, sleepWindow } from '@forkling/sim'
 import { esc } from './md.ts'
 import { noteFormCompact } from './notes.ts'
 import type { SiteProject } from './projects.ts'
@@ -16,6 +17,18 @@ const bg = (path: string) => `style="background-image:url('${esc(encodeURI(path)
 
 const win = (id: string, title: string, body: string, cls = '', attrs = '') =>
   `<section class="w95 ${cls}" id="${id}"${attrs}><div class="title"><h2>${esc(title)}</h2><span class="btns" aria-hidden="true"><i></i><i></i><i></i></span></div><div class="w95-body">${body}</div></section>`
+
+/**
+ * When Merge wakes next (Unix ms), from the sleep schedule the mind itself uses. Zero when the state says asleep but the schedule says awake at
+ * that moment: the page then claims no wake time.
+ */
+export function wakeInfo(i: { nowMs: number; seed: number; timezone: string; lateNight?: string | undefined; asleep: boolean }): number {
+  const opts = { seed: i.seed, timezone: i.timezone, lateNight: i.lateNight }
+  if (i.asleep && !isAsleepAt(i.nowMs, opts)) return 0
+  const today = localDate(i.timezone, i.nowMs)
+  const wakeOn = (d: string) => sleepWindow(d, i.seed, i.timezone, i.lateNight === d).wakeMs
+  return wakeOn(today) > i.nowMs ? wakeOn(today) : wakeOn(addDays(today, 1))
+}
 
 const clock = (tz: string, iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
 const dayOf = (tz: string, iso: string) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso))
@@ -65,7 +78,7 @@ export function frontBody(i: FrontInput): string {
       i.asleep
         ? `<div class="still asleep" role="img" aria-label="${esc(name)} is asleep: no signal"><span class="badge" id="live-badge">ASLEEP</span><span class="zface" aria-hidden="true"></span><strong class="nosig">NO SIGNAL</strong><span class="nosig-sub">${esc(name)} is asleep. zzz</span></div>`
         : `<div class="still" role="img" aria-label="${esc(name)}'s desktop" style="background-image:url('share.png')"><span class="badge" id="live-badge">LAST SEEN</span></div>`,
-      `<p class="right-now" id="live-line">Right now: ${doing}</p>`,
+      `<p class="right-now" id="live-line">Right now: ${i.asleep ? '<strong>asleep</strong>.' : doing}</p>`,
       '<p class="thought quiet" id="live-thought"></p>',
       `<p class="quiet" id="live-status">${i.asleep ? 'Asleep' : 'Awake'}. Last seen ${esc(i.lastSeen)}.</p>`,
       `<p class="actions">${i.viewerUrl ? `<a class="btn go" href="${esc(i.viewerUrl)}">&#9654; ENTER WORLD</a>` : ''}<a class="btn" href="${esc(i.aboutHref)}">who is ${esc(name)}?</a></p>`,
@@ -130,6 +143,9 @@ export const FRONT_SCRIPT = `(function () {
   }
   function openSleepDialog() {
     if (!dlg) return
+    // A page built before Merge woke: the wake time has passed, so do not claim it is asleep.
+    var wakeAt = Number(box.getAttribute('data-wake'))
+    if (wakeAt && Date.now() >= wakeAt) return
     try {
       if (window.sessionStorage && sessionStorage.getItem('merge95:sleepdlg')) return
       sessionStorage.setItem('merge95:sleepdlg', '1')

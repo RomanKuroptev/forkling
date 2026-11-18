@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url'
 import vm from 'node:vm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Note, Project } from '@forkling/schema'
-import { bootScript, FRONT_SCRIPT } from '../src/front.ts'
+import { sleepWindow } from '@forkling/sim'
+import { bootScript, FRONT_SCRIPT, wakeInfo } from '../src/front.ts'
 import { NOTES_SCRIPT } from '../src/notes-script.ts'
 import { renderSite } from '../src/render.ts'
 
@@ -325,12 +326,58 @@ describe('Merge asleep (step 7C): from the real asleep state, never from clock h
     expect(html).toMatch(/id="live"[^>]*data-asleep="0"/)
   })
 
-  it('carries the next wake time from the sleep schedule, as milliseconds, for the window to count down', () => {
+  // 03:00 in Stockholm on 18 November: inside Merge's real sleep window.
+  const AT_3AM = Date.parse('2026-11-18T02:00:00Z')
+
+  it('carries the next wake time from the real sleep schedule, as milliseconds, for the window to count down', () => {
+    sleeping()
+    build({ ...MAILBOX, now: new Date(AT_3AM) })
+    const wake = Number(/data-wake="(\d+)"/.exec(front())?.[1])
+    const real = sleepWindow('2026-11-18', 20260101, 'Europe/Stockholm').wakeMs
+    expect(wake).toBe(real)
+    expect(wake - AT_3AM).toBeGreaterThan(3 * 3_600_000)
+    expect(wake - AT_3AM).toBeLessThan(5 * 3_600_000)
+  })
+
+  it('says asleep in the Right now line too, from the same state as the badge, never what the repo last said it was doing', () => {
+    sleeping()
+    build({ ...MAILBOX, now: new Date(AT_3AM) })
+    const html = front()
+    const line = /<p class="right-now" id="live-line">([^<]*(?:<[^>]+>[^<]*)*)<\/p>/.exec(html)?.[1] ?? ''
+    expect(line).toMatch(/Right now: <strong>asleep<\/strong>/)
+    expect(line).not.toContain('New island')
+  })
+
+  it('shows no time at all when the state says asleep but the schedule says it is awake (the dialog then does not claim a wake time)', () => {
     sleeping()
     build(MAILBOX)
-    const wake = Number(/data-wake="(\d+)"/.exec(front())?.[1])
-    expect(wake).toBeGreaterThan(NOW)
-    expect(wake - NOW).toBeLessThan(26 * 3_600_000)
+    expect(front()).toMatch(/data-wake="0"/)
+  })
+
+  it('draws the dialog icon as a red error badge, a circle with a pixel x', () => {
+    sleeping()
+    build({ ...MAILBOX, now: new Date(AT_3AM) })
+    expect(front()).toContain('class="dlg-icon"')
+    expect(readFileSync(join(out, 'icons/error.svg'), 'utf8')).toMatch(/<circle/)
+    expect(readFileSync(join(out, 'style.css'), 'utf8')).toContain("icons/error.svg")
+  })
+
+  describe('wakeInfo, against the real sleepWindow for Merge', () => {
+    const merge = { seed: 20260101, timezone: 'Europe/Stockholm' }
+    const wake = sleepWindow('2026-11-18', merge.seed, merge.timezone).wakeMs
+    it('inside the night it is that morning\'s wake time, a few hours on', () => {
+      expect(wakeInfo({ ...merge, nowMs: AT_3AM, asleep: true })).toBe(wake)
+    })
+    it('a minute before waking it is still that wake time', () => {
+      expect(wakeInfo({ ...merge, nowMs: wake - 60_000, asleep: true })).toBe(wake)
+    })
+    it('in the evening (before bed) it is the next morning\'s, for a server that says asleep later', () => {
+      const evening = Date.parse('2026-11-18T19:00:00Z')
+      expect(wakeInfo({ ...merge, nowMs: evening, asleep: false })).toBe(sleepWindow('2026-11-19', merge.seed, merge.timezone).wakeMs)
+    })
+    it('is zero when the state says asleep and the schedule says awake', () => {
+      expect(wakeInfo({ ...merge, nowMs: Date.parse('2026-11-18T10:00:00Z'), asleep: true })).toBe(0)
+    })
   })
 
   const run = (over: { asleep: string; wake?: string; stored?: string | 'throws' } = { asleep: '1' }) => {
@@ -356,6 +403,16 @@ describe('Merge asleep (step 7C): from the real asleep state, never from clock h
     n['sleep-note']!.listeners.click!()
     expect(n['sleep-dialog']!.hidden).toBe(true)
     expect((n['note-message'] as unknown as { focused?: boolean }).focused).toBe(true)
+  })
+
+  it('does not open when the wake time has already passed (the page was built before Merge woke)', () => {
+    expect(run({ asleep: '1', wake: String(Date.now() - 60_000) })['sleep-dialog']!.hidden).toBe(true)
+  })
+
+  it('says only that Merge is asleep when the schedule gave no wake time', () => {
+    const n = run({ asleep: '1', wake: '0' })
+    expect(n['sleep-dialog']!.hidden).toBe(false)
+    expect(n['sleep-text']!.textContent).toBe('Merge is asleep.')
   })
 
   it('does not open when it is awake', () => {

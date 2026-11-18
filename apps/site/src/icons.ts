@@ -36,6 +36,13 @@ export function iconSvg(name: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" shape-rendering="crispEdges">${rects}</svg>\n`
 }
 
+/** The red error badge of Merge 95's windows: a circle with a pixel x. */
+export function errorIconSvg(): string {
+  const px = (x: number, y: number) => `<rect x="${x * 2}" y="${y * 2}" width="2" height="2" fill="#ffffff"/>`
+  const cross = Array.from({ length: 6 }, (_, i) => px(4 + i, 4 + i) + px(9 - i, 4 + i)).join('')
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28" shape-rendering="crispEdges"><circle cx="14" cy="14" r="13" fill="#e0245e" stroke="#1a0b3b" stroke-width="2"/>${cross}</svg>\n`
+}
+
 /** Merge asleep: the monitor with flat closed eyes and a small z, for the NO SIGNAL screen. */
 export function asleepFaceSvg(): string {
   const p = (x: number, y: number, w: number, h: number, fill: string) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`
