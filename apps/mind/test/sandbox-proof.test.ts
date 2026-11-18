@@ -63,6 +63,20 @@ const deps = (sandbox: SocketSandbox, over: Partial<ProofDeps> = {}): ProofDeps 
   ...over,
 })
 
+describe('sandbox-proof says why the unit gave nothing', () => {
+  it("adds the client's last problem to a failing line", async () => {
+    const sandbox: SocketSandbox = { ...unit(), probe: async () => null, lastProblem: () => 'the sandbox stayed busy (every connection was dropped)' }
+    const lines = await runProof(deps(sandbox))
+    expect(lines.find((l) => l.test === '5')!.detail).toMatch(/sandbox: the sandbox stayed busy/)
+  })
+
+  it('names crashed and timedOut for the page that draws', async () => {
+    const sandbox: SocketSandbox = { ...unit(), run: async () => run({ loaded: true, crashed: true }) }
+    const lines = await runProof(deps(sandbox))
+    expect(lines[1]!.detail).toMatch(/crashed true, timedOut false/)
+  })
+})
+
 const failed = (lines: { test: string; pass: boolean }[]) => lines.filter((l) => !l.pass).map((l) => l.test)
 
 describe('sandbox-proof', () => {

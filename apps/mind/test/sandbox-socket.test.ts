@@ -90,11 +90,56 @@ describe('the client of the sandbox unit', () => {
   })
 
   it('calls a run that ends with no answer early a crash (the memory limit), and one at the time limit timed out', async () => {
-    const path = await fakeUnit((_, socket) => socket.end())
+    const path = await fakeUnit((_, socket) => socket.end('ready\n'))
     const early = await createSocketSandbox({ socketPath: path, libsDir: LIBS }).run(PAGE)
     expect(early.crashed).toBe(true)
     expect(early.unavailable).toBeUndefined()
     expect(readPageAnswer({ answer: null, ms: 30_500, error: 'the run ended with no answer' }).timedOut).toBe(true)
+  })
+
+  it('tries again when the socket drops the connection at once (the unit is still busy with the last run), and the run goes through', async () => {
+    // systemd with Accept=yes and MaxConnections=1 accepts a connection made while the last run's unit is still stopping and
+    // closes it at once, with nothing written. The runner always says "ready" first, so a run that started never looks like that.
+    const path = socketPath()
+    let connections = 0
+    const server = createServer((socket) => {
+      connections++
+      if (connections < 3) return socket.destroy()
+      socket.write('ready\n')
+      socket.once('data', () => socket.end(`${JSON.stringify(emptyPageResult({ loaded: true, rendered: true }))}\n`))
+    })
+    servers.push(server)
+    await new Promise<void>((resolve) => server.listen(path, resolve))
+    const r = await createSocketSandbox({ socketPath: path, libsDir: LIBS }).run(PAGE)
+    expect(connections).toBe(3)
+    expect(r.rendered).toBe(true)
+    expect(r.crashed).toBe(false)
+  })
+
+  it('says the sandbox stayed busy when every connection is dropped, and never calls that a crash', async () => {
+    const path = socketPath()
+    const server = createServer((socket) => socket.destroy())
+    servers.push(server)
+    await new Promise<void>((resolve) => server.listen(path, resolve))
+    const sandbox = createSocketSandbox({ socketPath: path, libsDir: LIBS, busyMs: 500 })
+    const r = await sandbox.run(PAGE)
+    expect(r.unavailable).toBe(true)
+    expect(r.crashed).toBe(false)
+    expect(r.errors.join(' ')).toMatch(/busy/)
+    expect(await sandbox.probe({ read: [], write: [], connect: [], browser: false })).toBeNull()
+    expect(sandbox.lastProblem()).toMatch(/busy/)
+  })
+
+  it("keeps the runner's own words when a probe failed, for the proof to print", async () => {
+    const path = await fakeUnit((_, socket) => socket.end(`ready\n${JSON.stringify({ failed: 'EACCES: scratch/tmp' })}\n`))
+    const sandbox = createSocketSandbox({ socketPath: path })
+    expect(await sandbox.probe({ read: [], write: [], connect: [], browser: false })).toBeNull()
+    expect(sandbox.lastProblem()).toMatch(/EACCES: scratch\/tmp/)
+  })
+
+  it('reads the answer after the ready line', async () => {
+    const path = await fakeUnit((req, socket) => socket.end(`ready\n${JSON.stringify(req.mode === 'probe' ? probeResult() : {})}\n`))
+    expect(await createSocketSandbox({ socketPath: path }).probe({ read: [], write: [], connect: [], browser: true })).toEqual(probeResult())
   })
 
   it('gives up on a unit that never answers', async () => {
