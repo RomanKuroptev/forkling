@@ -170,7 +170,9 @@ dd { margin: 0; }
 .gtiles { flex: 1 0 100%; list-style: none; margin: 0; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; background: var(--white); border: 2px solid var(--ink); }
 .gt a { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: var(--ink); background: var(--white); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--hot); }
 .gt a:focus-visible { outline: 2px dotted var(--ink); outline-offset: 2px; }
-.gname { margin: 0 8px 8px; font-size: 24px; line-height: 1.1; overflow-wrap: anywhere; }
+.gname { margin: 0 8px 8px; font-size: 20px; line-height: 1.1; overflow-wrap: anywhere; }
+.gt .tmeta { color: var(--purple); font-size: 18px; white-space: nowrap; }
+@media (min-width: 700px) { .gtiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 #gf-sketch:checked ~ .gtiles .gt:not([data-k="sketch"]), #gf-work:checked ~ .gtiles .gt:not([data-k="work"]), #gf-build:checked ~ .gtiles .gt:not([data-k="build"]) { display: none; }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
