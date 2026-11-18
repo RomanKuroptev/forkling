@@ -29,7 +29,7 @@ permissions:
 env:
   # The engine release this world runs on. Keep it the same as in mind.yml.
   FORKLING_REPO: RomanKuroptev/forkling
-  FORKLING_REF: v0.17.2
+  FORKLING_REF: v0.18.0
 
 jobs:
   check:
