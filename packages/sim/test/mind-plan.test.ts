@@ -72,6 +72,13 @@ describe('validateMindPlan', () => {
     expect(reasons(Array.from({ length: 8 }, (_, i) => (i % 2 ? write() : wander())))).toEqual([])
   })
 
+  it('counts steps code took out toward the 3 to 8, so its own edit never makes a plan too short', () => {
+    expect(reasons([wander(), write()], ctx({ removedSteps: 1 }))).toEqual([])
+    expect(reasons([wander(), write()], ctx({ removedSteps: 0 }))).toEqual([expect.stringContaining('3 to 8 steps')])
+    expect(reasons([wander()], ctx({ removedSteps: 1 }))).toEqual([expect.stringContaining('3 to 8 steps')])
+    expect(reasons([], ctx({ removedSteps: 3 }))).toEqual([expect.stringContaining('3 to 8 steps')])
+  })
+
   it('rejects a verb that is not one of the nine', () => {
     expect(reasons([wander(), { ...write(), verb: 'fish' as never }, rest()])).toEqual([expect.stringContaining('"fish"')])
   })

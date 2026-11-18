@@ -122,6 +122,8 @@ export interface MindPlanContext {
   paceAhead?: boolean
   /** Build sessions can run here (spec-v4 3.3: the sandbox is ready). Without it Merge has the nine verbs, and `build` is not one of them. */
   buildAvailable?: boolean
+  /** Steps code took out of the plan before this check (a wander from a used starting point). They still count toward the plan's 3 to 8, so code's own edit never makes a plan too short. */
+  removedSteps?: number
 }
 
 export type MindPlanResult = { ok: true; steps: MindStep[] } | { ok: false; reasons: string[] }
@@ -155,7 +157,8 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
   }
   const steps = input.map((s) => (isVerb(s.verb) ? { ...s, minutes: clampMinutes(s.verb, s.minutes) } : s))
 
-  if (steps.length < MIN_STEPS || steps.length > MAX_STEPS) reasons.push(`a plan has ${MIN_STEPS} to ${MAX_STEPS} steps, and this one has ${steps.length}`)
+  const asked = steps.length + (c.removedSteps ?? 0)
+  if (steps.length < 1 || asked < MIN_STEPS || asked > MAX_STEPS) reasons.push(`a plan has ${MIN_STEPS} to ${MAX_STEPS} steps, and this one has ${asked}`)
   const limits = tiredLimits(c.mood)
   if (limits.maxSteps !== null && steps.length > limits.maxSteps) reasons.push(`you are tired (energy ${c.mood.energy}): a plan has at most ${limits.maxSteps} steps today`)
 
