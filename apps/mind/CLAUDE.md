@@ -1,6 +1,6 @@
 # apps/mind
 
-The mind of one world repo. Today it runs as the Actions tick (`src/cli.ts`, `mind.yml`); from W3 it also runs as a loop on a server (`src/serve.ts`, `src/tick/loop.ts`): a reflex tick in code every 10 s while awake (60 s asleep), a Haiku thought tick every 2 to 5 minutes while awake, and decide, step, reflection and sleep calls at the triggers in spec 2.3. A plan is 3 to 8 steps in the ten verbs (`build` runs a session on a project through the build worker: `src/builds/session.ts`, `session-job.ts`), written by the mind; code validates it and never chooses it.
+The mind of one world repo. Today it runs as the Actions tick (`src/cli.ts`, `mind.yml`); from W3 it also runs as a loop on a server (`src/serve.ts`, `src/tick/loop.ts`): a reflex tick in code every 10 s while awake (60 s asleep), a Haiku thought tick every 2 to 5 minutes while awake, and decide, step, reflection and sleep calls at the triggers in spec 2.3. A plan is 3 to 8 steps in the ten verbs (`build` runs a session on a project through the build worker: `src/builds/session.ts`, `session-job.ts`; it is a verb only when `TickDeps.sessions` is set, which `serve.ts` does when the sandbox self-test passed, so the Actions tick and `sandbox: missing` show nine), written by the mind; code validates it and never chooses it.
 
 ## Models and calls
 - **Haiku 5.5** (`claude-haiku-5-5`) for the thought tick, decide and replan calls, one call per step that writes a file (tend, revisit, write), web reads and looks. Write pages are 80 words.

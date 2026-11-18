@@ -92,6 +92,8 @@ async function main(): Promise<void> {
       behaviors: species.behaviors,
       speciesPersona: species.persona,
       workCheck,
+      // The `build` verb exists only where its sessions can run: the sandbox self-test passed, and there is a model to run them.
+      sessions: selfTest.status === 'ok' && llm !== null,
       web,
       outsideCalls: () => intake?.drainCalls() ?? [],
       engine: env.FORKLING_REF ?? 'dev',

@@ -41,6 +41,9 @@ describe('prompt golden files', () => {
     const system = buildSystem({ seed: DEFAULT_SEED })
     await expect(system).toMatchFileSnapshot('golden/system.txt')
   })
+  it('system prompt where build sessions can run (spec-v4 3.2)', async () => {
+    await expect(buildSystem({ seed: DEFAULT_SEED, build: true })).toMatchFileSnapshot('golden/system-build.txt')
+  })
   for (const kind of ['morning', 'decide'] as const) {
     it(`${kind} user prompt`, async () => {
       await expect(buildUser(input(kind))).toMatchFileSnapshot(`golden/user-${kind}.txt`)
