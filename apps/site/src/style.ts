@@ -134,6 +134,14 @@ dd { margin: 0; }
 .note-fate { margin: 0 0 8px 30px; }
 .notes li.note p.quiet a { font-size: 22px; }
 .notes li.note .note-answer-btn { margin-left: 30px; }
+.msg.typing { display: flex; align-items: center; gap: 10px; border-style: dashed; border-color: var(--purple); }
+.tface { flex: none; width: 34px; height: 24px; background: var(--ink) url('icons/asleep-face.svg') center / 80% no-repeat; border: 2px solid var(--ink); image-rendering: pixelated; }
+.replies-left { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 22px; }
+.pips { display: inline-flex; gap: 4px; }
+.pips i { display: block; width: 18px; height: 18px; border: 2px solid var(--ink); background: var(--white); }
+.pips i.on { background: var(--hot); }
+.note-who { margin: 4px 0; font-size: 22px; }
+.note-who a { color: var(--purple); }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
 .bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto var(--taskbar); overflow-wrap: anywhere; }

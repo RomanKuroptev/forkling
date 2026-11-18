@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Note, NotesHidden, type Place } from '@forkling/schema'
-import { NOTE_DISCLOSURE, noteFate, notesEndpoint, threadNotes, threadOf, threadState, validSiteKey, visibleNotes } from '@forkling/sim'
+import { NOTE_DISCLOSURE, noteFate, THREAD_MAX_REPLIES, notesEndpoint, threadNotes, threadOf, threadState, validSiteKey, visibleNotes } from '@forkling/sim'
 
 export { notesEndpoint, validSiteKey }
 import { esc } from './md.ts'
@@ -61,10 +61,17 @@ export interface NotesInput {
   add: (rel: string, input: { title: string; active: string; body: string; head?: string }) => void
 }
 
+/** The rule of a chat, said where the chat is: Merge's replies per thread and the name it remembers. */
+export const CHAT_RULE = (merge: string) => `${merge} answers up to ${THREAD_MAX_REPLIES} times per chat and remembers your name next time.`
+
+/** "you are: Kim · not you?", filled in by `notes.js` from the name this browser remembers; hidden until there is one. */
+const WHO_HTML = '<p id="note-who" class="note-who quiet" hidden>you are: <strong id="note-who-name"></strong> &middot; <a href="#" id="note-notyou">not you?</a></p>'
+
 export const noteForm = (m: { endpoint: string; siteKey: string }, root = '../') =>
   [
     `<form id="note-form" data-endpoint="${esc(m.endpoint)}" autocomplete="off">`,
     '<p><label for="note-name">Your name (optional, up to 40 characters)</label><br><input id="note-name" type="text" maxlength="40"></p>',
+    WHO_HTML,
     '<p id="note-answering" class="quiet" hidden></p>',
     '<p><label for="note-message">Your note (up to 500 characters)</label><br><textarea id="note-message" maxlength="500" rows="5" placeholder="say something…" required></textarea></p>',
     `<div class="cf-turnstile" data-sitekey="${esc(m.siteKey)}"></div>`,
@@ -85,6 +92,7 @@ export const noteFormCompact = (m: { endpoint: string; siteKey: string }, root =
     `<form id="note-form" class="note-compact" data-endpoint="${esc(m.endpoint)}" autocomplete="off">`,
     '<div class="note-row"><input id="note-message" type="text" maxlength="500" placeholder="leave Merge a note..." aria-label="Your note (up to 500 characters)" required><button id="note-send" type="submit" class="send">SEND</button></div>',
     '<div id="note-extra" hidden>',
+    WHO_HTML,
     NOTE_DISCLOSURE_HTML,
     '<p><label for="note-name">Your name (optional, up to 40 characters)</label><br><input id="note-name" type="text" maxlength="40"></p>',
     `<div class="cf-turnstile" data-sitekey="${esc(m.siteKey)}"></div>`,
@@ -107,6 +115,7 @@ export function renderNotes(i: NotesInput): void {
   const fate = (n: Note): string => {
     const { lead, detail } = noteFate(n, n.foundAt ? i.stamp(n.foundAt).slice(0, 10) : '')
     if (n.status === 'replied') return `<div class="msg merge"><strong class="who">${esc(merge)}:</strong> ${paragraphs(detail ?? '')}</div>`
+    if (n.status === 'found') return `<div class="msg merge typing"><span class="tface" aria-hidden="true"></span><span class="typing-text"><em>${esc(lead)}</em></span></div>`
     return `<p class="quiet note-fate"><em>${esc(lead)}</em>${detail ? ` ${esc(detail)}` : ''}</p>`
   }
   const nowMs = i.nowMs ?? Date.now()
@@ -120,7 +129,9 @@ export function renderNotes(i: NotesInput): void {
     const answers = n.replyTo ? ` data-reply-to="${esc(n.replyTo)}"` : ''
     const shareable = newest && threadNotes(i.notes, id).some((t) => t.status === 'replied')
     const share = shareable ? `<p class="quiet"><a href="t/${esc(id)}.html">Share this thread</a></p>` : ''
-    const foot = share + (!newest || n.status !== 'replied' ? '' : state.open ? (i.mailbox ? `<p><button type="button" class="note-answer-btn" data-answer="${esc(n.id)}">Answer</button></p>` : '') : '<p class="quiet">This thread is closed. Leave a new note above.</p>')
+    const left = Math.max(0, THREAD_MAX_REPLIES - state.replies)
+    const pips = newest && n.status === 'replied' && state.open ? `<p class="replies-left quiet">replies left <span class="pips" role="img" aria-label="${left} of ${THREAD_MAX_REPLIES}">${Array.from({ length: THREAD_MAX_REPLIES }, (_, k) => `<i class="${k < left ? 'on' : ''}"></i>`).join('')}</span></p>` : ''
+    const foot = pips + share + (!newest || n.status !== 'replied' ? '' : state.open ? (i.mailbox ? `<p><button type="button" class="note-answer-btn" data-answer="${esc(n.id)}">Answer</button></p>` : '') : '<p class="quiet">This thread is closed. Leave a new note above.</p>')
     return `<li class="note" data-note="${esc(n.id)}" data-thread="${esc(id)}"${answers} data-status="${esc(n.status)}"><p class="quiet note-meta">${esc(n.name || 'A visitor')} ${n.replyTo ? 'answered' : 'left this'} on ${esc(i.stamp(n.at))}, at ${esc(placeName(n.placeId))}.</p><div class="msg visitor"><strong class="who">${esc(n.name || 'A visitor')}:</strong> ${paragraphs(n.message)}</div>${fate(n)}${foot}</li>`
   }
 
@@ -175,6 +186,7 @@ export function renderNotes(i: NotesInput): void {
       '<h2>Leave a note</h2>',
       i.mailbox ? `${NOTE_DISCLOSURE_HTML}\n${noteForm(i.mailbox)}` : '<p><strong>The mailbox is closed for now.</strong> Notes cannot be left at the moment.</p>',
       '<h2>On the board</h2>',
+      `<p class="quiet">${esc(CHAT_RULE(merge))}</p>`,
       ...(i.notes.length > 0 ? [`<p class="quiet">Times are ${esc(i.zone)}.</p>`] : []),
       i.notes.length > 0 ? `<ul class="requests notes">${order.map(item).join('')}</ul>` : '<p class="quiet">No notes have been left yet.</p>',
     ].join('\n'),
