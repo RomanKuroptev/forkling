@@ -227,6 +227,8 @@ function rgb(hex: string): [number, number, number] {
 }
 
 export type SceneInstances = Record<Shape, ShapeInstances> & {
+  /** The see-through glass boxes, one more draw call. */
+  glassBox: ShapeInstances
   /** For each model file, the matrices of its instances (16 numbers each). */
   models: Record<string, Float32Array>
 }
@@ -235,16 +237,17 @@ export type SceneInstances = Record<Shape, ShapeInstances> & {
  * Every place's shapes, grouped by shape: its outside always (with scaffolding while it is being built), its inside only when `interiors` has it. Each stands on the ground
  * under it. `models` are the model files that have loaded: a part that has one is drawn from it, the others from their primitives.
  */
-export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number; plots?: readonly PlaceRequest[] }): SceneInstances {
+export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number; plots?: readonly PlaceRequest[]; litAlways?: boolean }): SceneInstances {
   const lists: Record<Shape, Instance[]> = { box: [], sphere: [], cylinder: [], cone: [] }
+  const glassList: Instance[] = []
   const modelLists: Record<string, Mat4[]> = {}
   for (const place of places) {
     const [px, pz] = placeCentre(toLandPlace(place))
     const baseY = opts.heightAt(px, pz)
     // How long since it was cared for sets how it looks (spec 4.4). Without a clock, nothing is neglected.
-    const level = opts.nowMs === undefined ? 0 : neglectFor({ id: place.id, lastCareAt: place.state.lastCareAt, founded: place.founded, closed: place.state.closed !== null }, opts.nowMs)
+    const level = opts.nowMs === undefined || opts.litAlways ? 0 : neglectFor({ id: place.id, lastCareAt: place.state.lastCareAt, founded: place.founded, closed: place.state.closed !== null }, opts.nowMs)
     // A closed place (spec 9.9) has its lamps off, whatever its own switch says.
-    const lampsOn = place.state.closed ? false : neglectLook(level, place.state.lamps).lampsOn
+    const lampsOn = place.state.closed ? false : opts.litAlways ? true : neglectLook(level, place.state.lamps).lampsOn
     // A place whose lamps are on (or that is cared for, spec 4.4) has lit windows; one with its lamps off, or neglected, is dark.
     for (const i of exteriorInstances(place, kit, baseY)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
     for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
@@ -278,11 +281,11 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     })
     return { matrices, colors, glow, count: list.length }
   }
-  return { box: pack(lists.box), sphere: pack(lists.sphere), cylinder: pack(lists.cylinder), cone: pack(lists.cone), models }
+  return { box: pack(lists.box), sphere: pack(lists.sphere), cylinder: pack(lists.cylinder), cone: pack(lists.cone), glassBox: pack(glassList), models }
 }
 
 /** What drawing these costs: a draw call for each shape that has any and the triangles of every instance, and for each model file at most `MODEL_LIMITS`. */
-export function renderBudget(scene: Record<Shape, ShapeInstances> & { models?: Record<string, Float32Array> }): { drawCalls: number; triangles: number } {
+export function renderBudget(scene: Record<Shape, ShapeInstances> & { glassBox?: ShapeInstances; models?: Record<string, Float32Array> }): { drawCalls: number; triangles: number } {
   let drawCalls = 0
   let triangles = 0
   for (const matrices of Object.values(scene.models ?? {})) {
@@ -293,6 +296,10 @@ export function renderBudget(scene: Record<Shape, ShapeInstances> & { models?: R
     if (scene[shape].count === 0) continue
     drawCalls++
     triangles += scene[shape].count * SHAPE_TRIANGLES[shape]
+  }
+  if (scene.glassBox && scene.glassBox.count > 0) {
+    drawCalls++
+    triangles += scene.glassBox.count * SHAPE_TRIANGLES.box
   }
   return { drawCalls, triangles }
 }

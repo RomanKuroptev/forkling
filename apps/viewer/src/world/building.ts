@@ -28,7 +28,7 @@ export const NARROW_FRONT = 8
 /** The title bar along the top of the front. */
 export const TITLE_BAR = 1
 /** The glowing band round the body (the hero) is at least this tall. */
-export const RING_HEIGHT = 0.3
+export const RING_HEIGHT = 0.45
 /** The crown is this wide at its foot: steep and narrow. */
 export const CROWN_WIDTH = 3.2
 
@@ -73,18 +73,24 @@ export function frontHeight(bodyHeight: number): number {
  * How tall the crown is, in meters: two thirds of the body, standing on top of the front over the door; the clamp cuts it to the
  * 12 m limit. (So the tip is at the front's height plus this.)
  */
-export function crownHeight(bodyHeight: number): number {
-  return Math.max(0, Math.min((bodyHeight * 2) / 3, MAX_OUTLINE_HEIGHT - frontHeight(bodyHeight)))
+export function crownHeight(bodyHeight: number, share = 2 / 3): number {
+  return Math.max(0, Math.min(bodyHeight * share, MAX_OUTLINE_HEIGHT - frontHeight(bodyHeight)))
 }
+
+/** The styles drawn by the building model, and how tall each one's crown is as a share of the body (a third to two thirds). */
+export const CROWN_SHARE: Record<string, number> = { tower: 2 / 3, timber: 1 / 3, stone: 1 / 2, glass: 1 / 3, 'tin-shack': 1 / 2 }
 
 /** The width of the front: the whole building, or the middle 8 m of one wider than 16 m. */
 export const frontWidth = (footprintWidth: number): number => (footprintWidth > WIDE_BUILDING ? NARROW_FRONT : footprintWidth)
 
 /** The six slots of a building, or nothing for a style that is not drawn this way yet. */
 export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingModel | null {
-  if (place.exterior.style !== 'tower') return null
+  const style = place.exterior.style
+  if (!(style in CROWN_SHARE)) return null
   const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
   const c = colorsOf(palette)
+  // The body is the palette's pastel wall, white marble (stone) or chrome (tin-shack).
+  const bodyColor = style === 'stone' ? c.marble : style === 'tin-shack' ? COLORS.metal : c.body
   const [px, pz] = placeCentre(toLandPlace(place))
   const [fw, fd] = place.exterior.footprint
   const h = floorHeight(place)
@@ -93,7 +99,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
 
   const slots: BuildingModel['slots'] = { base: [], body: [], front: [], crown: [], hero: [], glow: [] }
   const add = (slot: keyof BuildingModel['slots'], shape: Shape, at: [number, number, number], size: [number, number, number], color: string, glow = false, rot: [number, number, number] = [0, 0, 0]): void => {
-    slots[slot].push({ shape, matrix: compose(at, rot, size), color, ...(glow ? { glow: true } : {}) })
+    slots[slot].push({ shape, matrix: compose(at, rot, size), color, ...(glow ? { glow: true } : {}), ...(style === 'glass' && color === bodyColor && shape === 'box' ? { glass: true } : {}) })
   }
 
   // Base: a low marble slab, wider than the footprint, with a thin glowing edge.
@@ -103,7 +109,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   // Body: smooth wall panels on every floor, each leaning in a little and each floor a little narrower than the one below, with few
   // big glowing windows. `dir` is +1 for a wall whose inside is towards +x or +z (back and left), -1 for the front and right.
   let frontWindows = 0
-  const tilt = Math.atan2(LEAN, h)
+  const tilt = style === 'tower' ? Math.atan2(LEAN, h) : 0
   const lean = Math.sin(tilt)
   const taper = (f: number) => Math.min(TAPER * f, Math.min(fw, fd) / 4)
   const windowTop = h / 2 + WINDOW_SIZE[1] / 2
@@ -129,11 +135,11 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       }
       const size = (len: number, up: number, thick: number): [number, number, number] => (alongZ ? [thick, up, len] : [len, up, thick])
       const rot: [number, number, number] = alongZ ? [0, 0, -dir * tilt] : [dir * tilt, 0, 0]
-      add('body', 'box', at(bodyMid, h / 2), size(bodyLen, h / Math.cos(tilt), WALL_THICKNESS), c.body, false, rot)
+      add('body', 'box', at(bodyMid, h / 2), size(bodyLen, h / Math.cos(tilt), WALL_THICKNESS), bodyColor, false, rot)
       if (f === 0) add('body', 'box', at(bodyMid, 0.125), size(bodyLen + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent, false, rot)
       if (f === floors - 1) add('body', 'box', at(bodyMid, h - 0.125), size(bodyLen + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent, false, rot)
       // The glowing band round the body (the hero), above the windows, on the top floor, on every side.
-      if (f === floors - 1) add('hero', 'box', at(mid, ringUp, WALL_THICKNESS / 2 + 0.15), size(length + 1.1, RING_HEIGHT, 0.3), c.glow, true, rot)
+      if (style === 'tower' && f === floors - 1) add('hero', 'box', at(mid, ringUp, WALL_THICKNESS / 2 + 0.15), size(length + 1.1, RING_HEIGHT, 0.3), c.glow, true, rot)
       if (!windows) return
       const n = Math.floor(length / WINDOW_EVERY)
       if (front) frontWindows += n
@@ -151,9 +157,9 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       wall(x0, px - DOOR_HALF, z1, false, -1, true, true, 'after')
       wall(px + DOOR_HALF, x1, z1, false, -1, true, true, 'before')
       // The band goes on over the door too, above it.
-      if (floors === 1) add('hero', 'box', [px, y + ringUp * Math.cos(tilt), z1 - ringUp * lean + WALL_THICKNESS / 2 + 0.15], [DOOR_HALF * 2 + 1, RING_HEIGHT, 0.3], c.glow, true, [-tilt, 0, 0])
+      if (style === 'tower' && floors === 1) add('hero', 'box', [px, y + ringUp * Math.cos(tilt), z1 - ringUp * lean + WALL_THICKNESS / 2 + 0.15], [DOOR_HALF * 2 + 1, RING_HEIGHT, 0.3], c.glow, true, [-tilt, 0, 0])
       const lintel = h - DOOR_HEIGHT
-      if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1 - lean * (DOOR_HEIGHT + lintel / 2)], [DOOR_HALF * 2, lintel, WALL_THICKNESS], c.body)
+      if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1 - lean * (DOOR_HEIGHT + lintel / 2)], [DOOR_HALF * 2, lintel, WALL_THICKNESS], bodyColor)
       // A closed place has its door boarded: chrome planks nailed across the gap, a little crooked.
       if (place.state.closed) {
         const planks: [number, number][] = [[0.55, 0.05], [1.1, -0.06], [1.65, 0.04]]
@@ -176,7 +182,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   let screen = 0
   let titleBar: BuildingModel['titleBar'] = null
   if (panel >= TITLE_BAR + 0.5) {
-    add('front', 'box', [px, baseY + bodyH + panel / 2, frontZ], [fwid, panel, 0.5], c.body)
+    add('front', 'box', [px, baseY + bodyH + panel / 2, frontZ], [fwid, panel, 0.5], bodyColor)
     add('front', 'box', [px, baseY + fh - TITLE_BAR / 2, frontZ + 0.05], [fwid, TITLE_BAR, 0.6], c.accent)
     for (let k = 0; k < 3; k++) add('front', 'box', [px + fwid / 2 - 0.55 - k * 0.6, baseY + fh - TITLE_BAR / 2, frontZ + 0.4], [0.4, 0.4, 0.3], c.marble)
     const nameW = Math.max(1, fwid - 2.6)
@@ -189,11 +195,59 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     add('glow', 'box', [px, baseY + barTop - screenH / 2, frontZ + 0.05], [screenW, screenH, 0.55], c.glow, true)
     screen = screenW * screenH
   }
-  const frontGlowArea = screen + frontWindows * WINDOW_SIZE[0] * WINDOW_SIZE[1]
 
-  // Crown: a steep, narrow glowing pyramid standing on the front over the door, two thirds of the body high.
-  const ch = crownHeight(bodyH)
-  if (ch > 0.2) add('crown', 'cone', [px, baseY + fh + ch / 2, frontZ], [CROWN_WIDTH, ch, CROWN_WIDTH], c.glow, true)
+  // Crown and hero, by style. The crown stands on the front over the door and gives the outline; the hero is the one bold feature.
+  const ch = crownHeight(bodyH, CROWN_SHARE[style])
+  const crownY = baseY + fh
+  const front0 = pz + fd / 2 - INSET - lean * bodyH
+  let heroGlow = 0
+  if (style === 'tower') {
+    if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ], [CROWN_WIDTH, ch, CROWN_WIDTH], c.glow, true)
+  } else if (style === 'timber') {
+    // A pastel villa: a low chrome pyramid, and a porch of four thick white marble columns standing forward under a porch slab, clear of the door.
+    if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ], [Math.min(6, fwid * 0.5), ch, Math.min(6, fwid * 0.5)], c.chrome)
+    const inner = Math.max(DOOR_HALF + 1.2, fw * 0.18)
+    const outer = Math.max(inner + 1.2, fw / 2 - 1)
+    for (const x of [-outer, -inner, inner, outer]) add('hero', 'cylinder', [px + x, baseY + bodyH / 2, front0 + 1.5], [0.8, bodyH, 0.8], c.marble)
+    add('hero', 'box', [px, baseY + bodyH + 0.2, front0 + 1.1], [outer * 2 + 1.8, 0.4, 3.0], c.marble)
+  } else if (style === 'stone') {
+    // A marble temple: a dome set back behind the front so the whole name shows, and one tall round arch round the door, 0.4 m out from the wall.
+    if (ch > 0.2) {
+      const r = Math.min(5, fwid * 0.5)
+      add('crown', 'sphere', [px, crownY, frontZ - 0.4 - r / 2], [r, Math.min(ch * 2, r * 1.1), r], c.marble)
+    }
+    const R = DOOR_HALF + 0.4
+    const archZ = front0 + 0.4 + 0.3
+    const springY = baseY + Math.max(DOOR_HEIGHT + 0.3, 2.6)
+    for (const s2 of [-1, 1]) add('hero', 'box', [px + s2 * R, (baseY + springY) / 2, archZ], [0.6, springY - baseY, 0.6], c.marble)
+    // The round top: eight short marble pieces on a semicircle, each turned to follow it.
+    const pieces = 8
+    for (let k = 0; k < pieces; k++) {
+      const a = (Math.PI * (k + 0.5)) / pieces
+      add('hero', 'box', [px + Math.cos(a) * R, springY + Math.sin(a) * R, archZ], [(Math.PI * R) / pieces + 0.15, 0.6, 0.6], c.marble, false, [0, 0, a - Math.PI / 2])
+    }
+  } else if (style === 'glass') {
+    // A screen house: tinted see-through walls, a tall glowing screen beside the door from the foot band to the top band, and a flat
+    // chrome lid that overhangs by 0.8 m with a neon edge.
+    const w = Math.max(1.2, fw / 2 - DOOR_HALF - 0.3)
+    const hh = Math.max(1, bodyH - 0.5)
+    add('hero', 'box', [px - (DOOR_HALF + 0.1 + w / 2), baseY + 0.25 + hh / 2, front0 + 0.3], [w, hh, 0.5], c.glow, true)
+    heroGlow = w * hh
+    add('crown', 'box', [px, baseY + bodyH + 0.25, pz], [fw + 1.6, 0.5, fd + 1.6], c.chrome)
+    add('crown', 'box', [px, baseY + bodyH + 0.04, pz], [fw + 1.7, 0.08, fd + 1.7], c.glow, true)
+  } else {
+    // An arcade: a pale shiny metal body, three stepped blocks each smaller than the one below, and a neon sign standing above the top step.
+    let signY = crownY + 0.6
+    if (ch > 0.2) {
+      const step = ch / 3
+      const widths = [Math.min(7, fwid * 0.55), Math.min(5, fwid * 0.4), Math.min(3, fwid * 0.25)]
+      widths.forEach((w, k) => add('crown', 'box', [px, crownY + step * (k + 0.5), frontZ - 0.6], [w, step, 2.4 - k * 0.5], c.chrome))
+      signY = crownY + ch + 0.6
+    }
+    add('hero', 'box', [px, Math.min(baseY + MAX_OUTLINE_HEIGHT - 0.5, signY), frontZ - 0.6], [Math.min(6, fwid * 0.5), 0.9, 0.35], c.glow, true)
+  }
+
+  const frontGlowArea = screen + heroGlow + frontWindows * WINDOW_SIZE[0] * WINDOW_SIZE[1]
 
   const instances = [...slots.base, ...slots.body, ...slots.front, ...slots.crown, ...slots.hero, ...slots.glow]
   return {
@@ -201,7 +255,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     instances,
     front: { width: fwid, height: fh, area: fwid * fh },
     frontGlowArea,
-    outlineHeight: fh + ch,
+    outlineHeight: Math.max(fh + ch, bodyH + 1),
     titleBar,
   }
 }

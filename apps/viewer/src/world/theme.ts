@@ -19,6 +19,8 @@ export const COLORS = {
   white: '#ffffff',
   lilac: '#b48cff',
   night: '#05021a',
+  /** A pale, shiny metal, the body of an arcade. */
+  metal: '#eef1f6',
 } as const
 
 /** The sky by day, from the horizon up, with the stops (the sine of the angle above the horizon) look.md gives. */
