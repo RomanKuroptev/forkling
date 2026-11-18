@@ -122,7 +122,7 @@ function mapSvg(places: readonly Place[], nowMs: number): string {
     const building = isBuilding(p.state, nowMs)
     return `<a href="${esc(p.id)}/"><rect data-place="${esc(p.id)}" data-neglect="${level}"${building ? ' data-building="true"' : ''} x="${(toX(x) - w / 2).toFixed(1)}" y="${(toZ(z) - d / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${d.toFixed(1)}" fill="${NEGLECT_FILL[level]}" stroke="currentColor"><title>${esc(p.name)}: ${p.state.closed ? 'closed' : NEGLECT_WORDS[level]}${building ? ', under construction' : ''}</title></rect></a>`
   })
-  return `<svg role="img" aria-label="Top-down map of the places" viewBox="0 0 ${cols * CELL} ${rows * CELL}" width="${Math.min(cols * CELL, 640)}" style="max-width:100%;height:auto">${[...squares, ...tracks, ...houses].join('')}</svg>`
+  return `<svg role="img" aria-label="Top-down map of the places" viewBox="0 0 ${cols * CELL} ${rows * CELL}" width="${Math.min(Math.max(cols * CELL, Math.min(cols * 140, 420)), 640)}" style="max-width:100%;height:auto">${[...squares, ...tracks, ...houses].join('')}</svg>`
 }
 
 function exhibitHtml(place: Place, ex: Place['exhibits'][number], i: PlacesInput, works: Map<string, SiteWork>): string {
