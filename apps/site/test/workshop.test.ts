@@ -243,6 +243,16 @@ describe('retired works (spec 9.9)', () => {
     expect(existsSync(join(out, 'works/old-lamp/index.html'))).toBe(true)
   })
 
+  it('is a folder listing with name, day made and why it ended, escaped, in the look of the retired mockup', () => {
+    putWork('old-lamp', { status: 'retired', retireReason: 'It was <i>loud</i>.', title: 'Old lamp' })
+    renderSite(world, out)
+    const html = page('workshop/retired/index.html')
+    expect(html).toContain('<th>why it ended</th>')
+    expect(html).toMatch(/<tr><td><a href="\.\.\/old-lamp\.html"><span class="folder" aria-hidden="true"><\/span>Old lamp<\/a><\/td><td>[^<]+<\/td><td>It was &lt;i&gt;loud&lt;\/i&gt;\.<\/td><\/tr>/)
+    expect(html).not.toContain('<i>loud</i>')
+    expect(html).toContain('C:\\MERGE\\retired\\')
+  })
+
   it('has no retired link or page while nothing is put away', () => {
     putWork('a-lamp')
     renderSite(world, out)
