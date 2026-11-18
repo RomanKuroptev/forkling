@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contentWords, sameSubject, sameWorkStreak, topicClusters, topicWriteCounts, writesOnTopic, type WrittenPage } from '../src/topic-cluster.ts'
+import { contentWords, sameSubject, sameWork, sameWorkStreak, topicClusters, topicWriteCounts, writesOnTopic, type WrittenPage } from '../src/topic-cluster.ts'
 
 const DAY = 86_400_000
 const NOW = Date.parse('2026-11-16T12:00:00Z')
@@ -117,5 +117,26 @@ describe('sameWorkStreak', () => {
   it('is 1 for a single tinker and null for none', () => {
     expect(sameWorkStreak(['Rain clock'])).toEqual({ count: 1, title: 'Rain clock' })
     expect(sameWorkStreak([])).toBeNull()
+  })
+})
+
+describe('sameWork', () => {
+  const terrain = 'Noise Terrain Lamp: noise grows into shapes over a terrain,…'
+  const contour = 'Contour Lamp: noise rings drawn over a hill, with one small…'
+  it('tells two different works apart when only their ideas share words (R1 fast-forward, Contour Lamp)', () => {
+    expect(sameSubject(terrain, contour)).toBe(true)
+    expect(sameWork(terrain, contour)).toBe(false)
+  })
+  it('is the same work when the name is the same, whatever the idea says', () => {
+    expect(sameWork('Contour Lamp: noise rings drawn over a hill', 'Contour Lamp, again: rings and a hill with a new lamp')).toBe(true)
+    expect(sameWork('Grain under a low sun: sand', 'Grain under a low sun, again: more sand')).toBe(true)
+  })
+  it('falls back to the whole text when a target has no name before a colon', () => {
+    expect(sameWork('Live coding loop', 'Live coding loop again')).toBe(true)
+    expect(sameWork('Rain clock', 'Live coding loop')).toBe(false)
+  })
+  it('streak does not run through a different work with a shared word or two', () => {
+    expect(sameWorkStreak([terrain, contour])).toEqual({ count: 1, title: contour })
+    expect(sameWorkStreak([contour, 'Contour Lamp: noise rings drawn over a hill, with one small lamp'])).toEqual({ count: 2, title: 'Contour Lamp: noise rings drawn over a hill, with one small lamp' })
   })
 })
