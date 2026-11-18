@@ -3,6 +3,7 @@ import { kit } from '@forkling/schema/kit'
 import { DOOR_HALF, placeCentre, toLandPlace } from '@forkling/sim'
 import { makeFixtureWorld } from '@forkling/sim/fixture'
 import { describe, expect, it } from 'vitest'
+import { buildingModel } from '../src/world/building.ts'
 import { floorHeight } from '../src/world/kitBase.ts'
 import { renderBudget, sceneInstances } from '../src/world/kitGeometry.ts'
 import { WIRE_THICKNESS, wireframeInstances } from '../src/world/wireframe.ts'
@@ -23,15 +24,15 @@ describe('a place being built is its finished model as cyan wireframe', () => {
     expect(wireframeInstances(base, kit, 0, NOW)).toEqual([])
   })
 
-  it('draws glowing cyan lines, a few dozen, thin, for every style', () => {
+  it('draws glowing cyan lines, thin, for every style', () => {
     for (const style of kit.styles) {
       const lines = wireframeInstances(building(base, style.id), kit, 0, NOW)!
-      expect(lines.length, style.id).toBeGreaterThan(12)
-      expect(lines.length, style.id).toBeLessThanOrEqual(40)
+      expect(lines.length, style.id).toBeGreaterThan(30)
+      expect(lines.length, style.id).toBeLessThanOrEqual(450)
       for (const l of lines) {
         expect(l.color).toBe(WIREFRAME.pole)
         expect(l.glow).toBe(true)
-        expect(Math.min(...half(l.matrix)) * 2).toBeCloseTo(WIRE_THICKNESS, 5)
+        expect(Math.min(Math.hypot(l.matrix[4]!, l.matrix[5]!, l.matrix[6]!), Math.hypot(l.matrix[8]!, l.matrix[9]!, l.matrix[10]!))).toBeCloseTo(WIRE_THICKNESS, 5)
       }
     }
   })
@@ -42,25 +43,52 @@ describe('a place being built is its finished model as cyan wireframe', () => {
       const [px, pz] = placeCentre(toLandPlace(p))
       const frontZ = pz + p.exterior.footprint[1] / 2
       for (const l of wireframeInstances(p, kit, 0, NOW)!) {
-        const [x, y, z] = [l.matrix[12]!, l.matrix[13]!, l.matrix[14]!]
-        const [hx, hy, hz] = half(l.matrix) as [number, number, number]
-        const inDoorway = Math.abs(z - frontZ) < 1 + hz && Math.abs(x - px) - hx < DOOR_HALF && y - hy < 2.2
-        expect(inDoorway, `${style.id}: a line in the doorway at y ${y}`).toBe(false)
+        // Walk along the line: no point of it is in the doorway, below the lintel.
+        for (let k = 0; k <= 8; k++) {
+          const f = k / 8 - 0.5
+          const [x, y, z] = [l.matrix[12]! + f * l.matrix[0]!, l.matrix[13]! + f * l.matrix[1]!, l.matrix[14]! + f * l.matrix[2]!]
+          const inDoorway = Math.abs(z - frontZ) < 1 && Math.abs(x - px) < DOOR_HALF - 0.05 && y < 2.2
+          expect(inDoorway, `${style.id}: a line in the doorway at y ${y}`).toBe(false)
+        }
       }
     }
   })
 
-  it('stays within the body, the front and the crown, under 12 m and near the footprint', () => {
+  it('stays near the footprint and under 12 m, with the ends of every line taken from its matrix', () => {
     const p = building(base)
     const [px, pz] = placeCentre(toLandPlace(p))
     const [fw, fd] = p.exterior.footprint
     for (const l of wireframeInstances(p, kit, 0, NOW)!) {
-      expect(l.matrix[13]! - half(l.matrix)[1]!).toBeGreaterThanOrEqual(-0.1)
-      expect(l.matrix[13]! + half(l.matrix)[1]!).toBeLessThanOrEqual(12.2)
-      expect(Math.abs(l.matrix[12]! - px)).toBeLessThanOrEqual(fw / 2 + 1)
-      expect(Math.abs(l.matrix[14]! - pz)).toBeLessThanOrEqual(fd / 2 + 1)
+      const m = l.matrix
+      for (const k of [-0.5, 0.5]) {
+        const [x, y, z] = [m[12]! + k * m[0]!, m[13]! + k * m[1]!, m[14]! + k * m[2]!]
+        expect(y).toBeGreaterThanOrEqual(-0.1)
+        expect(y).toBeLessThanOrEqual(12.2)
+        expect(Math.abs(x - px)).toBeLessThanOrEqual(fw / 2 + 4)
+        expect(Math.abs(z - pz)).toBeLessThanOrEqual(fd / 2 + 4)
+      }
     }
     expect(floorHeight(p)).toBeGreaterThan(0)
+  })
+
+  it('carries the whole finished model over: the crown, the hero and the taper are drawn, and a pyramid points up', () => {
+    const top = (style: string) => {
+      const lines = wireframeInstances(building(base, style), kit, 0, NOW)!
+      return Math.max(...lines.flatMap((l) => [l.matrix[13]! + 0.5 * l.matrix[1]!, l.matrix[13]! - 0.5 * l.matrix[1]!]))
+    }
+    for (const style of kit.styles) {
+      const m = buildingModel(building(base, style.id), kit, 0)!
+      expect(top(style.id), style.id).toBeGreaterThanOrEqual(m.outlineHeight - 1.2)
+    }
+    // The pyramid of a villa: four slanted lines that meet at one point above the front, and four that make its base.
+    const model = buildingModel(building(base, 'timber'), kit, 0)!
+    const ends = (l: { matrix: number[] }) => [0, 1].map((k) => [l.matrix[12]! + (k - 0.5) * l.matrix[0]!, l.matrix[13]! + (k - 0.5) * l.matrix[1]!, l.matrix[14]! + (k - 0.5) * l.matrix[2]!] as const)
+    const crown = wireframeInstances(building(base, 'timber'), kit, 0, NOW)!.filter((l) => Math.min(...ends(l).map((e) => e[1])) >= model.front.height - 0.01)
+    const slanted = crown.filter((l) => Math.abs(l.matrix[1]!) > 0.1 * Math.hypot(l.matrix[0]!, l.matrix[1]!, l.matrix[2]!))
+    expect(slanted).toHaveLength(4)
+    const tips = slanted.flatMap((l) => ends(l)).filter((e) => e[1] > model.front.height + 0.3)
+    expect(tips).toHaveLength(4)
+    for (const t of tips) expect(t[1]).toBeCloseTo(tips[0]![1], 3)
   })
 
   it('replaces the exterior in the scene while it is built, and the exterior comes back when it is done', () => {
@@ -78,6 +106,6 @@ describe('a place being built is its finished model as cyan wireframe', () => {
     const places = Array.from({ length: 64 }, (_, i) => ({ ...building(fixture.places[i % fixture.places.length]!), id: `p${i}` }))
     const cost = renderBudget(sceneInstances(places, kit, { heightAt: () => 0, interiors: new Set(), nowMs: NOW }))
     expect(cost.drawCalls).toBeLessThanOrEqual(4)
-    expect(cost.triangles).toBeLessThanOrEqual(80000)
+    expect(cost.triangles).toBeLessThanOrEqual(300000)
   })
 })

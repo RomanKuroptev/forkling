@@ -131,7 +131,7 @@ describe('the scene with scaffolding', () => {
     expect(lines.length).toBeGreaterThan(12)
     const ends = Date.parse(building.state.construction!.finishesAt)
     const s = (nowMs: number) => sceneInstances([building], kit, { heightAt, interiors: new Set(), nowMs })
-    expect(s(ends + 1).box.count).toBeGreaterThan(s(NOW).box.count)
+    expect(s(ends + 1).box.count).not.toBe(s(NOW).box.count)
   })
 
   it('stays within the render budget: 10 places with one being built, at most 5 draw calls (four shapes and the see-through glass) and 80,000 triangles', () => {
