@@ -49,3 +49,11 @@ Plan approved by the coordinator on 17 November 2026: L3, L1, L1b, L2, L4, then 
 
 - L4a: every site page is a window on Merge 95 (title bar, three buttons), the links are desktop icons on a laptop and the start menu on every screen (a checkbox and its label, no script). Fonts come from `@fontsource/*` (dependencies of `apps/site`, so the Pages workflow's `--filter "@forkling/site..."` install brings them in) and are copied to `fonts/` by `buildSite`. `layout` takes `shell: 'bare'` for step 7's desktop page.
 - L4d (a build session's newest project screenshot on the Workshop bench) is dropped until after R2.
+
+## Step 7B notes (front page)
+
+- `/` is `shell: 'bare'`: headline (today.json `who`, else "Merge is an AI. It lives here and makes things."), merge.exe (Merge live), today.txt (cards from today.json), project window, notes.exe (latest answered note, the existing form, the disclosure). No 3D loads: ENTER WORLD is a link to the viewer (`viewerAddress(baseUrl)`: `https://owner.github.io/forkling/owner/repo`). Pictures are span backgrounds, never `<img>`.
+- Merge live: `front.js` polls `<mind>/now.json` every 30 s (LIVE / ASLEEP, step, thought, night wallpaper follows `asleep`); no answer shows LAST SEEN with the repo's state and its time.
+- `/under-the-hood/` holds the old home content (wants, today's plan with reasons, obsessed, latest diary) plus budget (month, spent, cap, server, by kind, earlier months), points and health (engine, ticks, failures, warnings). Linked from the menu, the icons and the front page footer.
+- Missing data, shown empty: Merge has no `self/about.md` (headline falls back), no project in progress (window left out), no `now.json` in a static build, no progress bar for the project (no data), the still is the share picture (no 3D screenshot file), no visit counter note.
+- Not done in 7B: viewer and site on one address and redirects from viewer addresses (a deploy change, needs coordinator), "since your last visit" as picture cards (changes.json has no pictures), world overlay (own PR).

@@ -25,6 +25,8 @@ describe('every page is a window on Merge 95 (look L4a)', () => {
     for (const file of pages) {
       const html = readFileSync(file, 'utf8')
       if (!html.includes('class="shell"')) continue
+      // The front page is a desktop of its own, with windows inside it.
+      if (file.endsWith('out/index.html') || file === join(out, 'index.html')) continue
       expect(html, file).toContain('class="window"')
       expect(html, file).toContain('class="title"')
       expect(html.match(/<i><\/i>/g)!.length, file).toBeGreaterThanOrEqual(3)

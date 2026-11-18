@@ -42,8 +42,20 @@ export const NOTES_SCRIPT = `(function () {
     if (window.turnstile && window.turnstile.reset) window.turnstile.reset()
   }
 
+  // The front page's compact form keeps the notice, the name and the human check in a part that is hidden until the field is used.
+  // A note is never sent while that part is still hidden: the first press only opens it.
+  var extraEl = document.getElementById('note-extra')
+  function openNotice() {
+    if (extraEl) extraEl.hidden = false
+  }
+  if (extraEl) messageEl.addEventListener('focus', openNotice)
+
   form.addEventListener('submit', function (event) {
     event.preventDefault()
+    if (extraEl && extraEl.hidden) {
+      openNotice()
+      return say('Read the notice above, then press Send.', false)
+    }
     var message = messageEl.value.trim()
     if (!message) return say('Write something first.', false)
     var check = token()

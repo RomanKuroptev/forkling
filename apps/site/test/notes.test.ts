@@ -220,7 +220,7 @@ describe('notes.js (what the form does when it is sent)', () => {
     url: string
     init: { method: string; headers: Record<string, string>; body: string }
   }
-  function run(over: { name?: string; message?: string; token?: string; response?: { status: number; body?: unknown; json?: 'throws' } | 'network' } = {}) {
+  function run(over: { name?: string; message?: string; token?: string; extraHidden?: boolean; response?: { status: number; body?: unknown; json?: 'throws' } | 'network' } = {}) {
     const sent: Sent[] = []
     const reset: number[] = []
     const el = (value = '') => ({ value, textContent: '', className: '', disabled: false, listeners: {} as Record<string, (e: unknown) => void>, addEventListener(type: string, f: (e: unknown) => void) { this.listeners[type] = f } })
@@ -234,7 +234,9 @@ describe('notes.js (what the form does when it is sent)', () => {
       getAttribute: (n: string) => (n === 'data-endpoint' ? 'https://merge-mind.example.org/notes' : null),
       querySelector: (sel: string) => (sel.includes('cf-turnstile-response') ? tokenEl : null),
     }
-    const byId: Record<string, unknown> = { 'note-form': form, 'note-name': nameEl, 'note-message': messageEl, 'note-send': send, 'note-status': status }
+    // The front page's compact form: the notice and the name are in a part that stays hidden until the field is used.
+    const extra = { hidden: over.extraHidden ?? false }
+    const byId: Record<string, unknown> = { 'note-form': form, 'note-name': nameEl, 'note-message': messageEl, 'note-send': send, 'note-status': status, ...(over.extraHidden === undefined ? {} : { 'note-extra': extra }) }
     const response = over.response ?? { status: 202, body: { ok: true, id: 'n-1' } }
     const sandbox = {
       document: { getElementById: (id: string) => byId[id] ?? null },
@@ -252,8 +254,26 @@ describe('notes.js (what the form does when it is sent)', () => {
       await new Promise((r) => setTimeout(r, 0))
       await new Promise((r) => setTimeout(r, 0))
     }
-    return { sent, reset, nameEl, messageEl, send, status, tokenEl, submit }
+    return { sent, reset, nameEl, messageEl, send, status, tokenEl, submit, extra }
   }
+
+  it('on the compact form, shows the notice when the field is used, and sends nothing while the notice is still hidden', async () => {
+    const r = run({ extraHidden: true })
+    await r.submit()
+    expect(r.sent).toHaveLength(0)
+    expect(r.extra.hidden).toBe(false)
+    expect(r.status.textContent).toMatch(/notice/i)
+    // Now that it has been in front of the visitor, a second press sends.
+    await r.submit()
+    expect(r.sent).toHaveLength(1)
+  })
+
+  it('on the compact form, focusing the field opens the notice', () => {
+    const r = run({ extraHidden: true })
+    // The harness keeps the listeners the script added on the message field.
+    ;(r.messageEl as unknown as { listeners: Record<string, () => void> }).listeners.focus!()
+    expect(r.extra.hidden).toBe(false)
+  })
 
   it('posts the note as JSON to the server with the Turnstile token and the place Home, and thanks the visitor', async () => {
     const r = run()

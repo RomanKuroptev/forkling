@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { z } from 'zod'
-import { Beliefs, Forkling, Goals, Interests, isOpenRequest, MindState, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
+import { Beliefs, BudgetLedger, Forkling, Goals, Health, Interests, isOpenRequest, MindState, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
 import { STYLE } from './style.ts'
 import { buildToday } from './today.ts'
+import { FRONT_SCRIPT, frontBody, hoodBody, viewerAddress } from './front.ts'
 import { desktopPicturePng } from './desktop-picture.ts'
 import { faviconSvg, ICONS, iconFor, iconSvg } from './icons.ts'
 import { esc, markdown } from './md.ts'
@@ -83,6 +84,7 @@ const NAV: [string, string][] = [
   ['Notes', 'notes/'],
   ['Workshop', 'workshop/'],
   ['Why?', 'why/'],
+  ['Under the hood', 'under-the-hood/'],
 ]
 
 interface PageInput {
@@ -275,27 +277,35 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const buildMs = (opts.now ?? new Date()).getTime()
   const add = (rel: string, input: Omit<PageInput, 'name' | 'root' | 'nav'>) => pages.set(rel, layout({ name, root: '../'.repeat(rel.split('/').length - 1), nav, night: forkling.asleep, timezone: forkling.timezone, nowMs: buildMs, baseUrl: opts.baseUrl, ...input }))
 
-  // Home: who it is, what it wants, what it is doing and why.
-  const step = goals.now ? goals.today?.steps[goals.now.index] : undefined
+  const works = loadWorks(world)
+  // Home (step 7): the front page, a desktop of its own. What used to sit here (the plan with its reasons, what it wants) moved to /under-the-hood/.
+  const today = buildToday({ projects, works, about: mergeAbout, nowMs: buildMs, tz })
+  const endpoint0 = notesEndpoint(opts.mindUrl)
+  const siteKey0 = validSiteKey(opts.turnstileSiteKey)
   const i = forkling.intention
   add('index.html', {
     title: 'Home',
     active: 'index.html',
-    body: [
-      `<h1>${esc(name)}</h1>`,
-      `<p class="quiet">${forkling.asleep ? 'Asleep' : 'Awake'}. Last seen ${esc(localStamp(forkling.lastTickAt, forkling.timezone))}.</p>`,
-      '<h2>Right now</h2>',
-      `<p><strong>${esc(i.type.replaceAll('_', ' '))}</strong>${i.targetId ? ` at ${esc(i.targetId)}` : ''}: <em>${esc(i.reason)}</em></p>`,
-      ...(step?.topic ? [`<p class="quiet">About ${esc(step.topic)}.</p>`] : []),
-      goals.long ? `<h2>What it wants</h2><p>${esc(goals.long.text)}</p><p class="quiet">${esc(goals.long.reason)}</p>` : '',
-      goals.today
-        ? `<h2>Today</h2><p>${esc(goals.today.reason)}</p><ol>${goals.today.steps.map((s, n) => `<li${goals.now?.index === n ? ' class="now"' : ''}>${esc(s.verb)}${s.targetId ? ` (${esc(s.targetId)})` : ''}: ${esc(s.reason)}</li>`).join('')}</ol>`
-        : '',
-      interests.current
-        ? `<h2>Obsessed with</h2><p><strong>${esc(interests.current.topic)}</strong>, since ${esc(interests.current.startedAt.slice(0, 10))}. It started with ${sourceLink(interests.current.origin)}.</p>`
-        : '',
-      journal[0] ? `<h2>Latest diary entry</h2><p><a href="journal/${esc(journal[0].date)}.html">${esc(journal[0].date)}</a></p>` : '',
-    ].join('\n'),
+    shell: 'bare',
+    body: frontBody({
+      name,
+      asleep: forkling.asleep,
+      lastSeen: localStamp(forkling.lastTickAt, forkling.timezone),
+      timezone: forkling.timezone,
+      intention: { type: i.type, targetId: i.targetId, reason: i.reason },
+      today,
+      project: today.project ? (projects.find((p) => p.project.id === today.project?.id) ?? null) : null,
+      notes: loadNotes(world),
+      mailbox: endpoint0 && siteKey0 ? { endpoint: endpoint0, siteKey: siteKey0 } : null,
+      viewerUrl: viewerAddress(opts.baseUrl),
+      mindUrl: endpoint0 ? endpoint0.slice(0, -'/notes'.length) : null,
+      aboutHref: hasAbout(mergeAbout) ? 'about/' : 'why/',
+    }),
+  })
+  add('under-the-hood/index.html', {
+    title: 'Under the hood',
+    active: 'under-the-hood/',
+    body: hoodBody({ goals, interests, budget: readJson(world, 'brain/budget.json', BudgetLedger), health: readJson(world, 'mind/health.json', Health), latestDiary: journal[0]?.date, sourceLink }),
   })
 
   // Journal.
@@ -429,7 +439,6 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   })
 
   // The workshop is always there (spec 8): an empty shelf says so. A work is shown only through its own page, in its sandbox.
-  const works = loadWorks(world)
   renderWorkshop({ works, tz, goals, add })
   renderProjects({ projects, stamp: (iso) => localStamp(iso, tz), add })
   renderPlaces({
@@ -483,13 +492,14 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   for (const name of Object.keys(ICONS)) write(`icons/${name}.svg`, iconSvg(name))
   write('favicon.svg', faviconSvg())
   write('share.png', desktopPicturePng())
-  write('today.json', `${JSON.stringify(buildToday({ projects, works, about: mergeAbout, nowMs: buildMs, tz }), null, 2)}
+  write('today.json', `${JSON.stringify(today, null, 2)}
 `)
   write('feed.xml', renderFeed({ name, items: feedItems, baseUrl: opts.baseUrl }))
   write('changes.json', `${JSON.stringify(changes)}
 `)
   write('since.js', SINCE_SCRIPT)
   write('notes.js', NOTES_SCRIPT)
+  write('front.js', FRONT_SCRIPT)
   written.push(...publishWorks(world, out, works))
   written.push(...publishProjects(world, out, projects))
   return { pages: written }

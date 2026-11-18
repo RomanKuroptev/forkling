@@ -71,15 +71,17 @@ describe('renderSite', () => {
     expect(pages).toContain('index.html')
   })
 
-  it('shows on the home page who it is, what it wants and what it is doing now, with the reason', () => {
+  it('shows on the home page who it is and what it is doing now, with the reason; what it wants and plans moved under the hood', () => {
     renderSite(world, out)
     const html = page('index.html')
     expect(html).toContain('Merge')
-    expect(html).toContain('Build a computer out of clay.')
-    expect(html).toContain('I want to know how they work.')
-    expect(html).toContain('logic gates')
-    expect(html).toContain('https://example.com/cpu')
-    expect(html).toContain('journal/2026-11-03.html')
+    expect(html).toContain('New island. I will allow it.')
+    const hood = page('under-the-hood/index.html')
+    expect(hood).toContain('Build a computer out of clay.')
+    expect(hood).toContain('I want to know how they work.')
+    expect(hood).toContain('logic gates')
+    expect(hood).toContain('https://example.com/cpu')
+    expect(hood).toContain('journal/2026-11-03.html')
   })
 
   it('links every page to the others and uses relative links, so it works under any path', () => {

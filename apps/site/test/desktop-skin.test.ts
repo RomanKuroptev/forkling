@@ -73,7 +73,7 @@ describe('the home page line', () => {
   it('says awake or asleep and when Merge was last seen, with no pet-era mood words', () => {
     buildSite(templateWorld, out, {})
     const html = readFileSync(join(out, 'index.html'), 'utf8')
-    expect(html).toMatch(/<p class="quiet">Awake\. Last seen /)
+    expect(html).toMatch(/<p class="quiet" id="live-status">Awake\. Last seen /)
     expect(html).not.toMatch(/feeling/)
   })
 })
