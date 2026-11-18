@@ -88,6 +88,15 @@ describe('what the place names must exist (spec 11.1)', () => {
     expect(reasonsAfter((p) => (p.exhibits[2]!.ref = 'souvenirs/2026-11-18-keepers-log'))).toMatch(/ref/)
   })
 
+  it('shows a project on a screen, by its projects/ ref, and nowhere else (spec-v4 3.4)', () => {
+    const project = { ...ctx, exists: (path: string) => path === 'projects/tide-clock' || ctx.exists!(path) }
+    const toProject = (p: P) => Object.assign(p.exhibits[2]!, { kind: 'project', ref: 'projects/tide-clock' })
+    expect(reasonsAfter(toProject, project)).toBe('')
+    expect(reasonsAfter((p) => { toProject(p); p.exhibits[2]!.ref = 'works/signal-clock' }, project)).toMatch(/ref must start with projects\//)
+    expect(reasonsAfter((p) => { toProject(p); p.exhibits[2]!.ref = 'projects/nothing' }, project)).toMatch(/projects\/nothing/)
+    expect(reasonsAfter((p) => Object.assign(p.exhibits[0]!, { kind: 'project', ref: 'projects/tide-clock' }), project)).toMatch(/slot/)
+  })
+
   it('puts a quote on a plaque stand and a fact in a case, but an image only in a frame, shelf or case', () => {
     const withStand = (p: P) => p.rooms[0]!.parts.push({ part: 'plaque-stand', at: [0, 0, 0], rot: 0 })
     expect(reasonsAfter((p) => { withStand(p); p.exhibits[0]!.slot = 'hall/3/0' })).toBe('')

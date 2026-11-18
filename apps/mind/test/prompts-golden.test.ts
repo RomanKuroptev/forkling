@@ -113,4 +113,17 @@ describe('prompt golden files', () => {
     })
     await expect(user).toMatchFileSnapshot('golden/user-tend.txt')
   })
+  it('tend user prompt with done projects (spec-v4 3.4)', async () => {
+    const workshop = Place.parse(JSON.parse(readFileSync(join(templates, '../forkling-world/places/workshop.json'), 'utf8')))
+    const user = buildTendUser({
+      place: workshop,
+      kit,
+      reason: 'Show what I finished.',
+      daysSinceCare: 2,
+      pile: [],
+      works: [{ id: 'signal-clock', title: 'Signal clock' }],
+      projects: [{ id: 'tide-clock', name: 'Tide clock' }],
+    })
+    await expect(user).toMatchFileSnapshot('golden/user-tend-projects.txt')
+  })
 })
