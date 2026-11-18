@@ -170,7 +170,9 @@ dd { margin: 0; }
 .gtiles { flex: 1 0 100%; list-style: none; margin: 0; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; background: var(--white); border: 2px solid var(--ink); }
 .gt a { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: var(--ink); background: var(--white); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--hot); }
 .gt a:focus-visible { outline: 2px dotted var(--ink); outline-offset: 2px; }
-.gname { margin: 0 8px 8px; font-size: 20px; line-height: 1.1; overflow-wrap: anywhere; }
+.gabout { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: 0 8px 8px; color: var(--quiet); font-size: 20px; line-height: 1.1; overflow-wrap: anywhere; }
+.work.gt .tmeta { white-space: normal; }
+.gname { margin: 0 8px 4px; font-size: 20px; line-height: 1.1; overflow-wrap: anywhere; }
 .gt .tmeta { color: var(--purple); font-size: 18px; white-space: nowrap; }
 @media (min-width: 700px) { .gtiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 #gf-sketch:checked ~ .gtiles .gt:not([data-k="sketch"]), #gf-work:checked ~ .gtiles .gt:not([data-k="work"]), #gf-build:checked ~ .gtiles .gt:not([data-k="build"]) { display: none; }
@@ -212,6 +214,27 @@ dd { margin: 0; }
   .ftable td:nth-child(3)::after { content: '\\201d'; }
   .ftable tr:hover td { background: none; color: inherit; }
 }
+/* The workshop: the projects as a list and a detail beside it, one chosen with radio buttons (no script). */
+.wshop { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.wp { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.wlist { display: grid; align-content: start; background: var(--white); border: 2px solid var(--ink); }
+.wp-item { display: grid; grid-template-columns: 22px 1fr; column-gap: 8px; align-items: center; min-height: 44px; padding: 6px 10px; cursor: pointer; border-bottom: 2px dotted var(--face); }
+.wp-item strong { font-size: 26px; line-height: 1.1; }
+.wp-item small { grid-column: 2; color: var(--quiet); font-size: 20px; }
+.wp-item .sw { grid-row: 1 / span 2; width: 18px; height: 18px; border: 2px solid var(--ink); background: var(--hot); }
+.wp-item.st-done .sw { background: var(--green); }
+.wp-item.st-abandoned .sw { background: var(--purple); }
+.wp-item:hover { background: var(--purple); color: var(--white); }
+.wd { display: none; }
+.wd h2 { margin: 0 0 4px; }
+.wshots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 8px 0; }
+.wshot { position: relative; display: block; text-decoration: none; border: 2px solid var(--ink); }
+.wshot .pic { aspect-ratio: 4 / 3; border: 0; }
+.wshot .day { position: absolute; left: 0; bottom: 0; padding: 2px 4px; font: 8px/1.2 var(--pixel); color: var(--white); background: rgb(26 11 59 / 80%); }
+.wlog { margin: 8px 0; padding: 8px 10px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--green); background: var(--deep); border: 2px solid var(--ink); font: 22px/1.15 var(--read); }
+.wd .actions { margin-top: 8px; }
+.wd .play { display: inline-flex; align-items: center; text-decoration: none; }
+@media (min-width: 800px) { .wshop { grid-template-columns: 240px minmax(0, 1fr); align-items: start; } }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
 .bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto var(--taskbar); overflow-wrap: anywhere; }

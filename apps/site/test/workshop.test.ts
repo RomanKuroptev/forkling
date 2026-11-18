@@ -74,7 +74,7 @@ describe('the shelf', () => {
     const html = page('workshop/index.html')
     expect(html.indexOf('Newer work')).toBeLessThan(html.indexOf('Older work'))
     expect(html).toContain('href="newer.html"')
-    expect(html).toContain('src="../works/newer/thumb.png"')
+    expect(html).toContain("background-image:url('../works/newer/thumb.png')")
     expect(html).toMatch(/game/)
     expect(html).toMatch(/sketch/)
     expect(html).toContain('About newer.')

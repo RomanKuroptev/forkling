@@ -84,8 +84,10 @@ export function renderWorkshop(o: WorkshopInput): void {
   const scrap = o.works.filter((w) => w.meta.status === 'scrap')
   const byId = new Map(shown.map((w) => [w.meta.id, w.meta]))
 
+  // A tile in the look of the gallery (docs/spec/v4/look/site/gallery.png): the picture (or a plain screen), the day and kind, the name and what it is.
+  const day = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: o.tz, day: 'numeric', month: 'short' }).format(new Date(iso))
   const card = (w: SiteWork, to: string, thumbs: string) =>
-    `<li class="work">${w.hasThumb ? `<a href="${to}${w.meta.id}.html"><img src="${thumbs}works/${w.meta.id}/thumb.png" alt="" loading="lazy" width="240" height="180"></a> ` : ''}<strong><a href="${to}${w.meta.id}.html">${esc(w.meta.title)}</a></strong> <span class="quiet">${kindLine(w.meta)}</span><p>${esc(w.meta.about)}</p></li>`
+    `<li class="work gt"><a href="${to}${w.meta.id}.html"><span class="pic" role="img" aria-label="${esc(w.meta.title)}"${w.hasThumb ? ` style="background-image:url('${thumbs}works/${esc(encodeURIComponent(w.meta.id))}/thumb.png')"` : ''}></span><span class="tmeta"><time datetime="${esc(w.meta.made)}">${esc(day(w.meta.made))}</time> &middot; ${kindLine(w.meta)}</span><span class="gname">${esc(w.meta.title)}</span><span class="gabout">${esc(w.meta.about)}</span></a></li>`
 
   // What is on the bench: a tinker step in progress.
   const step = o.goals.now ? o.goals.today?.steps[o.goals.now.index] : undefined
@@ -100,7 +102,7 @@ export function renderWorkshop(o: WorkshopInput): void {
   const strip = [...days.entries()]
     .sort((a, b) => b[0].localeCompare(a[0]))
     .slice(0, MAX_STRIP_DAYS)
-    .map(([d, list]) => `<li><strong>${esc(d)}</strong><ul class="shelf">${list.map((w) => card(w, '', '../')).join('')}</ul></li>`)
+    .map(([d, list]) => `<li><strong>${esc(d)}</strong><ul class="shelf gtiles">${list.map((w) => card(w, '', '../')).join('')}</ul></li>`)
     .join('')
 
   o.add('workshop/index.html', {
@@ -111,7 +113,7 @@ export function renderWorkshop(o: WorkshopInput): void {
       '<h2>On the bench now</h2>',
       bench,
       '<h2>The shelf</h2>',
-      shelf.length > 0 ? `<ul class="shelf">${shelf.map((w) => card(w, '', '../')).join('')}</ul>` : '<p class="quiet">Nothing on the shelf yet.</p>',
+      shelf.length > 0 ? `<ul class="shelf gtiles">${shelf.map((w) => card(w, '', '../')).join('')}</ul>` : '<p class="quiet">Nothing on the shelf yet.</p>',
       ...(retired.length > 0 ? [`<p><a href="retired/">Put away (${retired.length})</a></p>`] : []),
       '<h2>Sketches, day by day</h2>',
       strip ? `<ul class="strip">${strip}</ul>` : '<p class="quiet">No sketch yet.</p>',
