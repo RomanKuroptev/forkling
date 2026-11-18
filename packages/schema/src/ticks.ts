@@ -109,7 +109,7 @@ export const Health = z.object({
   /** What is left of the limits that still exist. The pet-era quotas (creative, photos, builds, code) are only read from old files. */
   quotas: z.object({ readings: Quota, creative: Quota.optional(), photos: Quota.optional(), builds: Quota.optional(), codeThisWeek: Quota.optional() }),
   /** Points of the daily allowance in hand (spec 9.8), and the most that can be held. */
-  allowance: z.object({ points: z.number().nonnegative(), max: z.number().positive() }).default({ points: 0, max: 450 }),
+  allowance: z.object({ points: z.number().nonnegative(), max: z.number().positive(), daily: z.number().positive().optional(), dailySetOn: z.string().optional() }).default({ points: 0, max: 1500 }),
   /** Hosts paused after a 429 or a 403 (spec 6.1), and the host that gave most of this week's reads (spec 12.3, "one host"). */
   web: z.object({ pausedHosts: z.record(z.string(), Timestamp).default({}), topHost: z.object({ host: z.string(), share: z.number() }).nullable().default(null) }).default({ pausedHosts: {}, topHost: null }),
   /** Pet-era health files have it; nothing writes it any more. */

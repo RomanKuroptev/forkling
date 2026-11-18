@@ -114,9 +114,9 @@ describe('validateMindPlan', () => {
 
   it('prices a plan with the prices in force when the context carries them (the weekly reset)', () => {
     const sketches = [wander(), { ...write(), verb: 'tinker', size: 'sketch', target: 'a lamp' } as MindStep, { ...write(), verb: 'tinker', size: 'sketch', target: 'a door' } as MindStep]
-    // At 50 points each two sketches plus a trip cost 103; at 23 they cost 49.
-    expect(reasons(sketches, ctx({ pointsInHand: 60 }))).toEqual([expect.stringContaining('costs 103 points')])
-    expect(reasons(sketches, ctx({ pointsInHand: 60, prices: { fullWork: 240, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 23, found: 80, revisit: 1, write: 1, reply: 0, rest: 0 } }))).toEqual([])
+    // At 30 points each two sketches plus a trip cost 63; at 23 they cost 49.
+    expect(reasons(sketches, ctx({ pointsInHand: 60 }))).toEqual([expect.stringContaining('costs 63 points')])
+    expect(reasons(sketches, ctx({ pointsInHand: 60, prices: { fullWork: 150, expand: 50, expandEarned: 20, trip: 3, tend: 2, sketch: 23, found: 80, revisit: 1, caption: 1, page: 10, reply: 0, rest: 0 } }))).toEqual([])
   })
 
   it('rejects a step that starts in the 45 minutes before bed', () => {
@@ -186,21 +186,21 @@ describe('targets and conditions', () => {
     // Four sketches in one plan are allowed when the points are there, and refused when they are not: only the price limits them.
     const four = [sketch(), wander(), sketch(), write(), sketch(), rest(), sketch()]
     expect(reasons(four, ctx({ pointsInHand: 400 }))).toEqual([])
-    expect(reasons(four, ctx({ pointsInHand: 150 }))).toEqual([expect.stringContaining('costs 204 points and you have 150 in hand')])
+    expect(reasons(four, ctx({ pointsInHand: 100 }))).toEqual([expect.stringContaining('costs 133 points and you have 100 in hand')])
   })
 })
 
 describe('the allowance', () => {
   it('rejects a plan that costs more than the points in hand, and says how much', () => {
     const work: MindStep = { verb: 'tinker', target: 'a clock that is always early', reason: 'I want to make one properly.', minutes: 90, wantId: 'w1', size: 'full' }
-    expect(reasons([wander(), work, rest()], ctx({ pointsInHand: 150 }))).toEqual([expect.stringMatching(/costs 243 points.*150 in hand/)])
+    expect(reasons([wander(), work, rest()], ctx({ pointsInHand: 100 }))).toEqual([expect.stringMatching(/costs 153 points.*100 in hand/)])
     expect(reasons([wander(), work, rest()], ctx({ pointsInHand: 300 }))).toEqual([])
   })
 
   it('counts deep steps at 30 each', () => {
     const deepTends = [tend({ deep: true }), wander(), tend({ deep: true }), write(), tend({ deep: true }), rest()]
-    expect(reasons(deepTends, ctx({ pointsInHand: 94 }))).toEqual([])
-    expect(reasons(deepTends, ctx({ pointsInHand: 93 }))).toEqual([expect.stringContaining('costs 94 points')])
+    expect(reasons(deepTends, ctx({ pointsInHand: 103 }))).toEqual([])
+    expect(reasons(deepTends, ctx({ pointsInHand: 102 }))).toEqual([expect.stringContaining('costs 103 points')])
   })
 })
 
@@ -407,5 +407,18 @@ describe('build (spec-v4 3.2): a new project, or one that is building', () => {
 
   it('has no limit on build steps in a plan or a day', () => {
     expect(reasons([build('tide-clock'), wander(), build('tide-clock'), rest()], c())).toEqual([])
+  })
+})
+
+describe('a write is a caption or a page in the price (spec v4 5.1)', () => {
+  it('costs 1 for a caption (the target is a place or a work) and 10 for a page, and refuses on points only', () => {
+    const caption = write({ target: 'home' })
+    const page = write({ target: 'joke languages' })
+    const c = ctx({ captionTargets: new Set(['home']), pointsInHand: 14 })
+    // wander 3 + the write + rest 0
+    expect(reasons([wander(), caption, rest()], c)).toEqual([])
+    expect(reasons([wander(), page, rest()], c)).toEqual([])
+    expect(reasons([wander(), page, rest()], { ...c, pointsInHand: 12 })).toEqual([expect.stringContaining('costs 13 points')])
+    expect(reasons([wander(), caption, rest()], { ...c, pointsInHand: 3 })).toEqual([expect.stringContaining('costs 4 points')])
   })
 })

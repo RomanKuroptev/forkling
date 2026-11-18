@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { ABOUT_CHANGE_DAYS, ABOUT_MAX_TRAITS, ABOUT_MAX_WORDS, CAPTION_WORDS, CAPTION_WORDS_KEPT, DIARY_LINES, DIARY_LINE_CHARS, PAGE_MAX_WORDS, REPLY_WORDS, REPLY_WORDS_KEPT, aboutChange, checkAbout, checkPage, fitDiaryLines, fitReply } from '../src/self-text.ts'
+import { fitCaption, ABOUT_CHANGE_DAYS, ABOUT_MAX_TRAITS, ABOUT_MAX_WORDS, CAPTION_WORDS, DIARY_LINES, DIARY_LINE_CHARS, PAGE_MAX_WORDS, REPLY_WORDS, REPLY_WORDS_KEPT, aboutChange, checkAbout, checkPage, fitDiaryLines, fitReply } from '../src/self-text.ts'
 
 const lines = (n: number) => Array.from({ length: n }, (_, i) => `line ${i + 1} says something`).join('\n')
 
 describe('checkAbout (spec v4 6: 80 words, 8 traits, one change a week)', () => {
-  it('has the numbers of the spec', () => expect([ABOUT_MAX_WORDS, ABOUT_MAX_TRAITS, ABOUT_CHANGE_DAYS]).toEqual([80, 8, 7]))
+  it('has the numbers of the spec', () => expect([ABOUT_MAX_WORDS, ABOUT_MAX_TRAITS, ABOUT_CHANGE_DAYS]).toEqual([80, 8, 6]))
 
   it('takes a first version freely, up to 80 words', () => {
     expect(checkAbout('', lines(10).split(' ').slice(0, 30).join(' ')).ok).toBe(true)
@@ -19,11 +19,13 @@ describe('checkAbout (spec v4 6: 80 words, 8 traits, one change a week)', () => 
     expect(checkAbout('', traits(8)).ok).toBe(true)
     expect(checkAbout('', traits(9)).ok).toBe(false)
   })
-  it('allows one change a week, whatever its size, and refuses a second inside 7 days', () => {
+  it('allows one change a week, whatever its size, and refuses a second inside 6 days', () => {
     const prev = lines(3)
     const next = 'something else entirely'
     expect(checkAbout(prev, next, { lastChangeDate: '2026-11-10', today: '2026-11-17' }).ok).toBe(true)
-    const r = checkAbout(prev, next, { lastChangeDate: '2026-11-11', today: '2026-11-17' })
+    // A review that ran a day late last week (Monday 16) does not block this Sunday's (22): 6 days apart is allowed.
+    expect(checkAbout(prev, next, { lastChangeDate: '2026-11-16', today: '2026-11-22' }).ok).toBe(true)
+    const r = checkAbout(prev, next, { lastChangeDate: '2026-11-17', today: '2026-11-22' })
     expect(r.ok).toBe(false)
     expect(r.reasons.join(' ')).toMatch(/one change a week/)
     expect(checkAbout(prev, next, { lastChangeDate: null, today: '2026-11-17' }).ok).toBe(true)
@@ -79,7 +81,7 @@ describe('checkPage (spec 9.7: 300 words, no links or HTML, one change a day)', 
 
 describe('the short texts of spec v4 6', () => {
   it('has the numbers of the spec', () => {
-    expect([CAPTION_WORDS, CAPTION_WORDS_KEPT, REPLY_WORDS, REPLY_WORDS_KEPT, DIARY_LINES, DIARY_LINE_CHARS]).toEqual([40, 50, 50, 60, 3, 140])
+    expect([CAPTION_WORDS, REPLY_WORDS, REPLY_WORDS_KEPT, DIARY_LINES, DIARY_LINE_CHARS]).toEqual([40, 50, 60, 3, 140])
   })
   describe('fitDiaryLines: 3 lines of up to 140 characters, cut and never thrown away', () => {
     it('keeps a diary that fits as it is', () => {
@@ -101,11 +103,25 @@ describe('the short texts of spec v4 6', () => {
       expect(fitDiaryLines(['x'.repeat(140)]).cut).toBe(false)
     })
   })
-  describe('fitReply: up to 60 words kept', () => {
+  describe('fitReply: up to 60 words kept, line breaks kept unless it is cut', () => {
+    const words = (n: number) => Array.from({ length: n }, (_, i) => `w${i}`).join(' ')
     it('keeps 60 words and cuts at 61', () => {
-      const words = (n: number) => Array.from({ length: n }, (_, i) => `w${i}`).join(' ')
       expect(fitReply(words(60))).toBe(words(60))
       expect(fitReply(words(61))).toBe(words(60))
+    })
+    it('keeps the line breaks of a reply that fits, and trims its ends', () => {
+      const text = 'First line.\n\nSecond line.'
+      expect(fitReply('  ' + text + '\n')).toBe(text)
+    })
+  })
+  describe('fitCaption: up to 40 words, cut at a word', () => {
+    const words = (n: number) => Array.from({ length: n }, (_, i) => `w${i}`).join(' ')
+    it('keeps 40 words whole and cuts 41 or more to 40', () => {
+      expect(fitCaption(words(40))).toEqual({ text: words(40), cut: false })
+      expect(fitCaption(words(52))).toEqual({ text: words(40), cut: true })
+    })
+    it('keeps a caption of two lines as two lines', () => {
+      expect(fitCaption('A lamp.\nDims alone.').text).toBe('A lamp.\nDims alone.')
     })
   })
 })

@@ -14,7 +14,7 @@ export function localWeekday(timezone: string, ms: number): number {
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(name)
 }
 
-const localHour = (timezone: string, ms: number): number => Number(new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', hourCycle: 'h23' }).format(new Date(ms)))
+export const localHour = (timezone: string, ms: number): number => Number(new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', hourCycle: 'h23' }).format(new Date(ms)))
 
 export interface WeeklyDueInput {
   nowMs: number

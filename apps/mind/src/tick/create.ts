@@ -52,8 +52,8 @@ export function createTick(dir: string, deps: TickDeps): Tick {
   // What the body really did on the plan step since the last write: the step's effect waits on it.
   const body = playback.state
   const mind = structuredClone(w.mindState)
-  // The daily allowance is topped up at the first awake tick of each day: what was saved, plus 150, up to 450 (spec 9.8).
-  if (!asleep && mind.allowance?.day !== today) mind.allowance = { points: pointsAtWake(mind.allowance?.points ?? 0), day: today }
+  // The daily allowance is topped up at the first awake tick of each day: what was saved, plus the daily points (300 until the Sunday formula sets another figure), up to the most that may be held (spec v4 5.2).
+  if (!asleep && mind.allowance?.day !== today) mind.allowance = { points: pointsAtWake(mind.allowance?.points ?? 0, mind.dailyPoints?.value), day: today }
 
   const mindConfig = readMindConfig(dir)
   const t: Tick = {

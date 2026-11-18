@@ -72,7 +72,7 @@ function describeAllowance({ points, prices }: UserInput['allowance']): string[]
   const cost = (label: string, n: number) => `${label} ${n}`
   return [
     `points in hand: ${points}`,
-    `prices today: ${[cost('wander', prices.trip), cost('tend', prices.tend), cost('revisit', prices.revisit), `expand ${prices.expand} (${prices.expandEarned} where earned)`, cost('found', prices.found), cost('tinker (full work)', prices.fullWork), cost('tinker (sketch)', prices.sketch), cost('write', prices.write), cost('reply', prices.reply), cost('rest', prices.rest)].join(', ')}; a deep step costs 30`,
+    `prices today: ${[cost('wander', prices.trip), cost('tend', prices.tend), cost('revisit', prices.revisit), `expand ${prices.expand} (${prices.expandEarned} where earned)`, cost('found', prices.found), cost('tinker (full work)', prices.fullWork), cost('tinker (sketch)', prices.sketch), cost('caption', prices.caption), cost('page', prices.page), cost('reply', prices.reply), cost('rest', prices.rest)].join(', ')}; a deep step costs 30`,
   ]
 }
 

@@ -1,4 +1,5 @@
 import { SessionJob, sessionJobId, type PlanStep } from '@forkling/schema'
+import { readWorks } from '../builds/works.ts'
 import { MIND_VERBS, daysSinceCare, foundsInWeek, livePrices, overdueNotes, stepCost, validateMindPlan, type MindPlanContext, type MindStep, type MindVerb, type Trigger } from '@forkling/sim'
 import { clampText, planStepFrom, type LlmStep } from '../decision.ts'
 import type { ThinkKind } from '../prompts.ts'
@@ -33,6 +34,10 @@ const mindStepOf = (s: PlanStep): MindStep => ({
 })
 
 /** The ids of the places the plan may name: the place files, or Home and the Workshop in a world that has none yet. */
+/** The ids a write may be a caption for (spec v4 6): every place and every work, those made in this tick included. Project ids join with step 4. */
+export const captionTargets = (t: Pick<Tick, 'places' | 'dir' | 'newWorks'>): Set<string> =>
+  new Set([...placeIds(t), ...readWorks(t.dir).map((w) => w.id), ...t.newWorks.map((w) => w.meta.id)])
+
 export const placeIds = (t: Pick<Tick, 'places'>): string[] => (t.places.length > 0 ? t.places.map((p) => p.id) : [...STARTING_PLACES])
 
 /** The variety switches that are on, or nothing. The pages are read only when a switch needs them. */
@@ -70,6 +75,7 @@ export function planContext(t: Tick): MindPlanContext {
     revisitable: new Set(t.places.filter((p) => p.state.closed === null && daysSinceCare({ lastCareAt: p.state.lastCareAt, founded: p.founded }, t.nowMs) >= 7).map((p) => p.id)),
     expandable: new Set(expandablePlaces(t).map((e) => e.id)),
     expandEarned: new Set(expandablePlaces(t).filter((e) => e.earned.earned).map((e) => e.id)),
+    captionTargets: captionTargets(t),
     canFound: foundGate(t).check.ok,
     notes: new Set(t.visitorNotes.filter((n) => n.status === 'found').map((n) => n.id)),
     wants: t.wants,
@@ -120,7 +126,7 @@ export function startStep(t: Tick, index: number, reason?: string): void {
   t.started = started
   // A step spends its points when it starts, so the next plan is made with what is left.
   if ((MIND_VERBS as readonly string[]).includes(step.verb) && t.mind.allowance) {
-    const cost = stepCost({ verb: step.verb as MindVerb, ...(step.size ? { size: step.size } : {}), ...(step.deep ? { deep: true } : {}), ...(step.verb === 'expand' && expandablePlaces(t).some((e) => e.id === step.targetId && e.earned.earned) ? { earned: true } : {}) }, livePrices(t.mind.prices))
+    const cost = stepCost({ verb: step.verb as MindVerb, ...(step.size ? { size: step.size } : {}), ...(step.deep ? { deep: true } : {}), ...(step.verb === 'write' && step.targetId && captionTargets(t).has(step.targetId) ? { caption: true } : {}), ...(step.verb === 'expand' && expandablePlaces(t).some((e) => e.id === step.targetId && e.earned.earned) ? { earned: true } : {}) }, livePrices(t.mind.prices))
     t.mind.allowance = { ...t.mind.allowance, points: Math.max(0, t.mind.allowance.points - cost) }
   }
   // A build step asks the worker for a session (spec-v4 3.3) and holds the plan until its result arrives (`settleJobs`).

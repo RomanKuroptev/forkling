@@ -15,7 +15,7 @@ The mind of one world repo. Today it runs as the Actions tick (`src/cli.ts`, `mi
 - Skip the LLM entirely when no trigger fired.
 - At the monthly model cap (`brain/budget.json`: `capUsd`, and `capUsd` plus `serverUsd` never over $23), stop all LLM calls until the month resets. `src/budget.ts` estimates every call before it is made.
 - No LLM calls while asleep except the sleep rewrite batch.
-- Quotas and the daily allowance are rails in code (spec 9.8, `packages/sim/src/allowance.ts`, `build-rules.ts`): at most 40 reads and 20 looks a day, sketches priced at 50 points and not capped, 2 works put away a week, 1 found a week, and the like. Variety rules are nudges that are measured and logged only, and only Roman switches one on in `mind/config.json`.
+- Quotas and the daily allowance are rails in code (spec 9.8, `packages/sim/src/allowance.ts`, `build-rules.ts`): at most 40 reads and 20 looks a day, sketches priced at 30 points (visible things under their cost, a page at 10, a caption at 1) and not capped, 300 points a day set again each Sunday, 2 works put away a week, 1 found a week, and the like. Variety rules are nudges that are measured and logged only, and only Roman switches one on in `mind/config.json`.
 - Every tick commits: world state only when it changed, and the tick log (`mind/ticks/`, `mind/health.json`) always, in commits that start with `tick:`.
 - Log token usage and cost per run to the Actions summary.
 

@@ -97,6 +97,8 @@ export interface MindPlanContext {
   expandable: ReadonlySet<string>
   /** Places that have earned the lower price of an expand (spec v4 2.2). */
   expandEarned?: ReadonlySet<string>
+  /** Place ids and work ids (and project ids): a write aimed at one of them is a caption, priced apart from a page (spec v4 5.1). */
+  captionTargets?: ReadonlySet<string>
   /** Whether the rails of a found hold: no founded place under construction, room in the world (spec v4 2.3). */
   canFound: boolean
   /** Visitor notes found and not yet answered. */
@@ -143,6 +145,12 @@ const isVerb = (v: unknown): v is MindVerb => (MIND_VERBS as readonly unknown[])
 
 export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext): MindPlanResult {
   const reasons: string[] = []
+  /** A step with what decides its price: an expand on a place that earned it, a write aimed at a place or a work (spec v4 2.2, 5.1). */
+  const priced = <T extends PricedStep>(s: T, target: string | null): T => {
+    if (s.verb === 'expand' && target && c.expandEarned?.has(target)) return { ...s, earned: true }
+    if (s.verb === 'write' && target && c.captionTargets?.has(target)) return { ...s, caption: true }
+    return s
+  }
   const steps = input.map((s) => (isVerb(s.verb) ? { ...s, minutes: clampMinutes(s.verb, s.minutes) } : s))
 
   if (steps.length < MIN_STEPS || steps.length > MAX_STEPS) reasons.push(`a plan has ${MIN_STEPS} to ${MAX_STEPS} steps, and this one has ${steps.length}`)
@@ -192,7 +200,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
     }
 
     const handBefore = c.pointsInHand - spent
-    spent += stepCost(s.verb === 'expand' && target && c.expandEarned?.has(target) ? { ...s, earned: true } : s, c.prices)
+    spent += stepCost(priced(s, target), c.prices)
     if (BUILD_VERBS.has(verb) && !limits.allowBuilds) {
       here.push(`${n}: you are too tired for ${verb} today`)
       reasons.push(...here)
@@ -291,7 +299,7 @@ export function validateMindPlan(input: readonly MindStep[], c: MindPlanContext)
   }
 
   const valid = steps.filter((s): s is MindStep => isVerb(s.verb))
-  const cost = planCost(valid.map((s) => (s.verb === 'expand' && s.target && c.expandEarned?.has(s.target.trim()) ? { ...s, earned: true } : s)), c.prices)
+  const cost = planCost(valid.map((s) => priced(s, s.target?.trim() ?? null)), c.prices)
   if (cost > c.pointsInHand) reasons.push(`the plan costs ${cost} points and you have ${c.pointsInHand} in hand`)
 
   return reasons.length > 0 ? { ok: false, reasons } : { ok: true, steps: valid }
