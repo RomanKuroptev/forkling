@@ -71,6 +71,13 @@ Plan approved by the coordinator on 17 November 2026: L3, L1, L1b, L2, L4, then 
 - Missing data, left out: the "why" box and the source line of the mockup (cards have no such field), the taskbar buttons for open windows. Screenshots `d-shots/7c-card-open-*`.
 - Still to do in 7C: notes-chat extras, diary, gallery, workshop, who-am-i and retired pages; then 7D (S2, S3, S6, S7).
 
+## Lane D status (18 November 2026): step 7 and its pages are done
+
+Merged: 7C card (#240), chat extras (#241), diary (#243), gallery (#245), who-am-i (#247), retired (#248); 7D S2 (#250), S3 (#251), S6 (#252), S7 off (#253), workshop (#254). Every look PR had an Opus review with 390 and 1280 px shots in `d-shots/`; blockers were fixed and re-shot before merging.
+
+Small things the reviewers noted and I left: workshop list meta wraps on two lines at 1280 and shelf tiles say "17 Nov · game, a sketch" (long); no timelapse button in the project detail (it has "open the project"); the shelf and "Sketches, day by day" show the same sketches twice; the notes and about pages have no inset Notepad panel; taskbar buttons for open windows are not built (shell). Not built for lack of data: the "why" box on a card, the faces row of who-am-i, "phases" with date ranges on the retired page, points spent on a project.
+To switch the counter on: `GOATCOUNTER_CODE` for the site build step in the Pages workflows (needs Roman's GoatCounter account).
+
 ## Step 7D notes
 
 - S2 (#250): og and twitter tags with title, description, image and url on every page; `og/today.png` from today's first card, a day with no card still gets one; the newest 6 works and 3 projects get a framed picture (0.2 s each), older ones use their own picture. The site's vitest timeout is 20 s because builds draw pictures.
