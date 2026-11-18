@@ -136,7 +136,7 @@ dd { margin: 0; }
 .notes li.note .note-answer-btn { margin-left: 30px; }
 main img { max-width: 100%; height: auto; border: 2px solid var(--ink); image-rendering: auto; }
 /* The front page (step 7): a desktop of its own. Phone first, one column of windows; from 1000 px the live window on the left and the rest on the right, as in the mockup. */
-.bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto; overflow-wrap: anywhere; }
+.bare { flex: 1; min-width: 0; max-width: 1180px; margin: 0 auto var(--taskbar); overflow-wrap: anywhere; }
 .headline { font: 15px/1.6 var(--pixel); color: var(--white); text-shadow: 3px 3px 0 var(--deep); margin: 0 0 16px; }
 .desk { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
 .col-a, .col-b { display: grid; gap: 20px; min-width: 0; }

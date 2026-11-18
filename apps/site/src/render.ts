@@ -4,7 +4,7 @@ import type { z } from 'zod'
 import { Beliefs, BudgetLedger, Forkling, Goals, Health, Interests, isOpenRequest, MindState, SourceStats, Souvenir, TimelineEntry, Trail, type Belief, type InterestSource } from '@forkling/schema'
 import { STYLE } from './style.ts'
 import { buildToday } from './today.ts'
-import { FRONT_SCRIPT, frontBody, hoodBody, viewerAddress } from './front.ts'
+import { FRONT_SCRIPT, frontBody, hoodBody } from './front.ts'
 import { desktopPicturePng } from './desktop-picture.ts'
 import { faviconSvg, ICONS, iconFor, iconSvg } from './icons.ts'
 import { esc, markdown } from './md.ts'
@@ -211,6 +211,8 @@ export interface RenderOptions {
   turnstileSiteKey?: string | undefined
   /** The address of the site, for the links in the feed, like `https://owner.github.io/merge/`. Without it the feed links are relative. */
   baseUrl?: string | undefined
+  /** `false`: the viewer is not built into `world/`, so the front page has no way in. Default: it is (the CLI builds it). */
+  viewer?: boolean
   /** The world's history for `changes.json` (see `defaultGitLog`). Injected by a test; a world with no history gives an empty list. */
   gitLog?: () => string
   /** The moment the neglect of places is measured from. The build uses the clock; a test fixes it. The feed and the pages otherwise do not depend on it. */
@@ -297,7 +299,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
       project: today.project ? (projects.find((p) => p.project.id === today.project?.id) ?? null) : null,
       notes: loadNotes(world),
       mailbox: endpoint0 && siteKey0 ? { endpoint: endpoint0, siteKey: siteKey0 } : null,
-      viewerUrl: viewerAddress(opts.baseUrl),
+      viewerUrl: opts.viewer === false ? null : 'world/',
       mindUrl: endpoint0 ? endpoint0.slice(0, -'/notes'.length) : null,
       aboutHref: hasAbout(mergeAbout) ? 'about/' : 'why/',
     }),

@@ -11,19 +11,6 @@ import type { Today, TodayCard } from './today.ts'
  * Pictures are backgrounds on spans, never `<img>` tags.
  */
 
-/** The address of the 3D viewer for the world of this site: `https://owner.github.io/repo/` is viewed at `https://owner.github.io/forkling/owner/repo`. */
-export function viewerAddress(baseUrl: string | undefined): string | null {
-  if (!baseUrl) return null
-  try {
-    const url = new URL(baseUrl)
-    const m = /^([^.]+)\.github\.io$/.exec(url.hostname)
-    const repo = url.pathname.split('/').filter(Boolean)[0]
-    return m && repo ? `https://${url.hostname}/forkling/${m[1]}/${repo}` : null
-  } catch {
-    return null
-  }
-}
-
 /** A picture as a background, for a path from the site root. Anything that could break out of the `url()` is escaped. */
 const bg = (path: string) => `style="background-image:url('${esc(encodeURI(path).replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29'))}')"`
 
@@ -159,6 +146,7 @@ export const FRONT_SCRIPT = `(function () {
 `
 
 const usd = (n: number) => `$${n.toFixed(2)}`
+const calls = (n: number) => `${n} ${n === 1 ? 'call' : 'calls'}`
 const row = (a: string, b: string) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`
 
 export interface HoodInput {
@@ -183,6 +171,8 @@ export function hoodBody(i: HoodInput): string {
     '<p><a href="../why/">The timeline of steps and reasons</a></p>',
   ].join('\n')
 
+  // The month in progress is the table above; an older file may also list it in the history, which would read as nothing spent.
+  const earlier = budget?.history.filter((h) => h.month !== budget.month) ?? []
   const money = budget
     ? [
         '<h2>Budget</h2>',
@@ -193,8 +183,8 @@ export function hoodBody(i: HoodInput): string {
           row('Server', usd(budget.serverUsd)),
           row('Calls this month', String(budget.calls.length)),
         ].join('')}</table>`,
-        Object.keys(budget.byKind).length > 0 ? `<h3>By kind of call</h3><table>${Object.entries(budget.byKind).map(([k, t]) => row(k, `${t.calls} calls, ${usd(t.usd)}`)).join('')}</table>` : '',
-        budget.history.length > 0 ? `<h3>Earlier months</h3><table>${budget.history.map((h) => row(h.month, `${usd(h.spentUsd)}, ${h.calls} calls`)).join('')}</table>` : '',
+        Object.keys(budget.byKind).length > 0 ? `<h3>By kind of call</h3><table>${Object.entries(budget.byKind).map(([k, t]) => row(k, `${calls(t.calls)}, ${usd(t.usd)}`)).join('')}</table>` : '',
+        earlier.length > 0 ? `<h3>Earlier months</h3><table>${earlier.map((h) => row(h.month, `${usd(h.spentUsd)}, ${calls(h.calls)}`)).join('')}</table>` : '',
       ].join('\n')
     : '<h2>Budget</h2><p class="quiet">No budget file yet.</p>'
 
@@ -205,7 +195,7 @@ export function hoodBody(i: HoodInput): string {
           row('Points in hand', `${Math.round(health.allowance.points)} of ${Math.round(health.allowance.max)}${health.allowance.daily ? `, ${Math.round(health.allowance.daily)} a day` : ''}`),
           row('Engine', health.engine),
           row('Health updated', health.updatedAt),
-          row('Last tick', `${health.lastTick.at}: ${health.lastTick.summary}`),
+          row('Last tick', health.lastTick.summary ? `${health.lastTick.at}: ${health.lastTick.summary}` : health.lastTick.at),
           row('Ticks today', String(health.today.ticks)),
           row('Decide calls today', String(health.today.decideCalls)),
           row('Failures, rejections today', `${health.today.failures}, ${health.today.rejections}`),
