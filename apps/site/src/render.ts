@@ -113,9 +113,6 @@ function layout(p: PageInput): string {
   const menu = links.map((l) => `<a href="${l.href}"${cur(l.current)}>${esc(l.label)}</a>`).join('')
   const taskbar = `<footer class="taskbar"><div class="start"><input type="checkbox" id="start-toggle" class="start-toggle" aria-label="Open the start menu"><label class="start-btn" for="start-toggle"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Merge 95</label><nav class="menu" aria-label="Pages">${menu}</nav></div><span class="tray">${esc(p.name)}</span></footer>`
   const win = `<div class="window"><div class="title"><span>${esc(p.title)} - ${esc(p.name)}</span><span class="btns" aria-hidden="true"><i></i><i></i><i></i></span></div>
-<header>
-<a class="name" href="${p.root}index.html">${esc(p.name)}</a>
-</header>
 <main>
 ${p.body}
 </main></div>`

@@ -60,11 +60,24 @@ describe('every page is a window on Merge 95 (look L4a)', () => {
     for (const file of htmlFiles(out)) expect(readFileSync(file, 'utf8'), file).not.toMatch(/fonts\.googleapis|fonts\.gstatic/)
   })
 
-  it('keeps text readable: body type at least 18 px, buttons at least 44 px tall, ink on face', () => {
-    expect(STYLE).toMatch(/body \{[^}]*font: 20px/)
+  it('keeps text readable: VT323 sized so it measures 18 to 20 px (it renders small for its size), dark quiet text, buttons at least 44 px tall, ink on face', () => {
+    expect(STYLE).toMatch(/body \{[^}]*font: 26px/)
     expect(STYLE).toMatch(/button, \.play, \.note-answer-btn \{[^}]*min-height: 44px/)
     expect(STYLE).toContain('--face: #ffd6f1')
     expect(STYLE).toContain('--ink: #1a0b3b')
+    expect(STYLE).toContain('--quiet: #3d2c6b')
+    expect(STYLE).not.toContain('<header')
+  })
+
+  it('has dark secondary text: at least 4.5 to 1 on the face colour', () => {
+    const lum = (hex: string) => {
+      const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+      return 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!
+    }
+    const quiet = /--quiet: (#[0-9a-f]{6})/.exec(STYLE)![1]!
+    const face = /--face: (#[0-9a-f]{6})/.exec(STYLE)![1]!
+    const [hi, lo] = [lum(face), lum(quiet)].sort((a, b) => b - a)
+    expect((hi! + 0.05) / (lo! + 0.05)).toBeGreaterThanOrEqual(4.5)
   })
 
   it('leaves the frame round works and projects alone', () => {
