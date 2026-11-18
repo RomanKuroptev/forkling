@@ -30,6 +30,8 @@ const GEOMETRIES: Record<Shape, THREE.BufferGeometry> = {
 }
 
 /** `?lit` draws every place as cared for with its lamps on, to look at the glow (a debug flag). */
+/** `?wire` draws every place as being built, to look at the wireframe (a debug flag). */
+const WIRE_ALWAYS = new URLSearchParams(location.search).has('wire')
 const LIT_ALWAYS = new URLSearchParams(location.search).has('lit')
 
 /** How night it is, shared by every shape's material: windows and lamps glow in proportion to it. */
@@ -182,7 +184,7 @@ export function Places() {
     if (new URLSearchParams(location.search).has('debug')) Object.assign(window, { __forklingModels: () => [...loadedFiles].sort() })
   }, [loadedFiles])
 
-  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS }), [world, land, interiors, loadedFiles, nowMs, plots])
+  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS, wireAlways: WIRE_ALWAYS }), [world, land, interiors, loadedFiles, nowMs, plots])
   // The board of each place's sign: its name and its sign text, painted on one texture.
   const baseOfPlace = useCallback((p: (typeof world.places)[number]) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, [land])
   const boards = useMemo(() => signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit), [world, land])

@@ -3,6 +3,7 @@ import { DARK_GLOW, repaint } from './theme.ts'
 import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
 import { buildingModel } from './building.ts'
 import { constructionInstances } from './constructionGeometry.ts'
+import { wireframeInstances } from './wireframe.ts'
 import { plotInstances } from './plotGeometry.ts'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
 import { SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
@@ -237,7 +238,7 @@ export type SceneInstances = Record<Shape, ShapeInstances> & {
  * Every place's shapes, grouped by shape: its outside always (with scaffolding while it is being built), its inside only when `interiors` has it. Each stands on the ground
  * under it. `models` are the model files that have loaded: a part that has one is drawn from it, the others from their primitives.
  */
-export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number; plots?: readonly PlaceRequest[]; litAlways?: boolean }): SceneInstances {
+export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number; plots?: readonly PlaceRequest[]; litAlways?: boolean; wireAlways?: boolean }): SceneInstances {
   const lists: Record<Shape, Instance[]> = { box: [], sphere: [], cylinder: [], cone: [] }
   const glassList: Instance[] = []
   const modelLists: Record<string, Mat4[]> = {}
