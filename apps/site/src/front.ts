@@ -117,7 +117,7 @@ export function frontBody(i: FrontInput): string {
       .map(({ s, shot }) => `<a class="thumb" href="projects/${esc(p.id)}/" aria-label="${esc(s.caption)}"><span class="pic" ${bg(`projects/${p.id}/${shot}`)}></span><span class="day">day ${Math.round((Date.parse(`${dayOf(i.timezone, s.at)}T00:00:00Z`) - startDay) / 86_400_000) + 1}</span></a>`)
       .join('')
     const last = p.sessions.at(-1)
-    project = win('project', `PROJECT: ${p.name}`, `${thumbs ? `<div class="thumbs">${thumbs}</div>` : ''}<p class="standing"><strong>${esc(standing(p.sessions, p.status, i.timezone, i.nowMs))}.</strong></p><p><strong>Goal:</strong> ${esc(p.aim)}</p>${last ? `<p class="quiet">Latest: ${esc(cut(last.caption, 160))}</p>` : ''}<p class="quiet"><a href="projects/${esc(p.id)}/">Open the project</a></p>`)
+    project = win('project', `PROJECT: ${p.name}`, `${thumbs ? `<div class="thumbs">${thumbs}</div>` : ''}<p class="quiet standing">${esc(standing(p.sessions, p.status, i.timezone, i.nowMs))}.</p><p><strong>Goal:</strong> ${esc(p.aim)}</p>${last ? `<p class="quiet">Latest: ${esc(cut(last.caption, 160))}</p>` : ''}<p class="quiet"><a href="projects/${esc(p.id)}/">Open the project</a></p>`)
   }
 
   const noteBody = [
