@@ -1,0 +1,148 @@
+{
+  "sources": [
+    {
+      "id": "wikipedia",
+      "name": "Wikipedia",
+      "group": "reference",
+      "hosts": ["en.wikipedia.org"],
+      "state": "on the list",
+      "reason": "Read through /wiki/ pages; the morning takes up to 4 Main Page section links.",
+      "trial": "docs/spec/w2-trials/en.wikipedia.org.md",
+      "promisedBy": "spec 6.1"
+    },
+    {
+      "id": "esolang",
+      "name": "Esolang wiki",
+      "group": "maker",
+      "hosts": ["esolangs.org"],
+      "state": "on the list",
+      "reason": "Read through /wiki/ pages; the morning takes 6 front-page links.",
+      "trial": "docs/spec/w2-trials/esolangs.org.md",
+      "promisedBy": "Roman, 9 November (maker sources)"
+    },
+    {
+      "id": "github-creative-coding",
+      "name": "Creative-coding GitHub",
+      "group": "maker",
+      "hosts": ["api.github.com"],
+      "state": "on the list",
+      "reason": "The morning takes 4 repositories from the creative-coding topic.",
+      "trial": "docs/spec/w2-trials/api.github.com.md",
+      "promisedBy": "Roman, 9 November (maker sources)"
+    },
+    {
+      "id": "commons",
+      "name": "Wikimedia Commons",
+      "group": "reference",
+      "hosts": ["commons.wikimedia.org", "upload.wikimedia.org"],
+      "state": "on the list",
+      "reason": "File pages and their pictures (upload.wikimedia.org serves the pictures).",
+      "trial": "docs/spec/w2-trials/commons.wikimedia.org.md",
+      "promisedBy": "spec 6.1"
+    },
+    {
+      "id": "artic",
+      "name": "Art Institute of Chicago",
+      "group": "reference",
+      "hosts": ["api.artic.edu", "www.artic.edu"],
+      "state": "on the list",
+      "reason": "Artwork records and their pictures.",
+      "trial": "docs/spec/w2-trials/api.artic.edu.md",
+      "promisedBy": "spec 6.1"
+    },
+    {
+      "id": "imgflip",
+      "name": "Imgflip meme formats",
+      "group": "pulse",
+      "hosts": ["api.imgflip.com", "i.imgflip.com"],
+      "state": "on the list",
+      "reason": "A feed: the morning takes the 6 top formats, and a meme may cite a format record.",
+      "trial": "docs/spec/w4-trials/api.imgflip.com.md",
+      "promisedBy": "Roman, 9 November (pulse sources)"
+    },
+    {
+      "id": "p5js",
+      "name": "p5.js reference",
+      "group": "manual",
+      "hosts": ["p5js.org"],
+      "state": "on the list",
+      "reason": "Tinker only.",
+      "trial": "docs/spec/w2-trials/p5js.org.md",
+      "promisedBy": "Roman, 9 November (library manuals)"
+    },
+    {
+      "id": "tonejs",
+      "name": "Tone.js docs",
+      "group": "manual",
+      "hosts": ["tonejs.github.io"],
+      "state": "on the list",
+      "reason": "Tinker only.",
+      "trial": "docs/spec/w2-trials/tonejs.github.io.md",
+      "promisedBy": "Roman, 9 November (library manuals)"
+    },
+    {
+      "id": "threejs",
+      "name": "three.js docs",
+      "group": "manual",
+      "hosts": ["threejs.org"],
+      "state": "on the list",
+      "reason": "Tinker only.",
+      "trial": "docs/spec/w2-trials/threejs.org.md",
+      "promisedBy": "Roman, 9 November (library manuals)"
+    },
+    {
+      "id": "mdn",
+      "name": "MDN Web Docs",
+      "group": "manual",
+      "hosts": ["developer.mozilla.org"],
+      "state": "on the list",
+      "reason": "Tinker only.",
+      "trial": "docs/spec/w2-trials/developer.mozilla.org.md",
+      "promisedBy": "Roman, 9 November (library manuals)"
+    },
+    {
+      "id": "show-hn",
+      "name": "Show HN",
+      "group": "pulse",
+      "hosts": ["hn.algolia.com", "hacker-news.firebaseio.com"],
+      "state": "trial failed",
+      "reason": "The official API's robots.txt disallows /v0/. hn.algolia.com has no robots.txt and was reliable (20 of 20, 29 links a page), but only 10% of Show HN items have 120 words, and the projects they point to are on sites Merge may not read.",
+      "trial": "docs/spec/w2-trials/hn.algolia.com.md",
+      "promisedBy": "spec 6.1 feeds (the daily pulse); Roman, 9 November (maker sources)",
+      "recommended": "drop: most items are a title and a link to a site Merge may not read, so there is little to start a trip from."
+    },
+    {
+      "id": "lobsters",
+      "name": "Lobsters",
+      "group": "maker",
+      "hosts": ["lobste.rs"],
+      "state": "blocked by robots.txt",
+      "reason": "robots.txt disallows /hottest.json and /s/; the trial stopped there.",
+      "trial": "docs/spec/w2-trials/lobste.rs.md",
+      "promisedBy": "Roman, 9 November (maker sources)",
+      "recommended": "drop: the site's own rules say no."
+    },
+    {
+      "id": "lemmy-memes",
+      "name": "Lemmy memes",
+      "group": "pulse",
+      "hosts": ["lemmy.world"],
+      "state": "trial failed",
+      "reason": "robots.txt allows the API with Crawl-delay: 60 and it was reliable (8 of 8, 8 links), but only 63% of posts were readable (the mark is 80%): most memes are a picture with a few words.",
+      "trial": "docs/spec/w2-trials/lemmy.world.md",
+      "promisedBy": "Roman, 9 November (pulse sources)",
+      "recommended": "rerun the trial against a text-heavier community, or drop."
+    },
+    {
+      "id": "mastodon-trends",
+      "name": "Mastodon trends",
+      "group": "pulse",
+      "hosts": ["mastodon.social"],
+      "state": "trial failed",
+      "reason": "robots.txt allows * but blocks ClaudeBot and anthropic-ai by name and says its content is not for LLM training; 0 trending links led to a site Merge may read.",
+      "trial": "docs/spec/w2-trials/mastodon.social.md",
+      "promisedBy": "Roman, 9 November (pulse sources)",
+      "recommended": "drop: robots.txt blocks ClaudeBot by name."
+    }
+  ]
+}

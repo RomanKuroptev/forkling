@@ -10,6 +10,7 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 - **Docs merged** (#261).
 - **Q0 (this PR):** `apps/qa` (`pnpm qa fast`), the Finding schema, `findings.json` and `report.md`, PNG contact sheets, the check runner (a throwing check gives `qa.check-did-not-run`, planted test), `qa.yml` on PRs and main. Labels `qa`, `phase-2`, `needs-roman`, `fix-failed`, `qa-rules`. Site gaps filed as `qa` + `phase-2`: #262 to #268. Pinned digest issue: #269.
 - **Next:** lanes W, B, S, T in worktrees, each plan approved before it builds.
+- **Lane S (data sources, plan in `docs/spec/audit/lanes/s.md`):** S1 (this PR): `qa/sources.json` and two `fast` checks: the list matches the allowlist both ways, and every promised source not on the list is a finding (Lemmy memes, Mastodon trends and Show HN major, Lobsters minor, all for Roman with a recommended answer). A `roman` major no longer fails a PR. `apps/qa` now depends on `@forkling/mind`. Next: S2 (what Merge read), S3 (live source health, snapshot check), S4 (`qa-live.yml`).
 
 ## Spec v4, parallel build (started 17 November)
 
