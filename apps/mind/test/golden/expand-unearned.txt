@@ -79,7 +79,7 @@ log | nature | 1.4x0.4x0.5 | slots: none
 Rules for an expand:
 - Make one of three changes: add a new room, or enlarge one room, or add one path from this place to another.
 - A new room has at most 15 parts, and an enlarged room gets at most 15 added parts. A place has at most 6 rooms and a room at most 40 parts.
-- Every room stands inside the walls: the outer 0.8 m of the footprint is wall, so a room reaches at most 9.2 m from the middle across and 6.2 m front to back. It fits the height of its floor, does not overlap another room on the same floor, and sits on a floor from 0 to 0. The building itself does not change.
+- Every room fits inside the footprint (20 by 14) and the height of its floor, does not overlap another room on the same floor, and sits on a floor from 0 to 0. The building itself does not change.
 - An enlarged room is never smaller than it was. If it grows, move the parts that no longer fit, by their index.
 - Use only kit parts from the list above. You never write 3D code. A part sits inside its room, and its position is in meters from the middle of the room, y up.
 - A path leads to one other place that exists, and not to one it already has a path to.

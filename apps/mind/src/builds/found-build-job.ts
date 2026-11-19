@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { FoundJob, type Place, type PlaceRequest } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import { chooseRequestChunk, chunkKey, fallbackDue, hashString, layoutProblems, localDate, openPlaceRequests, roomOutsideWalls, toLandPlace, validatePlace } from '@forkling/sim'
+import { chooseRequestChunk, chunkKey, fallbackDue, hashString, layoutProblems, localDate, openPlaceRequests, toLandPlace, validatePlace } from '@forkling/sim'
 import type { BuildHandler } from '../build-worker.ts'
 import { clampText } from '../decision.ts'
 import type { LlmClient } from '../llm.ts'
@@ -87,7 +87,7 @@ export function createFoundBuildHandler(o: FoundBuildHandlerOptions): BuildHandl
       } catch (e) {
         return { ok: false, reasons: [...reasons, `the answer is not a place: ${e instanceof Error ? e.message.slice(0, 160) : 'it does not fit the schema'}`] }
       }
-      reasons.push(...validatePlace(place, { kit }), ...place.rooms.flatMap((r) => roomOutsideWalls(place, r) ?? []), ...layoutProblems([...lands, toLandPlace(place)]))
+      reasons.push(...validatePlace(place, { kit }), ...layoutProblems([...lands, toLandPlace(place)]))
       return reasons.length > 0 ? { ok: false, reasons } : { ok: true, place }
     }
 
