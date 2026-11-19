@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { readWorldSources, scoreSources, type SourceReads } from '../src/behaviour/sources.ts'
+import { readWorldSources, scoreSources, snapshotForWorld, snapshotOfRun, writeRunWeb, type SourceReads } from '../src/behaviour/sources.ts'
 import { readSourceList } from '../src/sources/list.ts'
 
 const list = readSourceList()
@@ -149,5 +149,19 @@ describe('planted: what Merge read goes wrong', () => {
     reads.trails.push(trail('again', '2026-11-19', `${W}Lighthouse`, [{ url: `${W}Lighthouse` }]))
     const r = scoreSources(reads, list, { label: 'test', to: '2026-11-19' })
     expect(r.summary.readTwice).toEqual([`${W}Lighthouse`])
+  })
+})
+
+describe('which web a run read', () => {
+  it('a behaviour run says in its out folder which snapshot it read; the sources score finds it beside the world', () => {
+    const seed = mkdtempSync(join(tmpdir(), 'qa-web-'))
+    mkdirSync(join(seed, 'world'))
+    mkdirSync(join(seed, 'out'))
+    expect(snapshotOfRun(join(seed, 'out'))).toBeNull()
+    expect(snapshotForWorld(join(seed, 'world'))).toBeNull()
+    writeRunWeb(join(seed, 'out'), '/snap')
+    expect(snapshotOfRun(join(seed, 'out'))).toBe('/snap')
+    expect(snapshotForWorld(join(seed, 'world'))).toBe('/snap')
+    expect(snapshotForWorld(join(seed, 'world'), '/other')).toBe('/other')
   })
 })

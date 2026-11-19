@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
-import { readWorldSources, scoreSources } from './behaviour/sources.ts'
+import { failedUrls, readWorldSources, scoreSources, snapshotForWorld, snapshotMisses } from './behaviour/sources.ts'
 import { fastChecks } from './fast.ts'
 import { qaOut, repoRoot } from './paths.ts'
 import { Area } from './report/finding.ts'
@@ -33,6 +33,8 @@ const USAGE = `pnpm qa <command>
   sources --world <dir>        what Merge read over 7 days, from a world copy or a clone of Merge's repo (no network)
           [--to <yyyy-mm-dd>]  the last day counted (default: the newest trail)
           [--label <name>]     the name in the findings (default: the folder's name)
+          [--snapshot <dir>]   the run read this web snapshot (default: what <world>/../out/web.json says, else the real web);
+                               on a snapshot run a failed page the snapshot never recorded is counted apart, never an alarm
   triage  findings to GitHub issues labelled qa, by fingerprint; picks up to 5 to fix (qa-out/triage.json)
           [--findings <file>] [--areas world,behaviour,...] [--dry-run] [--repo owner/name]
           --dry-run only reads GitHub and prints what it would open, comment, close and pick
@@ -63,7 +65,7 @@ async function main(argv: string[]): Promise<number> {
       return blocking(findings, loadKnown(repoRoot())) ? 1 : 0
     }
     case 'sources': {
-      const { values } = parseArgs({ args: rest, options: { world: { type: 'string' }, to: { type: 'string' }, label: { type: 'string' } } })
+      const { values } = parseArgs({ args: rest, options: { world: { type: 'string' }, to: { type: 'string' }, label: { type: 'string' }, snapshot: { type: 'string' } } })
       if (!values.world) {
         console.log(USAGE)
         return 2
@@ -77,7 +79,10 @@ async function main(argv: string[]): Promise<number> {
         area: 'behaviour',
         title: `What Merge read (${label})`,
         run: async () => {
-          const { summary, findings } = scoreSources(readWorldSources(world), readSourceList(), { label, ...(values.to ? { to: values.to } : {}) })
+          const reads = readWorldSources(world)
+          const snapshot = snapshotForWorld(world, values.snapshot ? resolve(process.env.INIT_CWD ?? process.cwd(), values.snapshot) : undefined)
+          const web = snapshot ? { snapshot: { missed: await snapshotMisses(snapshot, failedUrls(reads)) } } : {}
+          const { summary, findings } = scoreSources(reads, readSourceList(), { label, ...(values.to ? { to: values.to } : {}), ...web })
           mkdirSync(join(out, 'sources'), { recursive: true })
           writeFileSync(join(out, 'sources', `behaviour-${label}.json`), `${JSON.stringify(summary, null, 2)}\n`)
           return findings
