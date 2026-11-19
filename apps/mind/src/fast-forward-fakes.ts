@@ -1,14 +1,15 @@
 import type { Sandbox, SandboxRun } from './builds/sandbox-run.ts'
 import { emptyPageResult } from './builds/sandbox-runner.ts'
 import type { SessionBlock, SessionModel } from './builds/session.ts'
-import type { BatchOutcome, LlmClient, LlmRequest } from './llm.ts'
+import type { BatchOutcome, CallKind, LlmClient, LlmRequest } from './llm.ts'
 import type { FetchImpl } from './web/fetch.ts'
 
 /**
  * Stand-ins for the model and the web, for the fast-forward command's `--dry-run` smoke run and its tests. They cost nothing
  * and reach nothing. The model plans one sketch a day in the morning, makes the sketch when asked, has a different small
  * thought each time, and refuses everything else (a refusal is a failed call the mind already handles). It is not a voice:
- * a smoke run checks the plumbing, never what Merge would do.
+ * a smoke run checks the plumbing, never what Merge would do. The audit harness can script the answer to any call kind
+ * (`answers`) and reads back every prompt it was sent (`calls`); without a script it answers as above.
  */
 
 const USAGE = { input: 800, cacheRead: 0, cacheWrite: 0, output: 300 }
@@ -27,16 +28,28 @@ const WORDS = [
 /** A different line every time, since a repeated thought is thrown away. */
 const line = (n: number) => `${WORDS[0]![n % 7]} ${WORDS[1]![Math.floor(n / 7) % 7]} ${WORDS[2]![Math.floor(n / 49) % 11]} (${n}).`
 
-export function fakeModel(opts: { build?: boolean } = {}): LlmClient & { calls: LlmRequest[] } {
+/**
+ * A scripted answer for one call kind (the audit harness's planted runs, QB): it gets the request and how many calls of that
+ * kind there have been, this one included, and returns the parsed answer, or null for a refusal.
+ */
+export type FakeAnswer = (req: LlmRequest, n: number) => unknown
+export type FakeAnswers = Partial<Record<CallKind, FakeAnswer>>
+
+export function fakeModel(opts: { build?: boolean; answers?: FakeAnswers } = {}): LlmClient & { calls: LlmRequest[] } {
   const calls: LlmRequest[] = []
+  const perKind = new Map<CallKind, number>()
   let sketches = 0
   let thoughts = 0
   return {
     calls,
     async complete<T>(req: LlmRequest<T>) {
       calls.push(req)
+      const n = (perKind.get(req.kind) ?? 0) + 1
+      perKind.set(req.kind, n)
       let parsed: unknown = null
-      if (req.kind === 'morning') {
+      const scripted = opts.answers?.[req.kind]
+      if (scripted) parsed = scripted(req as LlmRequest, n)
+      else if (req.kind === 'morning') {
         parsed = {
           thought: 'A small thing first.',
           longGoal: null,
