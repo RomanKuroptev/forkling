@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util'
 import { qaOut } from '../paths.ts'
 import { blocking } from '../report/write.ts'
 import { snapshotDir } from '../sources/snapshot.ts'
-import { cloneLive, day0, runSeeds, scoreRuns, type SeedRun } from './runner.ts'
+import { cloneLive, day0, realEnvFile, runSeeds, scoreRuns, type SeedRun } from './runner.ts'
 import { SCENARIOS, type Scenario } from './scenarios.ts'
 import { readLevels } from './score.ts'
 
@@ -73,7 +73,7 @@ export async function behaviourCommand(args: string[]): Promise<number> {
       scenario,
       ...(values.sessions ? { sessions: true } : {}),
       ...(values.start ? { start: values.start } : {}),
-      ...(values['env-file'] ? { envFile: at(values['env-file']) } : {}),
+      ...((ef) => (ef ? { envFile: ef } : {}))(mode === 'real' ? realEnvFile(values['env-file'] ? at(values['env-file']) : undefined) : values['env-file'] ? at(values['env-file']) : undefined),
       log: (l) => console.log(l),
     })
   }
