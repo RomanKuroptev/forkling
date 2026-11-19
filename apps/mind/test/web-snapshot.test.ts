@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { FetchImpl } from '../src/web/fetch.ts'
-import { recordingFetch, snapshotFetch, trimHtml, writeManifest } from '../src/web/snapshot.ts'
+import { cutHtml, recordingFetch, snapshotFetch, trimHtml, writeManifest } from '../src/web/snapshot.ts'
 
 const temp = () => mkdtempSync(join(tmpdir(), 'snap-'))
 const web: FetchImpl = async (url) => {
@@ -19,6 +19,18 @@ const source = (host: string) => (host === 'en.wikipedia.org' ? 'wikipedia' : 'o
 describe('trimHtml', () => {
   it('drops scripts, styles, comments and styling attributes, and keeps text, links and classes', () => {
     expect(trimHtml('<head><script>x()</script><style>p{}</style></head><body><!-- hi --><p style="color:red" data-x="1">Lamps <a href="/wiki/Lamp" class="l">lamp</a></p></body>')).toBe('<head></head><body><p>Lamps <a href="/wiki/Lamp" class="l">lamp</a></p></body>')
+  })
+})
+
+describe('cutHtml', () => {
+  it('cuts a long page at the end of a tag, and keeps a front page whole', () => {
+    const page = `<p>${'word '.repeat(50)}</p>`.repeat(10)
+    const cut = cutHtml('https://en.wikipedia.org/wiki/Lamp', page, 300)
+    expect(cut.length).toBeLessThanOrEqual(300)
+    expect(cut.endsWith('>')).toBe(true)
+    expect(page.startsWith(cut)).toBe(true)
+    expect(cutHtml('https://en.wikipedia.org/wiki/Main_Page', page, 300)).toBe(page)
+    expect(cutHtml('https://en.wikipedia.org/wiki/Lamp', '<p>short</p>', 300)).toBe('<p>short</p>')
   })
 })
 

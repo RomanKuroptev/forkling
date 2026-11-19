@@ -31,7 +31,8 @@ export interface RecordOptions {
 }
 
 /** Pages kept per source, at most. The rest of the budget is shared. */
-const PER_SOURCE: Record<string, number> = { wikipedia: 16, esolang: 10, 'github-creative-coding': 8, commons: 4, artic: 4 }
+const MDN_START = 'https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API'
+const PER_SOURCE: Record<string, number> = { wikipedia: 24, esolang: 14, 'github-creative-coding': 8, commons: 4, artic: 4 }
 const DEFAULT_PER_SOURCE = 3
 /** Links followed from each page read, one step deep. */
 const LINKS_PER_PAGE = 3
@@ -113,21 +114,23 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
     const item = await soft(link.url, () => readUrl(wander, link.url))
     if (item) read.push(item)
   }
-  for (const item of [...read]) {
-    for (const link of item.links.slice(0, LINKS_PER_PAGE)) {
-      if (!room(link.url)) continue
-      await soft(link.url, () => readUrl(wander, link.url))
-    }
-  }
-  // 4. The library manuals (tinker reads them), and a page of MDN they link to.
+  // 4. The library manuals (tinker reads them), and a page of MDN they link to: small, so before the budget goes on step 5.
   const manuals: Item[] = []
   for (const url of Object.values(MANUAL_START)) {
     if (!room(url)) continue
     const page = await soft(url, () => manualPage(tinker, url))
     if (page) manuals.push(page)
   }
-  const mdn = manuals.flatMap((m) => m.links).find((l) => l.url.startsWith('https://developer.mozilla.org/'))
-  if (mdn && room(mdn.url)) await soft(mdn.url, () => manualPage(tinker, mdn.url))
+  // No manual front page links to MDN today, so its Canvas page (what a sketch draws with) stands in.
+  const mdn = manuals.flatMap((m) => m.links).find((l) => l.url.startsWith('https://developer.mozilla.org/'))?.url ?? MDN_START
+  if (room(mdn)) await soft(mdn, () => manualPage(tinker, mdn))
+  // 5. One step further from every page read, a few links each, while the budget lasts.
+  for (const item of [...read]) {
+    for (const link of item.links.slice(0, LINKS_PER_PAGE)) {
+      if (!room(link.url)) continue
+      await soft(link.url, () => readUrl(wander, link.url))
+    }
+  }
 
   const manifest = writeManifest(o.dir, { takenAt: (o.now ?? (() => new Date()))().toISOString(), engine: o.engine, userAgent: USER_AGENT, entries: rec.entries })
   log(`kept ${rec.entries.filter((e) => e.file).length} answers, ${(rec.bytes() / 1e6).toFixed(2)} MB; items per source: ${Object.entries(manifest.sources).map(([s, v]) => `${s} ${v.items}`).join(', ')}`)

@@ -62,6 +62,17 @@ export function trimHtml(html: string): string {
     .replace(/\n\s*\n+/g, '\n')
 }
 
+/**
+ * A page cut to `max` bytes at the end of a tag. The engine keeps at most 3,000 tokens of a page's text (about 12 KB), so the
+ * first 100 KB of HTML hold all it reads and the links near the top. A front page (`Main_Page`) is kept whole: its sections run long.
+ */
+export const MAX_PAGE_BYTES = 100_000
+export function cutHtml(url: string, html: string, max = MAX_PAGE_BYTES): string {
+  if (Buffer.byteLength(html) <= max || /\/Main_Page$/.test(new URL(url).pathname)) return html
+  const head = Buffer.from(html).subarray(0, max).toString('utf8')
+  return head.slice(0, head.lastIndexOf('>') + 1)
+}
+
 export function recordingFetch(inner: FetchImpl, dir: string, sourceOf: (host: string) => string): FetchImpl & { entries: SnapshotEntry[]; bytes: () => number } {
   const entries: SnapshotEntry[] = []
   const byUrl = new Map<string, SnapshotEntry>()
@@ -89,7 +100,7 @@ export function recordingFetch(inner: FetchImpl, dir: string, sourceOf: (host: s
       return res
     }
     let body = Buffer.from(await res.arrayBuffer())
-    if (/html/.test(contentType)) body = Buffer.from(trimHtml(body.toString('utf8')))
+    if (/html/.test(contentType)) body = Buffer.from(cutHtml(url, trimHtml(body.toString('utf8'))))
     const sha256 = createHash('sha256').update(body).digest('hex')
     const file = `files/${sha256.slice(0, 16)}.${extFor(contentType)}`
     if (!byUrl.has(url)) {
