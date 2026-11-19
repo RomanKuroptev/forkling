@@ -84,6 +84,26 @@ describe('the scene list', () => {
     expect(list.filter((o) => o.kind === 'room').every((o) => !o.visible)).toBe(true)
   })
 
+  it('says what each exhibit card shows: the souvenir once read, the label before, the gallery with its count (issues 347, 355)', () => {
+    const places = starterPlaces()
+    const home = places.find((p) => p.id === 'home')!
+    const room = home.rooms[0]!
+    const shelf = room.parts.findIndex((pp) => kit.parts.find((k) => k.id === pp.part)?.slots[0]?.kind === 'shelf')
+    expect(shelf).toBeGreaterThanOrEqual(0)
+    home.exhibits = [
+      { id: 'keep', kind: 'souvenir', ref: 'souvenirs/keep', slot: `${room.id}/${shelf}/0`, label: 'Kept, in my words', added: '2026-11-20' },
+      { id: 'blank', kind: 'souvenir', ref: null, slot: `${room.id}/${shelf}/1`, label: ' ', added: '2026-11-20' },
+    ]
+    const before = placeObjects({ places, kit, heightAt: flat, interiors: new Set(['home']), nowMs: NOW, plots: [] })
+    expect(before.find((o) => o.id === 'home/keep')!.card).toMatchObject({ shows: 'text', text: 'Kept · Kept, in my words' })
+    expect(before.find((o) => o.id === 'home/blank')!.card!.shows).toBe('nothing')
+    const souvenirs = new Map([['souvenirs/keep', { id: 'keep', why: 'w', topics: [], source: { url: 'https://en.wikipedia.org/wiki/Sand', title: 'Sand', fetchedAt: '2026-11-13T06:25:44.992Z' }, licence: null, placedIn: 'home', kind: 'quote' as const, content: 'Sand is granular.' }]])
+    const after = placeObjects({ places, kit, heightAt: flat, interiors: new Set(['home']), nowMs: NOW, plots: [], souvenirs, workCount: 2 })
+    expect(after.find((o) => o.id === 'home/keep')!.card).toEqual({ shows: 'text', text: 'Sand · “Sand is granular.”' })
+    const gallery = after.find((o) => o.exhibitKind === 'gallery')
+    if (gallery) expect(gallery.card!.text).toContain('2 works')
+  })
+
   it('marks a place being built as wireframe and puts the sign text in the list', () => {
     const places: Place[] = starterPlaces()
     places[0]!.state = { ...places[0]!.state, construction: { kind: 'found', finishesAt: '2026-11-27T13:00:00Z' } }

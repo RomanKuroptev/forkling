@@ -95,7 +95,10 @@ export const WIREFRAME = { pole: COLORS.cyan, rail: '#7ffcff', plank: '#4fc3f7' 
 export const PLOT = { stake: COLORS.cyan, rope: '#7ffcff', board: COLORS.face, pennant: COLORS.hotPink } as const
 
 /** Props on exhibits. */
-export const EXHIBIT = { brass: '#ffe08a', paper: COLORS.face, dust: '#d8d8ff', web: '#f5f0ff', vine: '#19c6a6', leaf: COLORS.green } as const
+export const EXHIBIT = { brass: '#ffe08a', paper: COLORS.face, backing: COLORS.ink, dust: '#d8d8ff', web: '#f5f0ff', vine: '#19c6a6', leaf: COLORS.green } as const
+
+/** The cards that show what an exhibit holds (`exhibitCards.ts`): small windows, brass plaques, the terminal's green on dark. */
+export const CARD = { body: COLORS.face, ink: COLORS.ink, barFrom: COLORS.purple, barTo: COLORS.hotPink, barText: COLORS.white, brass: '#ffe08a', brassEdge: '#b8892e', screen: '#04140b', green: COLORS.green, picture: COLORS.lilac } as const
 
 /** Marks left by visitors' notes, by state. */
 export const NOTE_PAPER = { new: '#fff7d6', found: '#fff27a', replied: '#ff9ad8', kept: '#9ff3ff', declined: '#ff7a9a' } as const

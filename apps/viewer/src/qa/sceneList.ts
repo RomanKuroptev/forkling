@@ -1,8 +1,9 @@
-import type { Kit, Place, PlaceRequest, SlotKind } from '@forkling/schema'
+import type { Kit, Place, PlaceRequest, SlotKind, Souvenir } from '@forkling/schema'
 import { placeCentre, toLandPlace } from '@forkling/sim'
 import * as THREE from 'three'
 import { buildingModel } from '../world/building.ts'
 import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots } from '../world/exhibitGeometry.ts'
+import { cardContent, cardPose, cardShows, type CardShows } from '../world/exhibitCards.ts'
 import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeometry.ts'
 import { plotInstances } from '../world/plotGeometry.ts'
 import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
@@ -35,6 +36,11 @@ export interface QaObject {
   slot?: SlotKind
   /** For a work or project on a screen: what its screen shows as drawn now, its picture or its title, or nothing (a plain lit panel). */
   shows?: ScreenShows
+  /**
+   * What an exhibit's card shows (issues 347, 355): a picture, its words, its title, or nothing, and the words on it. Every exhibit
+   * but a work screen has one. The souvenir files are read as the insides load, so before that a card shows the exhibit's label.
+   */
+  card?: { shows: CardShows; text: string }
   /** A place's or room's name, an exhibit's label. */
   name?: string
   /** The words painted on a sign or a title bar. */
@@ -81,6 +87,9 @@ export interface PlacesSnapshot {
   plant?: QaPlant | null
   /** What each screen face shows once it is drawn (`WorkScreens`), by `<place>/<exhibit>`. */
   screens?: ReadonlyMap<string, ScreenShows>
+  /** The souvenir files read so far, by an exhibit's ref, and how many works there are (the gallery's line). */
+  souvenirs?: ReadonlyMap<string, Souvenir | null>
+  workCount?: number
 }
 
 export type ScreenShows = 'picture' | 'title' | 'nothing'
@@ -112,7 +121,8 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
       const e = spot.exhibit
       const id = `${place.id}/${e.id}`
       const onScreen = spot.slotKind === 'screen' && (e.kind === 'work' || e.kind === 'project')
-      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
+      const card = cardPose(spot) ? cardShows(cardContent(e, spot.slotKind, e.ref ? s.souvenirs?.get(e.ref) : null, s.workCount ?? 0)) : null
+      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
     }
     const bar = buildingModel(place, s.kit, baseY)?.titleBar
     if (bar) {

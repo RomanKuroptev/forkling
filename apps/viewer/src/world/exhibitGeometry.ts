@@ -2,7 +2,8 @@ import type { Kit, KitPalette, Place, SlotKind } from '@forkling/schema'
 import { EXHIBIT } from './theme.ts'
 import { createPrng, placeCentre, toLandPlace, type NeglectLevel } from '@forkling/sim'
 import { floorHeight, type Instance } from './kitBase.ts'
-import { compose } from './matrix.ts'
+import { compose, multiply } from './matrix.ts'
+import { TERMINAL_TILT, cardPose } from './exhibitCards.ts'
 
 /**
  * What stands in a place's slots, and how neglect shows (spec 4.4, 5.1, 4.6), as plain arrays like the rest of the kit's geometry.
@@ -15,6 +16,9 @@ export interface ExhibitSpot {
   position: [number, number, number]
   /** The turn of the part it stands on, about y. */
   rotY: number
+  /** The kit part it stands on, and the height of that part's top in the world (a card in a case stands on the case). */
+  part: string
+  partTop: number
 }
 
 /** Each exhibit at its slot (`room / part index / slot index`) on its part, in the world. An exhibit whose slot is not there is left out. */
@@ -26,8 +30,9 @@ export function exhibitSpots(place: Place, kit: Kit, baseY: number): ExhibitSpot
     const m = /^([a-z0-9][a-z0-9-]*)\/(\d+)\/(\d+)$/.exec(exhibit.slot)
     const room = m ? place.rooms.find((r) => r.id === m[1]) : undefined
     const placed = room?.parts[Number(m?.[2])]
-    const slot = placed ? kit.parts.find((p) => p.id === placed.part)?.slots[Number(m?.[3])] : undefined
-    if (!room || !placed || !slot) continue
+    const kitPart = placed ? kit.parts.find((p) => p.id === placed.part) : undefined
+    const slot = kitPart?.slots[Number(m?.[3])]
+    if (!room || !placed || !kitPart || !slot) continue
     const c = Math.cos(placed.rot)
     const s = Math.sin(placed.rot)
     spots.push({
@@ -36,6 +41,8 @@ export function exhibitSpots(place: Place, kit: Kit, baseY: number): ExhibitSpot
       slotKind: slot.kind,
       position: [px + room.at[0] + placed.at[0] + slot.at[0] * c + slot.at[2] * s, baseY + room.floor * height + placed.at[1] + slot.at[1], pz + room.at[1] + placed.at[2] - slot.at[0] * s + slot.at[2] * c],
       rotY: placed.rot,
+      part: placed.part,
+      partTop: baseY + room.floor * height + placed.at[1] + kitPart.size[1],
     })
   }
   return spots
@@ -43,8 +50,12 @@ export function exhibitSpots(place: Place, kit: Kit, baseY: number): ExhibitSpot
 
 const BRASS = EXHIBIT.brass
 const PAPER = EXHIBIT.paper
+const BACKING = EXHIBIT.backing
 
-/** What an exhibit looks like at its spot: a lit screen, a canvas in a frame, a brass plaque, a keepsake on a shelf or in a case. */
+/**
+ * What an exhibit stands in at its spot: a lit screen, a frame, a brass plaque, a thin backing behind the card on a shelf, a keepsake
+ * in a case with its card on top, the terminal's lit screen. The words and the pictures are the cards in front (`exhibitCards.ts`).
+ */
 export function exhibitInstances(spot: ExhibitSpot, colors: KitPalette['colors']): Instance[] {
   const at = (size: [number, number, number], color: string, dy = 0): Instance => ({ shape: 'box', matrix: compose([spot.position[0], spot.position[1] + dy, spot.position[2]], [0, spot.rotY, 0], size), color })
   switch (spot.slotKind) {
@@ -52,15 +63,32 @@ export function exhibitInstances(spot: ExhibitSpot, colors: KitPalette['colors']
       return [at([0.46, 0.36, 0.03], colors.accent)]
     case 'screen':
       return [{ ...at([0.8, 0.5, 0.03], colors.glow), glow: true }]
-    case 'terminal':
-      return [{ ...at([0.45, 0.3, 0.03], colors.glow), glow: true }]
+    case 'terminal': {
+      // On the laptop's dark screen, leaning back with it; the card in front of it leaves a lit rim.
+      const out = 0.02
+      const turn = compose(spot.position, [0, spot.rotY, 0], [1, 1, 1])
+      return [{ shape: 'box', matrix: multiply(turn, compose([0, -Math.sin(TERMINAL_TILT) * out, -0.02 + Math.cos(TERMINAL_TILT) * out], [TERMINAL_TILT, 0, 0], [0.48, 0.33, 0.02])), color: colors.glow, glow: true }]
+    }
     case 'plaque':
       return [at([0.38, 0.2, 0.02], BRASS)]
     case 'shelf':
-      return [at([0.22, 0.16, 0.12], PAPER, 0.08)]
+      return [backing(spot)]
     case 'case':
-      return [at([0.22, 0.18, 0.22], PAPER, 0.09), { shape: 'sphere', matrix: compose([spot.position[0], spot.position[1] + 0.26, spot.position[2]], [0, 0, 0], [0.12, 0.12, 0.12]), color: colors.accent }]
+      return [
+        at([0.22, 0.18, 0.22], PAPER, 0.09),
+        { shape: 'sphere', matrix: compose([spot.position[0], spot.position[1] + 0.26, spot.position[2]], [0, 0, 0], [0.12, 0.12, 0.12]), color: colors.accent },
+        backing(spot),
+      ]
   }
+}
+
+/** A thin ink board just behind a card, a little larger, leaning with it, so the card has an edge and a back. */
+function backing(spot: ExhibitSpot): Instance {
+  const pose = cardPose(spot)!
+  const behind = 0.012
+  const local: [number, number, number] = [pose.local[0], pose.local[1] + Math.sin(pose.tilt) * behind, pose.local[2] - Math.cos(pose.tilt) * behind]
+  const turn = compose(spot.position, [0, spot.rotY, 0], [1, 1, 1])
+  return { shape: 'box', matrix: multiply(turn, compose(local, [pose.tilt, 0, 0], [pose.size[0] + 0.02, pose.size[1] + 0.02, 0.02])), color: BACKING }
 }
 
 export interface NeglectLook {
