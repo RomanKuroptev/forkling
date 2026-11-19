@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { LoadedWorld } from './loadWorld.ts'
 import type { PanelContent } from './panelContent.ts'
-import { loadPanel, worldFiles, type PanelTarget } from './worldData.ts'
+import { loadPanel, localFilesBase, worldFiles, type PanelTarget } from './worldData.ts'
 
 /** The open panel: nothing, loading, or what was found. Written when the visitor clicks an exhibit or a sign. */
 export type PanelState = { status: 'closed' } | { status: 'loading'; heading: string } | { status: 'open'; content: PanelContent }
@@ -28,7 +28,9 @@ export const panelStore = {
   async open(target: PanelTarget, world: LoadedWorld): Promise<void> {
     const mine = ++ticket
     set({ status: 'loading', heading: target.kind === 'sign' ? target.place.exterior.sign || target.place.name : target.kind === 'plot' ? target.request.name : target.exhibit.label })
-    const content = await loadPanel(target, { world, files: worldFiles(world) })
+    // `?world=local` reads the panels' files from the same server as the world (so they can be looked at before they go live).
+    const localBase = localFilesBase(world, location.origin, import.meta.env.BASE_URL)
+    const content = await loadPanel(target, { world, files: worldFiles(world, undefined, localBase), localSite: localBase })
     if (mine === ticket) set({ status: 'open', content })
   },
 }
