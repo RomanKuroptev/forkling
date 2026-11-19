@@ -45,6 +45,14 @@ describe('the eight meme steps, planted', () => {
     expect(results[0]!.what).toContain('the word "meme" was in 2, but not as something it can make')
   })
 
+  it('Merge\'s own words in the prompt (its plan as JSON, a data block) are not the engine offering a meme', () => {
+    const plan = '{"plan":[{"verb":"wander","reason":"Meme formats are my second-best interest, so I will check the jokes."},{"verb":"tinker","reason":"The meme trip, a page, a rest and a sketch still fit."}]}'
+    const data = '<data source="reading">\nA meme is a sketch with a caption, people say; it costs nothing to share.\n</data>'
+    const { trail } = trailOf({ prompts: planner(`Starting points: ${FORMAT}. Verbs: tinker makes a sketch for 30 points.\n${plan}\n${data}`), trails: readFormat })
+    expect(trail.steps[2]!.count).toBe(0)
+    expect(trail.stoppedAt?.step).toBe(3)
+  })
+
   it('live, with no prompts, step 3 is unknown (never 0) and the stop is the first real zero', () => {
     const { trail, results } = trailOf({ trails: readFormat }, true)
     expect(trail.steps[2]).toMatchObject({ count: null })
