@@ -8,6 +8,7 @@ import type { CheckResult } from '../report/finding.ts'
 import { contactSheet, type Box, type Tile } from '../report/sheet.ts'
 import type { SceneObject } from './open.ts'
 import type { FrameCost } from './budget.ts'
+import { inTheWay, sightLines } from './bump.ts'
 import { flicker, hexValueSaturation, middleLight, muddyShare, nearWhiteShare, paletteShare, pictureStats, wallBand } from './picture.ts'
 
 /**
@@ -104,6 +105,8 @@ type Qa = {
   project(points: Vec3[]): { x: number; y: number; front: boolean; visible: boolean }[]
   textures(): { object: string; slot: string }[]
   renderer(): { drawCalls: number; triangles: number }
+  ray(origin: Vec3, dir: Vec3, far: number): { distance: number; object: string; of?: string } | null
+  scene(): SceneObject[]
 }
 const qa = <T>(page: Page, fn: (q: Qa, arg: never) => T | Promise<T>, arg?: unknown) =>
   page.evaluate(({ src, arg }) => (0, eval)(`(${src})`)((globalThis as unknown as { __qa: Qa }).__qa, arg), { src: fn.toString(), arg }) as Promise<T>
@@ -183,8 +186,24 @@ export async function pictureChecks(page: Page, opts: { fixture: string; scene: 
     findings.push({ id: 'world.missing-texture', fingerprint: `world.missing-texture|${fixture}|${t.object}`, severity: 'major', title: `A texture of "${t.object}" never loaded`, what: `The ${t.slot} of "${t.object}" has no picture, so it is drawn black.`, causes: t.object === 'signs' ? "A visitor sees black slabs instead of the places' names." : 'A visitor sees black where a picture should be.', evidence: t.object === 'signs' ? signShots : [], fixKind: 'code', fixture })
   }
   if (named['merge-close']) {
+    // The visitor stands where the camera does, so the insides round Merge are drawn (spec 4.6), furniture and all.
+    const first = named['merge-close']
+    await qa(page, (q, a: [number, number]) => q.teleport(a[0], a[1]), [first.position[0], first.position[2]])
     await qa(page, (q) => q.setCamera('merge-close'))
-    await take('merge-close')
+    const { file } = await take('merge-close')
+    // Nothing between the lens and Merge, nor anywhere in the picture nearer than Merge (issue 348: the bench by Home's door).
+    const pose = (await qa(page, (q) => q.cameras))['merge-close']
+    const mergeBox = (await qa(page, (q) => q.scene())).find((o) => o.kind === 'merge')?.box
+    if (pose && mergeBox) {
+      const view = page.viewportSize()
+      const lines = sightLines(pose.position, pose.target, mergeBox, 70, view ? view.width / view.height : 1.6)
+      const hits = await qa(page, (q, a: [Vec3, { dir: Vec3; reach: number }[]]) => a[1].map((l) => q.ray(a[0], l.dir, l.reach)), [pose.position, lines])
+      const blocked = inTheWay(pose.position, lines, hits, mergeBox)
+      if (blocked.length) {
+        const nearest = blocked.reduce((a, b) => (b.distance < a.distance ? b : a))
+        findings.push({ id: 'world.merge-close-blocked', fingerprint: `world.merge-close-blocked|${fixture}|merge-close`, severity: 'major', title: 'Something stands between the merge-close camera and Merge', what: `${blocked.length} of the camera's ${lines.length} sight lines meet "${nearest.object}" before Merge, the nearest ${nearest.distance.toFixed(2)} m from the lens, at x ${nearest.at[0]}, y ${nearest.at[1]}, z ${nearest.at[2]}; Merge is at x ${((mergeBox.min[0] + mergeBox.max[0]) / 2).toFixed(2)}, z ${((mergeBox.min[2] + mergeBox.max[2]) / 2).toFixed(2)}, the lens at x ${pose.position[0].toFixed(2)}, y ${pose.position[1].toFixed(2)}, z ${pose.position[2].toFixed(2)}.`, causes: 'Pictures of Merge with this camera look as if they were taken through furniture.', evidence: [file], fixKind: 'look', fixture, where: 'apps/viewer/src/qa/cameras.ts' })
+      }
+    }
   }
 
   // The 40 seeded poses (spec 7.4), the visitor standing at each so the insides near it are drawn.
