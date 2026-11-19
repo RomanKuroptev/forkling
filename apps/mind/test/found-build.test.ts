@@ -54,6 +54,8 @@ describe('buildFoundBuildUser (what the fallback build asks for)', () => {
     expect(prompt).toMatch(/1 to 2 rooms/)
     expect(prompt).toMatch(/at most 30 parts/)
     expect(prompt).toMatch(/24 by 24/)
+    expect(prompt).toContain('Every room stands inside the walls: the outer 0.8 m of the footprint is wall, so a room keeps 0.8 m in from every edge of the footprint')
+    expect(prompt).not.toMatch(/fits inside the footprint/)
     expect(prompt).toMatch(/no exhibits/i)
     expect(prompt).toMatch(/name and the purpose are the request's/i)
   })
@@ -183,6 +185,15 @@ describe('the fallback build handler (spec 10.3: the build job runs only as the 
     const outside = answer({ rooms: [room('a', { width: 14, depth: 4 })] })
     const out2 = await run(handler(fakeLlm([outside, outside]).llm))
     expect(out2.status).toBe('failed')
+  })
+
+  it('asks once more when a room stands in the walls, where no one can walk in (issue 373)', async () => {
+    const thin = answer({ rooms: [answer().rooms[0], { id: 'counter', name: 'Counter', width: 1, depth: 8, height: 3, x: 5.5, z: 0, floor: 0, parts: [] }] })
+    const { llm, calls } = fakeLlm([thin, answer()])
+    const out = await run(handler(llm))
+    expect(calls.map((c) => c.kind)).toEqual(['foundbuild', 'repair'])
+    expect(calls[1]!.user).toMatch(/counter must stand inside the walls/)
+    expect(out.status).toBe('done')
   })
 
   it('does nothing yet, and spends nothing, when there is no model', async () => {
