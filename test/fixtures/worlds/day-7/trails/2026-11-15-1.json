@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-15-1",
+  "date": "2026-11-15",
+  "purpose": "Understand the terrain model first, since lidar finds the ground by subtracting it from the returned heights.",
+  "start": {
+    "kind": "topic",
+    "value": "Digital elevation model"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+      "title": "Digital elevation model",
+      "fetchedAt": "2026-11-15T07:09:43.521Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

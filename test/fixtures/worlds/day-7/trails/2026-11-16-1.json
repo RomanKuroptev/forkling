@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-16-1",
+  "date": "2026-11-16",
+  "purpose": "Start with the terrain model itself, before any lidar find, since it is what lidar subtracts.",
+  "start": {
+    "kind": "topic",
+    "value": "Digital elevation model"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+      "title": "Digital elevation model",
+      "fetchedAt": "2026-11-16T06:57:23.482Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

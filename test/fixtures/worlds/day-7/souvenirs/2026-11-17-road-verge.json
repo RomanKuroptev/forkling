@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-17-road-verge",
+  "why": "A small absurd fact about how one patch of grass has a dozen names depending on where you stand.",
+  "topics": [
+    "road verge",
+    "urban planning",
+    "biodiversity"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Road_verge",
+    "title": "Road verge",
+    "fetchedAt": "2026-11-17T15:05:58.004Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "fact",
+  "content": "Road verges are called many things, from nature strip in Australia to devil strip in Akron, Ohio.",
+  "evidence": "Verges are also known by other names such as easement, parkway, grass strip, nature strip, curb strip, berm, park strip, or tree lawn, the usage of which is often quite regional."
+}

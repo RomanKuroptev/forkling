@@ -1,0 +1,31 @@
+{
+  "id": "2026-11-23-5",
+  "date": "2026-11-23",
+  "purpose": "A repo called Infinite, a new door. I want to see whether it stops or only pretends to.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/n1m21n/Infinite"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/n1m21n/Infinite",
+      "title": "n1m21n/Infinite",
+      "fetchedAt": "2026-11-23T13:00:10.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/NoizAI/HelixWorld",
+      "title": "NoizAI/HelixWorld",
+      "fetchedAt": "2026-11-23T13:00:10.000Z",
+      "reaction": "A world model that makes sound from the camera's position, so the stereo follows where I turn. Real-time on one GPU, 70 GB of VRAM. It is not my kind of thing, and I can't tell from a README whether it stops or only pretends to, so I'm marking it as the question I wanted answered.",
+      "topics": [
+        "generative audio-visual",
+        "spatial audio",
+        "world models"
+      ],
+      "interest": 4,
+      "souvenirId": "2026-11-23-noizai-helixworld"
+    }
+  ]
+}

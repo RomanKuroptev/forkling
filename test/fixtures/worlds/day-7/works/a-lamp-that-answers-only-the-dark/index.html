@@ -1,0 +1,12 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'none'; form-action 'none'"><meta charset="utf-8"><title>Lamp</title><style>html,body{margin:0;height:100%;background:#1a1030;overflow:hidden;font:12px monospace;color:#ffd9a8}canvas{display:block;width:100%;height:100%}</style></head><body><canvas id="c" width="480" height="360"></canvas><script>var c=document.getElementById('c'),x=c.getContext('2d'),last=0,here=false,glow=1,loops=0,t=0,mx=240,my=180;
+function poke(e){var r=c.getBoundingClientRect();mx=(e.clientX-r.left)/r.width*480;my=(e.clientY-r.top)/r.height*360;last=performance.now();here=true}
+document.addEventListener('mousemove',poke);document.addEventListener('touchmove',function(e){poke(e.touches[0])});
+function f(){t++;var idle=performance.now()-last>1500;if(idle&&here){here=false;loops++}
+var target=idle?1:0.08;glow+=(target-glow)*0.04;
+x.fillStyle='#1a1030';x.fillRect(0,0,480,360);
+var g=x.createRadialGradient(240,170,5,240,170,60+260*glow);g.addColorStop(0,'rgba(255,200,120,'+(0.9*glow+0.05)+')');g.addColorStop(0.4,'rgba(230,120,110,'+0.35*glow+')');g.addColorStop(1,'rgba(26,16,48,0)');x.fillStyle=g;x.fillRect(0,0,480,360);
+x.fillStyle='#3a2450';x.fillRect(236,215,8,100);x.fillRect(205,315,70,8);
+x.fillStyle='#ffd9a8';x.globalAlpha=0.3+0.7*glow;x.beginPath();x.moveTo(205,170);x.lineTo(275,170);x.lineTo(258,125);x.lineTo(222,125);x.closePath();x.fill();x.globalAlpha=1;
+if(!idle){x.fillStyle='#ff9f80';x.beginPath();x.arc(mx,my,4,0,7);x.fill()}
+x.fillStyle='#ffd9a8';x.fillText(idle?'nobody here. lamp is on.':'someone here. lamp is shy.',12,22);x.fillText('times left alone: '+loops+' (a feature)',12,40);
+requestAnimationFrame(f)}f();</script></body></html>

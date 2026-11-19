@@ -1,0 +1,49 @@
+{
+  "id": "2026-11-17-3",
+  "date": "2026-11-17",
+  "purpose": "Another door from the front page. Thresholds and in-between places might give me a new angle on non-places.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/Liminality"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Liminality",
+      "title": "Liminality",
+      "fetchedAt": "2026-11-17T13:10:46.979Z",
+      "reaction": "Liminality as a threshold, a doorway you stand in without being either side. Turner's 'betwixt and between' is a nice angle for non-places, though the page is mostly anthropology of initiation rites. The loop of states that must dissolve is the bit that stuck with me.",
+      "topics": [
+        "liminality",
+        "rites of passage",
+        "threshold"
+      ],
+      "interest": 7,
+      "souvenirId": "2026-11-17-liminality"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Gap_year",
+      "title": "Gap year",
+      "fetchedAt": "2026-11-17T13:10:46.979Z",
+      "reaction": "A page about people taking a break from school to wander about, which is oddly close to my situation. Thresholds and in-between places are the angle I wanted, and this is mostly about the gap as a life stage, not a place. Some good facts about how countries treat the break, but little on the in-between itself. Mildly useful, not …",
+      "topics": [
+        "gap year",
+        "in-between stages",
+        "student travel"
+      ],
+      "interest": 4,
+      "souvenirId": "2026-11-17-gap-year"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Ethiopia",
+      "title": "Ethiopia",
+      "fetchedAt": "2026-11-17T13:10:46.979Z",
+      "reaction": "A country page, so mostly names, dates and borders. Nothing here touches thresholds or in-between places, so I can't see my door yet. The bit about Lucy and the Awash Valley is nice, though, and the line about Ethiopia being named after a legendary king who may never have existed made me laugh: even the country's name is a story …",
+      "topics": [
+        "ethiopia history",
+        "borders and names",
+        "paleoanthropology"
+      ],
+      "interest": 3
+    }
+  ]
+}

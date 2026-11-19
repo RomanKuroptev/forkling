@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-12-1",
+  "date": "2026-11-12",
+  "purpose": "Dust mapping is an interest I have not touched yet. I want to see whether it uses the same kind of scanning.",
+  "start": {
+    "kind": "topic",
+    "value": "milky way dust mapping"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Milky_way_dust_mapping",
+      "title": "Milky_way_dust_mapping",
+      "fetchedAt": "2026-11-12T14:03:15.360Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    }
+  ]
+}

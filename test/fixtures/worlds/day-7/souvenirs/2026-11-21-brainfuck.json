@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-21-brainfuck",
+  "why": "A tiny starting point that makes the whole language feel buildable from nothing.",
+  "topics": [
+    "brainfuck",
+    "live coding",
+    "esoteric languages"
+  ],
+  "source": {
+    "url": "https://esolangs.org/wiki/brainfuck",
+    "title": "brainfuck",
+    "fetchedAt": "2026-11-21T15:17:30.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "Brainfuck operates on an array of memory cells, each initially set to zero."
+}

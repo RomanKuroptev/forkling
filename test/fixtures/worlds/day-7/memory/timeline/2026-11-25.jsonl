@@ -1,0 +1,18 @@
+{"at":"2026-11-25T06:13:30.000Z","verb":"rest","reason":"Notes say to show the toy before any new sketch or wander, and a trip from a starting point is required today. I begin by waiting at Home beside the counter toy, then read from fand/vfx-js.","goalRef":"today:0"}
+{"at":"2026-11-25T07:13:30.000Z","verb":"wander","targetId":"https://github.com/fand/vfx-js","reason":"A shader library for web images. It is creative coding close to my live coding pull, so I want to see how its effects are wired.","goalRef":"today:1"}
+{"at":"2026-11-25T07:43:30.000Z","verb":"rest","reason":"Back at Home after the trip, still beside the toy. If a visitor has written, I will answer first.","goalRef":"today:2"}
+{"at":"2026-11-25T08:43:30.000Z","verb":"wander","targetId":"https://github.com/maximecb/plush","reason":"A small language project from a starting point. I want to see how a tiny compiler is laid out, and whether a loop there is counted.","goalRef":"today:3"}
+{"at":"2026-11-25T09:13:30.000Z","verb":"rest","reason":"Quiet end to the day at Home. Slack left on purpose, so the day does not fill itself.","goalRef":"today:4"}
+{"at":"2026-11-25T09:58:30.000Z","verb":"tend","targetId":"home","reason":"A visitor has not met the counter toy yet, so I will move it somewhere it can be found before I make anything else.","goalRef":"today:0"}
+{"at":"2026-11-25T10:28:30.000Z","verb":"rest","reason":"Wait beside the plinth. If a visitor has written, I answer that first.","goalRef":"today:1"}
+{"at":"2026-11-25T11:28:30.000Z","verb":"wander","targetId":"https://github.com/GraphiteEditor/Graphite","reason":"A node-based editor. Visual programming is close to my rule engine interest, so I want to see how its graph is wired.","goalRef":"today:2"}
+{"at":"2026-11-25T11:58:30.000Z","verb":"rest","reason":"Back at Home beside the toy, still open to a visitor. Slack left on purpose.","goalRef":"today:3"}
+{"at":"2026-11-25T12:58:30.000Z","verb":"rest","reason":"Quiet stretch at Home. Nothing new until a visitor has seen the toy.","goalRef":"today:4"}
+{"at":"2026-11-25T14:43:30.000Z","verb":"tend","targetId":"home","reason":"The toy has waited unseen for days, so I put it where a visitor can find it, then make the small sketch I promised instead of writing about the counter again.","goalRef":"today:0"}
+{"at":"2026-11-25T15:13:30.000Z","verb":"tinker","targetId":"Live Patch Side By Side Sketch","reason":"A small live-coding patch with its code and sliders side by side. A sketch, so it arrives now.","goalRef":"today:1"}
+{"at":"2026-11-25T16:43:30.000Z","verb":"rest","reason":"Beside the plinth at Home, still open to a visitor's note.","goalRef":"today:2"}
+{"at":"2026-11-25T17:43:30.000Z","verb":"wander","targetId":"https://en.wikipedia.org/wiki/Nvidia","reason":"GPU shaders are where live visuals come from. I want the plain story of that.","goalRef":"today:3"}
+{"at":"2026-11-25T18:13:30.000Z","verb":"rest","reason":"Back at Home with slack left on purpose, before bed.","goalRef":"today:4"}
+{"at":"2026-11-25T19:13:30.000Z","verb":"tend","targetId":"home","reason":"The toy has waited on a plinth for days, so the most useful thing now is to put it where a visitor can find it and then stay near it.","goalRef":"today:0"}
+{"at":"2026-11-25T19:43:30.000Z","verb":"rest","reason":"Beside the plinth at Home, still open to a visitor's note.","goalRef":"today:1"}
+{"at":"2026-11-25T20:43:30.000Z","verb":"rest","reason":"Back at Home with slack left on purpose, before bed.","goalRef":"today:2"}

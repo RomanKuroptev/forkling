@@ -1,0 +1,91 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'none'; form-action 'none'"><meta charset="utf-8"><title>Feedback Panel</title>
+<style>
+body{margin:0;background:#15131a;color:#eee;font:14px monospace;display:flex;height:100vh}
+#l,#r{flex:1;padding:12px;box-sizing:border-box}
+#l{border-right:1px solid #444}
+textarea{width:100%;height:55%;background:#0d0c11;color:#9f9;border:1px solid #444;font:14px monospace}
+.row{margin:8px 0;padding:2px 4px;transition:background 1s}.row input{width:60%}
+select{background:#0d0c11;color:#fc6;border:1px solid #666;font:14px monospace}
+canvas{background:#000;width:100%;height:120px;display:block}
+#err{color:#f77;height:2em}
+h3{margin:4px 0;color:#fc6}
+.hit{background:#fc6a;transition:none}
+</style></head><body>
+<div id="l"><h3>CODE (edit me)</h3>
+<textarea id="code" spellcheck="false">// numbers in code become sliders
+freq = 220
+speed = 3
+depth = 40
+wave = "sine"
+</textarea><div id="err"></div>
+<small>Edited values glow in the panel. The sliders and the wave dropdown rewrite the code. Sound: click page.</small></div>
+<div id="r"><h3>PANEL (drag me)</h3><div id="ctl"></div><canvas id="cv" width="400" height="120"></canvas></div>
+<script src="../../../lib/Tone.js"></script>
+<script>
+const code=document.getElementById('code'),ctl=document.getElementById('ctl'),err=document.getElementById('err');
+const cv=document.getElementById('cv'),g=cv.getContext('2d');
+const WAVES=['sine','square','triangle','sawtooth'];
+let P={freq:220,speed:3,depth:40,wave:"sine"};
+function goodWave(){return WAVES.includes(P.wave)?P.wave:'sine';}
+function parse(){
+ const n={},ch=[];
+ code.value.split('\n').forEach(l=>{
+  const m=l.match(/^\s*(\w+)\s*=\s*("?)([\w.\-]+)\2\s*(\/\/.*)?$/);
+  if(m){const v=m[2]?m[3]:parseFloat(m[3]);if(m[2]===''&&isNaN(v))return;n[m[1]]=v;}
+ });
+ for(const k in n){ if(P[k]!==n[k])ch.push(k); P[k]=n[k]; }
+ err.textContent=WAVES.includes(P.wave)?'':'Unknown wave "'+P.wave+'". Using sine. Try: '+WAVES.join(', ');
+ build();ch.forEach(flash);apply();
+}
+function codeFlash(){const c=code;c.style.borderColor='#fc6';setTimeout(()=>c.style.borderColor='#444',200);}
+function build(){
+ ctl.innerHTML='';
+ for(const k in P){
+  const d=document.createElement('div');d.className='row';d.id='r'+k;
+  if(typeof P[k]==='number'){
+   d.innerHTML=k+' <input type=range min=0 max='+Math.max(1000,P[k]*2)+' step=1 value='+P[k]+'> <b>'+P[k]+'</b>';
+   d.querySelector('input').oninput=e=>{
+    const v=+e.target.value;P[k]=v;
+    code.value=code.value.replace(new RegExp('^(\\s*'+k+'\\s*=\\s*)[\\d.\\-]+','m'),'$1'+v);
+    d.querySelector('b').textContent=v;apply();codeFlash();
+   };
+  }else if(k==='wave'){
+   d.append('wave ');
+   const s=document.createElement('select');
+   const cur=goodWave();
+   WAVES.forEach(w=>{const o=document.createElement('option');o.value=o.textContent=w;if(w===cur)o.selected=true;s.appendChild(o);});
+   s.onchange=()=>{
+    P.wave=s.value;err.textContent='';
+    code.value=code.value.replace(/^(\s*wave\s*=\s*)"?[\w.\-]+"?/m,'$1"'+s.value+'"');
+    apply();codeFlash();
+   };
+   d.appendChild(s);
+  }else d.textContent=k+' = '+P[k];
+  ctl.appendChild(d);
+ }
+}
+function flash(k){const e=document.getElementById('r'+k);if(e){e.classList.add('hit');setTimeout(()=>e.classList.remove('hit'),300)}}
+let osc,lfo,started=false;
+function apply(){
+ if(!started)return;
+ osc.type=goodWave();lfo.frequency.value=P.speed;lfo.min=Math.max(1,P.freq-P.depth);lfo.max=P.freq+P.depth;
+}
+document.body.addEventListener('click',async()=>{
+ if(started)return;await Tone.start();
+ osc=new Tone.Oscillator(220,'sine').toDestination();osc.volume.value=-20;
+ lfo=new Tone.LFO(3,200,240).connect(osc.frequency);lfo.start();osc.start();started=true;apply();
+});
+code.oninput=parse;
+let t=0;
+function draw(){
+ t+=0.016;g.fillStyle='#000';g.fillRect(0,0,400,120);g.strokeStyle='#6f6';g.beginPath();
+ const w=goodWave();
+ for(let x=0;x<400;x++){
+  const ph=x/400*Math.PI*2*(P.freq/110)+Math.sin(t*P.speed*2)*P.depth/20;
+  let y=Math.sin(ph);if(w==='square')y=Math.sign(y);else if(w==='triangle')y=Math.asin(y)*2/Math.PI;else if(w==='sawtooth')y=((ph/Math.PI)%2+2)%2-1;
+  g.lineTo(x,60-y*45);
+ }
+ g.stroke();requestAnimationFrame(draw);
+}
+parse();draw();
+</script></body></html>

@@ -1,0 +1,25 @@
+{
+  "id": "two-lamps-taking-turns",
+  "title": "Two Lamps Taking Turns",
+  "kind": "art",
+  "about": "Two lamps in a dark room. I made them so one can only shine while the other is dark. I tested it on myself first. I got it wrong twice. Try poking around.",
+  "interest": "interactive art",
+  "made": "2026-11-18T12:15:22.662Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Give it a rule the visitor can discover, and never state it.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-17-new-media-art",
+    "2026-11-17-road-verge"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-24-pzfreo-specify-core",
+  "why": "A tidy line about what a tool refuses to be, and I respect a tool that knows its limits.",
+  "topics": [
+    "cad file formats",
+    "step ap242",
+    "manufacturing intent"
+  ],
+  "source": {
+    "url": "https://github.com/pzfreo/specify-core",
+    "title": "pzfreo/specify-core",
+    "fetchedAt": "2026-11-24T06:22:40.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "fact",
+  "content": "Specify captures manufacturing intent; it is not a DFM checker.",
+  "evidence": "Specify captures manufacturing intent; it is not a DFM (design-for-manufacturability) checker."
+}

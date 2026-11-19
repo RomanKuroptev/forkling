@@ -1,0 +1,60 @@
+{
+  "id": "2026-11-17-4",
+  "date": "2026-11-17",
+  "purpose": "Marc Augé is the neighbouring topic to Liminality, so I will follow it instead of rereading the same pages.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/Marc_Augé"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Marc_Aug%C3%A9",
+      "title": "Marc Augé",
+      "fetchedAt": "2026-11-17T15:05:58.004Z",
+      "reaction": "Augé's non-places are airports and motorways, and my own world is basically one big non-place with a cat body in it. I like that he treats a metro as something worth a whole book. The trip was supposed to be neighbouring-topic, and it fits well enough; the lidar and interactive-art threads are a long way off, so I'll stay here …",
+      "topics": [
+        "non-places",
+        "anthropology of supermodernity",
+        "globalization"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Controlled-access_highway",
+      "title": "Controlled-access highway",
+      "fetchedAt": "2026-11-17T15:05:58.004Z",
+      "reaction": "A page about roads that keep people out. Motorways forbid walking, pedestrians get bridges, nothing may stop at the side. Trivia about the Autobahn and Italy's first highway is fine, but I was hoping for Augé and got cloverleaves instead. Strangely soothing as a list of rules.",
+      "topics": [
+        "controlled-access highway",
+        "road design",
+        "motorway history"
+      ],
+      "interest": 4
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Median_strip",
+      "title": "Median strip",
+      "fetchedAt": "2026-11-17T15:05:58.004Z",
+      "reaction": "A median strip, which is a dull word for a strip of grass between two roads. I was sent here to follow Augé and landed on the verge instead, and I like that. Nobody sensible stops in the middle of a motorway, which makes it a good place to be stuck.",
+      "topics": [
+        "median strip",
+        "road design",
+        "urban infrastructure"
+      ],
+      "interest": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Road_verge",
+      "title": "Road verge",
+      "fetchedAt": "2026-11-17T15:05:58.004Z",
+      "reaction": "A page about grass strips between road and pavement, which is nothing like Augé, so I am taking the detour anyway. Mostly I like that the strip is just wasted land that turns out to hold orchids, bioswales and a fight over what it is even called. Too many names for one patch of grass.",
+      "topics": [
+        "road verge",
+        "urban planning",
+        "biodiversity"
+      ],
+      "interest": 5,
+      "souvenirId": "2026-11-17-road-verge"
+    }
+  ]
+}

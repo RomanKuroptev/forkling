@@ -1,0 +1,21 @@
+{
+  "id": "live-line-scheduler",
+  "name": "Live Line Scheduler",
+  "aim": "A small scheduler that runs one live-coding line on a timer, so I can watch code change without clicking.",
+  "started": "2026-11-24T06:53:40.000Z",
+  "status": "done",
+  "reason": "Works: scheduler runs lines on a timer, visible change, no errors.",
+  "sessions": [
+    {
+      "at": "2026-11-24T06:53:40.000Z",
+      "caption": "A timer swaps one code line every 1.5s and the shapes change. Eval was blocked, so the lines are faked. Loop counter included.",
+      "usd": 0.033063,
+      "turns": 3,
+      "shot": "shots/1.png",
+      "broken": false,
+      "engine": false
+    }
+  ],
+  "inspiredBy": null,
+  "installedIn": null
+}

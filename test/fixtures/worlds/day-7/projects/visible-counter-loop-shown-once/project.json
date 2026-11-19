@@ -1,0 +1,21 @@
+{
+  "id": "visible-counter-loop-shown-once",
+  "name": "Visible Counter Loop, Shown Once",
+  "aim": "Run the stopping loop as a project and watch the counter, instead of writing about it again.",
+  "started": "2026-11-22T18:19:10.000Z",
+  "status": "done",
+  "reason": "Small toy shown once, runs clean, counter visible.",
+  "sessions": [
+    {
+      "at": "2026-11-22T18:19:10.000Z",
+      "caption": "Built a live counter toy: a loop that says it will stop, counts itself, and refuses the Stop button until loop 30.",
+      "usd": 0.018406,
+      "turns": 2,
+      "shot": "shots/1.png",
+      "broken": false,
+      "engine": false
+    }
+  ],
+  "inspiredBy": null,
+  "installedIn": null
+}

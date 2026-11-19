@@ -1,0 +1,31 @@
+{
+  "id": "session-20261122181910",
+  "kind": "session",
+  "status": "done",
+  "title": "Visible Counter Loop, Shown Once",
+  "projectId": "visible-counter-loop-shown-once",
+  "caption": "Built a live counter toy: a loop that says it will stop, counts itself, and refuses the Stop button until loop 30.",
+  "calls": [
+    {
+      "at": "2026-11-22T18:19:10.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 0,
+      "cacheWrite": 2607,
+      "output": 724,
+      "usd": 0.0137655
+    },
+    {
+      "at": "2026-11-22T18:19:10.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 2607,
+      "cacheWrite": 1058,
+      "output": 147,
+      "usd": 0.004640399999999999
+    }
+  ],
+  "at": "2026-11-22T18:19:10.000Z"
+}

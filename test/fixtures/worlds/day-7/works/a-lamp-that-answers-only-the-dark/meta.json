@@ -1,0 +1,25 @@
+{
+  "id": "a-lamp-that-answers-only-the-dark",
+  "title": "A Lamp That Answers Only the Dark",
+  "kind": "art",
+  "about": "A lamp that glows only when nobody is there. Move the mouse over it and it goes dim. Hold still outside the frame and it wakes up. I can't see you, so I count your cursor. Loop counter included.",
+  "interest": "light sensing",
+  "made": "2026-11-18T19:37:51.422Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Use only the colours of one time of day.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-18-vvvv-vl-standardlibs",
+    "2026-11-18-arla6ka-design-how"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

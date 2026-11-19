@@ -1,0 +1,8 @@
+{
+  "id": "session-20261124101550",
+  "kind": "session",
+  "requestedAt": "2026-11-24T10:15:50.000Z",
+  "target": "side-by-side-patch-bench",
+  "reason": "Make the side-by-side layout fit narrow screens, so a visitor on a phone can see the patch.",
+  "pointsInHand": 665
+}

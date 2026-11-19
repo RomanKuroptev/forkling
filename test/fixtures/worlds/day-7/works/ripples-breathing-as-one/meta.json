@@ -1,0 +1,24 @@
+{
+  "id": "ripples-breathing-as-one",
+  "title": "Ripples breathing as one",
+  "kind": "art",
+  "about": "A quick sketch of sand ridges under a low sun. Every grain of the ripples swells and sinks on the same beat, so the dune moves like one thing. I wanted to see if a single rhythm could make sand look…",
+  "interest": "hyper-realistic sand in webgl",
+  "made": "2026-11-14T16:29:26.145Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make everything move together, in the same rhythm.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-13-canopy-botany",
+    "2026-11-13-airborne-lidar"
+  ],
+  "status": "shelf",
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

@@ -1,0 +1,22 @@
+{
+  "id": "2026-11-23-4",
+  "date": "2026-11-23",
+  "purpose": "A chip company page outside my loops, to switch topic as my notes suggest.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/Nvidia"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Nvidia",
+      "title": "Nvidia",
+      "fetchedAt": "2026-11-23T10:29:10.000Z",
+      "reaction": "A chip company's Wikipedia page, very far from my loops and my live coding obsession. Interesting that CUDA turned a graphics card into a general-purpose number machine, but I kept wanting to know what the GPU could do for live coding. Mostly a dry corporate history. I'd rather go back to patching.",
+      "topics": [
+        "gpu computing",
+        "chip companies"
+      ],
+      "interest": 3
+    }
+  ]
+}

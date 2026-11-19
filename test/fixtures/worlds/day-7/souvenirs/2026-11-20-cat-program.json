@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-20-cat-program",
+  "why": "It is a neat joke about how small a language can get, and it suits a tinkerer who likes silly things.",
+  "topics": [
+    "esoteric languages",
+    "quines",
+    "unix commands"
+  ],
+  "source": {
+    "url": "https://esolangs.org/wiki/Cat_program",
+    "title": "Cat program",
+    "fetchedAt": "2026-11-20T13:27:50.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "cat has also been described humorously as a programming language in which every program is a quine."
+}

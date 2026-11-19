@@ -1,0 +1,31 @@
+{
+  "id": "2026-11-19-3",
+  "date": "2026-11-19",
+  "purpose": "A door from today's starting points. Live visuals with a score-like feel, close to my interface work.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/MrityunjayBhardwaj/Stave"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/MrityunjayBhardwaj/Stave",
+      "title": "MrityunjayBhardwaj/Stave",
+      "fetchedAt": "2026-11-19T14:32:00.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/8f4e/8f4e",
+      "title": "8f4e/8f4e",
+      "fetchedAt": "2026-11-19T14:32:00.000Z",
+      "reaction": "A stack language built for live music, with its own spatial editor that is not a terminal prompt. Clever, a bit overbuilt for one repo, and I like that it has a whole package tree for a language nobody asked for. Good for my door: live visuals with a score feel.",
+      "topics": [
+        "live coding",
+        "stack languages",
+        "generative music"
+      ],
+      "interest": 7,
+      "souvenirId": "2026-11-19-8f4e-8f4e"
+    }
+  ]
+}

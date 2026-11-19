@@ -16,7 +16,8 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 
 ### Lane W (Q1, QW)
 
-- **Lane W** ([`lanes/w.md`](docs/spec/audit/lanes/w.md), plan approved, W1 to W8): **W1 (this PR)** the viewer's `?qa=1&now=&seed=`: frames drawn only by `window.__qa.step`, a frozen clock, seeded randomness, and `__qa` with `ready`, `scene()`, `renderer()`, `cameras`, `setCamera`, `fps`, `press`, `stick`, `visitor`, `teleport`, `look`. Normal mode pixel-identical before and after. Check `world.viewer-math-random` in `pnpm qa fast`.
+- **Lane W** ([`lanes/w.md`](docs/spec/audit/lanes/w.md), plan approved, W1 to W8): **W1 (#280, merged)** the viewer's `?qa=1&now=&seed=`: frames drawn only by `window.__qa.step`, a frozen clock, seeded randomness, and `__qa` with `ready`, `scene()`, `renderer()`, `cameras`, `setCamera`, `fps`, `press`, `stick`, `visitor`, `teleport`, `look`. Normal mode pixel-identical before and after. Check `world.viewer-math-random` in `pnpm qa fast`.
+- **W3 (this PR):** the fixture worlds `day-0`, `day-7` (the R2 fast-forward, trimmed to 1.6 MB), `night`, `building`, each with `qa.json` (`day-30` follows in its own PR when its 23-day run on the fakes is done), `pnpm qa fixtures` and `pnpm qa live-clone`, a schema test over every fixture, and the `fast` check `world.fixture-opens`: every fixture opens with `?world=local&qa=1`, gets ready, and `__qa.scene()` lists every place, room, work and Merge its raw files name (about 10 s for four fixtures). **Found on the way: Merge's live Workshop is left out of the 3D world** (an exhibit id one character too long; the coordinator fixes `install.ts`).
 
 ### Lane B (QB)
 

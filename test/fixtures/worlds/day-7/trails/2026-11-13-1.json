@@ -1,0 +1,86 @@
+{
+  "id": "2026-11-13-1",
+  "date": "2026-11-13",
+  "purpose": "The lidar pull is still the strongest. I want to see how the scans get from points to ground shapes.",
+  "start": {
+    "kind": "topic",
+    "value": "Airborne laser scanning"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Airborne_lidar",
+      "title": "Airborne lidar",
+      "fetchedAt": "2026-11-13T06:25:44.992Z",
+      "reaction": "Points become ground by subtracting the terrain model's height from each return, then sorting what's left into buildings, birds, insects and trees. Strangely tidy for something that starts as a mess of laser hits. The Maya causeway and 60,000-structure bits are the good stuff for the lidar pull.",
+      "topics": [
+        "airborne lidar",
+        "digital elevation model",
+        "maya archaeology"
+      ],
+      "interest": 8,
+      "souvenirId": "2026-11-13-airborne-lidar"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+      "title": "Digital elevation model",
+      "fetchedAt": "2026-11-13T06:25:44.992Z",
+      "reaction": "A DEM is a grid of heights, and the page is clear that the numbers are only the start. Turning points into ground shapes means rendering: shading, false colour, sometimes a fake oblique view. The vertical exaggeration bit is the kind of thing that makes a landscape lie a little. Useful, if not thrilling for a lidar fan.",
+      "topics": [
+        "digital elevation model",
+        "lidar",
+        "terrain rendering"
+      ],
+      "interest": 6,
+      "souvenirId": "2026-11-13-digital-elevation-model"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Canopy_(botany)",
+      "title": "Canopy (botany)",
+      "fetchedAt": "2026-11-13T06:25:44.992Z",
+      "reaction": "Canopy as the last biotic frontier, and I am a cat who has never once been up a tree. The lidar angle you want is the part this page barely touches: it describes the canopy from the ground and from a plane, but the 3D geometry is the interesting bit. Leaf area index is the handle there. Modest page, useful …",
+      "topics": [
+        "forest canopy",
+        "leaf area index",
+        "canopy interception"
+      ],
+      "interest": 6,
+      "souvenirId": "2026-11-13-canopy-botany"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Leaf_area_index",
+      "title": "Leaf area index",
+      "fetchedAt": "2026-11-13T06:25:44.992Z",
+      "reaction": "Leaf area index is a neat ratio, leaf area over ground area, and it turns a forest into one number. The lidar link is the bit I want: scans of points become a canopy estimate, which is the pull I came for. The text is careful about how the number lies, too, which I respect.",
+      "topics": [
+        "leaf area index",
+        "lidar canopy scanning",
+        "plant canopy ecology"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Multispectral_imaging",
+      "title": "Multispectral imaging",
+      "fetchedAt": "2026-11-13T06:25:44.992Z",
+      "reaction": "Mostly a tour of multispectral imaging: different wavelength bands stacked to reveal what the eye misses. Useful for my lidar curiosity, since it's the same idea of turning raw returns into ground shapes, just in colour instead of distance. Dry in places, but the classification section is the bit I'd chase.",
+      "topics": [
+        "multispectral imaging",
+        "remote sensing",
+        "supervised classification"
+      ],
+      "interest": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Spectral_imaging",
+      "title": "Spectral imaging",
+      "fetchedAt": "2026-11-13T06:25:44.992Z",
+      "reaction": "Spectral imaging is a camera that stops pretending three colours is enough. The bit about building a mathematical basis from a few images to reconstruct a full spectrum per pixel is the closest thing here to your lidar question: a small set of measurements, inverted into a dense picture. Thin on lidar itself, though.",
+      "topics": [
+        "spectral imaging",
+        "hyperspectral imaging",
+        "remote sensing"
+      ],
+      "interest": 4
+    }
+  ]
+}

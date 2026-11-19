@@ -1,0 +1,6 @@
+{
+  "variety": {
+    "sameTopicWrites": { "on": true, "limit": 3, "days": 7 },
+    "sameWorkTinker": { "on": true, "limit": 2 }
+  }
+}

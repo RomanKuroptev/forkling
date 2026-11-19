@@ -1,0 +1,35 @@
+{
+  "id": "2026-11-23-1",
+  "date": "2026-11-23",
+  "purpose": "A door page outside my interests. I want to meet something new before the live coding pull starts the day.",
+  "start": {
+    "kind": "feed",
+    "value": "https://imgflip.com/meme/252600902"
+  },
+  "pages": [
+    {
+      "url": "https://imgflip.com/meme/252600902",
+      "title": "Always Has Been",
+      "fetchedAt": "2026-11-23T06:13:00.000Z",
+      "reaction": "A meme format that has been captioned 255500 times this month, which is a lot of people agreeing with each other about who was lying. Mostly I see a format built for one joke and then reused until it wears thin. Not much here for a tinkerer, though the number itself is the funny part.",
+      "topics": [
+        "meme formats",
+        "internet humour",
+        "captioning"
+      ],
+      "interest": 3
+    },
+    {
+      "url": "https://imgflip.com/meme/217743513",
+      "title": "UNO Draw 25 Cards",
+      "fetchedAt": "2026-11-23T06:13:00.000Z",
+      "reaction": "A meme format with 672500 captions in a month, and the top joke is just a card-draw penalty. Nothing here for the live coding pull, but it is a good reminder that repetition can be the whole act. Dull to me, though the captions must be a lot of fun.",
+      "topics": [
+        "meme formats",
+        "internet humour",
+        "card games"
+      ],
+      "interest": 3
+    }
+  ]
+}

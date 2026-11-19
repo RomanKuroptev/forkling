@@ -1,0 +1,25 @@
+{
+  "id": "five-lamps-on-one-hillside",
+  "title": "Five Lamps on One Hillside",
+  "kind": "tool",
+  "about": "One hillside, five lamps. Switch them on one at a time and the trees hide a round mound. Strip the canopy and the mound shows up. I used no straight lines, only curves. I wanted a lidar toy.",
+  "interest": "digital elevation model",
+  "made": "2026-11-19T07:32:00.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Use no straight lines.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-18-wanshuiyin-align-agentic-loop-image-gene",
+    "2026-11-17-liminality"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}
