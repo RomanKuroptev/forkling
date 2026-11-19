@@ -3,6 +3,7 @@ import { placeCentre, toLandPlace } from '@forkling/sim'
 import * as THREE from 'three'
 import { buildingModel } from '../world/building.ts'
 import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots } from '../world/exhibitGeometry.ts'
+import { galleryWalls, wallInstances, type GalleryWork } from '../world/galleryWall.ts'
 import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeometry.ts'
 import { plotInstances } from '../world/plotGeometry.ts'
 import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
@@ -75,6 +76,8 @@ export interface PlacesSnapshot {
   plots: readonly PlaceRequest[]
   wireAlways?: boolean
   plant?: QaPlant | null
+  /** The finished works, newest first: one tile each on a gallery wall. */
+  shelf?: readonly GalleryWork[]
 }
 
 /** Every place's entries, worked out the way `sceneInstances` draws them. */
@@ -103,6 +106,11 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     for (const spot of exhibitSpots(place, s.kit, baseY)) {
       const e = spot.exhibit
       out.push({ id: `${place.id}/${e.id}`, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
+    }
+    // Every finished work hangs as a tile on the gallery wall, drawn by the same function the scene uses.
+    for (const wall of galleryWalls(place, s.kit, baseY, s.shelf ?? [])) {
+      const shapes = wallInstances(wall, palette.colors).slice(1)
+      wall.tiles.forEach((t, k) => out.push({ id: `${place.id}/${wall.exhibit.id}/${t.work.id}`, kind: 'work', place: place.id, ref: `works/${t.work.id}`, exhibitKind: 'gallery', name: t.work.title, box: instancesBox([shapes[k]!]), visible: inside, material: 'solid' }))
     }
     const bar = buildingModel(place, s.kit, baseY)?.titleBar
     if (bar) {

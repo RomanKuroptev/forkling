@@ -1,12 +1,13 @@
 import { kit } from '@forkling/schema/kit'
 import { neglectFor, openPlaceRequests, placeCentre, toLandPlace } from '@forkling/sim'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { visitor } from '../visitor.ts'
 import { SIGN_W, exhibitSpots, signSpot } from './exhibitGeometry.ts'
+import { galleryWalls, tileAt } from './galleryWall.ts'
 import { signHoverText } from './panelContent.ts'
 import { hoverStore, opens } from './hoverStore.ts'
 import { panelStore } from './panelStore.ts'
@@ -199,11 +200,11 @@ export function Places() {
   // The audit harness (`?qa=1`) lists the places as they are drawn now (`window.__qa.scene()`).
   useEffect(() => {
     if (!qaMode) return
-    qaRegistry.places = { places: world.places, kit, heightAt: (x, z) => land.heightAt(x, z), interiors, nowMs, plots, wireAlways: WIRE_ALWAYS, plant: qaRegistry.plant }
+    qaRegistry.places = { places: world.places, kit, heightAt: (x, z) => land.heightAt(x, z), interiors, nowMs, plots, wireAlways: WIRE_ALWAYS, plant: qaRegistry.plant, shelf: world.shelf }
     qaRegistry.models.drawn = loadedFiles.size
   }, [world, land, interiors, nowMs, plots, loadedFiles])
 
-  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS, wireAlways: WIRE_ALWAYS }), [world, land, interiors, loadedFiles, nowMs, plots])
+  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS, wireAlways: WIRE_ALWAYS, shelf: world.shelf }), [world, land, interiors, loadedFiles, nowMs, plots])
   // The board of each place's sign: its name and its sign text, painted on one texture.
   const baseOfPlace = useCallback((p: (typeof world.places)[number]) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, [land])
   // Under ?qa=1 a fixture may plant a lifted sign (`qa/plant.ts`); in normal mode the plant is null and the boards are as made.
@@ -230,6 +231,8 @@ export function Places() {
     }
     return {
       exhibits: world.places.filter((p) => interiors.has(p.id)).flatMap((p) => exhibitSpots(p, kit, baseOf(p)).map((s) => ({ key: `${p.id}/${s.exhibit.id}`, position: s.position, rotY: s.rotY, title: p.name, text: s.exhibit.label, open: () => void panelStore.open({ kind: 'exhibit', place: p, exhibit: s.exhibit }, world) }))),
+      // One target over each gallery wall; which tile is under the pointer is worked out from where it hits.
+      walls: world.places.filter((p) => interiors.has(p.id)).flatMap((p) => galleryWalls(p, kit, baseOf(p), world.shelf).map((wall) => ({ key: `${p.id}/${wall.exhibit.id}/wall`, wall, place: p }))),
       plots: plots.map((r) => ({ key: r.id, position: plotSign(r, (x, z) => land.heightAt(x, z)).position, title: r.name, text: `${r.name}: ${r.status === 'building' ? 'Roman says he is building it' : 'waiting for Roman'}. ${r.purpose}`, open: () => void panelStore.open({ kind: 'plot', request: r }, world) })),
       signs: world.places.map((p) => ({ key: p.id, position: signSpot(p, baseOf(p)).position, title: p.exterior.sign || p.name, text: signHoverText(p), open: () => void panelStore.open({ kind: 'sign', place: p }, world) })),
     }
@@ -261,6 +264,30 @@ export function Places() {
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}
+      {targets.walls.map(({ key, wall, place }) => {
+        const tileOf = (e: ThreeEvent<PointerEvent | MouseEvent>) => tileAt(wall, [e.point.x, e.point.y, e.point.z])
+        const hover = (e: ThreeEvent<PointerEvent>) => {
+          const tile = tileOf(e)
+          hoverStore.set(tile ? { title: tile.work.title, text: tile.work.about } : null)
+        }
+        return (
+          <mesh
+            key={key}
+            position={wall.board.position}
+            rotation={[0, wall.rotY, 0]}
+            onClick={(e) => {
+              const tile = tileOf(e)
+              if (tile) opens(() => void panelStore.open({ kind: 'exhibit', place, exhibit: { ...wall.exhibit, kind: 'work', ref: `works/${tile.work.id}`, label: tile.work.title } }, world))(e)
+            }}
+            onPointerMove={hover}
+            onPointerOver={hover}
+            onPointerOut={() => hoverStore.set(null)}
+          >
+            <boxGeometry args={[wall.board.size[0], wall.board.size[1], 0.3]} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+          </mesh>
+        )
+      })}
       {targets.plots.map((t) => (
         <mesh key={t.key} position={[t.position[0], t.position[1] + 1.2, t.position[2]]} onClick={opens(t.open)} onPointerOver={() => hoverStore.set({ title: t.title, text: t.text })} onPointerOut={() => hoverStore.set(null)}>
           <boxGeometry args={[2.6, 2.4, 0.8]} />
