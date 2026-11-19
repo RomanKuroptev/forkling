@@ -1,4 +1,5 @@
 import type { Kit, Place } from '@forkling/schema'
+import { buildingWords } from '@forkling/sim'
 import { WINDOW } from './theme.ts'
 import { SIGN_BOTTOM, SIGN_H, SIGN_W, signSpot } from './exhibitGeometry.ts'
 
@@ -43,6 +44,9 @@ export interface SignLayout {
 
 const squash = (s: string) => s.trim().replace(/\s+/g, ' ')
 
+/** The words under the name: the reason it is closed, or that it is being built and how long is left, or its sign text. */
+export const signWords = (place: Place, nowMs?: number): string => (place.state.closed ? `Closed: ${place.state.closed.reason}` : (buildingWords(place.state.construction, nowMs) ?? place.exterior.sign))
+
 /** Words onto lines of at most `max` characters; a word longer than a line is broken, so nothing runs off the board. */
 function wrap(text: string, max: number): string[] {
   const lines: string[] = []
@@ -63,6 +67,14 @@ function wrap(text: string, max: number): string[] {
     }
   }
   if (line) lines.push(line)
+  // A last line of one or two letters (the "h" of "24 h") takes the word before it along, so a number keeps its unit.
+  const last = lines.at(-1)
+  const before = lines.at(-2)
+  if (last !== undefined && before !== undefined && last.length <= 2 && before.includes(' ')) {
+    const cut = before.lastIndexOf(' ')
+    const moved = `${before.slice(cut + 1)} ${last}`
+    if (moved.length <= max) lines.splice(-2, 2, before.slice(0, cut), moved)
+  }
   return lines
 }
 
@@ -73,10 +85,11 @@ const cut = (lines: string[], max: number): string[] => (lines.length <= 2 ? lin
 /**
  * The name and the sign text of a place laid out on its board: the largest type that puts the whole name on at most two lines
  * and the whole sign text below it on at most two smaller ones, all inside the cell. Text is plain characters, never markup.
+ * While the place is being built at `nowMs`, the sign text gives way to that and how long is left (issue 331).
  */
-export function signLayout(place: Place): SignLayout {
+export function signLayout(place: Place, nowMs?: number): SignLayout {
   const nameText = squash(place.name)
-  const signText = place.state.closed ? squash(`Closed: ${place.state.closed.reason}`) : squash(place.exterior.sign)
+  const signText = squash(signWords(place, nowMs))
   const room = SIGN_CELL.h - TITLE_BAR - 2 * VERTICAL_PAD
   let chosen: { namePx: number; name: string[]; textPx: number; text: string[] } | undefined
   for (const namePx of NAME_SIZES) {
@@ -157,8 +170,8 @@ export interface SignBoard {
 /** How far in front of the board's slab its painted face stands, so the two never fight. */
 const FACE = 0.06
 
-/** One board for each place: where it stands (by the door, facing the path), what it says and the colours it is painted in. */
-export function signBoards(places: readonly Place[], baseOf: (place: Place) => number, kit: Kit): SignBoard[] {
+/** One board for each place: where it stands (by the door, facing the path), what it says at `nowMs` and the colours it is painted in. */
+export function signBoards(places: readonly Place[], baseOf: (place: Place) => number, kit: Kit, nowMs?: number): SignBoard[] {
   return places.map((place) => {
     const spot = signSpot(place, baseOf(place)).position
     const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
@@ -166,7 +179,7 @@ export function signBoards(places: readonly Place[], baseOf: (place: Place) => n
       id: place.id,
       position: [spot[0], spot[1] + SIGN_BOTTOM + SIGN_H / 2, spot[2] + FACE],
       size: [SIGN_W, SIGN_H],
-      layout: signLayout(place),
+      layout: signLayout(place, nowMs),
       colors: signColors(palette.colors.wood),
     }
   })

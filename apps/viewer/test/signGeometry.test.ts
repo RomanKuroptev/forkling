@@ -206,3 +206,33 @@ describe('the sign of a closed place says it is closed and why (spec 9.9)', () =
     expect(signLayout({ ...open, state: { ...open.state, closed: null } })).toEqual(signLayout(open))
   })
 })
+
+describe('the sign of a place being built (issue 331)', () => {
+  const place = makeFixtureWorld(1, 10).places[0]!
+  const NOW = Date.parse('2026-11-26T13:00:00Z')
+  const building: Place = { ...place, state: { ...place.state, construction: { kind: 'expand', finishesAt: '2026-11-27T12:00:00Z' } } }
+
+  it('keeps the name and says it is being built and when it is ready, in place of the sign text', () => {
+    const { name, text } = signLayout(building, NOW)
+    expect(name.join(' ')).toBe(norm(place.name))
+    expect(text.join(' ')).toBe('Building · ready in about 23 h')
+  })
+
+  it('goes back to the sign text once it is done', () => {
+    expect(signLayout(building, Date.parse('2026-11-27T13:00:00Z')).text.join(' ')).toBe(norm(place.exterior.sign))
+  })
+
+  it('never leaves the unit alone on the last line: "24 h" stays together', () => {
+    for (const name of ['Hillside Room, Five Lamps', 'Lab', 'A long name for a place that wraps']) {
+      const { text } = signLayout({ ...building, name }, NOW)
+      expect(text.join(' '), name).toBe('Building · ready in about 23 h')
+      for (const line of text) expect(line.length, `${name}: ${line}`).toBeGreaterThan(2)
+    }
+  })
+
+  it('a board is made with the clock', () => {
+    const [board] = signBoards([building], () => 0, kit, NOW)
+    expect(board!.layout.text.join(' ')).toBe('Building · ready in about 23 h')
+  })
+})
+

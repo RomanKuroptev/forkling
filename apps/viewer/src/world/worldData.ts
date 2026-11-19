@@ -61,7 +61,7 @@ export function worldFiles(world: Pick<LoadedWorld, 'ref' | 'sha'>, fetchImpl: t
   }
 }
 
-export type PanelTarget = { kind: 'exhibit'; place: Place; exhibit: Place['exhibits'][number] } | { kind: 'sign'; place: Place } | { kind: 'plot'; request: PlaceRequest }
+export type PanelTarget = { kind: 'exhibit'; place: Place; exhibit: Place['exhibits'][number] } | { kind: 'sign'; place: Place; nowMs?: number } | { kind: 'plot'; request: PlaceRequest }
 
 const MAX_GALLERY = 60
 
@@ -73,7 +73,7 @@ export async function loadPanel(target: PanelTarget, ctx: { world: Pick<LoadedWo
   // A local world's works run from the files served next to the viewer, as they would from its site.
   const base = siteBase(ctx.world.ref) ?? ctx.localSite ?? null
   const local = base === null
-  if (target.kind === 'sign') return signPanel(target.place, base)
+  if (target.kind === 'sign') return signPanel(target.place, base, target.nowMs)
   if (target.kind === 'plot') return plotPanel(target.request)
   const { exhibit } = target
   const ref = exhibit.ref

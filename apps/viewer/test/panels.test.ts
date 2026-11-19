@@ -201,3 +201,18 @@ describe('exhibits put away, in the sign panel (spec 9.9)', () => {
     expect(signPanel(open, null)).toMatchObject({ away: [] })
   })
 })
+
+describe('a place being built says so where the visitor points and opens (issue 331)', () => {
+  const place = makeFixtureWorld(1, 10).places[0]!
+  const NOW = Date.parse('2026-11-26T13:00:00Z')
+  const building = { ...place, state: { ...place.state, construction: { kind: 'expand' as const, finishesAt: '2026-11-27T12:00:00Z' } } }
+  it('the hover says what is being built, how far it is and what it is for', () => {
+    expect(signHoverText(building, NOW)).toBe(`${place.name}: Building · ready in about 23 h. ${place.purpose}`)
+    expect(signHoverText(place, NOW)).toBe(`${place.name}: ${place.purpose}`)
+  })
+  it('the sign panel says it is being built', () => {
+    expect(signPanel(building, null, NOW)).toMatchObject({ building: 'Building · ready in about 23 h' })
+    expect(signPanel(place, null, NOW)).toMatchObject({ building: null })
+  })
+})
+
