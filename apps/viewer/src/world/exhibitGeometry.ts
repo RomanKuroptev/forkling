@@ -163,8 +163,14 @@ export const SIGN_H = 1.2
 /** How high the board's lower edge is above the ground. */
 export const SIGN_BOTTOM = 0.9
 
-/** Where a place's sign stands: by the door, on the front (+z) side, its board facing the path. It shows the place's name and its `exterior.sign` text. */
+/**
+ * How far in front of the footprint's front edge a sign stands, in meters: in front of everything the building model puts there (a
+ * villa's porch columns reach 1.5 m out), so no column or arch stands between the path and the board (issues 356, 366).
+ */
+export const SIGN_OUT = 2.6
+
+/** Where a place's sign stands: beside the door, out in front of the building (+z), its board facing the path. It shows the place's name and a line about it (`signLine`). */
 export function signSpot(place: Place, baseY: number): { position: [number, number, number] } {
   const [px, pz] = placeCentre(toLandPlace(place))
-  return { position: [px + 3.2, baseY, pz + place.exterior.footprint[1] / 2 + 1.2] }
+  return { position: [px + 3.2, baseY, pz + place.exterior.footprint[1] / 2 + SIGN_OUT] }
 }

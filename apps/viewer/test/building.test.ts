@@ -187,3 +187,12 @@ describe.each(STYLES)('the building model, %s style', (style) => {
     expect(sixtyFour.triangles).toBeLessThanOrEqual(80000)
   })
 })
+
+describe('the title bar', () => {
+  it('carries the whole name, never cut at 24 characters (issue 366)', () => {
+    const hill = { ...home, name: 'Hillside Room, Five Lamps', exterior: { ...home.exterior, style: 'timber' } }
+    expect(buildingModel(hill, kit, 0)!.titleBar!.text).toBe('HILLSIDE ROOM, FIVE LAMPS')
+    const longest = { ...hill, name: 'The Observatory of Patient Little Birds!' }
+    expect(buildingModel(longest, kit, 0)!.titleBar!.text).toBe('THE OBSERVATORY OF PATIENT LITTLE BIRDS!')
+  })
+})
