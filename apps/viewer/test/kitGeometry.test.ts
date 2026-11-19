@@ -5,6 +5,7 @@ import { DOOR_HALF, WALL, createLand, placeCentre, toLandPlace } from '@forkling
 import { FIXTURE_NOW, makeFixtureWorld } from '@forkling/sim/fixture'
 import { compose, multiply } from '../src/world/matrix.ts'
 import { buildingModel, partKey, windowLayout } from '../src/world/building.ts'
+import { SIGN_OUT, signSpot } from '../src/world/exhibitGeometry.ts'
 import { MODEL_LIMITS, SHAPES, SHAPE_TRIANGLES, exteriorInstances, floorHeight, interiorInstances, interiorsToLoad, modelFiles, partInstances, renderBudget, resolveColor, sceneInstances, wallBoxes } from '../src/world/kitGeometry.ts'
 
 const fixture = makeFixtureWorld(1, 10)
@@ -86,7 +87,13 @@ describe('the outside of a building (spec 5.3: a style is a set of wall, window 
     const [px, pz] = at(home)
     const [fw, fd] = home.exterior.footprint
     const height = floorHeight(home) * home.exterior.floors
-    const instances = exteriorInstances(home, kit, 0)
+    const all = exteriorInstances(home, kit, 0)
+    // The sign post stands out in front of the porch (SIGN_OUT, issues 356 and 366); everything else keeps to the footprint.
+    const sign = signSpot(home, 0).position
+    const isSign = (i: (typeof all)[number]) => Math.abs(pos(i.matrix)[2] - sign[2]) < 0.3 && Math.abs(pos(i.matrix)[0] - sign[0]) < 1.5
+    expect(all.filter(isSign).length).toBeGreaterThan(0)
+    for (const i of all.filter(isSign)) expect(Math.abs(pos(i.matrix)[2] - pz), 'sign z').toBeLessThanOrEqual(fd / 2 + SIGN_OUT + 0.2)
+    const instances = all.filter((i) => !isSign(i))
     expect(instances.length).toBeGreaterThan(20)
     for (const i of instances) {
       const [x, y, z] = pos(i.matrix)

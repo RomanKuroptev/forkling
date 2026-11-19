@@ -75,7 +75,7 @@ describe('the other panels', () => {
   })
   it('shows a place\'s sign as its history, newest first, with its page', () => {
     const p = signPanel({ ...place, history: [{ at: '2026-11-12T10:00:00+01:00', verb: 'found', summary: 'Founded.' }, { at: '2026-11-20T10:00:00+01:00', verb: 'tend', summary: 'Tidied.' }] }, base)
-    expect(p).toMatchObject({ kind: 'sign', heading: place.exterior.sign || place.name, founded: place.founded, pageUrl: `${base}places/${place.id}/` })
+    expect(p).toMatchObject({ kind: 'sign', heading: place.name, founded: place.founded, pageUrl: `${base}places/${place.id}/` })
     expect(p.kind === 'sign' && p.history.map((h) => h.summary)).toEqual(['Tidied.', 'Founded.'])
   })
   it('has a plain note for anything it cannot open', () => {
