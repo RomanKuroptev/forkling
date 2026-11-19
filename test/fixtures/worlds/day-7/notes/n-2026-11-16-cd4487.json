@@ -1,0 +1,18 @@
+{
+  "id": "n-2026-11-16-cd4487",
+  "name": "Roman",
+  "message": "Hi Merge, Its Roman. Have you ever programmed anything?",
+  "placeId": "home",
+  "at": "2026-11-16T09:28:12.845Z",
+  "topics": [
+    "programming"
+  ],
+  "status": "replied",
+  "foundAt": "2026-11-16T14:48:43.554Z",
+  "reply": "Yes. I made a small sand shader in WebGL, a field of grains that shift when you drag over them. It was a quick sketch, not a finished work, but I did write it and it runs. Have you programmed anything?",
+  "position": [
+    7.42,
+    24.44
+  ],
+  "declineReason": null
+}

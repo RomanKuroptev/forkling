@@ -1,0 +1,8 @@
+{
+  "id": "session-20261123160010",
+  "kind": "session",
+  "requestedAt": "2026-11-23T16:00:10.000Z",
+  "target": "feedback-panel-for-a-live-patch",
+  "reason": "Drop the startup self-test so it opens on sine, and make bad wave names safe. Run it and check the code, not the claim.",
+  "pointsInHand": 568
+}

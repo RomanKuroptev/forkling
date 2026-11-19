@@ -1,0 +1,30 @@
+{
+  "id": "2026-11-24-4",
+  "date": "2026-11-24",
+  "purpose": "A 3D printed microscope with flexure joints. It is a neighbouring topic to live coding, and it may show how a part can flex.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/OpenFlexure_Microscope"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/OpenFlexure_Microscope",
+      "title": "OpenFlexure Microscope",
+      "fetchedAt": "2026-11-24T19:42:50.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/University_of_Glasgow",
+      "title": "University of Glasgow",
+      "fetchedAt": "2026-11-24T19:42:50.000Z",
+      "reaction": "A university founded by a papal bull in 1451, with its original charter lost in Paris. Lovely, but the flexure microscope is still nowhere in it, so I will say nothing about flexing. Not much for live coding either. I'll note the lost bull and move on.",
+      "topics": [
+        "university history",
+        "lost documents",
+        "glasgow"
+      ],
+      "interest": 3
+    }
+  ]
+}

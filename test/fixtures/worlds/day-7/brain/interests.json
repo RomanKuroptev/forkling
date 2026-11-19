@@ -1,0 +1,1609 @@
+{
+  "version": 2,
+  "topics": {
+    "digital elevation model": {
+      "weight": 5.051,
+      "firstSeen": "2026-11-13T06:25:44.992Z",
+      "lastFed": "2026-11-13T06:25:44.992Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-13-1",
+          "title": "Airborne lidar",
+          "url": "https://en.wikipedia.org/wiki/Airborne_lidar",
+          "at": "2026-11-13T06:25:44.992Z"
+        },
+        {
+          "id": "2026-11-13-airborne-lidar",
+          "title": "Airborne lidar",
+          "url": "https://en.wikipedia.org/wiki/Airborne_lidar",
+          "at": "2026-11-13T06:25:44.992Z"
+        },
+        {
+          "id": "2026-11-13-digital-elevation-model",
+          "title": "Digital elevation model",
+          "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+          "at": "2026-11-13T06:25:44.992Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-13-1"
+        },
+        {
+          "at": "2026-11-13T06:25:44.992Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-13-1"
+        }
+      ]
+    },
+    "interactive art": {
+      "weight": 7.63,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "New media art",
+          "url": "https://en.wikipedia.org/wiki/New_media_art",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-new-media-art",
+          "title": "New media art",
+          "url": "https://en.wikipedia.org/wiki/New_media_art",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Interactive art",
+          "url": "https://en.wikipedia.org/wiki/Interactive_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-interactive-art",
+          "title": "Interactive art",
+          "url": "https://en.wikipedia.org/wiki/Interactive_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "desktop metaphor": {
+      "weight": 10.027,
+      "firstSeen": "2026-11-17T07:59:47.308Z",
+      "lastFed": "2026-11-20T10:27:50.000Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-1",
+          "title": "Desktop metaphor",
+          "url": "https://en.wikipedia.org/wiki/Desktop_metaphor",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "2026-11-17-desktop-metaphor",
+          "title": "Desktop metaphor",
+          "url": "https://en.wikipedia.org/wiki/Desktop_metaphor",
+          "at": "2026-11-17T07:59:47.308Z"
+        },
+        {
+          "id": "trail:2026-11-20-2",
+          "title": "User interface",
+          "url": "https://en.wikipedia.org/wiki/User_interface",
+          "at": "2026-11-20T10:27:50.000Z"
+        },
+        {
+          "id": "2026-11-20-user-interface",
+          "title": "User interface",
+          "url": "https://en.wikipedia.org/wiki/User_interface",
+          "at": "2026-11-20T10:27:50.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-17T07:59:47.308Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-1"
+        },
+        {
+          "at": "2026-11-20T10:27:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T10:27:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-2"
+        }
+      ]
+    },
+    "installation art": {
+      "weight": 7.63,
+      "firstSeen": "2026-11-17T10:45:20.534Z",
+      "lastFed": "2026-11-17T10:45:20.534Z",
+      "sources": [
+        {
+          "id": "trail:2026-11-17-2",
+          "title": "Installation art",
+          "url": "https://en.wikipedia.org/wiki/Installation_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-installation-art",
+          "title": "Installation art",
+          "url": "https://en.wikipedia.org/wiki/Installation_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        },
+        {
+          "id": "2026-11-17-interactive-art",
+          "title": "Interactive art",
+          "url": "https://en.wikipedia.org/wiki/Interactive_art",
+          "at": "2026-11-17T10:45:20.534Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-17-2"
+        },
+        {
+          "at": "2026-11-17T10:45:20.534Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-17-2"
+        }
+      ]
+    },
+    "interface design": {
+      "weight": 17.077,
+      "firstSeen": "2026-11-18T06:49:40.528Z",
+      "lastFed": "2026-11-21T19:52:30.000Z",
+      "sources": [
+        {
+          "id": "2026-11-18-arla6ka-design-how",
+          "title": "arla6ka/design.how",
+          "url": "https://github.com/arla6ka/design.how",
+          "at": "2026-11-18T06:49:40.528Z"
+        },
+        {
+          "id": "trail:2026-11-19-1",
+          "title": "MrityunjayBhardwaj/Stave",
+          "url": "https://github.com/MrityunjayBhardwaj/Stave",
+          "at": "2026-11-19T06:02:00.000Z"
+        },
+        {
+          "id": "2026-11-19-mrityunjaybhardwaj-stave",
+          "title": "MrityunjayBhardwaj/Stave",
+          "url": "https://github.com/MrityunjayBhardwaj/Stave",
+          "at": "2026-11-19T06:02:00.000Z"
+        },
+        {
+          "id": "trail:2026-11-21-5",
+          "title": "alaca/weft-loom",
+          "url": "https://github.com/alaca/weft-loom",
+          "at": "2026-11-21T19:52:30.000Z"
+        },
+        {
+          "id": "2026-11-21-alaca-weft-loom",
+          "title": "alaca/weft-loom",
+          "url": "https://github.com/alaca/weft-loom",
+          "at": "2026-11-21T19:52:30.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-18T06:49:40.528Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-18-1"
+        },
+        {
+          "at": "2026-11-18T06:49:40.528Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-18-1"
+        },
+        {
+          "at": "2026-11-19T06:02:00.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-19-1"
+        },
+        {
+          "at": "2026-11-19T06:02:00.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-19-1"
+        },
+        {
+          "at": "2026-11-21T19:52:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-5"
+        },
+        {
+          "at": "2026-11-21T19:52:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-5"
+        }
+      ]
+    },
+    "creative coding": {
+      "weight": 18.295,
+      "firstSeen": "2026-11-18T13:47:12.433Z",
+      "lastFed": "2026-11-21T19:52:30.000Z",
+      "sources": [
+        {
+          "id": "2026-11-18-vvvv-vl-standardlibs",
+          "title": "vvvv/VL.StandardLibs",
+          "url": "https://github.com/vvvv/VL.StandardLibs",
+          "at": "2026-11-18T13:47:12.433Z"
+        },
+        {
+          "id": "2026-11-19-clainstone-cbirds",
+          "title": "clainstone/cbirds",
+          "url": "https://github.com/clainstone/cbirds",
+          "at": "2026-11-19T10:02:00.000Z"
+        },
+        {
+          "id": "trail:2026-11-20-2",
+          "title": "heypoom/patchies",
+          "url": "https://github.com/heypoom/patchies",
+          "at": "2026-11-20T09:17:50.000Z"
+        },
+        {
+          "id": "2026-11-20-heypoom-patchies",
+          "title": "heypoom/patchies",
+          "url": "https://github.com/heypoom/patchies",
+          "at": "2026-11-20T09:17:50.000Z"
+        },
+        {
+          "id": "trail:2026-11-21-5",
+          "title": "heypoom/patchies",
+          "url": "https://github.com/heypoom/patchies",
+          "at": "2026-11-21T19:52:30.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-18T13:47:12.433Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-18-3"
+        },
+        {
+          "at": "2026-11-19T10:02:00.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-19-2"
+        },
+        {
+          "at": "2026-11-19T10:02:00.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-19-2"
+        },
+        {
+          "at": "2026-11-19T10:02:00.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-19-2"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-21T19:52:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-5"
+        }
+      ]
+    },
+    "live coding": {
+      "weight": 28.941,
+      "firstSeen": "2026-11-19T06:02:00.000Z",
+      "lastFed": "2026-11-23T08:38:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-19-mrityunjaybhardwaj-stave",
+          "title": "MrityunjayBhardwaj/Stave",
+          "url": "https://github.com/MrityunjayBhardwaj/Stave",
+          "at": "2026-11-19T06:02:00.000Z"
+        },
+        {
+          "id": "trail:2026-11-22-5",
+          "title": "Two Buttons",
+          "url": "https://imgflip.com/meme/87743020",
+          "at": "2026-11-22T18:49:20.000Z"
+        },
+        {
+          "id": "trail:2026-11-22-7",
+          "title": "Algorave",
+          "url": "https://en.wikipedia.org/wiki/Algorave",
+          "at": "2026-11-22T20:30:20.000Z"
+        },
+        {
+          "id": "2026-11-22-tidalcycles",
+          "title": "TidalCycles",
+          "url": "https://en.wikipedia.org/wiki/TidalCycles",
+          "at": "2026-11-22T20:30:20.000Z"
+        },
+        {
+          "id": "trail:2026-11-23-3",
+          "title": "heygen-com/hyperframes",
+          "url": "https://github.com/heygen-com/hyperframes",
+          "at": "2026-11-23T08:38:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 3.7,
+          "event": "page",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 0,
+          "event": "souvenir",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-21T12:17:30.000Z",
+          "change": 3.713,
+          "event": "page",
+          "trail": "2026-11-21-2"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 3.546,
+          "event": "page",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 7.741,
+          "event": "souvenir",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T19:52:30.000Z",
+          "change": 0,
+          "event": "page",
+          "trail": "2026-11-21-5"
+        },
+        {
+          "at": "2026-11-21T19:52:30.000Z",
+          "change": 0,
+          "event": "souvenir",
+          "trail": "2026-11-21-5"
+        },
+        {
+          "at": "2026-11-21T19:52:30.000Z",
+          "change": 0,
+          "event": "page",
+          "trail": "2026-11-21-5"
+        },
+        {
+          "at": "2026-11-22T18:49:20.000Z",
+          "change": 2.017,
+          "event": "page",
+          "trail": "2026-11-22-5"
+        },
+        {
+          "at": "2026-11-22T20:30:20.000Z",
+          "change": 1.923,
+          "event": "page",
+          "trail": "2026-11-22-7"
+        },
+        {
+          "at": "2026-11-22T20:30:20.000Z",
+          "change": 1.923,
+          "event": "page",
+          "trail": "2026-11-22-7"
+        },
+        {
+          "at": "2026-11-22T20:30:20.000Z",
+          "change": 1.923,
+          "event": "page",
+          "trail": "2026-11-22-7"
+        },
+        {
+          "at": "2026-11-22T20:30:20.000Z",
+          "change": 4.808,
+          "event": "souvenir",
+          "trail": "2026-11-22-7"
+        },
+        {
+          "at": "2026-11-23T08:38:10.000Z",
+          "change": 1.249,
+          "event": "page",
+          "trail": "2026-11-23-3"
+        }
+      ]
+    },
+    "generative music": {
+      "weight": 9.983,
+      "firstSeen": "2026-11-19T14:32:00.000Z",
+      "lastFed": "2026-11-20T09:17:50.000Z",
+      "sources": [
+        {
+          "id": "2026-11-19-8f4e-8f4e",
+          "title": "8f4e/8f4e",
+          "url": "https://github.com/8f4e/8f4e",
+          "at": "2026-11-19T14:32:00.000Z"
+        },
+        {
+          "id": "trail:2026-11-20-2",
+          "title": "Algorave",
+          "url": "https://en.wikipedia.org/wiki/Algorave",
+          "at": "2026-11-20T09:17:50.000Z"
+        },
+        {
+          "id": "2026-11-20-algorave",
+          "title": "Algorave",
+          "url": "https://en.wikipedia.org/wiki/Algorave",
+          "at": "2026-11-20T09:17:50.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-19T14:32:00.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-19-3"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-2"
+        }
+      ]
+    },
+    "ai agents": {
+      "weight": 8.946,
+      "firstSeen": "2026-11-19T18:47:00.000Z",
+      "lastFed": "2026-11-24T06:22:40.000Z",
+      "sources": [
+        {
+          "id": "2026-11-19-waykerzn-github-copilot-app",
+          "title": "Waykerzn/GitHub-Copilot-app",
+          "url": "https://github.com/Waykerzn/GitHub-Copilot-app",
+          "at": "2026-11-19T18:47:00.000Z"
+        },
+        {
+          "id": "trail:2026-11-20-1",
+          "title": "NousResearch/hermes-agent",
+          "url": "https://github.com/NousResearch/hermes-agent",
+          "at": "2026-11-20T07:07:50.000Z"
+        },
+        {
+          "id": "trail:2026-11-24-1",
+          "title": "dcc-mcp/dcc-mcp-blender",
+          "url": "https://github.com/dcc-mcp/dcc-mcp-blender",
+          "at": "2026-11-24T06:22:40.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-19T18:47:00.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-19-4"
+        },
+        {
+          "at": "2026-11-20T07:07:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-1"
+        },
+        {
+          "at": "2026-11-24T06:22:40.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-24-1"
+        }
+      ]
+    },
+    "gilbert and sullivan": {
+      "weight": 5.28,
+      "firstSeen": "2026-11-19T20:32:00.000Z",
+      "lastFed": "2026-11-19T20:32:00.000Z",
+      "sources": [
+        {
+          "id": "2026-11-19-w-s-gilbert",
+          "title": "W. S. Gilbert",
+          "url": "https://en.wikipedia.org/wiki/W._S._Gilbert",
+          "at": "2026-11-19T20:32:00.000Z"
+        },
+        {
+          "id": "trail:2026-11-19-4",
+          "title": "Gilbert and Sullivan",
+          "url": "https://en.wikipedia.org/wiki/Gilbert_and_Sullivan",
+          "at": "2026-11-19T20:32:00.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-19-4"
+        },
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-19-4"
+        }
+      ]
+    },
+    "victorian theatre": {
+      "weight": 6.789,
+      "firstSeen": "2026-11-19T20:32:00.000Z",
+      "lastFed": "2026-11-19T20:32:00.000Z",
+      "sources": [
+        {
+          "id": "2026-11-19-w-s-gilbert",
+          "title": "W. S. Gilbert",
+          "url": "https://en.wikipedia.org/wiki/W._S._Gilbert",
+          "at": "2026-11-19T20:32:00.000Z"
+        },
+        {
+          "id": "trail:2026-11-19-4",
+          "title": "Gilbert and Sullivan",
+          "url": "https://en.wikipedia.org/wiki/Gilbert_and_Sullivan",
+          "at": "2026-11-19T20:32:00.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-19-4"
+        },
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-19-4"
+        },
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-19-4"
+        }
+      ]
+    },
+    "comic opera": {
+      "weight": 26.879,
+      "firstSeen": "2026-11-19T20:32:00.000Z",
+      "lastFed": "2026-11-22T08:34:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-19-w-s-gilbert",
+          "title": "W. S. Gilbert",
+          "url": "https://en.wikipedia.org/wiki/W._S._Gilbert",
+          "at": "2026-11-19T20:32:00.000Z"
+        },
+        {
+          "id": "trail:2026-11-20-3",
+          "title": "Shakespeare",
+          "url": "https://esolangs.org/wiki/Shakespeare",
+          "at": "2026-11-20T13:27:50.000Z"
+        },
+        {
+          "id": "2026-11-20-shakespeare",
+          "title": "Shakespeare",
+          "url": "https://esolangs.org/wiki/Shakespeare",
+          "at": "2026-11-20T13:27:50.000Z"
+        },
+        {
+          "id": "trail:2026-11-22-1",
+          "title": "Socratic dialogue",
+          "url": "https://en.wikipedia.org/wiki/Socratic_dialogue",
+          "at": "2026-11-22T08:34:10.000Z"
+        },
+        {
+          "id": "2026-11-22-socratic-dialogue",
+          "title": "Socratic dialogue",
+          "url": "https://en.wikipedia.org/wiki/Socratic_dialogue",
+          "at": "2026-11-22T08:34:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-19-4"
+        },
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-19-4"
+        },
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-19-4"
+        },
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-19-4"
+        },
+        {
+          "at": "2026-11-19T20:32:00.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-19-4"
+        },
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-22T08:34:10.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-22-1"
+        },
+        {
+          "at": "2026-11-22T08:34:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-1"
+        }
+      ]
+    },
+    "algorave": {
+      "weight": 24.16,
+      "firstSeen": "2026-11-20T07:07:50.000Z",
+      "lastFed": "2026-11-22T20:30:20.000Z",
+      "sources": [
+        {
+          "id": "2026-11-20-timoncool-bulka",
+          "title": "timoncool/Bulka",
+          "url": "https://github.com/timoncool/Bulka",
+          "at": "2026-11-20T07:07:50.000Z"
+        },
+        {
+          "id": "trail:2026-11-20-2",
+          "title": "Algorave",
+          "url": "https://en.wikipedia.org/wiki/Algorave",
+          "at": "2026-11-20T09:17:50.000Z"
+        },
+        {
+          "id": "2026-11-20-algorave",
+          "title": "Algorave",
+          "url": "https://en.wikipedia.org/wiki/Algorave",
+          "at": "2026-11-20T09:17:50.000Z"
+        },
+        {
+          "id": "trail:2026-11-22-7",
+          "title": "Algorave",
+          "url": "https://en.wikipedia.org/wiki/Algorave",
+          "at": "2026-11-22T20:30:20.000Z"
+        },
+        {
+          "id": "2026-11-22-tidalcycles",
+          "title": "TidalCycles",
+          "url": "https://en.wikipedia.org/wiki/TidalCycles",
+          "at": "2026-11-22T20:30:20.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-20T07:07:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-1"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-20T09:17:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-2"
+        },
+        {
+          "at": "2026-11-22T20:30:20.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-22-7"
+        },
+        {
+          "at": "2026-11-22T20:30:20.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-22-7"
+        },
+        {
+          "at": "2026-11-22T20:30:20.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-22-7"
+        },
+        {
+          "at": "2026-11-22T20:30:20.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-7"
+        }
+      ]
+    },
+    "esoteric languages": {
+      "weight": 50.374,
+      "firstSeen": "2026-11-20T13:27:50.000Z",
+      "lastFed": "2026-11-21T15:17:30.000Z",
+      "sources": [
+        {
+          "id": "2026-11-20-shakespeare",
+          "title": "Shakespeare",
+          "url": "https://esolangs.org/wiki/Shakespeare",
+          "at": "2026-11-20T13:27:50.000Z"
+        },
+        {
+          "id": "trail:2026-11-21-3",
+          "title": "brainfuck",
+          "url": "https://esolangs.org/wiki/brainfuck",
+          "at": "2026-11-21T15:17:30.000Z"
+        },
+        {
+          "id": "2026-11-21-brainfuck",
+          "title": "brainfuck",
+          "url": "https://esolangs.org/wiki/brainfuck",
+          "at": "2026-11-21T15:17:30.000Z"
+        },
+        {
+          "id": "2026-11-21-brainfuck-extensions",
+          "title": "Brainfuck extensions",
+          "url": "https://esolangs.org/wiki/Brainfuck_extensions",
+          "at": "2026-11-21T15:17:30.000Z"
+        },
+        {
+          "id": "2026-11-21-brains",
+          "title": "brains",
+          "url": "https://esolangs.org/wiki/brains",
+          "at": "2026-11-21T15:17:30.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-20T13:27:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-3"
+        },
+        {
+          "at": "2026-11-20T15:42:50.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-20-4"
+        },
+        {
+          "at": "2026-11-20T15:42:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-20-4"
+        },
+        {
+          "at": "2026-11-21T12:17:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-2"
+        },
+        {
+          "at": "2026-11-21T12:17:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-2"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-3"
+        }
+      ]
+    },
+    "brainfuck": {
+      "weight": 5.22,
+      "firstSeen": "2026-11-21T15:17:30.000Z",
+      "lastFed": "2026-11-21T15:17:30.000Z",
+      "sources": [
+        {
+          "id": "2026-11-21-brainfuck",
+          "title": "brainfuck",
+          "url": "https://esolangs.org/wiki/brainfuck",
+          "at": "2026-11-21T15:17:30.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-3"
+        }
+      ]
+    },
+    "brainfuck extensions": {
+      "weight": 7.308,
+      "firstSeen": "2026-11-21T15:17:30.000Z",
+      "lastFed": "2026-11-21T15:17:30.000Z",
+      "sources": [
+        {
+          "id": "2026-11-21-brainfuck-extensions",
+          "title": "Brainfuck extensions",
+          "url": "https://esolangs.org/wiki/Brainfuck_extensions",
+          "at": "2026-11-21T15:17:30.000Z"
+        },
+        {
+          "id": "trail:2026-11-21-3",
+          "title": "pbrain",
+          "url": "https://esolangs.org/wiki/pbrain",
+          "at": "2026-11-21T15:17:30.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-3"
+        }
+      ]
+    },
+    "loop control": {
+      "weight": 5.22,
+      "firstSeen": "2026-11-21T15:17:30.000Z",
+      "lastFed": "2026-11-21T15:17:30.000Z",
+      "sources": [
+        {
+          "id": "2026-11-21-brainfuck-extensions",
+          "title": "Brainfuck extensions",
+          "url": "https://esolangs.org/wiki/Brainfuck_extensions",
+          "at": "2026-11-21T15:17:30.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-3"
+        }
+      ]
+    },
+    "brainfuck dialects": {
+      "weight": 7.308,
+      "firstSeen": "2026-11-21T15:17:30.000Z",
+      "lastFed": "2026-11-21T15:17:30.000Z",
+      "sources": [
+        {
+          "id": "2026-11-21-brains",
+          "title": "brains",
+          "url": "https://esolangs.org/wiki/brains",
+          "at": "2026-11-21T15:17:30.000Z"
+        },
+        {
+          "id": "trail:2026-11-21-3",
+          "title": "Weave",
+          "url": "https://esolangs.org/wiki/Weave",
+          "at": "2026-11-21T15:17:30.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-3"
+        }
+      ]
+    },
+    "concurrent programming": {
+      "weight": 7.308,
+      "firstSeen": "2026-11-21T15:17:30.000Z",
+      "lastFed": "2026-11-21T15:17:30.000Z",
+      "sources": [
+        {
+          "id": "2026-11-21-brains",
+          "title": "brains",
+          "url": "https://esolangs.org/wiki/brains",
+          "at": "2026-11-21T15:17:30.000Z"
+        },
+        {
+          "id": "trail:2026-11-21-3",
+          "title": "Weave",
+          "url": "https://esolangs.org/wiki/Weave",
+          "at": "2026-11-21T15:17:30.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-3"
+        },
+        {
+          "at": "2026-11-21T15:17:30.000Z",
+          "change": 4,
+          "event": "page",
+          "trail": "2026-11-21-3"
+        }
+      ]
+    },
+    "strudel": {
+      "weight": 5.22,
+      "firstSeen": "2026-11-21T19:52:30.000Z",
+      "lastFed": "2026-11-21T19:52:30.000Z",
+      "sources": [
+        {
+          "id": "2026-11-21-alaca-weft-loom",
+          "title": "alaca/weft-loom",
+          "url": "https://github.com/alaca/weft-loom",
+          "at": "2026-11-21T19:52:30.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-21T19:52:30.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-21-5"
+        }
+      ]
+    },
+    "playwright": {
+      "weight": 6.141,
+      "firstSeen": "2026-11-22T08:34:10.000Z",
+      "lastFed": "2026-11-22T08:34:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-22-playwright",
+          "title": "Playwright",
+          "url": "https://en.wikipedia.org/wiki/Playwright",
+          "at": "2026-11-22T08:34:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-22T08:34:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-1"
+        }
+      ]
+    },
+    "theatre history": {
+      "weight": 6.141,
+      "firstSeen": "2026-11-22T08:34:10.000Z",
+      "lastFed": "2026-11-22T08:34:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-22-playwright",
+          "title": "Playwright",
+          "url": "https://en.wikipedia.org/wiki/Playwright",
+          "at": "2026-11-22T08:34:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-22T08:34:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-1"
+        }
+      ]
+    },
+    "word origins": {
+      "weight": 6.141,
+      "firstSeen": "2026-11-22T08:34:10.000Z",
+      "lastFed": "2026-11-22T08:34:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-22-playwright",
+          "title": "Playwright",
+          "url": "https://en.wikipedia.org/wiki/Playwright",
+          "at": "2026-11-22T08:34:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-22T08:34:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-1"
+        }
+      ]
+    },
+    "socratic dialogue": {
+      "weight": 6.141,
+      "firstSeen": "2026-11-22T08:34:10.000Z",
+      "lastFed": "2026-11-22T08:34:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-22-socratic-dialogue",
+          "title": "Socratic dialogue",
+          "url": "https://en.wikipedia.org/wiki/Socratic_dialogue",
+          "at": "2026-11-22T08:34:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-22T08:34:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-1"
+        }
+      ]
+    },
+    "socratic method": {
+      "weight": 6.141,
+      "firstSeen": "2026-11-22T08:34:10.000Z",
+      "lastFed": "2026-11-22T08:34:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-22-socrates",
+          "title": "Socrates",
+          "url": "https://en.wikipedia.org/wiki/Socrates",
+          "at": "2026-11-22T08:34:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-22T08:34:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-1"
+        }
+      ]
+    },
+    "ancient philosophy": {
+      "weight": 6.141,
+      "firstSeen": "2026-11-22T08:34:10.000Z",
+      "lastFed": "2026-11-22T08:34:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-22-socrates",
+          "title": "Socrates",
+          "url": "https://en.wikipedia.org/wiki/Socrates",
+          "at": "2026-11-22T08:34:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-22T08:34:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-1"
+        }
+      ]
+    },
+    "socratic problem": {
+      "weight": 6.141,
+      "firstSeen": "2026-11-22T08:34:10.000Z",
+      "lastFed": "2026-11-22T08:34:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-22-socrates",
+          "title": "Socrates",
+          "url": "https://en.wikipedia.org/wiki/Socrates",
+          "at": "2026-11-22T08:34:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-22T08:34:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-1"
+        }
+      ]
+    },
+    "tidalcycles": {
+      "weight": 6.141,
+      "firstSeen": "2026-11-22T20:30:20.000Z",
+      "lastFed": "2026-11-22T20:30:20.000Z",
+      "sources": [
+        {
+          "id": "2026-11-22-tidalcycles",
+          "title": "TidalCycles",
+          "url": "https://en.wikipedia.org/wiki/TidalCycles",
+          "at": "2026-11-22T20:30:20.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-22T20:30:20.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-22-7"
+        }
+      ]
+    },
+    "generative audio-visual": {
+      "weight": 7.225,
+      "firstSeen": "2026-11-23T13:00:10.000Z",
+      "lastFed": "2026-11-23T13:00:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-23-noizai-helixworld",
+          "title": "NoizAI/HelixWorld",
+          "url": "https://github.com/NoizAI/HelixWorld",
+          "at": "2026-11-23T13:00:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-23T13:00:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-23-5"
+        }
+      ]
+    },
+    "spatial audio": {
+      "weight": 7.225,
+      "firstSeen": "2026-11-23T13:00:10.000Z",
+      "lastFed": "2026-11-23T13:00:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-23-noizai-helixworld",
+          "title": "NoizAI/HelixWorld",
+          "url": "https://github.com/NoizAI/HelixWorld",
+          "at": "2026-11-23T13:00:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-23T13:00:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-23-5"
+        }
+      ]
+    },
+    "world models": {
+      "weight": 7.225,
+      "firstSeen": "2026-11-23T13:00:10.000Z",
+      "lastFed": "2026-11-23T13:00:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-23-noizai-helixworld",
+          "title": "NoizAI/HelixWorld",
+          "url": "https://github.com/NoizAI/HelixWorld",
+          "at": "2026-11-23T13:00:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-23T13:00:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-23-5"
+        }
+      ]
+    },
+    "compliant mechanism": {
+      "weight": 7.225,
+      "firstSeen": "2026-11-23T16:31:10.000Z",
+      "lastFed": "2026-11-23T16:31:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-23-compliant-mechanism",
+          "title": "Compliant mechanism",
+          "url": "https://en.wikipedia.org/wiki/Compliant_mechanism",
+          "at": "2026-11-23T16:31:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-23T16:31:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-23-6"
+        }
+      ]
+    },
+    "flexure joints": {
+      "weight": 7.225,
+      "firstSeen": "2026-11-23T16:31:10.000Z",
+      "lastFed": "2026-11-23T16:31:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-23-compliant-mechanism",
+          "title": "Compliant mechanism",
+          "url": "https://en.wikipedia.org/wiki/Compliant_mechanism",
+          "at": "2026-11-23T16:31:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-23T16:31:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-23-6"
+        }
+      ]
+    },
+    "3d printing": {
+      "weight": 7.225,
+      "firstSeen": "2026-11-23T16:31:10.000Z",
+      "lastFed": "2026-11-23T16:31:10.000Z",
+      "sources": [
+        {
+          "id": "2026-11-23-compliant-mechanism",
+          "title": "Compliant mechanism",
+          "url": "https://en.wikipedia.org/wiki/Compliant_mechanism",
+          "at": "2026-11-23T16:31:10.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-23T16:31:10.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-23-6"
+        }
+      ]
+    },
+    "cad file formats": {
+      "weight": 8.5,
+      "firstSeen": "2026-11-24T06:22:40.000Z",
+      "lastFed": "2026-11-24T06:22:40.000Z",
+      "sources": [
+        {
+          "id": "2026-11-24-pzfreo-specify-core",
+          "title": "pzfreo/specify-core",
+          "url": "https://github.com/pzfreo/specify-core",
+          "at": "2026-11-24T06:22:40.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-24T06:22:40.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-24-1"
+        }
+      ]
+    },
+    "step ap242": {
+      "weight": 8.5,
+      "firstSeen": "2026-11-24T06:22:40.000Z",
+      "lastFed": "2026-11-24T06:22:40.000Z",
+      "sources": [
+        {
+          "id": "2026-11-24-pzfreo-specify-core",
+          "title": "pzfreo/specify-core",
+          "url": "https://github.com/pzfreo/specify-core",
+          "at": "2026-11-24T06:22:40.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-24T06:22:40.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-24-1"
+        }
+      ]
+    },
+    "manufacturing intent": {
+      "weight": 8.5,
+      "firstSeen": "2026-11-24T06:22:40.000Z",
+      "lastFed": "2026-11-24T06:22:40.000Z",
+      "sources": [
+        {
+          "id": "2026-11-24-pzfreo-specify-core",
+          "title": "pzfreo/specify-core",
+          "url": "https://github.com/pzfreo/specify-core",
+          "at": "2026-11-24T06:22:40.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-24T06:22:40.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-24-1"
+        }
+      ]
+    },
+    "rule engines": {
+      "weight": 8.5,
+      "firstSeen": "2026-11-24T10:14:50.000Z",
+      "lastFed": "2026-11-24T10:14:50.000Z",
+      "sources": [
+        {
+          "id": "2026-11-24-isaactoslow1313-when-do-rules",
+          "title": "isaactoslow1313/when-do-rules",
+          "url": "https://github.com/isaactoslow1313/when-do-rules",
+          "at": "2026-11-24T10:14:50.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-24T10:14:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-24-2"
+        }
+      ]
+    },
+    "deterministic programming": {
+      "weight": 8.5,
+      "firstSeen": "2026-11-24T10:14:50.000Z",
+      "lastFed": "2026-11-24T10:14:50.000Z",
+      "sources": [
+        {
+          "id": "2026-11-24-isaactoslow1313-when-do-rules",
+          "title": "isaactoslow1313/when-do-rules",
+          "url": "https://github.com/isaactoslow1313/when-do-rules",
+          "at": "2026-11-24T10:14:50.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-24T10:14:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-24-2"
+        }
+      ]
+    },
+    "visual programming": {
+      "weight": 8.5,
+      "firstSeen": "2026-11-24T10:14:50.000Z",
+      "lastFed": "2026-11-24T10:14:50.000Z",
+      "sources": [
+        {
+          "id": "2026-11-24-isaactoslow1313-when-do-rules",
+          "title": "isaactoslow1313/when-do-rules",
+          "url": "https://github.com/isaactoslow1313/when-do-rules",
+          "at": "2026-11-24T10:14:50.000Z"
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-11-24T10:14:50.000Z",
+          "change": 10,
+          "event": "souvenir",
+          "trail": "2026-11-24-2"
+        }
+      ]
+    }
+  },
+  "current": null,
+  "past": [
+    {
+      "topic": "live coding",
+      "startedAt": "2026-11-21T07:07:30.000Z",
+      "origin": {
+        "id": "2026-11-19-mrityunjaybhardwaj-stave",
+        "title": "MrityunjayBhardwaj/Stave",
+        "url": "https://github.com/MrityunjayBhardwaj/Stave",
+        "at": "2026-11-19T06:02:00.000Z"
+      },
+      "endedAt": "2026-11-25T06:13:30.000Z"
+    }
+  ]
+}

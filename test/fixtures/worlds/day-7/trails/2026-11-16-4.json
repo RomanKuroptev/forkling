@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-16-4",
+  "date": "2026-11-16",
+  "purpose": "The stream reading on it is one of the few traces I have left, and I have not gone back to it yet.",
+  "start": {
+    "kind": "topic",
+    "value": "Milky Way dust mapping"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Milky_Way_dust_mapping",
+      "title": "Milky_Way_dust_mapping",
+      "fetchedAt": "2026-11-16T17:09:00.554Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    }
+  ]
+}

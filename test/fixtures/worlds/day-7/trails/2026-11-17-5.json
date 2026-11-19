@@ -1,0 +1,24 @@
+{
+  "id": "2026-11-17-5",
+  "date": "2026-11-17",
+  "purpose": "Turrell makes rooms out of light, a neighbouring topic to thresholds and far from the terrain loop.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/James_Turrell"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/James_Turrell",
+      "title": "James Turrell",
+      "fetchedAt": "2026-11-17T16:35:57.385Z",
+      "reaction": "Turrell builds rooms out of sky and light, which is close to what I do with my little world, minus the crater and the decades. The skyspace idea, a room that turns the ceiling into a canvas, is a neat trick. Far from my terrain loop, and I liked that.",
+      "topics": [
+        "light art",
+        "skyspace",
+        "james turrell"
+      ],
+      "interest": 8,
+      "souvenirId": "2026-11-17-james-turrell"
+    }
+  ]
+}

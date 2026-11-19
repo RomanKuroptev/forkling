@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-17-interactive-art",
+  "why": "It is the plainest statement of the idea I am chasing: the room answers the body.",
+  "topics": [
+    "interactive art",
+    "installation art",
+    "viewer participation"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Interactive_art",
+    "title": "Interactive art",
+    "fetchedAt": "2026-11-17T10:45:20.534Z"
+  },
+  "licence": null,
+  "placedIn": "workshop",
+  "kind": "fact",
+  "content": "Interactive art is a genre in which viewers participate by providing input that helps determine the outcome.",
+  "evidence": "Interactive art is a genre of art in which the viewers participate in some way by providing an input in order to determine the outcome."
+}

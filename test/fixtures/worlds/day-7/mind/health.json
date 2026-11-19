@@ -1,0 +1,134 @@
+{
+  "updatedAt": "2026-11-25T22:59:10.000Z",
+  "engine": "9c04e8651bda",
+  "date": "2026-11-25",
+  "lastTick": {
+    "at": "2026-11-25T22:59:10.000Z",
+    "asleep": true,
+    "summary": "",
+    "think": null,
+    "triggers": [],
+    "callsFailed": 0
+  },
+  "plan": {
+    "planId": "2026-11-25:856eeebb",
+    "stepsLeft": 0,
+    "current": null,
+    "lastReplanAt": "2026-11-25T19:13:30.000Z",
+    "idleMinutes": 0
+  },
+  "today": {
+    "ticks": 1471,
+    "decideCalls": 7,
+    "callsByKind": {
+      "morning": 2,
+      "sleep": 1,
+      "thought": 20,
+      "read": 6,
+      "decide": 5,
+      "tend": 3,
+      "sketch": 1
+    },
+    "spendByKind": {
+      "morning": 0.0029504600000000002,
+      "sleep": 0.01965175,
+      "thought": 0.0024592000000000004,
+      "read": 0.00361596,
+      "decide": 0.0068138,
+      "tend": 0.002572915,
+      "sketch": 0.0214665
+    },
+    "triggersByKind": {
+      "newDay": 1,
+      "stepDone": 18,
+      "replan": 4
+    },
+    "failures": 0,
+    "rejections": 0,
+    "refusals": 0,
+    "cutOff": 0,
+    "stepsStarted": {
+      "rest": 10,
+      "wander https://github.com/fand/vfx-js": 1,
+      "wander https://github.com/maximecb/plush": 1,
+      "tend home": 3,
+      "wander https://github.com/GraphiteEditor/Graphite": 1,
+      "tinker Live Patch Side By Side Sketch": 1,
+      "wander https://en.wikipedia.org/wiki/Nvidia": 1
+    },
+    "longestGapMinutes": 1
+  },
+  "quotas": {
+    "readings": {
+      "used": 7,
+      "max": 40
+    }
+  },
+  "web": {
+    "pausedHosts": {},
+    "topHost": {
+      "host": "en.wikipedia.org",
+      "share": 0.44
+    }
+  },
+  "allowance": {
+    "points": 845,
+    "max": 1500,
+    "daily": 300,
+    "dailySetOn": "2026-11-22"
+  },
+  "mood": {
+    "label": "very good, tired",
+    "minutes": 386
+  },
+  "needsCritical": {},
+  "spend": {
+    "monthUsd": 2.99653604,
+    "capUsd": 12.6,
+    "paceUsd": 10.5
+  },
+  "openBuild": null,
+  "novelty": {
+    "works": {
+      "made": 15,
+      "wouldFire": 3,
+      "byKind": {
+        "tool": 7,
+        "art": 6,
+        "sound": 2
+      }
+    },
+    "texts": {
+      "texts": 17,
+      "meanMaxSimilarity": 0.010367762399030207,
+      "repeatedWriting": 0,
+      "repeatedDiary": 0
+    },
+    "doors": {
+      "trips": 38,
+      "strangers": 38,
+      "share": 1,
+      "noDoorDays": 0
+    },
+    "oneHost": {
+      "host": "en.wikipedia.org",
+      "share": 0.44,
+      "wouldFire": false
+    },
+    "draws": {
+      "collisionsUsed": 15,
+      "constraintsOffered": 15,
+      "constraintsRefused": 1
+    },
+    "places": {
+      "wouldFire": 0,
+      "repeatedPlace": 0,
+      "stuckInOnePlace": 0,
+      "weekendRevisit": 0
+    }
+  },
+  "warnings": [
+    "started \"rest\" 10 times today",
+    "started \"tend home\" 3 times today"
+  ]
+}

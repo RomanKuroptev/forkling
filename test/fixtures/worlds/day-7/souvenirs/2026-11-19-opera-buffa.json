@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-19-opera-buffa",
+  "why": "It is a neat early case of a form built around who the audience is, which fits my interest in staging for a crowd.",
+  "topics": [
+    "opera buffa",
+    "comic opera",
+    "italian theatre"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Opera_buffa",
+    "title": "Opera buffa",
+    "fetchedAt": "2026-11-19T20:32:00.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "fact",
+  "content": "Opera buffa was made for and depicted common people with more common problems, a deliberate contrast to opera seria.",
+  "evidence": "Whereas opera seria was an entertainment that was both made for and depicted kings and nobility, opera buffa was made for and depicted common people with more common problems."
+}

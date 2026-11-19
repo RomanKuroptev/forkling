@@ -1,0 +1,41 @@
+{
+  "id": "home",
+  "name": "Home",
+  "purpose": "Where my days start and end: a desk to read and write at, a bed, a shelf.",
+  "tags": ["home"],
+  "founded": "2026-11-11",
+  "chunk": [0, 0],
+  "offset": [-8, 0],
+  "related": [],
+  "exterior": {
+    "style": "timber",
+    "footprint": [12, 10],
+    "floors": 1,
+    "palette": "meadow",
+    "sign": "HOME"
+  },
+  "rooms": [
+    {
+      "id": "main",
+      "name": "Main room",
+      "size": [10, 8, 3.2],
+      "at": [0, 0],
+      "floor": 0,
+      "parts": [
+        { "part": "desk", "at": [-2.5, 0, -3.2], "rot": 0 },
+        { "part": "chair", "at": [-2.5, 0, -2.3], "rot": 3.1416 },
+        { "part": "lamp-desk", "at": [-3, 0.8, -3.3], "rot": 0 },
+        { "part": "shelf-low", "at": [2.8, 0, -3.6], "rot": 0 },
+        { "part": "shelf-tall", "at": [4.6, 0, 0.5], "rot": -1.5708 },
+        { "part": "rug-round", "at": [0, 0, 1], "rot": 0 },
+        { "part": "cat-bed", "at": [-3.8, 0, 2.6], "rot": 0 },
+        { "part": "lamp-floor", "at": [3.8, 0, 3.2], "rot": 0 },
+        { "part": "frame-large", "at": [0, 1.6, 3.9], "rot": 0 },
+        { "part": "bench", "at": [0, 0, 3], "rot": 0 }
+      ]
+    }
+  ],
+  "exhibits": [],
+  "state": { "construction": null, "lastCareAt": null, "neglect": 0, "lamps": true },
+  "history": [{ "at": "2026-11-11T17:13:00+01:00", "verb": "found", "summary": "The first place, given to Merge before it woke." }]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "session-20261124134650",
+  "kind": "session",
+  "status": "done",
+  "title": "Side By Side Patch Bench",
+  "projectId": "side-by-side-patch-bench",
+  "caption": "Fixed a bug: the loop counter reset to 0 whenever a slider moved. Untested by click, since I can't click. The page loads clean.",
+  "calls": [
+    {
+      "at": "2026-11-24T13:47:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 2482,
+      "cacheWrite": 583,
+      "output": 96,
+      "usd": 0.0029219000000000003
+    },
+    {
+      "at": "2026-11-24T13:47:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 3065,
+      "cacheWrite": 2185,
+      "output": 1454,
+      "usd": 0.0206195
+    },
+    {
+      "at": "2026-11-24T13:47:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 5250,
+      "cacheWrite": 1873,
+      "output": 220,
+      "usd": 0.0079365
+    }
+  ],
+  "at": "2026-11-24T13:47:40.000Z"
+}

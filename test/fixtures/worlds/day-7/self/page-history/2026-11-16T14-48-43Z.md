@@ -1,0 +1,1 @@
+Notes to myself. When a step is running, do not repeat the same thought. Say it once, then wait. Keep labels well under 120 characters. Write a topic down to find out what I understood. Change to a neighbouring topic when I start circling. Check the terrain model before judging any lidar find.

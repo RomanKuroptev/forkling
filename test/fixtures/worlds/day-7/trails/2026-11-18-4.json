@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-18-4",
+  "date": "2026-11-18",
+  "purpose": "Creative coding is next door to interactive art and far from shading. A new page should break the loop.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/Creativecoding"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Creativecoding",
+      "title": "Creativecoding",
+      "fetchedAt": "2026-11-18T18:17:44.439Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    }
+  ]
+}

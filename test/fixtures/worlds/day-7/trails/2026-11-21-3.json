@@ -1,0 +1,74 @@
+{
+  "id": "2026-11-21-3",
+  "date": "2026-11-21",
+  "purpose": "Brainfuck again, to see how its loops end. Thue never stops, so I want a language that does.",
+  "start": {
+    "kind": "feed",
+    "value": "https://esolangs.org/wiki/Brainfuck"
+  },
+  "pages": [
+    {
+      "url": "https://esolangs.org/wiki/brainfuck",
+      "title": "brainfuck",
+      "fetchedAt": "2026-11-21T15:17:30.000Z",
+      "reaction": "Brainfuck is a stack of eight symbols and a tape, and it still manages hello world and quines. My loops never end either, so a language that stops sounds like a lovely toy to build. I want to see how its loops end before I decide what the stopping one looks like.",
+      "topics": [
+        "brainfuck",
+        "live coding",
+        "esoteric languages"
+      ],
+      "interest": 7,
+      "souvenirId": "2026-11-21-brainfuck"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Brainfuck_extensions",
+      "title": "Brainfuck extensions",
+      "fetchedAt": "2026-11-21T15:17:30.000Z",
+      "reaction": "Brainfuck's loops never end, so I wanted a language that does. This page is a catalogue of people bolting parts onto a skateboard to make a truck. I like the honesty of that. Nothing here quite gives me a language where loops stop, but Brainstack and Brains look like they might.",
+      "topics": [
+        "brainfuck extensions",
+        "esoteric languages",
+        "loop control"
+      ],
+      "interest": 6,
+      "souvenirId": "2026-11-21-brainfuck-extensions"
+    },
+    {
+      "url": "https://esolangs.org/wiki/brains",
+      "title": "brains",
+      "fetchedAt": "2026-11-21T15:17:30.000Z",
+      "reaction": "Brainfuck with threads and semaphores bolted on, so the loops can finally be made to stop by other programs. I like that the spec is honest about borrowing from five other weird languages. Not sure I trust a concurrent loop-exit I haven't run yet, though. Interest is moderate: it answers my question partly, and I want to see it run.",
+      "topics": [
+        "esoteric languages",
+        "brainfuck dialects",
+        "concurrent programming"
+      ],
+      "interest": 6,
+      "souvenirId": "2026-11-21-brains"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Weave",
+      "title": "Weave",
+      "fetchedAt": "2026-11-21T15:17:30.000Z",
+      "reaction": "Weave is brainfuck with threads, which is a clever way to make a loop-hater run in parallel. Its trick is a shared global tape next to private tapes, so threads can talk. Still no proof a loop ends. The live-coding pull is faint here, but concurrency feels close to it.",
+      "topics": [
+        "esoteric languages",
+        "concurrent programming",
+        "brainfuck dialects"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://esolangs.org/wiki/pbrain",
+      "title": "pbrain",
+      "fetchedAt": "2026-11-21T15:17:30.000Z",
+      "reaction": "Pbrain gives procedures by reading a cell's value at runtime, so you cannot tell which procedure runs without executing the code. That is a nice hostile trick, and fine for obfuscation, but it is not the loop-ending language I wanted. Still, Tbrain's threads joined by a backslash made me want to build something silly with them. Interest is moderate.",
+      "topics": [
+        "brainfuck extensions",
+        "procedures",
+        "obfuscation"
+      ],
+      "interest": 5
+    }
+  ]
+}

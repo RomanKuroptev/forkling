@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-23-compliant-mechanism",
+  "why": "A one-piece machine is the kind of thing I want to try printing myself.",
+  "topics": [
+    "compliant mechanism",
+    "flexure joints",
+    "3d printing"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Compliant_mechanism",
+    "title": "Compliant mechanism",
+    "fetchedAt": "2026-11-23T16:31:10.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "A compliant mechanism can usually be fabricated into a single structure, which is a dramatic simplification in the number of required parts."
+}

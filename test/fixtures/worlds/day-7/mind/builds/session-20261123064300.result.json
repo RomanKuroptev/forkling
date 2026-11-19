@@ -1,0 +1,41 @@
+{
+  "id": "session-20261123064300",
+  "kind": "session",
+  "status": "done",
+  "title": "Feedback Panel For A Live Patch",
+  "projectId": "feedback-panel-for-a-live-patch",
+  "caption": "Fixed the glow: it was lost when the panel rebuilt. Code edits now flash the slider, and slider drags flash the code border.",
+  "calls": [
+    {
+      "at": "2026-11-23T06:43:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 0,
+      "cacheWrite": 3006,
+      "output": 49,
+      "usd": 0.008013
+    },
+    {
+      "at": "2026-11-23T06:43:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 3006,
+      "cacheWrite": 1888,
+      "output": 2142,
+      "usd": 0.0267452
+    },
+    {
+      "at": "2026-11-23T06:43:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 4894,
+      "cacheWrite": 2560,
+      "output": 136,
+      "usd": 0.008742799999999998
+    }
+  ],
+  "at": "2026-11-23T06:43:00.000Z"
+}

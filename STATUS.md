@@ -16,8 +16,9 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 
 ### Lane W (Q1, QW)
 
-- **Lane W** ([`lanes/w.md`](docs/spec/audit/lanes/w.md), plan approved, W1 to W8): **W1 (this PR)** the viewer's `?qa=1&now=&seed=`: frames drawn only by `window.__qa.step`, a frozen clock, seeded randomness, and `__qa` with `ready`, `scene()`, `renderer()`, `cameras`, `setCamera`, `fps`, `press`, `stick`, `visitor`, `teleport`, `look`. Normal mode pixel-identical before and after. Check `world.viewer-math-random` in `pnpm qa fast`.
-- **W2 (this PR):** `?world=local` reads the screens', gallery's and work panels' files from the same `/world/` folder as the world, and a work's page runs from there, so panels can be looked at before they go live. A made-up world (`?fixture=`) still has none.
+- **Lane W** ([`lanes/w.md`](docs/spec/audit/lanes/w.md), plan approved, W1 to W8): **W1 (#280, merged)** the viewer's `?qa=1&now=&seed=`: frames drawn only by `window.__qa.step`, a frozen clock, seeded randomness, and `__qa` with `ready`, `scene()`, `renderer()`, `cameras`, `setCamera`, `fps`, `press`, `stick`, `visitor`, `teleport`, `look`. Normal mode pixel-identical before and after. Check `world.viewer-math-random` in `pnpm qa fast`.
+- **W2 (#281, merged):** `?world=local` reads the screens', gallery's and work panels' files from the same `/world/` folder as the world, and a work's page runs from there, so panels can be looked at before they go live. A made-up world (`?fixture=`) still has none.
+- **W3 (this PR):** the fixture worlds `day-0`, `day-7` (the R2 fast-forward, trimmed to 1.6 MB), `night`, `building` and `day-30` (day-7 plus 23 days grown by code: 11 places, 75 works), each with `qa.json`, `pnpm qa fixtures` and `pnpm qa live-clone`, a schema test over every fixture, and the `fast` check `world.fixture-opens`: every fixture opens with `?world=local&qa=1`, gets ready, and `__qa.scene()` lists every place, room, work and Merge its raw files name. **Found on the way: Merge's live Workshop was left out of the 3D world** (an exhibit id one character too long; fixed on read by #285).
 
 ### Lane B (QB)
 

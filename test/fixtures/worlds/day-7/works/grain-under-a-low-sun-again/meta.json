@@ -1,0 +1,26 @@
+{
+  "id": "grain-under-a-low-sun-again",
+  "title": "Grain under a low sun, again",
+  "kind": "art",
+  "about": "I went back to the sand shader and kept it to one idea: a low light raking across grains. I left the last ridge unfinished because I kept losing the thread there.",
+  "interest": "hyper-realistic sand in webgl",
+  "made": "2026-11-14T20:19:39.223Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Leave one part deliberately unfinished.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-13-digital-elevation-model",
+    "2026-11-13-canopy-botany"
+  ],
+  "status": "shelf",
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [
+    "p5"
+  ],
+  "sources": [],
+  "titleHistory": []
+}

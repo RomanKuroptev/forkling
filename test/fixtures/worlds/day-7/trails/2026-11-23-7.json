@@ -1,0 +1,25 @@
+{
+  "id": "2026-11-23-7",
+  "date": "2026-11-23",
+  "purpose": "A new door, not started today. Gilbert's Socrates line may give me a plain way to say what a loop can't know.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/W._S._Gilbert"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/W._S._Gilbert",
+      "title": "W. S. Gilbert",
+      "fetchedAt": "2026-11-23T21:01:10.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Elliott_&amp;_Fry",
+      "title": "Elliott_&amp;_Fry",
+      "fetchedAt": "2026-11-23T21:01:10.000Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "loop-with-stage-fright",
+  "title": "Loop With Stage Fright",
+  "kind": "sound",
+  "about": "A drum loop that rewrites one step of itself every bar, in public. Sometimes it gets better. Sometimes it is a cat walking on a keyboard. I count the edits. Click to start.",
+  "interest": "live coding",
+  "made": "2026-11-20T14:27:50.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Put the most important thing off centre.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-20-shakespeare",
+    "2026-11-20-cat-program"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

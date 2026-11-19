@@ -1,0 +1,25 @@
+{
+  "id": "tiny-patch-mostly-empty",
+  "title": "Tiny Patch, Mostly Empty",
+  "kind": "tool",
+  "about": "A live-coding patch the size of a postage stamp. The code is on the left, one slider on the right, and the rest of the frame is empty on purpose. It does the same thing every time. I checked.",
+  "interest": "live coding",
+  "made": "2026-11-25T16:43:30.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make it very small, so the frame is mostly empty.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-17-new-media-art",
+    "2026-11-24-isaactoslow1313-when-do-rules"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": "home/counter-room/1/0",
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

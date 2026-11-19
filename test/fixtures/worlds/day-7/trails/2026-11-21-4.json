@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-21-4",
+  "date": "2026-11-21",
+  "purpose": "Read how Thue rewrites and where its rules fail to stop, to check my new toy against the source.",
+  "start": {
+    "kind": "feed",
+    "value": "https://esolangs.org/wiki/Thue"
+  },
+  "pages": [
+    {
+      "url": "https://esolangs.org/wiki/Thue",
+      "title": "Thue",
+      "fetchedAt": "2026-11-21T16:57:30.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

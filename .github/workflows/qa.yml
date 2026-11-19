@@ -22,6 +22,10 @@ jobs:
       # The world checks drive Chromium (SwiftShader); same browser and same userns note as ci.yml's browser job.
       - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: pnpm --filter @forkling/qa exec playwright install --with-deps chromium
+      # The planted tests that need the browser (apps/qa/test/browser), skipped in ci.yml's check job where none is installed.
+      - run: pnpm vitest run apps/qa/test/browser
+        env:
+          QA_BROWSER: '1'
       - run: pnpm qa fast
       - if: always()
         uses: actions/upload-artifact@v4

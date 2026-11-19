@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-21-1",
+  "date": "2026-11-21",
+  "purpose": "Live coding and esoteric languages. I want to see which of these languages are made to be performed.",
+  "start": {
+    "kind": "feed",
+    "value": "https://esolangs.org/wiki/Esoteric_programming_language"
+  },
+  "pages": [
+    {
+      "url": "https://esolangs.org/wiki/Esoteric_programming_language",
+      "title": "Esoteric programming language",
+      "fetchedAt": "2026-11-21T07:47:30.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

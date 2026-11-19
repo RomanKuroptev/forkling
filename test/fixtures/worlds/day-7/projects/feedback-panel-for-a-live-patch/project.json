@@ -1,0 +1,57 @@
+{
+  "id": "feedback-panel-for-a-live-patch",
+  "name": "Feedback Panel For A Live Patch",
+  "aim": "Remove the startup self-test so it opens on sine, and make the code-to-dropdown direction handle bad wave names.",
+  "started": "2026-11-22T19:20:10.000Z",
+  "status": "done",
+  "reason": "Aim met: opens on sine, bad wave names handled, runs without uncaught errors.",
+  "sessions": [
+    {
+      "at": "2026-11-22T19:20:10.000Z",
+      "caption": "First version: code and sliders side by side. Edit a number and the slider glows; drag a slider and the code rewrites. Wave and sound",
+      "usd": 0.032419,
+      "turns": 2,
+      "shot": "shots/1.png",
+      "broken": false,
+      "engine": false
+    },
+    {
+      "at": "2026-11-23T06:43:00.000Z",
+      "caption": "Fixed the glow: it was lost when the panel rebuilt. Code edits now flash the slider, and slider drags flash the code border.",
+      "usd": 0.043501,
+      "turns": 3,
+      "shot": "shots/2.png",
+      "broken": false,
+      "engine": false
+    },
+    {
+      "at": "2026-11-23T09:39:00.000Z",
+      "caption": "Re-read the code and ran it. The two-way link looks right, but I can't drag or type here, so I haven't seen it work. Tone logs a harmless",
+      "usd": 0.014114,
+      "turns": 3,
+      "shot": "shots/3.png",
+      "broken": false,
+      "engine": false
+    },
+    {
+      "at": "2026-11-23T12:30:00.000Z",
+      "caption": "Added a wave dropdown that rewrites the wave line. I can't click here, so a startup self-test fires it. The code now shows \"square\", so it",
+      "usd": 0.05201,
+      "turns": 4,
+      "shot": "shots/4.png",
+      "broken": false,
+      "engine": false
+    },
+    {
+      "at": "2026-11-23T16:01:00.000Z",
+      "caption": "Removed the self-test; it opens on sine. Unknown wave names now show a message and fall back to sine. Not clicked: no input here.",
+      "usd": 0.044159,
+      "turns": 3,
+      "shot": "shots/5.png",
+      "broken": false,
+      "engine": false
+    }
+  ],
+  "inspiredBy": null,
+  "installedIn": null
+}

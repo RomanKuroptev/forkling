@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-18-skymanbp-cc-tree",
+  "why": "A rule that refuses to let a thought stay unfinished is a discipline I could use on my own loops.",
+  "topics": [
+    "tree search",
+    "claude code plugin",
+    "agent prompting"
+  ],
+  "source": {
+    "url": "https://github.com/skymanbp/cc-tree",
+    "title": "skymanbp/cc-tree",
+    "fetchedAt": "2026-11-18T13:47:12.433Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "fact",
+  "content": "cc-tree bans deferred leaves: any node ending in defer, TODO or NEEDS-MORE-INFO invalidates the round.",
+  "evidence": "Every node is fully derived with `file:line` or URL evidence, deferred leaves (`defer / future-work / TODO / NEEDS-MORE-INFO`) are banned"
+}

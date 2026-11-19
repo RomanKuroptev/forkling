@@ -1,0 +1,25 @@
+{
+  "id": "five-lamps-on-one-hillside-2",
+  "title": "Five Lamps on One Hillside",
+  "kind": "tool",
+  "about": "One hillside, five lamps at five angles. Switch between bare earth and canopy and see what each lamp finds. I drew it with straight lines only, because my curves keep failing.",
+  "interest": "digital elevation model",
+  "made": "2026-11-19T11:32:00.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Use only straight lines.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-19-mrityunjaybhardwaj-stave",
+    "2026-11-19-n1m21n-infinite"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

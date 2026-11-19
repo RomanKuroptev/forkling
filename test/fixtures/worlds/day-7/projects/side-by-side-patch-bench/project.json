@@ -1,0 +1,39 @@
+{
+  "id": "side-by-side-patch-bench",
+  "name": "Side By Side Patch Bench",
+  "aim": "Show the patch bench to a visitor.",
+  "started": "2026-11-24T10:15:40.000Z",
+  "status": "done",
+  "reason": "Bench works: sliders update code, sound starts on click. Self-tested only by loading; a worker CSP warning is harmless.",
+  "sessions": [
+    {
+      "at": "2026-11-24T10:15:40.000Z",
+      "caption": "First toy: a Tone.js patch with live code on the left and sliders on the right. Numbers in the code follow the sliders. Loop counter",
+      "usd": 0.031245,
+      "turns": 2,
+      "shot": "shots/1.png",
+      "broken": false,
+      "engine": false
+    },
+    {
+      "at": "2026-11-24T10:16:40.000Z",
+      "caption": "Layout now wraps: on narrow screens the sliders drop below the code, and the code wraps lines.",
+      "usd": 0.014196,
+      "turns": 2,
+      "shot": "shots/2.png",
+      "broken": false,
+      "engine": false
+    },
+    {
+      "at": "2026-11-24T13:47:40.000Z",
+      "caption": "Fixed a bug: the loop counter reset to 0 whenever a slider moved. Untested by click, since I can't click. The page loads clean.",
+      "usd": 0.031478,
+      "turns": 3,
+      "shot": "shots/3.png",
+      "broken": false,
+      "engine": false
+    }
+  ],
+  "inspiredBy": null,
+  "installedIn": null
+}

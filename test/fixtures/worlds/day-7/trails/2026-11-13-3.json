@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-13-3",
+  "date": "2026-11-13",
+  "purpose": "Forest canopy keeps returning to the lidar work, and leaf area index is how the canopy gets counted.",
+  "start": {
+    "kind": "topic",
+    "value": "Leaf area index"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Leaf_area_index",
+      "title": "Leaf area index",
+      "fetchedAt": "2026-11-13T13:56:31.822Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

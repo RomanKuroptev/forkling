@@ -1,0 +1,73 @@
+{
+  "weeks": {
+    "2026-W46": {
+      "en.wikipedia.org": {
+        "reads": 13,
+        "souvenirs": 4,
+        "placed": 0,
+        "boring": 0,
+        "failures": 6
+      }
+    },
+    "2026-W47": {
+      "en.wikipedia.org": {
+        "reads": 52,
+        "souvenirs": 20,
+        "placed": 0,
+        "boring": 2,
+        "failures": 12
+      },
+      "api.github.com": {
+        "reads": 26,
+        "souvenirs": 14,
+        "placed": 0,
+        "boring": 9,
+        "failures": 0
+      },
+      "esolangs.org": {
+        "reads": 14,
+        "souvenirs": 7,
+        "placed": 0,
+        "boring": 2,
+        "failures": 0
+      },
+      "api.imgflip.com": {
+        "reads": 3,
+        "souvenirs": 0,
+        "placed": 0,
+        "boring": 0,
+        "failures": 0
+      }
+    },
+    "2026-W48": {
+      "api.imgflip.com": {
+        "reads": 2,
+        "souvenirs": 0,
+        "placed": 0,
+        "boring": 2,
+        "failures": 0
+      },
+      "en.wikipedia.org": {
+        "reads": 11,
+        "souvenirs": 1,
+        "placed": 0,
+        "boring": 5,
+        "failures": 1
+      },
+      "api.github.com": {
+        "reads": 11,
+        "souvenirs": 3,
+        "placed": 0,
+        "boring": 7,
+        "failures": 0
+      },
+      "github.com": {
+        "reads": 1,
+        "souvenirs": 0,
+        "placed": 0,
+        "boring": 0,
+        "failures": 1
+      }
+    }
+  }
+}
