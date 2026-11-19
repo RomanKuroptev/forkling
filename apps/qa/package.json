@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@forkling/mind": "workspace:*",
+    "@forkling/sim": "workspace:*",
     "playwright": "1.65.0",
     "pngjs": "7.0.0",
     "zod": "^4.6.7"

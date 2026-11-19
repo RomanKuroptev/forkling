@@ -48,6 +48,9 @@ importers:
       '@forkling/mind':
         specifier: workspace:*
         version: link:../mind
+      '@forkling/sim':
+        specifier: workspace:*
+        version: link:../../packages/sim
       playwright:
         specifier: 1.65.0
         version: 1.65.0

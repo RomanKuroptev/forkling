@@ -2,6 +2,11 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+## 2026-11-19: How the behaviour scores read a run (audit QB, lane B)
+- **Repeated words count titles with their captions** (a work's title and about, and written page titles), share of texts with the word. Spec 9.2 says "titles, captions and diary"; diary lines are many and short and water the share down. On R2 this finds "loop" in 38% (level 25%); over titles alone it found "counter" at 23%.
+- **Topic runs use only what Merge made and wrote; topic variety also counts what it read.** A day's many Wikipedia reads (R2: 63 clusters) hide the topic it kept making. On R2, topic runs stay at 2 days: the "loop" drift moves through names (loop, counter, the counter toy, a visitor for it), so repeated words is the score that catches it, as spec 9.2 expects.
+- **Rest is counted from the stream's `step` lines**: rest steps over all steps started that day.
+
 ## 2026-11-19: The source list of the audit harness (audit QS, lane S)
 - **`qa/sources.json`, not `qa/coverage.json`.** Spec 9.4 puts the sources in `qa/coverage.json`; steps.md names `qa/sources.json`, and steps.md wins. `coverage.json` stays Phase 2's mockup file.
 - **Lemmy memes is `trial failed`, not a `code` fix.** Spec 9.4 calls Lemmy "a passed trial that just needs wiring", but its report (`docs/spec/w2-trials/lemmy.world.md`) fails readable at 63% (mark 80%). The report wins: it is for Roman, recommended "rerun the trial against a text-heavier community, or drop". Mastodon trends: Roman, recommended "drop: robots.txt blocks ClaudeBot by name". Show HN: Roman, recommended "drop" (10% of items have 120 words; the projects are on sites Merge may not read).

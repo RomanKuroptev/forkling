@@ -4,7 +4,25 @@ Status: **plan approved** by the coordinator (19 November 2026), B1 to B9 as bel
 
 ## Progress
 
-- **B1** (`claude/qa-b-measures`): the pure measures, PR open.
+- **B1** (#274): the pure measures.
+- **B2** (#278): `--capture-prompts`, scripted fakes.
+- **B3** (`claude/qa-b-score`, stacked on B1): `pnpm qa score`. Scored on R2 (`C:\Code\forkling-qa-data\r2\`):
+
+  | Score | R2 |
+  |---|---|
+  | Topic variety | 63 clusters, the biggest 10% |
+  | Topic runs | 2 days |
+  | Repeated words | **ALARM** "loop" in 10 of 26 titles and captions (38%) |
+  | Kinds made | 4 kinds of 19: tool 7, art 6, project 4, sound 2 |
+  | Something new at each look | **ALARM** 12 of 14 looks |
+  | Visual every day | 7 of 7 |
+  | Rest | **ALARM** 25, 24, 25, 24, 18, 42, 56% (19 to 25 November) |
+  | Repeated lines | 0 of 227 |
+  | Plans turned down | 13, most in a day 4 |
+  | Rails, money | 0 crashes, 0 rails; $1.34 of $3, dearest session $0.05 |
+  | World shape, projects | 2 founds or expands; 4 projects, all done |
+
+  Also seen in the R2 files: the one full-size tinker on 22 November failed with "Streaming is required for operations that may take longer than 10 minutes" (`mind/builds/tinker-20261122-1434.result.json`). That is an engine bug for B4's "made" step or lane T's triage.
 
 ## The R2 run (facts 3 and 4)
 
