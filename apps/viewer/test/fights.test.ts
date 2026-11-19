@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { starterPlaces } from '@forkling/sim'
-import { placeFights } from '../src/qa/fights.ts'
+import { coveredDoors, placeFights } from '../src/qa/fights.ts'
 import { buildingModel } from '../src/world/building.ts'
 import { interiorInstances } from '../src/world/kitGeometry.ts'
 
@@ -56,5 +56,44 @@ describe('surfaces that fight (z-fighting) in the drawn places', () => {
     expect(crownFoot - roofTop).toBeGreaterThan(1)
     const drums = model.slots.crown.filter((i) => i.shape === 'box' && i.matrix[13]! - i.matrix[5]! / 2 <= roofTop && i.matrix[13]! + i.matrix[5]! / 2 >= crownFoot - 0.001)
     expect(drums).toHaveLength(1)
+  })
+
+  it('the drum is under the front top: the crown over the front is still a third to two thirds of the body, in every style (look.md)', () => {
+    const home = starterPlaces()[0]!
+    for (const style of ['timber', 'stone', 'tin-shack', 'tower']) {
+      const place = { ...home, exterior: { ...home.exterior, style } }
+      const model = buildingModel(place, kit, 0)!
+      const body = Math.max(...model.slots.body.map((i) => i.matrix[13]! + Math.abs(i.matrix[5]!) / 2)) - 0.02
+      const crownOverFront = model.outlineHeight - model.front.height
+      expect(crownOverFront, style).toBeGreaterThanOrEqual(body / 3 - 0.01)
+      expect(crownOverFront, style).toBeLessThanOrEqual((2 * body) / 3 + 0.01)
+      // Every drum ends at the front's top, where the crown starts.
+      const top = model.front.height
+      for (const d of model.slots.crown.filter((i) => i.matrix[13]! + Math.abs(i.matrix[5]!) / 2 <= top + 0.001)) expect(d.matrix[13]! + Math.abs(d.matrix[5]!) / 2, style).toBeCloseTo(top, 5)
+    }
+  })
+})
+
+describe('doors the building covers', () => {
+  const snapshot = (places: Place[]) => ({ places, kit, heightAt: () => 0, nowMs: 0 })
+
+  it('none in the fixture worlds: the upper floor door of grown places 5 and 9 stands in front of its wall (issue 370, second try)', () => {
+    expect(coveredDoors(snapshot(fixturePlaces()))).toEqual([])
+  })
+
+  it('planted: a door pushed 1.5 cm into the wall it was flush with is found, with the wall in front of it', () => {
+    const base = fixturePlaces().find((p) => p.id === 'day-30/grown-place-5')!
+    const room = base.rooms.find((r) => r.floor === 1)!
+    const index = room.parts.findIndex((p) => p.part.startsWith('door'))
+    expect(index).toBeGreaterThanOrEqual(0)
+    const pushed: Place = {
+      ...base,
+      rooms: base.rooms.map((r) => (r !== room ? r : { ...r, parts: r.parts.map((p, k) => (k !== index ? p : { ...p, at: [p.at[0], p.at[1], p.at[2] - 0.015] as [number, number, number] })) })),
+    }
+    const found = coveredDoors(snapshot([pushed]))
+    expect(found.length).toBeGreaterThan(0)
+    expect(found[0]!.door).toContain(`${room.id}/${index}`)
+    expect(found[0]!.by).toContain('the body of the building')
+    expect(found[0]!.gap).toBeCloseTo(0.005, 3)
   })
 })

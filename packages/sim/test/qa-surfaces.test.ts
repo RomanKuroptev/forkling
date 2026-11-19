@@ -61,6 +61,17 @@ describe('surfaces that fight (z-fighting)', () => {
     expect(surfaceFights([{ ...a, group: 'shelf' }, { ...b, group: 'shelf' }])).toEqual([])
   })
 
+  it('says which face is in front, and how far apart, when asked to look a little wider than one plane', () => {
+    const wall = box([0, 1.5, 0], [6, 3, 0.4], '#ffc8e8')
+    // A door panel whose face is 5 mm behind the wall's outer face (+z): the wall covers it.
+    const door = box([0, 1.15, 0.145], [1, 2.1, 0.1], '#c06cff')
+    expect(surfaceFights([wall, door])).toEqual([])
+    const near = surfaceFights([wall, door], { gap: 0.03 }).filter((f) => f.normal[2] > 0.5)
+    expect(near).toHaveLength(1)
+    expect(near[0]!.front).toBe(0)
+    expect(near[0]!.gap).toBeCloseTo(0.005)
+  })
+
   it('finds turned boxes too, in their own plane', () => {
     const a = turned([0, 0.5, 0], [2, 1, 0.4], 0.5, '#ffffff')
     const b = turned([0, 0.5, 0], [1, 1, 0.4], 0.5, '#000000')

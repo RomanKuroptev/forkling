@@ -24,6 +24,9 @@ export interface SurfaceFight {
   at: [number, number, number]
   /** The way the faces look (a unit vector). */
   normal: [number, number, number]
+  /** The box whose face is the nearer to a viewer looking against `normal` (the one in front), and how far apart the faces are. */
+  front: number
+  gap: number
 }
 
 /** Two faces closer than this (meters) along their normal are in one plane for the depth buffer. */
@@ -172,7 +175,7 @@ export function surfaceFights(boxes: readonly DrawnBox[], opts: { gap?: number; 
         const key = `${Math.min(f.box, g.box)}:${Math.max(f.box, g.box)}:${n.map((c) => Math.round(c * 100)).join(',')}`
         if (seen.has(key)) continue
         seen.add(key)
-        out.push({ a: Math.min(f.box, g.box), b: Math.max(f.box, g.box), area, at, normal: n })
+        out.push({ a: Math.min(f.box, g.box), b: Math.max(f.box, g.box), area, at, normal: n, front: g.box, gap: g.d - f.d })
       }
     }
   }

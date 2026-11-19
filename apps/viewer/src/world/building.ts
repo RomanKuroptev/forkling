@@ -141,8 +141,9 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       }
       const size = (len: number, up: number, thick: number): [number, number, number] => (alongZ ? [thick, up, len] : [len, up, thick])
       const rot: [number, number, number] = alongZ ? [0, 0, -dir * tilt] : [dir * tilt, 0, 0]
-      // The outer face stands `SKIN` proud of the wall's line, so furniture set flush with the line never fights it (issues 370, 371).
-      add('body', 'box', at(bodyMid, h / 2, SKIN / 2), size(bodyLen, h / Math.cos(tilt), WALL_THICKNESS + SKIN), bodyColor, false, rot)
+      // The outer face stands `SKIN` back from the wall's line, so a part the place file set flush with the line (a door on an upper
+      // floor) stands just in front of the wall and shows, instead of fighting it (issues 370, 371) or being covered by it.
+      add('body', 'box', at(bodyMid, h / 2, -SKIN / 2), size(bodyLen, h / Math.cos(tilt), WALL_THICKNESS - SKIN), bodyColor, false, rot)
       if (f === 0) add('body', 'box', at(bodyMid, 0.125), size(bodyLen + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent, false, rot)
       // The top band rises `SKIN` over the wall top, so the two tops are not in one plane (issue 364).
       if (f === floors - 1) add('body', 'box', at(bodyMid, h - 0.125 + SKIN / 2), size(bodyLen + 0.1, 0.25 + SKIN, WALL_THICKNESS + 0.12), c.accent, false, rot)
@@ -167,7 +168,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       // The band goes on over the door too, above it.
       if (style === 'tower' && floors === 1) add('hero', 'box', [px, y + ringUp * Math.cos(tilt), z1 - ringUp * lean + WALL_THICKNESS / 2 + 0.15], [DOOR_HALF * 2 + 1, RING_HEIGHT, 0.3], c.glow, true, [-tilt, 0, 0])
       const lintel = h - DOOR_HEIGHT
-      if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1 - lean * (DOOR_HEIGHT + lintel / 2) + SKIN / 2], [DOOR_HALF * 2, lintel, WALL_THICKNESS + SKIN], bodyColor)
+      if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1 - lean * (DOOR_HEIGHT + lintel / 2) - SKIN / 2], [DOOR_HALF * 2, lintel, WALL_THICKNESS - SKIN], bodyColor)
       // A doorstep in the accent colour (the foot band going on across the door) runs from the room out over the slab and its glowing
       // edge, as high as the floor inside: the doorway shows a step, not white marble and a glowing line blown out to a white smear
       // (issue 350).

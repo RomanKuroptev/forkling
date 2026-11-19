@@ -46,5 +46,38 @@ export function fightFindings(fights: readonly SurfaceFight[], fixture: string):
   return out
 }
 
+/** A door part the building covers, as `window.__qa.coveredDoors()` lists it (apps/viewer/src/qa/fights.ts). */
+export interface CoveredDoor {
+  place: string
+  door: string
+  by: string
+  gap: number
+  area: number
+  at: [number, number, number]
+}
+
+/**
+ * No door hidden by its own wall (the second try at issues 370 and 371, steps QW.2): moving the upper walls' face 1 cm out stopped
+ * the fight but covered the door the place file had set flush with that face, leaving an empty frame. A door part whose face lies
+ * just behind a face of the building looking the same way is a door a visitor should see and does not. One finding per door.
+ */
+export function coveredDoorFindings(doors: readonly CoveredDoor[], fixture: string): CheckResult[] {
+  return doors.map((d) => ({
+    id: 'world.door-covered',
+    fingerprint: `world.door-covered|${fixture}|${d.place}/${d.door.replace(/^part /, '').replace(/ .*$/, '')}`,
+    severity: 'major' as const,
+    title: `A door of ${d.place} is hidden behind its own wall`,
+    what: `The face of ${d.door} lies ${(d.gap * 100).toFixed(1)} cm behind ${d.by}, over ${d.area.toFixed(2)} square meters at ${m(d.at)}.`,
+    causes: 'A visitor sees an empty frame, or bare wall, where the place has a door.',
+    evidence: [],
+    where: 'apps/viewer/src/world/building.ts',
+    fixKind: 'look' as const,
+    fixture,
+  }))
+}
+
+/** The doors the building covers in the world open on the page. */
+export const collectCoveredDoors = (page: Page): Promise<CoveredDoor[]> => page.evaluate(() => (globalThis as unknown as { __qa: { coveredDoors(): CoveredDoor[] } }).__qa.coveredDoors())
+
 /** The fights of the world open on the page. */
 export const collectFights = (page: Page): Promise<SurfaceFight[]> => page.evaluate(() => (globalThis as unknown as { __qa: { fights(): SurfaceFight[] } }).__qa.fights())
