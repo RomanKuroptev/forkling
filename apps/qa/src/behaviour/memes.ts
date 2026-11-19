@@ -46,6 +46,12 @@ const MAKING = /\b(kinds?|tinker|sketch|price|prices|points?|costs?)\b/i
 /** A sentence or line that names a meme as something to make, not only the word (a seed line about memes is not an offer). */
 const offersMeme = (text: string): boolean =>
   text
+    // Only the engine's own words can offer: data blocks (web text, notes, its readings) and JSON (its own plans and state)
+    // are Merge's or the web's words, even when they say "meme" and "sketch".
+    .replace(/<data\b[^>]*>[\s\S]*?<\/data>/g, ' ')
+    .split('\n')
+    .filter((l) => !/^\s*[[{]/.test(l) && !/"\w+"\s*:/.test(l))
+    .join('\n')
     .replace(/https?:\/\/\S+/g, ' ')
     .split(/\n|(?<=[.!?])\s+/)
     .some((s) => MEME_WORD.test(s) && MAKING.test(s))
