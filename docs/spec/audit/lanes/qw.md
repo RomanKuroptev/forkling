@@ -93,3 +93,10 @@ Each confirmed finding gets a code check in its fix PR (audit steps QW.2). The o
 ## Still to run
 
 - In `/qa release` before each release: both agents on the planted world and on `live`, recorded here.
+
+## Run 5: the first `/qa release` (coordinator, 19 November)
+
+- **World explorer** (Opus, from its agent file, not told what was planted) on live, day-7, day-30, night, building and the planted world: 46 findings, about 158 steps. All five problems of run 4 are still there (walk off the land edge, Workshop screens plain blue, Workshop floor flicker or seam, a frame in Home's doorway, Home's Counter Room with no way in).
+- **Look reviewer** (Opus): 41 confirmed as major, 1 rejected (a phone button over an empty place on day-30), 4 unsure (the files settle them). Its overall read: "a tidy pastel game level, not yet an AI's home": blank pink boxes on every shelf, plain blue work screens, fat cyan build beams.
+- **Planted world: 3 of 4 by the explorer** (the hillside place through the Workshop, the floating Home sign, the missing texture as black boards). It did not report the work the site says is in the Workshop but is not there; that flaw is in the files only, and the code checks (`world.work-shown`, the claims check) catch it. So all four planted flaws are found by the explorer and the code checks together, as QW asks; the explorer alone is 3 of 4 this run (4 of 4 in run 4).
+- The planted world's findings are acceptance data, not issues: they were kept out of triage (`qa-out/acceptance/`).
