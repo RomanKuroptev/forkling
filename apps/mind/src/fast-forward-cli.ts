@@ -15,8 +15,9 @@ import { fakeFetch, fakeModel, fakeSandbox, fakeSessionModel } from './fast-forw
 import { localMidnight, remotesOf, runFastForward } from './fast-forward.ts'
 import { anthropicClient } from './llm.ts'
 import { loadSpecies } from './species.ts'
+import { snapshotFetch } from './web/snapshot.ts'
 
-const USAGE = `usage: pnpm --filter @forkling/mind fast-forward (--world <copy> | --clone-from <url> [--world <new dir>]) [--days 7] [--cap 3] [--start <YYYY-MM-DD>] [--out <dir>] [--sessions] [--dry-run]
+const USAGE = `usage: pnpm --filter @forkling/mind fast-forward (--world <copy> | --clone-from <url> [--world <new dir>]) [--days 7] [--cap 3] [--start <YYYY-MM-DD>] [--out <dir>] [--sessions] [--web-snapshot <dir>] [--dry-run]
 
 The fast-forward test: createLoop and the build worker on a fake clock over a throwaway copy of a world, real Haiku and
 Sonnet calls through the budget guard with a hard cap for the run, the real web allowlist and fetcher (read-only). At the
@@ -30,6 +31,8 @@ end it writes the run report and a short summary (path printed). Exit code 0 on 
   --out         where the summary goes (default a new temp dir)
   --sessions    give the loop build sessions (step 4): the build verb is on, and sessions run in this process with a local browser, not the
                 sandbox unit. They count against --cap, and a session over $1 fails the run (Roman's rule of 18 November). Default off
+  --web-snapshot  read the web from a recorded copy (the audit harness's qa/web-snapshot) instead of the real web or the dry run's
+                empty one; an address not in it is missing. Real or dry run
   --dry-run     a smoke run with a fake model and a fake web: no key needed, nothing spent
 
 The model key comes from ANTHROPIC_API_KEY; without it only --dry-run runs.`
@@ -58,6 +61,7 @@ async function main(): Promise<number> {
       out: { type: 'string' },
       sessions: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
+      'web-snapshot': { type: 'string' },
       help: { type: 'boolean', short: 'h', default: false },
     },
   })
@@ -70,6 +74,7 @@ async function main(): Promise<number> {
   if (!Number.isInteger(days) || days < 1 || days > 31) throw new Error(`--days is a whole number from 1 to 31\n\n${USAGE}`)
   if (!Number.isFinite(cap) || cap <= 0 || cap > TOTAL_CAP_USD) throw new Error(`--cap is dollars, more than 0 and at most ${TOTAL_CAP_USD}\n\n${USAGE}`)
   const dryRun = values['dry-run']
+  const snapshot = values['web-snapshot'] ? resolve(process.env.INIT_CWD ?? process.cwd(), values['web-snapshot']) : null
   if (!dryRun && !hasCredentials(process.env)) throw new Error('no ANTHROPIC_API_KEY: set it for a real run, or pass --dry-run for a smoke run with the fakes')
 
   const base = process.env.INIT_CWD ?? process.cwd()
@@ -104,7 +109,8 @@ async function main(): Promise<number> {
     startMs: localMidnight(timezone, startDate),
     llm: dryRun ? fakeModel({ build: values.sessions }) : anthropicClient(),
     ...(values.sessions ? { sessions: dryRun ? { model: fakeSessionModel(), sandbox: fakeSandbox() } : { model: anthropicSessionModel(new Anthropic()), sandbox: createSandbox() } } : {}),
-    fetchImpl: dryRun ? fakeFetch : (url, init) => fetch(url, init),
+    fetchImpl: snapshot ? snapshotFetch(snapshot) : dryRun ? fakeFetch : (url, init) => fetch(url, init),
+    ...(snapshot ? { realSleep: async () => undefined } : {}),
     workCheck: createBrowserChecker(),
     pack: species.pack,
     behaviors: species.behaviors,
