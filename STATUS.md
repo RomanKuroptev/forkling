@@ -13,6 +13,7 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 - **Docs** (#261) and **Q0** (#270) merged: `apps/qa` (`pnpm qa fast`), the Finding schema, `findings.json` and `report.md`, PNG contact sheets, the check runner (a throwing check gives `qa.check-did-not-run`, planted test), `qa.yml` on PRs and main. Labels `qa`, `phase-2`, `needs-roman`, `fix-failed`, `qa-rules`. Site gaps filed as `qa` + `phase-2`: #262 to #268. Pinned digest issue: #269.
 - **All four lane plans approved (19 November).** The R2 fast-forward output is kept on Roman's PC at `C:\Code\forkling-qa-data\r2\` (`ff-r2a-world`, `ff-r2a-out`, copied out of an old scratchpad; not in the repo), so `day-7` needs no new real run.
 - **Waiting for Roman:** this repo does not let GitHub Actions open pull requests, so the web-snapshot refresh job pushes its branch and stops. Recommended: switch on Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"; until then the coordinator opens that PR by hand.
+- **QR fix for #376 (PR open):** every live model call now streams and keeps the final message (`apps/mind/src/llm.ts`), because the SDK refused a call without streaming at the tinker's 24,000 `max_tokens`, so every full-size tinker failed. Same request, answer and cost booking; test in `apps/mind/test/llm.test.ts`.
 
 ### Lane W (Q1, QW)
 

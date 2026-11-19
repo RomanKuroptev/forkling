@@ -159,7 +159,10 @@ export function anthropicClient(client: Anthropic = new Anthropic()): LlmClient 
       // `messages.parse` throws when the answer stops in the middle of its JSON, and then neither the stop reason nor the cost
       // gets back (a tend that ran out of tokens showed as "call failed" and was never booked). So the text is parsed here, as
       // a batch result is: a cut-off answer is a null with its stop reason and usage.
-      const response = await client.messages.create(params(request))
+      // Every call streams and keeps only the final message: the SDK refuses a call without streaming whose `max_tokens` could
+      // take over 10 minutes (more than about 21,000 tokens), so a full-size tinker at 24,000 always failed (issue #376).
+      // The request, the answer and the usage are the same either way.
+      const response = await client.messages.stream(params(request)).finalMessage()
       const text = response.content.flatMap((block) => (block.type === 'text' ? [block.text] : [])).join('')
       const { parsed, error } = parseAnswer(text, request.schema)
       return { parsed, ...(error ? { parseError: error } : {}), stopReason: response.stop_reason, usage: usageOf(response.usage) }
