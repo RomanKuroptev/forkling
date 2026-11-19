@@ -19,6 +19,50 @@ export function pictureStats(p: PNG): { light: number; spread: number } {
   return { light, spread: Math.sqrt(Math.max(0, sq / n - light * light)) }
 }
 
+/** Hue (0 to 360), saturation and value (0 to 1) of one pixel. */
+const hsv = (r: number, g: number, b: number): [number, number, number] => {
+  const mx = Math.max(r, g, b) / 255
+  const mn = Math.min(r, g, b) / 255
+  const d = mx - mn
+  let h = 0
+  if (d > 0) {
+    const [R, G, B] = [r / 255, g / 255, b / 255]
+    h = mx === R ? ((G - B) / d) % 6 : mx === G ? (B - R) / d + 2 : (R - G) / d + 4
+    h *= 60
+    if (h < 0) h += 360
+  }
+  return [h, mx ? d / mx : 0, mx]
+}
+
+/**
+ * The share of near-white pixels: bright (light 185 of 255 and up) with almost no colour (saturation 0.2 at most). A room whose
+ * walls and floor are mostly this is blown out: the light has washed its colours away (issue 358).
+ */
+export function nearWhiteShare(p: PNG): number {
+  let n = 0
+  for (let i = 0; i < p.data.length; i += 4) {
+    const r = p.data[i]!
+    const g = p.data[i + 1]!
+    const b = p.data[i + 2]!
+    if (lum(r, g, b) >= 185 && hsv(r, g, b)[1] <= 0.2) n++
+  }
+  return n / (p.width * p.height)
+}
+
+/**
+ * The share of muddy pixels: brown, olive or khaki, the colours look.md rule 3 keeps out. That is a warm or yellow-green hue (15 to
+ * 130 degrees) that is dull (value under 0.7) and has some colour (saturation 0.08 and up). Bright orange and lemon are not muddy; the
+ * same colours dimmed by the night are (issue 361).
+ */
+export function muddyShare(p: PNG): number {
+  let n = 0
+  for (let i = 0; i < p.data.length; i += 4) {
+    const [h, s, v] = hsv(p.data[i]!, p.data[i + 1]!, p.data[i + 2]!)
+    if (h >= 15 && h <= 130 && s >= 0.08 && v < 0.7) n++
+  }
+  return n / (p.width * p.height)
+}
+
 const hex = (h: string): [number, number, number] => {
   const n = Number.parseInt(h.slice(1), 16)
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]

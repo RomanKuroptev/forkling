@@ -8,7 +8,7 @@ import type { CheckResult } from '../report/finding.ts'
 import { contactSheet, type Box, type Tile } from '../report/sheet.ts'
 import type { SceneObject } from './open.ts'
 import type { FrameCost } from './budget.ts'
-import { flicker, paletteShare, pictureStats } from './picture.ts'
+import { flicker, muddyShare, nearWhiteShare, paletteShare, pictureStats } from './picture.ts'
 
 /**
  * The picture checks of one opened world (audit spec 7.3, 7.4): the fixed cameras (aerial, each place's front, Merge close) and
@@ -35,6 +35,10 @@ export const PICTURE_LEVELS = {
   night: [4, 200] as const,
   /** Below this share of pixels near the look's colours, a picture is off the palette. The fixtures' pictures score 0.97 and up (19 November). */
   palette: 0.75,
+  /** More than this share of near-white pixels in a picture taken inside a room is blown out (issue 358; the before pictures were 0.46 to 0.57). */
+  roomNearWhite: 0.4,
+  /** More than this share of brown, olive or khaki pixels in a night picture breaks look.md rule 3 (issue 361; the before pictures were 0.13). */
+  nightMuddy: 0.08,
   /** More than this share of pixels jumping when the camera moves 1 mm is flicker. */
   flicker: 0.003,
   /** The smallest letters on a sign must be this many pixels high on a phone (390x844) from 6 m. */
@@ -57,6 +61,15 @@ export function judgeShot(shot: Shot, ctx: { fixture: string; night: boolean; fi
   const [lo, hi] = ctx.night ? PICTURE_LEVELS.night : PICTURE_LEVELS.day
   if (light < lo) add('world.too-dark', 'major', `The view "${shot.name}" is too dark`, `Mean light ${light.toFixed(0)} of 255 (at least ${lo} ${ctx.night ? 'at night' : 'by day'}).`, 'A visitor cannot make out what is there.')
   if (light > hi) add('world.too-bright', 'major', `The view "${shot.name}" is washed out`, `Mean light ${light.toFixed(0)} of 255 (at most ${hi}).`, 'The glow swallows the shapes.')
+  // Inside a room (the seeded poses named `room:`): the walls and floor must keep their colours.
+  if (shot.name.startsWith('room:')) {
+    const white = nearWhiteShare(img)
+    if (white > PICTURE_LEVELS.roomNearWhite) add('world.room-blown-out', 'major', `The room in "${shot.name}" is washed out`, `${(white * 100).toFixed(0)}% of the picture is near white (at most ${PICTURE_LEVELS.roomNearWhite * 100}%).`, 'The room looks like an empty, overlit showroom: its walls and floor lose their colours.')
+  }
+  if (ctx.night) {
+    const muddy = muddyShare(img)
+    if (muddy > PICTURE_LEVELS.nightMuddy) add('world.night-muddy', 'major', `The view "${shot.name}" turns brown or olive at night`, `${(muddy * 100).toFixed(0)}% of its pixels are brown, olive or khaki (at most ${PICTURE_LEVELS.nightMuddy * 100}%; look.md rule 3).`, 'At night the pastel world reads as mud instead of glowing colour.')
+  }
   const share = paletteShare(img, LOOK_PALETTE)
   if (share < PICTURE_LEVELS.palette) add('world.off-palette', 'minor', `The view "${shot.name}" is off the look's colours`, `${(share * 100).toFixed(0)}% of its pixels are near the look's palette (look.md); at least ${PICTURE_LEVELS.palette * 100}% should be.`, 'It looks less like the agreed pastel world and more like a generic 3D scene.')
   return out
