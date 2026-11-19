@@ -205,3 +205,41 @@ describe('remixing (spec 7.5)', () => {
     expect(metaOf('lamp').status).toBe('retired')
   })
 })
+
+/**
+ * Issue #394, from the QR 3-day run on PR #389: the plan named the sketch by its title ("Pixel Fuck"), not by its id
+ * ("pixel-fuck"). The step did not know the work, so the full toy came out as a new work with no `remixOf`, twice
+ * (`pixel-fuck-2`, `pixel-fuck-3`). A step that names one of its works by its title is a step on that work, as with an id.
+ */
+describe('a tinker step that names an earlier work by its title (#394)', () => {
+  const pixelFuck = { title: 'Pixel Fuck', kind: 'tool', about: 'A tiny Brainfuck-like toy. Each instruction you run paints one pixel.', size: 'sketch', made: '2026-11-01T09:05:00Z' }
+  const theJob = () => TinkerJob.parse(JSON.parse(readFileSync(file(`mind/builds/${readdirSync(file('mind/builds')).find((f) => !f.endsWith('.result.json'))}`), 'utf8')))
+
+  it('asks the question about that work, and a full upgrade of the sketch is a remix of it, not an unlinked copy', async () => {
+    putWork('pixel-fuck', pixelFuck)
+    seedState({ allowance: { points: 450, day: '2026-11-03' } })
+    const fake = fakeLlm(planFor('Pixel Fuck', 'full'), { action: 'remix', reason: 'The sketch wants to be a full toy.' })
+    await landOn(fake)
+    expect(fake.calls.find((c) => c.kind === 'rework')?.user).toContain('Pixel Fuck')
+    expect(readdirSync(file('mind/builds')).filter((f) => !f.endsWith('.result.json'))).toHaveLength(1)
+    expect(theJob().remixOf).toBe('pixel-fuck')
+    expect(metaOf('pixel-fuck').status).toBe('shelf')
+  })
+
+  it('matches the title in any case, and takes the newest of two works with that title', async () => {
+    putWork('pixel-fuck', pixelFuck)
+    putWork('pixel-fuck-2', { ...pixelFuck, size: 'full', made: '2026-11-02T09:35:40Z', remixOf: 'pixel-fuck' })
+    seedState({ allowance: { points: 450, day: '2026-11-03' } })
+    await landOn(fakeLlm(planFor('pixel fuck', 'full'), { action: 'remix', reason: 'Again.' }))
+    expect(theJob().remixOf).toBe('pixel-fuck-2')
+  })
+
+  it("does not take a scrap by its title: an idea that shares a scrap's title is a new work", async () => {
+    putWork('pixel-fuck', { ...pixelFuck, status: 'scrap', scrapReason: 'blank page' })
+    seedState({ allowance: { points: 450, day: '2026-11-03' } })
+    const fake = fakeLlm(planFor('Pixel Fuck', 'full'), { action: 'remix', reason: 'x' })
+    await landOn(fake)
+    expect(fake.calls.filter((c) => c.kind === 'rework')).toHaveLength(0)
+    expect(theJob().remixOf).toBeNull()
+  })
+})

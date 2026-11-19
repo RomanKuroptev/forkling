@@ -45,6 +45,20 @@ function askForWork(t: Tick, step: PlanStep, index: number, o: { idea: string; r
 type Remix = { id: string; title: string; about: string; html: string }
 
 /**
+ * The earlier work a tinker target names: by its id, or else by its title in any case (the newest such work that is not a scrap).
+ * Issue #394: a plan named the sketch "Pixel Fuck" by its title, the step did not know it, and the full toy was made twice as an
+ * unlinked new work. A scrap is found only by its id: an idea that shares a scrap's title is a new work, as before.
+ */
+export function earlierWork(works: readonly WorkMeta[], target: string): WorkMeta | null {
+  const byId = works.find((w) => w.id === target)
+  if (byId) return byId
+  const wanted = target.trim().toLowerCase()
+  if (!wanted) return null
+  const newestFirst = [...works].sort((a, b) => b.made.localeCompare(a.made))
+  return newestFirst.find((w) => w.status !== 'scrap' && w.title.trim().toLowerCase() === wanted) ?? null
+}
+
+/**
  * What a tinker step does when it lands. A step on an earlier work first asks a cheap question: remix it, put it away, or bring
  * it back (spec 7.5, 9.9). Otherwise a sketch is made right away and a full work is asked of the build worker.
  */
@@ -54,7 +68,7 @@ export async function workStep(t: Tick): Promise<void> {
   const { step, index } = pending
   const target = (step.targetId ?? '').trim()
   const works = readWorks(t.dir)
-  const earlier = works.find((w) => w.id === target)
+  const earlier = earlierWork(works, target)
   if (earlier) return reworkStep(t, step, index, earlier)
   if (step.size !== 'sketch') return askForWork(t, step, index, { idea: target, remixOf: null })
   return makeSketch(t, step, index, { idea: target, remix: null }, works)
