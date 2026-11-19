@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>Funciton - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Funciton rootpage-Funciton skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">Funciton</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><p><a href="/wiki/Esolang:Featured_languages" title="Esolang:Featured languages"><span class="featured-icon" title="This is a featured language; *click* for more information."></span></a></p><div class="featured-text">
+<dl><dd><i>This is a <a href="/wiki/Esolang:Featured_languages" title="Esolang:Featured languages">featured language</a>.</i></dd></dl>
+</div>
+<p><b>Funciton</b> (pronounced: /ˈfʌŋkɪtɒn/) is a <a href="/wiki/Category:Two-dimensional_languages" title="Category:Two-dimensional languages">two-dimensional</a>, minimalistic, <a href="/wiki/Category:Declarative_paradigm" title="Category:Declarative paradigm">declarative</a> programming language invented by <a href="/wiki/User:Timwi" title="User:Timwi">User:Timwi</a> in 2011.
+</p>
+<div><pre>           ╓───╖
+           ║&#160;! ║
+           ╙─┬─╜   ┌───╖  ╔═══╗
+      ┌──────┴─────┤ &gt; ╟──╢ 2 ║
+   ┌──┴──┐         ╘═╤═╝  ╚═══╝
+ ┌─┴─╖   │    ╔═══╗  │
+ │ ♭ ║   │    ║ 1 ║  │
+ ╘═╤═╝   │    ╚═╤═╝  │
+ ┌─┴─╖ ┌─┴─╖  ┌─┴─╖  │
+ │&#160;! ║ │ × ╟──┤ ‽ ╟──┘
+ ╘═╤═╝ ╘═╤═╝  ╘═╤═╝
+   └─────┘      │
+</pre>
+<div><p><b>Example:</b> The factorial function.</p><p>(None of the functions used here (addition, multiplication, greater-than etc.) are built-in. All of them have their own implementation in Funciton.)</p></div>
+</div>
+<div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" /><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Features"><span class="tocnumber">1</span> <span class="toctext">Features</span></a></li>
+<li class="toclevel-1 tocsection-2"><a href="#Syntactic_elements"><span class="tocnumber">2</span> <span class="toctext">Syntactic elements</span></a></li>
+<li class="toclevel-1 tocsection-3"><a href="#Introduction"><span class="tocnumber">3</span> <span class="toctext">Introduction</span></a>
+<ul>
+<li class="toclevel-2 tocsection-4"><a href="#NAND_and_the_splitter"><span class="tocnumber">3.1</span> <span class="toctext">NAND and the splitter</span></a></li>
+<li class="toclevel-2 tocsection-5"><a href="#Declaring_a_function"><span class="tocnumber">3.2</span> <span class="toctext">Declaring a function</span></a></li>
+<li class="toclevel-2 tocsection-6"><a href="#Less-than_and_shift-left"><span class="tocnumber">3.3</span> <span class="toctext">Less-than and shift-left</span></a></li>
+<li class="toclevel-2 tocsection-7"><a href="#The_Starkov_construct"><span class="tocnumber">3.4</span> <span class="toctext">The Starkov construct</span></a></li>
+<li class="toclevel-2 tocsection-8"><a href="#Calling_a_function"><span class="tocnumber">3.5</span> <span class="toctext">Calling a function</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-9"><a href="#The_conditional_operator"><span class="tocnumber">4</span> <span class="toctext">The conditional operator</span></a></li>
+<li class="toclevel-1 tocsection-10"><a href="#Addition"><span class="tocnumber">5</span> <span class="toctext">Addition</span></a>
+<ul>
+<li class="toclevel-2 tocsection-11"><a href="#Incomplete_first_version"><span class="tocnumber">5.1</span> <span class="toctext">Incomplete first version</span></a></li>
+<li class="toclevel-2 tocsection-12"><a href="#Problem_#1:_crossing_lines_(solution:_cross-nop)"><span class="tocnumber">5.2</span> <span class="toctext">Problem #1: crossing lines (solution: cross-nop)</span></a></li>
+<li class="toclevel-2 tocsection-13"><a href="#Problem_#2:_infinite_recursion_(solution:_short-circuit_evaluation)"><span class="tocnumber">5.3</span> <span class="toctext">Problem #2: infinite recursion (solution: short-circuit evaluation)</span></a>
+<ul>
+<li class="toclevel-3 tocsection-14"><a href="#The_conditional_operator,_fixed"><span class="tocnumber">5.3.1</span> <span class="toctext">The conditional operator, fixed</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-15"><a href="#Problem_#3:_it_doesn’t_work_with_negative_numbers"><span class="tocnumber">5.4</span> <span class="toctext">Problem #3: it doesn’t work with negative numbers</span></a>
+<ul>
+<li class="toclevel-3 tocsection-16"><a href="#The_increment_function"><span class="tocnumber">5.4.1</span> <span class="toctext">The increment function</span></a></li>
+<li class="toclevel-3 tocsection-17"><a href="#Introducing_private_functions"><span class="tocnumber">5.4.2</span> <span class="toctext">Introducing private functions</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-18"><a href="#Strings"><span class="tocnumber">6</span> <span class="toctext">Strings</span></a></li>
+<li class="toclevel-1 tocsection-19"><a href="#Lambda_expressions"><span class="tocnumber">7</span> <span class="toctext">Lambda expressions</span></a>
+<ul>
+<li class="toclevel-2 tocsection-20"><a href="#Lazy_sequences"><span class="tocnumber">7.1</span> <span class="toctext">Lazy sequences</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-21"><a href="#Lists"><span class="tocnumber">8</span> <span class="toctext">Lists</span></a>
+<ul>
+<li class="toclevel-2 tocsection-22"><a href="#List_encoding_grammar"><span class="tocnumber">8.1</span> <span class="toctext">List encoding grammar</span></a></li>
+<li class="toclevel-2 tocsection-23"><a href="#Examples"><span class="tocnumber">8.2</span> <span class="toctext">Examples</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-24"><a href="#Regular_expressions"><span class="tocnumber">9</span> <span class="toctext">Regular expressions</span></a></li>
+<li class="toclevel-1 tocsection-25"><a href="#Arrays"><span class="tocnumber">10</span> <span class="toctext">Arrays</span></a></li>
+<li class="toclevel-1 tocsection-26"><a href="#All_functions"><span class="tocnumber">11</span> <span class="toctext">All functions</span></a>
+<ul>
+<li class="toclevel-2 tocsection-27"><a href="#Comparison_functions"><span class="tocnumber">11.1</span> <span class="toctext">Comparison functions</span></a></li>
+<li class="toclevel-2 tocsection-28"><a href="#Conditional_functions"><span class="tocnumber">11.2</span> <span class="toctext">Conditional functions</span></a></li>
+<li class="toclevel-2 tocsection-29"><a href="#Miscellaneous_functions"><span class="tocnumber">11.3</span> <span class="toctext">Miscellaneous functions</span></a></li>
+<li class="toclevel-2 tocsection-30"><a href="#Arithmetic_functions"><span class="tocnumber">11.4</span> <span class="toctext">Arithmetic functions</span></a></li>
+<li class="toclevel-2 tocsection-31"><a href="#String_functions"><span class="tocnumber">11.5</span> <span class="toctext">String functions</span></a></li>
+<li class="toclevel-2 tocsection-32"><a href="#Array_functions"><span class="tocnumber">11.6</span> <span class="toctext">Array functions</span></a></li>
+<li class="toclevel-2 tocsection-33"><a href="#List_functions"><span class="tocnumber">11.7</span> <span class="toctext">List functions</span></a></li>
+<li class="toclevel-2 tocsection-34"><a href="#Lazy_sequence_functions"><span class="tocnumber">11.8</span> <span class="toctext">Lazy sequence functions</span></a></li>
+<li class="toclevel-2 tocsection-35"><a href="#Regular_expression_functions"><span class="tocnumber">11.9</span> <span class="toctext">Regular expression functions</span></a></li>
+<li class="toclevel-2 tocsection-36"><a href="#Additional_functions"><span class="tocnumber">11.10</span> <span class="toctext">Additional functions</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-37"><a href="#Example_programs"><span class="tocnumber">12</span> <span class="toctext">Example programs</span></a></li>
+<li class="toclevel-1 tocsection-38"><a href="#See_also"><span class="tocnumber">13</span> <span class="toctext">See also</span></a></li>
+<li class="toclevel-1 tocsection-39"><a href="#External_resources"><span class="tocnumber">14</span> <span class="toctext">External resources</span></a></li>
+</ul>
+</div>
+<h2><span class="mw-headline" id="Features">Features</span></h2>
+<ul><li>Programs use the Unicode box-drawing characters to create a graphical representation of data flow. (To view and edit Funciton programs effectively, a monospace font with broad Unicode support is required — the author’s recommendation would be <a rel="nofollow" class="external text" href="https://juliamono.netlify.app/">JuliaMono</a>.)</li>
+<li>Funciton is <i>not</i> electronics. Programs look a bit like circuit diagrams, but they are not circuit diagrams.</li>
+<li>Funciton is invariant under 90° rotations. This means you can take any program or any individual function declaration and turn it by 90° without altering its semantics or the semantics of anything that calls it.</li>
+<li>Funciton has only one datatype, the arbitrary-size integer. However, Funciton has built-in semantics to express strings and anonymous functions as integers.</li>
+<li>Funciton has only six built-in instructions (NAND, less-than, shift-left, standard input, function invocation and lambda expressions); all other functionality (arithmetic, string handling, lazy sequences, etc.) is implemented in terms of these.</li>
+<li>Funciton has a fully working interpreter <i>and</i> a compiler to IL; see <i>External resources</i> at the bottom.</li>
+<li>Since integers in Funciton can be arbitrary size, it allows for <a href="/wiki/Arbitrary_memory_emulation" title="Arbitrary memory emulation">arbitrary memory emulation</a>.</li></ul>
+<h2><span class="mw-headline" id="Syntactic_elements">Syntactic elements</span></h2>
+<table>
+<tbody><tr>
+<td><a href="#Declaring_a_function">Function declaration header</a>
+</td>
+<td>
+<pre>  ╓───╖       ╒═══╕
+──╢ + ╟──   ──┤ + ├──
+  ╙───╜       ╘═══╛
+</pre>
+</td></tr>
+<tr>
+<td><a href="#Calling_a_function">Function call</a>
+</td>
+<td>
+<pre>  ┌───╖      ╓───┐      ╔═══╕      ╒═══╗
+──┤ + ╟──  ──╢ + ├──  ──╢ + ├──  ──┤ + ╟──
+  ╘═╤═╝      ╚═╤═╛      ╙─┬─┘      └─┬─╜
+    │          │          │          │
+</pre>
+</td></tr>
+<tr>
+<td><a href="#NAND_and_the_splitter">NAND or splitter</a>
+</td>
+<td>
+<pre>  │       │                   │
+──┴──     ├──     ──┬──     ──┤
+          │         │         │
+</pre>
+</td></tr>
+<tr>
+<td><a href="#Less-than_and_shift-left">less-than and shift-left</a>
+</td>
+<td>
+<pre>      │
+    ──┼──
+      │
+</pre>
+</td></tr>
+<tr>
+<td>Function return value
+</td>
+<td>
+<pre>           │
+  ────     │
+           │
+</pre>
+</td></tr>
+<tr>
+<td>Integer literal
+</td>
+<td>
+<pre>  ╔═══╗
+  ║ 1 ╟──
+  ╚═══╝
+</pre>
+</td></tr>
+<tr>
+<td>Read string from STDIN
+</td>
+<td>
+<pre>  ╔═══╗
+  ║   ╟──
+  ╚═══╝
+</pre>
+</td></tr>
+<tr>
+<td><a href="#Lambda_expressions">Lambda expression</a>
+</td>
+<td>
+<pre>    │          │          │          │
+  ╒═╧═╗      ╓─┴─╖      ╔═╧═╕      ╔═╧═╗
+──┤   ╟──  ──╢   ╟──  ──╢   ├──  ──╢   ╟──
+  ╘═╤═╝      ╚═╤═╝      ╚═╤═╛      ╙─┬─╜
+    │          │          │          │
+</pre>
+</td></tr>
+<tr>
+<td><a href="#Lambda_expressions">Lambda invocation</a>
+</td>
+<td>
+<pre>    │          │          │          │
+  ┌─┴─╖      ┌─┴─┐      ╓─┴─┐      ╒═╧═╕
+──┤   ╟──  ──┤   ├──  ──╢   ├──  ──┤   ├──
+  └─┬─╜      ╘═╤═╛      ╙─┬─┘      └─┬─┘
+    │          │          │          │
+</pre>
+</td></tr>
+<tr>
+<td>Comment
+</td>
+<td>
+<pre>  ╔════════════╗
+  ║  Hi, Bob!  ║
+  ╚════════════╝
+</pre>
+</td></tr></tbody></table>
+<h2><span class="mw-headline" id="Introduction">Introduction</span></h2>
+<p>Simply speaking, Funciton programs consist of lines and boxes. Each line carries data from one box to the next.
+</p><p>A Funciton program must have exactly one <i>loose end</i>; a line that just stops somewhere. This is the program output.
+</p><p>Boxes with a double-struck line and at least one outgoing line are <i>literals</i>. Such a box may contain an integer written in decimal. A very simple program might look like this:
+</p>
+<pre>  ╔════╗
+  ║ 47 ║
+  ╚═╤══╝
+    │
+</pre>
+<p>This program prints <code>/</code>, which is Unicode character number 47.
+</p><p>Boxes with a double-struck line can be empty, too. In this case, such a box represents the data passed to the program via STDIN. The data is encoded according to the <a href="#Strings">string encoding</a> described later. (Multiple such boxes in a program do not read multiple different inputs from STDIN. The interpreter reads STDIN only once, and then all such boxes return the same data.)
+</p>
+<pre>  ╔═══╗
+  ║   ║
+  ╚═╤═╝
+    │
+</pre>
+<p>This program prints its input, so it is a <b>cat</b> program.
+</p>
+<h3><span class="mw-headline" id="NAND_and_the_splitter">NAND and the splitter</span></h3>
+<p>A T-junction in which the two parallel connectors are <i>inputs</i> and the perpendicular one is an <i>output</i> calculates the <b>NAND</b> of two numbers. In C notation, NAND(a,b) = ~(a &amp; b). Consider the following programs:
+</p>
+<pre>  ╔═══╗   ╔═══╗       ╔═══╗   ╔═══╗       ╔════╗  ╔════╗
+  ║ 5 ║   ║ 5 ║       ║ 5 ║   ║ 0 ║       ║ -2 ║  ║ -1 ║
+  ╚═╤═╝   ╚═╤═╝       ╚═╤═╝   ╚═╤═╝       ╚══╤═╝  ╚══╤═╝
+    │       │           │       │            │       │
+    └───┬───┘           └───┬───┘            └───┬───┘
+        │                   │                    │
+</pre>
+<p>The above three programs calculate <b>−6</b>, <b>−1</b> and <b>1</b>, respectively. (The actual output will be an unprintable character.)
+</p><p>Remember that numbers in Funciton are arbitrary-size integers. Negative numbers can be conceptualized in two ways that are equivalent:
+</p>
+<ul><li>You can think of it as infinitely many 1-bits. <code>-1</code> has all bits set. There is a least significant bit, but no most significant bit (any more than there is a most significant <code>0</code>-bit in a non-negative number).</li>
+<li>You can also think of it as finitely many bits followed by a sign bit, in which case the bit-shift operation performs sign extension.</li></ul>
+<p>Also remember that Funciton programs are rotation-invariant, so all of the following programs do exactly the same thing:
+</p>
+<pre>  ╔════╗  ╔════╗           │          ╔════╗               ╔════╗
+  ║ -2 ║  ║ -1 ║       ┌───┴───┐      ║ -1 ╟──┐         ┌──╢ -2 ║
+  ╚══╤═╝  ╚══╤═╝       │       │      ╚════╝  │         │  ╚════╝
+     │       │      ╔══╧═╗  ╔══╧═╗            ├──     ──┤
+     └───┬───┘      ║ -1 ║  ║ -2 ║    ╔════╗  │         │  ╔════╗
+         │          ╚════╝  ╚════╝    ║ -2 ╟──┘         └──╢ -1 ║
+                                      ╚════╝               ╚════╝
+&#160;
+          ╔══════════════════════════════════════════════════╗
+          ║  All four of the above programs are equivalent.  ║
+          ╟──────────────────────────────────────────────────╢
+          ║  Also, a double-lined box with no outgoing       ║
+          ║  lines (like this one) is a comment.             ║
+          ╚══════════════════════════════════════════════════╝
+</pre>
+<p>A T-junction in which the two parallel connectors are <i>outputs</i> and the perpendicular one is an <i>input</i> is a <b>splitter</b>. This is not an operation, but simply a syntactic element that splits a line into two. It allows you to access the same value more than once. For example, consider the following program:
+</p>
+<pre>  ╔═══╗              ╔═══╗              ╔═══╗
+  ║ 1 ║ ╔════════╗   ║ 2 ║ ╔════════╗   ║ 3 ║
+  ╚═╤═╝ ║ ↓ NAND ║   ╚═╤═╝ ║ ↓ NAND ║   ╚═╤═╝
+    │   ╚════════╝     │   ╚════════╝     │
+    └─────┬────────────┴─────┬────────────┘
+          │ ╔════════════╗   │
+          │ ║ splitter ↑ ║   │
+          │ ╚════════════╝   │
+          │     ╔════════╗   │
+          │     ║ ↓ NAND ║   │
+          │     ╚════════╝   │
+          └───────┬──────────┘
+                  │
+</pre>
+<p>This program computes the value <code>(3 NAND 2) NAND (2 NAND 1)</code> and thus outputs character number <b>2</b> (which, again, is an unprintable character).  (The order of the NAND arguments is significant due to its <a href="#Problem_#2:_infinite_recursion_(solution:_short-circuit_evaluation)">short-circuit semantics</a> explained later.)
+</p><p>Whether a T-junction is a NAND operation or simply a splitter is implicit in which incoming lines are inputs and which are outputs:
+</p>
+<pre>╔═════════════════╗    ╔═════════════════════╗    ╔══════════════════════════╗
+║ This is a NAND. ║    ║ This is a splitter. ║    ║ This program is invalid. ║
+╚═════════════════╝    ╚═════════════════════╝    ╚══════════════════════════╝
+&#160;
+                                                           ╔═══╗
+╔═══╗         ╔═══╗         ──────┬──────                  ║ 3 ║
+║ 3 ╟────┬────╢ 2 ║               │                        ╚═╤═╝
+╚═══╝    │    ╚═══╝             ╔═╧═╗                        │    ╔═══╗
+         │                      ║ 3 ║                        ├────╢ 2 ║
+         │                      ╚═══╝                        │    ╚═══╝
+</pre>
+<p>(Though notice that the second program is also invalid because it has more than one output.)
+</p>
+<h3><span class="mw-headline" id="Declaring_a_function">Declaring a function</span></h3>
+<p>A function declaration consists of a <i>declaration header</i> and one or more <i>loose ends</i>. The <i>header</i> is a box, containing the function name, that has two double-lined and two single-lined edges on opposite sides. A <i>loose end</i> defines a function output.
+</p><p>We can now construct a function for each of the familiar logic gates:
+</p>
+<pre>                                                  ┌──────────────────────┐
+╓─────╖        ╓─────╖            ╓────╖          │  ╓─────╖             │
+║ not ║     ┌──╢ and ╟──┐      ┌──╢ or ╟──┐       ├──╢ xor ╟─────┐       │
+╙──┬──╜     │  ╙─────╜  │     ┌┴┐ ╙────╜ ┌┴┐      │  ╙─────╜ ┌┐  │    ┌┐ │
+   │        └─────┬─────┘     └┬┘        └┬┘      └───┬──────┤├──┴──┬─┤├─┘
+  ┌┴┐            ┌┴┐           └────┬─────┘           │      └┘     │ └┘
+  └┬┘            └┬┘                │                 └────┬────────┘
+   │              │                                        │
+</pre>
+<p>Notice that NOT consists of a splitter and a NAND.
+</p><p>The lines emerging from the declaration header define inputs to the function. Loose ends define outputs. A function can have multiple outputs. The directions in which the inputs “leave” the declaration header and the directions in which the outputs “point” determine how the function can be called; more about this later.
+</p>
+<h3><span class="mw-headline" id="Less-than_and_shift-left">Less-than and shift-left</span></h3>
+<p><b>Less-than</b> and <b>shift-left</b> are both calculated by a single operator, the cross:
+</p>
+<pre>      ╔═══╗
+      ║ a ║
+      ╚═╤═╝
+ ╔═══╗  │
+ ║ b ╟──┼──── (a &lt; b)
+ ╚═══╝  │
+        │
+        │
+    (a SHL b)
+</pre>
+<p>The <b>less-than</b> operation returns <code>−1</code> for <i>true</i> and <code>0</code> for <i>false</i>. This enables boolean logic using the NAND operation; if <i>true</i> were represented by <code>1</code>, then <code>NOT 1</code> would be <code>−2</code>.
+</p><p>The <b>shift-left</b> operation can also do <b>shift-right</b> simply by giving it a negative operand.
+</p><p>In order to use this to evaluate <i>only</i> less-than or <i>only</i> shift-left, we need a little trick.
+</p>
+<h3><span class="mw-headline" id="The_Starkov_construct">The Starkov construct</span></h3>
+<p>The <b>Starkov construct</b>, named for Cambridge computer scientist and entrepreneur Roman Starkov, who discovered this construct months into Funciton’s existence, is a trick to “nullify” a wire. It consists of a NAND operator that is connected to itself. The following declarations for a less-than and greater-than function demonstrate this:
+</p>
+<pre> ╔╤════════════╗   ╔╤═══════════════╗
+ ║│ less than  ║   ║│ greater than  ║
+ ╚╧════════════╝   ╚╧═══════════════╝
+                      ╓───╖
+ ┌────────┐         ┌─╢ &gt; ╟──┐
+ │ ╓───╖  │         │ ╙───╜  │
+ └─╢ &lt; ╟──┼─────┐   └────────┼─────┐
+   ╙───╜  ├──┐  │            ├──┐  │
+          └──┘               └──┘
+</pre>
+<p>In these examples, the <i>less-than</i> part of the cross operator is connected to the function output, while the <i>shift-left</i> part is connected to a Starkov construct. Since this does not constitute a function output, it is never evaluated and thus effectively nullifies that part of the calculation.
+</p>
+<h3><span class="mw-headline" id="Calling_a_function">Calling a function</span></h3>
+<p>It would be no use declaring functions if you couldn’t call them. A call box consists of two adjacent double-lined edges and two single-lined ones. This is best demonstrated by an example, so let’s define some more comparison operators:
+</p>
+<pre>  ╔╤══════════════╗   ╔╤═══════════════╗
+  ║│ less than    ║   ║│ greater than  ║
+  ║│ or equal to  ║   ║│ or equal to   ║
+  ╚╧══════════════╝   ╚╧═══════════════╝
+        ╓───╖               ╓───╖
+     ┌──╢ ≤ ╟──┐         ┌──╢ ≥ ╟──┐
+     │  ╙───╜  │         │  ╙───╜  │
+     │         │         │         │
+     │  ┌───╖  │         │  ┌───╖  │
+     └──┤ &lt; ╟──┘         └──┤ &gt; ╟──┘
+        ╘═╤═╝               ╘═╤═╝
+         ┌┴┐                 ┌┴┐
+         └┬┘                 └┬┘
+          │                   │
+</pre>
+<p>These declarations may at first look wrong. After all, “less-than-or-equal-to” is <i>not</i> the same as “NOT less-than”! To understand why this declaration is correct, you have to consider the direction in which data is flowing:
+</p>
+<dl><dd><span class="mw-default-size" typeof="mw:File"><a href="/wiki/File:Funciton_%E2%80%94_data_flow_direction.png" class="mw-file-description"><img src="/w/images/1/1e/Funciton_%E2%80%94_data_flow_direction.png" decoding="async" width="395" height="247" class="mw-file-element" /></a></span></dd></dl>
+<p>So basically, what goes <i>in</i> to the <i>right</i> of the <i>call</i> node comes <i>out</i> of the <i>left</i> of the <i>declaration</i> box (if the orientation of the outputs in the declaration and the call are the same). The fact that the wires take a 180° turn effectively swaps the order of the operands.
+</p>
+<h2><span class="mw-headline" id="The_conditional_operator">The conditional operator</span></h2>
+<p>The conditional operator, written in C-like languages as <code>c&#160;? y&#160;: n</code>, which returns <code>n</code> if <code>c</code> is zero and <code>y</code> otherwise, is equivalent to the expression <code>((a ≠ 0) NAND b) NAND ((a = 0) NAND c)</code>. Here we can really show off the splitter: the test for <code>a ≠ 0</code> is only evaluated once even though it is used in two places.
+</p>
+<pre>  ╔═══╗  ┌───╖  ╓───╖
+  ║ 0 ╟──┤ ≠ ╟──╢&#160;? ╟─┐
+  ╚═══╝  ╘═╤═╝  ╙─┬─╜ │        ╔══════════════════════════════╗
+           │      ├─┬─┤        ║  conditional operator        ║
+           │      │  ┌┴┐       ║  WITH A PROBLEM (read on)    ║
+           │      │  └┬┘       ╚══════════════════════════════╝
+           │      └─┬─┘
+           └────────┘
+</pre>
+<p>Now, I hate to break it with you, but it’s not quite this simple. The above declaration has a big problem which we will come to later.
+</p>
+<h2><span class="mw-headline" id="Addition">Addition</span></h2>
+<h3><span class="mw-headline" id="Incomplete_first_version">Incomplete first version</span></h3>
+<p>Addition will be our first <i>recursive</i> function. The simplest way to do addition is to add and subtract 1 at a time:
+</p>
+<pre>+(a, b) = a&#160;? +(a−1, b+1)&#160;: b;
+</pre>
+<p>However, this would be incredibly slow (it would be exponential-time). We can do better — we can do linear-time by harnessing the bit-shift operation. We will implement addition as a recursive function using the following formula:
+</p>
+<pre>+(a, b) = b&#160;? +(a XOR b, (a AND b) SHL 1)&#160;: a
+</pre>
+<p>You can easily convince yourself that this works by considering the following:
+</p>
+<ul><li>The XOR does the addition on each individual bit, ignoring the carry.</li>
+<li>The AND calculates the carry. SHL carries it to the next bit and then the recursive call adds it to the previous result.</li></ul>
+<p>Unfortunately, we run into three problems. The first problem is immediately apparent here:
+</p>
+<pre>            ╓───╖
+         ┌──╢ + ╟──┐
+         │  ╙───╜  │
+    ┌────┴────┬────┴────┐
+    │  ┌┐     │      ┌┐ │
+  ┌─┴──┤├──whoops!─┬─┤├─┴─┐
+  │    └┘     │    │ └┘   │          ╔═══════════════════════════════════╗
+  │    ┌──────┴───┬┘      │          ║  addition                         ║
+  │   ┌┴┐        ┌┴┐      │          ║  WITH THREE PROBLEMS (read on)    ║
+  │   └┬┘        └┬┘      │          ╟───────────────────────────────────╢
+  │ ┌──┴─╖  ┌───╖ │       │          ║  If → is 0, answer is ←, else:    ║
+  │ │ &lt;&lt; ╟──┤ + ╟─┘       │          ║  XOR to add digits without carry  ║
+  │ ╘══╤═╝  ╘═╤═╝         │          ║  AND to calculate carry           ║
+  │  ╔═╧═╗    │           │          ║  then recursive call              ║
+  │  ║ 1 ║    │           │          ╚═══════════════════════════════════╝
+  │  ╚═══╝  ┌─┴─╖         │
+  └─────────┤&#160;? ╟─────────┘
+            ╘═╤═╝
+              │
+</pre>
+<h3><span id="Problem_.231:_crossing_lines_.28solution:_cross-nop.29"></span><span class="mw-headline" id="Problem_#1:_crossing_lines_(solution:_cross-nop)">Problem #1: crossing lines (solution: cross-nop)</span></h3>
+<p>We need for those two lines to cross. But as we saw before, crossing two lines causes less-than and shift-left to be calculated; we don’t want that. We need a cross that is a no-op. A cross-nop.
+</p><p>Fortunately, there <i>is</i> a way to cross two lines. We can declare a function that takes two inputs and two outputs, and which... does nothing:
+</p><p><br />
+</p>
+<pre>      ╒═══╕          ╔═════════════╗
+      │ · ├──        ║  cross-nop  ║
+      ╘═╤═╛          ╚═════════════╝
+        │
+</pre>
+<p>Notice that this declaration says that:
+</p>
+<ul><li>the function has two inputs which are adjacent</li>
+<li>the function has two outputs which are adjacent, and opposite the inputs</li>
+<li>each output is equal to the input opposite to it</li></ul>
+<p>which is exactly what we want.
+</p><p>There is a way to cross two values without this function, although it involves multiple NAND operations. Consider this a puzzle challenge! Can you find it?
+</p>
+<h3><span id="Problem_.232:_infinite_recursion_.28solution:_short-circuit_evaluation.29"></span><span class="mw-headline" id="Problem_#2:_infinite_recursion_(solution:_short-circuit_evaluation)">Problem #2: infinite recursion (solution: short-circuit evaluation)</span></h3>
+<p>Another problem with our addition function above is that it may potentially get stuck in infinite recursion. The function specifies a terminating condition (namely, <code>b</code>); but we need to make sure that the rest of the code (the part containing the recursive call) is not going to get evaluated when <code>b</code> is zero.
+</p><p>To this end, the NAND operator has built-in <i>short-circuit semantics</i>:
+</p>
+<pre>  ╔═══╗   ╔═══╗
+  ║ x ║   ║ 0 ║      ╔═══════════════════════════════╗
+  ╚═╤═╝   ╚═╤═╝      ║  short-circuit evaluation:    ║
+  ┌─┴─╖     │        ║  the NAND operator returns    ║
+  │ F ║     │        ║  −1 without evaluating F(x).  ║
+  ╘═╤═╝     │        ╚═══════════════════════════════╝
+    └───┬───┘
+        │
+</pre>
+<p>Whenever the <i>first operand</i> to a NAND operation evaluates to <code>0</code>, the <i>second operand</i> is never evaluated. Notice that if the NAND’s output is pointing <i>down</i>, the “first” operand is on the <i>right</i> (and analogously for the other possible rotations).
+</p>
+<h4><span id="The_conditional_operator.2C_fixed"></span><span class="mw-headline" id="The_conditional_operator,_fixed">The conditional operator, fixed</span></h4>
+<p>Now the problem with the conditional operator we defined earlier may become apparent. Our implementation does <code>((c = 0) NAND n) NAND (y NAND (c ≠ 0))</code>; the second inner NAND has its operands in the wrong order. We need to evaluate <code>c ≠ 0</code> first in order to know whether to evaluate <code>y</code>. Therefore, we need to flip it around. At this point we run into the line-crossing problem again, so we use our newly-defined cross-nop:
+</p>
+<pre> ╔═══╗  ┌───╖    ╓───╖
+ ║ 0 ╟──┤ ≠ ╟────╢&#160;? ╟─┐
+ ╚═══╝  ╘═╤═╝    ╙─┬─╜ │        ╔════════════════════════╗
+          │      ┌─┴─╖ │        ║  conditional operator  ║
+          │  ┌───┤ · ╟─┤        ╟────────────────────────╢
+          │  │   ╘═╤═╝ │        ║  Returns ↓ if ← ≠ 0    ║
+          │  └──┬──┤  ┌┴┐       ║  and → if ← = 0        ║
+          │     │  │  └┬┘       ╚════════════════════════╝
+          │        └─┬─┘
+          └──────────┘
+</pre>
+<p>In cases where we already know that the input is a boolean (0 or −1), the call to <code>≠</code> is redundant, so for performance optimization let’s also provide an “unsafe” version:
+</p>
+<pre>                 ╓───╖
+          ┌──────╢ ‽ ╟─┐
+          │      ╙─┬─╜ │        ╔══════════════════════════════╗
+          │      ┌─┴─╖ │        ║  conditional operator where  ║
+          │  ┌───┤ · ╟─┤        ║  ← is assumed to be 0 or −1  ║
+          │  │   ╘═╤═╝ │        ║  (if it isn’t, all operands  ║
+          │  └──┬──┤  ┌┴┐       ║  are evaluated and unwanted  ║
+          │     │  │  └┬┘       ║  bitwise operations happen)  ║
+          │        └─┬─┘        ╚══════════════════════════════╝
+          └──────────┘
+</pre>
+<h3><span id="Problem_.233:_it_doesn.E2.80.99t_work_with_negative_numbers"></span><span class="mw-headline" id="Problem_#3:_it_doesn’t_work_with_negative_numbers">Problem #3: it doesn’t work with negative numbers</span></h3>
+<p>Well, it works with <i>some</i> negative numbers. But there are combinations of inputs for which the addition function we wrote results in infinite recursion (the terminating condition is never reached).
+</p><p>Specifically, it works fine only if:
+</p>
+<ul><li><i>a</i> ≥ 0 and <i>b</i> ≥ 0, <i>or</i></li>
+<li><i>a</i> + <i>b</i> &lt; 0</li></ul>
+<p>But it doesn’t manage to do the jump from a negative input to a positive (or zero) output. <code>a XOR b</code> will be negative and stay negative, and the <code>(a AND b) SHL 1</code> will be positive and just keep on growing indefinitely.
+</p>
+<h4><span class="mw-headline" id="The_increment_function">The increment function</span></h4>
+<p>Let’s take a quick diversion to implement a simpler operation: the <i>increment function</i>, which is defined as:
+</p>
+<pre>♯(a) = a + 1
+</pre>
+<p>But we can’t define it in terms of the addition function because we still haven’t succeeded in writing one that works for all inputs. Let’s instead write a recursive function that does this:
+</p>
+<ul><li>If the input is −1, return 0.</li>
+<li>If the least significant bit is 0, change it to 1.</li>
+<li>If the least significant bit is 1, change it to 0 and call this function recursively on the next bit.</li></ul>
+<pre>                            ╓───╖
+                            ║ ♯ ║             ╔══════════════════════════════╗
+                            ╙─┬─╜             ║  increment                   ║
+                   ┌──────────┴────────┐      ╟──────────────────────────────╢
+   ╔════╗  ┌────╖  │    ╔═══╗          │      ║  If ↓ = −1, return 0         ║
+   ║ -1 ╟──┤ &lt;&lt; ╟──┴─┬──╢ 1 ║          │      ║  If ↓ &amp; 1 = 0, return ↓ | 1  ║
+   ╚════╝  ╘══╤═╝    │  ╚═══╝          │      ║  Else, recurse with ↓ &gt;&gt; 1   ║
+            ┌─┴─╖   ┌┴┐   ╔═══╗ ╔════╗ │      ╟──────────────────────────────╢
+            │ ♯ ║   └┬┘   ║ 0 ║ ║ -1 ║ │      ║  Note: can’t actually use    ║
+            ╘═╤═╝    │    ╚═╤═╝ ╚══╤═╝ │      ║  &gt;&gt; because &gt;&gt; depends on    ║
+           ┌──┴─╖  ┌─┴─╖  ┌─┴─╖  ┌─┴─╖ │      ║  − (unary minus) which in    ║
+           │ &lt;&lt; ╟──┤&#160;? ╟──┤ ‽ ╟──┤ = ║ │      ║  turn depends on the         ║
+           ╘══╤═╝  ╘═╤═╝  ╘═╤═╝  ╘═╤═╝ │      ║  increment function.         ║
+            ╔═╧═╗ ┌┐ │ ┌┐   │      ├───┘      ╚══════════════════════════════╝
+            ║ 1 ╟─┤├─┴─┤├──────────┘
+            ╚═══╝ └┘   └┘
+</pre>
+<p>Note that the formula uses both <code>&lt;&lt;</code> (shift-left) and <code>&gt;&gt;</code> (shift-right), but we haven’t defined a <code>&gt;&gt;</code> function yet. Fortunately, the built-in SHL operation can perform SHR by simply giving it a negative number, so we use <code>SHL −1</code>.
+</p>
+<h4><span class="mw-headline" id="Introducing_private_functions">Introducing private functions</span></h4>
+<p>Since the addition function we already defined is potentially an infinite loop, we don’t really want any code to call it other than code that knows what it’s doing. Therefore, we will declare it <i>private</i>. A private function is a function that can only be called by functions within the same source file; in other words, its scope is its containing file. Private functions are marked with an extra little tag in the declaration box as seen here:
+</p>
+<pre>                    ╓┬───╖
+                 ┌──╫┘+p ╟──┐
+                 │  ╙────╜  │
+            ┌────┴─────┬────┴────┐
+            │ ┌───┐  ┌─┴─╖    ┌┐ │
+          ┌─┴─┤   ├──┤ · ╟──┬─┤├─┴─┐
+          │   └───┘  ╘═╤═╝  │ └┘   │          ╔═══════════════════════════════════╗
+          │    ┌───────┴───┬┘      │          ║  addition in the case of          ║
+          │   ┌┴┐         ┌┴┐      │          ║  (a≥0 &amp; b≥0) | (¬b)≥a             ║
+          │   └┬┘         └┬┘      │          ╟───────────────────────────────────╢
+          │ ┌──┴─╖  ┌────╖ │       │          ║  If → is 0, answer is ←, else:    ║
+          │ │ &lt;&lt; ╟──┤ +p ╟─┘       │          ║  XOR to add digits without carry  ║
+          │ ╘══╤═╝  ╘══╤═╝         │          ║  AND to calculate carry           ║
+          │  ╔═╧═╗     │           │          ║  then recursive call              ║
+          │  ║ 1 ║     │           │          ╚═══════════════════════════════════╝
+          │  ╚═══╝   ┌─┴─╖         │
+          └──────────┤&#160;? ╟─────────┘
+                     ╘═╤═╝
+                       │
+</pre>
+<p>Finally, we define the <i>real</i> addition function in terms of this private one. We know that the above function works for negative numbers if the result is negative. Therefore, if we can tell (using ≥) that it is going to be non-negative, just negate both operands; then the result will be negative, which we negate again to get the real result. Since binary negation is actually one away from unary minus, we use the increment function to correct the discrepancy.
+</p>
+<pre>      ┌──────────────────────────────┐  ╔══════════════════════════════════════════╗
+      │       ╓───╖                  │  ║  addition                                ║
+      ├───────╢ + ╟───────┐          │  ╟──────────────────────────────────────────╢
+    ┌─┴─╖     ╙───╜       │          │  ║  If (a≥0 &amp; b≥0) | (¬b)≥a, use +p         ║
+ ┌──┤ · ╟─────────────────┴──┐       │  ║  Else, negate both inputs, then use +p,  ║
+ │  ╘═╤═╝          ┌─────────┴──┐    │  ║  then increment and negate result        ║
+ │    │            │  ┌────╖  ┌─┴─╖  │  ╚══════════════════════════════════════════╝
+ │    │            └──┤ +p ╟──┤ · ╟──┴──────────────────┐
+┌┴┐  ┌┴┐              ╘═╤══╝  ╘═╤═╝┌───╖  ╔═══╗  ┌───╖  │
+└┬┘  └┬┘                │       └──┤ ≤ ╟──╢ 0 ╟──┤ ≥ ╟──┴─┐
+ │    │                 │          ╘═╤═╝  ╚═══╝  ╘═╤═╝    │
+ │ ┌──┴─╖  ┌───╖  ┌┐  ┌─┴─╖          └──────┬──────┘      │
+ │ │ +p ╟──┤ ♯ ╟──┤├──┤ ‽ ╟─────────────────┤             │
+ │ ╘══╤═╝  ╘═══╝  └┘  ╘═╤═╝                 │             │
+ │    │                 │                   │             │
+ └────┤                                   ┌─┴─╖           │
+      └───────────────────────────────────┤ &lt; ╟───────────┘
+                                          ╘═══╝
+</pre>
+<h2><span class="mw-headline" id="Strings">Strings</span></h2>
+<p>As alluded to in the introduction, Funciton programs receive their input (which is assumed to be a Unicode string) as a single humongous integer. The format in which strings are encoded could be referred to as <b>UTF-21</b>: every 21 bits form a Unicode character. This way the complexity arising from surrogates in UTF-16 is avoided, while still being more memory-efficient than UTF-32.
+</p><p>The <i>least significant</i> 21 bits contain the <i>first</i> character in the string. Thus, if you were to look at the bit pattern of an integer, the string would appear to be stored backwards (unless you’re writing in Arabic or Hebrew lol). The operation <i>s</i> SHR 21 removes the first character and thus appears to be shifting the characters in the string to the <i>left</i>.
+</p><p>The empty string is 0 and all other strings are positive integers. The NUL character (U+0000) is encoded as <code>0x110000</code>, which is one higher than the highest legitimate Unicode codepoint. A compliant interpreter must replace NUL with this code when reading STDIN and replace this code back with NUL when outputting.
+</p><p>This takes us directly to some simple functions on strings. Here are string length and string concatenation:
+</p>
+<pre>                      ╓───╖
+                      ║ ℓ ║                                                        ┌────┐   ╓───╖
+       ╔═════╗ ┌────╖ ╙─┬─╜     ╔═══╤═════╤═════════════════╗                      │    ├───╢ ‼ ╟──┐
+       ║ −21 ╟─┤ &lt;&lt; ╟───┴─┐     ║ ← │  ℓ  │  String length  ║                      │  ┌─┴─╖ ╙───╜  │
+       ╚═════╝ ╘═╤══╝     │     ╚═══╧═════╧═════════════════╝                      │  │ ℓ ║        │
+               ┌─┴─╖      │                                                        │  ╘═╤═╝        │
+               │ ℓ ║      │                                                        │  ┌─┴─╖ ┌────╖ │
+               ╘═╤═╝      │                                                        │  │ × ╟─┤ &lt;&lt; ╟─┘
+               ┌─┴─╖      │             ╔═════╤═══════════════════════════╤═══╗    │  ╘═╤═╝ ╘═╤══╝
+               │ ♯ ║      │             ║  ‼  │  Concatenate two strings  │ → ║    │  ╔═╧══╗  │
+               ╘═╤═╝      │             ╚═════╧═══════════════════════════╧═══╝   ┌┴┐ ║ 21 ║ ┌┴┐
+         ╔═══╗ ┌─┴─╖      │                                                       └┬┘ ╚════╝ └┬┘
+         ║ 0 ╟─┤&#160;? ╟──────┘                                                        └───────┬──┘
+         ╚═══╝ ╘═╤═╝                                                                       │
+                 │
+</pre>
+<p>The string concatenation function allows us to implement <a href="/wiki/Funciton/99_bottles_of_beer_on_the_wall" title="Funciton/99 bottles of beer on the wall">99 bottles of beer on the wall</a>.
+</p>
+<h2><span class="mw-headline" id="Lambda_expressions">Lambda expressions</span></h2>
+<p>Since Dec 2013, Funciton supports <i>lambda expressions</i> (anonymous functions). There are two new types of box for this:
+</p>
+<pre> ╔══════════════════════════════╗          ╔══════════════════════════════╗
+ ║       Lambda expression      ║          ║       Lambda invocation      ║
+ ╟──────────────────────────────╢          ╟──────────────────────────────╢
+ ║             output 1         ║          ║           lambda             ║
+ ║                ↓             ║          ║             ↓                ║
+ ║              ╔═╧═╕           ║          ║           ┌─┴─╖              ║
+ ║  output 2 → ─╢   ├─ → input  ║          ║  input → ─┤   ╟─ → output 2  ║
+ ║              ╚═╤═╛           ║          ║           └─┬─╜              ║
+ ║                ↓             ║          ║             ↓                ║
+ ║              lambda          ║          ║          output 1            ║
+ ╚══════════════════════════════╝          ╚══════════════════════════════╝
+</pre>
+<p>Every lambda has one input (parameter) and two outputs (return values). In cases where only one output is desired, the convention is that the lambda expression returns 0 for the second output and the invocation uses a <a href="#The_Starkov_construct">Starkov construct</a> to discard it.
+</p><p>Since a lambda can easily itself return a lambda, any number of parameters are possible through currying. Similarly, if more than two return values are desired, simply return the first value in output 1 and another lambda in output 2 which will successively produce the remaining values.
+</p><p>Since we already have <a href="#Lists">lists</a>, we can now implement interesting operations that take a list and a lambda. The <a href="https://en.wikipedia.org/wiki/Map_(higher-order_function)" class="extiw" title="wikipedia:Map (higher-order function)"><i>map</i></a> and <a href="https://en.wikipedia.org/wiki/Filter_(higher-order_function)" class="extiw" title="wikipedia:Filter (higher-order function)"><i>filter</i></a> functions (well-known to functional programmers) can be implemented thusly:
+</p>
+<pre>    ╔═════╤══════════════════════════════╗        ╔═════╤══════════════════════════╗
+    ║  ꜰ  │  filter                      ║        ║  ᴍ  │  map                     ║
+    ╟─────┴──────────────────────────────╢        ╟─────┴──────────────────────────╢
+    ║  Returns a new list containing     ║        ║  Returns a new list contain-   ║
+    ║  only those elements that match a  ║        ║  ing the results of passing    ║
+    ║  predicate provided as a lambda    ║        ║  every element through the     ║
+    ╚════════════════════════════════════╝        ║  provided lambda function      ║
+      ┌───────────────────────┐                   ╚════════════════════════════════╝
+      │     ┌─────────┐ ┌───╖ │                     ┌───────────────────────────┐
+      │     │ ┌───╖   ├─┤ ‹&#160;╟─┘                     │       ╓───╖               │
+      │     └─┤&#160;› ╟─┐ │ ╘═╤═╝                       ├───────╢ ᴍ ╟───────┐       │
+      │       ╘═╤═╝ │ │   └─┬─────────┐             │       ╙───╜       │       │
+      │       ┌─┴─╖ │ │     │ ╓───╖   │             │ ┌─────────────────┴───┐   │
+    ┌─┴─╖   ┌─┤ · ╟─┘ │     └─╢ ꜰ ╟─┐ │             │ │   ┌───┬─┐           │   │
+    │ ꜰ ╟───┤ ╘═╤═╝   │       ╙───╜ │ │             │ │ ┌─┴─╖ └─┘   ┌───╖ ┌─┴─╖ │
+    ╘═╤═╝   │ ┌─┴─╖ ┌─┴─╖           │ │             │ └─┤   ╟───────┤&#160;› ╟─┤ ᴍ ║ │
+      │     └─┤&#160;? ╟─┤   ╟───────┐   │ │             │   └─┬─╜       ╘═╤═╝ ╘═╤═╝ │
+      │       ╘═╤═╝ └─┬─╜ ┌─┐   ├───┘ │             │   ┌─┴─╖ ╔═══╗ ┌─┴─╖ ┌─┴─╖ │
+      │ ╔═══╗ ┌─┴─╖   └───┴─┘ ┌─┴─╖   │             └───┤ ‹&#160;║ ║ 0 ╟─┤&#160;? ╟─┤ · ╟─┘
+      │ ║ 0 ╟─┤&#160;? ╟───────────┤ · ╟───┘                 ╘═╤═╝ ╚═══╝ ╘═╤═╝ ╘═╤═╝
+      │ ╚═══╝ ╘═╤═╝           ╘═╤═╝                       └─────────────────┘
+      └─────────────────────────┘
+</pre>
+<p>Observe that both examples use only the first lambda output as they use a Starkov construct to swallow the other one.
+</p><p>The following (partial) code would use the above filter function to extract only the odd numbers from a list.
+</p>
+<pre>           (list)
+             ↓
+           ┌─┴─╖
+           │ ꜰ ╟──
+           ╘═╤═╝
+ ╔═══╗     ╔═╧═╕  ╔═══╗
+ ║ 1 ╟──┬──╢   ├──╢ 0 ║
+ ╚═══╝ ┌┴┐ ╚═╤═╛  ╚═══╝
+       └┬┘   │
+        └────┘
+</pre>
+<p>This example provides a lambda expression that bitwise-ands its input with 1, thus returning 0 for even numbers, causing those to be filtered out. (The second return value is set to zero as is conventional for single-output lambdas.)
+</p><p>Since the only datatype in Funciton is the arbitrary-size integer, a compliant interpreter must allocate a non-zero integer to every lambda closure the program creates. The lambda expression box returns an integer that identifies the closure, and the lambda invocation box will use the number to identify the lambda closure to invoke. This approach has many advantages; in particular, you can automatically have lists of functions. The integers returned are required to be non-zero as a convenience so that the user code can still use the number 0 to mean null or false in cases where a lambda is optional.
+</p><p>Now that we have lambda expressions, we can do some of the things that are typical of functional programming languages. For example, if we take two lambdas that each produce only one output, we can implement function composition easily:
+</p>
+<pre>           ╓───╖
+      ┌────╢ ∘ ╟────┐
+      │    ╙───╜    │
+      │   ┌───┬─┐   │          ╔════════════════════════╗
+      │ ┌─┴─╖ └─┘ ┌─┴─╖ ┌─┐    ║  Function composition  ║
+      └─┤   ╟─────┤   ╟─┴─┘    ╟────────────────────────╢
+        └─┬─╜     └─┬─╜        ║  (f∘g)(x) = f(g(x))    ║
+          │ ╔═══╗ ╔═╧═╕        ╚════════════════════════╝
+          │ ║ 0 ╟─╢   ├─┐
+          │ ╚═══╝ ╚═╤═╛ │
+          │       └─┘   │
+          └─────────────┘
+</pre>
+<h3><span class="mw-headline" id="Lazy_sequences">Lazy sequences</span></h3>
+<p>Another exciting use-case for lambda expressions is lazy sequences (also known as iterators or enumerables).
+</p><p>First, we decide to use the number <code>0</code> to represent an empty sequence. The lambda expression feature specifically allocates only non-zero integers to represent lambdas for exactly this kind of purpose. This way we can always use the <a href="#The_conditional_operator,_fixed"><code>?</code> function</a> to test if a sequence is empty.
+</p><p>Second, we make use of the ability for lambda expressions to return two outputs. The first output returns the first element (the <i>head</i>), while the second returns the rest of the sequence (the <i>tail</i>). If the rest of the sequence is empty, this is <code>0</code>; otherwise, it’s another lambda. This way, we can retrieve element after element simply by calling the lambdas until we get <code>0</code>.
+</p><p>To illustrate this, let’s write a function that takes an input value and returns a lazy sequence containing just that value and nothing else:
+</p>
+<pre>           ╓───╖
+           ║ ⌑ ║
+           ╙─┬─╜
+     ╔═══╗ ╔═╧═╕  ┌─┐
+     ║ 0 ╟─╢   ├──┴─┘
+     ╚═══╝ ╚═╤═╛
+             │
+</pre>
+<p>The function’s argument goes into the lambda expression’s first output, making it the head of the sequence. The second output is set to <code>0</code>, which indicates the end of the sequence. The completed lambda expression is returned as the function’s output. (The lambda expression doesn’t care what value you pass into it when you call it, so it uses a <a href="#The_Starkov_construct">Starkov construct</a> to nullify its input.)
+</p><p>We can go further than this. If we wanted a sequence containing lots of repetitions of a value, we <i>could</i> concatenate sequences like the above, but there’s a more elegant way. Consider this function:
+</p>
+<pre>           ╓───╖
+           ║ ⁞ ║
+           ╙─┬─╜
+           ╔═╧═╕  ┌─┐
+         ┌─╢   ├──┴─┘
+         │ ╚═╤═╛
+         └───┴──┐
+                │
+</pre>
+<p>This is almost the same function as above, only instead of the <code>0</code> (which would indicate the end of the sequence) it returns another copy of the same lambda. This means that every time you call the lambda, you get the value and another copy of the same lambda. You keep getting the same value and never reach the end of the sequence. We have created an infinite sequence that repeats a value indefinitely.
+</p><p>Since the sequences are lazy — meaning the next element in a sequence is not evaluated until you ask for it by invoking the lambda — they do not actually have to terminate. You only need a terminating sequence if your code actually traverses the whole sequence until it encounters the <code>0</code> that indicates its end.
+</p><p>To round this up, let’s take a look at the <i>truncate</i> function. You could use this to turn an infinite sequence into a finite one for output.
+</p>
+<pre>         ┌────────────┬───────────┐
+       ┌─┴─╖          │  ╓───╖    │
+     ┌─┤   ╟─────┐    └──╢ ȶ ╟──┐ │
+     │ └─┬─╜   ┌─┴─╖     ╙───╜  │ │
+     │   └─────┤ · ╟────┐       │ │
+     │         ╘═╤═╝    │       │ │    ╔═════════════════════════════╗
+     │   ┌───┐ ┌─┴─╖  ╔═╧═╕     │ │    ║  truncate                   ║
+     │  ┌┴┐  │ │ ȶ ╟──╢   ├─┬─┐ │ │    ╟─────────────────────────────╢
+     │  └┬┘  │ ╘═╤═╝  ╚═╤═╛ └─┘ │ │    ║  Truncates a lazy sequence  ║
+     │ ┌─┴─╖ └───┘    ┌─┴─╖     │ │    ║  after at most n elements   ║
+     │ │ ♯ ║ ┌────────┤ · ╟───┐ │ │    ╚═════════════════════════════╝
+     │ ╘═╤═╝ │        ╘═╤═╝   ├─┘ │
+     │  ┌┴┐  │        ┌─┴─╖   │   │
+     │  └┬┘  │   ┌────┤&#160;? ╟───┘   │
+     │   └───┘   │    ╘═╤═╝       │
+     │         ╔═╧═╗  ┌─┴─╖       │
+     └─────────╢ 0 ╟──┤&#160;? ╟───────┘
+               ╚═══╝  ╘═╤═╝
+                        │
+</pre>
+<p>If the input sequence is empty, or <i>n</i> = 0, return an empty sequence. In all other cases, return a lambda expression that will retrieve the head of the original sequence and then call <i>truncate</i> recursively with <i>n</i> decremented. Eventually this will reach 0 and the sequence terminates.
+</p><p>Observe how this will evaluate each element of the original sequence only if and when the new sequence is evaluated. All the other familiar functional operations — such as <i>map</i>, <i>filter</i>, <i>zip</i>, etc. — can be implemented similarly, allowing them to be lazy and work on infinite sequences — unlike the <i>map</i> and <i>filter</i> function we defined for lists above, which always evaluate the entire list.
+</p>
+<h2><span class="mw-headline" id="Lists">Lists</span></h2>
+<p>The Funciton language does not have any <i>built-in</i> functionality for lists; but that is not necessary because we can implement lists entirely in Funciton itself. The encoding used to represent lists in a single humongous integer is not fundamental to the language; anyone could come up with a different encoding and implement new functions for that (as indeed I did for <a href="#Arrays">arrays</a> later).
+</p><p>(However, the official Funciton interpreter has a feature that allows you to trace the execution of a specific function. This feature will detect values that encode lists and decode them for the purposes of debugging. The encoding described here is the encoding understood by this feature of the interpreter as well as the one used by all the <a class="mw-selflink-fragment" href="#List_handling">list handling functions</a>.)
+</p><p>Since strings are encoded as integers, a list of integers can automatically double as a list of strings. Furthermore, since lists themselves are encoded as single integers, one can also have lists of lists, arbitrarily nested.
+</p>
+<h3><span class="mw-headline" id="List_encoding_grammar">List encoding grammar</span></h3>
+<p>Since integers are arbitrary-size, we cannot assume each element in a list fits into any particular number of bits. Therefore, we have to define a variable-length encoding for integers. The encoding described here chops each integer into chunks of 21 bits. (The number 21 is arbitrary, but since characters in a string are already 21 bits, I decided to reuse the number.)
+</p>
+<dl><dd><span typeof="mw:File"><a href="/wiki/File:Funciton_list_encoding_grammar.png" class="mw-file-description"><img src="/w/images/thumb/d/d0/Funciton_list_encoding_grammar.png/512px-Funciton_list_encoding_grammar.png" decoding="async" width="512" height="119" class="mw-file-element" srcset="/w/images/thumb/d/d0/Funciton_list_encoding_grammar.png/768px-Funciton_list_encoding_grammar.png 1.5x, /w/images/d/d0/Funciton_list_encoding_grammar.png 2x" /></a></span></dd></dl>
+<ul><li><b>In the above diagram, the least significant bit is on the <i>right</i>.</b></li>
+<li>Each element in the list is split into chunks of 21 bits. (The number 0 has no chunks.)</li>
+<li>The least significant bits of the final encoding contain the least significant chunk of the element.</li>
+<li>Each chunk is preceded by a continuation bit: 0 = more chunks to come, 1 = no more chunks.</li>
+<li>The number is preceded by a sign bit. If the sign bit is set, the entire element is bitwise negated.</li></ul>
+<p>Notice that this encoding has several consequences:
+</p>
+<ul><li>The empty list is represented by the number 0.</li>
+<li>The number 2 encodes a list containing one element, which is 0 (no chunks, sign bit is 0).</li>
+<li>The number 3 encodes a list containing one element, which is −1 (no chunks, sign bit is 1).</li>
+<li>The number 1 is not a valid list.</li>
+<li>Negative numbers also never constitute a valid list.</li>
+<li>Many of the list functions will get stuck in infinite loops if you pass them an invalid list.</li></ul>
+<h3><span class="mw-headline" id="Examples">Examples</span></h3>
+<p>List containing two items, each ≤ 21 bits long (again, in this diagram, the <i>least</i> significant bit is on the <i>right</i>):
+</p>
+<dl><dd><span typeof="mw:File"><a href="/wiki/File:Funciton_list_encoding_example_1.png" class="mw-file-description"><img src="/w/images/thumb/a/a2/Funciton_list_encoding_example_1.png/512px-Funciton_list_encoding_example_1.png" decoding="async" width="512" height="107" class="mw-file-element" srcset="/w/images/thumb/a/a2/Funciton_list_encoding_example_1.png/768px-Funciton_list_encoding_example_1.png 1.5x, /w/images/a/a2/Funciton_list_encoding_example_1.png 2x" /></a></span></dd></dl>
+<p>List containing one item between 22 and 42 bits long:
+</p>
+<dl><dd><span typeof="mw:File"><a href="/wiki/File:Funciton_list_encoding_example_2.png" class="mw-file-description"><img src="/w/images/thumb/f/f3/Funciton_list_encoding_example_2.png/597px-Funciton_list_encoding_example_2.png" decoding="async" width="597" height="106" class="mw-file-element" srcset="/w/images/thumb/f/f3/Funciton_list_encoding_example_2.png/896px-Funciton_list_encoding_example_2.png 1.5x, /w/images/thumb/f/f3/Funciton_list_encoding_example_2.png/1194px-Funciton_list_encoding_example_2.png 2x" /></a></span></dd></dl>
+<h2><span class="mw-headline" id="Regular_expressions">Regular expressions</span></h2>
+<p>Starting in 2025, Funciton has library functions that implement a rudimentary regular expression engine. However, it sports the following significant differences from regular expressions in normal programming languages:
+</p>
+<ul><li>There is no regular expression <i>parser</i>. Instead, regular expressions are constructed by calling functions that create or modify regular expressions.</li>
+<li>These regular expressions match against lazy sequences, not strings. This lets us match against sequences of any kind of value. To match against a string, use ↯ to convert the string to a lazy sequence first.</li>
+<li>Each match of a regular expression within an input is associated with a “result value”. This is more flexible than capturing groups: instead of always getting a substring of the input, the regex can return any kind of result value.</li></ul>
+<p>Under the hood, regular expressions are implemented as follows:
+</p>
+<ul><li>A regular expression is really a lambda that takes a lazy sequence as input and returns a lazy sequence of “matches”. This lambda only matches against the <b>start</b> of the input. The matching function ⇯ takes the first of those matches. The rest are used for backtracking.</li>
+<li>A “match” is actually a lambda that ignores its input and returns two values:
+<ul><li>The first output is the rest of the input that comes after the match. To reconstruct the matched subsequence, ⊬ can be used.</li>
+<li>The second output is the result value associated with the match.</li></ul></li></ul>
+<p>To construct a typical regular expression, let’s say <code>mul\((\d*),(\d*)\)</code>, one would:
+</p>
+<ul><li>Use ℞ to create a basic regular expression that matches a specific sequence (such as the characters in <code>mul(</code>).</li>
+<li>Use ℟ to create a regular expression that matches a single element that satisfies a predicate (such as “is a digit character”).</li>
+<li>Use ⊗ to match repetitions of a regex (equivalent to <code>*</code> in traditional regex syntax).</li>
+<li>Use ℣ to associate each group of digits with the integer they represent.
+<ul><li>The convenience function № provides a regular expression that matches a group of digits and associates it with the parsed integer.</li></ul></li>
+<li>Use ∔/⨥/⧺ to concatenate the regexes, obtaining a single regex that matches the whole thing.
+<ul><li>In particular, ⧺ would be used to combine the result values from the two groups of digits into one value (for example, by creating a list or tuple).</li></ul></li></ul>
+<p>Once constructed, such a regular expression can then be passed to ⇯ alongside an input. This will find all matches of the regex within that input and return a sequence of the associated result values.
+</p><p>The following example code constructs a regular expression similar to <code>mul\((\d*),(\d*)\)</code>, except that it directly multiplies the two matched numbers. The results of those multiplications are output as a comma-separated list.
+</p>
+<pre>                  ╔═══╗
+                  ║ 0 ║
+                  ╚═╤═╝                           ╔═════╤═════════╤═════╗
+                  ┌─┴─╖                           ║  ↓  │  "mul(" │  ↓  ║
+                  │ № ║                           ╚═════╧═════════╧═════╝
+                  ╘═╤═╝        ┌───╖ ┌───╖ ┌───╖ ╔═══════════════════════╗
+      ┌─────────────┴──────────┤ ⨥ ╟─┤ ℞ ╟─┤ ↯ ╟─╢ 368935356463459598445 ║
+      │                        ╘═╤═╝ ╘═══╝ ╘═══╝ ╚═══════════════════════╝
+      │ ╔════╗ ┌───╖ ┌───╖ ┌───╖ │   ╔═══╤═══════╗
+      │ ║ 44 ╟─┤ ↯ ╟─┤ ℞ ╟─┤ ∔ ╟─┘   ║ ← │  ","  ║
+      │ ╚════╝ ╘═══╝ ╘═══╝ ╘═╤═╝     ╚═══╧═══════╝
+      └──────────────────┐   │
+   ┌───────────────┐     │   │
+   │   ┌─────┐     │     │   │
+   │ ┌─┴─╖ ╔═╧═╕ ╔═╧═╕ ┌─┴─╖ │
+   │ │ × ╟─╢   ├─╢   ├─┤ ⧺ ╟─┘
+   │ ╘═╤═╝ ╚═╤═╛ ╚═╤═╛ ╘═╤═╝
+   └───┘     └──┬──┘     │
+              ╔═╧═╗      │
+              ║ 0 ║      │
+              ╚═══╝      │
+╔════╗ ┌───╖ ┌───╖ ┌───╖ │
+║ 41 ╟─┤ ↯ ╟─┤ ℞ ╟─┤ ∔ ╟─┘
+╚════╝ ╘═══╝ ╘═══╝ ╘═╤═╝ ┌───╖ ┌───╖ ╔═══╗    ╔═══════════════════════════════════╗
+╔═══╤═══════╗        └───┤ ⇯ ╟─┤ ↯ ╟─╢   ║    ║ ←  match stdin against the regex  ║
+║ ↑ │  ")"  ║            ╘═╤═╝ ╘═══╝ ╚═══╝    ╚═══════════════════════════════════╝
+╚═══╧═══════╝            ┌─┴─╖ ┌─┴─╖ ╔════╗
+                         │ ɱ ╟─┤ ʝ ╟─╢ 44 ║   ╔═════════════════════════════════╗
+                         ╘═╤═╝ ╘═══╝ ╚════╝   ║ ←  convert integers to strings  ║
+                   ┌───╖ ╔═╧═╕ ╔═══╗          ║    and join them with commas    ║
+                 ┌─┤ ▷ ╟─╢   ├─╢ 0 ║          ╚═════════════════════════════════╝
+                 │ ╘═══╝ ╚═╤═╛ ╚═══╝
+                 └─────────┘
+</pre>
+<h2><span class="mw-headline" id="Arrays">Arrays</span></h2>
+<p>Starting in 2025, Funciton has library functions to deal with arrays. Functionally, these are the same as lists (a finite bunch of arbitrary-size integers all encoded into a single integer), but their internal implementation is designed to allow constant-time retrieval (with the downside of potentially increasing the cost of constructing). This enables binary search, a logarithmic-time retrieval algorithm on sorted arrays.
+</p><p>An array is encoded as follows:
+</p>
+<ul><li>The empty array is represented by the number 0.</li>
+<li>The least significant bits contain a list-like encoding (using <code>›</code>) of <i>b</i>, the bitlength of each element.</li>
+<li>The next <i>b</i> bits contain a number equal to one less than the length of the array.</li>
+<li>Next, the elements, with <i>b</i> bits per element. Each element’s LSB is a sign bit: if it is 0, the remaining <i>b</i>−1 bits encode the number directly; if it is 1, the number is stored bitwise negated.</li></ul>
+<p>Since the finite bitlength of each element limits the maximum size of elements in an array, the insertion function will recode the entire array whenever a larger element is inserted. This is the increased cost of construction alluded to earlier. However, increasing the bitlength even by just 1 bit will double the range of representable integers, thus recoding usually only happens a couple times when inserting elements that are not wildly different by orders of magnitude. The ∲ function (convert lazy sequence to array) constructs the array from the last element to the first, so the somewhat common case of converting a sorted (or almost-sorted) sequence will not incur any recoding at all.
+</p><p>One consequence of this new encoding is that, unlike lists, arrays containing the same elements in the same order do not necessarily have the same value. If you create an array containing the value 1, then add the value 100, then remove the value 100 again, the new array is not recoded to shrink the bitlength; therefore, although you still have an array containing just the value 1, it will not compare numerically equal with the first array.
+</p>
+<h2><span class="mw-headline" id="All_functions">All functions</span></h2>
+<p>The interpreter comes with an <a rel="nofollow" class="external text" href="https://codeberg.org/Timwi/Funciton/src/branch/main/FncLib">extensive library</a> of useful functions, all listed here:
+</p>
+<table>
+<tbody><tr valign="top">
+<td>
+<h3><span class="mw-headline" id="Comparison_functions">Comparison functions</span></h3>
+<table class="wikitable">
+<tbody><tr>
+<th>&lt; / &gt; / ≤ / ≥
+</th>
+<td>less than / greater than / less than or equal to / greater than or equal to
+</td></tr>
+<tr>
+<th>= / ≠
+</th>
+<td>equal to / not equal to
+</td></tr>
+<tr>
+<th>≷ / ⋛ / ⪌
+</th>
+<td>in range (exclusive / min-inclusive max-exclusive / inclusive)
+</td></tr>
+<tr>
+<th>≶ / ⋚ / ⪋
+</th>
+<td>out of range (exclusive / min-exclusive max-inclusive / inclusive)
+</td></tr></tbody></table>
+<h3><span class="mw-headline" id="Conditional_functions">Conditional functions</span></h3>
+<table class="wikitable">
+<tbody><tr>
+<th>‽
+</th>
+<td>if c (then, else) (c must be 0 or −1)
+</td></tr>
+<tr>
+<th>?
+</th>
+<td>if c ≠ 0 (then, else)
+</td></tr>
+<tr>
+<th>⁉
+</th>
+<td>if c = 0 (then, else)
+</td></tr>
+<tr>
+<th>⩻
+</th>
+<td>if c &lt; 0 (then, else)
+</td></tr>
+<tr>
+<th>⩼
+</th>
+<td>if c &gt; 0 (then, else)
+</td></tr></tbody></table>
+<h3><span class="mw-headline" id="Miscellaneous_functions">Miscellaneous functions</span></h3>
+<table class="wikitable">
+<tbody><tr>
+<th>·
+</th>
+<td>cross-nop (used to cross wires, otherwise a no-op)
+</td></tr>
+<tr>
+<th>∘
+</th>
+<td>function composition for lambda expressions
+</td></tr>
+<tr>
+<th>⧮
+</th>
+<td>count bits in non-negative number (= ⌊log₂(x)⌋+1)
+</td></tr>
+<tr>
+<th>⧯
+</th>
+<td>count 1-bits in non-negative number (a.k.a. population count)
+</td></tr></tbody></table>
+</td>
+<td>
+<h3><span class="mw-headline" id="Arithmetic_functions">Arithmetic functions</span></h3>
+<table class="wikitable">
+<tbody><tr>
+<th>&lt;&lt; / &gt;&gt;
+</th>
+<td>shift left / shift right
+</td></tr>
+<tr>
+<th>^
+</th>
+<td>bitwise XOR (exclusive or)
+</td></tr>
+<tr>
+<th>♯
+</th>
+<td>increment (plus one)
+</td></tr>
+<tr>
+<th>♭
+</th>
+<td>decrement (minus one)
+</td></tr>
+<tr>
+<th>+
+</th>
+<td>addition (plus)
+</td></tr>
+<tr>
+<th>−
+</th>
+<td>unary minus (negative)
+</td></tr>
+<tr>
+<th>|
+</th>
+<td>absolute value
+</td></tr>
+<tr>
+<th>×
+</th>
+<td>multiplication (times)
+</td></tr>
+<tr>
+<th>÷
+</th>
+<td>integer division (round down)
+</td></tr>
+<tr>
+<th>%
+</th>
+<td>modulo (negative for negative <i>a</i>; the way most programming languages define it)
+</td></tr>
+<tr>
+<th>mod
+</th>
+<td>modulo (always non-negative for positive <i>b</i>; the way mathematicians define it)
+</td></tr>
+<tr>
+<th>÷%
+</th>
+<td>division and modulo (two-input, two-output function)
+</td></tr>
+<tr>
+<th>↑
+</th>
+<td>exponentiation (to the power of) (<a href="https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation" class="extiw" title="wikipedia:Knuth&#39;s up-arrow notation">up-arrow notation</a>)
+</td></tr>
+<tr>
+<th>!
+</th>
+<td>factorial
+</td></tr>
+<tr>
+<th>A
+</th>
+<td><a href="https://en.wikipedia.org/wiki/Ackermann_function" class="extiw" title="wikipedia:Ackermann function">Ackermann function</a>
+</td></tr>
+<tr>
+<th>Ṗ
+</th>
+<td>lazy sequence of primes up to <i>n</i>
+</td></tr>
+<tr>
+<th>Ḟ
+</th>
+<td>lazy sequence of prime factorization of <i>n</i> (empty for <i>n</i> &lt; 2)
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+<table>
+<tbody><tr valign="top">
+<td>
+<h3><span class="mw-headline" id="String_functions">String functions</span></h3>
+<p>The number 0 represents the empty string.
+</p>
+<table class="wikitable">
+<tbody><tr>
+<th>ℓ
+</th>
+<td>string length
+</td></tr>
+<tr>
+<th>‼
+</th>
+<td>string concatenation
+</td></tr>
+<tr>
+<th>ʃ
+</th>
+<td>substring (string, index, length)
+</td></tr>
+<tr>
+<th>ʘ
+</th>
+<td>index of first occurrence of a substring, or −1 if not found (haystack, needle)
+</td></tr>
+<tr>
+<th>…
+</th>
+<td>repeat string a number of times (string, number)
+</td></tr>
+<tr>
+<th>⮌
+</th>
+<td>reverse string
+</td></tr>
+<tr>
+<th>ǂ
+</th>
+<td>single split: given a separator, return everything before and after its first occurrence
+</td></tr>
+<tr>
+<th>⋔
+</th>
+<td>replace a single character in a string with a specified new character
+</td></tr>
+<tr>
+<th>◁
+</th>
+<td>parse string containing decimal digits into an integer
+</td></tr>
+<tr>
+<th>▷
+</th>
+<td>convert integer to string
+</td></tr>
+<tr>
+<th>▦
+</th>
+<td>Turns a 2D character grid with newlines into a flattened grid and width/height
+</td></tr></tbody></table>
+</td>
+<td>
+<h3><span class="mw-headline" id="Array_functions">Array functions</span></h3>
+<p>The number 0 represents the empty array.
+</p>
+<table class="wikitable">
+<tbody><tr>
+<th>⧦
+</th>
+<td>length of array (number of elements)
+</td></tr>
+<tr>
+<th>⟦
+</th>
+<td>index into array (retrieve element)
+</td></tr>
+<tr>
+<th>⎀
+</th>
+<td>insert element into array at index
+</td></tr>
+<tr>
+<th>⎃
+</th>
+<td>delete element from array at index
+</td></tr>
+<tr>
+<th>⎂
+</th>
+<td>replace element at index with a new element (insert if index ≥ length)
+</td></tr>
+<tr>
+<th>⍝
+</th>
+<td>swap two elements by index
+</td></tr>
+<tr>
+<th>⧓
+</th>
+<td>binary search: assumes array is sorted; returns <i>found</i> (boolean) and <i>index</i>
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+<h3><span class="mw-headline" id="List_functions">List functions</span></h3>
+<p>The number 0 represents the empty list.
+</p>
+<table>
+<tbody><tr valign="top">
+<td>
+<table class="wikitable">
+<tbody><tr>
+<th>‹
+</th>
+<th>shift
+</th>
+<td>returns head and tail
+</td></tr>
+<tr>
+<th>›
+</th>
+<th>unshift
+</th>
+<td>returns result list only
+</td></tr>
+<tr>
+<th>«
+</th>
+<th>push
+</th>
+<td>adds element to end of list
+</td></tr>
+<tr>
+<th>»
+</th>
+<th>pop
+</th>
+<td>returns leg and foot
+</td></tr>
+<tr>
+<th>[
+</th>
+<th>indexing
+</th>
+<td>returns n<sup>th</sup> element and its bit offset
+</td></tr>
+<tr>
+<th>]
+</th>
+<th>reverse indexing
+</th>
+<td>returns (length − n)<sup>th</sup> element’s index and bit offset
+</td></tr>
+<tr>
+<th>↨
+</th>
+<th>replace element
+</th>
+<td>set n<sup>th</sup> element to a new element
+</td></tr>
+<tr>
+<th>→
+</th>
+<th>index of
+</th>
+<td>returns index of first element that matches a predicate (or −1)
+</td></tr>
+<tr>
+<th>←
+</th>
+<th>last index of
+</th>
+<td>returns index of last element that matches a predicate (or −1)
+</td></tr>
+<tr>
+<th>ᴀ
+</th>
+<th>aggregate (fold)
+</th>
+<td>computes a single value by iteratively applying a lambda to each element
+</td></tr>
+<tr>
+<th>ʙ
+</th>
+<th>bit length
+</th>
+<td>returns bit length of all items in list
+</td></tr>
+<tr>
+<th>ᴄ
+</th>
+<th>concat
+</th>
+<td>concatenates two lists
+</td></tr>
+<tr>
+<th>ʗ
+</th>
+<th>count
+</th>
+<td>counts the number of elements that match a predicate
+</td></tr>
+<tr>
+<th>ᴅ
+</th>
+<th>distinct
+</th>
+<td>removes duplicate elements from a list
+</td></tr>
+<tr>
+<th>ɛ
+</th>
+<th>indexing
+</th>
+<td>returns n<sup>th</sup> element
+</td></tr></tbody></table>
+</td>
+<td>
+<table class="wikitable">
+<tbody><tr>
+<th>ɜ
+</th>
+<th>reverse indexing
+</th>
+<td>returns (length − n)<sup>th</sup> element
+</td></tr>
+<tr>
+<th>ᴇ
+</th>
+<th>extract sublist
+</th>
+<td>takes index and length, works just like substring
+</td></tr>
+<tr>
+<th>ꜰ
+</th>
+<th>filter
+</th>
+<td>returns a list containing only elements that match a predicate
+</td></tr>
+<tr>
+<th>ɢ
+</th>
+<th>index of
+</th>
+<td>index of first occurrence of element (or −1)
+</td></tr>
+<tr>
+<th>ʛ
+</th>
+<th>last index of
+</th>
+<td>index of last occurrence of element (or −1)
+</td></tr>
+<tr>
+<th>ʜ
+</th>
+<th>shift
+</th>
+<td>like ‹, but returns head bitlength as well
+</td></tr>
+<tr>
+<th>ɪ
+</th>
+<th>insert
+</th>
+<td>insert element at index
+</td></tr>
+<tr>
+<th>ʟ
+</th>
+<th>length
+</th>
+<td>returns number of items in list
+</td></tr>
+<tr>
+<th>ᴍ
+</th>
+<th>map
+</th>
+<td>passes every element through a lambda and returns the new list
+</td></tr>
+<tr>
+<th>ʀ
+</th>
+<th>remove
+</th>
+<td>remove element at index
+</td></tr>
+<tr>
+<th>ᴙ
+</th>
+<th>reverse
+</th>
+<td>reverse list
+</td></tr>
+<tr>
+<th>ʁ
+</th>
+<th>bit offset
+</th>
+<td>bit offset of n<sup>th</sup> element
+</td></tr>
+<tr>
+<th>ᴚ
+</th>
+<th>bit offset (reverse)
+</th>
+<td>bit offset of (length − n)<sup>th</sup> element
+</td></tr>
+<tr>
+<th>ᴜ
+</th>
+<th>unshift
+</th>
+<td>returns unshifted list and bitlength of new element
+</td></tr>
+<tr>
+<th>ʏ
+</th>
+<th>flatten
+</th>
+<td>concatenates all the lists in a list of lists into a single list
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+<h3><span class="mw-headline" id="Lazy_sequence_functions">Lazy sequence functions</span></h3>
+<p>The number 0 represents the empty sequence. Everything else is a lambda expression that returns the head element and the tail. The tail is another lazy sequence, or 0 if the sequence ends here.
+</p>
+<table>
+<tbody><tr valign="top">
+<td>
+<table class="wikitable">
+<tbody><tr>
+<th>⌑
+</th>
+<th>return
+</th>
+<td>monadic return (lazy sequence containing a single value)
+</td></tr>
+<tr>
+<th>⁞
+</th>
+<th>one
+</th>
+<td>repeat a value indefinitely
+</td></tr>
+<tr>
+<th>⸗
+</th>
+<th>two
+</th>
+<td>alternate two values indefinitely
+</td></tr>
+<tr>
+<th>≡
+</th>
+<th>three
+</th>
+<td>cycle three values indefinitely
+</td></tr>
+<tr>
+<th>♪
+</th>
+<th>count up
+</th>
+<td>all integers starting at <i>x</i>
+</td></tr>
+<tr>
+<th>♫
+</th>
+<th>count up
+</th>
+<td><i>n</i> consecutive integers starting at <i>x</i>
+</td></tr>
+<tr>
+<th>ʭ
+</th>
+<th>concatenate
+</th>
+<td>concatenate two sequences
+</td></tr>
+<tr>
+<th>ʬ
+</th>
+<th>append
+</th>
+<td>append a single element to the end of a sequence
+</td></tr>
+<tr>
+<th>≛
+</th>
+<th>equal
+</th>
+<td><code>−1</code> if two sequences are equal, <code>0</code> otherwise
+</td></tr>
+<tr>
+<th>⨲
+</th>
+<th>pairs
+</th>
+<td>maps a function over the Cartesian product of two sequences
+</td></tr>
+<tr>
+<th>⋉
+</th>
+<th>index of
+</th>
+<td>index of first element satisfying a predicate (or <code>−1</code>)
+</td></tr>
+<tr>
+<th>⋊
+</th>
+<th>last index of
+</th>
+<td>index of last element satisfying a predicate (or <code>−1</code>)
+</td></tr>
+<tr>
+<th>⊷
+</th>
+<th>first or default
+</th>
+<td>first element or default value if sequence empty
+</td></tr>
+<tr>
+<th>⊶
+</th>
+<th>last or default
+</th>
+<td>last element or default value if sequence empty
+</td></tr>
+<tr>
+<th>⊥
+</th>
+<th>min
+</th>
+<td>find the minimum value (smallest integer)
+</td></tr>
+<tr>
+<th>⊤
+</th>
+<th>max
+</th>
+<td>find the maximum value (largest integer)
+</td></tr>
+<tr>
+<th>⊢
+</th>
+<th>starts with
+</th>
+<td>determines if a lazy sequence starts with another (and if so, returns the rest)
+</td></tr>
+<tr>
+<th>⊬
+</th>
+<th>truncate at tail
+</th>
+<td>truncates a sequence at the first occurrence of a given tail sequence
+</td></tr>
+<tr>
+<th>∀
+</th>
+<th>all
+</th>
+<td><code>−1</code> if all elements satisfy a predicate, <code>0</code> otherwise
+</td></tr>
+<tr>
+<th>ɓ
+</th>
+<th>bind
+</th>
+<td>monadic bind (map + concatenate)
+</td></tr>
+<tr>
+<th>ɕ
+</th>
+<th>count
+</th>
+<td>number of elements
+</td></tr>
+<tr>
+<th>ƈ
+</th>
+<th>contains
+</th>
+<td><code>−1</code> if element is in the sequence, <code>0</code> otherwise
+</td></tr></tbody></table>
+</td>
+<td>
+<table class="wikitable">
+<tbody><tr>
+<th>ɗ
+</th>
+<th>default
+</th>
+<td>adds an element to a sequence only if it is empty
+</td></tr>
+<tr>
+<th>∃
+</th>
+<th>exists
+</th>
+<td><code>−1</code> if any element satisfies a predicate, <code>0</code> otherwise
+</td></tr>
+<tr>
+<th>ᶒ
+</th>
+<th>element
+</th>
+<td>retrieve element by its index
+</td></tr>
+<tr>
+<th>ƒ
+</th>
+<th>filter
+</th>
+<td>return only elements that match a predicate
+</td></tr>
+<tr>
+<th>ʩ
+</th>
+<th>fold/aggregate
+</th>
+<td>computes a value by iteratively applying a lambda to each element
+</td></tr>
+<tr>
+<th>ɠ
+</th>
+<th>group
+</th>
+<td>group by the results of a selector (result is a sequence of sequences)
+</td></tr>
+<tr>
+<th>ɱ
+</th>
+<th>map
+</th>
+<td>pass every element through a lambda
+</td></tr>
+<tr>
+<th>ᶗ
+</th>
+<th>omit
+</th>
+<td>omit (remove) element by its index
+</td></tr>
+<tr>
+<th>ƥ
+</th>
+<th>permutations
+</th>
+<td>compute all permutations (result is a sequence of sequences)
+</td></tr>
+<tr>
+<th>ꝓ
+</th>
+<th>consecutive pairs
+</th>
+<td>run all consecutive pairs through a lambda (returns sequence of results)
+</td></tr>
+<tr>
+<th>∏
+</th>
+<th>product
+</th>
+<td>product of all elements in a sequence
+</td></tr>
+<tr>
+<th>ɹ
+</th>
+<th>reverse
+</th>
+<td>reverse a lazy sequence
+</td></tr>
+<tr>
+<th>ʂ
+</th>
+<th>subsequences
+</th>
+<td>compute all subsequences (result is a sequence of sequences)
+</td></tr>
+<tr>
+<th>ᶋ
+</th>
+<th>sort asc
+</th>
+<td>ascending sort of integers
+</td></tr>
+<tr>
+<th>ʆ
+</th>
+<th>sort asc
+</th>
+<td>ascending sort according to the results of a selector
+</td></tr>
+<tr>
+<th>ƪ
+</th>
+<th>sort desc
+</th>
+<td>descending sort according to the results of a selector
+</td></tr>
+<tr>
+<th>ſ
+</th>
+<th>sort
+</th>
+<td>sort according to a comparison function
+</td></tr>
+<tr>
+<th>∑
+</th>
+<th>sum
+</th>
+<td>sum of all elements in a sequence
+</td></tr>
+<tr>
+<th>ʓ
+</th>
+<th>skip
+</th>
+<td>remove the first <i>n</i> elements
+</td></tr>
+<tr>
+<th>ȶ
+</th>
+<th>truncate
+</th>
+<td>stop after at most <i>n</i> elements
+</td></tr>
+<tr>
+<th>ʑ
+</th>
+<th>zip
+</th>
+<td>pass every pair of same-index elements through a lambda
+</td></tr>
+<tr>
+<th>ʥ
+</th>
+<th>zip-bind
+</th>
+<td>same as ʑ, but concatenate lazy sequences returned by the lambda
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+<table>
+<tbody><tr valign="top">
+<td>
+<h3><span class="mw-headline" id="Regular_expression_functions">Regular expression functions</span></h3>
+<table class="wikitable">
+<tbody><tr>
+<th>Fn</th>
+<th>Description</th>
+<th>Result value
+</th></tr>
+<tr>
+<th>℞
+</th>
+<td>regex that matches one occurrence of a given sequence
+</td>
+<td>0
+</td></tr>
+<tr>
+<th>ℛ
+</th>
+<td>regex that matches one occurrence of a given sequence
+</td>
+<td>specified
+</td></tr>
+<tr>
+<th>℟
+</th>
+<td>regex that matches an element against a predicate
+</td>
+<td>the matched element
+</td></tr>
+<tr>
+<th>⊚
+</th>
+<td>regex that matches any single element
+</td>
+<td>the matched element
+</td></tr>
+<tr>
+<th>№
+</th>
+<td>regex that matches an ASCII integer
+</td>
+<td>the converted integer
+</td></tr>
+<tr>
+<th>℣
+</th>
+<td>passes the result value of a regex through a lambda
+</td>
+<td>result of the lambda
+</td></tr>
+<tr>
+<th>ǀ
+</th>
+<td>alternation: returns a regex that matches either one of two regexes
+</td>
+<td>whichever matched
+</td></tr>
+<tr>
+<th>◫
+</th>
+<td>n-ary alternation: converts a lazy sequence of regexes into a regex that matches any one of them
+</td>
+<td>whichever matched
+</td></tr>
+<tr>
+<th>∔
+</th>
+<td>concatenates two regexes
+</td>
+<td>first regex’s result value
+</td></tr>
+<tr>
+<th>⨥
+</th>
+<td>concatenates two regexes
+</td>
+<td>second regex’s result value
+</td></tr>
+<tr>
+<th>⧺
+</th>
+<td>concatenates two regexes and passes the result values through a lambda
+</td>
+<td>result of the lambda
+</td></tr>
+<tr>
+<th>⊗ / ⊠
+</th>
+<td>greedy/non-greedy repeater with zero or more matches
+</td>
+<td>lazy sequence of inner result values
+</td></tr>
+<tr>
+<th>⊕ / ⊞
+</th>
+<td>greedy/non-greedy repeater with minimum number of matches
+</td>
+<td>lazy sequence of inner result values
+</td></tr>
+<tr>
+<th>⊖ / ⊟
+</th>
+<td>greedy/non-greedy repeater with maximum number of matches
+</td>
+<td>lazy sequence of inner result values
+</td></tr>
+<tr>
+<th>⊙ / ⊡
+</th>
+<td>greedy/non-greedy repeater with range of number of matches
+</td>
+<td>lazy sequence of inner result values
+</td></tr>
+<tr>
+<th>⊜
+</th>
+<td>repeater with exact number of matches
+</td>
+<td>lazy sequence of inner result values
+</td></tr>
+<tr>
+<th>⇯
+</th>
+<td colspan="2">search a string for matches of a regex and return lazy sequence of result values of the matches
+</td></tr>
+<tr>
+<th>⇪
+</th>
+<td colspan="2">determine whether a string matches a regex from start to end
+</td></tr></tbody></table>
+</td>
+<td>
+<h3><span class="mw-headline" id="Additional_functions">Additional functions</span></h3>
+<p>These are functions that involve more than one of the data structures that have dedicated sections above.
+</p>
+<table class="wikitable">
+<tbody><tr>
+<th>⌠
+</th>
+<td>converts a <a href="#Lazy_sequences">lazy sequence</a> to a <a href="#Lists">list</a>
+</td></tr>
+<tr>
+<th>⌡
+</th>
+<td>converts a <a href="#Lists">list</a> to a <a href="#Lazy_sequences">lazy sequence</a>
+</td></tr>
+<tr>
+<th>∳
+</th>
+<td>converts an <a href="#Arrays">array</a> to a <a href="#Lazy_sequences">lazy sequence</a>
+</td></tr>
+<tr>
+<th>∲
+</th>
+<td>converts a <a href="#Lazy_sequences">lazy sequence</a> to an <a href="#Arrays">array</a>
+</td></tr>
+<tr>
+<th>∱
+</th>
+<td>converts a <a href="#Lazy_sequences">lazy sequence</a> to a sorted <a href="#Arrays">array</a> (using binary search to insert each element)
+</td></tr>
+<tr>
+<th>ǁ
+</th>
+<td>lazy string split: lazily separate a string at every occurrence of a substring
+</td></tr>
+<tr>
+<th>↯
+</th>
+<td>convert string to a lazy sequence of its characters
+</td></tr>
+<tr>
+<th>⁂
+</th>
+<td>string suffixes as a lazy sequence
+</td></tr>
+<tr>
+<th>ꜱ
+</th>
+<td>list string split: separate a string at every occurrence of a substring and return a list
+</td></tr>
+<tr>
+<th>ʝ
+</th>
+<td>string join: concatenate sequence of strings using separator
+</td></tr>
+<tr>
+<th>ᴊ
+</th>
+<td>string join: concatenate list of strings using separator
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+<h2><span class="mw-headline" id="Example_programs">Example programs</span></h2>
+<ul><li><a href="/wiki/Hello_world_program_in_esoteric_languages_(D-G)#Funciton" title="Hello world program in esoteric languages (D-G)">Hello, World!</a></li>
+<li><a href="/wiki/Funciton/99_bottles_of_beer_on_the_wall" title="Funciton/99 bottles of beer on the wall">99 bottles of beer on the wall</a></li>
+<li><a href="/wiki/Funciton/Digital_root_calculator" title="Funciton/Digital root calculator">Digital root calculator</a></li>
+<li><a href="/wiki/Funciton/Brainfuckiton" title="Funciton/Brainfuckiton">Brainfuckiton (Brainfuck interpreter)</a></li>
+<li><a href="/wiki/Funciton/Quine" title="Funciton/Quine">Quine</a></li>
+<li><a href="/wiki/Truth-machine#Funciton" title="Truth-machine">Truth-machine</a></li></ul>
+<h2><span class="mw-headline" id="See_also">See also</span></h2>
+<ul><li><a href="/wiki/%F0%9D%94%B9ox%C6%92%E2%8A%99ck" title="𝔹oxƒ⊙ck">𝔹oxƒ⊙ck</a></li></ul>
+<h2><span class="mw-headline" id="External_resources">External resources</span></h2>
+<ul><li>Interpreters/compilers:
+<ul><li><a rel="nofollow" class="external text" href="https://codeberg.org/Timwi/Funciton"><b>Funciton Interpreter and Compiler to .NET</b></a>, written in C# (requires .NET 4.0 or Mono 2.8; compiler requires the <a rel="nofollow" class="external text" href="https://github.com/jbevain/cecil">Mono.Cecil library</a>)</li>
+<li><a rel="nofollow" class="external free" href="https://github.com/qpliu/esolang/blob/master/featured/funkytown.hs">https://github.com/qpliu/esolang/blob/master/featured/funkytown.hs</a>, a minimal interpreter</li>
+<li><a rel="nofollow" class="external text" href="http://yoo2001818.github.io/AheuiChem/">A link that can help with the formatting</a>, although it can't be used to interpret Funciton because it is intended for <a href="/wiki/Aheui" title="Aheui">another language</a>.</li></ul></li>
+<li><a rel="nofollow" class="external text" href="https://codeberg.org/Timwi/AoC2024inFunciton">Advent of Code 2024 in Funciton</a></li></ul>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=Funciton&amp;oldid=192368">https://esolangs.org/w/index.php?title=Funciton&amp;oldid=192368</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Categories</a>: <ul><li><a href="/wiki/Category:Featured_languages" title="Category:Featured languages">Featured languages</a></li><li><a href="/wiki/Category:Languages" title="Category:Languages">Languages</a></li><li><a href="/wiki/Category:Two-dimensional_languages" title="Category:Two-dimensional languages">Two-dimensional languages</a></li><li><a href="/wiki/Category:Declarative_paradigm" title="Category:Declarative paradigm">Declarative paradigm</a></li><li><a href="/wiki/Category:2011" title="Category:2011">2011</a></li><li><a href="/wiki/Category:Implemented" title="Category:Implemented">Implemented</a></li><li><a href="/wiki/Category:Turing_complete" title="Category:Turing complete">Turing complete</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=Funciton" title="You are encouraged to create an account and log in; however, it is not mandatory"><span>Create account</span></a></li><li id="pt-login" class="mw-list-item"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=Funciton" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o"><span>Log in</span></a></li>
+		</ul>
+	</div>
+</nav>
+		<div id="left-navigation">
+<nav id="p-namespaces" class="mw-portlet mw-portlet-namespaces vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-namespaces-label"  >
+	<h3
+		id="p-namespaces-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Namespaces</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-nstab-main" class="selected mw-list-item"><a href="/wiki/Funciton" title="View the content page [c]" accesskey="c"><span>Page</span></a></li><li id="ca-talk" class="mw-list-item"><a href="/wiki/Talk:Funciton" rel="discussion" title="Discussion about the content page [t]" accesskey="t"><span>Discussion</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-variants" class="mw-portlet mw-portlet-variants emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-variants-label"  >
+	<input type="checkbox"
+		id="p-variants-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-variants-label"
+	>
+	<label
+		id="p-variants-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">English</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+		</div>
+		<div id="right-navigation">
+<nav id="p-views" class="mw-portlet mw-portlet-views vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-views-label"  >
+	<h3
+		id="p-views-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Views</span>
+	</h3>
+	<div class="vector-menu-content">

@@ -1,0 +1,696 @@
+{
+  "version": 1,
+  "takenAt": "2026-11-19T15:32:53.182Z",
+  "engine": "5c072ef0b289",
+  "userAgent": "forkling/0.10 (read-only reader for an autonomous AI; +https://github.com/RomanKuroptev/forkling)",
+  "entries": [
+    {
+      "url": "https://en.wikipedia.org/robots.txt",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "file": "files/48b98d80c8444d37.txt",
+      "bytes": 28275,
+      "sha256": "48b98d80c8444d37cdf50cc9a4d2257b66039477e581066d2356062a4cbd678f"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Main_Page",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/571cb574c2f07206.html",
+      "bytes": 184652,
+      "sha256": "571cb574c2f072060b055fc1f4739ae09529fbdd9429689595c0455180119f4e"
+    },
+    {
+      "url": "https://esolangs.org/robots.txt",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/plain",
+      "file": "files/66284f2b3d6b2f03.txt",
+      "bytes": 263,
+      "sha256": "66284f2b3d6b2f038949f041072479886c81645d2462bec2b6b2787db6a9f4a4"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Main_Page",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/2f235f93c642db86.html",
+      "bytes": 16462,
+      "sha256": "2f235f93c642db86a8c8a175856731d75e195d7df3429ee67d0c06e29a38f936"
+    },
+    {
+      "url": "https://api.imgflip.com/robots.txt",
+      "host": "api.imgflip.com",
+      "source": "imgflip",
+      "status": 200,
+      "contentType": "text/plain",
+      "file": "files/86471ef0c4ba9c7e.txt",
+      "bytes": 90,
+      "sha256": "86471ef0c4ba9c7eea65487f260178164ddd92d8fa656f0becaeea29ddc55b56"
+    },
+    {
+      "url": "https://api.imgflip.com/get_memes",
+      "host": "api.imgflip.com",
+      "source": "imgflip",
+      "status": 200,
+      "contentType": "application/json; charset=UTF-8",
+      "file": "files/aa83fe23cc48f088.json",
+      "bytes": 14640,
+      "sha256": "aa83fe23cc48f088b95a9a24f43dde953432218ff0541702babdc7f35eca8d08"
+    },
+    {
+      "url": "https://api.github.com/robots.txt",
+      "host": "api.github.com",
+      "source": "github-creative-coding",
+      "status": 404,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "url": "https://api.github.com/search/repositories?q=topic:creative-coding+stars:%3E20&sort=updated&per_page=4",
+      "host": "api.github.com",
+      "source": "github-creative-coding",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "file": "files/99fe60ae4844bb1d.json",
+      "bytes": 20603,
+      "sha256": "99fe60ae4844bb1dc45d9c8d4cddbb93838dea3e52bde38ef9dbd90f7a543a7f"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Wikipedia",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/295c5cb7fde42ce5.html",
+      "bytes": 99964,
+      "sha256": "295c5cb7fde42ce53c1370377d16800f4f06a809e35a48c76fe5d4dc5003c143"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Esoteric_programming_language",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/e86da21d05dc0a79.html",
+      "bytes": 21607,
+      "sha256": "e86da21d05dc0a79e3bb8921a785545988a3922286df0f23c6669677af97ab3e"
+    },
+    {
+      "url": "https://commons.wikimedia.org/robots.txt",
+      "host": "commons.wikimedia.org",
+      "source": "commons",
+      "status": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "file": "files/89c0b6b55d04a401.txt",
+      "bytes": 17713,
+      "sha256": "89c0b6b55d04a401346110c36c8cd8663a3443f4b69cb2909a26ff79ac8f3884"
+    },
+    {
+      "url": "https://commons.wikimedia.org/wiki/Main_Page",
+      "host": "commons.wikimedia.org",
+      "source": "commons",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/8a19bc0e2fbb4506.html",
+      "bytes": 184055,
+      "sha256": "8a19bc0e2fbb450689300e9fc15fa0cb17316a8631c9577b18918e443844c9f1"
+    },
+    {
+      "url": "https://commons.wikimedia.org/wiki/File:008_Eurasian_hoopoe_eating_in_Keoladeo_National_Park_Photo_by_Giles_Laurent.jpg",
+      "host": "commons.wikimedia.org",
+      "source": "commons",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/3e1058b8bfbd6de1.html",
+      "bytes": 99989,
+      "sha256": "3e1058b8bfbd6de1ddd3236abd11b4cc27b1b337583e222ea36373cd6ead4dfc"
+    },
+    {
+      "url": "https://api.github.com/search/repositories?q=topic:creative-coding+stars:%3E20&sort=updated&per_page=10",
+      "host": "api.github.com",
+      "source": "github-creative-coding",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "file": "files/2f4f57d5763c80b4.json",
+      "bytes": 53189,
+      "sha256": "2f4f57d5763c80b45fc670ade8f3b692f61a79d95fdf97a52c6cafef3dc311ee"
+    },
+    {
+      "url": "https://api.github.com/repos/DavidHDev/canvas-ui",
+      "host": "api.github.com",
+      "source": "github-creative-coding",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "file": "files/2e0bdc74110d988c.json",
+      "bytes": 5526,
+      "sha256": "2e0bdc74110d988cea3d8d4da4523b95cd41018c5129dccd7374c54ce14ebdbd"
+    },
+    {
+      "url": "https://api.github.com/repos/DavidHDev/canvas-ui/readme",
+      "host": "api.github.com",
+      "source": "github-creative-coding",
+      "status": 200,
+      "contentType": "application/vnd.github.raw; charset=utf-8",
+      "file": "files/8cb0134516a032d1.bin",
+      "bytes": 19596,
+      "sha256": "8cb0134516a032d1da27269bbc7bb28db5571cac7c5702a8b7982e3e58a10df7"
+    },
+    {
+      "url": "https://api.github.com/search/repositories?q=topic:animation+stars:%3E20&sort=updated&per_page=5",
+      "host": "api.github.com",
+      "source": "github-creative-coding",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "file": "files/1ef02cbf144d7977.json",
+      "bytes": 28780,
+      "sha256": "1ef02cbf144d79772639f710b1901247503313988f98f2dcc298140f9d5a1db5"
+    },
+    {
+      "url": "https://api.artic.edu/robots.txt",
+      "host": "api.artic.edu",
+      "source": "artic",
+      "status": 200,
+      "contentType": "text/plain; charset=UTF-8",
+      "file": "files/e5c4b84484ee4216.txt",
+      "bytes": 24,
+      "sha256": "e5c4b84484ee4216e9373be99380320c25dd94805f99f0a805846f087636553f"
+    },
+    {
+      "url": "https://api.artic.edu/api/v1/artworks/search?query[term][is_public_domain]=true&page=1&limit=1&fields=id",
+      "host": "api.artic.edu",
+      "source": "artic",
+      "status": 200,
+      "contentType": "application/json",
+      "file": "files/3fe2f24979c3d385.json",
+      "bytes": 698,
+      "sha256": "3fe2f24979c3d385af0c3483e243df32aa72c9bff14f29c1a3c1321a5d85cc46"
+    },
+    {
+      "url": "https://api.artic.edu/api/v1/artworks/28560?fields=id,title,artist_display,artist_title,date_display,medium_display,place_of_origin,description,short_description,image_id,is_public_domain,subject_titles",
+      "host": "api.artic.edu",
+      "source": "artic",
+      "status": 200,
+      "contentType": "application/json",
+      "file": "files/ff9381d0788c927d.json",
+      "bytes": 2645,
+      "sha256": "ff9381d0788c927d67e30072e740f1c1a8e0d9a6412e3c70ad1402e32737aec1"
+    },
+    {
+      "url": "https://api.artic.edu/api/v1/artworks/search?q=Vincent%20van%20Gogh&limit=4&fields=id,title",
+      "host": "api.artic.edu",
+      "source": "artic",
+      "status": 200,
+      "contentType": "application/json",
+      "file": "files/0bbafccc6e0ed631.json",
+      "bytes": 925,
+      "sha256": "0bbafccc6e0ed631e29b48074812c2418a7b7bec4c97e0fef2dac18aeb644545"
+    },
+    {
+      "url": "https://api.artic.edu/api/v1/artworks/search?q=interiors&limit=4&fields=id,title",
+      "host": "api.artic.edu",
+      "source": "artic",
+      "status": 200,
+      "contentType": "application/json",
+      "file": "files/11fc2abd576167cf.json",
+      "bytes": 969,
+      "sha256": "11fc2abd576167cf732c261f8dffe629d4fc527b0eb42e6e6d099a4909e6ec62"
+    },
+    {
+      "url": "https://api.artic.edu/api/v1/artworks/search?q=Saint-R%C3%A9my-de-Provence&limit=4&fields=id,title",
+      "host": "api.artic.edu",
+      "source": "artic",
+      "status": 200,
+      "contentType": "application/json",
+      "file": "files/7b9db5c34475bcd4.json",
+      "bytes": 914,
+      "sha256": "7b9db5c34475bcd4d55b4bbea39f889c5bee567c34507e6d2e496de66758dbf7"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Iron_Gate_(Antioch)",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/6420ddb5a7df4312.html",
+      "bytes": 99965,
+      "sha256": "6420ddb5a7df4312fb05e9b5655543e174731addb9c15bc23d385d7460252254"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Canadian_football",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/8cb58f0866786428.html",
+      "bytes": 99893,
+      "sha256": "8cb58f08667864284348f0c08c78328da195eaaf09397cd2150da778f9632b8f"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Helmi_Kurrik",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/629c6a15c0b5e18c.html",
+      "bytes": 99725,
+      "sha256": "629c6a15c0b5e18c2509f2ad209b28b238093cafb2408e60a930065679fef848"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/November_19",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/1c3b55fb2c7fba74.html",
+      "bytes": 99999,
+      "sha256": "1c3b55fb2c7fba74e410e4338475f939eb8095951300e58d1d3b94a6d2349bfd"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Joke_language_list",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/a94742d5ecb5dbd7.html",
+      "bytes": 95294,
+      "sha256": "a94742d5ecb5dbd7cead85b8265eadc8554e26219c3b1280c18674ee0faec7f1"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Thue",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/fb87a044d5a0cc4f.html",
+      "bytes": 28112,
+      "sha256": "fb87a044d5a0cc4f9eecf2fb83f776b13817d78ed638214221400e66d9e8b4c1"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Nondeterministic",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/c3b40d9e831413e0.html",
+      "bytes": 17437,
+      "sha256": "c3b40d9e831413e08e022e861877cdf85594f6c69fbac279f2efacaaeee67e3d"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Funciton",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/c59ca5e3f0e33cf1.html",
+      "bytes": 100000,
+      "sha256": "c59ca5e3f0e33cf1876c2822854b1aed4b84ccd941334759468fb1a217359b39"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Brainfuck",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/57d4d3af0e4759b8.html",
+      "bytes": 97277,
+      "sha256": "57d4d3af0e4759b8038a7090a3bb459f7923e1002437a0462b560c7ef8153fab"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Deadfish",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/77b0a87a10e7a50b.html",
+      "bytes": 26188,
+      "sha256": "77b0a87a10e7a50b042e0bc911f7e14976c3f139f7329a29e34dda8ec4e8ab44"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Emmental",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/640a686fc51a6f73.html",
+      "bytes": 29712,
+      "sha256": "640a686fc51a6f73639796ff832607ced65c0a82d09db9f04ee92cff319ecac5"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Language_list",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/e245007fafd2bfc7.html",
+      "bytes": 99965,
+      "sha256": "e245007fafd2bfc78d7c5acabe18873d0641523162ea05f1f8bd8d26eaec0670"
+    },
+    {
+      "url": "https://esolangs.org/wiki/List_of_ideas",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/c9b694df7f913b12.html",
+      "bytes": 99292,
+      "sha256": "c9b694df7f913b1252195613a1b55f45388db81af9a454cab3bff524bc5a5272"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Esolang_talk:Community_portal",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/e2d334324a34668b.html",
+      "bytes": 73711,
+      "sha256": "e2d334324a34668b2fe755e02bca4de12d4d92d6e499e0288e990ca6578d8126"
+    },
+    {
+      "url": "https://api.github.com/repos/openrndr/orx",
+      "host": "api.github.com",
+      "source": "github-creative-coding",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "file": "files/0a1a6a9003686c3a.json",
+      "bytes": 6120,
+      "sha256": "0a1a6a9003686c3a1db1c2e2d6d8e32b095113f2c40f1c1dec5d711c17d2d87e"
+    },
+    {
+      "url": "https://api.github.com/repos/openrndr/orx/readme",
+      "host": "api.github.com",
+      "source": "github-creative-coding",
+      "status": 200,
+      "contentType": "application/vnd.github.raw; charset=utf-8",
+      "file": "files/ed1c23b0c9c71b73.bin",
+      "bytes": 12431,
+      "sha256": "ed1c23b0c9c71b739c729bd957109492bebaf130b82f1306a349d05cce1dcc73"
+    },
+    {
+      "url": "https://api.github.com/search/repositories?q=topic:creative-coding+stars:%3E20&sort=updated&per_page=5",
+      "host": "api.github.com",
+      "source": "github-creative-coding",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "file": "files/8fda648e1f842bd9.json",
+      "bytes": 25680,
+      "sha256": "8fda648e1f842bd9490073fa6e3c0d9b9d9871a33719e6b023bd922f8c57024a"
+    },
+    {
+      "url": "https://p5js.org/robots.txt",
+      "host": "p5js.org",
+      "source": "p5js",
+      "status": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "file": "files/8fa3036c68bfcbd3.txt",
+      "bytes": 1248,
+      "sha256": "8fa3036c68bfcbd32365f6225d24333264093b7cd38d306e106b4dbdc934fd5b"
+    },
+    {
+      "url": "https://p5js.org/reference/",
+      "host": "p5js.org",
+      "source": "p5js",
+      "status": 200,
+      "contentType": "text/html",
+      "file": "files/ec377796853b0d0a.html",
+      "bytes": 99982,
+      "sha256": "ec377796853b0d0adc21a4cb55d349a79322c56edaaa537fc390d72005681155"
+    },
+    {
+      "url": "https://tonejs.github.io/robots.txt",
+      "host": "tonejs.github.io",
+      "source": "tonejs",
+      "status": 404,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "url": "https://tonejs.github.io/docs/",
+      "host": "tonejs.github.io",
+      "source": "tonejs",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "file": "files/3e13fafe8992426c.html",
+      "bytes": 3,
+      "sha256": "3e13fafe8992426ccfcfbe1e1135fcbb8364b4a0a7331c64ba06546009b758f1"
+    },
+    {
+      "url": "https://threejs.org/robots.txt",
+      "host": "threejs.org",
+      "source": "threejs",
+      "status": 404,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "url": "https://threejs.org/docs/",
+      "host": "threejs.org",
+      "source": "threejs",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "file": "files/f94b389a07f23e6e.html",
+      "bytes": 99987,
+      "sha256": "f94b389a07f23e6e749c03ca40c19a9625a6d27275a974ec2382aab015136033"
+    },
+    {
+      "url": "https://developer.mozilla.org/robots.txt",
+      "host": "developer.mozilla.org",
+      "source": "mdn",
+      "status": 200,
+      "contentType": "text/plain",
+      "file": "files/8f2712e11105e549.txt",
+      "bytes": 119,
+      "sha256": "8f2712e11105e549aa4fa1ea4de6a9fd5292ee805d773d669ca98a9e0e54273a"
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API",
+      "host": "developer.mozilla.org",
+      "source": "mdn",
+      "status": 200,
+      "contentType": "text/html",
+      "file": "files/6925b980e3c5e62f.html",
+      "bytes": 70292,
+      "sha256": "6925b980e3c5e62f46adc81af1202c4446dc4cd0c9ab8c8b37c1e60d2d6c97cb"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Esolangs_(irc)",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/d9e573f3fdd495df.html",
+      "bytes": 12426,
+      "sha256": "d9e573f3fdd495df48e818587e95dd409b4ffcbe259b374e4eba19933c9c5ea5"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Programming_language",
+      "host": "esolangs.org",
+      "source": "esolang",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/8b581afecf7f41aa.html",
+      "bytes": 16282,
+      "sha256": "8b581afecf7f41aa097bb530416f9c7d229a748d58bf1c251d410e367d00e3b8"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Aspect_ratio_(image)",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/6813618924de2bb0.html",
+      "bytes": 99994,
+      "sha256": "6813618924de2bb0e657f992ef23eb14e959ee9ad4b6dd787aee86193754b636"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/widescreen",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 301,
+      "contentType": "text/html; charset=UTF-8",
+      "location": "https://en.wikipedia.org/wiki/Widescreen"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Widescreen",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/612b36e3c80da347.html",
+      "bytes": 99475,
+      "sha256": "612b36e3c80da3475ff252d75c9fdd6016b5d6c26cf94c5aa84873e24a3dffdf"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Wallpaper_(computing)",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/f04bbd6f8be69ede.html",
+      "bytes": 79294,
+      "sha256": "f04bbd6f8be69ededc1ff2c90200f5416a541597ff2ef5435d3bed7d7ef94e48"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Drake_Hotline_Bling",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 404,
+      "contentType": "text/html; charset=UTF-8"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Iron_Gate_(disambiguation)",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/e63ff9f15e85ba5f.html",
+      "bytes": 48231,
+      "sha256": "e63ff9f15e85ba5f1f3aadac428b5a551d7c31cfd28f8728cac675b7105d88e0"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Dam",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/f09d7f3362e25f1b.html",
+      "bytes": 99991,
+      "sha256": "f09d7f3362e25f1bc31904fa0469e68692abdb098350b2694988265b9581a6ba"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Defensive_wall",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/acfda102d6c5a492.html",
+      "bytes": 99992,
+      "sha256": "acfda102d6c5a4922f8e886092b7172ed751c8758877f594ba85224b6b5c46db"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Soccer_in_Canada",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/dd720ae61457a2dd.html",
+      "bytes": 99998,
+      "sha256": "dd720ae61457a2ddc781c0c4aa9e16071b2beaa54900ed8f39458840da4689ab"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Professional_football_in_Canada",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/79cc0e8b935121fe.html",
+      "bytes": 63959,
+      "sha256": "79cc0e8b935121feb553a65f040585dfe7159645630bc7a5fe739247902db3c0"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Calgary_Stampeders",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/7ca631c8c192e62c.html",
+      "bytes": 99902,
+      "sha256": "7ca631c8c192e62c2a8cb63e7748ee555063e27667565a44b653f17939069203"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Tartu",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/ed913b10852d048f.html",
+      "bytes": 99994,
+      "sha256": "ed913b10852d048fff939a656cf15acede60daddc23e2b07be8958cc05a81339"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Palo_Alto%2C_California",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/2161afd58838c224.html",
+      "bytes": 99989,
+      "sha256": "2161afd58838c224bd822eed630782d7e05501a6fed9b46f2dc9f2359af36795"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/University_of_Tartu",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/3572fec53d8b5e81.html",
+      "bytes": 99899,
+      "sha256": "3572fec53d8b5e81fe252c1a3b27e4bdda6c9c78a7ee948bc6cde973ce9f5139"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/October",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/f532b179e3a65f91.html",
+      "bytes": 100000,
+      "sha256": "f532b179e3a65f911c7323b69b39dde4668bcfce9aa0dc553022d3b0cd32ac2c"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/November",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/8466bc0a1504b54b.html",
+      "bytes": 99924,
+      "sha256": "8466bc0a1504b54b4f2d0d8cf39ad71362a2d2783ec903639fa38228741dcfc4"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/December",
+      "host": "en.wikipedia.org",
+      "source": "wikipedia",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "file": "files/8191e175a76aeda2.html",
+      "bytes": 99979,
+      "sha256": "8191e175a76aeda2f141b6498702b90cbcb8bd49accfcbb4a73b968843bc9b67"
+    }
+  ],
+  "sources": {
+    "wikipedia": {
+      "items": 21
+    },
+    "esolang": {
+      "items": 14
+    },
+    "imgflip": {
+      "items": 1
+    },
+    "github-creative-coding": {
+      "items": 8
+    },
+    "commons": {
+      "items": 2
+    },
+    "artic": {
+      "items": 5
+    },
+    "p5js": {
+      "items": 1
+    },
+    "tonejs": {
+      "items": 1
+    },
+    "threejs": {
+      "items": 1
+    },
+    "mdn": {
+      "items": 1
+    }
+  }
+}
