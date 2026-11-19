@@ -6,6 +6,7 @@ import { constructionInstances } from './constructionGeometry.ts'
 import { wireframeInstances } from './wireframe.ts'
 import { plotInstances } from './plotGeometry.ts'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
+import { galleryWalls, wallInstances, type GalleryWork } from './galleryWall.ts'
 import { SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
 
@@ -238,7 +239,7 @@ export type SceneInstances = Record<Shape, ShapeInstances> & {
  * Every place's shapes, grouped by shape: its outside always (with scaffolding while it is being built), its inside only when `interiors` has it. Each stands on the ground
  * under it. `models` are the model files that have loaded: a part that has one is drawn from it, the others from their primitives.
  */
-export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number; plots?: readonly PlaceRequest[]; litAlways?: boolean; wireAlways?: boolean }): SceneInstances {
+export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heightAt: (x: number, z: number) => number; interiors: ReadonlySet<string>; models?: ReadonlySet<string>; nowMs?: number; plots?: readonly PlaceRequest[]; litAlways?: boolean; wireAlways?: boolean; shelf?: readonly GalleryWork[] }): SceneInstances {
   const lists: Record<Shape, Instance[]> = { box: [], sphere: [], cylinder: [], cone: [] }
   const glassList: Instance[] = []
   const modelLists: Record<string, Mat4[]> = {}
@@ -267,6 +268,8 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
       for (const m of inside.models) (modelLists[m.file] ??= []).push(m.matrix)
       const { palette } = look(place, kit)
       for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
+      // The gallery wall's board (every finished work, a page at a time): one box; its painted face is drawn apart (`GalleryWalls`).
+      if (opts.shelf?.length) for (const wall of galleryWalls(place, kit, baseY, opts.shelf, exteriorInstances(place, kit, baseY))) for (const i of wallInstances(wall, palette.colors)) lists[i.shape].push(lampsOn ? i : { ...i, glow: false })
       for (const i of neglectInstances(place, kit, baseY, level, 'interior')) lists[i.shape].push(i)
     }
   }
