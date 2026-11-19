@@ -38,4 +38,13 @@ describe('nothing stands in a doorway (issues 342, 345, 354; audit QW.2)', () =>
   it('leaves alone a part that is not drawn now', () => {
     expect(doorwayFindings('test', [...clean(), o('home/main/8', 'part', [7.4, 1.6, 19.86], [8.6, 2.5, 19.94], { visible: false })])).toEqual([])
   })
+
+  it('planted: a part left out of a doorway that holds an exhibit is a minor data finding; one that holds nothing is not', () => {
+    const hidden = (holds: string[]) => o('home/main/8', 'part', [7.4, 1.6, 19.86], [8.6, 2.5, 19.94], { name: 'frame-large', visible: false, material: 'none', inDoorway: { holds } })
+    expect(doorwayFindings('test', [...clean(), hidden([])])).toEqual([])
+    const found = doorwayFindings('test', [...clean(), hidden(['canopy-note'])])
+    expect(found.map((f) => f.fingerprint)).toEqual(['world.in-doorway-holds|test|home/main/8'])
+    expect(found[0]).toMatchObject({ severity: 'minor', fixKind: 'data', where: 'places/home.json' })
+    expect(found[0]!.what).toContain('canopy-note')
+  })
 })

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import { DOOR_HALF, createLand, placeCentre, toLandPlace } from '@forkling/sim'
+import { DOOR_HALF, boardHiddenShare, createLand, placeCentre, signLine, signLineProblem, toLandPlace } from '@forkling/sim'
 import { makeFixtureWorld } from '@forkling/sim/fixture'
 import { SIGN_H, SIGN_W, signSpot } from '../src/world/exhibitGeometry.ts'
+import { buildingModel } from '../src/world/building.ts'
+import { instancesBox } from '../src/qa/sceneList.ts'
 import { SIGN_CELL, atlasLayout, contrast, signBoards, signColors, signLayout, textWidth } from '../src/world/signGeometry.ts'
 
 const PAD = 24
@@ -22,14 +24,14 @@ describe.each(worlds.map((w) => ({ count: w.places.length, places: w.places })))
     }
   })
 
-  it('shows the whole sign text, the one a tend can rewrite, on one or two lines, whenever there is one', () => {
+  it('shows its whole line about the place (signLine), on one or two lines, never the name again and never another place', () => {
     for (const p of places) {
-      const { text } = signLayout(p)
-      if (norm(p.exterior.sign) === '') expect(text, p.id).toEqual([])
-      else {
-        expect(text.length, p.id).toBeLessThanOrEqual(2)
-        expect(text.join(' '), p.id).toBe(norm(p.exterior.sign))
-      }
+      const { text } = signLayout(p, places)
+      expect(text.length, p.id).toBeGreaterThanOrEqual(1)
+      expect(text.length, p.id).toBeLessThanOrEqual(2)
+      expect(text.join(' '), p.id).toBe(norm(signLine(p, places)))
+      expect(text.join(' '), p.id).not.toContain('…')
+      expect(signLineProblem(text.join(' '), p, places), p.id).toBeNull()
     }
   })
 
@@ -80,10 +82,27 @@ describe('what a sign says in the awkward cases', () => {
     for (const op of layout.ops) expect(textWidth(op.text, op.px)).toBeLessThanOrEqual(SIGN_CELL.w - 2 * PAD)
   })
 
-  it('shows only the name when there is no sign text, and never an empty board', () => {
+  it('with no sign text says what the place is for under the name, never an empty board', () => {
     const layout = signLayout(withText(home, 'Home', ''))
-    expect(layout.text).toEqual([])
-    expect(layout.ops.length).toBe(1)
+    expect(layout.name).toEqual(['Home'])
+    expect(layout.text.join(' ')).toBe(signLine(home, [home]))
+    expect(layout.ops.length).toBeGreaterThan(1)
+  })
+
+  it('Home whose sign says PATCH BENCH: WORKSHOP shows what Home is for, not the Workshop (issue 363)', () => {
+    const workshop = withText({ ...home, id: 'workshop' }, 'Workshop', 'WORKSHOP')
+    const patched = { ...withText(home, 'Home', 'PATCH BENCH: WORKSHOP'), purpose: 'Where my days start and end: a desk to read and write at, a bed, a shelf.' }
+    const layout = signLayout(patched, [patched, workshop])
+    expect(layout.text.join(' ')).toBe('Where my days start and end: a desk to read and write at')
+    expect(layout.text.join(' ')).not.toMatch(/workshop/i)
+  })
+
+  it('a long name and the name cut short on the sign: the whole name, and the purpose without a cut (issues 359, 366)', () => {
+    const hill = { ...withText(home, 'Hillside Room, Five Lamps', 'HILLSIDE ROOM, FIVE LAMP'), id: 'hillside-room-five-lamps', purpose: 'A small room for the hillside toy and its five lamps, where the light outside sets the pattern inside. Short, plain, and built to be changed.' }
+    const layout = signLayout(hill, [hill])
+    expect(layout.name.join(' ')).toBe('Hillside Room, Five Lamps')
+    expect(layout.text.join(' ')).toBe('A small room for the hillside toy')
+    for (const op of layout.ops) expect(op.text).not.toContain('…')
   })
 
   it('does not draw markup: text goes on the board as the characters it is', () => {
@@ -151,6 +170,22 @@ describe('the board', () => {
     const widest = Math.max(...post.primitives.map((q) => q.size[0]))
     expect(widest).toBeGreaterThanOrEqual(SIGN_W)
     expect(post.size[0]).toBeGreaterThanOrEqual(SIGN_W)
+  })
+})
+
+describe('nothing of the building stands in front of its sign (issues 356, 366)', () => {
+  const fixture = makeFixtureWorld(1, 10)
+  const base = fixture.places[0]!
+  // Home (12 by 10) and the Hillside Room (8 by 8) are timber with a porch of columns; the others for every style and size.
+  const sizes: [number, number][] = [[12, 10], [8, 8], [10, 8], [16, 12], [20, 14], [6, 6]]
+  const cases = kit.styles.flatMap((style) => sizes.map((footprint) => ({ ...base, exterior: { ...base.exterior, style: style.id, footprint } }) as Place))
+
+  it.each(cases.map((p) => [`${p.exterior.style} ${p.exterior.footprint.join('x')}`, p] as const))('%s: seen from straight in front, no column, arch or wall hides any of the board', (_label, p) => {
+    const board = signBoards([p], () => 0, kit)[0]!
+    const [x, y, z] = board.position
+    const box = { min: [x - SIGN_W / 2, y - SIGN_H / 2, z] as [number, number, number], max: [x + SIGN_W / 2, y + SIGN_H / 2, z] as [number, number, number] }
+    const pieces = (buildingModel(p, kit, 0)?.instances ?? []).map((i) => instancesBox([i])!)
+    expect(boardHiddenShare(box, 0, pieces)).toBe(0)
   })
 })
 

@@ -63,8 +63,19 @@ describe('doorways are clear (issues 342, 345, 354)', () => {
     const scene = placeObjects({ places, kit, heightAt: () => 0, interiors: new Set(places.map((p) => p.id)), nowMs: Date.parse('2026-11-26T13:00:00Z'), plots: [] })
     const doors = scene.filter((o) => o.kind === 'door')
     expect(doors.map((d) => d.id).sort()).toEqual(['hillside-room-five-lamps/door', 'home/door', 'workshop/door'])
-    const parts = scene.filter((o) => o.kind === 'part')
-    expect(parts.some((p) => p.id === 'home/main/0' && p.name === 'desk')).toBe(true)
+    const parts = scene.filter((o) => o.kind === 'part' && !o.inDoorway)
+    expect(parts.some((p) => p.id === 'home/main/0' && p.name === 'desk' && p.visible)).toBe(true)
     for (const door of doors) for (const p of parts) expect(overlaps(p.box!, door.box!), `${p.id} in ${door.id}`).toBe(false)
+  })
+
+  it('lists a part left out of a doorway as not drawn, with the exhibits it holds, so nothing is hidden silently', () => {
+    const home = day7('home')
+    const withFrame: Place = { ...home, exhibits: [...home.exhibits, { ...home.exhibits[0]!, id: 'in-the-door', slot: 'main/8/0' }] }
+    const list = (p: Place) => placeObjects({ places: [p], kit, heightAt: () => 0, interiors: new Set([p.id]), nowMs: Date.parse('2026-11-26T13:00:00Z'), plots: [] })
+    const empty = list(home).find((o) => o.id === 'home/main/8')!
+    expect(empty).toMatchObject({ kind: 'part', name: 'frame-large', visible: false, inDoorway: { holds: [] } })
+    expect(list(withFrame).find((o) => o.id === 'home/main/8')!.inDoorway).toEqual({ holds: ['in-the-door'] })
+    // Every other fixture place: a part in a doorway holds nothing today (the reviewer's guard on day-7, issue 354).
+    for (const place of [home, day7('hillside-room-five-lamps'), day7('workshop')]) for (const o of list(place)) if (o.inDoorway) expect(o.inDoorway.holds, o.id).toEqual([])
   })
 })

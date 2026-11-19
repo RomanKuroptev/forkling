@@ -36,5 +36,23 @@ export function doorwayFindings(fixture: string, scene: readonly SceneObject[]):
       })
     }
   }
+  // A part left out for standing in a doorway takes what it holds with it: say so, so nothing is hidden silently.
+  for (const o of scene) {
+    if (o.kind !== 'part' || !o.inDoorway || o.inDoorway.holds.length === 0) continue
+    const placeId = o.place ?? o.id.split('/')[0]!
+    const n = o.inDoorway.holds.length
+    out.push({
+      id: 'world.in-doorway-holds',
+      fingerprint: `world.in-doorway-holds|${fixture}|${o.id}`,
+      severity: 'minor',
+      title: `${placeId} keeps ${n === 1 ? 'an exhibit' : `${n} exhibits`} in ${o.name ?? o.id}, which stands in its doorway and is not drawn`,
+      what: `The part ${o.id}${o.name ? ` (${o.name})` : ''} stands in the door opening of ${placeId}, so the world leaves it out, and with it ${o.inDoorway.holds.join(', ')}.`,
+      causes: 'A visitor never sees what Merge put there, though the place page may list it.',
+      evidence: [],
+      fixKind: 'data',
+      fixture,
+      where: `places/${placeId}.json`,
+    })
+  }
   return out
 }
