@@ -2,6 +2,10 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+## 2026-11-19: `?qa=1` draws a frame only when the harness steps it (audit Q1, lane W)
+- **Why.** A picture must depend only on the address and the steps taken, or the world checks cannot compare two runs. With the clock frozen but the frame loop free, the visitor's capsule and Merge's animations still moved with real frame times.
+- **What.** Under `?qa=1&now=&seed=` the Canvas runs with `frameloop="never"`, and `window.__qa.step(ms)` draws frames of 1/30 s that also move the world clock. `Math.random` is replaced by the seeded PRNG before any other module loads (`apps/viewer/src/qa/seedRandom.ts`), so library code that draws randomly is seeded too, and a check (`world.viewer-math-random`) keeps the viewer's own code free of `Math.random()` calls. Places are drawn as a few instanced meshes, so `__qa.scene()` lists them from the same geometry functions the drawing uses; Merge and the visitor come from their three.js objects. Normal mode is unchanged: pictures before and after at the same camera and clock are pixel-identical (Playwright's fake page clock).
+
 ## 2026-11-19: The audit harness is its own package, `apps/qa` (audit Q0)
 - **Why.** The harness measures forkling without steering Merge (audit spec 1). Keeping it in its own package keeps sim pure and keeps every score and finding out of the mind's code paths.
 - **What.** `@forkling/qa`, run as `pnpm qa <command>` (`qa`, not `audit`, because `pnpm audit` is built in). Every check returns findings in one Zod format (`apps/qa/src/report/finding.ts`); a check that throws or returns a malformed finding gives `qa.check-did-not-run` (major), never a silent pass. A new blocker or major fails `qa.yml`. Pictures are PNG via pngjs (pure JS, works the same on Windows and Linux).

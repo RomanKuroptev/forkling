@@ -10,6 +10,7 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 - **Docs merged** (#261).
 - **Q0 (this PR):** `apps/qa` (`pnpm qa fast`), the Finding schema, `findings.json` and `report.md`, PNG contact sheets, the check runner (a throwing check gives `qa.check-did-not-run`, planted test), `qa.yml` on PRs and main. Labels `qa`, `phase-2`, `needs-roman`, `fix-failed`, `qa-rules`. Site gaps filed as `qa` + `phase-2`: #262 to #268. Pinned digest issue: #269.
 - **Next:** lanes W, B, S, T in worktrees, each plan approved before it builds.
+- **Lane W** ([`lanes/w.md`](docs/spec/audit/lanes/w.md), plan approved, W1 to W8): **W1 (this PR)** the viewer's `?qa=1&now=&seed=`: frames drawn only by `window.__qa.step`, a frozen clock, seeded randomness, and `__qa` with `ready`, `scene()`, `renderer()`, `cameras`, `setCamera`, `fps`, `press`, `stick`, `visitor`, `teleport`, `look`. Normal mode pixel-identical before and after. Check `world.viewer-math-random` in `pnpm qa fast`.
 
 ## Spec v4, parallel build (started 17 November)
 
