@@ -1,6 +1,33 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { anthropicClient, effortFor, outputFormat, requestParams, stopFailure, thinkingFor, userContent } from '../src/llm.ts'
+import { TINKER_MAX_TOKENS } from '../src/builds/tinker.ts'
+
+/**
+ * A stand-in for the SDK client that answers with `message`. Like the real SDK (1.3.0, `calculateNonstreamingTimeout`), its
+ * `create` refuses a call without streaming whose `max_tokens` could take over 10 minutes (60 minutes per 128,000 tokens),
+ * and its `stream` returns the whole message from `finalMessage()`. It records which way each call went.
+ */
+function fakeSdk(message: unknown) {
+  const calls: { via: 'create' | 'stream'; params: Record<string, unknown> }[] = []
+  const sdk = {
+    messages: {
+      create: async (params: { max_tokens: number; stream?: boolean }) => {
+        calls.push({ via: 'create', params })
+        if (!params.stream && (60 * 60 * params.max_tokens) / 128_000 > 10 * 60) {
+          throw new Error('Streaming is required for operations that may take longer than 10 minutes. See https://platform.claude.com/docs/en/cli-sdks-libraries/sdks/typescript#long-requests for more details')
+        }
+        return message
+      },
+      stream: (params: Record<string, unknown>) => {
+        calls.push({ via: 'stream', params })
+        return { finalMessage: async () => message }
+      },
+      batches: {},
+    },
+  }
+  return { client: anthropicClient(sdk as never), calls }
+}
 
 describe('userContent', () => {
   it('is the plain text when there is no picture', () => {
@@ -67,7 +94,7 @@ describe('stopFailure (spec 11.3)', () => {
 describe('anthropicClient: an answer cut off in the middle still comes back as a cut-off, with its cost', () => {
   const Answer = z.object({ title: z.string(), n: z.number() })
   const usage = { input_tokens: 1200, output_tokens: 600, cache_read_input_tokens: 0, cache_creation_input_tokens: 300 }
-  const clientWith = (message: unknown) => anthropicClient({ messages: { create: async () => message, batches: {} } } as never)
+  const clientWith = (message: unknown) => fakeSdk(message).client
   const request = { kind: 'sketch' as const, model: 'claude-sonnet-5-5' as const, system: 's', user: 'u', maxTokens: 600, effort: 'medium' as const, schema: Answer }
 
   it('gives null, the stop reason and the usage when the JSON stops half way (the SDK parser used to throw, and the cost was never booked)', async () => {
@@ -129,7 +156,7 @@ describe('outputFormat: the schema sent keeps its enums (the SDK turned them int
 describe('anthropicClient: an answer that does not fit the schema says why', () => {
   const usage = { input_tokens: 1, output_tokens: 1 }
   const request = { kind: 'sketch' as const, model: 'claude-sonnet-5-5' as const, system: 's', user: 'u', maxTokens: 600, effort: 'medium' as const, schema: z.object({ kind: z.enum(['art', 'game']) }) }
-  const clientWith = (text: string) => anthropicClient({ messages: { create: async () => ({ content: [{ type: 'text', text }], stop_reason: 'end_turn', usage }), batches: {} } } as never)
+  const clientWith = (text: string) => fakeSdk({ content: [{ type: 'text', text }], stop_reason: 'end_turn', usage }).client
 
   it('names the field and the problem', async () => {
     const r = await clientWith('{"kind": "toy"}').complete(request)
@@ -145,5 +172,31 @@ describe('anthropicClient: an answer that does not fit the schema says why', () 
   it('has no parse error when it parsed', async () => {
     const r = await clientWith('{"kind": "art"}').complete(request)
     expect(r.parseError).toBeUndefined()
+  })
+})
+
+describe('anthropicClient: a full-size tinker gets its answer (issue #376: the SDK refused it without streaming)', () => {
+  const Answer = z.object({ title: z.string() })
+  const usage = { input_tokens: 5000, output_tokens: 20_000, cache_read_input_tokens: 4000, cache_creation_input_tokens: 0 }
+  const message = { content: [{ type: 'text', text: '{"title": "A pond"}' }], stop_reason: 'end_turn', usage }
+  const request = { kind: 'tinker' as const, model: 'claude-sonnet-5-5' as const, system: 's', user: 'u', maxTokens: TINKER_MAX_TOKENS, effort: 'medium' as const, schema: Answer }
+
+  it('is a call the SDK would refuse without streaming', () => {
+    expect((60 * 60 * TINKER_MAX_TOKENS) / 128_000).toBeGreaterThan(10 * 60)
+  })
+
+  it('comes back parsed, with its stop reason and its whole cost', async () => {
+    const r = await fakeSdk(message).client.complete(request)
+    expect(r.parsed).toEqual({ title: 'A pond' })
+    expect(r.stopReason).toBe('end_turn')
+    expect(r.usage).toEqual({ input: 5000, cacheRead: 4000, cacheWrite: 0, output: 20_000 })
+  })
+
+  it('sends exactly the request params, structured output and all, by streaming', async () => {
+    const { client, calls } = fakeSdk(message)
+    await client.complete(request)
+    expect(calls).toHaveLength(1)
+    expect(calls[0]!.via).toBe('stream')
+    expect(calls[0]!.params).toEqual(requestParams(request))
   })
 })
