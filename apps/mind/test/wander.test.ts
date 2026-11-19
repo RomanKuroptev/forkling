@@ -260,6 +260,19 @@ describe('a wander step', () => {
     expect(user).not.toContain(`${wiki}/wiki/Moss`)
   })
 
+  it('explains a starting point marked read lately even when a trip read it on the way, not as its start', async () => {
+    // Octopus is a starting point today (a front-page link); a trip read it second, after Logic gate.
+    writeJson('trails/2026-11-01-1.json', Trail.parse({ id: '2026-11-01-1', date: '2026-11-01', purpose: 'p', start: { kind: 'topic', value: 'logic gates' }, pages: [
+      { url: `${wiki}/wiki/Logic_gate`, title: 'Logic gate', fetchedAt: '2026-11-01T10:00:00Z', topics: [], interest: 6 },
+      { url: `${wiki}/wiki/Octopus`, title: 'Octopus', fetchedAt: '2026-11-01T10:05:00Z', topics: [], interest: 6 },
+    ] }))
+    const llm = fake(wanderPlan)
+    await tick(MORNING, llm)
+    const user = llm.calls[0]!.user
+    expect(user).toMatch(/\(read lately\) Octopus \|/)
+    expect(user.split('<data source="read-lately">')[1]!.split('</data>')[0]).toContain(`Octopus | ${wiki}/wiki/Octopus`)
+  })
+
   it('says it read the page lately, not that it could not be read, when the 30-day rule skips where it started', async () => {
     // A trail from two days ago read both pages, so today's trip to the same topic skips them (spec 6.6).
     writeJson('trails/2026-11-01-1.json', Trail.parse({ id: '2026-11-01-1', date: '2026-11-01', purpose: 'p', start: { kind: 'topic', value: 'logic gates' }, pages: [
