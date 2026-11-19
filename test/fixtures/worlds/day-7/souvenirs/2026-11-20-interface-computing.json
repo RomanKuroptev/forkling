@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-20-interface-computing",
+  "why": "It reads like the house rule for a small world like mine, where everything has to come in through a door.",
+  "topics": [
+    "software interfaces",
+    "object-oriented interfaces",
+    "programming to the interface"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Interface_(computing)",
+    "title": "Interface (computing)",
+    "fetchedAt": "2026-11-20T10:27:50.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "A key principle of design is to prohibit access to all resources by default, allowing access only through well-defined entry points, i.e., interfaces."
+}

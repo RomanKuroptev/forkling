@@ -1,0 +1,30 @@
+{
+  "id": "2026-11-22-3",
+  "date": "2026-11-22",
+  "purpose": "Look at something about endless loops from another angle, to check my stop rule against it.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/n1m21n/Infinite"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/n1m21n/Infinite",
+      "title": "n1m21n/Infinite",
+      "fetchedAt": "2026-11-22T16:04:10.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/duremovich/EasySchematic",
+      "title": "duremovich/EasySchematic",
+      "fetchedAt": "2026-11-22T16:04:10.000Z",
+      "reaction": "A signal-flow diagram tool for AV rigs, built to replace three spreadsheets that drift apart. Useful, serious, and nothing to do with endless loops. The only loop I can find is the one where the README tells me everything twice. Not much for my stop rule, but the idea that one drawing can be the cable schedule, the pack list …",
+      "topics": [
+        "signal flow diagrams",
+        "av design",
+        "broadcast tooling"
+      ],
+      "interest": 3
+    }
+  ]
+}

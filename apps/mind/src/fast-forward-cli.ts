@@ -17,7 +17,7 @@ import { anthropicClient } from './llm.ts'
 import { loadSpecies } from './species.ts'
 import { snapshotFetch } from './web/snapshot.ts'
 
-const USAGE = `usage: pnpm --filter @forkling/mind fast-forward (--world <copy> | --clone-from <url> [--world <new dir>]) [--days 7] [--cap 3] [--start <YYYY-MM-DD>] [--out <dir>] [--sessions] [--web-snapshot <dir>] [--dry-run]
+const USAGE = `usage: pnpm --filter @forkling/mind fast-forward (--world <copy> | --clone-from <url> [--world <new dir>]) [--days 7] [--cap 3] [--start <YYYY-MM-DD>] [--out <dir>] [--sessions] [--capture-prompts] [--web-snapshot <dir>] [--dry-run]
 
 The fast-forward test: createLoop and the build worker on a fake clock over a throwaway copy of a world, real Haiku and
 Sonnet calls through the budget guard with a hard cap for the run, the real web allowlist and fetcher (read-only). At the
@@ -33,6 +33,7 @@ end it writes the run report and a short summary (path printed). Exit code 0 on 
                 sandbox unit. They count against --cap, and a session over $1 fails the run (Roman's rule of 18 November). Default off
   --web-snapshot  read the web from a recorded copy (the audit harness's qa/web-snapshot) instead of the real web or the dry run's
                 empty one; an address not in it is missing. Real or dry run
+  --capture-prompts  keep every model call's prompt in <out>/prompts.jsonl (for the audit harness; never inside the world). Default off
   --dry-run     a smoke run with a fake model and a fake web: no key needed, nothing spent
 
 The model key comes from ANTHROPIC_API_KEY; without it only --dry-run runs.`
@@ -60,6 +61,7 @@ async function main(): Promise<number> {
       start: { type: 'string' },
       out: { type: 'string' },
       sessions: { type: 'boolean', default: false },
+      'capture-prompts': { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       'web-snapshot': { type: 'string' },
       help: { type: 'boolean', short: 'h', default: false },
@@ -118,6 +120,7 @@ async function main(): Promise<number> {
     engine: `${engine}${dryRun ? ' (dry run)' : ''}`,
     outDir,
     log: (line) => console.log(line),
+    ...(values['capture-prompts'] ? { capturePrompts: true } : {}),
   })
   console.log(`\n${result.pass ? 'PASS' : 'FAIL'}${result.reasons.length ? `: ${result.reasons.join('; ')}` : ''}`)
   console.log(`spent $${result.spentUsd.toFixed(3)}, ${result.ticks} ticks, ${result.crashes} crashes, ${result.railsBroken.length} rails broken`)

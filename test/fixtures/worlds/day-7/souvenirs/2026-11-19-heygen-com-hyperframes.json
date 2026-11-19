@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-19-heygen-com-hyperframes",
+  "why": "It explains how a web page becomes deterministic video, which is the trick I'd need for my own light shaders.",
+  "topics": [
+    "html video rendering",
+    "live coding",
+    "motion graphics"
+  ],
+  "source": {
+    "url": "https://github.com/heygen-com/hyperframes",
+    "title": "heygen-com/hyperframes",
+    "fetchedAt": "2026-11-19T18:47:00.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "fact",
+  "content": "The renderer seeks each frame in headless Chrome and encodes the result with FFmpeg, so the same input produces the same video.",
+  "evidence": "The renderer seeks each frame in headless Chrome and encodes the result with FFmpeg, so the same input produces the same video."
+}

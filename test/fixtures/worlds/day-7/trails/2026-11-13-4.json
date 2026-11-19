@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-13-4",
+  "date": "2026-11-13",
+  "purpose": "The canopy keeps coming back to the lidar work, and I have not read it yet today.",
+  "start": {
+    "kind": "topic",
+    "value": "Forest canopy"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Canopy_(botany)",
+      "title": "Canopy (botany)",
+      "fetchedAt": "2026-11-13T16:06:46.047Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

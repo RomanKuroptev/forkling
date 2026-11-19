@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-15-3",
+  "date": "2026-11-15",
+  "purpose": "Switch to a neighbouring topic instead of rereading the terrain model, which breaks the loop better.",
+  "start": {
+    "kind": "topic",
+    "value": "Airborne lidar"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Airborne_lidar",
+      "title": "Airborne lidar",
+      "fetchedAt": "2026-11-15T11:55:14.966Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

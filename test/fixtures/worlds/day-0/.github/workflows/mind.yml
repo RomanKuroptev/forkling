@@ -1,0 +1,144 @@
+name: mind
+
+# The forkling's mind: one tick every 10 minutes (GitHub may run it a few minutes late; nothing here assumes exact
+# times). While the forkling sleeps, only the first tick of each hour does anything.
+on:
+  schedule:
+    - cron: '3-59/10 * * * *'
+  workflow_dispatch:
+
+# Ticks must never overlap: two minds writing one repo would corrupt its state.
+concurrency:
+  group: mind
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  # Lets it start the website build (see the last step).
+  actions: write
+  # Lets the job ask GitHub for an identity token, so no API key has to be stored (see the README).
+  id-token: write
+
+env:
+  # The engine release this world runs on. Change it on purpose, after reading what changed.
+  FORKLING_REPO: RomanKuroptev/forkling
+  FORKLING_REF: v0.18.0
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    # Most ticks take under a minute.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: world
+
+      - name: Decide whether to tick
+        id: gate
+        run: |
+          asleep=$(jq -r '.asleep // false' world/forkling.json)
+          minute=$((10#$(date -u +%M)))
+          run=true
+          if [ "$asleep" = true ] && [ "$minute" -ge 10 ]; then
+            run=false
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          repository: ${{ env.FORKLING_REPO }}
+          ref: ${{ env.FORKLING_REF }}
+          path: engine
+
+      - uses: pnpm/action-setup@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          package_json_file: engine/package.json
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version-file: engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: engine/pnpm-lock.yaml
+
+      - name: Install the mind
+        if: steps.gate.outputs.run == 'true'
+        working-directory: engine
+        run: pnpm install --frozen-lockfile --filter "@forkling/mind..."
+
+      # Keyless auth: when the four repository variables are set, trade GitHub's identity token for a short-lived
+      # Anthropic one. A fresh token each tick, because Anthropic accepts each identity token only once.
+      - name: Fetch identity token
+        if: steps.gate.outputs.run == 'true' && vars.ANTHROPIC_FEDERATION_RULE_ID != ''
+        env:
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+        run: |
+          token_file="$RUNNER_TEMP/anthropic-identity-token"
+          curl -sS --fail -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN"             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" | jq -r .value > "$token_file"
+          {
+            echo "ANTHROPIC_FEDERATION_RULE_ID=$ANTHROPIC_FEDERATION_RULE_ID"
+            echo "ANTHROPIC_ORGANIZATION_ID=$ANTHROPIC_ORGANIZATION_ID"
+            echo "ANTHROPIC_SERVICE_ACCOUNT_ID=$ANTHROPIC_SERVICE_ACCOUNT_ID"
+            echo "ANTHROPIC_WORKSPACE_ID=$ANTHROPIC_WORKSPACE_ID"
+            echo "ANTHROPIC_IDENTITY_TOKEN_FILE=$token_file"
+          } >> "$GITHUB_ENV"
+
+      - name: Tick
+        id: tick
+        if: steps.gate.outputs.run == 'true'
+        working-directory: engine
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Lifts GitHub's limit for reading repositories from 60 requests an hour; sent to api.github.com only.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # An unset secret arrives as an empty variable, which would still outrank federation.
+          if [ -z "$ANTHROPIC_API_KEY" ]; then unset ANTHROPIC_API_KEY; fi
+          pnpm --filter @forkling/mind tick --world "$GITHUB_WORKSPACE/world"
+
+      # Every tick commits: a tick that changed nothing in the world still leaves its line in mind/ticks/ and refreshes
+      # mind/health.json. Those commits start with "tick:", so the history can be read without them.
+      - name: Commit what changed
+        if: steps.gate.outputs.run == 'true' && (steps.tick.outputs.changed == 'true' || steps.tick.outputs.logged == 'true')
+        working-directory: world
+        env:
+          SUMMARY: ${{ steps.tick.outputs.summary }}
+          WORLD: ${{ steps.tick.outputs.changed }}
+        run: |
+          git config user.name "forkling-mind"
+          git config user.email "forkling-mind@users.noreply.github.com"
+          git add -A
+          if [ "$WORLD" = "true" ]; then
+            git commit -m "chore(mind): ${SUMMARY:-tick}"
+          else
+            git commit -m "tick: ${SUMMARY:-quiet}"
+          fi
+          # Another run or a merged PR may have landed since checkout.
+          git pull --rebase
+          git push
+
+      # The website is built from the files of this repo, so rebuild it when one of them changed. Dispatches that arrive
+      # while a build runs collapse into one waiting build (see pages.yml).
+      - name: Update the website
+        if: steps.gate.outputs.run == 'true' && steps.tick.outputs.changed == 'true'
+        working-directory: world
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          changed=$(git diff --name-only HEAD~1 HEAD)
+          if echo "$changed" | grep -qE '^(journal/|art/|notebook/|souvenirs/|trails/|memory/beliefs\.json|memory/timeline/|brain/interests\.json)'; then
+            gh workflow run pages.yml || echo "could not start the website build (is pages.yml on this branch?)"
+          elif echo "$changed" | grep -qE '^(forkling\.json|mind/goals\.json)$'; then
+            # The home page shows where it is and what it is doing, so it follows those too, but at most once an hour:
+            # they change on most ticks.
+            last=$(gh run list --workflow pages.yml --limit 1 --json createdAt --jq '.[0].createdAt // empty')
+            if [ -z "$last" ] || [ $(( $(date +%s) - $(date -u -d "$last" +%s) )) -ge 3600 ]; then
+              gh workflow run pages.yml || echo "could not start the website build (is pages.yml on this branch?)"
+            fi
+          fi

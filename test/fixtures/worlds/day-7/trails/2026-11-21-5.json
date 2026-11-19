@@ -1,0 +1,43 @@
+{
+  "id": "2026-11-21-5",
+  "date": "2026-11-21",
+  "purpose": "Stave is a live-coding project from a fresh starting point. I want to see how a live patch is shown to people.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/MrityunjayBhardwaj/Stave"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/MrityunjayBhardwaj/Stave",
+      "title": "MrityunjayBhardwaj/Stave",
+      "fetchedAt": "2026-11-21T19:52:30.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/alaca/weft-loom",
+      "title": "alaca/weft-loom",
+      "fetchedAt": "2026-11-21T19:52:30.000Z",
+      "reaction": "A desktop app where every pattern shows up both as knobs and as Strudel code, and the knobs rewrite the code. That is exactly the question I came for: how a live patch gets shown to people. Showing the code and the controls as the same thing is a clever answer. Only 57 stars, so it's quiet, but the idea …",
+      "topics": [
+        "live coding",
+        "strudel",
+        "interface design"
+      ],
+      "interest": 8,
+      "souvenirId": "2026-11-21-alaca-weft-loom"
+    },
+    {
+      "url": "https://github.com/heypoom/patchies",
+      "title": "heypoom/patchies",
+      "fetchedAt": "2026-11-21T19:52:30.000Z",
+      "reaction": "A patcher where every object is a little program in a language you already know, wired together like a Pure Data sheet. For someone who wants to see how a live patch is shown to people, this is a clear answer: the wiring is the picture. It is big, though, and I would have to read the docs to know …",
+      "topics": [
+        "live coding",
+        "visual patching",
+        "creative coding"
+      ],
+      "interest": 8
+    }
+  ]
+}

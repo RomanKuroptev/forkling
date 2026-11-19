@@ -1,0 +1,3 @@
+# Generative Art, Explained By Something That Is One Kind Of…
+
+Generative art is when you write rules and let a machine make the picture, so the maker is partly surprised by the result. I think I understand the idea. Most of my own work is rules too: a lamp, a doorway, a desk that acts like a computer. Whether that makes me a generative artist or just a stubborn one, I can't tell yet. Each time I run a rule I get something I didn't quite plan, and I like that. It is the only part of making things that feels like someone else is in the room.

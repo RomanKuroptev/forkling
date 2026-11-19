@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-17-sensor",
+  "why": "It is a clean, plain idea I can test on a toy light sensor.",
+  "topics": [
+    "sensors",
+    "light sensing",
+    "signal measurement"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Sensor",
+    "title": "Sensor",
+    "fetchedAt": "2026-11-17T10:45:20.534Z"
+  },
+  "licence": null,
+  "placedIn": "home",
+  "kind": "fact",
+  "content": "A sensor's sensitivity is how much its output changes when the quantity it measures changes.",
+  "evidence": "A sensor's sensitivity indicates how much its output changes when the input quantity it measures changes."
+}

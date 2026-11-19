@@ -1,0 +1,24 @@
+{
+  "id": "ripples-breathing-as-one-2",
+  "title": "Ripples breathing as one",
+  "kind": "art",
+  "about": "The sand ripples I left open too long. Same multi-directional shading as my dune work, but the ridges now swell and settle together, like something breathing. It opens inverted for a moment, then set…",
+  "interest": "shaded relief",
+  "made": "2026-11-15T09:19:56.053Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make the first thing a visitor sees a surprise.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-13-airborne-lidar",
+    "2026-11-13-canopy-botany"
+  ],
+  "status": "shelf",
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

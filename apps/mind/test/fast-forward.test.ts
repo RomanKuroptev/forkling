@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import type { WorkChecker } from '../src/builds/browser-check.ts'
 import type { SessionModel } from '../src/builds/session.ts'
 import { fakeFetch, fakeModel, fakeSandbox, fakeSessionModel } from '../src/fast-forward-fakes.ts'
-import { cappedModel, localMidnight, remotesOf, runFastForward, watchedFetch, type FastForwardOptions } from '../src/fast-forward.ts'
+import { cappedModel, capturingModel, localMidnight, remotesOf, runFastForward, watchedFetch, type FastForwardOptions } from '../src/fast-forward.ts'
 import type { LlmRequest } from '../src/llm.ts'
 import { loadSpecies } from '../src/species.ts'
 
@@ -202,5 +202,68 @@ describe('a run with build sessions', () => {
     expect(capped.spentUsd).toBeGreaterThan(0)
     expect(capped.reached).toBe(true)
     await expect(session.turn(req)).rejects.toThrow(/cap/)
+  })
+})
+
+describe('captured prompts (audit harness, QB)', () => {
+  const req = (kind: string) => ({ kind, model: 'claude-haiku-5-5', system: 'the system part', user: `the ${kind} part`, maxTokens: 10, effort: 'low', schema: null }) as unknown as LlmRequest
+
+  it('writes one line per call: when, kind, model, the prompt and whether it parsed', async () => {
+    const file = join(temp('ff-cap-'), 'prompts.jsonl')
+    let now = Date.parse('2026-11-03T08:00:00Z')
+    const model = capturingModel(fakeModel(), file, () => now)
+    await model.complete(req('decide'))
+    now += 60_000
+    await model.complete(req('sketch'))
+    const lines = readFileSync(file, 'utf8').trim().split('\n').map((l) => JSON.parse(l))
+    expect(lines).toEqual([
+      { at: '2026-11-03T08:00:00.000Z', kind: 'decide', model: 'claude-haiku-5-5', system: 'the system part', user: 'the decide part', parsed: true, stopReason: 'end_turn' },
+      expect.objectContaining({ at: '2026-11-03T08:01:00.000Z', kind: 'sketch', parsed: true }),
+    ])
+  })
+
+  it('notes a call that did not parse, and a batch it sent', async () => {
+    const file = join(temp('ff-cap-'), 'prompts.jsonl')
+    const model = capturingModel(fakeModel(), file, () => 0)
+    await model.complete(req('weekly'))
+    await model.submitBatch(req('sleep'))
+    const lines = readFileSync(file, 'utf8').trim().split('\n').map((l) => JSON.parse(l))
+    expect(lines[0]).toMatchObject({ kind: 'weekly', parsed: false, stopReason: 'refusal' })
+    expect(lines[1]).toMatchObject({ kind: 'sleep', parsed: null, batch: true })
+  })
+
+  it('is off by default, and on writes prompts.jsonl beside the summary for every call, never in the world', async () => {
+    const plain = world()
+    const off = options(plain, { outDir: temp('ff-out-'), durationMs: 10 * HOUR })
+    await runFastForward(off)
+    expect(existsSync(join(off.outDir, 'prompts.jsonl'))).toBe(false)
+
+    const dir = world()
+    const llm = fakeModel()
+    const o = options(dir, { llm, outDir: temp('ff-out-'), capturePrompts: true, durationMs: 10 * HOUR })
+    await runFastForward(o)
+    const lines = readFileSync(join(o.outDir, 'prompts.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l))
+    expect(lines.length).toBe(llm.calls.length)
+    expect(lines.map((l) => l.kind)).toContain('morning')
+    const inWorld = (readdirSync(dir, { recursive: true }) as string[]).filter((f) => f.endsWith('prompts.jsonl'))
+    expect(inWorld).toEqual([])
+  }, 300_000)
+})
+
+describe('scripted fakes (audit harness, QB)', () => {
+  const req = (kind: string, user = '') => ({ kind, model: 'claude-haiku-5-5', system: '', user, maxTokens: 10, effort: 'low', schema: null }) as unknown as LlmRequest
+
+  it('answers a call kind from the script, counting the calls of that kind, and keeps every prompt', async () => {
+    const llm = fakeModel({ answers: { weekly: (r, n) => ({ said: `${r.user} ${n}` }) } })
+    expect((await llm.complete(req('weekly', 'first'))).parsed).toEqual({ said: 'first 1' })
+    expect((await llm.complete(req('weekly', 'second'))).parsed).toEqual({ said: 'second 2' })
+    expect(llm.calls.map((c) => c.user)).toEqual(['first', 'second'])
+  })
+
+  it('a scripted null is a refusal, and kinds not in the script keep the default answers', async () => {
+    const llm = fakeModel({ answers: { decide: () => null } })
+    expect((await llm.complete(req('decide'))).stopReason).toBe('refusal')
+    const plain = fakeModel()
+    expect((await llm.complete(req('morning'))).parsed).toEqual((await plain.complete(req('morning'))).parsed)
   })
 })

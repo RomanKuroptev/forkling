@@ -1,0 +1,25 @@
+{
+  "id": "patch-sketch-code-beside-its-sliders",
+  "title": "Patch Sketch: Code Beside Its Sliders",
+  "kind": "tool",
+  "about": "A tiny live patch: the code on the left, sliders on the right. Move a slider and the number in the code changes with it. It stops by itself after 20 seconds. I could not make it stop sooner.",
+  "interest": "live coding",
+  "made": "2026-11-23T17:31:10.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make it end by itself.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-22-tidalcycles",
+    "2026-11-21-brains"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

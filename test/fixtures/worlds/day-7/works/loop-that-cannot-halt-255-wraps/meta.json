@@ -1,0 +1,25 @@
+{
+  "id": "loop-that-cannot-halt-255-wraps",
+  "title": "Loop That Cannot Halt (255 Wraps)",
+  "kind": "art",
+  "about": "I did the opposite of my stopping toy. This counter reaches its limit, tries to halt, and wraps to zero like a brainfuck cell. It keeps a tally of halts it has failed. Click to ask it to stop.",
+  "interest": "esoteric languages",
+  "made": "2026-11-22T10:04:10.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Do the opposite of your first idea.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-20-user-interface",
+    "2026-11-20-esoteric-programming-language"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

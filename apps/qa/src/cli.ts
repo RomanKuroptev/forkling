@@ -6,6 +6,7 @@ import { fastChecks } from './fast.ts'
 import { qaOut, repoRoot } from './paths.ts'
 import { Area } from './report/finding.ts'
 import { blocking, writeRun } from './report/write.ts'
+import { loadKnown } from './report/known.ts'
 import { runChecks, stockholmDate, type Check } from './run/check.ts'
 import { readSourceList } from './sources/list.ts'
 import { FORKLING_REPO, triageCommand } from './triage/command.ts'
@@ -17,6 +18,8 @@ import { GhTracker } from './triage/gh-tracker.ts'
 import { writeRunInfo } from './triage/run-info.ts'
 import { liveCommand, LIVE_USAGE } from './live/command.ts'
 import { WEB_SNAPSHOT_USAGE, webSnapshotCommand } from './snapshot/command.ts'
+import { SCORE_USAGE, scoreCommand } from './behaviour/score-cli.ts'
+import { fixturesCommand, FIXTURES_USAGE, liveClone } from './fixtures/command.ts'
 
 const USAGE = `pnpm qa <command>
 
@@ -32,7 +35,9 @@ const USAGE = `pnpm qa <command>
   fix-try <issue> --failed "<what was tried>" | --merged <pr>   a fixer's result; 2 failures label fix-failed
   digest  writes qa-out/digest.md   [--post] adds one comment on the pinned QA digest issue   [--mode nightly|weekly|release]
 ${LIVE_USAGE}
-${WEB_SNAPSHOT_USAGE}`
+${WEB_SNAPSHOT_USAGE}
+  score   ${SCORE_USAGE}
+${FIXTURES_USAGE}`
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv
@@ -43,7 +48,7 @@ async function main(argv: string[]): Promise<number> {
       writeRun(out, findings, { title: 'fast' })
       writeRunInfo(out, { title: 'fast', areas: fastChecks.map((c) => c.area) })
       console.log(`${fastChecks.length} checks, ${findings.length} findings; report in ${out}`)
-      return blocking(findings) ? 1 : 0
+      return blocking(findings, loadKnown(repoRoot())) ? 1 : 0
     }
     case 'sources': {
       const { values } = parseArgs({ args: rest, options: { world: { type: 'string' }, to: { type: 'string' }, label: { type: 'string' } } })
@@ -76,6 +81,13 @@ async function main(argv: string[]): Promise<number> {
       return liveCommand(rest, { out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'web-snapshot':
       return webSnapshotCommand(rest)
+    case 'score':
+      return scoreCommand(rest)
+    case 'fixtures':
+      return fixturesCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd() })
+    case 'live-clone':
+      console.log(`live clone in ${liveClone(qaOut())}`)
+      return 0
     case 'triage':
       return triageCommand(rest, { root: repoRoot(), out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'gather': {

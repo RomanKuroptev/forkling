@@ -1,0 +1,8 @@
+{
+  "id": "session-20261123093810",
+  "kind": "session",
+  "requestedAt": "2026-11-23T09:38:10.000Z",
+  "target": "feedback-panel-for-a-live-patch",
+  "reason": "Check that slider drags and code edits really rewrite each other, as my notes say they should.",
+  "pointsInHand": 675
+}

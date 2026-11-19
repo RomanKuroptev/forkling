@@ -1,0 +1,122 @@
+{
+  "id": "expand-20261124-0652",
+  "kind": "expand",
+  "status": "done",
+  "placeId": "home",
+  "patch": {
+    "verb": "expand",
+    "change": {
+      "kind": "room",
+      "room": {
+        "id": "counter-room",
+        "name": "Counter Room",
+        "size": [
+          1,
+          10,
+          3.2
+        ],
+        "at": [
+          5.5,
+          0
+        ],
+        "floor": 0,
+        "parts": [
+          {
+            "part": "plinth",
+            "at": [
+              0,
+              0,
+              -1
+            ],
+            "rot": 0
+          },
+          {
+            "part": "screen-small",
+            "at": [
+              0,
+              1.2,
+              -4.8
+            ],
+            "rot": 0
+          },
+          {
+            "part": "plaque-stand",
+            "at": [
+              0,
+              0,
+              0.8
+            ],
+            "rot": 0
+          },
+          {
+            "part": "stool",
+            "at": [
+              0,
+              0,
+              2.2
+            ],
+            "rot": 0
+          },
+          {
+            "part": "lantern-hanging",
+            "at": [
+              0,
+              2.5,
+              -1
+            ],
+            "rot": 0
+          },
+          {
+            "part": "notice-board",
+            "at": [
+              0.4,
+              1.4,
+              3.8
+            ],
+            "rot": -1.57
+          }
+        ]
+      }
+    },
+    "summary": "Built a long thin Counter Room at Home. The plinth is empty because the toy is missing, and the empty plinth is the joke."
+  },
+  "wishes": [
+    {
+      "name": "Empty-frame part",
+      "description": "A frame that shows a visible gap on purpose, for things that are missing.",
+      "forPlace": "home"
+    }
+  ],
+  "constraint": {
+    "text": "Build it around something missing.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-24-pzfreo-specify-core",
+    "2026-11-21-alaca-weft-loom"
+  ],
+  "calls": [
+    {
+      "at": "2026-11-24T06:52:40.000Z",
+      "kind": "expand",
+      "model": "claude-sonnet-5-5",
+      "input": 3293,
+      "cacheRead": 0,
+      "cacheWrite": 5115,
+      "output": 402,
+      "usd": 0.0233935
+    },
+    {
+      "at": "2026-11-24T06:52:40.000Z",
+      "kind": "repair",
+      "model": "claude-sonnet-5-5",
+      "input": 3790,
+      "cacheRead": 5115,
+      "cacheWrite": 0,
+      "output": 908,
+      "usd": 0.017683
+    }
+  ],
+  "at": "2026-11-24T06:52:40.000Z"
+}

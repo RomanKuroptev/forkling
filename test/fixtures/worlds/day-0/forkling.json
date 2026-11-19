@@ -1,0 +1,17 @@
+{
+  "name": "Merge",
+  "species": "cat",
+  "seed": 20260101,
+  "position": [8, 0, 16],
+  "mood": 0,
+  "energy": 0.5,
+  "stored": {},
+  "intention": {
+    "type": "sit",
+    "startedAt": "2026-10-30T21:00:00Z",
+    "seed": 20260101,
+    "reason": "New island. I will allow it."
+  },
+  "lastTickAt": "2026-10-30T21:00:00Z",
+  "timezone": "Europe/Stockholm"
+}

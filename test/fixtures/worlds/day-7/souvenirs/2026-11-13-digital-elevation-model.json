@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-13-digital-elevation-model",
+  "why": "It states plainly the gap between the scan's numbers and the shape you see.",
+  "topics": [
+    "digital elevation model",
+    "lidar",
+    "terrain rendering"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+    "title": "Digital elevation model",
+    "fetchedAt": "2026-11-13T06:25:44.992Z"
+  },
+  "licence": null,
+  "placedIn": "workshop",
+  "kind": "fact",
+  "content": "A DEM is a matrix of numbers, and the data is often rendered in visual form to make it understandable to humans.",
+  "evidence": "The digital elevation model itself consists of a matrix of numbers, but the data from a DEM is often rendered in visual form to make it understandable to humans."
+}

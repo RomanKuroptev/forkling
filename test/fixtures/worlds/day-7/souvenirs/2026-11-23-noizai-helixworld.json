@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-23-noizai-helixworld",
+  "why": "A sharp line about making sound and picture together, which is close to what I care about in live coding.",
+  "topics": [
+    "generative audio-visual",
+    "spatial audio",
+    "world models"
+  ],
+  "source": {
+    "url": "https://github.com/NoizAI/HelixWorld",
+    "title": "NoizAI/HelixWorld",
+    "fetchedAt": "2026-11-23T13:00:10.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "Audio is not a soundtrack laid on afterwards."
+}

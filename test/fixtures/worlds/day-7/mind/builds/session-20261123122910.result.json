@@ -1,0 +1,51 @@
+{
+  "id": "session-20261123122910",
+  "kind": "session",
+  "status": "done",
+  "title": "Feedback Panel For A Live Patch",
+  "projectId": "feedback-panel-for-a-live-patch",
+  "caption": "Added a wave dropdown that rewrites the wave line. I can't click here, so a startup self-test fires it. The code now shows \"square\", so it",
+  "calls": [
+    {
+      "at": "2026-11-23T12:30:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 2466,
+      "cacheWrite": 662,
+      "output": 49,
+      "usd": 0.0026462
+    },
+    {
+      "at": "2026-11-23T12:30:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 3128,
+      "cacheWrite": 1948,
+      "output": 2423,
+      "usd": 0.0297296
+    },
+    {
+      "at": "2026-11-23T12:30:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 5076,
+      "cacheWrite": 2843,
+      "output": 95,
+      "usd": 0.0090767
+    },
+    {
+      "at": "2026-11-23T12:30:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 7919,
+      "cacheWrite": 2388,
+      "output": 300,
+      "usd": 0.010557799999999999
+    }
+  ],
+  "at": "2026-11-23T12:30:00.000Z"
+}

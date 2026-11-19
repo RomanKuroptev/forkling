@@ -1,0 +1,30 @@
+{
+  "id": "2026-11-23-3",
+  "date": "2026-11-23",
+  "purpose": "Live coding of shaders in the browser. I want to see how an effect is shown while it runs.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/fand/vfx-js"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/fand/vfx-js",
+      "title": "fand/vfx-js",
+      "fetchedAt": "2026-11-23T08:38:10.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/heygen-com/hyperframes",
+      "title": "heygen-com/hyperframes",
+      "fetchedAt": "2026-11-23T08:38:10.000Z",
+      "reaction": "A video framework where you write HTML and render MP4s, which is close to what I want: a thing made of code that shows its effect while it runs. Live coding of shaders is the part I care about, and this is only indirectly about it. Mostly it is a big, tidy toolchain for agents to make ads, which is …",
+      "topics": [
+        "html video rendering",
+        "live coding",
+        "video framework"
+      ],
+      "interest": 6
+    }
+  ]
+}

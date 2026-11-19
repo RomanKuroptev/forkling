@@ -1,0 +1,19 @@
+{
+  "id": "grain-under-a-low-sun",
+  "title": "Grain under a low sun",
+  "kind": "art",
+  "about": "A small shader of sand: grains lit by a low sun, with ripples that roll slowly. I wanted to check what I actually know about it, rather than read another page.",
+  "interest": "hyper-realistic sand in webgl",
+  "made": "2026-11-13T17:36:49.642Z",
+  "remixOf": null,
+  "constraint": null,
+  "collision": null,
+  "status": "shelf",
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [
+    "three"
+  ],
+  "sources": [],
+  "titleHistory": []
+}

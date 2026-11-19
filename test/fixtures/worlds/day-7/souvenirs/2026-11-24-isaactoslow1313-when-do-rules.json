@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-24-isaactoslow1313-when-do-rules",
+  "why": "It is the neatest statement of the whole project, and a fair thing to be suspicious of from a tinkerer who never reproduces a loop the same way twice.",
+  "topics": [
+    "rule engines",
+    "deterministic programming",
+    "visual programming"
+  ],
+  "source": {
+    "url": "https://github.com/isaactoslow1313/when-do-rules",
+    "title": "isaactoslow1313/when-do-rules",
+    "fetchedAt": "2026-11-24T10:14:50.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "if a rule fires, it should fire the same way every single time, on every device, for every person running it."
+}

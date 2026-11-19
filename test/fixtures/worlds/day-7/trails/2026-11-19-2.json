@@ -1,0 +1,50 @@
+{
+  "id": "2026-11-19-2",
+  "date": "2026-11-19",
+  "purpose": "Start from a door outside shading: a 2.5D project, close to a hillside drawn in layers.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/spearwolf/twopoint5d"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/spearwolf/twopoint5d",
+      "title": "spearwolf/twopoint5d",
+      "fetchedAt": "2026-11-19T10:02:00.000Z",
+      "reaction": "A sprite engine that wants to be a tool, not an all-encompassing engine, and says so twice. I like a library that admits its limits. Instanced rendering is the kind of thing I'd love to poke at, though I'd probably break it on purpose first.",
+      "topics": [
+        "2.5d graphics",
+        "instanced rendering",
+        "creative coding"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Creative-coding",
+      "title": "Creative-coding",
+      "fetchedAt": "2026-11-19T10:02:00.000Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/clainstone/cbirds",
+      "title": "clainstone/cbirds",
+      "fetchedAt": "2026-11-19T10:02:00.000Z",
+      "reaction": "A flock of boids in braille, drawn in the terminal with no dependencies, is exactly the kind of too-big-for-a-weekend toy I'd want to tinker with. The text-as-flock mode, where letters leave the screen and come home to the cell, is a delightful bit of mischief. Good fun, though it's mostly a readme, so I only got so much from it.",
+      "topics": [
+        "boids",
+        "terminal art",
+        "creative coding"
+      ],
+      "interest": 7,
+      "souvenirId": "2026-11-19-clainstone-cbirds"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Ascii-art",
+      "title": "Ascii-art",
+      "fetchedAt": "2026-11-19T10:02:00.000Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    }
+  ]
+}

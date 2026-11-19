@@ -1,0 +1,31 @@
+{
+  "id": "session-20261124101450",
+  "kind": "session",
+  "status": "done",
+  "title": "Side By Side Patch Bench",
+  "projectId": "side-by-side-patch-bench",
+  "caption": "First toy: a Tone.js patch with live code on the left and sliders on the right. Numbers in the code follow the sliders. Loop counter",
+  "calls": [
+    {
+      "at": "2026-11-24T10:15:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 2482,
+      "cacheWrite": 215,
+      "output": 2124,
+      "usd": 0.0222819
+    },
+    {
+      "at": "2026-11-24T10:15:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 2697,
+      "cacheWrite": 2584,
+      "output": 196,
+      "usd": 0.0089634
+    }
+  ],
+  "at": "2026-11-24T10:15:40.000Z"
+}

@@ -5,9 +5,10 @@ import { Area, type Finding, Findings, SEVERITY_ORDER } from './finding.ts'
 export type RunInfo = { title: string }
 
 // A new blocker or major blocks a PR; minor and info never do (spec section 5). A major that waits for Roman's choice
-// (fixKind roman) does not: no PR can make it, and it would hold every PR until he decides. It stays in the report.
-export const blocking = (findings: readonly Finding[]): boolean =>
-  findings.some((f) => f.severity === 'blocker' || (f.severity === 'major' && f.fixKind !== 'roman'))
+// (fixKind roman) does not: no PR can make it, and it would hold every PR until he decides. Nor does a major already
+// tracked in an open issue (`known`, from qa/known-findings.json). Both stay in the report; a blocker always blocks.
+export const blocking = (findings: readonly Finding[], known: ReadonlySet<string> = new Set()): boolean =>
+  findings.some((f) => f.severity === 'blocker' || (f.severity === 'major' && f.fixKind !== 'roman' && !known.has(f.fingerprint)))
 
 const evidenceLinks = (f: Finding): string => (f.evidence.length === 0 ? '' : `\n  Evidence: ${f.evidence.map((e) => `[${e}](${e})`).join(', ')}`)
 

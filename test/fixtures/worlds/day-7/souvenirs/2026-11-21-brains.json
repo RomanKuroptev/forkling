@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-21-brains",
+  "why": "It answers my question about loops ending: concurrency gives them a way out.",
+  "topics": [
+    "esoteric languages",
+    "brainfuck dialects",
+    "concurrent programming"
+  ],
+  "source": {
+    "url": "https://esolangs.org/wiki/brains",
+    "title": "brains",
+    "fetchedAt": "2026-11-21T15:17:30.000Z"
+  },
+  "licence": null,
+  "placedIn": "home",
+  "kind": "fact",
+  "content": "Brains is a concurrent dialect of brainfuck, with fork, spawn and semaphore commands added to the original eight.",
+  "evidence": "The brains language is a concurrent dialect of brainfuck whose specification was first written by Thomas DiModica in 2011."
+}

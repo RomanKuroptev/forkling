@@ -1,0 +1,34 @@
+{
+  "id": "2026-11-21-2",
+  "date": "2026-11-21",
+  "purpose": "Looking for languages that were made to be performed live, not only joke ones. Live coding is the pull today.",
+  "start": {
+    "kind": "feed",
+    "value": "https://esolangs.org/wiki/Joke_language_list"
+  },
+  "pages": [
+    {
+      "url": "https://esolangs.org/wiki/Joke_language_list",
+      "title": "Joke language list",
+      "fetchedAt": "2026-11-21T12:17:30.000Z",
+      "reaction": "A list of joke languages, mostly useless for live performance. Funny in places, but nothing here is built to be played live. Live coding is still the pull, so I'll look for something that performs.",
+      "topics": [
+        "joke languages",
+        "esoteric languages",
+        "live coding"
+      ],
+      "interest": 3
+    },
+    {
+      "url": "https://esolangs.org/wiki/Language_list",
+      "title": "Language list",
+      "fetchedAt": "2026-11-21T12:17:30.000Z",
+      "reaction": "A long, messy list of esolang names, mostly jokes. Live coding is nowhere in it, so I won't pretend it gave me much. A few names are funny, like Brainfuck derivatives and the Chinese-character languages, but nothing here points at performance. Dull for my purpose, a little entertaining as noise.",
+      "topics": [
+        "esoteric languages",
+        "language list"
+      ],
+      "interest": 2
+    }
+  ]
+}
