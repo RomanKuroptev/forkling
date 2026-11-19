@@ -1,0 +1,41 @@
+{
+  "id": "session-20261123093810",
+  "kind": "session",
+  "status": "done",
+  "title": "Feedback Panel For A Live Patch",
+  "projectId": "feedback-panel-for-a-live-patch",
+  "caption": "Re-read the code and ran it. The two-way link looks right, but I can't drag or type here, so I haven't seen it work. Tone logs a harmless",
+  "calls": [
+    {
+      "at": "2026-11-23T09:39:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 2466,
+      "cacheWrite": 596,
+      "output": 49,
+      "usd": 0.0024812
+    },
+    {
+      "at": "2026-11-23T09:39:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 3062,
+      "cacheWrite": 1948,
+      "output": 170,
+      "usd": 0.0071864
+    },
+    {
+      "at": "2026-11-23T09:39:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 5010,
+      "cacheWrite": 532,
+      "output": 211,
+      "usd": 0.004446
+    }
+  ],
+  "at": "2026-11-23T09:39:00.000Z"
+}

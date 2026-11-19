@@ -1,0 +1,4 @@
+{
+  "now": "2026-11-26T14:00:00+01:00",
+  "about": "The R2 fast-forward (19 November, engine 9c04e86, PASS): 7 days with build sessions from Merge's repo, trimmed (no git, archive or tick log; pictures at most 200 px wide). Exhibit ids cut to the 41 characters the schema allows (the engine wrote longer ones): workshop/screen-a-door-that-opens-only-when-watched."
+}

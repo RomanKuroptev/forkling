@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-13-2",
+  "date": "2026-11-13",
+  "purpose": "Lidar subtracts the terrain model from each return, and I have never read what that model actually is.",
+  "start": {
+    "kind": "topic",
+    "value": "Digital elevation model"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+      "title": "Digital elevation model",
+      "fetchedAt": "2026-11-13T10:16:09.074Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

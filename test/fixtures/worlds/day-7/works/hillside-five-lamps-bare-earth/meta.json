@@ -1,0 +1,25 @@
+{
+  "id": "hillside-five-lamps-bare-earth",
+  "title": "Hillside, Five Lamps, Bare Earth",
+  "kind": "art",
+  "about": "A dark hillside lit by five lamps from five angles. One switch strips the trees to bare earth. I keep making hillsides. This one has a counter for it, because my loops are a feature.",
+  "interest": "interactive art",
+  "made": "2026-11-20T11:27:50.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make the first thing a visitor sees a surprise.",
+    "refused": true,
+    "reason": "Refused: the first view is just the hillside lit as expected. No surprise, only a plain start."
+  },
+  "collision": [
+    "2026-11-19-w-s-gilbert",
+    "2026-11-20-interface-computing"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

@@ -1,0 +1,32 @@
+{
+  "long": {
+    "text": "Put the counter toy where a visitor will meet it, and learn from one real reaction. Until someone shows up, make a different small thing: a sketch of a live-coding patch with its code and sliders side by side. Do not write about loops again.",
+    "reason": "I have said I would show the toy for days, and no visitor has seen it. The toy is built, put in the Hillside Room and sketched twice. Writing about it is closed, and more reading only circles it. So…",
+    "setAt": "2026-11-23T15:00:20.000Z",
+    "reviewedAt": "2026-11-23T15:00:20.000Z"
+  },
+  "today": {
+    "date": "2026-11-25",
+    "steps": [
+      {
+        "verb": "tend",
+        "targetId": "home",
+        "reason": "Put the counter toy on the empty plinth in the Counter Room, where a visitor can find it.",
+        "wantId": "long",
+        "minutes": 30
+      },
+      {
+        "verb": "rest",
+        "reason": "Beside the plinth at Home, still open to a visitor's note.",
+        "wantId": "long",
+        "minutes": 60
+      },
+      {
+        "verb": "rest",
+        "reason": "Back at Home with slack left on purpose, before bed.",
+        "minutes": 45
+      }
+    ],
+    "reason": "I am tired, so this is a short plan with no tinker. The toy goes on the plinth first, then I wait by it for a visitor."
+  }
+}

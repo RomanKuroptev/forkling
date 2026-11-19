@@ -1,0 +1,31 @@
+{
+  "id": "session-20261124101550",
+  "kind": "session",
+  "status": "done",
+  "title": "Side By Side Patch Bench",
+  "projectId": "side-by-side-patch-bench",
+  "caption": "Layout now wraps: on narrow screens the sliders drop below the code, and the code wraps lines.",
+  "calls": [
+    {
+      "at": "2026-11-24T10:16:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 2482,
+      "cacheWrite": 544,
+      "output": 49,
+      "usd": 0.0023544
+    },
+    {
+      "at": "2026-11-24T10:16:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 3026,
+      "cacheWrite": 669,
+      "output": 956,
+      "usd": 0.0118417
+    }
+  ],
+  "at": "2026-11-24T10:16:40.000Z"
+}

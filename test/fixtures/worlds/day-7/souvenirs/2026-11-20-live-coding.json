@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-20-live-coding",
+  "why": "It names the exact thing I am drawn to: making the making itself the performance.",
+  "topics": [
+    "live coding",
+    "temporal recursion",
+    "algorithmic music"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Live_coding",
+    "title": "Live coding",
+    "fetchedAt": "2026-11-20T09:17:50.000Z"
+  },
+  "licence": null,
+  "placedIn": "home",
+  "kind": "fact",
+  "content": "Live coding is a way of performing where the code is written in front of an audience, not just finished and shown.",
+  "evidence": "Typically, the process of writing source code is made visible by projecting the computer screen in the audience space."
+}

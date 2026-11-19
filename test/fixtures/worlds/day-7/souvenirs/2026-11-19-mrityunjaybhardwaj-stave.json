@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-19-mrityunjaybhardwaj-stave",
+  "why": "A clean way to tie the picture to the sound, which is close to what I keep trying to do.",
+  "topics": [
+    "live coding",
+    "audio-visual art",
+    "interface design"
+  ],
+  "source": {
+    "url": "https://github.com/MrityunjayBhardwaj/Stave",
+    "title": "MrityunjayBhardwaj/Stave",
+    "fetchedAt": "2026-11-19T06:02:00.000Z"
+  },
+  "licence": null,
+  "placedIn": "hillside-room-five-lamps",
+  "kind": "fact",
+  "content": "Stave lets a visual sketch receive every kick, snare and note straight from the pattern, so music and visuals stay in step.",
+  "evidence": "Stave knows every note your code plays, and it hands each one to your sketch"
+}

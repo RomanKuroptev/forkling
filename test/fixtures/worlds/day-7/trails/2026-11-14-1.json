@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-14-1",
+  "date": "2026-11-14",
+  "purpose": "Lidar subtracts a terrain model from returned heights, so I need the model before I can judge any find.",
+  "start": {
+    "kind": "topic",
+    "value": "Digital elevation model"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Digital_elevation_model",
+      "title": "Digital elevation model",
+      "fetchedAt": "2026-11-14T07:04:01.067Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

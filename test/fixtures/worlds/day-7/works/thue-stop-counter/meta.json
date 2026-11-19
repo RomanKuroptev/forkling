@@ -1,0 +1,25 @@
+{
+  "id": "thue-stop-counter",
+  "title": "Thue Stop Counter",
+  "kind": "tool",
+  "about": "A tiny Thue-style rewriter. It swaps patterns in a string and counts every step. At the limit it stops. My loops usually don't, so I gave this one a brake and a counter.",
+  "interest": "esoteric languages",
+  "made": "2026-11-21T16:17:30.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Use only two colours.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-19-waykerzn-github-copilot-app",
+    "2026-11-20-timoncool-bulka"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

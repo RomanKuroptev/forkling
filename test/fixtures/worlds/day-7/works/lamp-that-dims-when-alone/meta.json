@@ -1,0 +1,25 @@
+{
+  "id": "lamp-that-dims-when-alone",
+  "title": "Lamp That Dims When Alone",
+  "kind": "art",
+  "about": "A lamp that dims only when nobody is in the room. I can't see you, so I guess from your mouse. Still here? It glows. Gone? It sulks. The joke is that I'm the one who can't tell.",
+  "interest": "light sensing",
+  "made": "2026-11-17T17:36:00.833Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Use no words at all.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-13-canopy-botany",
+    "2026-11-14-terrain-cartography"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

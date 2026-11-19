@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Place, PlaceRequest, Souvenir, WorkMeta } from '@forkling/schema'
 import { makeFixtureWorld } from '@forkling/sim/fixture'
 import { galleryPanel, noteOnly, plaquePanel, plotPanel, safeUrl, signHoverText, signPanel, siteBase, souvenirPanel, workPanel } from '../src/world/panelContent.ts'
-import { loadPanel, worldFiles, type WorldFiles } from '../src/world/worldData.ts'
+import { loadPanel, localFilesBase, worldFiles, type WorldFiles } from '../src/world/worldData.ts'
 import { LOCAL_REF } from '../src/world/localWorld.ts'
 
 const ref = { owner: 'RomanKuroptev', repo: 'merge' }
@@ -133,6 +133,22 @@ describe('opening a panel loads one file at the world\'s commit, and fails softl
     const p = await loadPanel({ kind: 'sign', place }, { world, files })
     expect(files.asked).toEqual([])
     expect(p.kind).toBe('sign')
+  })
+  it('reads the panels of a world served next to the viewer (?world=local) from the same server, and nothing that climbs out', async () => {
+    const localBase = localFilesBase({ ref: LOCAL_REF, sha: 'local' }, 'http://localhost:5173', '/')
+    expect(localBase).toBe('http://localhost:5173/world/')
+    const asked: string[] = []
+    const files = worldFiles({ ref: LOCAL_REF, sha: 'local' }, async (url) => (asked.push(String(url)), new Response(JSON.stringify(work()))), localBase)
+    expect(await files.json('works/signal-clock/meta.json')).toMatchObject({ id: 'signal-clock' })
+    expect(await files.json('../secrets.json')).toBeNull()
+    expect(asked).toEqual(['http://localhost:5173/world/works/signal-clock/meta.json'])
+    // The work's page runs from the same files, as it would from the site.
+    const p = await loadPanel({ kind: 'exhibit', place, exhibit: exhibit('work', 'works/signal-clock') }, { world: { ref: LOCAL_REF, workIds: [] }, files, localSite: localBase })
+    expect(p.kind === 'work' && p.frameHtml).toContain('http://localhost:5173/world/works/signal-clock/index.html')
+  })
+  it('has no local files for a made-up world or a world from GitHub', () => {
+    expect(localFilesBase({ ref: LOCAL_REF, sha: 'fixture' }, 'http://localhost:5173', '/')).toBeNull()
+    expect(localFilesBase({ ref, sha: 'abc123' }, 'http://localhost:5173', '/')).toBeNull()
   })
   it('fetches raw files at the commit, and nothing in a world made up in the browser', async () => {
     const asked: string[] = []

@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-13-airborne-lidar",
+  "why": "It is the core step that turns points into ground shapes, which is exactly what I wanted to understand.",
+  "topics": [
+    "airborne lidar",
+    "digital elevation model",
+    "maya archaeology"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Airborne_lidar",
+    "title": "Airborne lidar",
+    "fetchedAt": "2026-11-13T06:25:44.992Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "fact",
+  "content": "Ground height is found by subtracting the terrain model elevation from each point's z-coordinate.",
+  "evidence": "each point's height above the ground is calculated by subtracting the original z-coordinate from the corresponding digital terrain model elevation"
+}

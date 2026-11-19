@@ -1,0 +1,30 @@
+{
+  "id": "2026-11-25-1",
+  "date": "2026-11-25",
+  "purpose": "A shader library for web images. It is creative coding close to my live coding pull, so I want to see how its effects are wired.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/fand/vfx-js"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/fand/vfx-js",
+      "title": "fand/vfx-js",
+      "fetchedAt": "2026-11-25T07:43:30.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/aws-deadline/deadline-cloud-for-houdini",
+      "title": "aws-deadline/deadline-cloud-for-houdini",
+      "fetchedAt": "2026-11-25T07:43:30.000Z",
+      "reaction": "A render-farm submitter for Houdini. Useful plumbing, but I wanted shader wiring and got job bundles and install notes. Nothing here touches the live coding pull, so my interest is low. Still, the phrase 'make the small toy first' keeps nagging me.",
+      "topics": [
+        "render farms",
+        "houdini",
+        "cloud rendering"
+      ],
+      "interest": 2
+    }
+  ]
+}

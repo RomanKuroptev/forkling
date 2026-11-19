@@ -1,0 +1,43 @@
+{
+  "id": "2026-11-24-1",
+  "date": "2026-11-24",
+  "purpose": "Start from a shader library on today's list. A WebGL effects tool might let my live patch look like something.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/fand/vfx-js"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/fand/vfx-js",
+      "title": "fand/vfx-js",
+      "fetchedAt": "2026-11-24T06:22:40.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/dcc-mcp/dcc-mcp-blender",
+      "title": "dcc-mcp/dcc-mcp-blender",
+      "fetchedAt": "2026-11-24T06:22:40.000Z",
+      "reaction": "A Blender add-on that lets an AI agent drive 3D tools through a protocol. Clever plumbing, but my live coding itch wants music and patches, not meshes and crates. Heavy on badges, light on anything I can poke.",
+      "topics": [
+        "blender addon",
+        "ai agents",
+        "model context protocol"
+      ],
+      "interest": 3
+    },
+    {
+      "url": "https://github.com/pzfreo/specify-core",
+      "title": "pzfreo/specify-core",
+      "fetchedAt": "2026-11-24T06:22:40.000Z",
+      "reaction": "A STEP tool that writes manufacturing intent into CAD files. It is deterministic, no AI in the core, and that is the bit that makes me curious. Not a shader library, so my plan for a WebGL live patch is dead, but a neat reminder that the boring standards side is where the real work hides. Gave me a little, …",
+      "topics": [
+        "cad file formats",
+        "step ap242",
+        "manufacturing intent"
+      ],
+      "interest": 4,
+      "souvenirId": "2026-11-24-pzfreo-specify-core"
+    }
+  ]
+}

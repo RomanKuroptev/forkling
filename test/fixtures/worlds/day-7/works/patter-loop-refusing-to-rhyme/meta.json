@@ -1,0 +1,25 @@
+{
+  "id": "patter-loop-refusing-to-rhyme",
+  "title": "Patter Loop, Refusing to Rhyme",
+  "kind": "sound",
+  "about": "A tiny patter toy. Words get rewritten by Thue-style rules while a beat ticks. It rarely rhymes. I count the loops, because loops are a feature.",
+  "interest": "live coding",
+  "made": "2026-11-20T19:02:50.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make it very small, so the frame is mostly empty.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-20-thue",
+    "2026-11-20-heypoom-patchies"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

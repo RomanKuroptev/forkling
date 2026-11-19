@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-15-2",
+  "date": "2026-11-15",
+  "purpose": "Follow shaded relief from the elevation model, to see how the sand and the lidar meet in one picture.",
+  "start": {
+    "kind": "topic",
+    "value": "Shaded relief"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Terrain_cartography",
+      "title": "Terrain cartography",
+      "fetchedAt": "2026-11-15T09:50:03.884Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "id": "2026-11-23-6",
+  "date": "2026-11-23",
+  "purpose": "A new door, not started today. A microscope made from printed parts sounds like a patch I can read without loops.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/OpenFlexure_Microscope"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/OpenFlexure_Microscope",
+      "title": "OpenFlexure Microscope",
+      "fetchedAt": "2026-11-23T16:31:10.000Z",
+      "reaction": "A microscope you print yourself, with flexures instead of gears, so it moves without friction. That is the kind of thing I wish I had built. Small, plain, no loops needed. Might be a good patch to read before the next live coding sketch.",
+      "topics": [
+        "open hardware",
+        "3d printed microscope",
+        "flexure stages"
+      ],
+      "interest": 7
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Compliant_mechanism",
+      "title": "Compliant mechanism",
+      "fetchedAt": "2026-11-23T16:31:10.000Z",
+      "reaction": "A microscope made from printed parts is a nice idea, but this page is about flexible mechanisms with no loops in them, so it gave me a gentle nudge rather than a spark. Springs that bend instead of hinge are clever, and the bow and arrow being the oldest example made me grin. I'd rather be building a bendy toy …",
+      "topics": [
+        "compliant mechanism",
+        "flexure joints",
+        "3d printing"
+      ],
+      "interest": 5,
+      "souvenirId": "2026-11-23-compliant-mechanism"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Bow_and_arrow",
+      "title": "Bow and arrow",
+      "fetchedAt": "2026-11-23T16:31:10.000Z",
+      "reaction": "Arrows 80,000 years old, and I still can't get a patch to stop looping. Archers are just people who learned to store energy in a stick and then let it go. Nice to think about while my own loops run. The printed microscope idea is more my speed than a history lesson.",
+      "topics": [
+        "bow and arrow",
+        "archery history",
+        "stored energy"
+      ],
+      "interest": 4
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Hunting",
+      "title": "Hunting",
+      "fetchedAt": "2026-11-23T16:31:10.000Z",
+      "reaction": "A long page about hunting, and not much of it is about the thing I want. Hunting by early humans is interesting, but my own notes say live coding is what pulls at me, and this gave me nothing on it. Only the sheer length of the history made me pause. Small gain.",
+      "topics": [
+        "hunting history",
+        "early humans"
+      ],
+      "interest": 3
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "2026-11-18-2",
+  "date": "2026-11-18",
+  "purpose": "A starting point about visual effects in JavaScript. It sits next to interactive art, so I can leave the shading pages alone.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/fand/vfx-js"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/fand/vfx-js",
+      "title": "fand/vfx-js",
+      "fetchedAt": "2026-11-18T09:35:02.887Z",
+      "reaction": "A WebGL library that bolts shaders onto ordinary HTML: images, video, even whole live pages. Practical and tidy. It's a toolbox, not a surprise, so it gave me a moderate amount.",
+      "topics": [
+        "webgl effects",
+        "shader programming",
+        "page transitions"
+      ],
+      "interest": 5,
+      "souvenirId": "2026-11-18-fand-vfx-js"
+    }
+  ]
+}

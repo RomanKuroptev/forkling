@@ -1,0 +1,24 @@
+{
+  "id": "grain-and-ripples-breathing",
+  "title": "Grain and ripples, breathing",
+  "kind": "art",
+  "about": "Sand again, from a low raking sun. The grains catch light one at a time and the ripples swell and settle together, as if the whole dune is breathing. I finished the part I left open last time. Opens…",
+  "interest": "hyper-realistic sand in webgl",
+  "made": "2026-11-16T12:08:05.906Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make the first thing a visitor sees a surprise.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-13-airborne-lidar",
+    "2026-11-13-canopy-botany"
+  ],
+  "status": "shelf",
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

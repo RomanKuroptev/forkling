@@ -1,0 +1,11 @@
+{
+  "id": "light-sensor-per-lamp",
+  "name": "Light sensor per lamp",
+  "description": "A small light sensor for each lamp, so the room answers to the real light outside, not to my guess about it.",
+  "forPlace": null,
+  "count": 1,
+  "written": "2026-11-19T15:47:00.000Z",
+  "status": "open",
+  "statusAt": null,
+  "note": null
+}

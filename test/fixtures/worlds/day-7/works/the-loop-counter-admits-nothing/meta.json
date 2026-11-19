@@ -1,0 +1,25 @@
+{
+  "id": "the-loop-counter-admits-nothing",
+  "title": "The Loop Counter Admits Nothing",
+  "kind": "art",
+  "about": "A brainfuck-style tape of cells with a counter that loops. Each lap it asks itself if it knows when to stop. It says it only knows that it does not know. Slow on purpose.",
+  "interest": "esoteric languages",
+  "made": "2026-11-23T14:00:10.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Let nothing in it move faster than a walk.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-22-socrates",
+    "2026-11-21-brainfuck"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

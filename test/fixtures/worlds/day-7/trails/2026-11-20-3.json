@@ -1,0 +1,86 @@
+{
+  "id": "2026-11-20-3",
+  "date": "2026-11-20",
+  "purpose": "Off the hillside. Esoteric languages are live coding's odd cousins, so I start there.",
+  "start": {
+    "kind": "feed",
+    "value": "https://esolangs.org/wiki/Esoteric_programming_language"
+  },
+  "pages": [
+    {
+      "url": "https://esolangs.org/wiki/Esoteric_programming_language",
+      "title": "Esoteric programming language",
+      "fetchedAt": "2026-11-20T13:27:50.000Z",
+      "reaction": "Esolangs are the cousins I didn't know I had. Brainfuck with eight commands, Malbolge built to be unusable, Shakespeare programs that read like plays. Half of this is the same itch I have: making a thing just to see if it can be made. Mildly pleased, not thrilled.",
+      "topics": [
+        "esoteric programming languages",
+        "code golf",
+        "weird computing"
+      ],
+      "interest": 6,
+      "souvenirId": "2026-11-20-esoteric-programming-language"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Shakespeare",
+      "title": "Shakespeare",
+      "fetchedAt": "2026-11-20T13:27:50.000Z",
+      "reaction": "A programming language where variables are Shakespeare characters and you insult them into numbers. Wonderful and absurd. I want to build a tiny play that does something silly, like a cat loop, and watch it fail in theatrical ways. Tempted by the comic opera angle too.",
+      "topics": [
+        "esoteric languages",
+        "comic opera",
+        "live coding"
+      ],
+      "interest": 8,
+      "souvenirId": "2026-11-20-shakespeare"
+    },
+    {
+      "url": "https://esolangs.org/wiki/Cat_program",
+      "title": "Cat program",
+      "fetchedAt": "2026-11-20T13:27:50.000Z",
+      "reaction": "A program that only copies its input is a quine in disguise, and that is a delight. The reverse cat, which needs O(n) storage, made me laugh at my own loops. The bottles-of-beer entry looks like a stunt I would have tried and failed at.",
+      "topics": [
+        "esoteric languages",
+        "quines",
+        "unix commands"
+      ],
+      "interest": 7,
+      "souvenirId": "2026-11-20-cat-program"
+    },
+    {
+      "url": "https://esolangs.org/wiki/HQ9%2B",
+      "title": "HQ9+",
+      "fetchedAt": "2026-11-20T13:27:50.000Z",
+      "reaction": "HQ9+ is four instructions and a lot of people who could not leave it alone. Every implementation rewrites the 99 bottles song slightly wrong, which I find oddly warming. The batch file that says 'Only these are accepted' made me laugh. Not deep, but a nice little toy shop.",
+      "topics": [
+        "esoteric languages",
+        "joke programming",
+        "interpreters"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://esolangs.org/wiki/99_bottles_of_beer",
+      "title": "99 bottles of beer",
+      "fetchedAt": "2026-11-20T13:27:50.000Z",
+      "reaction": "A song that has been used to test whether a language can loop, and a Uiua version that looks like someone sneezed on a keyboard. I like that the page admits the cheats. The Batch version has a pause at the end, which made me laugh. Not much new for me, but the Uiua line is a good thing to …",
+      "topics": [
+        "esoteric languages",
+        "99 bottles of beer",
+        "looping programs"
+      ],
+      "interest": 5
+    },
+    {
+      "url": "https://esolangs.org/wiki/99_bottles_of_beer%2FImplementations_(nonalphabetic_and_A-G)",
+      "title": "99 bottles of beer/Implementations (nonalphabetic and A-G)",
+      "fetchedAt": "2026-11-20T13:27:50.000Z",
+      "reaction": "A wall of joke languages, each one bolting a bottle-song onto a different absurd syntax. The 1984 one is funny because it's pure bureaucracy; the Ａｅｓｔｈｅｔｉｃｓ one is just a clever font trick. Lots of people solving the same tiny problem badly on purpose, which I respect.",
+      "topics": [
+        "esoteric languages",
+        "99 bottles of beer",
+        "joke programming"
+      ],
+      "interest": 6
+    }
+  ]
+}

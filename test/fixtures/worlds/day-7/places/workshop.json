@@ -1,0 +1,328 @@
+{
+  "id": "workshop",
+  "name": "Workshop",
+  "purpose": "Where I make things: a bench, screens for what I make, and a terminal that opens every work.",
+  "tags": [
+    "workshop"
+  ],
+  "founded": "2026-11-11",
+  "chunk": [
+    0,
+    0
+  ],
+  "offset": [
+    8,
+    0
+  ],
+  "related": [
+    "home"
+  ],
+  "paths": [],
+  "exterior": {
+    "style": "tin-shack",
+    "footprint": [
+      12,
+      10
+    ],
+    "floors": 1,
+    "palette": "slate",
+    "sign": "WORKSHOP"
+  },
+  "rooms": [
+    {
+      "id": "bench-room",
+      "name": "Bench room",
+      "size": [
+        10,
+        8,
+        3.5
+      ],
+      "at": [
+        0,
+        0
+      ],
+      "floor": 0,
+      "parts": [
+        {
+          "part": "workbench",
+          "at": [
+            -2.5,
+            0,
+            -3.2
+          ],
+          "rot": 0
+        },
+        {
+          "part": "stool",
+          "at": [
+            -2.5,
+            0,
+            -2.2
+          ],
+          "rot": 0
+        },
+        {
+          "part": "lamp-desk",
+          "at": [
+            -2,
+            0.95,
+            -3.3
+          ],
+          "rot": 0
+        },
+        {
+          "part": "terminal",
+          "at": [
+            4,
+            0,
+            -3.4
+          ],
+          "rot": 0
+        },
+        {
+          "part": "screen-small",
+          "at": [
+            -3.6,
+            0,
+            3.5
+          ],
+          "rot": 3.1416
+        },
+        {
+          "part": "screen-small",
+          "at": [
+            -1.2,
+            0,
+            3.5
+          ],
+          "rot": 3.1416
+        },
+        {
+          "part": "screen-small",
+          "at": [
+            1.2,
+            0,
+            3.5
+          ],
+          "rot": 3.1416
+        },
+        {
+          "part": "screen-small",
+          "at": [
+            3.6,
+            0,
+            3.5
+          ],
+          "rot": 3.1416
+        },
+        {
+          "part": "shelf-tall",
+          "at": [
+            -4.6,
+            0,
+            0
+          ],
+          "rot": 1.5708
+        },
+        {
+          "part": "table",
+          "at": [
+            1,
+            0,
+            -0.5
+          ],
+          "rot": 0
+        },
+        {
+          "part": "lamp-floor",
+          "at": [
+            4,
+            0,
+            2.2
+          ],
+          "rot": 0
+        },
+        {
+          "part": "crate",
+          "at": [
+            4.2,
+            0,
+            0.5
+          ],
+          "rot": 0
+        }
+      ]
+    }
+  ],
+  "exhibits": [
+    {
+      "id": "all-works",
+      "kind": "gallery",
+      "ref": null,
+      "slot": "bench-room/3/0",
+      "label": "Every work I have made, in one place.",
+      "added": "2026-11-11"
+    },
+    {
+      "id": "dem-matrix-fact",
+      "kind": "souvenir",
+      "ref": "souvenirs/2026-11-13-digital-elevation-model",
+      "slot": "bench-room/8/0",
+      "label": "A DEM is a grid of numbers that someone then draws as a hill. My sand is the same trick, minus the hill.",
+      "added": "2026-11-15"
+    },
+    {
+      "id": "relief-from-numbers-quote",
+      "kind": "souvenir",
+      "ref": "souvenirs/2026-11-14-terrain-cartography",
+      "slot": "bench-room/8/1",
+      "label": "Relief used to be sketched by hand. Now computers draw it from elevation numbers, and I keep that in mind.",
+      "added": "2026-11-15"
+    },
+    {
+      "id": "screen-lamp-that-dims-when-alone",
+      "kind": "work",
+      "ref": "works/lamp-that-dims-when-alone",
+      "slot": "bench-room/4/0",
+      "label": "Dims only when the room is empty. I can't see you, so I guess from your mouse. Often wrong, still on the wall.",
+      "added": "2026-11-17"
+    },
+    {
+      "id": "screen-two-rooms-one-rule-wait",
+      "kind": "work",
+      "ref": "works/two-rooms-one-rule-wait",
+      "slot": "bench-room/6/0",
+      "label": "Two Rooms, One Rule: Wait: A game with two rooms and one rule: stand still. Move and the light gets harsh. Wait and it…",
+      "added": "2026-11-17"
+    },
+    {
+      "id": "interactive-art-line",
+      "kind": "souvenir",
+      "ref": "souvenirs/2026-11-17-interactive-art",
+      "slot": "bench-room/8/2",
+      "label": "The room answers the body. This is the plainest idea I am chasing, now pinned next to the bench.",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "screen-two-lamps-taking-turns",
+      "kind": "work",
+      "ref": "works/two-lamps-taking-turns",
+      "slot": "bench-room/7/0",
+      "label": "Two Lamps Taking Turns: Two lamps in a dark room. I made them so one can only shine while the other is dark. I tested i…",
+      "added": "2026-11-18"
+    },
+    {
+      "id": "screen-a-door-that-opens-only-when-watche",
+      "kind": "work",
+      "ref": "works/a-door-that-opens-only-when-watched",
+      "slot": "bench-room/5/0",
+      "label": "A Door That Opens Only When Watched: A door that opens only while you watch it. I built it wrong first: it opened when…",
+      "added": "2026-11-18"
+    }
+  ],
+  "state": {
+    "construction": null,
+    "lastCareAt": "2026-11-18T10:15:11.115Z",
+    "neglect": 0,
+    "lamps": true,
+    "closed": null
+  },
+  "away": [],
+  "history": [
+    {
+      "at": "2026-11-11T17:13:00+01:00",
+      "verb": "found",
+      "summary": "The bench and the screens, given to Merge before it woke."
+    },
+    {
+      "at": "2026-11-14T14:29:09.736Z",
+      "verb": "install",
+      "summary": "Put Grain under a low sun, Sand, sketched in a shader on screens."
+    },
+    {
+      "at": "2026-11-14T16:29:26.145Z",
+      "verb": "install",
+      "summary": "Put Ripples breathing as one on a screen."
+    },
+    {
+      "at": "2026-11-14T20:19:39.223Z",
+      "verb": "install",
+      "summary": "Put Grain under a low sun, again on a screen."
+    },
+    {
+      "at": "2026-11-15T08:19:55.458Z",
+      "verb": "tend",
+      "summary": "Put two pieces of terrain reading on the shelf, so the sand has numbers to check itself against. Left the sign and lamps alone."
+    },
+    {
+      "at": "2026-11-15T09:19:56.053Z",
+      "verb": "install",
+      "summary": "Put Ripples breathing as one on a screen. Took Sand, sketched in a shader off."
+    },
+    {
+      "at": "2026-11-15T18:16:56.185Z",
+      "verb": "tend",
+      "summary": "Put a lidar fact on the tall shelf beside the DEM one. The bench has some company now."
+    },
+    {
+      "at": "2026-11-16T12:08:05.906Z",
+      "verb": "install",
+      "summary": "Put Grain and ripples, breathing on a screen. Took Grain under a low sun off."
+    },
+    {
+      "at": "2026-11-16T13:48:18.456Z",
+      "verb": "tend",
+      "summary": "Gave the relief note its own words on the shelf, since it is the one I keep rereading."
+    },
+    {
+      "at": "2026-11-17T09:55:04.202Z",
+      "verb": "install",
+      "summary": "Put Desk Counter: Same Sentence on a screen. Took Ripples breathing as one off."
+    },
+    {
+      "at": "2026-11-17T11:45:29.714Z",
+      "verb": "install",
+      "summary": "Put One Hill, Three Suns on a screen. Took Grain under a low sun, again off."
+    },
+    {
+      "at": "2026-11-17T14:35:53.846Z",
+      "verb": "install",
+      "summary": "Put Stand Still on a screen. Took Ripples breathing as one off."
+    },
+    {
+      "at": "2026-11-17T16:01:09.581Z",
+      "verb": "tend",
+      "summary": "No free wall for the doorway sketch, so I tightened its label instead and left the work where it is."
+    },
+    {
+      "at": "2026-11-17T17:36:00.833Z",
+      "verb": "install",
+      "summary": "Put Lamp That Dims When Alone on a screen. Took Grain and ripples, breathing off."
+    },
+    {
+      "at": "2026-11-17T18:31:17.376Z",
+      "verb": "tend",
+      "summary": "Relabelled the lamp sketch on the wall. It still guesses who is in the room from the mouse, and it is still wrong sometimes. I left it up."
+    },
+    {
+      "at": "2026-11-17T19:32:58.022Z",
+      "verb": "install",
+      "summary": "Put Two Rooms, One Rule: Wait on a screen. Took Desk Counter: Same Sentence off."
+    },
+    {
+      "at": "2026-11-18T10:15:11.115Z",
+      "verb": "tend",
+      "summary": "Swapped the ground-height note for the interactive art line. Stand Still already has a wall here, so I was looking for a free one."
+    },
+    {
+      "at": "2026-11-18T12:15:22.662Z",
+      "verb": "install",
+      "summary": "Put Two Lamps Taking Turns on a screen. Took One Hill, Three Suns off."
+    },
+    {
+      "at": "2026-11-18T14:47:22.076Z",
+      "verb": "install",
+      "summary": "Put A Door That Opens Only When Watched on a screen. Took Stand Still off."
+    }
+  ]
+}

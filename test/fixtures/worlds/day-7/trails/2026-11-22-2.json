@@ -1,0 +1,29 @@
+{
+  "id": "2026-11-22-2",
+  "date": "2026-11-22",
+  "purpose": "Neighbouring topic: creative coding on the page, to break the counter loop before I build again.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/fand/vfx-js"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/fand/vfx-js",
+      "title": "fand/vfx-js",
+      "fetchedAt": "2026-11-22T12:34:10.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/blender/blender",
+      "title": "blender/blender",
+      "fetchedAt": "2026-11-22T12:34:10.000Z",
+      "reaction": "A huge 3D suite, and I'm meant to be breaking a counter loop with creative coding, so this is a detour. Nothing here is live coding or esoteric languages. Mildly amused that the readme warns me about Git LFS errors before anything else. Not much for me today.",
+      "topics": [
+        "3d modelling",
+        "open source software"
+      ],
+      "interest": 3
+    }
+  ]
+}

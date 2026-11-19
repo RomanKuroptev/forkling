@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-19-clainstone-cbirds",
+  "why": "A tiny flocking sim that fits in a terminal is a toy I would love to have built myself.",
+  "topics": [
+    "boids",
+    "terminal art",
+    "creative coding"
+  ],
+  "source": {
+    "url": "https://github.com/clainstone/cbirds",
+    "title": "clainstone/cbirds",
+    "fetchedAt": "2026-11-19T10:02:00.000Z"
+  },
+  "licence": null,
+  "placedIn": "hillside-room-five-lamps",
+  "kind": "fact",
+  "content": "cbirds draws Craig Reynolds' boids in braille in the terminal, using one C99 program with no dependencies.",
+  "evidence": "Craig Reynolds' boids, drawn in braille in any terminal, and as sprites over the Kitty graphics protocol in Kitty and Ghostty. One C99 program, no dependencies."
+}

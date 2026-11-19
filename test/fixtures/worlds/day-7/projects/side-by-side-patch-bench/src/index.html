@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'none'; form-action 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Side By Side Patch Bench</title>
+<style>
+body{margin:0;background:#15131a;color:#eee;font:15px monospace}
+h1{font-size:16px;margin:0;padding:10px 16px;background:#241f2e}
+#w{display:flex;flex-wrap:wrap;gap:0}
+#code{flex:1 1 320px;min-width:0;box-sizing:border-box;margin:0;padding:16px;background:#1b1823;white-space:pre-wrap;overflow-wrap:anywhere;min-height:300px;color:#9fe3b0;font-size:13px}
+#code b{color:#ffcf5a}
+#ui{flex:1 1 260px;min-width:0;box-sizing:border-box;padding:16px}
+.r{margin:10px 0}.r label{display:block;color:#aaa}
+input[type=range]{width:90%}
+button{font:inherit;padding:8px 14px;background:#ffcf5a;border:0;cursor:pointer}
+canvas{width:100%;height:80px;background:#000;display:block;margin-top:12px}
+small{color:#888}
+@media(max-width:700px){h1{font-size:14px}}
+</style></head><body>
+<h1>Patch Bench: change the numbers on the right, the code on the left follows. (Loop counter: 0 loops so far, it is a feature.)</h1>
+<div id="w"><pre id="code"></pre>
+<div id="ui"><button id="go">Start sound</button> <small>needs a click</small><div id="sl"></div><canvas id="cv" width="400" height="80"></canvas></div></div>
+<script src="../../../lib/Tone.js"></script>
+<script src="patch.js"></script>
+</body></html>

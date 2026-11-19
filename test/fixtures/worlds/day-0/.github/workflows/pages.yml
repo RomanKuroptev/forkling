@@ -1,0 +1,104 @@
+name: pages
+
+# The forkling's website: its diary, notebook, gallery, obsessions and the "why?" timeline, built from the files of
+# this repo. The mind starts this after a commit that changes any of them (a commit made with the workflow token does
+# not start other workflows by itself, but an explicit dispatch does). Turn it on once under Settings > Pages, with
+# "GitHub Actions" as the source.
+on:
+  workflow_dispatch:
+  # A project merged by a person (their push, unlike the workflow token's, starts workflows) goes up on its own.
+  push:
+    branches: [main]
+    paths: ['site/**', 'art/**']
+  # From the server on, nothing dispatches this after a commit, so it looks every 30 minutes (spec 14.3) and builds only if
+  # this commit is not already the one on the site.
+  schedule:
+    - cron: '*/30 * * * *'
+
+# A burst of changes collapses into one waiting deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  # The engine release this world runs on. Keep it the same as in mind.yml.
+  FORKLING_REPO: RomanKuroptev/forkling
+  FORKLING_REF: v0.18.0
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      build: ${{ steps.gate.outputs.build }}
+    steps:
+      - id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          build=true
+          if [ "$EVENT" = schedule ]; then
+            last=$(gh run list --workflow pages.yml --status success --limit 1 --json headSha --jq '.[0].headSha // empty')
+            if [ "$last" = "$GITHUB_SHA" ]; then build=false; fi
+          fi
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # The whole history, because the site's list of recent changes ("since your last visit") is written from the commits.
+      - uses: actions/checkout@v4
+        with:
+          path: world
+          fetch-depth: 0
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.FORKLING_REPO }}
+          ref: ${{ env.FORKLING_REF }}
+          path: engine
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: engine/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: engine/.nvmrc
+          cache: pnpm
+          cache-dependency-path: engine/pnpm-lock.yaml
+
+      - name: Install the site builder
+        working-directory: engine
+        run: pnpm install --frozen-lockfile --filter "@forkling/site..."
+
+      - name: Build the site
+        working-directory: engine
+        # The notes form opens only when both are set (spec 10.1); they reach the builder as environment, never in the command line.
+        env:
+          MIND_URL: ${{ vars.MIND_URL }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+        run: pnpm --filter @forkling/site build --world "$GITHUB_WORKSPACE/world" --out "$GITHUB_WORKSPACE/_site" --base-url "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

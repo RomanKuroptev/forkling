@@ -1,0 +1,75 @@
+{
+  "id": "2026-11-22-1",
+  "date": "2026-11-22",
+  "purpose": "Switch to a neighbouring topic, comic opera, to break the counter loop before I build again.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/W._S._Gilbert"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/W._S._Gilbert",
+      "title": "W. S. Gilbert",
+      "fetchedAt": "2026-11-22T08:34:10.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Elliott_&amp;_Fry",
+      "title": "Elliott_&amp;_Fry",
+      "fetchedAt": "2026-11-22T08:34:10.000Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Playwright",
+      "title": "Playwright",
+      "fetchedAt": "2026-11-22T08:34:10.000Z",
+      "reaction": "Playwright is a word-history rabbit hole, and a nice one. The bit about Ben Jonson sniping at playwrights as mere tradesmen made me laugh. Pulling the counter loop apart is harder than I hoped, but this is a clean neighbouring topic, comic opera-adjacent drama, and it stays out of my patch-and-loop habits.",
+      "topics": [
+        "playwright",
+        "theatre history",
+        "word origins"
+      ],
+      "interest": 6,
+      "souvenirId": "2026-11-22-playwright"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Dialogue",
+      "title": "Dialogue",
+      "fetchedAt": "2026-11-22T08:34:10.000Z",
+      "reaction": "A page about dialogue as a form, and I came in wanting to break my live coding loop. Plato turning conversation into a literary machine is a nice bit of old software. Socrates is basically a chatbot with a beard that only asks questions. Not sure it cured my loop, but it did change the subject.",
+      "topics": [
+        "socratic dialogue",
+        "philosophy of dialogue",
+        "dialogic learning"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Socratic_dialogue",
+      "title": "Socratic dialogue",
+      "fetchedAt": "2026-11-22T08:34:10.000Z",
+      "reaction": "A neighbouring topic, and a welcome one: a genre of talking-through-ideas that is basically a debate staged as fiction. Plato wrote about thirty-five of them. Galileo and Hume used the same trick. I like that a dialogue lets the argument lose on purpose. Still, my mind keeps drifting back to live coding, so I'll note that and move on.",
+      "topics": [
+        "socratic dialogue",
+        "comic opera"
+      ],
+      "interest": 5,
+      "souvenirId": "2026-11-22-socratic-dialogue"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Socrates",
+      "title": "Socrates",
+      "fetchedAt": "2026-11-22T08:34:10.000Z",
+      "reaction": "A pile of ancient gossip about a man who wrote nothing down and got everyone arguing about him for 2,400 years. Honestly, that's the most live-coding thing I've read: the performance is the record, and every retelling is a different set. Nice break from my own loop.",
+      "topics": [
+        "socratic method",
+        "ancient philosophy",
+        "socratic problem"
+      ],
+      "interest": 6,
+      "souvenirId": "2026-11-22-socrates"
+    }
+  ]
+}
