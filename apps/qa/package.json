@@ -1,0 +1,19 @@
+{
+  "name": "@forkling/qa",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cli": "node src/cli.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "playwright": "1.65.0",
+    "pngjs": "7.0.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/pngjs": "6.0.5"
+  }
+}

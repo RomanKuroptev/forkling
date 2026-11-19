@@ -66,6 +66,7 @@ pnpm --filter @forkling/mind <tick|serve|validate-pr|replay|source-trial>
 pnpm --filter @forkling/mind replay --world <clone>   # the canonical body from a world repo's history beside its plan
 pnpm --filter @forkling/mind run-report --world <clone> --from <date> --to <date>   # step 8's run report: the launch checklist counted from a world repo (writes nothing; Merge never sees it)
 pnpm --filter @forkling/mind fast-forward --world <copy with no remote> --days 7 --cap 3   # the fast-forward test: the loop on a fake clock, real calls under a run cap; summary path printed, exit 0 on a pass (--clone-from <url> makes the copy; --sessions turns on the build verb with local, unsandboxed sessions, counted under the cap, and a session over $1 fails; --dry-run uses fakes, no key)
+pnpm qa fast                   # the audit harness's PR checks (docs/spec/audit/); writes qa-out/findings.json and report.md
 pnpm --filter @forkling/site build                    # render a forkling's Pages site
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 ```
@@ -74,6 +75,7 @@ pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 
 - [`STATUS.md`](STATUS.md): where the project is and what is next.
 - [`MILESTONES.md`](MILESTONES.md): W0 to W8 and the launch criteria.
+- [`docs/spec/audit/`](docs/spec/audit/): the audit harness (`apps/qa`), its spec, steps and lane progress.
 - [`docs/spec/`](docs/spec/): the spec. `spec.md` is the whole thing, and each milestone gets its own file when it starts.
 - `docs/decisions.md`: why things are the way they are. `docs/milestones-done.md`: the pet-era milestones M1 to M7.
 - Pet-era docs, kept as history until the code they describe is replaced: `docs/how-it-works.md`, `docs/architecture.md`, `docs/review-2026-11.md`, `docs/future.md`, `docs/plans/`.
