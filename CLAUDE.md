@@ -71,6 +71,7 @@ pnpm qa triage --dry-run       # findings to GitHub issues labelled qa (without 
 pnpm qa gather                 # one findings.json for a /qa run (fast, qa-out/actions/ artefacts, qa-out/review/ reviewer files)
 pnpm qa fix-try <issue> --failed "<what>" | --merged <pr>   # a fixer's result on its issue (2 failures: fix-failed)
 pnpm qa digest [--post]        # qa-out/digest.md; --post adds one comment on the pinned QA digest issue
+/qa [nightly|weekly|release|dry-run]   # the audit harness by hand in Claude Code (.claude/skills/qa); nothing is scheduled
 pnpm --filter @forkling/site build                    # render a forkling's Pages site
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 ```
