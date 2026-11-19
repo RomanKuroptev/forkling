@@ -2,6 +2,13 @@
 
 Read this first. Update it before every commit and before you stop.
 
+## Audit harness (started 19 November)
+
+Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session builds Phase 1 (Q0 base, then lanes W, B, S, T in worktrees), then QR (run it, fix, release). Lanes write progress to `docs/spec/audit/lanes/<lane>.md`; real-run spend is tracked in `docs/spec/audit/lanes/spend.md` (harness budget $10 a month). Nothing runs on a schedule. After QR: the Merge fresh start ([`docs/spec/v4/merge-fresh-start.md`](docs/spec/v4/merge-fresh-start.md)), on Roman's go.
+
+- **Docs:** this PR commits the audit spec and the fresh-start plan.
+- **Next:** Q0 (`apps/qa`, the Finding format, `qa.yml`, the `phase-2` site-gap issues).
+
 ## Spec v4, parallel build (started 17 November)
 
 Plan: [`docs/spec/v4/parallel-plan.md`](docs/spec/v4/parallel-plan.md). One coordinator session (lane 0) on Roman's PC runs four helper agents in worktrees; each lane writes its progress to `docs/spec/v4/lanes/<lane>.md` and the coordinator folds it in here when a slice is merged. Roman's "Decided ahead" rules replace the reviews that used to stop a lane.
