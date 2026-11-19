@@ -18,9 +18,12 @@ const MAX_SHOWN_KEPT = 5
 /** The most start pages read lately shown to a plan. */
 const MAX_SHOWN_READ_LATELY = 10
 
-/** The first page each trip of the last 30 days really read, newest first and once each: where a wander would read nothing new. */
+/**
+ * Where a wander would read nothing new: today's starting points read lately (so each one marked "(read lately)" is explained),
+ * then the first page each trip of the last 30 days really read, newest first, once each.
+ */
 function readLatelyStarts(t: Tick): { title: string; url: string }[] {
-  const out: { title: string; url: string }[] = []
+  const out: { title: string; url: string }[] = t.startingPoints.filter((p) => t.wander.readRecently(p.url)).map((p) => ({ title: p.title, url: p.url }))
   for (const trail of readTrailsSince(t.dir, t.today, 30).reverse()) {
     const first = trail.pages.find((p) => !p.failed)
     if (first && !out.some((o) => o.url === first.url)) out.push({ title: first.title, url: first.url })
