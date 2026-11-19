@@ -57,9 +57,9 @@ describe('toExpandPatch', () => {
   })
 
   it('makes one for an enlarged room, with the parts that move and the parts added', () => {
-    const enlarge = { roomId: 'main', width: 12, depth: 10, height: 3.2, x: null, z: null, moves: [{ index: 0, x: 1, y: 0, z: 1 }], addParts: [part] }
+    const enlarge = { roomId: 'main', width: 10.4, depth: 8.4, height: 3.2, x: null, z: null, moves: [{ index: 0, x: 1, y: 0, z: 1 }], addParts: [part] }
     const r = toExpandPatch(answer({ change: 'enlarge', enlarge, path: null }))
-    expect(r.ok && r.patch.change).toEqual({ kind: 'enlarge', roomId: 'main', size: [12, 10, 3.2], moves: [{ index: 0, at: [1, 0, 1] }], addParts: [{ part: 'shelf-tall', at: [0, 0, 1], rot: 0 }] })
+    expect(r.ok && r.patch.change).toEqual({ kind: 'enlarge', roomId: 'main', size: [10.4, 8.4, 3.2], moves: [{ index: 0, at: [1, 0, 1] }], addParts: [{ part: 'shelf-tall', at: [0, 0, 1], rot: 0 }] })
     expect(validatePlacePatch(home, (r as { ok: true; patch: never }).patch, ctx).ok).toBe(true)
   })
 
@@ -114,6 +114,13 @@ describe('buildExpandUser (what an expand asks for)', () => {
     expect(prompt).toContain('signals')
     expect(prompt).toMatch(/main \| Main room \| 10 by 8 by 3\.2/)
     expect(prompt).toMatch(/footprint 20 by 14/)
+  })
+
+  it('says the outer 0.8 m of the footprint is wall, and how far from the middle a room may reach (issue 373)', () => {
+    const prompt = buildExpandUser(input())
+    expect(prompt).toContain('Every room stands inside the walls: the outer 0.8 m of the footprint is wall, so a room reaches at most 9.2 m from the middle across and 6.2 m front to back')
+    expect(prompt).not.toMatch(/fits inside the footprint/)
+    expect(prompt).not.toMatch(/issue|finding|score/i)
   })
 
   it('lists the kit parts with their sizes and slots, so it can only name parts that exist', () => {

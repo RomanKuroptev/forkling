@@ -1,4 +1,5 @@
-import { Place, SLOT_ACCEPTS, type Kit, type SlotKind, type SouvenirKindName } from '@forkling/schema'
+import { Place, SLOT_ACCEPTS, type Kit, type Room, type SlotKind, type SouvenirKindName } from '@forkling/schema'
+import { WALL } from './body-world.ts'
 
 /** The limits of spec 5.2, in one place. */
 export const PLACE_LIMITS = {
@@ -44,6 +45,25 @@ interface Box {
   x1: number
   z0: number
   z1: number
+}
+
+/**
+ * Why a room stands where no one can walk in, or null. The outer `WALL` meters of a footprint are the building's wall (the body and
+ * the visitor walk only inside it, `buildBodyWorld`), and the rooms have no walls or doors of their own, so a room inside that ring is
+ * open to the rest of the building and one that reaches into it is partly or wholly shut in the wall (issue 373: a 1 m room in the
+ * wall ring held four exhibits no one could reach). A rail on what can be built (a schema limit), checked for each room an expand
+ * adds or enlarges and for every room of a new place; rooms already standing are left as they are.
+ */
+export function roomOutsideWalls(place: Pick<Place, 'exterior'>, room: Pick<Room, 'id' | 'size' | 'at'>): string | null {
+  const [fw, fd] = place.exterior.footprint
+  const ix = fw / 2 - WALL
+  const iz = fd / 2 - WALL
+  const [w, d] = room.size
+  const [x, z] = room.at
+  const fits = x - w / 2 >= -ix - 1e-9 && x + w / 2 <= ix + 1e-9 && z - d / 2 >= -iz - 1e-9 && z + d / 2 <= iz + 1e-9
+  if (fits) return null
+  const r = (n: number) => Math.round(n * 100) / 100
+  return `room ${room.id} must stand inside the walls, where a visitor can walk in: the outer ${WALL} m of the ${fw} by ${fd} footprint is wall, so every room stays within ${r(ix)} m of the middle across and ${r(iz)} m front to back (this one reaches from ${r(x - w / 2)} to ${r(x + w / 2)} across and ${r(z - d / 2)} to ${r(z + d / 2)} front to back)`
 }
 
 /**
