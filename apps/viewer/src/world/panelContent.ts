@@ -69,7 +69,7 @@ export function galleryPanel(metas: readonly WorkMeta[], base: string | null): P
 export function signPanel(place: Place, base: string | null): PanelContent {
   return {
     kind: 'sign',
-    heading: place.exterior.sign || place.name,
+    heading: place.name,
     purpose: place.purpose,
     founded: place.founded,
     tags: place.tags,
