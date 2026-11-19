@@ -24,6 +24,7 @@ import { COMPARE_USAGE, compareCommand } from './behaviour/compare.ts'
 import { fixturesCommand, FIXTURES_USAGE, liveClone } from './fixtures/command.ts'
 import { exploreCommand, EXPLORE_USAGE } from './review/explore/command.ts'
 import { makePlantedWorld } from './fixtures/planted.ts'
+import { worldFullCheck } from './world/fixture-opens.ts'
 
 const USAGE = `pnpm qa <command>
 
@@ -42,6 +43,7 @@ ${LIVE_USAGE}
 ${WEB_SNAPSHOT_USAGE}
 ${FIXTURES_USAGE}
 ${EXPLORE_USAGE}
+  world   every fixture with every world check (pictures, the phone, walking, sheets in qa-out/sheets); /qa runs it
   score   ${SCORE_USAGE}
 ${BEHAVIOUR_USAGE}
 ${COMPARE_USAGE}`
@@ -98,6 +100,17 @@ async function main(argv: string[]): Promise<number> {
       return scoreCommand(rest)
     case 'fixtures':
       return fixturesCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd() })
+    case 'world': {
+      // Every fixture with every world check (the fast tier takes pictures and walks in day-7 only). `/qa` runs this.
+      // Its own folder, so it never overwrites the fast tier's findings.json; `pnpm qa gather` reads qa-out/review/*.json.
+      const findings = await runChecks([worldFullCheck], { now: new Date() })
+      const out = qaOut('world-run')
+      writeRun(out, findings, { title: 'world' })
+      mkdirSync(qaOut('review'), { recursive: true })
+      writeFileSync(qaOut('review', 'world-checks.json'), `${JSON.stringify(findings, null, 2)}\n`)
+      console.log(`${findings.length} findings; report in ${out}, for gather in ${qaOut('review', 'world-checks.json')}, world sheets in ${qaOut('sheets')}`)
+      return blocking(findings, loadKnown(repoRoot())) ? 1 : 0
+    }
     case 'planted-world':
       console.log(`planted world in ${makePlantedWorld(qaOut('planted', 'world'))}`)
       return 0

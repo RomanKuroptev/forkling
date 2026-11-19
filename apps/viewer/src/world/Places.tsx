@@ -210,7 +210,8 @@ export function Places() {
   const boards = useMemo(() => plantBoards(signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit), qaRegistry.plant), [world, land])
   const walls = useMemo(
     () =>
-      world.places.flatMap((place) => {
+      // Under ?qa=1 a fixture may plant a place whose walls do not stop the visitor (`qa/plant.ts`); null in normal mode.
+      world.places.filter((place) => !qaRegistry.plant?.walkThrough.includes(place.id)).flatMap((place) => {
         const [px, pz] = placeCentre(toLandPlace(place))
         const base = land.heightAt(px, pz)
         return wallBoxes(place).map((b) => ({
@@ -281,6 +282,10 @@ export function Places() {
       <Shapes shape="box" data={scene.glassBox} glass />
       {Object.entries(scene.models).map(([file, matrices]) => (loaded[file] ? <ModelShapes key={file} model={loaded[file]} matrices={matrices} /> : null))}
       <RigidBody type="fixed" colliders={false}>
+        {/* Under ?qa=1 a fixture may plant a wall that stops the visitor but is not drawn (audit QW.7); none in normal mode. */}
+        {(qaRegistry.plant?.invisibleWall ?? []).map((w, i) => (
+          <CuboidCollider key={`qa-${i}`} args={[w.w / 2, 3, w.d / 2]} position={[w.x, land.heightAt(w.x, w.z) + 3, w.z]} />
+        ))}
         {walls.map((w, i) => (
           <CuboidCollider key={i} args={w.half} position={w.position} />
         ))}

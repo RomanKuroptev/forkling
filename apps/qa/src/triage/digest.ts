@@ -19,7 +19,8 @@ const TriageSummary = z.object({
   closed: z.array(z.number()).default([]),
 })
 
-const MAX_SHEETS = 4
+// The five world sheets (one per fixture, `pnpm qa world`) and room for one more.
+const MAX_SHEETS = 6
 const SUMMARY_LINES = 15
 
 const readJson = (file: string): unknown => (existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : undefined)

@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Browser } from 'playwright'
 import { launchChromium } from '../browser.ts'
@@ -12,13 +12,14 @@ import { collectGeometry } from './collect.ts'
 import { geometryFindings } from './geometry.ts'
 import { pictureChecks } from './pictures.ts'
 import { phoneCoversMerge } from './phone.ts'
+import { walkChecks } from './walk.ts'
 import { buildViewer, serveWorld } from './serve.ts'
 
 /**
  * Opens one world folder in the viewer with `?world=local&qa=1` and checks that it gets ready and that the scene lists
  * everything its files name. Takes the start picture as evidence. A world that never gets ready is a major finding.
  */
-export async function checkWorldOpens(browser: Browser, viewer: string, world: string, opts: { fixture: string; now: string; out: string; timeoutMs?: number; pictures?: boolean; qaOut?: string }): Promise<CheckResult[]> {
+export async function checkWorldOpens(browser: Browser, viewer: string, world: string, opts: { fixture: string; now: string; out: string; timeoutMs?: number; pictures?: boolean; walk?: boolean; qaOut?: string }): Promise<CheckResult[]> {
   const served = await serveWorld(viewer, world)
   try {
     let page
@@ -53,6 +54,11 @@ export async function checkWorldOpens(browser: Browser, viewer: string, world: s
       found.push(...pictures.findings)
       found.push(...(await phoneCoversMerge(browser, served.url, { fixture: opts.fixture, now: opts.now })))
     }
+    if (opts.walk) {
+      const seed = (JSON.parse(readFileSync(join(world, 'forkling.json'), 'utf8')) as { seed: number }).seed
+      const start = { x: geometry.start.eye[0], z: geometry.start.eye[2], yaw: geometry.start.yaw }
+      found.push(...(await walkChecks(page, { fixture: opts.fixture, seed, places: geometry.places, scene: geometry.scene, start })))
+    }
     await page.close()
     return found
   } finally {
@@ -61,22 +67,35 @@ export async function checkWorldOpens(browser: Browser, viewer: string, world: s
 }
 
 /** Every committed fixture opens and lists every place, room, work and Merge (steps Q1, done when). */
-export const fixtureOpensCheck: Check = {
-  id: 'world.fixture-opens',
-  area: 'world',
-  title: 'Every fixture world opens and shows what its files name',
-  run: async () => {
-    const viewer = buildViewer()
-    const browser = await launchChromium()
-    try {
-      const out: CheckResult[] = []
-      for (const name of FIXTURES) {
-        const world = materialize(name, qaOut('fixtures', name, 'world'))
-        out.push(...(await checkWorldOpens(browser, viewer, world, { fixture: name, now: readQaJson(name).now, out: qaOut('world'), pictures: true })))
+/**
+ * Which fixtures get the long checks (pictures, the phone, walking). The pull request tier (`pnpm qa fast`) opens every
+ * fixture for the scene and geometry checks but takes pictures and walks only in `day-7`, to stay well under 15 minutes on
+ * CI; `pnpm qa world` does every fixture, and `/qa` runs it, so every world sheet is in its report.
+ */
+export const FAST_DEEP: readonly string[] = ['day-7']
+
+function worldCheck(deep: (fixture: string) => boolean, id: string, title: string): Check {
+  return {
+    id,
+    area: 'world',
+    title,
+    run: async () => {
+      const viewer = buildViewer()
+      const browser = await launchChromium()
+      try {
+        const out: CheckResult[] = []
+        for (const name of FIXTURES) {
+          const world = materialize(name, qaOut('fixtures', name, 'world'))
+          const d = deep(name)
+          out.push(...(await checkWorldOpens(browser, viewer, world, { fixture: name, now: readQaJson(name).now, out: qaOut('world'), pictures: d, walk: d })))
+        }
+        return out
+      } finally {
+        await browser.close()
       }
-      return out
-    } finally {
-      await browser.close()
-    }
-  },
+    },
+  }
 }
+
+export const fixtureOpensCheck = worldCheck((f) => FAST_DEEP.includes(f), 'world.fixture-opens', 'Every fixture world opens and shows what its files name (pictures and walks in day-7)')
+export const worldFullCheck = worldCheck(() => true, 'world.full', 'Every fixture world: scene, geometry, pictures, the phone, walking')
