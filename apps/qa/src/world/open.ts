@@ -3,7 +3,7 @@ import type { Browser, Page } from 'playwright'
 /** One entry of `window.__qa.scene()` (apps/viewer/src/qa/sceneList.ts). */
 export interface SceneObject {
   id: string
-  kind: 'place' | 'room' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor'
+  kind: 'place' | 'room' | 'part' | 'door' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor'
   place?: string
   ref?: string | null
   exhibitKind?: string
