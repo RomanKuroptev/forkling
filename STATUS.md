@@ -27,6 +27,7 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 - **B2 (#278, merged):** `fast-forward --capture-prompts` writes every model call's prompt to `<out>/prompts.jsonl`, never in the world, and `fakeModel` takes a scripted answer per call kind (`answers`). Without them the fakes and `--dry-run` behave as before.
 - **B3 (#282, merged):** `pnpm qa score --world <w> [--out <ff out>]` reads a run (`apps/qa/src/behaviour/read-run.ts`) and scores 13 of the 9.2 scores (`score.ts`), levels in `qa/behaviour.json`. **On R2 (`C:\Code\forkling-qa-data\r2\`) it finds on its own: "loop" in 38% of titles and captions, rest at 42% and 56% on the last two days, and 2 of 14 visitor looks with nothing new.**
 - **B4 (#284):** the eight meme steps (`apps/qa/src/behaviour/memes.ts`), and an end-to-end test that makes a meme through the real loop on fakes. **On R2: memes stop at step 4, "chosen"** (formats read 5 times; step 3 is unknown because R2 kept no prompts).
+- **B7 (#PR7):** `.claude/agents/behaviour-reviewer.md` (Opus, read only): reads a behaviour run (scores, summaries, diary, plans, stream, captured prompts, pictures) and says what Merge is stuck on and why, with file and log lines, and whether each problem comes from the fake web, the real web or Merge's choices. It writes `qa-out/review/behaviour-reviewer.json` and `qa-out/behaviour/summary.md`, as the `/qa` skill expects, and judges prompt fixes from two runs. It never proposes a rule on Merge. Its acceptance run comes with B8.
 
 ### Lane S (QS)
 
