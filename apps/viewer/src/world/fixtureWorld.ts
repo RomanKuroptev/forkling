@@ -31,5 +31,5 @@ export function loadFixtureWorld(count: number, pack: SpeciesPack, nowMs: number
     today: { date: now.slice(0, 10), steps: [{ verb: 'wander', reason: 'Reading at my desk.', minutes: 60 }], reason: 'A plan for looking at the fixture.' },
     now: { index: 0, startedAt: now, until: new Date(nowMs + 3_600_000).toISOString() },
   }
-  return { ref: LOCAL_REF, sha: 'fixture', committedAt: now, forkling, pack, places: world.places, requests: world.requests, workIds: [], workThumbs: [], goals }
+  return { ref: LOCAL_REF, sha: 'fixture', committedAt: now, forkling, pack, places: world.places, requests: world.requests, workIds: [], workThumbs: [], shelf: [], goals }
 }
