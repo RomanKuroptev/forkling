@@ -18,6 +18,7 @@ import { writeRunInfo } from './triage/run-info.ts'
 import { liveCommand, LIVE_USAGE } from './live/command.ts'
 import { SCORE_USAGE, scoreCommand } from './behaviour/score-cli.ts'
 import { BEHAVIOUR_USAGE, behaviourCommand } from './behaviour/command.ts'
+import { COMPARE_USAGE, compareCommand } from './behaviour/compare.ts'
 import { WEB_SNAPSHOT_USAGE, webSnapshotCommand } from './snapshot/command.ts'
 
 const USAGE = `pnpm qa <command>
@@ -36,7 +37,8 @@ const USAGE = `pnpm qa <command>
 ${LIVE_USAGE}
   score   ${SCORE_USAGE}
 ${WEB_SNAPSHOT_USAGE}
-${BEHAVIOUR_USAGE}`
+${BEHAVIOUR_USAGE}
+${COMPARE_USAGE}`
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv
@@ -78,6 +80,8 @@ async function main(argv: string[]): Promise<number> {
     }
     case 'live':
       return liveCommand(rest, { out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
+    case 'compare':
+      return compareCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd(), out: qaOut('behaviour') })
     case 'behaviour':
       return behaviourCommand(rest)
     case 'score':

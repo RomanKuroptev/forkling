@@ -43,7 +43,7 @@ export function scenarioAnswers(scenario: Scenario): FakeAnswers {
       const plan =
         scenario === 'rest-40'
           ? [step('wander', a, 30, 'I want to read where the day starts.'), step('rest', null, 30, 'A rest.'), step('tinker', `sketch ${n}`, 45, 'I want to make a small thing.', { size: 'sketch' }), step('rest', null, 30, 'Another rest.'), step('tinker', `sketch ${n}b`, 45, 'One more small thing.', { size: 'sketch' })]
-          : [step('wander', a, 30, 'I want to read where the day starts.'), step('tinker', `sketch ${n}`, 45, 'I want to make a small thing.', { size: 'sketch' }), step('wander', b, 30, 'I want to read one more place.'), step('tinker', `sketch ${n}b`, 45, 'One more small thing.', { size: 'sketch' }), step('rest', null, 30, 'A rest at the end.')]
+          : [step('wander', a, 30, 'I want to read where the day starts.'), step('tinker', `sketch ${n}`, 45, 'I want to make a small thing.', { size: 'sketch' }), step('wander', b, 30, 'I want to read one more place.'), step('tinker', `sketch ${n}b`, 45, 'One more small thing.', { size: 'sketch' }), step('tinker', `sketch ${n}c`, 45, 'And a third small thing.', { size: 'sketch' }), step('rest', null, 30, 'A rest at the end.')]
       return { thought: 'A day of reading and making.', longGoal: null, dropLongGoal: false, plan, planReason: 'Read, make, read, make.', stayUpLate: null }
     },
     // A different line each time, as a repeated thought is a finding of its own.
@@ -56,7 +56,7 @@ export function scenarioAnswers(scenario: Scenario): FakeAnswers {
       // captions share no word, so the plain fake alone never trips the repeated-words alarm.
       const a = TITLES[(sketches * 3) % TITLES.length]!
       const b = TITLES[(sketches * 3 + 1) % TITLES.length]!
-      if (format && scenario !== 'no-memes' && sketches % 4 === 1) {
+      if (format && (scenario === 'plain' || scenario === 'rest-40') && sketches % 4 === 1) {
         return { meta: { title: `${a} vs ${b}`, kind: 'meme', about: `${a.toLowerCase()} vs ${b.toLowerCase()}.`, interest: null, sources: [{ role: 'looked', url: format }, { role: 'read', url: format }] }, html: page(`${a} vs ${b}`, sketches) }
       }
       const title = scenario === 'same-topic' ? `Loop Counter ${sketches}` : `${a} ${Math.floor(sketches / TITLES.length) + 1}`

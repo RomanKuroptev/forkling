@@ -10,14 +10,14 @@ import { repoRoot } from '../../src/paths.ts'
 /**
  * Planted behaviour (steps.md QB.7), through the real runner: the fast-forward loop on the web snapshot with a fake model that
  * always picks the same topic, never makes memes, or rests 40%. Each must raise its own alarm, and a plain fake raises none of
- * the three. One simulated day each, so the suite stays a few minutes long.
+ * the three. Fourteen simulated hours each (a night, a morning plan and its steps), so the suite stays a few minutes long.
  */
 
 const THE_THREE = ['behaviour.repeated-words', 'behaviour.memes', 'behaviour.rest']
 
 async function planted(scenario: Scenario): Promise<string[]> {
   const root = mkdtempSync(join(tmpdir(), `qa-planted-${scenario}-`))
-  const runs = await runSeeds({ mode: 'fake', days: 1, seeds: 1, capUsd: 1, world: makeDay0(join(root, 'day-0')), outRoot: root, snapshot: join(repoRoot(), 'qa', 'web-snapshot'), scenario, start: '2026-11-20' })
+  const runs = await runSeeds({ mode: 'fake', days: 1, seeds: 1, capUsd: 1, world: makeDay0(join(root, 'day-0')), outRoot: root, snapshot: join(repoRoot(), 'qa', 'web-snapshot'), scenario, start: '2026-11-20', durationMs: 14 * 3_600_000 })
   const { findings } = await scoreRuns(runs, readLevels(), scenario, root, new Date('2026-11-21T12:00:00Z'))
   return findings.filter((f) => f.severity !== 'info').map((f) => f.id)
 }

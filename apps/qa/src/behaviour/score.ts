@@ -18,7 +18,7 @@ import { localTime, type RunData } from './read-run.ts'
 export const Levels = z.object({
   topicVariety: z.object({ minClusters: z.number(), maxTopShare: z.number() }),
   topicRuns: z.object({ maxDays: z.number() }),
-  repeatedWords: z.object({ maxShare: z.number() }),
+  repeatedWords: z.object({ maxShare: z.number(), minCount: z.number() }),
   kinds: z.object({ min: z.number(), maxShare: z.number() }),
   somethingNew: z.object({ looks: z.array(z.string().regex(/^\d{2}:\d{2}$/)), maxMisses: z.number() }),
   visualEveryDay: z.object({ maxMisses: z.number() }),
@@ -91,7 +91,7 @@ export const SCORES: ScoreCheck[] = [
       const w = topWord(titles)
       return {
         value: w ? `"${w.word}" in ${w.count} of ${titles.length} titles and captions (${pct(w.share)})` : 'no titles',
-        alarm: w && w.share > l.repeatedWords.maxShare ? alarm('major', 'prompt', `"${w.word}" is in ${pct(w.share)} of the titles and captions`, `${w.count} of ${titles.length} titles and captions made or written from ${run.from} to ${run.to} have the word "${w.word}".`, 'The same word on card after card reads as one idea repeated.') : null,
+        alarm: w && w.count >= l.repeatedWords.minCount && w.share > l.repeatedWords.maxShare ? alarm('major', 'prompt', `"${w.word}" is in ${pct(w.share)} of the titles and captions`, `${w.count} of ${titles.length} titles and captions made or written from ${run.from} to ${run.to} have the word "${w.word}".`, 'The same word on card after card reads as one idea repeated.') : null,
       }
     },
   },

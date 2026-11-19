@@ -4,3 +4,4 @@ Budget: $10 a month (D1), separate from Merge's $23. Every real run has its own 
 
 | Date | Lane | Run | Cap | Spent | Month total |
 |---|---|---|---|---|---|
+| 2026-11-20 | B | QB.8: real fast-forward on `day-0`, 7 days, 2 seeds side by side, `--sessions --capture-prompts --web-snapshot` | $3.00 ($1.50 a seed) | running | running |
