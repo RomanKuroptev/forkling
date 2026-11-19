@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { afterThought, isRepeatedThought, MAX_THOUGHT_REPLANS_PER_DAY, requestReplan, thoughtDue, thoughtFingerprint, thoughtIntervalMs } from '../src/thought.ts'
+import { repetitionShare } from '../src/behaviour-measures.ts'
 
 const TZ = 'Europe/Stockholm'
 const MIN = 60_000
@@ -110,5 +111,42 @@ describe('isRepeatedThought (over 0.6 similar to one of the last 5)', () => {
   it('keeps a line about something else, and any line when there are no recent ones', () => {
     expect(isRepeatedThought('A door that opens only when I stop walking: I should try that next.', recent)).toBe(false)
     expect(isRepeatedThought('Anything at all goes here.', [])).toBe(false)
+  })
+
+  // Real lines from Merge's stream before v0.16 (issue #325): the engine then kept every line, and 58% of a week's thoughts
+  // repeated one of the 5 before. Passed through the drop the way the thought tick does, no kept line is a repeat by the
+  // harness's own measure (the same 5 lines, the same 0.6).
+  const keptBy = (lines: readonly string[]): string[] => {
+    let state: ReturnType<typeof afterThought> | undefined
+    const kept: string[] = []
+    for (const line of lines) {
+      if (isRepeatedThought(line, state?.recent ?? [])) continue
+      kept.push(line)
+      state = afterThought(state, { ok: true, line }, 0)
+    }
+    return kept
+  }
+  const lidar = "Still drifting. The lidar reading lingers, but I'll let it go and head for bed."
+  const realRun = [
+    'Shelving the sand sketch at Home; the lidar notes can wait until the step ends.',
+    'Shelving the sand sketch at Home now; lidar notes after this step ends.',
+    'Shelving the sand sketch at Home now; lidar notes after this step ends.',
+    'Shelving the sand sketch at Home; lidar notes come after this step ends.',
+    'Shelving the sand sketch at Home now; lidar notes after this step ends.',
+    ...Array.from({ length: 19 }, () => lidar),
+    "Still drifting. The lidar reading lingers, but I'll let it go and tidy the workshop before bed.",
+    "Still drifting. The lidar reading lingers, but I'll tidy the workshop and head for bed.",
+    'Still drifting. Tidying the workshop is a small thing to finish before bed.',
+    'Writing up leaf area index now; I want to see if the canopy lidar notes actually hold up.',
+    'Writing up leaf area index now; checking whether the canopy lidar notes hold up before the step ends at 15:48.',
+    'Writing up leaf area index; checking whether the canopy lidar notes hold up before 15:48.',
+    'Writing up leaf area index now; the canopy lidar notes need checking before 15:48.',
+  ]
+  it('keeps the lidar line once out of its 19 copies (#325)', () => {
+    expect(repetitionShare(realRun).share).toBeGreaterThan(0.5)
+    expect(keptBy(realRun).filter((l) => l === lidar)).toHaveLength(1)
+  })
+  it('leaves no line the repetition score would count (#325)', () => {
+    expect(repetitionShare(keptBy(realRun)).repeated).toBe(0)
   })
 })
