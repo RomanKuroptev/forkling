@@ -26,6 +26,21 @@ Status: **plan approved** by the coordinator (19 November 2026), B1 to B9 as bel
 
   Also seen in the R2 files: the one full-size tinker on 22 November failed with "Streaming is required for operations that may take longer than 10 minutes" (`mind/builds/tinker-20261122-1434.result.json`). That is an engine bug for B4's "made" step or lane T's triage.
 
+- **B5** (#286): the web snapshot. 62 answers, 3.7 MB, with every source on the list; record with `pnpm qa web-snapshot`, replay with `fast-forward --web-snapshot`.
+- **B6**: `pnpm qa behaviour` and `pnpm qa compare`. The planted fakes (`same-topic`, `no-memes`, `rest-40`) each raise their alarm and `plain` raises none of the three. **Live, Merge's last 7 days (13 to 19 November, scored from a fresh read-only clone):**
+
+  | Score | Live |
+  |---|---|
+  | Topic runs | **ALARM** 4 days (13 to 16 November) |
+  | Kinds made | **ALARM** 3 kinds of 16: art 12, game 3, tool 1 |
+  | Something new at each look | **ALARM** 13 of 14 |
+  | Rest | **ALARM** 28% and 26% on 13 and 14 November |
+  | Repeated lines | **ALARM** 833 of 1447 (58%); for example "Still drifting. The lidar reading lingers..." 19 times on 13 November |
+  | World shape, projects | **ALARM** no found, expand or project in 7 days |
+  | Memes | **ALARM** stop at step 2: no Imgflip format read in 7 days |
+
+  On fakes, the captured planner prompts show the engine never offers a meme to the planner as something to make. Step 3 measures 0 of 24, and the word appears only in the seed line ("answer it with your own memes, sketches and toys").
+
 ## The R2 run (facts 3 and 4)
 
 Found on Roman's PC, so no new real run was started and nothing was spent. The coordinator copied it somewhere durable, outside the repo and not committed:

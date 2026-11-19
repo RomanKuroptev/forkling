@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { makeDay0, runSeeds, scoreRuns } from '../../src/behaviour/runner.ts'
+import { day0, runSeeds, scoreRuns } from '../../src/behaviour/runner.ts'
 import type { Scenario } from '../../src/behaviour/scenarios.ts'
 import { readLevels } from '../../src/behaviour/score.ts'
 import { repoRoot } from '../../src/paths.ts'
@@ -17,7 +17,7 @@ const THE_THREE = ['behaviour.repeated-words', 'behaviour.memes', 'behaviour.res
 
 async function planted(scenario: Scenario): Promise<string[]> {
   const root = mkdtempSync(join(tmpdir(), `qa-planted-${scenario}-`))
-  const runs = await runSeeds({ mode: 'fake', days: 1, seeds: 1, capUsd: 1, world: makeDay0(join(root, 'day-0')), outRoot: root, snapshot: join(repoRoot(), 'qa', 'web-snapshot'), scenario, start: '2026-11-20', durationMs: 14 * 3_600_000 })
+  const runs = await runSeeds({ mode: 'fake', days: 1, seeds: 1, capUsd: 1, world: day0(), outRoot: root, snapshot: join(repoRoot(), 'qa', 'web-snapshot'), scenario, start: '2026-11-20', durationMs: 14 * 3_600_000 })
   const { findings } = await scoreRuns(runs, readLevels(), scenario, root, new Date('2026-11-21T12:00:00Z'))
   return findings.filter((f) => f.severity !== 'info').map((f) => f.id)
 }

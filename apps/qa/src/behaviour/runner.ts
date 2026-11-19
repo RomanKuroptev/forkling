@@ -52,14 +52,8 @@ export interface BehaviourOptions {
   log?: (line: string) => void
 }
 
-/** The start world when no fixture is given (steps.md fact 5): the template, with Merge's forkling.json and seed when a Merge world is at hand. */
-export function makeDay0(dir: string, merge?: string): string {
-  const root = repoRoot()
-  cpSync(join(root, 'templates/forkling-world'), dir, { recursive: true })
-  cpSync(join(root, 'templates/merge'), dir, { recursive: true })
-  if (merge) for (const f of ['forkling.json', 'self/seed.md']) if (existsSync(join(merge, f))) cpSync(join(merge, f), join(dir, f))
-  return dir
-}
+/** The start world when none is given: lane W's `day-0` fixture, the fresh start (steps.md fact 5). */
+export const day0 = (): string => join(repoRoot(), 'test', 'fixtures', 'worlds', 'day-0')
 
 /** A fresh copy of the world for one seed: no `.git` (so nothing can be pushed), its own world seed. */
 export function seedWorld(from: string, to: string, k: number): void {

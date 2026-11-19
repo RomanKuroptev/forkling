@@ -4,13 +4,13 @@ import { parseArgs } from 'node:util'
 import { qaOut } from '../paths.ts'
 import { blocking } from '../report/write.ts'
 import { snapshotDir } from '../sources/snapshot.ts'
-import { cloneLive, makeDay0, runSeeds, scoreRuns, type SeedRun } from './runner.ts'
+import { cloneLive, day0, runSeeds, scoreRuns, type SeedRun } from './runner.ts'
 import { SCENARIOS, type Scenario } from './scenarios.ts'
 import { readLevels } from './score.ts'
 
 export const BEHAVIOUR_USAGE = `  behaviour --fake|--real|--live   behaviour runs and their scores (spec 9.1, 9.2, 9.5), into qa-out/behaviour/<label>/
           [--days 7] [--seeds 1] [--cap <dollars>]   --real needs --cap (each seed gets cap/seeds; harness budget, a line in spend.md)
-          [--world <start world>] [--merge <world>]   default start: the template with --merge's forkling.json and seed (day-0 stand-in)
+          [--world <start world>]   default: test/fixtures/worlds/day-0 (the fresh start); it is copied, never changed
           [--scenario plain|same-topic|no-memes|rest-40]   the fake model (--fake only)
           [--snapshot <dir>] [--start <date>] [--sessions] [--env-file <file>] [--label <name>]
           --live scores a fresh read-only clone of Merge's repo (or --world <clone>), its last 7 logged days`
@@ -26,7 +26,6 @@ export async function behaviourCommand(args: string[]): Promise<number> {
       seeds: { type: 'string', default: '1' },
       cap: { type: 'string' },
       world: { type: 'string' },
-      merge: { type: 'string' },
       scenario: { type: 'string' },
       snapshot: { type: 'string' },
       start: { type: 'string' },
@@ -62,7 +61,7 @@ export async function behaviourCommand(args: string[]): Promise<number> {
     const world = values.world ? at(values.world) : cloneLive()
     runs = [{ label: 'live', world, outDir: join(outRoot, 'no-output') }]
   } else {
-    const world = values.world ? at(values.world) : makeDay0(join(outRoot, 'day-0'), values.merge ? at(values.merge) : undefined)
+    const world = values.world ? at(values.world) : day0()
     runs = await runSeeds({
       mode,
       days,
