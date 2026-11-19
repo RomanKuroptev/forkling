@@ -79,6 +79,15 @@ const colorsOf = (palette: KitPalette): Colors => ({
   marble: COLORS.white,
 })
 
+/**
+ * How far in from the footprint's edge the inside face of a ground-floor wall is (its lining), `up` meters above the floor: where a
+ * thing hung in a corner touches the wall. A tower's walls lean in as they rise.
+ */
+export function innerWallFace(place: Place, up: number): number {
+  const lean = place.exterior.style === 'tower' ? Math.sin(Math.atan2(LEAN, floorHeight(place))) * up : 0
+  return INSET + WALL_THICKNESS / 2 + SKIN + LINING + lean
+}
+
 /** The height of the front: as tall as the larger of 1.5 times the body or the body plus 2.5 m, and no taller than the 12 m clamp. */
 export function frontHeight(bodyHeight: number): number {
   return Math.min(MAX_OUTLINE_HEIGHT, Math.max(1.5 * bodyHeight, bodyHeight + 2.5))
