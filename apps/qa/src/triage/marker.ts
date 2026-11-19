@@ -13,6 +13,8 @@ export const QaState = z.object({
   evidence: z.string(),
   // Failed fix attempts; 2 labels the issue fix-failed.
   tries: z.number().int().min(0),
+  // The fix PR that was merged for it (pnpm qa fix-try --merged), so the close can say what fixed it.
+  fixedBy: z.number().int().positive().optional(),
 })
 export type QaState = z.infer<typeof QaState>
 

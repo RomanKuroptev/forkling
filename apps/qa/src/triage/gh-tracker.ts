@@ -30,6 +30,14 @@ const GhIssue = z.object({
   createdAt: z.string(),
 })
 
+const FIELDS = 'number,title,body,state,labels,createdAt'
+const toIssue = (i: z.infer<typeof GhIssue>): Issue => ({
+  ...i,
+  state: i.state.toLowerCase() === 'closed' ? 'closed' : 'open',
+  labels: i.labels.map((l) => l.name),
+  comments: [],
+})
+
 export class GhTracker implements Tracker {
   private branchReady = false
   private readonly repo: string
@@ -41,11 +49,12 @@ export class GhTracker implements Tracker {
   }
 
   async listIssues(label: string): Promise<Issue[]> {
-    const out = await this.exec(['issue', 'list', '--repo', this.repo, '--label', label, '--state', 'all', '--limit', '1000', '--json', 'number,title,body,state,labels,createdAt'])
-    return z
-      .array(GhIssue)
-      .parse(JSON.parse(out))
-      .map((i) => ({ ...i, state: i.state.toLowerCase() === 'closed' ? 'closed' : 'open', labels: i.labels.map((l) => l.name), comments: [] }))
+    const out = await this.exec(['issue', 'list', '--repo', this.repo, '--label', label, '--state', 'all', '--limit', '1000', '--json', FIELDS])
+    return z.array(GhIssue).parse(JSON.parse(out)).map(toIssue)
+  }
+
+  async getIssue(n: number): Promise<Issue> {
+    return toIssue(GhIssue.parse(JSON.parse(await this.exec(['issue', 'view', String(n), '--repo', this.repo, '--json', FIELDS]))))
   }
 
   async createIssue({ title, body, labels }: NewIssue): Promise<number> {
