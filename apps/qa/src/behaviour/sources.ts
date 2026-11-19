@@ -122,6 +122,9 @@ const daysBefore = (date: string, n: number): string => {
 
 const pct = (x: number | null): string => (x === null ? 'unknown' : `${Math.round(x * 100)}%`)
 
+// The trip's note for a page skipped by the 30-day no-reread rule (apps/mind/src/web/trip.ts, READ_LATELY).
+const READ_LATELY = /^skipped: read in the last 30 days/
+
 export const TOP_SHARE_ALARM = 0.5
 export const READ_NOTHING_ALARM = 0.1
 
@@ -133,6 +136,8 @@ export interface SourceSummary {
   tripsByDay: Record<string, Record<string, number>>
   readsBySource: Record<string, number>
   readNothing: number
+  /** Trips that only met pages read in the last 30 days: the no-reread rule, not a source fault. */
+  skippedLately: number
   hit404: number
   invented: string[]
   readTwice: string[]
@@ -156,14 +161,19 @@ export function scoreSources(reads: SourceReads, list: SourceList, opts: { label
   let readNothing = 0
   let hit404 = 0
   let badTrips = 0
+  let skippedLately = 0
   for (const t of trails) {
     const startUrl = t.start.value.startsWith('https://') ? t.start.value : t.pages[0]!.url
     const id = source(startUrl) ?? hostOf(startUrl) ?? 'other'
     tripsBySource[id] = (tripsBySource[id] ?? 0) + 1
     const day = (tripsByDay[t.date] ??= {})
     day[id] = (day[id] ?? 0) + 1
-    const nothing = t.pages.every((p) => p.failed)
+    // A trip that only met pages read lately is counted on its own: the 30-day rule skipped them, the source was fine
+    // (and Merge is now told so, since the fix after R2).
+    const onlySkippedLately = t.pages.every((p) => p.failed && READ_LATELY.test(p.failed))
+    const nothing = !onlySkippedLately && t.pages.every((p) => p.failed)
     const missing = t.pages.some((p) => p.failed && /\b404\b/.test(p.failed))
+    if (onlySkippedLately) skippedLately++
     if (nothing) readNothing++
     if (missing) hit404++
     if (nothing || missing) badTrips++
@@ -191,7 +201,7 @@ export function scoreSources(reads: SourceReads, list: SourceList, opts: { label
     }
   }
 
-  const summary: SourceSummary = { from, to, trips: trails.length, tripsBySource, tripsByDay, readsBySource, readNothing, hit404, invented, readTwice, fed, offered }
+  const summary: SourceSummary = { from, to, trips: trails.length, tripsBySource, tripsByDay, readsBySource, readNothing, skippedLately, hit404, invented, readTwice, fed, offered }
   const findings: CheckResult[] = []
   const base = (id: string, key = '') => ({ id, fingerprint: `${id}|${opts.label}${key ? `|${key}` : ''}`, area: 'behaviour' as const, evidence: [] as string[], fixture: opts.label })
   const span = `${from} to ${to}`
@@ -235,8 +245,18 @@ export function scoreSources(reads: SourceReads, list: SourceList, opts: { label
       ...base('sources.read-nothing'),
       severity: 'major',
       title: `Too many trips read nothing or hit a missing page (${pct(nothing)})`,
-      what: `${badTrips} of ${trails.length} trips read nothing or hit a 404 (${readNothing} read nothing, ${hit404} hit a 404), ${span}; the alarm is over ${pct(READ_NOTHING_ALARM)}.`,
+      what: `${badTrips} of ${trails.length} trips read nothing or hit a 404 (${readNothing} read nothing, ${hit404} hit a 404), ${span}; the alarm is over ${pct(READ_NOTHING_ALARM)}. Not counted: ${skippedLately} trips that only met pages read in the last 30 days.`,
       causes: 'A trip that reads nothing still costs a step and a read, and gives Merge nothing to make from.',
+      fixKind: 'code',
+    })
+
+  if (skippedLately > 0)
+    findings.push({
+      ...base('sources.read-lately-skips'),
+      severity: 'info',
+      title: `Trips that only met pages read lately: ${skippedLately}`,
+      what: `${skippedLately} of ${trails.length} trips, ${span}, only met pages read in the last 30 days and were skipped by the no-reread rule. Not a source fault; since the fix after R2 the plan is shown which start pages it read lately.`,
+      causes: 'Measured for the report.',
       fixKind: 'code',
     })
 

@@ -127,11 +127,21 @@ describe('planted: what Merge read goes wrong', () => {
   it('20% of trips reading nothing raises the read-nothing alarm, and a Wikipedia 404 is an invented title', () => {
     const reads = healthy()
     reads.trails[0] = trail('t0', '2026-11-13', `${W}Made_up_title`, [{ url: `${W}Made_up_title`, failed: 'http: 404 from en.wikipedia.org' }])
-    reads.trails[1] = trail('t1', '2026-11-14', 'https://esolangs.org/wiki/Brainfuck', [{ url: 'https://esolangs.org/wiki/Brainfuck', failed: 'skipped: read lately' }])
+    reads.trails[1] = trail('t1', '2026-11-14', 'https://esolangs.org/wiki/Brainfuck', [{ url: 'https://esolangs.org/wiki/Brainfuck', failed: 'network: timed out' }])
     const r = scoreSources(reads, list, { label: 'test', to: '2026-11-19' })
     expect(major(r)).toContain('sources.read-nothing')
     const invented = r.findings.find((f) => f.id === 'sources.invented-titles')!
     expect(invented.what).toContain('Made_up_title')
+  })
+
+  it('trips skipped by the 30-day rule are counted on their own, never as a source fault', () => {
+    const reads = healthy()
+    for (const i of [0, 1, 2]) reads.trails[i] = trail(`t${i}`, '2026-11-15', 'https://esolangs.org/wiki/Brainfuck', [{ url: 'https://esolangs.org/wiki/Brainfuck', failed: 'skipped: read in the last 30 days' }])
+    const r = scoreSources(reads, list, { label: 'test', to: '2026-11-19' })
+    expect(major(r)).toEqual([])
+    expect(r.summary.skippedLately).toBe(3)
+    expect(r.summary.readNothing).toBe(0)
+    expect(ids(r)).toContainEqual(['sources.read-lately-skips', 'info'])
   })
 
   it('a page read on two trips is counted', () => {
