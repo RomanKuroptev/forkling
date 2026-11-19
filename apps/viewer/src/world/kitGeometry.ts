@@ -253,8 +253,11 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     // A place whose lamps are on (or that is cared for, spec 4.4) has lit windows; one with its lamps off, or neglected, is dark.
     // A place that is being built is its finished model as cyan wireframe until its finish time (spec 4.5); a style the building model
     // does not draw keeps the scaffolding.
-    const wire = wireframeInstances(place, kit, baseY, opts.nowMs, opts.wireAlways)
-    if (wire && wire.length > 0) {
+    // Its inside, when it is drawn, is lines too: the floor, the furniture and the lamps (issue 329), from their plain shapes.
+    const wireInside = opts.interiors.has(place.id) ? interiorParts(place, kit, baseY).instances : []
+    const wire = wireframeInstances(place, kit, baseY, opts.nowMs, opts.wireAlways, wireInside)
+    const wired = wire !== null && wire.length > 0
+    if (wired) {
       for (const i of wire) lists[i.shape].push(i)
     } else {
       // The tinted see-through glass of a glass house goes to its own draw call.
@@ -263,14 +266,17 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
       for (const i of constructionInstances(place, baseY, opts.nowMs)) lists[i.shape].push(i)
     }
     if (opts.interiors.has(place.id)) {
-      const inside = interiorParts(place, kit, baseY, opts.models, { lampsOn })
-      for (const i of inside.instances) lists[i.shape].push(i)
-      for (const m of inside.models) (modelLists[m.file] ??= []).push(m.matrix)
+      // Being built, the rooms are in the wireframe above; the things Merge keeps in them (souvenirs, works) are finished and stay.
+      if (!wired) {
+        const inside = interiorParts(place, kit, baseY, opts.models, { lampsOn })
+        for (const i of inside.instances) lists[i.shape].push(i)
+        for (const m of inside.models) (modelLists[m.file] ??= []).push(m.matrix)
+      }
       const { palette } = look(place, kit)
       for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
       // The gallery wall's board (every finished work, a page at a time): one box; its painted face is drawn apart (`GalleryWalls`).
       if (opts.shelf?.length) for (const wall of galleryWalls(place, kit, baseY, opts.shelf, exteriorInstances(place, kit, baseY))) for (const i of wallInstances(wall, palette.colors)) lists[i.shape].push(lampsOn ? i : { ...i, glow: false })
-      for (const i of neglectInstances(place, kit, baseY, level, 'interior')) lists[i.shape].push(i)
+      if (!wired) for (const i of neglectInstances(place, kit, baseY, level, 'interior')) lists[i.shape].push(i)
     }
   }
   // The plots staked by open requests (spec 10.3), each on its own ground.
