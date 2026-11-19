@@ -9,6 +9,7 @@ import { runChecks, type Check } from './run/check.ts'
 import { readSourceList } from './sources/list.ts'
 import { triageCommand } from './triage/command.ts'
 import { writeRunInfo } from './triage/run-info.ts'
+import { liveCommand, LIVE_USAGE } from './live/command.ts'
 
 const USAGE = `pnpm qa <command>
 
@@ -18,7 +19,8 @@ const USAGE = `pnpm qa <command>
           [--label <name>]     the name in the findings (default: the folder's name)
   triage  findings to GitHub issues labelled qa, by fingerprint; picks up to 5 to fix (qa-out/triage.json)
           [--findings <file>] [--areas world,behaviour,...] [--dry-run] [--repo owner/name]
-          --dry-run only reads GitHub and prints what it would open, comment, close and pick`
+          --dry-run only reads GitHub and prints what it would open, comment, close and pick
+${LIVE_USAGE}`
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv
@@ -58,6 +60,8 @@ async function main(argv: string[]): Promise<number> {
       console.log(`${findings.length} findings; report in ${out}`)
       return 0
     }
+    case 'live':
+      return liveCommand(rest, { out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'triage':
       return triageCommand(rest, { root: repoRoot(), out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     default:
