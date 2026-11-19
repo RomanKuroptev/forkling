@@ -11,6 +11,8 @@ export interface SceneObject {
   slot?: string
   /** For a work or project on a screen: what the screen shows as drawn now. */
   shows?: 'picture' | 'title' | 'nothing'
+  /** What an exhibit's card shows and the words on it; every exhibit but a work screen has one. */
+  card?: { shows: 'picture' | 'text' | 'title' | 'nothing'; text: string }
   name?: string
   text?: string
   letter?: number
