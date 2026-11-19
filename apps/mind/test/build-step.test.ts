@@ -153,3 +153,44 @@ describe('a build step in the tick', () => {
     expect(stateOf().allowance!.points).toBeGreaterThanOrEqual(0)
   })
 })
+
+describe('a build step that cannot start (the R2 fast-forward: a second session on a project that was done)', () => {
+  const project = (status: 'building' | 'done') => {
+    mkdirSync(file('projects/tide-clock'), { recursive: true })
+    writeFileSync(file('projects/tide-clock/project.json'), JSON.stringify({ id: 'tide-clock', name: 'Tide clock', aim: 'a pool', started: '2026-11-01T10:00:00.000Z', status, ...(status === 'done' ? { reason: 'The pool fills.' } : {}) }))
+  }
+  const memory = () => (existsSync(file('memory/stream/2026-11-03.jsonl')) ? readFileSync(file('memory/stream/2026-11-03.jsonl'), 'utf8') : '')
+
+  it('asks for no session on a project that is done by the time the step starts, says why, and goes on', async () => {
+    project('building')
+    const fake = fakeLlm()
+    await runTick(dir, deps(fake.llm, NOW))
+    // An earlier session finished it after the plan was made.
+    project('done')
+    await runTick(dir, deps(fake.llm, minutesAfter(31)))
+    expect(jobs()).toHaveLength(0)
+    expect(memory()).toContain('My build of Tide clock could not start (it is done)')
+    await runTick(dir, deps(fake.llm, minutesAfter(32)))
+    expect(goalsOf().now?.index).toBe(2)
+  })
+
+  it('asks for no second session while one on the same project is still running', async () => {
+    project('building')
+    const fake = fakeLlm()
+    await runTick(dir, deps(fake.llm, NOW))
+    mkdirSync(file('mind/builds'), { recursive: true })
+    const id = sessionJobId(minutesAfter(5))
+    writeFileSync(file(`mind/builds/${id}.json`), JSON.stringify(SessionJob.parse({ id, kind: 'session', requestedAt: minutesAfter(5), target: 'tide-clock', reason: 'An earlier plan.', pointsInHand: 300 })))
+    await runTick(dir, deps(fake.llm, minutesAfter(31)))
+    expect(jobs()).toEqual([`${id}.json`])
+    expect(memory()).toContain('a session on it is already running')
+  })
+
+  it('still asks for one on a project that is building with nothing running', async () => {
+    project('building')
+    const fake = fakeLlm()
+    await runTick(dir, deps(fake.llm, NOW))
+    await runTick(dir, deps(fake.llm, minutesAfter(31)))
+    expect(jobs()).toHaveLength(1)
+  })
+})

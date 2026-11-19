@@ -9,7 +9,8 @@ import { expandablePlaces } from './expand.ts'
 import { foundGate } from './found.ts'
 import { intentionSeed } from './util.ts'
 import { readWrittenPages, varietyFor } from './variety.ts'
-import { readProjects } from '../builds/projects.ts'
+import { findProject, readProjects } from '../builds/projects.ts'
+import { pendingJobs } from '../build-worker.ts'
 import { rememberJobWant } from './wants.ts'
 import { paceAhead } from '../budget.ts'
 
@@ -109,6 +110,19 @@ export function checkPlan(t: Tick, plan: LlmStep[]) {
   return { usable: usable.map((s, i) => ({ ...s, minutes: check.steps[i]!.minutes })), droppedStarts: rail.dropped, check }
 }
 
+/** Why a build step on `target` cannot start now, or null: its project is no longer building, or a session on it is still out. */
+function buildBlocked(t: Tick, target: string): string | null {
+  const { projects } = readProjects(t.dir)
+  const project = findProject(projects, target)
+  if (project && project.status !== 'building') return `it is ${project.status}`
+  const same = (other: string) => {
+    if (project) return findProject([project], other) !== null
+    return other.trim().toLowerCase() === target.trim().toLowerCase()
+  }
+  const out = [...pendingJobs(t.dir), ...t.newJobs].some((j) => j.kind === 'session' && SessionJob.safeParse(j).success && same(SessionJob.parse(j).target))
+  return out ? 'a session on it is already running' : null
+}
+
 /** Begins step `index` of today's plan: a focus window for the body, and an intention that says why. */
 export function startStep(t: Tick, index: number, reason?: string): void {
   const step = t.goals.today?.steps[index]
@@ -131,7 +145,16 @@ export function startStep(t: Tick, index: number, reason?: string): void {
     t.mind.allowance = { ...t.mind.allowance, points: Math.max(0, t.mind.allowance.points - cost) }
   }
   // A build step asks the worker for a session (spec-v4 3.3) and holds the plan until its result arrives (`settleJobs`).
-  if (step.verb === 'build' && step.targetId) {
+  // A plan checked while the project was building can reach its build step after an earlier session finished it, or while one
+  // on it is still running (the R2 fast-forward): then no session is asked for, the step says why and ends at once.
+  const blocked = step.verb === 'build' && step.targetId ? buildBlocked(t, step.targetId) : null
+  if (blocked) {
+    t.notes.push(`build ${step.targetId}: ${blocked}`)
+    const text = `My build of ${clampText(step.targetId!, 60)} could not start (${blocked}), so I rested instead.`
+    t.remember.push({ at: t.nowIso, kind: 'event', text, verb: 'build' })
+    t.justNow.push(text)
+    t.goals.now = { ...t.goals.now, until: t.nowIso }
+  } else if (step.verb === 'build' && step.targetId) {
     t.newJobs.push(SessionJob.parse({ id: sessionJobId(t.nowIso), kind: 'session', requestedAt: t.nowIso, target: clampText(step.targetId, 60), reason: clampText(step.reason, 200), pointsInHand: t.mind.allowance?.points ?? 0 }))
     rememberJobWant(t, sessionJobId(t.nowIso), step.wantId)
   }
