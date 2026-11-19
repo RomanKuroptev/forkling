@@ -187,6 +187,23 @@ export function QaProbe() {
         await step(QA_FRAME_MS * 3)
       },
       /** The ground height at each point, and whether its chunk holds a place, is edge land or fog. */
+      /**
+       * What a ray from `origin` along `dir` first meets among the drawn things (not the invisible click targets, not the
+       * visitor): its distance, or null when it meets nothing within `far` meters.
+       */
+      ray: (origin: Vec3, dir: Vec3, far: number) => {
+        const caster = new THREE.Raycaster(new THREE.Vector3(...origin), new THREE.Vector3(...dir).normalize(), 0, far)
+        for (const hit of caster.intersectObject(root, true)) {
+          const mats = (hit.object as THREE.Mesh).material
+          const list = Array.isArray(mats) ? mats : mats ? [mats] : []
+          let shown = hit.object.visible
+          for (let o = hit.object.parent; o && shown; o = o.parent) shown = o.visible
+          if (!shown || list.length === 0 || list.every((m) => m.transparent && m.opacity === 0)) continue
+          if (hit.object.type === 'Line' || hit.object.type === 'LineSegments' || hit.object.type === 'Points' || hit.object.type === 'Sprite') continue
+          return { distance: hit.distance, object: hit.object.name || hit.object.type }
+        }
+        return null
+      },
       /** Every texture a drawn material uses whose picture never loaded (no image, or an image of no size), by object name. */
       textures: () => {
         const broken: { object: string; slot: string }[] = []

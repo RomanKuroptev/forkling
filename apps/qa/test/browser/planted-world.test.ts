@@ -57,6 +57,21 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('planted flaws in day-7, found b
     expect(found.filter((f) => ['world.missing-texture', 'world.blank', 'world.too-dark', 'world.too-bright'].includes(f.id))).toEqual([])
   }, 240_000)
 
+  it('a wall you can walk through, and an invisible wall in the way (planted in qa.json)', async () => {
+    const world = day7()
+    // The Workshop's walls stop no one; an undrawn wall stands across the way from the arrival point to the hillside place.
+    edit(world, 'qa.json', (q) => (q.plant = { walkThrough: ['workshop'], invisibleWall: [{ x: 8, z: 21, w: 14, d: 0.4 }] }))
+    const found = await checkWorldOpens(browser, viewer, world, { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')), pictures: true, qaOut: mkdtempSync(join(tmpdir(), 'qa-out-')) })
+    const ids = found.map((f) => f.fingerprint)
+    expect(ids).toContain('world.walk-through-wall|day-7|workshop')
+    expect(ids.some((f) => f.startsWith('world.invisible-wall|day-7|'))).toBe(true)
+  }, 300_000)
+
+  it('clean day-7 can be walked: every place reached, no wall walked through, no hole, no invisible wall', async () => {
+    const found = await checkWorldOpens(browser, viewer, day7(), { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')), pictures: true, qaOut: mkdtempSync(join(tmpdir(), 'qa-out-')) })
+    expect(found.filter((f) => ['world.cannot-reach', 'world.invisible-wall', 'world.walk-through-wall', 'world.hole', 'world.camera-in-mesh'].includes(f.id))).toEqual([])
+  }, 300_000)
+
   it('a floating sign (planted in qa.json: the files cannot say it)', async () => {
     const world = day7()
     edit(world, 'qa.json', (q) => (q.plant = { raise: [{ id: 'home/sign', dy: 3 }] }))

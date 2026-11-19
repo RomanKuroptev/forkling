@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Browser } from 'playwright'
 import { launchChromium } from '../browser.ts'
@@ -12,6 +12,7 @@ import { collectGeometry } from './collect.ts'
 import { geometryFindings } from './geometry.ts'
 import { pictureChecks } from './pictures.ts'
 import { phoneCoversMerge } from './phone.ts'
+import { walkChecks } from './walk.ts'
 import { buildViewer, serveWorld } from './serve.ts'
 
 /**
@@ -52,6 +53,9 @@ export async function checkWorldOpens(browser: Browser, viewer: string, world: s
       const pictures = await pictureChecks(page, { fixture: opts.fixture, scene: geometry.scene, night: hour >= 17 || hour < 8, out: opts.qaOut ?? qaOut() })
       found.push(...pictures.findings)
       found.push(...(await phoneCoversMerge(browser, served.url, { fixture: opts.fixture, now: opts.now })))
+      const seed = (JSON.parse(readFileSync(join(world, 'forkling.json'), 'utf8')) as { seed: number }).seed
+      const start = { x: geometry.start.eye[0], z: geometry.start.eye[2], yaw: geometry.start.yaw }
+      found.push(...(await walkChecks(page, { fixture: opts.fixture, seed, places: geometry.places, scene: geometry.scene, start })))
     }
     await page.close()
     return found

@@ -14,11 +14,11 @@ describe('planted world flaws (audit QW.7): only what the world files cannot say
     expect(plantFrom(qa, { delete: 'everything' })).toBeNull()
   })
   it('reads a raised object and a missing texture under ?qa=1', () => {
-    expect(plantFrom(qa, { raise: [{ id: 'home/sign', dy: 3 }], missingTexture: ['signs'] })).toEqual({ raise: [{ id: 'home/sign', dy: 3 }], missingTexture: ['signs'] })
+    expect(plantFrom(qa, { raise: [{ id: 'home/sign', dy: 3 }], missingTexture: ['signs'], walkThrough: ['home'], invisibleWall: [{ x: 1, z: 2, w: 0.3, d: 6 }] })).toEqual({ raise: [{ id: 'home/sign', dy: 3 }], missingTexture: ['signs'], walkThrough: ['home'], invisibleWall: [{ x: 1, z: 2, w: 0.3, d: 6 }] })
   })
   it('raises only the planted sign', () => {
     const boards = [board('home', 1.5), board('workshop', 1.5)]
-    const out = plantBoards(boards, { raise: [{ id: 'home/sign', dy: 3 }], missingTexture: [] })
+    const out = plantBoards(boards, { raise: [{ id: 'home/sign', dy: 3 }], missingTexture: [], walkThrough: [], invisibleWall: [] })
     expect(out.map((b) => b.position[1])).toEqual([4.5, 1.5])
     expect(plantBoards(boards, null)).toBe(boards)
   })

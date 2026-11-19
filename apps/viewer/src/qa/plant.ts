@@ -11,6 +11,10 @@ export interface QaPlant {
   raise: { id: string; dy: number }[]
   /** Draw these with a texture that never loaded (`signs`). */
   missingTexture: 'signs'[]
+  /** Places whose walls do not stop the visitor (no colliders): a wall you can walk through. */
+  walkThrough: string[]
+  /** A wall that stops the visitor but is not drawn: a box `w` by `d` meters on the ground at x, z. */
+  invisibleWall: { x: number; z: number; w: number; d: number }[]
 }
 
 const TEXTURES = new Set(['signs'])
@@ -18,7 +22,7 @@ const TEXTURES = new Set(['signs'])
 /** The plant to apply, or null: always null in normal mode, and when `qa.json` plants nothing it knows. */
 export function plantFrom(qa: QaParams | null, raw: unknown): QaPlant | null {
   if (!qa || typeof raw !== 'object' || raw === null) return null
-  const r = raw as { raise?: unknown; missingTexture?: unknown }
+  const r = raw as { raise?: unknown; missingTexture?: unknown; walkThrough?: unknown; invisibleWall?: unknown }
   const raise = Array.isArray(r.raise)
     ? r.raise.flatMap((x: unknown) => {
         const { id, dy } = (x ?? {}) as { id?: unknown; dy?: unknown }
@@ -26,7 +30,15 @@ export function plantFrom(qa: QaParams | null, raw: unknown): QaPlant | null {
       })
     : []
   const missingTexture = Array.isArray(r.missingTexture) ? r.missingTexture.filter((t: unknown): t is 'signs' => typeof t === 'string' && TEXTURES.has(t)) : []
-  return raise.length || missingTexture.length ? { raise, missingTexture } : null
+  const walkThrough = Array.isArray(r.walkThrough) ? r.walkThrough.filter((p: unknown): p is string => typeof p === 'string').map((p) => p.slice(0, 100)).slice(0, 20) : []
+  const invisibleWall = Array.isArray(r.invisibleWall)
+    ? r.invisibleWall.flatMap((x: unknown) => {
+        const { x: px, z, w, d } = (x ?? {}) as Record<string, unknown>
+        const ok = [px, z, w, d].every((n) => typeof n === 'number' && Number.isFinite(n)) && (w as number) > 0 && (d as number) > 0 && (w as number) <= 20 && (d as number) <= 20
+        return ok ? [{ x: px as number, z: z as number, w: w as number, d: d as number }] : []
+      })
+    : []
+  return raise.length || missingTexture.length || walkThrough.length || invisibleWall.length ? { raise, missingTexture, walkThrough, invisibleWall } : null
 }
 
 /** The sign boards with any planted lift applied. The same boards when nothing is planted. */
