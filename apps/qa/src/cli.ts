@@ -17,6 +17,7 @@ import { GhTracker } from './triage/gh-tracker.ts'
 import { writeRunInfo } from './triage/run-info.ts'
 import { liveCommand, LIVE_USAGE } from './live/command.ts'
 import { SCORE_USAGE, scoreCommand } from './behaviour/score-cli.ts'
+import { WEB_SNAPSHOT_USAGE, webSnapshotCommand } from './snapshot/command.ts'
 
 const USAGE = `pnpm qa <command>
 
@@ -32,7 +33,8 @@ const USAGE = `pnpm qa <command>
   fix-try <issue> --failed "<what was tried>" | --merged <pr>   a fixer's result; 2 failures label fix-failed
   digest  writes qa-out/digest.md   [--post] adds one comment on the pinned QA digest issue   [--mode nightly|weekly|release]
 ${LIVE_USAGE}
-  score   ${SCORE_USAGE}`
+  score   ${SCORE_USAGE}
+${WEB_SNAPSHOT_USAGE}`
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv
@@ -76,6 +78,8 @@ async function main(argv: string[]): Promise<number> {
       return liveCommand(rest, { out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'score':
       return scoreCommand(rest)
+    case 'web-snapshot':
+      return webSnapshotCommand(rest)
     case 'triage':
       return triageCommand(rest, { root: repoRoot(), out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'gather': {

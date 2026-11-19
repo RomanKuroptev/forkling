@@ -25,6 +25,7 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 - **B2 (#278):** `fast-forward --capture-prompts` and scripted fakes.
 - **B3 (#282):** `pnpm qa score --world <w> [--out <ff out>]` reads a run (`apps/qa/src/behaviour/read-run.ts`) and scores 13 of the 9.2 scores (`score.ts`), levels in `qa/behaviour.json`. **On R2 (`C:\Code\forkling-qa-data\r2\`) it finds on its own: "loop" in 38% of titles and captions, rest at 42% and 56% on the last two days, and 2 of 14 visitor looks with nothing new.**
 - **B4 (#284):** the eight meme steps (`apps/qa/src/behaviour/memes.ts`), and an end-to-end test that makes a meme through the real loop on fakes. **On R2: memes stop at step 4, "chosen"** (formats read 5 times; step 3 is unknown because R2 kept no prompts).
+- **B5 (#286):** the web snapshot. `pnpm qa web-snapshot` records `qa/web-snapshot/` (3.7 MB, 62 answers, every source on the list) with the engine's own source code, and robots.txt is obeyed. `fast-forward --web-snapshot <dir>` reads the web from it.
 
 ### Lane S (QS)
 
