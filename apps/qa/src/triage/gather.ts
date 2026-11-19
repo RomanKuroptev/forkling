@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { Area, DID_NOT_RUN, type Finding, Findings, SEVERITY_ORDER } from '../report/finding.ts'
 import { writeRun } from '../report/write.ts'
@@ -10,6 +10,8 @@ import { readRunInfo, writeRunInfo } from './run-info.ts'
 //   qa-out/actions/**/findings*.json the Actions artefacts (gh run download)
 //   qa-out/review/*.json            the reviewer agents' findings
 // and one run.json with every area that was looked at.
+// Findings from the planted world (QW.7) are acceptance data, never real problems: they go to
+// qa-out/acceptance/planted-findings.json for the qw.md record and never reach findings.json or triage.
 
 const rank = (f: Finding): number => SEVERITY_ORDER.indexOf(f.severity)
 
@@ -63,9 +65,14 @@ function unreadable(rel: string, error: unknown, now: Date): Finding {
   }
 }
 
+/** A finding about the planted world: its fixture is `planted` (or `planted-…`), or its fingerprint names it. */
+export function isPlanted(f: Finding): boolean {
+  return f.fingerprint.includes('|planted|') || (f.fixture !== undefined && /^planted(-|$)/.test(f.fixture))
+}
+
 export type GatherOptions = { out: string; now: Date; from?: string[]; extraAreas?: Area[] }
 
-export function gather({ out, now, from = [], extraAreas = [] }: GatherOptions): { findings: Finding[]; files: string[] } {
+export function gather({ out, now, from = [], extraAreas = [] }: GatherOptions): { findings: Finding[]; files: string[]; planted: Finding[] } {
   const files = [
     ...(existsSync(join(out, 'findings.json')) ? [join(out, 'findings.json')] : []),
     ...filesUnder(join(out, 'actions'), (n) => n.startsWith('findings') && n.endsWith('.json')),
@@ -82,7 +89,13 @@ export function gather({ out, now, from = [], extraAreas = [] }: GatherOptions):
       broken.push(unreadable(rel.startsWith('..') ? posix(file) : rel, e, now))
     }
   }
-  const findings = mergeFindings([...lists, broken])
+  const merged = mergeFindings([...lists, broken])
+  const findings = merged.filter((f) => !isPlanted(f))
+  const planted = merged.filter(isPlanted)
+  const acceptance = join(out, 'acceptance')
+  mkdirSync(acceptance, { recursive: true })
+  writeFileSync(join(acceptance, 'planted-findings.json'), `${JSON.stringify(planted, null, 2)}
+`)
 
   const runFiles = [out, ...filesUnder(join(out, 'actions'), (n) => n === 'run.json').map((f) => join(f, '..')), ...from]
   const areas = new Set<Area>(extraAreas)
@@ -95,5 +108,5 @@ export function gather({ out, now, from = [], extraAreas = [] }: GatherOptions):
   }
   writeRun(out, findings, { title: 'qa' })
   writeRunInfo(out, { title: 'qa', areas: [...areas] })
-  return { findings, files }
+  return { findings, files, planted }
 }

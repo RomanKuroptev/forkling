@@ -91,7 +91,7 @@ function worldCheck(deep: (fixture: string) => boolean, id: string, title: strin
     area: 'world',
     title,
     run: async () => {
-      const viewer = buildViewer()
+      const viewer = await buildViewer()
       const browser = await launchChromium()
       try {
         const out: CheckResult[] = []

@@ -72,6 +72,23 @@ describe('pnpm qa gather', () => {
     expect(broken.find((x) => x.fingerprint.includes('qa-live'))!.area).toBe('live')
   })
 
+  it('keeps planted-world findings out of findings.json and writes them to acceptance/planted-findings.json', () => {
+    const out = mkdtempSync(join(tmpdir(), 'qa-gather-'))
+    write(join(out, 'findings.json'), [f()])
+    write(join(out, 'review', 'world-explorer.json'), [
+      f({ id: 'world.explorer', fingerprint: 'world.explorer|planted|floating-sign' }),
+      f({ id: 'world.explorer', fingerprint: 'world.explorer|day-7|lamp', fixture: 'planted' }),
+      f({ id: 'world.explorer', fingerprint: 'world.explorer|day-7|real', fixture: 'day-7' }),
+    ])
+    const r = gather({ out, now })
+    expect(r.findings.map((x) => x.fingerprint)).toEqual(['fp-a', 'world.explorer|day-7|real'])
+    const saved = JSON.parse(readFileSync(join(out, 'findings.json'), 'utf8')) as Finding[]
+    expect(saved.map((x) => x.fingerprint)).toEqual(['fp-a', 'world.explorer|day-7|real'])
+    const planted = JSON.parse(readFileSync(join(out, 'acceptance', 'planted-findings.json'), 'utf8')) as Finding[]
+    expect(planted.map((x) => x.fingerprint)).toEqual(['world.explorer|planted|floating-sign', 'world.explorer|day-7|lamp'])
+    expect(readFileSync(join(out, 'report.md'), 'utf8')).not.toContain('floating-sign')
+  })
+
   it('a run with nothing to read says so in an empty findings.json', () => {
     const out = mkdtempSync(join(tmpdir(), 'qa-gather-'))
     expect(gather({ out, now }).findings).toEqual([])

@@ -209,7 +209,7 @@ export async function startSession(target: string, opts: { phone: boolean; heade
     world = target
     now = opts.now ?? readQaJson('', target).now
   }
-  const viewer = buildViewer()
+  const viewer = await buildViewer()
   const served: Served = await serveWorld(viewer, world)
   const browser: Browser = await launchChromium({ headed: opts.headed })
   const page = await openWorld(browser, served.url, { now, phone: opts.phone })

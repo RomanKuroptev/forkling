@@ -13,7 +13,7 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('planted flaws in day-7, found b
   let browser: Browser
   let viewer: string
   beforeAll(async () => {
-    viewer = buildViewer()
+    viewer = await buildViewer()
     browser = await launchChromium()
   }, 180_000)
   afterAll(async () => {

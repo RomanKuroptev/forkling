@@ -38,6 +38,7 @@ const USAGE = `pnpm qa <command>
           --dry-run only reads GitHub and prints what it would open, comment, close and pick
   gather  merges qa-out/findings.json, qa-out/actions/** (Actions artefacts) and qa-out/review/*.json (reviewers)
           into qa-out/findings.json and run.json   [--from <dir>]... [--areas world,behaviour,...]
+          planted-world findings go to qa-out/acceptance/planted-findings.json, never to findings.json
   fix-try <issue> --failed "<what was tried>" | --merged <pr>   a fixer's result; 2 failures label fix-failed
   digest  writes qa-out/digest.md   [--post] adds one comment on the pinned QA digest issue   [--mode nightly|weekly|release]
 ${LIVE_USAGE}
@@ -134,13 +135,14 @@ async function main(argv: string[]): Promise<number> {
     case 'gather': {
       const { values } = parseArgs({ args: rest, options: { from: { type: 'string', multiple: true, default: [] }, areas: { type: 'string', default: '' } } })
       const cwd = process.env.INIT_CWD ?? process.cwd()
-      const { findings, files } = gather({
+      const { findings, files, planted } = gather({
         out: qaOut(),
         now: new Date(),
         from: values.from.map((d) => resolve(cwd, d)),
         extraAreas: Area.array().parse(values.areas.split(',').filter(Boolean)),
       })
       console.log(`${files.length} findings files, ${findings.length} findings after merging; written to ${qaOut('findings.json')}`)
+      if (planted.length) console.log(`${planted.length} planted-world findings kept out of triage, in ${qaOut('acceptance', 'planted-findings.json')}`)
       return 0
     }
     case 'fix-try': {

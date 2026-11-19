@@ -40,7 +40,7 @@ export function fpsFindings(results: readonly FpsResult[]): CheckResult[] {
 }
 
 export async function measureFps(fixtures: readonly string[], opts: { seconds: number; out: string; headed: boolean }): Promise<FpsResult[]> {
-  const viewer = buildViewer()
+  const viewer = await buildViewer()
   // The real GPU: headed, with no software-rendering flags (launchChromium only adds SwiftShader when headless).
   const browser = await launchChromium({ headed: opts.headed })
   const results: FpsResult[] = []
