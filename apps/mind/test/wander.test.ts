@@ -184,7 +184,7 @@ describe('the morning', () => {
     const llm = fake(wanderPlan)
     await tick(MORNING, llm)
     const user = llm.calls[0]!.user
-    expect(user).toMatch(/<memes>\nA sketch can be a meme/)
+    expect(user).toMatch(/<sketches>\nA sketch \(tinker with size sketch, \d+ points\) can be art, a tool, a small game or a meme/)
     expect(user.split('<data source="meme-formats">')[1]!.split('</data>')[0]).toContain('Drake Hotline Bling | https://imgflip.com/meme/181913649')
   })
 

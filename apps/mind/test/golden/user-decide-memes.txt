@@ -14,10 +14,10 @@ You are not especially into anything yet.
 Two Buttons | https://imgflip.com/meme/87743020
 </data>
 
-<memes>
-A sketch can be a meme: your own drawing of a meme format, made in code, with a caption about your own situation. It is a tinker with size sketch and costs what a sketch costs, 30 points. You choose the kind when you make it; if you want a meme, say so in the idea.
+<sketches>
+A sketch (tinker with size sketch, 30 points) can be art, a tool, a small game or a meme; you choose the kind when you make it, and you can name it in the idea. A meme is your own drawing of a meme format, made in code, with a caption about your own situation.
 You have read no meme format yet. An Imgflip format among the starting points (an address on imgflip.com/meme) is read by a wander like any other page, and after that a sketch can be drawn from it.
-</memes>
+</sketches>
 
 <goals>
 {"long":null,"today":null,"currentStep":null}
