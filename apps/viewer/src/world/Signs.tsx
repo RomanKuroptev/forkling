@@ -101,5 +101,5 @@ export function Signs({ boards, missingTexture = false }: { boards: readonly Sig
   )
   if (boards.length === 0) return null
   // The invisible targets in `Places` take the clicks and the hover; the board itself is only to look at.
-  return <mesh geometry={geometry} material={material} frustumCulled={false} raycast={() => null} />
+  return <mesh name="signs" geometry={geometry} material={material} frustumCulled={false} raycast={() => null} />
 }

@@ -9,6 +9,7 @@ export interface SceneObject {
   exhibitKind?: string
   name?: string
   text?: string
+  letter?: number
   box: { min: [number, number, number]; max: [number, number, number] } | null
   visible: boolean
   material: 'solid' | 'wireframe' | 'glass' | 'none'

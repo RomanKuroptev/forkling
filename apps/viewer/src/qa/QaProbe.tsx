@@ -3,6 +3,7 @@ import { useThree } from '@react-three/fiber'
 import { chunkAt, placeCentre, toLandPlace } from '@forkling/sim'
 import { useJoystickStore } from 'ecctrl/input'
 import { useEffect, useMemo, useRef } from 'react'
+import * as THREE from 'three'
 import { worldLand } from '../world/worldLand.ts'
 import { live } from '../forkling/live.ts'
 import { useWorld } from '../world/WorldContext.tsx'
@@ -23,6 +24,8 @@ const VISITOR = { radius: 0.3, halfHeight: 0.75 }
 export function QaProbe() {
   const gl = useThree((s) => s.gl)
   const advance = useThree((s) => s.advance)
+  const camera = useThree((s) => s.camera)
+  const root = useThree((s) => s.scene)
   const { simWorld, world } = useWorld()
   // The land the places stand on, built the one way the viewer builds it (`worldLand`).
   const land = useMemo(() => worldLand(world), [world])
@@ -184,6 +187,32 @@ export function QaProbe() {
         await step(QA_FRAME_MS * 3)
       },
       /** The ground height at each point, and whether its chunk holds a place, is edge land or fog. */
+      /** Every texture a drawn material uses whose picture never loaded (no image, or an image of no size), by object name. */
+      textures: () => {
+        const broken: { object: string; slot: string }[] = []
+        root.traverse((o) => {
+          const mats = (o as THREE.Mesh).material
+          if (!mats || !o.visible) return
+          for (const m of Array.isArray(mats) ? mats : [mats]) {
+            for (const slot of ['map', 'emissiveMap', 'alphaMap', 'normalMap'] as const) {
+              const t = (m as unknown as Record<string, THREE.Texture | null | undefined>)[slot]
+              const img = t?.image as { width?: number; data?: unknown } | null | undefined
+              if (t && !(img && ((img.width ?? 0) > 0 || img.data))) broken.push({ object: o.name || o.type, slot })
+            }
+          }
+        })
+        return broken
+      },
+      /** World points on the picture, in CSS pixels from the top left, and whether each is in front of the camera and inside the picture. */
+      project: (points: Vec3[]) => {
+        const size = gl.domElement.getBoundingClientRect()
+        return points.map(([x, y, z]) => {
+          const v = new THREE.Vector3(x, y, z).project(camera)
+          const px = ((v.x + 1) / 2) * size.width
+          const py = ((1 - v.y) / 2) * size.height
+          return { x: px, y: py, front: v.z > -1 && v.z < 1, visible: v.z > -1 && v.z < 1 && px >= 0 && px <= size.width && py >= 0 && py <= size.height }
+        })
+      },
       ground: (points: [number, number][]) => points.map(([x, z]) => ({ y: land.heightAt(x, z), chunk: land.classify(chunkAt(x, z)) })),
       look: async (yaw: number, pitch: number) => {
         qaRegistry.player?.setLook(yaw, pitch)
@@ -194,6 +223,6 @@ export function QaProbe() {
     return () => {
       delete (window as { __qa?: unknown }).__qa
     }
-  }, [gl, advance, simWorld, loading, land])
+  }, [gl, advance, camera, root, simWorld, loading, land])
   return null
 }

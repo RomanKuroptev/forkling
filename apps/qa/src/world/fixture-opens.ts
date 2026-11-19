@@ -10,13 +10,15 @@ import { openWorld } from './open.ts'
 import { sceneListsFiles } from './scene-lists-files.ts'
 import { collectGeometry } from './collect.ts'
 import { geometryFindings } from './geometry.ts'
+import { pictureChecks } from './pictures.ts'
+import { phoneCoversMerge } from './phone.ts'
 import { buildViewer, serveWorld } from './serve.ts'
 
 /**
  * Opens one world folder in the viewer with `?world=local&qa=1` and checks that it gets ready and that the scene lists
  * everything its files name. Takes the start picture as evidence. A world that never gets ready is a major finding.
  */
-export async function checkWorldOpens(browser: Browser, viewer: string, world: string, opts: { fixture: string; now: string; out: string; timeoutMs?: number }): Promise<CheckResult[]> {
+export async function checkWorldOpens(browser: Browser, viewer: string, world: string, opts: { fixture: string; now: string; out: string; timeoutMs?: number; pictures?: boolean; qaOut?: string }): Promise<CheckResult[]> {
   const served = await serveWorld(viewer, world)
   try {
     let page
@@ -44,6 +46,13 @@ export async function checkWorldOpens(browser: Browser, viewer: string, world: s
     await page.screenshot({ path: shot })
     const geometry = await collectGeometry(page, world, opts.fixture, Date.parse(opts.now) + 1000)
     const found = [...sceneListsFiles(world, geometry.scene, opts.fixture), ...geometryFindings(geometry)].map((f) => ({ ...f, evidence: [shot] }))
+    if (opts.pictures) {
+      // Night is after sunset and before sunrise in Stockholm (look.md's night colours); the levels for light differ.
+      const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Stockholm', hour: '2-digit', hourCycle: 'h23' }).format(new Date(opts.now)))
+      const pictures = await pictureChecks(page, { fixture: opts.fixture, scene: geometry.scene, night: hour >= 17 || hour < 8, out: opts.qaOut ?? qaOut() })
+      found.push(...pictures.findings)
+      found.push(...(await phoneCoversMerge(browser, served.url, { fixture: opts.fixture, now: opts.now })))
+    }
     await page.close()
     return found
   } finally {
@@ -63,7 +72,7 @@ export const fixtureOpensCheck: Check = {
       const out: CheckResult[] = []
       for (const name of FIXTURES) {
         const world = materialize(name, qaOut('fixtures', name, 'world'))
-        out.push(...(await checkWorldOpens(browser, viewer, world, { fixture: name, now: readQaJson(name).now, out: qaOut('world') })))
+        out.push(...(await checkWorldOpens(browser, viewer, world, { fixture: name, now: readQaJson(name).now, out: qaOut('world'), pictures: true })))
       }
       return out
     } finally {

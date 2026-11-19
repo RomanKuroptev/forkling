@@ -5,7 +5,7 @@ import { buildingModel } from '../world/building.ts'
 import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots } from '../world/exhibitGeometry.ts'
 import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeometry.ts'
 import { plotInstances } from '../world/plotGeometry.ts'
-import { signBoards } from '../world/signGeometry.ts'
+import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
 import { plantBoards, type QaPlant } from './plant.ts'
 
@@ -35,6 +35,8 @@ export interface QaObject {
   name?: string
   /** The words painted on a sign or a title bar. */
   text?: string
+  /** The height of the smallest letters on a sign, in meters (for the readable-label check). */
+  letter?: number
   box: QaBox | null
   /** Drawn now. An inside (rooms, exhibits) is drawn only near the visitor (spec 4.6). */
   visible: boolean
@@ -110,7 +112,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
   }
   for (const board of plantBoards(signBoards(s.places, baseOf, s.kit), s.plant ?? null)) {
     const [x, y, z] = board.position
-    out.push({ id: `${board.id}/sign`, kind: 'sign', place: board.id, text: [...board.layout.name, ...board.layout.text].join(' '), box: { min: [round(x - SIGN_W / 2), round(y - SIGN_H / 2), round(z)], max: [round(x + SIGN_W / 2), round(y + SIGN_H / 2), round(z)] }, visible: true, material: 'solid' })
+    out.push({ id: `${board.id}/sign`, kind: 'sign', place: board.id, text: [...board.layout.name, ...board.layout.text].join(' '), letter: round((Math.min(...board.layout.ops.map((op) => op.px), SIGN_CELL.h) / SIGN_CELL.h) * SIGN_H), box: { min: [round(x - SIGN_W / 2), round(y - SIGN_H / 2), round(z)], max: [round(x + SIGN_W / 2), round(y + SIGN_H / 2), round(z)] }, visible: true, material: 'solid' })
   }
   for (const plot of s.plots) out.push({ id: `plot/${plot.id}`, kind: 'plot', name: plot.name, box: instancesBox(plotInstances(plot, s.heightAt)), visible: true, material: 'solid' })
   return out
