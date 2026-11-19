@@ -57,7 +57,8 @@ export function makeFixtureWorld(seed = 1, count = 10, now: string = FIXTURE_NOW
     const parts = [
       { part: 'shelf-low', at: [-(hx - 1.5), 0, -(hz - 0.3)], rot: 0 },
       { part: 'shelf-low', at: [hx - 1.5, 0, -(hz - 0.3)], rot: 0 },
-      { part: 'frame-large', at: [0, 1.6, hz - 0.1], rot: 3.1416 },
+      // On the front wall beside the door, not over it: the doorway stays clear (issues 342, 354).
+      { part: 'frame-large', at: [-2.6, 1.6, hz - 0.1], rot: 3.1416 },
       { part: 'case-glass', at: [0, 0, 0], rot: 0 },
       { part: 'plaque-stand', at: [hx - 1, 0, hz - 1], rot: 0 },
       { part: 'lamp-floor', at: [-(hx - 0.5), 0, hz - 0.5], rot: 0 },

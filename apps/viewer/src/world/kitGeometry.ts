@@ -9,6 +9,7 @@ import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot
 import { galleryWalls, wallInstances, type GalleryWork } from './galleryWall.ts'
 import { SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
+import { partInDoorway } from './doorway.ts'
 
 export { SHAPES, floorHeight, type Instance, type Shape }
 
@@ -140,7 +141,8 @@ export interface ModelInstance {
 }
 
 /**
- * The inside: a floor for each floor of the building, and every room's furniture where the place file put it. A part with a model
+ * The inside: a floor for each floor of the building, and every room's furniture where the place file put it, but for a part that
+ * stands in the doorway (`doorway.ts`), which is not drawn. A part with a model
  * is a model instance once its file is in `models` (it has loaded), and its primitives until then, or for good if it never loads.
  */
 export function interiorParts(place: Place, kit: Kit, baseY: number, models: ReadonlySet<string> = new Set(), opts: { lampsOn?: boolean } = {}): { instances: Instance[]; models: ModelInstance[] } {
@@ -165,6 +167,8 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
       if (consumed.has(partKey(r, k))) continue
       const part = kit.parts.find((p) => p.id === placed.part)
       if (!part) continue
+      // Nothing stands in the doorway: the building draws the opening, and a frame or a door leaf there blocks it (issues 342, 345, 354).
+      if (partInDoorway(place, kit, room, placed, baseY)) continue
       const at: [number, number, number] = [px + room.at[0] + placed.at[0], baseY + room.floor * height + placed.at[1], pz + room.at[1] + placed.at[2]]
       if (part.model && models.has(part.model.file)) {
         const s = part.model.scale

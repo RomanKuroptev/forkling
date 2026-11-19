@@ -6,6 +6,7 @@ import { FIXTURE_NOW, makeFixtureWorld } from '@forkling/sim/fixture'
 import { compose, multiply } from '../src/world/matrix.ts'
 import { buildingModel, partKey, windowLayout } from '../src/world/building.ts'
 import { SIGN_OUT, signSpot } from '../src/world/exhibitGeometry.ts'
+import { partInDoorway } from '../src/world/doorway.ts'
 import { MODEL_LIMITS, SHAPES, SHAPE_TRIANGLES, exteriorInstances, floorHeight, interiorInstances, interiorsToLoad, modelFiles, partInstances, renderBudget, resolveColor, sceneInstances, wallBoxes } from '../src/world/kitGeometry.ts'
 
 const fixture = makeFixtureWorld(1, 10)
@@ -167,8 +168,13 @@ describe('the walls you cannot walk through (the same walls the cat\'s world has
 describe('the inside of a building (spec 4.6: only the place the visitor is in, and its neighbours, are loaded in full)', () => {
   it('is the furniture of each room, on its floor, and the lining of the walls', () => {
     const home = place('home')
+    // But for the starter's large frame, hung over the door: nothing is drawn in a doorway (issues 342, 354; doorway.test.ts).
+    // Window parts against a wall are drawn as that wall's windows instead (issue 346), and the walls are lined inside (issue 358).
     const { consumed } = windowLayout(home)
-    const count = home.rooms.flatMap((r, ri) => r.parts.filter((_, k) => !consumed.has(partKey(ri, k)))).reduce((n, p) => n + kit.parts.find((k) => k.id === p.part)!.primitives.length, 0)
+    const all = home.rooms.flatMap((r, ri) => r.parts.map((p, k) => ({ r, p, key: partKey(ri, k) })))
+    const notInDoor = all.filter(({ r, p }) => !partInDoorway(home, kit, r, p, 0))
+    expect(all.length - notInDoor.length).toBe(1)
+    const count = notInDoor.filter(({ key }) => !consumed.has(key)).reduce((n, { p }) => n + kit.parts.find((k) => k.id === p.part)!.primitives.length, 0)
     const lining = buildingModel(home, kit, 0)!.inside.length
     expect(lining).toBeGreaterThan(0)
     expect(interiorInstances(home, kit, 0)).toHaveLength(count + 1 + lining) // and the floor
