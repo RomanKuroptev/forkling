@@ -45,6 +45,15 @@ importers:
 
   apps/qa:
     dependencies:
+      '@forkling/mind':
+        specifier: workspace:*
+        version: link:../mind
+      '@forkling/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      '@forkling/sim':
+        specifier: workspace:*
+        version: link:../../packages/sim
       playwright:
         specifier: 1.65.0
         version: 1.65.0
