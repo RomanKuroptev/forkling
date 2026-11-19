@@ -18,7 +18,7 @@ export const OFF_WALL = 0.02
  * themselves keep their place and size: they are not drawn, and moving one would put it through its neighbour.
  *
  * Only the drawing reads this. The place file is never changed, and the body's world (`bodyWorldFor`) walks the place as it is, so
- * the mind and every viewer still agree on where Merge goes. The validator now refuses a new room in the walls (`roomOutsideWalls`).
+ * the mind and every viewer still agree on where Merge goes. Stopping new rooms in the walls is the validator's job, not the drawing's.
  */
 export function settledPlace(place: Place, kit: Kit): Place {
   const cached = memo.get(place)
