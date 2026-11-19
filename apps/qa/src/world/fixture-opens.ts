@@ -12,6 +12,7 @@ import { collectGeometry } from './collect.ts'
 import { geometryFindings } from './geometry.ts'
 import { screenFindings } from './screens.ts'
 import { galleryFindings } from './gallery.ts'
+import { doorwayFindings } from './doorway.ts'
 import { pictureChecks } from './pictures.ts'
 import { phoneCoversMerge } from './phone.ts'
 import { walkChecks } from './walk.ts'
@@ -52,7 +53,7 @@ export async function checkWorldOpens(browser: Browser, viewer: string, world: s
     const shot = join(opts.out, `${opts.fixture}-start.png`)
     await page.screenshot({ path: shot })
     const geometry = await collectGeometry(page, world, opts.fixture, Date.parse(opts.now) + 1000)
-    const found = [...sceneListsFiles(world, geometry.scene, opts.fixture), ...geometryFindings(geometry), ...screenFindings(opts.fixture, geometry.scene), ...exhibitFindings(geometry.scene, opts.fixture), ...galleryFindings(opts.fixture, geometry.scene)].map((f) => ({ ...f, evidence: [shot] }))
+    const found = [...sceneListsFiles(world, geometry.scene, opts.fixture), ...geometryFindings(geometry), ...screenFindings(opts.fixture, geometry.scene), ...exhibitFindings(geometry.scene, opts.fixture), ...galleryFindings(opts.fixture, geometry.scene), ...doorwayFindings(opts.fixture, geometry.scene)].map((f) => ({ ...f, evidence: [shot] }))
     if (opts.pictures) {
       // Night is after sunset and before sunrise in Stockholm (look.md's night colours); the levels for light differ.
       const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Stockholm', hour: '2-digit', hourCycle: 'h23' }).format(new Date(opts.now)))
