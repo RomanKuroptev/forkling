@@ -8,7 +8,11 @@ import { sourceListChecks } from '../sources/checks.ts'
 import { readSourceList } from '../sources/list.ts'
 import { snapshotDir, snapshotFreshCheck } from '../sources/snapshot.ts'
 import { writeRunInfo } from '../triage/run-info.ts'
+import { backfillImgflip, mergeHistory } from './imgflip.ts'
 import { checkSourceHealth, type ImgflipHistory } from './sources.ts'
+
+// How far back the Imgflip back-fill reads Merge's history: past the 14 days of the stale alarm (qa-live.yml clones as deep).
+const BACKFILL_SINCE = '20 days ago'
 
 export const LIVE_USAGE = `  live --sources                the read-only source run (network: the allowlisted hosts only, robots.txt first)
           [--world <clone>]            also score what Merge read, from a clone of its repo
@@ -36,7 +40,10 @@ export async function liveCommand(args: string[], ctx: { out: string; cwd: strin
   const at = (p: string) => resolve(ctx.cwd, p)
   const list = readSourceList()
   const oldHistoryPath = values['imgflip-history'] ? at(values['imgflip-history']) : undefined
-  const history = readHistory(oldHistoryPath)
+  // Earlier runs' lists (the artefact) win per date; days they miss are back-filled from Merge's own morning lists.
+  const backfill = values.world ? backfillImgflip(readWorldSources(at(values.world), { since: BACKFILL_SINCE }).offered) : []
+  const history = mergeHistory(readHistory(oldHistoryPath), backfill)
+  if (backfill.length > 0) console.log(`Imgflip history: ${backfill.length} days back-filled from Merge's morning lists (${backfill[0]!.date} to ${backfill.at(-1)!.date})`)
   mkdirSync(ctx.out, { recursive: true })
 
   const health: Check = {

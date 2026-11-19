@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkImgflipFreshness, checkSourceHealth, PROBES, type ImgflipHistory } from '../src/live/sources.ts'
+import { backfillImgflip, checkImgflipFreshness, checkSourceHealth, mergeHistory, PROBES, type ImgflipHistory } from '../src/live/sources.ts'
 import { readSourceList } from '../src/sources/list.ts'
 import { healthyRoutes, memes, recordedFetch, withRoutes, type Routes } from './recorded/web.ts'
 
@@ -66,9 +66,10 @@ describe('planted: sources break', () => {
   })
 })
 
+const ids = (from: number, n = 100) => Array.from({ length: n }, (_, i) => String(from + i))
+const hist = (...entries: [string, string[]][]): ImgflipHistory => ({ version: 1, entries: entries.map(([date, ids]) => ({ date, ids })) })
+
 describe('Imgflip freshness', () => {
-  const ids = (from: number, n = 100) => Array.from({ length: n }, (_, i) => String(from + i))
-  const hist = (...entries: [string, string[]][]): ImgflipHistory => ({ version: 1, entries: entries.map(([date, ids]) => ({ date, ids })) })
 
   it('no history yet is info, never a pass on freshness', () => {
     const r = checkImgflipFreshness(null, '2026-11-20', ids(0))
@@ -79,7 +80,7 @@ describe('Imgflip freshness', () => {
 
   it('counts the formats new since the last run', () => {
     const r = checkImgflipFreshness(hist(['2026-11-13', ids(0)]), '2026-11-20', ids(3))
-    expect(r.findings[0]!.what).toContain('3 of 100')
+    expect(r.findings[0]!.what).toContain('3 of the top 100')
     expect(r.findings[0]!.severity).toBe('info')
   })
 
@@ -90,12 +91,56 @@ describe('Imgflip freshness', () => {
     expect(stale.fixKind).toBe('roman')
   })
 
-  it('keeps the last 8 runs, one per day', () => {
+  it('keeps the last 30 days, one entry per day (long enough for the two-week alarm)', () => {
     let h: ImgflipHistory | null = null
-    for (let d = 1; d <= 10; d++) h = checkImgflipFreshness(h, `2026-11-${String(d).padStart(2, '0')}`, ids(d)).history
-    h = checkImgflipFreshness(h, '2026-11-10', ids(99)).history
-    expect(h!.entries.map((e) => e.date)).toEqual(['2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08', '2026-11-09', '2026-11-10'])
-    expect(h!.entries.at(-1)!.ids[0]).toBe('99')
+    for (let d = 1; d <= 40; d++) h = checkImgflipFreshness(h, new Date(Date.UTC(2026, 9, d)).toISOString().slice(0, 10), ids(d)).history
+    h = checkImgflipFreshness(h, '2026-11-09', ids(99)).history
+    expect(h!.entries).toHaveLength(30)
+    expect(h!.entries[0]!.date).toBe('2026-10-11')
+    expect(h!.entries.at(-1)).toEqual({ date: '2026-11-09', ids: ids(99) })
+  })
+
+  it('no history and nothing to back-fill says when the first verdict is due', () => {
+    expect(checkImgflipFreshness(null, '2026-11-20', ids(0)).findings[0]!.what).toContain('2026-12-04')
+  })
+})
+
+describe('Imgflip history back-filled from Merge’s morning lists', () => {
+  const page = (id: string) => `https://imgflip.com/meme/${id}`
+  const morning = (date: string, memeIds: string[]) => ({ date, urls: ['https://en.wikipedia.org/wiki/Moth', ...memeIds.map(page), 'https://github.com/a/b'] })
+
+  it('takes the Imgflip formats of each morning, in order, and leaves out a morning with none', () => {
+    const b = backfillImgflip([morning('2026-11-05', ['1', '2', '3']), { date: '2026-11-06', urls: ['https://esolangs.org/wiki/X'] }, morning('2026-11-07', ['4'])])
+    expect(b).toEqual([
+      { date: '2026-11-05', ids: ['1', '2', '3'], backfilled: true },
+      { date: '2026-11-07', ids: ['4'], backfilled: true },
+    ])
+    expect(backfillImgflip(null)).toEqual([])
+  })
+
+  it('merges with the artefact, the artefact winning per date', () => {
+    const merged = mergeHistory(hist(['2026-11-07', ids(500)]), backfillImgflip([morning('2026-11-05', ['1']), morning('2026-11-07', ['2'])]))
+    expect(merged!.entries).toEqual([
+      { date: '2026-11-05', ids: ['1'], backfilled: true },
+      { date: '2026-11-07', ids: ids(500) },
+    ])
+    expect(mergeHistory(null, [])).toBeNull()
+  })
+
+  it('compares like with like: a back-filled top 6 against today’s top 6', () => {
+    const top = ['10', '11', '12', '13', '14', '15']
+    const r = checkImgflipFreshness(mergeHistory(null, backfillImgflip([morning('2026-11-13', top)])), '2026-11-20', [...top.slice(0, 5), '99', ...ids(1000, 94)])
+    expect(r.findings[0]!.what).toContain('1 of the top 6')
+    expect(r.findings[0]!.what).toContain("back-filled from Merge's morning list")
+  })
+
+  it('planted: a back-filled list from 15 days ago equal to today’s gives the major', () => {
+    const top = ['10', '11', '12', '13', '14', '15']
+    const history = mergeHistory(null, backfillImgflip([morning('2026-11-05', top), morning('2026-11-12', top)]))
+    const r = checkImgflipFreshness(history, '2026-11-20', [...top, ...ids(1000, 94)])
+    const stale = r.findings.find((f) => f.fingerprint === 'sources.imgflip-stale')!
+    expect(stale.severity).toBe('major')
+    expect(stale.what).toContain("2026-11-05 (back-filled from Merge's morning list, top 6)")
   })
 
   it('the live check feeds its ids into the history', async () => {
