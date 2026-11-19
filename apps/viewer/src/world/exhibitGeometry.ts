@@ -4,6 +4,7 @@ import { createPrng, placeCentre, toLandPlace, type NeglectLevel } from '@forkli
 import { floorHeight, type Instance } from './kitBase.ts'
 import { compose, multiply } from './matrix.ts'
 import { TERMINAL_TILT, cardPose } from './exhibitCards.ts'
+import { partInDoorway } from './doorway.ts'
 
 /**
  * What stands in a place's slots, and how neglect shows (spec 4.4, 5.1, 4.6), as plain arrays like the rest of the kit's geometry.
@@ -33,6 +34,8 @@ export function exhibitSpots(place: Place, kit: Kit, baseY: number): ExhibitSpot
     const kitPart = placed ? kit.parts.find((p) => p.id === placed.part) : undefined
     const slot = kitPart?.slots[Number(m?.[3])]
     if (!room || !placed || !kitPart || !slot) continue
+    // A part in the doorway is not drawn (`interiorParts`), so neither is what it holds.
+    if (partInDoorway(place, kit, room, placed, baseY)) continue
     const c = Math.cos(placed.rot)
     const s = Math.sin(placed.rot)
     spots.push({

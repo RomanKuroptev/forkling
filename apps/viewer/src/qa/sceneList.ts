@@ -6,6 +6,7 @@ import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots } from '../world/exhibit
 import { galleryWalls, slotOf, type GalleryWork } from '../world/galleryWall.ts'
 import { cardContent, cardPose, cardShows, type CardShows } from '../world/exhibitCards.ts'
 import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeometry.ts'
+import { doorwayBox, partInDoorway, placedPartBox } from '../world/doorway.ts'
 import { compose } from '../world/matrix.ts'
 import { plotInstances } from '../world/plotGeometry.ts'
 import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
@@ -14,7 +15,7 @@ import { wireframeInstances } from '../world/wireframe.ts'
 import { plantBoards, type QaPlant } from './plant.ts'
 
 /**
- * What `window.__qa.scene()` lists (docs/spec/audit/spec.md 7.1): every place, room, exhibit, sign, label and plot, Merge and
+ * What `window.__qa.scene()` lists (docs/spec/audit/spec.md 7.1): every place, its doorway, room, drawn part, exhibit, sign, label and plot, Merge and
  * the visitor, each with an id, a kind, a box in world meters and whether it is drawn. Places are drawn as a few instanced
  * meshes, so their entries come from the same geometry functions the drawing uses; Merge and the visitor come from their
  * three.js objects.
@@ -24,7 +25,8 @@ export interface QaBox {
   max: [number, number, number]
 }
 
-export type QaKind = 'place' | 'room' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor'
+/** `part` is a piece of a room's furniture as drawn (id `<place>/<room>/<part index>`, name the kit part); `door` is a place's doorway, which must stay clear. */
+export type QaKind = 'place' | 'room' | 'part' | 'door' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor'
 
 export interface QaObject {
   id: string
@@ -118,12 +120,20 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     out.push({ id: place.id, kind: 'place', name: place.name, box: instancesBox(outside), visible: true, material: wire && wire.length > 0 ? 'wireframe' : 'solid' })
     const inside = s.interiors.has(place.id)
     const height = floorHeight(place)
+    const door = doorwayBox(place, baseY)
+    out.push({ id: `${place.id}/door`, kind: 'door', place: place.id, box: { min: door.min.map(round) as QaBox['min'], max: door.max.map(round) as QaBox['max'] }, visible: true, material: 'none' })
     for (const room of place.rooms) {
       const [w, d, h] = room.size
       const x = px + room.at[0]
       const z = pz + room.at[1]
       const y = baseY + room.floor * height
       out.push({ id: `${place.id}/${room.id}`, kind: 'room', place: place.id, name: room.name, box: { min: [round(x - w / 2), round(y), round(z - d / 2)], max: [round(x + w / 2), round(y + h), round(z + d / 2)] }, visible: inside, material: 'solid' })
+      // Each part as `interiorParts` draws it (a part in the doorway is not drawn, so it is not listed).
+      room.parts.forEach((placed, k) => {
+        if (partInDoorway(place, s.kit, room, placed, baseY)) return
+        const box = placedPartBox(place, s.kit, room, placed, baseY)
+        if (box) out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, box: { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] }, visible: inside, material: 'solid' })
+      })
     }
     const palette = s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0]!
     for (const spot of exhibitSpots(place, s.kit, baseY)) {
