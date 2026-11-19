@@ -41,6 +41,14 @@ const PLANNER_KINDS = new Set(['morning', 'decide'])
 const MEME_WORD = /\bmemes?\b/i
 /** The word "meme" in a text, not counting addresses (an Imgflip format lives at https://imgflip.com/meme/<id>). */
 const namesMeme = (text: string): boolean => MEME_WORD.test(text.replace(/https?:\/\/\S+/g, ' '))
+/** Words that make a sentence about a meme an offer to make one (spec 9.5: "named the meme as a thing it can make, with its price"). */
+const MAKING = /\b(kinds?|tinker|sketch|price|prices|points?|costs?)\b/i
+/** A sentence or line that names a meme as something to make, not only the word (a seed line about memes is not an offer). */
+const offersMeme = (text: string): boolean =>
+  text
+    .replace(/https?:\/\/\S+/g, ' ')
+    .split(/\n|(?<=[.!?])\s+/)
+    .some((s) => MEME_WORD.test(s) && MAKING.test(s))
 /** A scrap reason from `verifyMemeSources` or the sources schema. */
 const SOURCE_REASON = /(must come from the list|sources?\b)/i
 const UNUSABLE = /no usable answer/i
@@ -61,9 +69,16 @@ export function memeTrail(run: RunData): MemeTrail {
   const failed = run.trailPages.filter((p) => IMGFLIP_FORMAT.test(p.url) && p.failed)
   const read: MemeStep = { step: 2, name: 'read', count: formatsRead.length, of: formatsRead.length + failed.length, detail: `${formatsRead.length} Imgflip format pages read${failed.length ? `, ${failed.length} not read (${[...new Set(failed.map((f) => f.failed))].slice(0, 2).join('; ')})` : ''}` }
 
-  const seenPrompts = withFormat?.filter((p) => namesMeme(p.system) || namesMeme(p.user)) ?? null
+  const seenPrompts = withFormat?.filter((p) => offersMeme(p.system) || offersMeme(p.user)) ?? null
+  const mentioned = withFormat?.filter((p) => namesMeme(p.system) || namesMeme(p.user)).length ?? 0
   const seen: MemeStep = seenPrompts
-    ? { step: 3, name: 'seen by the planner', count: seenPrompts.length, of: planner!.length, detail: `a meme was named as a thing to make, with a format, in ${seenPrompts.length} of ${planner!.length} morning and decide prompts` }
+    ? {
+        step: 3,
+        name: 'seen by the planner',
+        count: seenPrompts.length,
+        of: planner!.length,
+        detail: `a meme was offered as a thing to make (a kind, a tinker or a price, with a format in the prompt) in ${seenPrompts.length} of ${planner!.length} morning and decide prompts${mentioned > seenPrompts.length ? `; the word "meme" was in ${mentioned}, but not as something it can make` : ''}`,
+      }
     : { step: 3, name: 'seen by the planner', count: null, of: null, detail: 'unknown: the run kept no prompts (the tick log cannot tell what the planner saw)' }
 
   const planSteps = run.plans.filter((s) => namesMeme(`${s.target} ${s.reason}`))

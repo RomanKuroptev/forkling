@@ -112,8 +112,8 @@ export function makeRun(shape: RunShape): { world: string; out: string } {
 /** A run in which one meme made it all the way through: the planner was offered a format and told it may make a meme. */
 export const WITH_A_MEME: Omit<RunShape, 'days'> = {
   prompts: [
-    { kind: 'morning', user: 'You can make a meme. Starting points: https://imgflip.com/meme/181913649' },
-    { kind: 'decide', user: 'You can make a meme. Starting points: https://imgflip.com/meme/181913649' },
+    { kind: 'morning', user: 'Tinker kinds: art, game, meme (a meme costs 30 points). Starting points: https://imgflip.com/meme/181913649' },
+    { kind: 'decide', user: 'Tinker kinds: art, game, meme (a meme costs 30 points). Starting points: https://imgflip.com/meme/181913649' },
   ],
   trails: (d) => (d === 0 ? [{ url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling', reaction: 'No, then yes.' }] : []),
   works: [{ id: 'no-then-yes', title: 'No, Then Yes', kind: 'meme', about: 'me and my plans, in two panels', made: '2026-11-19T15:00:00.000Z' }],
