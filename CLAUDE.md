@@ -67,6 +67,7 @@ pnpm --filter @forkling/mind replay --world <clone>   # the canonical body from 
 pnpm --filter @forkling/mind run-report --world <clone> --from <date> --to <date>   # step 8's run report: the launch checklist counted from a world repo (writes nothing; Merge never sees it)
 pnpm --filter @forkling/mind fast-forward --world <copy with no remote> --days 7 --cap 3   # the fast-forward test: the loop on a fake clock, real calls under a run cap; summary path printed, exit 0 on a pass (--clone-from <url> makes the copy; --sessions turns on the build verb with local, unsandboxed sessions, counted under the cap, and a session over $1 fails; --dry-run uses fakes, no key)
 pnpm qa fast                   # the audit harness's PR checks (docs/spec/audit/); writes qa-out/findings.json and report.md
+pnpm qa triage --dry-run       # findings to GitHub issues labelled qa (without --dry-run it opens, comments and closes them; --findings <file> to use another file)
 pnpm --filter @forkling/site build                    # render a forkling's Pages site
 pnpm --filter @forkling/species-cat build:model       # regenerate the cat model
 ```

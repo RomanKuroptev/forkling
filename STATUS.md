@@ -10,6 +10,7 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 - **Docs merged** (#261).
 - **Q0 (this PR):** `apps/qa` (`pnpm qa fast`), the Finding schema, `findings.json` and `report.md`, PNG contact sheets, the check runner (a throwing check gives `qa.check-did-not-run`, planted test), `qa.yml` on PRs and main. Labels `qa`, `phase-2`, `needs-roman`, `fix-failed`, `qa-rules`. Site gaps filed as `qa` + `phase-2`: #262 to #268. Pinned digest issue: #269.
 - **Next:** lanes W, B, S, T in worktrees, each plan approved before it builds.
+- **Lane T (QT, plan in `docs/spec/audit/lanes/t.md`):** T1 (this PR): `pnpm qa triage [--dry-run]`, findings to issues labelled `qa` by fingerprint (open, comment when the evidence changed, close after 2 clean runs in a covered area, reopen when it comes back), PNG evidence on the orphan `qa-evidence` branch, up to 5 picks in `qa-out/triage.json`; GitHub only through a `Tracker` interface with a fake in tests. Next: T2 (gather, fix tries, digest), T3 (the `/qa` skill, the fixer, `qa/nightly.ps1`).
 
 ## Spec v4, parallel build (started 17 November)
 
