@@ -2,6 +2,10 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+## 2026-11-19: `?qa=1` draws a frame only when the harness steps it (audit Q1, lane W)
+- **Why.** A picture must depend only on the address and the steps taken, or the world checks cannot compare two runs. With the clock frozen but the frame loop free, the visitor's capsule and Merge's animations still moved with real frame times.
+- **What.** Under `?qa=1&now=&seed=` the Canvas runs with `frameloop="never"`, and `window.__qa.step(ms)` draws frames of 1/30 s that also move the world clock. `Math.random` is replaced by the seeded PRNG before any other module loads (`apps/viewer/src/qa/seedRandom.ts`), so library code that draws randomly is seeded too, and a check (`world.viewer-math-random`) keeps the viewer's own code free of `Math.random()` calls. Places are drawn as a few instanced meshes, so `__qa.scene()` lists them from the same geometry functions the drawing uses; Merge and the visitor come from their three.js objects. Normal mode is unchanged: pictures before and after at the same camera and clock are pixel-identical (Playwright's fake page clock).
+
 ## 2026-11-19: The source list of the audit harness (audit QS, lane S)
 - **`qa/sources.json`, not `qa/coverage.json`.** Spec 9.4 puts the sources in `qa/coverage.json`; steps.md names `qa/sources.json`, and steps.md wins. `coverage.json` stays Phase 2's mockup file.
 - **Lemmy memes is `trial failed`, not a `code` fix.** Spec 9.4 calls Lemmy "a passed trial that just needs wiring", but its report (`docs/spec/w2-trials/lemmy.world.md`) fails readable at 63% (mark 80%). The report wins: it is for Roman, recommended "rerun the trial against a text-heavier community, or drop". Mastodon trends: Roman, recommended "drop: robots.txt blocks ClaudeBot by name". Show HN: Roman, recommended "drop" (10% of items have 120 words; the projects are on sites Merge may not read).

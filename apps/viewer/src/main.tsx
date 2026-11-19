@@ -1,3 +1,4 @@
+import './qa/seedRandom.ts'
 import '@fontsource/press-start-2p/index.css'
 import '@fontsource/vt323/index.css'
 import { StrictMode } from 'react'
