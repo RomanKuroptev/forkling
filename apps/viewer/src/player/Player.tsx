@@ -11,6 +11,8 @@ import { visitor } from '../visitor.ts'
 import { applyLookDrag, lookEuler, type Look } from './look.ts'
 import { mergeMovement } from './touchInput.ts'
 import { keepOnLand } from './keepOnLand.ts'
+import { keepAwayFrom } from './keepAway.ts'
+import { mergeSpot } from '../forkling/spot.ts'
 import { worldLand } from '../world/worldLand.ts'
 import { qaMode } from '../qa/params.ts'
 import { qaRegistry } from '../qa/registry.ts'
@@ -126,7 +128,11 @@ export function Player() {
     b.setMovement(mergeMovement(getKeys(), stick, { jump: useButtonStore.getState().buttons.jump }))
     const p = b.currPos
     // The land ends where the fog does: past it there is no ground, so the visitor stops there, whatever moved it.
-    const kept = keepOnLand(land, lastOnLand.current, { x: p.x, z: p.z })
+    const onLand = keepOnLand(land, lastOnLand.current, { x: p.x, z: p.z })
+    // And it keeps a small distance from Merge, so the camera is never on top of it (issues 357, 349).
+    // Under ?qa=1 a fixture may plant a visitor that walks right up to Merge (`qa/plant.ts`); never in normal mode.
+    const merge = qaMode && qaRegistry.plant?.mergeNear ? null : mergeSpot.position
+    const kept = (merge && keepAwayFrom(merge, lastOnLand.current, onLand ?? { x: p.x, z: p.z })) || onLand
     if (kept) {
       const v = b.body.linvel()
       b.body.setTranslation({ x: kept.x, y: p.y, z: kept.z }, true)

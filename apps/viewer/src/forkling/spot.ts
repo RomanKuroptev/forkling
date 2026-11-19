@@ -1,0 +1,4 @@
+import type { Point2 } from '@forkling/sim'
+
+/** Where Merge is drawn on the ground plane, written by the forkling each frame and read by the player (`keepAway.ts`). */
+export const mergeSpot: { position: Point2 | null } = { position: null }

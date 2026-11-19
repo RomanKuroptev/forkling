@@ -11,10 +11,12 @@ export interface QaPlant {
   raise: { id: string; dy: number }[]
   /** Draw these with a texture that never loaded (`signs`). */
   missingTexture: 'signs'[]
-  /** Places whose walls do not stop the visitor (no colliders): a wall you can walk through. */
+  /** Places whose walls and furniture do not stop the visitor (no colliders): a wall, a bench you can walk through. */
   walkThrough: string[]
   /** A wall that stops the visitor but is not drawn: a box `w` by `d` meters on the ground at x, z. */
   invisibleWall: { x: number; z: number; w: number; d: number }[]
+  /** The visitor may walk right up to Merge (no distance kept, issues 357, 349). Set only when planted. */
+  mergeNear?: true
 }
 
 const TEXTURES = new Set(['signs'])
@@ -22,7 +24,7 @@ const TEXTURES = new Set(['signs'])
 /** The plant to apply, or null: always null in normal mode, and when `qa.json` plants nothing it knows. */
 export function plantFrom(qa: QaParams | null, raw: unknown): QaPlant | null {
   if (!qa || typeof raw !== 'object' || raw === null) return null
-  const r = raw as { raise?: unknown; missingTexture?: unknown; walkThrough?: unknown; invisibleWall?: unknown }
+  const r = raw as { raise?: unknown; missingTexture?: unknown; walkThrough?: unknown; invisibleWall?: unknown; mergeNear?: unknown }
   const raise = Array.isArray(r.raise)
     ? r.raise.flatMap((x: unknown) => {
         const { id, dy } = (x ?? {}) as { id?: unknown; dy?: unknown }
@@ -38,7 +40,8 @@ export function plantFrom(qa: QaParams | null, raw: unknown): QaPlant | null {
         return ok ? [{ x: px as number, z: z as number, w: w as number, d: d as number }] : []
       })
     : []
-  return raise.length || missingTexture.length || walkThrough.length || invisibleWall.length ? { raise, missingTexture, walkThrough, invisibleWall } : null
+  const mergeNear = r.mergeNear === true
+  return raise.length || missingTexture.length || walkThrough.length || invisibleWall.length || mergeNear ? { raise, missingTexture, walkThrough, invisibleWall, ...(mergeNear ? { mergeNear: true as const } : {}) } : null
 }
 
 /** The sign boards with any planted lift applied. The same boards when nothing is planted. */

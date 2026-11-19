@@ -45,3 +45,98 @@ export function frontPose(place: Place, kit: Kit, baseY: number, aspect: number,
   if (bar) d = Math.max(d, bar.position[2] - front + (bar.position[1] + bar.height / 2 - (baseY + EYE) + 0.3) / tanY)
   return { position: [x, baseY + EYE, front + d], target: [x, baseY + AIM, z] }
 }
+
+/** A box in world meters, as the scene list and `furnitureBoxes` give them. */
+export interface PoseBox {
+  min: readonly [number, number, number] | readonly number[]
+  max: readonly [number, number, number] | readonly number[]
+}
+
+/** Whether the segment from `a` to `b` passes through the inside of `box` (the slab test). */
+export function segmentHitsBox(a: readonly number[], b: readonly number[], box: PoseBox): boolean {
+  let t0 = 0
+  let t1 = 1
+  for (let k = 0; k < 3; k++) {
+    const d = b[k]! - a[k]!
+    const lo = box.min[k]!
+    const hi = box.max[k]!
+    if (Math.abs(d) < 1e-9) {
+      if (a[k]! <= lo || a[k]! >= hi) return false
+      continue
+    }
+    let u0 = (lo - a[k]!) / d
+    let u1 = (hi - a[k]!) / d
+    if (u0 > u1) [u0, u1] = [u1, u0]
+    t0 = Math.max(t0, u0)
+    t1 = Math.min(t1, u1)
+    if (t0 >= t1) return false
+  }
+  return true
+}
+
+/** How far round Merge the merge-close camera may go from straight in front, in order, and how far away it may stand. */
+const CLOSE_TURNS = [0, 30, -30, 60, -60, 90, -90, 120, -120, 150, -150, 180].map((d) => (d * Math.PI) / 180)
+const CLOSE_DISTANCES = [1.5, 1.2, 1.0]
+/** The lens keeps this far from any box, so nothing is right in front of it. */
+const LENS_CLEAR = 0.25
+/** Heights on Merge the lens must see, its feet to its face. */
+const MERGE_POINTS = [0.05, 0.4, 0.8]
+/** Half the picture's field of view, tall and wide (a laptop window, 70 deg tall), in radians: the corners of what the lens sees. */
+const HALF_TALL = (35 * Math.PI) / 180
+const HALF_WIDE = Math.atan(Math.tan(HALF_TALL) * 1.6)
+
+/**
+ * The named camera `merge-close`: low in front of Merge's face, looking at it, 1.5 m away. When a piece of furniture or a wall
+ * stands between the lens and Merge, its feet to its face, or anywhere in the picture nearer the lens than Merge (issue 348: the
+ * camera stood over the bench by Home's door, which filled the bottom third), it comes a little nearer or goes a little round
+ * Merge, to the first pose with nothing in the way; when none is clear, to the one with the least in the way.
+ */
+export function mergeClosePose(merge: { x: number; z: number }, heading: number, heightAt: (x: number, z: number) => number, obstacles: readonly PoseBox[]): QaPose {
+  const y = heightAt(merge.x, merge.z)
+  const at = (turn: number, dist: number): QaPose => ({
+    position: [merge.x + Math.sin(heading + turn) * dist, y + 0.7, merge.z + Math.cos(heading + turn) * dist],
+    target: [merge.x, y + 0.4, merge.z],
+  })
+  /** How many of the lens's sight lines a box crosses before they reach Merge. */
+  const blocked = (pose: QaPose): number => {
+    const [cx, cy, cz] = pose.position
+    const f = pose.target.map((v, k) => v - pose.position[k]!)
+    const len = Math.hypot(f[0]!, f[1]!, f[2]!)
+    const fw = f.map((v) => v / len)
+    const rl = Math.hypot(fw[0]!, fw[2]!)
+    const right = [-fw[2]! / rl, 0, fw[0]! / rl]
+    const up = [right[1]! * fw[2]! - right[2]! * fw[1]!, right[2]! * fw[0]! - right[0]! * fw[2]!, right[0]! * fw[1]! - right[1]! * fw[0]!]
+    // Up to just short of Merge: a piece it is sitting on or in, or one beside it, is not in front of it.
+    const ends: number[][] = MERGE_POINTS.map((h) => [merge.x, y + h, merge.z])
+    for (let i = -3; i <= 3; i++) {
+      for (let j = -2; j <= 2; j++) {
+        const a = (Math.tan(HALF_WIDE) * i) / 3
+        const b = (Math.tan(HALF_TALL) * j) / 2
+        const d = [0, 1, 2].map((k) => fw[k]! + right[k]! * a + up[k]! * b)
+        const dl = Math.hypot(d[0]!, d[1]!, d[2]!)
+        ends.push(d.map((v, k) => pose.position[k]! + (v / dl) * len))
+      }
+    }
+    let count = 0
+    for (const b of obstacles) {
+      if ([cx, cy, cz].every((v, k) => v > b.min[k]! - LENS_CLEAR && v < b.max[k]! + LENS_CLEAR)) count += ends.length
+      for (const end of ends) {
+        const l = Math.hypot(end[0]! - cx, end[1]! - cy, end[2]! - cz)
+        const t = Math.max(0, (l - 0.3) / l)
+        if (segmentHitsBox(pose.position, [cx + (end[0]! - cx) * t, cy + (end[1]! - cy) * t, cz + (end[2]! - cz) * t], b)) count++
+      }
+    }
+    return count
+  }
+  let best = at(0, CLOSE_DISTANCES[0]!)
+  let least = Infinity
+  // Nearest straight in front first: a little nearer, or a little round, keeps its face in the picture; its back is the last resort.
+  const order = CLOSE_TURNS.flatMap((turn) => CLOSE_DISTANCES.map((dist) => ({ turn, dist })))
+  for (const { turn, dist } of order) {
+    const pose = at(turn, dist)
+    const n = blocked(pose)
+    if (n === 0) return pose
+    if (n < least) [best, least] = [pose, n]
+  }
+  return best
+}

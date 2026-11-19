@@ -16,6 +16,11 @@ describe('planted world flaws (audit QW.7): only what the world files cannot say
   it('reads a raised object and a missing texture under ?qa=1', () => {
     expect(plantFrom(qa, { raise: [{ id: 'home/sign', dy: 3 }], missingTexture: ['signs'], walkThrough: ['home'], invisibleWall: [{ x: 1, z: 2, w: 0.3, d: 6 }] })).toEqual({ raise: [{ id: 'home/sign', dy: 3 }], missingTexture: ['signs'], walkThrough: ['home'], invisibleWall: [{ x: 1, z: 2, w: 0.3, d: 6 }] })
   })
+  it('plants a visitor that walks right up to Merge only when asked, and only under ?qa=1', () => {
+    expect(plantFrom(qa, { mergeNear: true })).toEqual({ raise: [], missingTexture: [], walkThrough: [], invisibleWall: [], mergeNear: true })
+    expect(plantFrom(qa, { mergeNear: 'yes' })).toBeNull()
+    expect(plantFrom(null, { mergeNear: true })).toBeNull()
+  })
   it('raises only the planted sign', () => {
     const boards = [board('home', 1.5), board('workshop', 1.5)]
     const out = plantBoards(boards, { raise: [{ id: 'home/sign', dy: 3 }], missingTexture: [], walkThrough: [], invisibleWall: [] })
