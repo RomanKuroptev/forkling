@@ -15,6 +15,9 @@ import { LOCAL_REF, localFetch } from './world/localWorld.ts'
 import { fixedRoute, parseRoute, siteWorldExists, worldSiteRedirect, type WorldRef } from './world/route.ts'
 import { WorldErrorPanel } from './world/WorldErrorPanel.tsx'
 import { WorldProvider } from './world/WorldContext.tsx'
+import { qaMode } from './qa/params.ts'
+import { plantFrom } from './qa/plant.ts'
+import { qaRegistry } from './qa/registry.ts'
 
 /** Where the bare viewer address takes you. */
 const DEFAULT_WORLD = 'RomanKuroptev/merge'
@@ -34,6 +37,17 @@ function load(ref: WorldRef, local: boolean): Promise<LoadResult> {
     const real: typeof fetch = (input, init) => fetch(input, init)
     // `?world=local` reads the world from files served next to the viewer, not from GitHub.
     pending = loadWorld(ref, { fetch: local ? localFetch(`${location.origin}${import.meta.env.BASE_URL}`, real) : real, species: speciesPacks })
+    // The audit harness (`?qa=1`, a local world only) reads a planted flaw from the fixture's qa.json before the world is shown.
+    if (local && qaMode) {
+      const world = pending
+      pending = real(`${location.origin}${import.meta.env.BASE_URL}world/qa.json`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((qa: { plant?: unknown } | null) => {
+          qaRegistry.plant = plantFrom(qaMode, qa?.plant)
+        })
+        .catch(() => undefined)
+        .then(() => world)
+    }
     loads.set(key, pending)
   }
   return pending

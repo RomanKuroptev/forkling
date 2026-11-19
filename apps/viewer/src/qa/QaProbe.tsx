@@ -1,8 +1,9 @@
 import { useProgress } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
-import { placeCentre, toLandPlace } from '@forkling/sim'
+import { chunkAt, placeCentre, toLandPlace } from '@forkling/sim'
 import { useJoystickStore } from 'ecctrl/input'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { worldLand } from '../world/worldLand.ts'
 import { live } from '../forkling/live.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { qaMode, qaTime } from './params.ts'
@@ -22,7 +23,9 @@ const VISITOR = { radius: 0.3, halfHeight: 0.75 }
 export function QaProbe() {
   const gl = useThree((s) => s.gl)
   const advance = useThree((s) => s.advance)
-  const { simWorld } = useWorld()
+  const { simWorld, world } = useWorld()
+  // The land the places stand on, built the one way the viewer builds it (`worldLand`).
+  const land = useMemo(() => worldLand(world), [world])
   const progress = useProgress()
   // The loading manager's state, read by `ready` (the hook's value is from the last render).
   const loading = useRef(progress)
@@ -180,6 +183,8 @@ export function QaProbe() {
         qaRegistry.player?.teleport(x, z, yaw)
         await step(QA_FRAME_MS * 3)
       },
+      /** The ground height at each point, and whether its chunk holds a place, is edge land or fog. */
+      ground: (points: [number, number][]) => points.map(([x, z]) => ({ y: land.heightAt(x, z), chunk: land.classify(chunkAt(x, z)) })),
       look: async (yaw: number, pitch: number) => {
         qaRegistry.player?.setLook(yaw, pitch)
         await step(0)
@@ -189,6 +194,6 @@ export function QaProbe() {
     return () => {
       delete (window as { __qa?: unknown }).__qa
     }
-  }, [gl, advance, simWorld, loading])
+  }, [gl, advance, simWorld, loading, land])
   return null
 }

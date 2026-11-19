@@ -21,6 +21,7 @@ import { WEB_SNAPSHOT_USAGE, webSnapshotCommand } from './snapshot/command.ts'
 import { SCORE_USAGE, scoreCommand } from './behaviour/score-cli.ts'
 import { fixturesCommand, FIXTURES_USAGE, liveClone } from './fixtures/command.ts'
 import { exploreCommand, EXPLORE_USAGE } from './review/explore/command.ts'
+import { makePlantedWorld } from './fixtures/planted.ts'
 
 const USAGE = `pnpm qa <command>
 
@@ -89,6 +90,9 @@ async function main(argv: string[]): Promise<number> {
       return scoreCommand(rest)
     case 'fixtures':
       return fixturesCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd() })
+    case 'planted-world':
+      console.log(`planted world in ${makePlantedWorld(qaOut('planted', 'world'))}`)
+      return 0
     case 'live-clone':
       console.log(`live clone in ${liveClone(qaOut())}`)
       return 0

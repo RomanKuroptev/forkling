@@ -12,7 +12,8 @@ import { trimWorld } from './trim.ts'
 
 export const FIXTURES_USAGE = `  fixtures                     rebuild day-0, night, building and day-30 from the template and day-7 (by code, seeded, no model, no network)
            [--import-day7 <dir> [--about <text>]]  make day-7 from a fast-forward world copy (trimmed to about 2 MB)
-  live-clone                   a fresh clone of Merge's repo in qa-out/live/world, remote removed (read-only, never committed)`
+  live-clone                   a fresh clone of Merge's repo in qa-out/live/world, remote removed (read-only, never committed)
+  planted-world                day-7 with the four planted world flaws (QW.7) in qa-out/planted/world, for the agents' acceptance runs`
 
 /** The clock every Phase 1 fixture world is shown at, unless it says otherwise: a Thursday afternoon in Stockholm. */
 export const DAY_NOW = '2026-11-26T14:00:00+01:00'

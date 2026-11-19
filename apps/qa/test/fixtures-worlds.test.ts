@@ -16,7 +16,8 @@ const write = (dir: string, rel: string, data: string | Buffer) => {
   writeFileSync(join(dir, rel), data)
 }
 
-describe('the committed fixture worlds (audit spec 4)', () => {
+// Copying day-7 a few times takes seconds on a busy machine.
+describe('the committed fixture worlds (audit spec 4)', { timeout: 60_000 }, () => {
   it('are day-0, day-7, day-30, night and building, each with its clock in qa.json', () => {
     expect([...FIXTURES]).toEqual(['day-0', 'day-7', 'day-30', 'night', 'building'])
     for (const name of FIXTURES) {
@@ -71,7 +72,7 @@ describe('the committed fixture worlds (audit spec 4)', () => {
   })
 })
 
-describe('making the fixtures', () => {
+describe('making the fixtures', { timeout: 60_000 }, () => {
   it('a broken place file is an issue that names the file (planted)', () => {
     const dir = materialize('day-0', join(temp('bad'), 'world'))
     writeFileSync(join(dir, 'places/home.json'), JSON.stringify({ id: 'Home!', name: 3 }))

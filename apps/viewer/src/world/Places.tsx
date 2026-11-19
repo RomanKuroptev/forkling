@@ -22,6 +22,7 @@ import { useWorld } from './WorldContext.tsx'
 import { worldLand } from './worldLand.ts'
 import { qaMode } from '../qa/params.ts'
 import { qaRegistry } from '../qa/registry.ts'
+import { plantBoards } from '../qa/plant.ts'
 
 /** The unit shapes every part is made of; an instance scales them to its primitive's size. */
 const GEOMETRIES: Record<Shape, THREE.BufferGeometry> = {
@@ -198,14 +199,15 @@ export function Places() {
   // The audit harness (`?qa=1`) lists the places as they are drawn now (`window.__qa.scene()`).
   useEffect(() => {
     if (!qaMode) return
-    qaRegistry.places = { places: world.places, kit, heightAt: (x, z) => land.heightAt(x, z), interiors, nowMs, plots, wireAlways: WIRE_ALWAYS }
+    qaRegistry.places = { places: world.places, kit, heightAt: (x, z) => land.heightAt(x, z), interiors, nowMs, plots, wireAlways: WIRE_ALWAYS, plant: qaRegistry.plant }
     qaRegistry.models.drawn = loadedFiles.size
   }, [world, land, interiors, nowMs, plots, loadedFiles])
 
   const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS, wireAlways: WIRE_ALWAYS }), [world, land, interiors, loadedFiles, nowMs, plots])
   // The board of each place's sign: its name and its sign text, painted on one texture.
   const baseOfPlace = useCallback((p: (typeof world.places)[number]) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, [land])
-  const boards = useMemo(() => signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit), [world, land])
+  // Under ?qa=1 a fixture may plant a lifted sign (`qa/plant.ts`); in normal mode the plant is null and the boards are as made.
+  const boards = useMemo(() => plantBoards(signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit), qaRegistry.plant), [world, land])
   const walls = useMemo(
     () =>
       world.places.flatMap((place) => {
@@ -270,7 +272,7 @@ export function Places() {
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}
-      <Signs boards={boards} />
+      <Signs boards={boards} missingTexture={qaRegistry.plant?.missingTexture.includes('signs') ?? false} />
       <TitleBars places={world.places} baseOf={baseOfPlace} />
       <Shapes shape="box" data={scene.box} />
       <Shapes shape="sphere" data={scene.sphere} />

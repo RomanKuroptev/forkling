@@ -16,6 +16,8 @@ export const QaJson = z
   .object({
     now: z.string().refine((s) => Number.isFinite(Date.parse(s)), 'an ISO time'),
     base: z.enum(FIXTURES).optional(),
+    /** A planted flaw the world files cannot say (apps/viewer/src/qa/plant.ts), for the harness's own tests only. */
+    plant: z.unknown().optional(),
     /** Where the fixture came from, in plain words. */
     about: z.string().max(500).optional(),
   })

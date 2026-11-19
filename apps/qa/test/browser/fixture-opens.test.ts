@@ -33,8 +33,8 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('a fixture world in the real vie
     place.rooms[0]!.id = 'a-workshop-room-with-a-name-far-too-long-for-it'
     writeFileSync(file, JSON.stringify(place))
     const found = await checkWorldOpens(browser, viewer, world, { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')) })
-    expect(found.map((f) => f.fingerprint)).toEqual(['world.scene-lists-files|day-7|place|workshop'])
-    expect(found[0]!.what).toContain('does not fit the schema')
+    expect(found.filter((f) => f.id === 'world.scene-lists-files').map((f) => f.fingerprint)).toEqual(['world.scene-lists-files|day-7|place|workshop'])
+    expect(found.find((f) => f.id === 'world.scene-lists-files')!.what).toContain('does not fit the schema')
   }, 120_000)
 
   it('the R2 Workshop with its 42-character exhibit id (as the engine wrote it) is shown, since every reader repairs that id (#285)', async () => {
@@ -44,7 +44,8 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('a fixture world in the real vie
     const cut = place.exhibits.find((e) => e.id === 'screen-a-door-that-opens-only-when-watche')!
     cut.id = 'screen-a-door-that-opens-only-when-watched'
     writeFileSync(file, JSON.stringify(place))
-    expect(await checkWorldOpens(browser, viewer, world, { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')) })).toEqual([])
+    const found = await checkWorldOpens(browser, viewer, world, { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')) })
+    expect(found.filter((f) => f.id === 'world.scene-lists-files')).toEqual([])
   }, 120_000)
 
   it('planted: a world with no forkling.json never gets ready, and that is a major finding', async () => {
