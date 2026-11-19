@@ -29,9 +29,32 @@ Result: **4 of 4 found.** Also seen, not planted: Home's sign says "PATCH BENCH:
 | 1 | `world.work-not-installed` | `apps/qa/test/browser/planted-world.test.ts` |
 | 2 | `world.places-overlap` | same |
 | 3 | `world.floating` | same |
-| 4 | W6 (picture checks: missing or black textures) | W6 |
+| 4 | `world.missing-texture` (from the materials) | `apps/qa/test/browser/planted-world.test.ts` |
+
+## Run 2: look reviewer, by hand from its file (lane W, 19 November)
+
+The lane W builder followed `.claude/agents/look-reviewer.md` on run 1's pictures, against look.md and the world mockups.
+
+| Flaw | Verdict | Why |
+|---|---|---|
+| 1 work-not-in-workshop | not a picture question | Nothing on a picture shows a missing work; the code checks own it. |
+| 2 place-through-place | **confirmed, major** | `008-...-camera-front-workshop.png`: the hillside place's porch columns and roof grow out of the Workshop's right half, two buildings in one; `buildings-merge-visitor.png` shows each building standing apart. |
+| 3 floating-sign | **confirmed, major** | `001-...-start.png`: Home's sign posts stand empty, the board hangs above the roof line. |
+| 4 missing-texture | **confirmed, major** | `008-...`: every sign board is a black slab; the mockups show white window-style boards with the place's name. |
+
+"An AI lives here, or a blocky game?": with the planted flaws it reads as a broken game level; without them (the day-7 sheet) the pastel buildings and grid read as the agreed look, but the rooms are plain and empty, closer to a demo than a lived-in place.
+
+**Result: 3 of 3 picture flaws confirmed.**
+
+## The code checks on all four (after W8)
+
+| Flaw | Check |
+|---|---|
+| 1 | `world.work-not-installed` (W5), and `world.claim-not-in-world` for a work the Workshop page lists in a slot the Workshop does not have (W8) |
+| 2 | `world.places-overlap` (W5) |
+| 3 | `world.floating` (W5) |
+| 4 | `world.missing-texture` (W6) |
 
 ## Still to run
 
-- The world explorer as a real subagent (Opus) in `/qa`, on the planted world and on `live`, once lane T's skill calls it.
-- The look reviewer on run 1's pictures: it must confirm 2, 3 and 4 on the pictures.
+- The world explorer and the look reviewer as real subagents (Opus) in `/qa`, on the planted world (`pnpm qa planted-world`) and on `live`, once lane T's skill calls them. Record each run here.

@@ -24,6 +24,7 @@ import { COMPARE_USAGE, compareCommand } from './behaviour/compare.ts'
 import { fixturesCommand, FIXTURES_USAGE, liveClone } from './fixtures/command.ts'
 import { exploreCommand, EXPLORE_USAGE } from './review/explore/command.ts'
 import { makePlantedWorld } from './fixtures/planted.ts'
+import { fpsFindings, fpsFloor, measureFps } from './world/fps.ts'
 import { worldFullCheck } from './world/fixture-opens.ts'
 
 const USAGE = `pnpm qa <command>
@@ -43,6 +44,7 @@ ${LIVE_USAGE}
 ${WEB_SNAPSHOT_USAGE}
 ${FIXTURES_USAGE}
 ${EXPLORE_USAGE}
+  fps     [--seconds 20] [--fixtures day-7,day-30]   real frame rate with the GPU, headed, laptop window and phone preset (Roman's PC, never CI)
   world   every fixture with every world check (pictures, the phone, walking, sheets in qa-out/sheets); /qa runs it
   score   ${SCORE_USAGE}
 ${BEHAVIOUR_USAGE}
@@ -100,6 +102,16 @@ async function main(argv: string[]): Promise<number> {
       return scoreCommand(rest)
     case 'fixtures':
       return fixturesCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd() })
+    case 'fps': {
+      // Real frame rate on this PC's GPU (headed Chromium): never in CI, where there is no GPU.
+      const { values } = parseArgs({ args: rest, options: { seconds: { type: 'string', default: '20' }, fixtures: { type: 'string', default: 'day-7,day-30' } } })
+      const results = await measureFps(values.fixtures.split(',').filter(Boolean), { seconds: Number(values.seconds), out: qaOut(), headed: true })
+      for (const r of results) console.log(`${r.fixture.padEnd(9)} ${r.device.padEnd(7)} ${r.fps.toFixed(1).padStart(6)} fps  (floor ${fpsFloor(r.fixture, r.device)})`)
+      const findings = fpsFindings(results).map((f) => ({ ...f, area: 'world' as const, firstSeen: stockholmDate(new Date()), runs: 1 }))
+      writeRun(qaOut(), findings, { title: 'fps' })
+      writeFileSync(qaOut('fps.json'), `${JSON.stringify(results, null, 2)}\n`)
+      return findings.length ? 1 : 0
+    }
     case 'world': {
       // Every fixture with every world check (the fast tier takes pictures and walks in day-7 only). `/qa` runs this.
       // Its own folder, so it never overwrites the fast tier's findings.json; `pnpm qa gather` reads qa-out/review/*.json.

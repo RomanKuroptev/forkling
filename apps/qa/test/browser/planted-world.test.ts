@@ -72,6 +72,19 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('planted flaws in day-7, found b
     expect(found.filter((f) => ['world.cannot-reach', 'world.invisible-wall', 'world.walk-through-wall', 'world.hole', 'world.camera-in-mesh'].includes(f.id))).toEqual([])
   }, 300_000)
 
+  it('a work the site says is on show in the Workshop, in a slot the Workshop does not have (files)', async () => {
+    const world = day7()
+    edit(world, 'places/workshop.json', (p) => {
+      const room = (p.rooms as { id: string }[])[0]!.id
+      ;(p.exhibits as unknown[]).push({ id: 'planted-work', kind: 'work', ref: 'works/stand-still', slot: `${room}/99/0`, label: 'A planted work the world cannot hang', added: '2026-11-25' })
+    })
+    const found = await checkWorldOpens(browser, viewer, world, { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')), pictures: true, qaOut: mkdtempSync(join(tmpdir(), 'qa-out-')) })
+    expect(found.map((f) => f.fingerprint)).toContain('world.claim-not-in-world|day-7|workshop/A planted work the world cannot hang')
+    // Clean otherwise: no other claim, and the drawing is within the budget.
+    expect(found.filter((f) => f.id === 'world.claim-not-in-world')).toHaveLength(1)
+    expect(found.filter((f) => f.id === 'world.budget')).toEqual([])
+  }, 300_000)
+
   it('a floating sign (planted in qa.json: the files cannot say it)', async () => {
     const world = day7()
     edit(world, 'qa.json', (q) => (q.plant = { raise: [{ id: 'home/sign', dy: 3 }] }))

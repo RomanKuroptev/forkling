@@ -7,6 +7,7 @@ import { shrinkPng } from '../fixtures/trim.ts'
 import type { CheckResult } from '../report/finding.ts'
 import { contactSheet, type Box, type Tile } from '../report/sheet.ts'
 import type { SceneObject } from './open.ts'
+import type { FrameCost } from './budget.ts'
 import { flicker, paletteShare, pictureStats } from './picture.ts'
 
 /**
@@ -71,7 +72,7 @@ type Qa = {
   cameras: Record<string, { position: Vec3; target: Vec3 }>
   project(points: Vec3[]): { x: number; y: number; front: boolean; visible: boolean }[]
   textures(): { object: string; slot: string }[]
-  textures(): { object: string; slot: string }[]
+  renderer(): { drawCalls: number; triangles: number }
 }
 const qa = <T>(page: Page, fn: (q: Qa, arg: never) => T | Promise<T>, arg?: unknown) =>
   page.evaluate(({ src, arg }) => (0, eval)(`(${src})`)((globalThis as unknown as { __qa: Qa }).__qa, arg), { src: fn.toString(), arg }) as Promise<T>
@@ -91,7 +92,8 @@ const rectOf = (pts: { x: number; y: number; front: boolean }[]): Box | null => 
 const corners = (b: Box3): Vec3[] => [[b.min[0], b.min[1], b.min[2]], [b.max[0], b.min[1], b.min[2]], [b.min[0], b.max[1], b.max[2]], [b.max[0], b.max[1], b.max[2]]]
 
 /** Takes and judges every picture of an opened world, and writes its contact sheet. The page is set to 640x400. */
-export async function pictureChecks(page: Page, opts: { fixture: string; scene: SceneObject[]; night: boolean; out: string }): Promise<{ findings: CheckResult[]; sheet: string; shots: number }> {
+export async function pictureChecks(page: Page, opts: { fixture: string; scene: SceneObject[]; night: boolean; out: string }): Promise<{ findings: CheckResult[]; sheet: string; shots: number; costs: FrameCost[] }> {
+  const costs: FrameCost[] = []
   const { fixture, scene, out } = opts
   const dir = join(out, 'world', fixture)
   mkdirSync(dir, { recursive: true })
@@ -106,6 +108,7 @@ export async function pictureChecks(page: Page, opts: { fixture: string; scene: 
   const take = async (name: string, boxes: () => Promise<Box[]> = async () => []) => {
     const { png, file } = await shoot(name)
     findings.push(...judgeShot({ name, png }, { fixture, night: opts.night, file }))
+    costs.push({ view: name, ...(await qa(page, (q) => q.renderer())) })
     tiles.push({ png: shrinkPng(png, 320), boxes: (await boxes()).map((b) => ({ x: Math.round(b.x / 2), y: Math.round(b.y / 2), w: Math.max(1, Math.round(b.w / 2)), h: Math.max(1, Math.round(b.h / 2)) })) })
     return { png, file }
   }
@@ -168,5 +171,5 @@ export async function pictureChecks(page: Page, opts: { fixture: string; scene: 
   const sheet = join(out, 'sheets', `world-${fixture}.png`)
   mkdirSync(join(out, 'sheets'), { recursive: true })
   writeFileSync(sheet, contactSheet(tiles, { columns: 8 }))
-  return { findings: findings.map((f) => (f.evidence.length ? f : { ...f, evidence: [sheet] })), sheet, shots: tiles.length }
+  return { findings: findings.map((f) => (f.evidence.length ? f : { ...f, evidence: [sheet] })), sheet, shots: tiles.length, costs }
 }
