@@ -115,7 +115,8 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     const [px, pz] = placeCentre(toLandPlace(place))
     const wire = wireframeInstances(place, s.kit, baseY, s.nowMs, s.wireAlways)
     const outside = exteriorInstances(place, s.kit, baseY)
-    out.push({ id: place.id, kind: 'place', name: place.name, box: instancesBox(outside), visible: true, material: wire && wire.length > 0 ? 'wireframe' : 'solid' })
+    const wired = wire !== null && wire.length > 0
+    out.push({ id: place.id, kind: 'place', name: place.name, box: instancesBox(outside), visible: true, material: wired ? 'wireframe' : 'solid' })
     const inside = s.interiors.has(place.id)
     const height = floorHeight(place)
     for (const room of place.rooms) {
@@ -123,7 +124,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
       const x = px + room.at[0]
       const z = pz + room.at[1]
       const y = baseY + room.floor * height
-      out.push({ id: `${place.id}/${room.id}`, kind: 'room', place: place.id, name: room.name, box: { min: [round(x - w / 2), round(y), round(z - d / 2)], max: [round(x + w / 2), round(y + h), round(z + d / 2)] }, visible: inside, material: 'solid' })
+      out.push({ id: `${place.id}/${room.id}`, kind: 'room', place: place.id, name: room.name, box: { min: [round(x - w / 2), round(y), round(z - d / 2)], max: [round(x + w / 2), round(y + h), round(z + d / 2)] }, visible: inside, material: wired ? 'wireframe' : 'solid' })
     }
     const palette = s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0]!
     for (const spot of exhibitSpots(place, s.kit, baseY)) {
@@ -149,7 +150,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
       out.push({ id: `${place.id}/title`, kind: 'label', place: place.id, text: bar.text, box: { min: [round(bx - bar.width / 2), round(by - bar.height / 2), round(bz)], max: [round(bx + bar.width / 2), round(by + bar.height / 2), round(bz)] }, visible: true, material: 'solid' })
     }
   }
-  for (const board of plantBoards(signBoards(s.places, baseOf, s.kit), s.plant ?? null)) {
+  for (const board of plantBoards(signBoards(s.places, baseOf, s.kit, s.nowMs), s.plant ?? null)) {
     const [x, y, z] = board.position
     out.push({ id: `${board.id}/sign`, kind: 'sign', place: board.id, text: [...board.layout.name, ...board.layout.text].join(' '), letter: round((Math.min(...board.layout.ops.map((op) => op.px), SIGN_CELL.h) / SIGN_CELL.h) * SIGN_H), box: { min: [round(x - SIGN_W / 2), round(y - SIGN_H / 2), round(z)], max: [round(x + SIGN_W / 2), round(y + SIGN_H / 2), round(z)] }, visible: true, material: 'solid' })
   }

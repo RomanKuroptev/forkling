@@ -1,5 +1,5 @@
 import type { Place, WorkMeta } from '@forkling/schema'
-import { boxGap, footprintOverlap, inView, volumeOverlap, type Box, type Vec3 } from '@forkling/sim'
+import { boxGap, buildingWords, footprintOverlap, inView, volumeOverlap, type Box, type Vec3 } from '@forkling/sim'
 import type { CheckResult } from '../report/finding.ts'
 import type { SceneObject } from './open.ts'
 
@@ -88,12 +88,29 @@ export function geometryFindings(input: GeometryInput): CheckResult[] {
     const building = file.state.construction !== null && Date.parse(file.state.construction.finishesAt) > input.now
     if (building !== (p.material === 'wireframe')) add('world.wireframe-state', p.id, 'major', building ? `${p.id} is being built but is drawn finished` : `${p.id} is finished but is drawn as a wireframe`, `Its file says ${building ? `it is being built until ${file.state.construction!.finishesAt}` : 'it is finished'}; the world draws it ${p.material}.`, 'A visitor is told the wrong thing about what Merge is building.', 'code', `places/${p.id}.json`)
   }
+  // Its insides too (issue 329): a finished, furnished room standing in a wire shell reads as a room whose walls did not load.
+  for (const r of rooms) {
+    const file = files.get(r.place ?? '')
+    if (!file) continue
+    const building = file.state.construction !== null && Date.parse(file.state.construction.finishesAt) > input.now
+    if (building && r.material !== 'wireframe') add('world.wireframe-state', r.id, 'major', `A room of ${file.id} is finished and furnished inside the place being built`, `${r.id} is drawn ${r.material} while ${file.id} is being built until ${file.state.construction!.finishesAt}; being built is the finished model in cyan wireframe, inside and out.`, 'It does not read as a project in progress: it looks like a finished room whose walls failed to load.', 'code', `places/${file.id}.json`)
+  }
+
+  // A place being built has a sign that names it and says it is being built (issue 331).
+  for (const [id, file] of files) {
+    const words = buildingWords(file.state.construction, input.now)
+    if (!words || file.state.closed) continue
+    const sign = of('sign').find((s) => s.place === id)
+    const shown = squash(sign?.text ?? '')
+    if (!sign || !shown.includes(squash(file.name)) || !shown.includes('Building')) add('world.site-sign', id, 'major', `The build site of ${id} does not say what is being built`, sign ? `Its sign shows "${shown}"; it should name ${file.name} and say it is being built (${words}).` : `${file.name} is being built, and it has no sign.`, 'A visitor cannot tell that Merge is working on something right now, or what.', 'code', `places/${id}.json`)
+  }
 
   // Words on signs and title bars are the words in the files.
   for (const s of of('sign')) {
     const file = files.get(s.place ?? '')
     if (!file) continue
-    const words = file.state.closed ? `Closed: ${file.state.closed.reason}` : file.exterior.sign
+    // A place being built says so in place of its sign text, and how long is left (issue 331).
+    const words = file.state.closed ? `Closed: ${file.state.closed.reason}` : (buildingWords(file.state.construction, input.now) ?? file.exterior.sign)
     const expected = squash(`${file.name} ${words}`)
     const shown = squash(s.text ?? '')
     if (shown.includes('…')) add('world.label-cut', s.id, 'minor', `The sign ${s.id} is cut short`, `It shows "${shown}"; the file says "${expected}".`, 'A visitor reads half a sentence.', 'look', `places/${file.id}.json`)

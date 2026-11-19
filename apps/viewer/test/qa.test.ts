@@ -104,14 +104,17 @@ describe('the scene list', () => {
     if (gallery) expect(gallery.card!.text).toContain('2 works')
   })
 
-  it('marks a place being built as wireframe and puts the sign text in the list', () => {
+  it('marks a place being built as wireframe, its rooms too, and puts the sign text in the list', () => {
     const places: Place[] = starterPlaces()
     places[0]!.state = { ...places[0]!.state, construction: { kind: 'found', finishesAt: '2026-11-27T13:00:00Z' } }
     places[0]!.exterior = { ...places[0]!.exterior, sign: 'Under way' }
     const list = placeObjects({ places, kit, heightAt: flat, interiors: new Set(), nowMs: NOW, plots: [] })
     expect(list.find((o) => o.id === places[0]!.id)!.material).toBe('wireframe')
     expect(list.find((o) => o.id === places[1]!.id)!.material).toBe('solid')
-    expect(list.find((o) => o.id === `${places[0]!.id}/sign`)!.text).toContain('Under way')
+    // Being built, the sign says so and how long is left in place of its sign text (issue 331).
+    expect(list.find((o) => o.id === `${places[0]!.id}/sign`)!.text).toBe(`${places[0]!.name} Building · ready in about 24 h`)
+    expect(list.filter((o) => o.kind === 'room' && o.place === places[0]!.id).map((o) => o.material)).toEqual(places[0]!.rooms.map(() => 'wireframe'))
+    expect(list.filter((o) => o.kind === 'room' && o.place === places[1]!.id).every((o) => o.material === 'solid')).toBe(true)
   })
 
   it('says what each work screen shows: its picture or its title as drawn, and nothing until it is drawn', () => {
