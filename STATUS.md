@@ -7,7 +7,9 @@ Read this first. Update it before every commit and before you stop.
 Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session builds Phase 1 (Q0 base, then lanes W, B, S, T in worktrees), then QR (run it, fix, release). Lanes write progress to `docs/spec/audit/lanes/<lane>.md`; real-run spend is tracked in `docs/spec/audit/lanes/spend.md` (harness budget $10 a month). Nothing runs on a schedule. After QR: the Merge fresh start ([`docs/spec/v4/merge-fresh-start.md`](docs/spec/v4/merge-fresh-start.md)), on Roman's go.
 
 - **Docs:** this PR commits the audit spec and the fresh-start plan.
-- **Next:** Q0 (`apps/qa`, the Finding format, `qa.yml`, the `phase-2` site-gap issues).
+- **Docs merged** (#261).
+- **Q0 (this PR):** `apps/qa` (`pnpm qa fast`), the Finding schema, `findings.json` and `report.md`, PNG contact sheets, the check runner (a throwing check gives `qa.check-did-not-run`, planted test), `qa.yml` on PRs and main. Labels `qa`, `phase-2`, `needs-roman`, `fix-failed`, `qa-rules`. Site gaps filed as `qa` + `phase-2`: #262 to #268. Pinned digest issue: #269.
+- **Next:** lanes W, B, S, T in worktrees, each plan approved before it builds.
 
 ## Spec v4, parallel build (started 17 November)
 

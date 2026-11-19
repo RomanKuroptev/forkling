@@ -1,0 +1,32 @@
+name: QA
+
+# The audit harness's fast tier (docs/spec/audit/spec.md section 5): free, no network, no key.
+# Runs on every pull request and push to main. A new blocker or major finding fails the job.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The world checks drive Chromium (SwiftShader); same browser and same userns note as ci.yml's browser job.
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: pnpm --filter @forkling/qa exec playwright install --with-deps chromium
+      - run: pnpm qa fast
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-out
+          path: qa-out/
+          if-no-files-found: warn
+          retention-days: 30

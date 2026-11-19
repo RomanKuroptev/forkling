@@ -2,6 +2,10 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+## 2026-11-19: The audit harness is its own package, `apps/qa` (audit Q0)
+- **Why.** The harness measures forkling without steering Merge (audit spec 1). Keeping it in its own package keeps sim pure and keeps every score and finding out of the mind's code paths.
+- **What.** `@forkling/qa`, run as `pnpm qa <command>` (`qa`, not `audit`, because `pnpm audit` is built in). Every check returns findings in one Zod format (`apps/qa/src/report/finding.ts`); a check that throws or returns a malformed finding gives `qa.check-did-not-run` (major), never a silent pass. A new blocker or major fails `qa.yml`. Pictures are PNG via pngjs (pure JS, works the same on Windows and Linux).
+
 ## 2026-11-17: Prices that favour what you can see, 300 points a day, a formula on Sundays (spec v4 step 2, slice B)
 - **Why.** Merge held 420 of 450 points and wrote about 4 pages a day, because a page cost 1 point and was always on offer, while a sketch cost 50 against a real cost of about $0.012. Roman decided on 16 November that visible things are priced under their cost and standalone text over it.
 - **What.** The table of spec-v4 5.1 (`PRICES`): sketch 30, full work 150, found 80, expand 50 or 20 earned, trip 3, tend 2, revisit 1, caption 1, page 10, deep 30, reply and rest free. Daily points 300, most held 1,500. A write costs a caption's 1 point when its target is a place or a work, else a page's 10. The old one-price `write` and `foundRequest` keys of a stored table are read and ignored.

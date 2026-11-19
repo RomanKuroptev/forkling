@@ -8,3 +8,4 @@ coverage/
 voice-test-out/
 .env
 .env.*
+qa-out/
