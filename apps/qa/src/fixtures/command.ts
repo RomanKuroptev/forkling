@@ -10,7 +10,7 @@ import { FIXTURES, fixtureDir, materialize, QaJson, readQaJson, worldFileList, w
 import { worldSchemaIssues } from './schema.ts'
 import { trimWorld } from './trim.ts'
 
-export const FIXTURES_USAGE = `  fixtures                     rebuild day-0, night and building from the template and day-7 (pure edits, no model, no network)
+export const FIXTURES_USAGE = `  fixtures                     rebuild day-0, night, building and day-30 from the template and day-7 (by code, seeded, no model, no network)
            [--import-day7 <dir> [--about <text>]]  make day-7 from a fast-forward world copy (trimmed to about 2 MB)
   live-clone                   a fresh clone of Merge's repo in qa-out/live/world, remote removed (read-only, never committed)`
 
