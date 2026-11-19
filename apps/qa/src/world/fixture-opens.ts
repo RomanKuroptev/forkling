@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Browser } from 'playwright'
 import { launchChromium } from '../browser.ts'
@@ -13,6 +13,9 @@ import { geometryFindings } from './geometry.ts'
 import { pictureChecks } from './pictures.ts'
 import { phoneCoversMerge } from './phone.ts'
 import { walkChecks } from './walk.ts'
+import { budgetFindings } from './budget.ts'
+import { claimFindings, claimsFromSite } from './claims.ts'
+import { buildSite } from '@forkling/site/build'
 import { buildViewer, serveWorld } from './serve.ts'
 
 /**
@@ -51,7 +54,12 @@ export async function checkWorldOpens(browser: Browser, viewer: string, world: s
       // Night is after sunset and before sunrise in Stockholm (look.md's night colours); the levels for light differ.
       const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Stockholm', hour: '2-digit', hourCycle: 'h23' }).format(new Date(opts.now)))
       const pictures = await pictureChecks(page, { fixture: opts.fixture, scene: geometry.scene, night: hour >= 17 || hour < 8, out: opts.qaOut ?? qaOut() })
-      found.push(...pictures.findings)
+      found.push(...pictures.findings, ...budgetFindings(pictures.costs, opts.fixture))
+      // What the built site says is in the world (its places and what each place page has on show).
+      const site = join(opts.qaOut ?? qaOut(), 'site', opts.fixture)
+      rmSync(site, { recursive: true, force: true })
+      buildSite(world, site)
+      found.push(...claimFindings(claimsFromSite(site), geometry.scene, opts.fixture))
       found.push(...(await phoneCoversMerge(browser, served.url, { fixture: opts.fixture, now: opts.now })))
     }
     if (opts.walk) {

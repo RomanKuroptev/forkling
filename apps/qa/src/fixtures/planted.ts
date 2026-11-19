@@ -12,7 +12,7 @@ import { materialize } from './fixtures.ts'
  * 4. The signs drawn with a texture that never loaded (qa.json plant).
  */
 export const PLANTED = [
-  { flaw: 'work-not-in-workshop', where: 'works/stand-still/meta.json says installedIn workshop/bench/0/0' },
+  { flaw: 'work-not-in-workshop', where: 'works/stand-still/meta.json says installedIn workshop/bench/0/0, and the Workshop lists it in a slot it does not have' },
   { flaw: 'place-through-place', where: 'places/hillside-room-five-lamps.json moved onto the Workshop' },
   { flaw: 'floating-sign', where: "Home's sign, 3 m up" },
   { flaw: 'missing-texture', where: 'every sign board' },
@@ -27,6 +27,11 @@ const edit = (world: string, rel: string, change: (data: Record<string, unknown>
 export function makePlantedWorld(out: string): string {
   const world = materialize('day-7', out)
   edit(world, 'works/stand-still/meta.json', (m) => (m.installedIn = 'workshop/bench/0/0'))
+  // The Workshop's page on the site lists it too, in a slot the Workshop does not have, so the world cannot hang it.
+  edit(world, 'places/workshop.json', (p) => {
+    const room = (p.rooms as { id: string }[])[0]!.id
+    ;(p.exhibits as unknown[]).push({ id: 'stand-still', kind: 'work', ref: 'works/stand-still', slot: `${room}/99/0`, label: 'Stand Still', added: '2026-11-25' })
+  })
   edit(world, 'places/hillside-room-five-lamps.json', (p) => {
     p.chunk = [0, 0]
     p.offset = [12, 0]
