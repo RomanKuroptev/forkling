@@ -85,3 +85,16 @@ describe('installing works on screens (spec 7, W5: newest on the screens, the ol
     expect(planInstalls(home, [work('a', day(1))], kit, NOW).place).toBeNull()
   })
 })
+
+describe('screen exhibit ids always fit the place schema (Merge lost its Workshop to a 42-character id, November 2026)', () => {
+  it('cuts screen-<work id> to 41 characters, also when the id is taken, so the place still parses', () => {
+    const long = 'a-door-that-opens-only-when-watched'
+    const twin = 'a-door-that-opens-only-when-watched-too'
+    const r = planInstalls(workshop, [work(long, day(5)), work(twin, day(6))], kit, NOW)
+    const ids = workExhibits(r.place!).map((e) => e.id)
+    expect(new Set(ids).size).toBe(2)
+    for (const id of ids) expect(id.length).toBeLessThanOrEqual(41)
+    expect(Place.safeParse(r.place).success).toBe(true)
+    expect(validatePlace(r.place!, { kit, exists: () => true })).toEqual([])
+  })
+})
