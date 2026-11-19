@@ -102,11 +102,13 @@ async function main(argv: string[]): Promise<number> {
       return fixturesCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'world': {
       // Every fixture with every world check (the fast tier takes pictures and walks in day-7 only). `/qa` runs this.
+      // Its own folder, so it never overwrites the fast tier's findings.json; `pnpm qa gather` reads qa-out/review/*.json.
       const findings = await runChecks([worldFullCheck], { now: new Date() })
-      const out = qaOut()
+      const out = qaOut('world-run')
       writeRun(out, findings, { title: 'world' })
-      writeRunInfo(out, { title: 'world', areas: ['world'] })
-      console.log(`${findings.length} findings; report in ${out}, world sheets in ${qaOut('sheets')}`)
+      mkdirSync(qaOut('review'), { recursive: true })
+      writeFileSync(qaOut('review', 'world-checks.json'), `${JSON.stringify(findings, null, 2)}\n`)
+      console.log(`${findings.length} findings; report in ${out}, for gather in ${qaOut('review', 'world-checks.json')}, world sheets in ${qaOut('sheets')}`)
       return blocking(findings, loadKnown(repoRoot())) ? 1 : 0
     }
     case 'planted-world':
