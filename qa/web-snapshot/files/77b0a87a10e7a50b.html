@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>Deadfish - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Deadfish rootpage-Deadfish skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">Deadfish</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><p><a href="/wiki/Esolang:Featured_languages" title="Esolang:Featured languages"><span class="featured-icon" title="This is a featured language; *click* for more information."></span></a></p><div class="featured-text">
+<dl><dd><i>This is a <a href="/wiki/Esolang:Featured_languages" title="Esolang:Featured languages">featured language</a>.</i></dd></dl>
+</div>
+<p><b>Deadfish</b> is a very odd interpreted programming language created by
+Jonathan Todd Skinner. It was released under public domain
+and was originally programmed in C, but has since been ported to many other programming languages (see below).
+</p><p>Deadfish has a way to output things but
+it has no way to input them! It only has a few commands, only four in
+total. It is also case-sensitive, and can deal only with integer values
+when adding or subtracting, however once squared this number increases
+greatly!
+</p><p>You can have several commands per line, at least in the C implementation.
+</p><p>Errors are not acknowledged: the shell simply adds a newline character!
+</p><p>Anything that is not a command is not accepted by the interpreter.
+As you've probably assumed deadfish was created in less than a hour,
+and can be very useful in creating highly interactive programs.
+</p>
+<div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" /><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Commands"><span class="tocnumber">1</span> <span class="toctext">Commands</span></a></li>
+<li class="toclevel-1 tocsection-2"><a href="#Why_&quot;deadfish&quot;?"><span class="tocnumber">2</span> <span class="toctext">Why "deadfish"?</span></a></li>
+<li class="toclevel-1 tocsection-3"><a href="#Example_programs"><span class="tocnumber">3</span> <span class="toctext">Example programs</span></a>
+<ul>
+<li class="toclevel-2 tocsection-4"><a href="#Mandatory_test_cases"><span class="tocnumber">3.1</span> <span class="toctext">Mandatory test cases</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-5"><a href="#Complexity_class"><span class="tocnumber">4</span> <span class="toctext">Complexity class</span></a></li>
+<li class="toclevel-1 tocsection-6"><a href="#Implementations"><span class="tocnumber">5</span> <span class="toctext">Implementations</span></a></li>
+<li class="toclevel-1 tocsection-7"><a href="#Variants_of_deadfish"><span class="tocnumber">6</span> <span class="toctext">Variants of deadfish</span></a></li>
+<li class="toclevel-1 tocsection-8"><a href="#See_also"><span class="tocnumber">7</span> <span class="toctext">See also</span></a></li>
+<li class="toclevel-1 tocsection-9"><a href="#External_resources"><span class="tocnumber">8</span> <span class="toctext">External resources</span></a></li>
+</ul>
+</div>
+<h2><span class="mw-headline" id="Commands">Commands</span></h2>
+<table class="wikitable">
+<tbody><tr>
+<th>Increment</th>
+<th>Decrement</th>
+<th>Square</th>
+<th>Output</th>
+<th>Halt (optional)
+</th></tr>
+<tr align="center">
+<td><code>i</code></td>
+<td><code>d</code></td>
+<td><code>s</code></td>
+<td><code>o</code></td>
+<td><code>h</code>
+</td></tr></tbody></table>
+<p>For other variations, see <a href="/wiki/Trivial_deadfish_substitution" title="Trivial deadfish substitution">Trivial deadfish substitution</a>.
+</p><p>Sometimes, the additional command 'h', meaning halt, is used.
+Although the comment in the C implementation states <code>/* Make sure x is not greater then [sic] 256 */</code>, the implementation sets the value to zero if and only if <code>value == -1 || value == 256</code>.
+</p>
+<h2><span id="Why_.22deadfish.22.3F"></span><span class="mw-headline" id="Why_&quot;deadfish&quot;?">Why "deadfish"?</span></h2>
+<p>Deadfish started out as a subset of <a href="/wiki/HQ9_Plus" class="mw-redirect" title="HQ9 Plus">HQ9+</a>, as all it would do would
+be to print out <a href="/wiki/Hello_world" class="mw-redirect" title="Hello world">hello world</a> and give an iou depending on how many times
+the command 9 was entered for how many <a href="/wiki/99_bottles_of_beer" title="99 bottles of beer">99 bottles of beer</a> programs it
+owed the programmer. Deadfish was originally going to be called fishheads as programming in this language is like eating raw fish heads. However, due to the
+limiting features of the language, programming in this language became
+like eating (and having to smell) dead, rotting fish heads, an experience not often generally considered pleasurable.
+</p>
+<h2><span class="mw-headline" id="Example_programs">Example programs</span></h2>
+<p>Note: the standard shell adds &gt;&gt; characters for readability.
+</p>
+<pre>&gt;&gt; i
+&gt;&gt; 
+&gt;&gt; o
+1
+&gt;&gt; d
+</pre>
+<p>This program prints the ASCII values (as <i>numbers</i>, not characters, since Deadfish does not have character output) of the characters in the string "Hello, world!"
+</p>
+<pre>iiisdsiiiiiiiioiiiiiiiiiiiiiiiiiiiiiiiiiiiiioiiiiiiiooiiio
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddoddddddddddddo
+dddddddddddddddddddddsddoddddddddoiiioddddddoddddddddo
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddo
+</pre>
+<p><b><a href="/wiki/XKCD_Random_Number" title="XKCD Random Number">XKCD Random Number</a></b>:
+</p>
+<pre>iiso
+</pre>
+<h3><span class="mw-headline" id="Mandatory_test_cases">Mandatory test cases</span></h3>
+<p>Since the proper behavior of Deadfish arithmetic can be <small>*cough*</small> surprising, here are a few important test cases for people making interpreters:  The program
+</p>
+<pre>iissso
+</pre>
+<p>should print 0; the program
+</p>
+<pre>diissisdo
+</pre>
+<p>should print 288; and the program
+</p>
+<pre>iissisdddddddddddddddddddddddddddddddddo
+</pre>
+<p>should print 0.
+</p><p>Interpreters that do not support these test cases and cannot trivially be fixed <b>may be removed from the implementations subpages</b>. In particular, it is required to support numbers at least up to <code>17^2 == 289</code> to showcase the strange behavior also of the <code>s</code> command.
+</p>
+<h2><span class="mw-headline" id="Complexity_class">Complexity class</span></h2>
+<p>We consider the complexity of computing the output of a Deadfish program with <i>n</i> commands. A Deadfish interpreter must store one intermediate number. The most extreme operation is squaring; for a number with <i>k</i> digits, squaring can produce 2<i>k</i> digits. Concretely, the sequence of programs:
+</p>
+<pre>P(0) = iissis o
+P(1) = iissis s o
+P(2) = iissis ss o
+...
+P(k) = iissis s×<i>k</i> o
+</pre>
+<p>Outputs 17, 289, 83521, …, pow(17, 2<sup><i>k</i></sup>) for P(<i>k</i>), requiring O(2<sup><i>k</i></sup>) digits to represent. This puts Deadfish squarely in the complexity class EXPSPACE but not in PSPACE.
+</p><p>Deadfish is regular and can be recognized in LOGSPACE. Moreover, Deadfish can be computed relative to any modulus in LOGSPACE.
+</p>
+<h2><span class="mw-headline" id="Implementations">Implementations</span></h2>
+<p>Deadfish has been implemented in a very wide range of languages – it is something of a <a href="/wiki/Popular_problem" title="Popular problem">popular problem</a> for demonstrating the capabilities of a new language, or simply as a fun exercise to implement.
+</p><p>Due to its length, the list of implementations has been split out into subpages:
+</p>
+<ul><li><a href="/wiki/Deadfish/Implementations_(nonalphabetic_and_A-L)" title="Deadfish/Implementations (nonalphabetic and A-L)">Deadfish/Implementations (nonalphabetic and A-L)</a></li>
+<li><a href="/wiki/Deadfish/Implementations_(M-Z)" title="Deadfish/Implementations (M-Z)">Deadfish/Implementations (M-Z)</a></li></ul>
+<h2><span class="mw-headline" id="Variants_of_deadfish">Variants of deadfish</span></h2>
+<ul><li><a href="/wiki/Goldfish%2B%2B" title="Goldfish++">Goldfish++</a> is Deadfish but usable for programs. AKA, Turing complete</li>
+<li><a href="/wiki/Deadfish_i" title="Deadfish i">Deadfish i</a> object oriented</li>
+<li><a href="/wiki/Deadfish~" title="Deadfish~">Deadfish~</a> superset</li>
+<li><a href="/wiki/FISHQ9%2B" title="FISHQ9+">FISHQ9+</a> — deadfish merged with <a href="/wiki/HQ9%2B" title="HQ9+">HQ9+</a></li>
+<li><a href="/wiki/Deadfish_x" title="Deadfish x">Deadfish x</a> — xkcd variant with extra commands</li>
+<li><a href="/wiki/Print_%22deadfish%22" title="Print &quot;deadfish&quot;">Print "deadfish"</a> includes termination, and character printing.</li>
+<li><a href="/wiki/Deadfish_2" title="Deadfish 2">Deadfish 2</a> is another superset.</li>
+<li><a href="/wiki/Functional_deadfish" title="Functional deadfish">Functional deadfish</a> adds "functions"</li>
+<li><a href="/wiki/%CE%99%CE%A7%CE%98%CE%A5%CE%A3" title="ΙΧΘΥΣ">ΙΧΘΥΣ</a> ancient Greek themed, with Unicode output, statement definitions, and <a href="/wiki/Turing-complete" title="Turing-complete">Turing-complete</a> via Deadfish-overflow side-effects.</li>
+<li><a href="/wiki/%CE%99%CE%A7%CE%98%CE%A5%CE%A3_PRIME" title="ΙΧΘΥΣ PRIME">ΙΧΘΥΣ PRIME</a> is based on Minkowski addition and the Ix set fractal. Certainly worse than deadfish.</li>
+<li><a href="/wiki/Livefish" title="Livefish">Livefish</a> Input only variant</li>
+<li><a href="/wiki/CARfish" title="CARfish">CARfish</a> tries to make programming in Deadfish even more horrible.</li>
+<li><a href="/wiki/Deadfish_%22self-interpreter%22" title="Deadfish &quot;self-interpreter&quot;">Deadfish "self-interpreter"</a> is a Deadfish superset that is capable of implementing Deadfish without explicit Deadfish-implementing commands.</li>
+<li><a href="/wiki/BrainfisHQ9%2B" title="BrainfisHQ9+">BrainfisHQ9+</a> merges deadfish with Brainfuck and HQ9+</li>
+<li><a href="/wiki/2Deadfish" title="2Deadfish">2Deadfish</a> makes each command in Deadfish change the direction of the pointer by some multiple of 90 degrees.</li>
+<li><a href="/wiki/Catshark" title="Catshark">Catshark</a>, which also has 4 instructions, but are modified to support 2 accumulators.</li>
+<li><a href="/wiki/Deadsocket" title="Deadsocket">Deadsocket</a> has the <code>s</code> instruction modified to open a socket.</li>
+<li><a href="/wiki/Deadfish%2B%2B" title="Deadfish++">Deadfish++</a> with more commands and custom functions. Turing-complete.</li>
+<li><a href="/wiki/Feedfish" title="Feedfish">Feedfish</a> is a <a class="mw-selflink selflink">Deadfish</a> derivative that simulates feeding a fish.</li>
+<li><a href="/wiki/Dead_fish" title="Dead fish">&gt;&lt;x&gt;</a> is a crossbreed between deadfish and <a href="/wiki/Fish" title="Fish">&gt;&lt;&gt;</a>.</li>
+<li><a href="/wiki/Dead_fish_%2B-_%2B." class="mw-redirect" title="Dead fish +- +.">&gt;&lt;x±∔&gt;</a> is a crossbreed between 4 esolangs, including deadfish. It is also a superset of <a href="/wiki/Dead_fish" title="Dead fish">&gt;&lt;x&gt;</a>.</li>
+<li><a href="/wiki/Deadshark" title="Deadshark">Deadshark</a> exists.</li>
+<li><a href="/wiki/Deadfish_with_gotos_and_input" title="Deadfish with gotos and input">Deadfish with gotos and input</a> is Deadfish with gotos and input.</li>
+<li><a href="/wiki/Deadman" title="Deadman">Deadman</a> is uhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh</li>
+<li><a href="/wiki/No_mans_fish" title="No mans fish">No mans fish</a> is Deadfish with 4 new operators</li>
+<li><a href="/wiki/Robinfish" title="Robinfish">Robinfish</a> is Deadfish running on a Bytecode VM, with more commands, a stack, and full math operations!</li>
+<li><a href="/wiki/Livingfish" title="Livingfish">Livingfish</a> is a Deadfish derivative with input, conditionals, and a stack.</li>
+<li><a href="/wiki/Deadfish_but_in_english" title="Deadfish but in english">Deadfish but in english</a>. It's exactly what you think it is.</li>
+<li><a href="/wiki/NotDeadfish" title="NotDeadfish">NotDeadfish</a> is like deadfish with different order of operations.</li></ul>
+<h2><span class="mw-headline" id="See_also">See also</span></h2>
+<ul><li><a href="/wiki/Deadfish/Constants" title="Deadfish/Constants">Deadfish/Constants</a> - Shortest ways to produce numbers in the range 0 to 255.</li></ul>
+<h2><span class="mw-headline" id="External_resources">External resources</span></h2>
+<ul><li><a rel="nofollow" class="external text" href="https://web.archive.org/web/20110208024639/http://jonathantoddskinner.com/">Creator's Webpage</a> <i>(from the <a href="https://en.wikipedia.org/wiki/Wayback_Machine" class="extiw" title="wikipedia:Wayback Machine">Wayback Machine</a>; retrieved on 8 February 2011)</i> (Note: The creator's webpage was added for more information about the creator of the language.)</li>
+<li><a rel="nofollow" class="external text" href="http://www.planetsourcecode.com/vb/scripts/ShowCode.asp?txtCodeId=11751&amp;lngWId=3">Deadfish at Planet Source Code</a></li>
+<li><a rel="nofollow" class="external text" href="https://web.archive.org/web/20100821130345/http://asienet.site40.net/dead64.html">This is an implementation of Deadfish for the Commodore 64</a> <i>(from the <a href="https://en.wikipedia.org/wiki/Wayback_Machine" class="extiw" title="wikipedia:Wayback Machine">Wayback Machine</a>; retrieved on 21 August 2010)</i></li>
+<li><a rel="nofollow" class="external text" href="http://golf.shinh.org/p.rb?Deadfish">Anarchy golf Deadfish challenge</a></li>
+<li><a rel="nofollow" class="external text" href="http://zzo38computer.org/nes_program/deadfish.zip">Implementation of Deadfish in Nintendo Family Computer</a></li>
+<li><a rel="nofollow" class="external text" href="http://www.youtube.com/watch?v=VAHgwvvWSmM">Implementation on the Makey-Makey</a> <i>(private video)</i></li>
+<li><a rel="nofollow" class="external text" href="http://apps.getpebble.com/en_US/application/563eaf4c5fafdbf3df000014">Deadfish implementation for Pebble watches</a></li></ul>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=Deadfish&amp;oldid=203469">https://esolangs.org/w/index.php?title=Deadfish&amp;oldid=203469</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Categories</a>: <ul><li><a href="/wiki/Category:Featured_languages" title="Category:Featured languages">Featured languages</a></li><li><a href="/wiki/Category:Languages" title="Category:Languages">Languages</a></li><li><a href="/wiki/Category:Finite_state_automata" title="Category:Finite state automata">Finite state automata</a></li><li><a href="/wiki/Category:Joke_languages" title="Category:Joke languages">Joke languages</a></li><li><a href="/wiki/Category:2006" title="Category:2006">2006</a></li><li><a href="/wiki/Category:Unusable_for_programming" title="Category:Unusable for programming">Unusable for programming</a></li><li><a href="/wiki/Category:Output_only" title="Category:Output only">Output only</a></li><li><a href="/wiki/Category:Implemented" title="Category:Implemented">Implemented</a></li><li><a href="/wiki/Category:Program_forms" title="Category:Program forms">Program forms</a></li><li><a href="/wiki/Category:Total" title="Category:Total">Total</a></li><li><a href="/wiki/Category:Accumulator-based" title="Category:Accumulator-based">Accumulator-based</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=Deadfish" title="You are encouraged to create an account and log in; however, it is not mandatory"><span>Create account</span></a></li><li id="pt-login" class="mw-list-item"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=Deadfish" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o"><span>Log in</span></a></li>
+		</ul>
+	</div>
+</nav>
+		<div id="left-navigation">
+<nav id="p-namespaces" class="mw-portlet mw-portlet-namespaces vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-namespaces-label"  >
+	<h3
+		id="p-namespaces-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Namespaces</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-nstab-main" class="selected mw-list-item"><a href="/wiki/Deadfish" title="View the content page [c]" accesskey="c"><span>Page</span></a></li><li id="ca-talk" class="mw-list-item"><a href="/wiki/Talk:Deadfish" rel="discussion" title="Discussion about the content page [t]" accesskey="t"><span>Discussion</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-variants" class="mw-portlet mw-portlet-variants emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-variants-label"  >
+	<input type="checkbox"
+		id="p-variants-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-variants-label"
+	>
+	<label
+		id="p-variants-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">English</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+		</div>
+		<div id="right-navigation">
+<nav id="p-views" class="mw-portlet mw-portlet-views vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-views-label"  >
+	<h3
+		id="p-views-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Views</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-view" class="selected mw-list-item"><a href="/wiki/Deadfish"><span>Read</span></a></li><li id="ca-viewsource" class="mw-list-item"><a href="/w/index.php?title=Deadfish&amp;action=edit" title="This page is protected.&#10;You can view its source [e]" accesskey="e"><span>View source</span></a></li><li id="ca-history" class="mw-list-item"><a href="/w/index.php?title=Deadfish&amp;action=history" title="Past revisions of this page [h]" accesskey="h"><span>View history</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-cactions" class="mw-portlet mw-portlet-cactions emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-cactions-label"  title="More options" >
+	<input type="checkbox"
+		id="p-cactions-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-cactions-label"
+	>
+	<label
+		id="p-cactions-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">More</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+<div id="p-search" role="search" class="vector-search-box-vue  vector-search-box-show-thumbnail vector-search-box-auto-expand-width vector-search-box">
+	<h3 >Search</h3>
+	<form action="/w/index.php" id="searchform" class="vector-search-box-form">
+		<div id="simpleSearch"
+			class="vector-search-box-inner"
+			>
+			<input class="vector-search-box-input"
+				 type="search" name="search" placeholder="Search Esolang" aria-label="Search Esolang" autocapitalize="sentences" title="Search Esolang [f]" accesskey="f" id="searchInput"
+			>
+			<input type="hidden" name="title" value="Special:Search">
+			<input id="mw-searchButton"
+				 class="searchButton mw-fallbackSearchButton" type="submit" name="fulltext" title="Search the pages for this text" value="Search">
+			<input id="searchButton"
+				 class="searchButton" type="submit" name="go" title="Go to a page with this exact name if it exists" value="Go">
+		</div>
+	</form>
+</div>
+		</div>
+	</div>
+<div id="mw-panel" class="vector-legacy-sidebar">
+	<div id="p-logo" role="banner">
+		<a class="mw-wiki-logo" href="/wiki/Main_Page"
+			title="Visit the main page"></a>
+	</div>
+<nav id="p-navigation" class="mw-portlet mw-portlet-navigation vector-menu-portal portal vector-menu" aria-labelledby="p-navigation-label"  >
+	<h3
+		id="p-navigation-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Navigation</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="n-mainpage-description" class="mw-list-item"><a href="/wiki/Main_Page" title="Visit the main page [z]" accesskey="z"><span>Main page</span></a></li><li id="n-portal" class="mw-list-item"><a href="/wiki/Esolang:Community_portal" title="About the project, what you can do, where to find things"><span>Community portal</span></a></li><li id="n-Language-list" class="mw-list-item"><a href="/wiki/Language_list"><span>Language list</span></a></li><li id="n-Browse-by-category" class="mw-list-item"><a href="/wiki/Esolang:Categorization"><span>Browse by category</span></a></li><li id="n-recentchanges" class="mw-list-item"><a href="/wiki/Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r"><span>Recent changes</span></a></li><li id="n-randompage" class="mw-list-item"><a href="/wiki/Special:Random" title="Load a random page [x]" accesskey="x"><span>Random page</span></a></li><li id="n-help" class="mw-list-item"><a href="/wiki/Esolang:Help" title="The place to find out"><span>Help</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-tb" class="mw-portlet mw-portlet-tb vector-menu-portal portal vector-menu" aria-labelledby="p-tb-label"  >
+	<h3
+		id="p-tb-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="t-whatlinkshere" class="mw-list-item"><a href="/wiki/Special:WhatLinksHere/Deadfish" title="A list of all wiki pages that link here [j]" accesskey="j"><span>What links here</span></a></li><li id="t-recentchangeslinked" class="mw-list-item"><a href="/wiki/Special:RecentChangesLinked/Deadfish" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k"><span>Related changes</span></a></li><li id="t-specialpages" class="mw-list-item"><a href="/wiki/Special:SpecialPages" title="A list of all special pages [q]" accesskey="q"><span>Special pages</span></a></li><li id="t-print" class="mw-list-item"><a href="javascript:print();" rel="alternate" title="Printable version of this page [p]" accesskey="p"><span>Printable version</span></a></li><li id="t-permalink" class="mw-list-item"><a href="/w/index.php?title=Deadfish&amp;oldid=203469" title="Permanent link to this revision of this page"><span>Permanent link</span></a></li><li id="t-info" class="mw-list-item"><a href="/w/index.php?title=Deadfish&amp;action=info" title="More information about this page"><span>Page information</span></a></li>
+		</ul>
+	</div>
+</nav>
+</div>
+</div>
+<footer id="footer" class="mw-footer" >
+	<ul id="footer-info">
+	<li id="footer-info-lastmod"> This page was last edited on 14 November 2026, at 02:58.</li>
+	<li id="footer-info-copyright">Content is available under <a href="/wiki/Esolang:Copyrights" title="Esolang:Copyrights">CC0 public domain dedication</a>.</li>
+</ul>
+	<ul id="footer-places">
+	<li id="footer-places-about"><a href="/wiki/Esolang:About">About Esolang</a></li>
+	<li id="footer-places-disclaimers"><a href="/wiki/Esolang:General_disclaimer">Disclaimers</a></li>
+</ul>
+	<ul id="footer-icons" class="noprint">
+	<li id="footer-copyrightico"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/licenses/cc-0.png" alt="CC0 public domain dedication" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-poweredbyico"><a href="https://www.mediawiki.org/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-hostedbyico"><a href="https://www.bytemark.co.uk/r/esolangs" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/images/hosting_bytemark_88x31.png" srcset="/w/images/hosting_bytemark_132x47.png 1.5x, /w/images/hosting_bytemark_176x62.png 2x" alt="Hosting donated by Bytemark" width="88" height="31" loading="lazy"></a></li>
+</ul>
+</footer>
+</body>
+</html>
