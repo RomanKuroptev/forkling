@@ -24,6 +24,7 @@ import { COMPARE_USAGE, compareCommand } from './behaviour/compare.ts'
 import { fixturesCommand, FIXTURES_USAGE, liveClone } from './fixtures/command.ts'
 import { exploreCommand, EXPLORE_USAGE } from './review/explore/command.ts'
 import { makePlantedWorld } from './fixtures/planted.ts'
+import { worldFullCheck } from './world/fixture-opens.ts'
 
 const USAGE = `pnpm qa <command>
 
@@ -42,6 +43,7 @@ ${LIVE_USAGE}
 ${WEB_SNAPSHOT_USAGE}
 ${FIXTURES_USAGE}
 ${EXPLORE_USAGE}
+  world   every fixture with every world check (pictures, the phone, walking, sheets in qa-out/sheets); /qa runs it
   score   ${SCORE_USAGE}
 ${BEHAVIOUR_USAGE}
 ${COMPARE_USAGE}`
@@ -98,6 +100,15 @@ async function main(argv: string[]): Promise<number> {
       return scoreCommand(rest)
     case 'fixtures':
       return fixturesCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd() })
+    case 'world': {
+      // Every fixture with every world check (the fast tier takes pictures and walks in day-7 only). `/qa` runs this.
+      const findings = await runChecks([worldFullCheck], { now: new Date() })
+      const out = qaOut()
+      writeRun(out, findings, { title: 'world' })
+      writeRunInfo(out, { title: 'world', areas: ['world'] })
+      console.log(`${findings.length} findings; report in ${out}, world sheets in ${qaOut('sheets')}`)
+      return blocking(findings, loadKnown(repoRoot())) ? 1 : 0
+    }
     case 'planted-world':
       console.log(`planted world in ${makePlantedWorld(qaOut('planted', 'world'))}`)
       return 0
