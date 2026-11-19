@@ -22,6 +22,9 @@ Dated log of choices that shape the project, newest first. Add an entry when a d
 - **The start world is lane W's `day-0` fixture**, copied for each seed and never changed; `--world` gives another one.
 - **`pnpm qa compare` says where an alarm comes from**: only on runs that read the web snapshot means the fake web, only on runs that read the real web means the real web, and on both kinds means Merge's choices (or the engine's prompts).
 - **Findings are combined across seeds**, one per id, with "(k of K seeds)" and each seed's numbers. The report has a spread table with each score per seed.
+- **Meme step 3 reads only the engine's own text.** Data blocks and JSON lines in a prompt (Merge's plans and state, web text) are left out before looking for an offer. In the B8 run, Merge's own plan ("the meme trip, a page, a rest and a sketch") had counted as 2 offers.
+- **A fake run's cap is $100.** The fakes cost nothing real, but the fast-forward prices their calls at about $0.14 a simulated day. The first 30-day run on Actions stopped after 7 days at the old $1.
+- **The B8 real run's two seeds ran side by side**, not one after another, so the run took about 4 hours instead of 8. `pnpm qa behaviour --real` still runs seeds one after another.
 
 ## 2026-11-19: `?qa=1` draws a frame only when the harness steps it (audit Q1, lane W)
 - **Why.** A picture must depend only on the address and the steps taken, or the world checks cannot compare two runs. With the clock frozen but the frame loop free, the visitor's capsule and Merge's animations still moved with real frame times.

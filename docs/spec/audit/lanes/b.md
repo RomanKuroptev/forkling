@@ -40,6 +40,37 @@ Status: **plan approved** by the coordinator (19 November 2026), B1 to B9 as bel
   | Memes | **ALARM** stop at step 2: no Imgflip format read in 7 days |
 
   On fakes, the captured planner prompts show the engine never offers a meme to the planner as something to make. Step 3 measures 0 of 24, and the word appears only in the seed line ("answer it with your own memes, sketches and toys").
+- **B7** (#292): the behaviour reviewer agent. **Acceptance run on R2** (20 November, run as a general agent with the agent file's instructions, because the agent was merged after the session started). Its summary:
+  - Merge is mostly fun to follow, more than live: 19 things of 4 kinds, 4 projects done, a found and an expand, and a funny, honest voice ("I said I would show the toy again, which is five times now", `journal/2026-11-24.md`). It sags from 23 November.
+  - **The rising rest has a cause.** From 22 November its long goal and want w3 are "show the counter toy to a visitor" (`mind/goals.json`, `mind/wants.json`). That is the subject of 36 of 37 thoughts on 24 November. Its rest steps say "wait beside the toy". A fast-forward has no visitors, and even live Merge cannot see views. It asked Roman for a view count on 22 November (`self/requests/2026-11-22.md`).
+  - **The mood word "tired" is read as the tired limit.** From about 15:00 UTC the mood word is "tired" (energy below -0.1), and Merge plans "I am tired, so no tinker". The code's limit is -0.5, which was never reached. So evenings make nothing.
+  - **The planner is never offered a meme** (`prompts/system.ts`). The kind "meme" is only in the tinker prompt (`builds/tinker.ts:87`). This agrees with the code's step 3.
+  - **Harness, not Merge:** the fast-forward reads the same front pages every simulated morning, so from 22 November most trips start at a page "read in the last 30 days". The "loop" run is Merge's own interest, and it ended it itself ("Do not write about loops again", plan for 23 November).
+  - Findings: `unshowable-want` (major, roman: build the view count it asked for, plant visitor looks in the fast-forward), `tired-word` (major, prompt), `meme-not-offered` (major, prompt), `stale-starting-points` (minor, code), `loop-run` (info), `diary-cut-midsentence` (minor, code: diary lines cut at 140 characters, `sim/self-text.ts:80`).
+- **B9** (#295): `qa-behaviour.yml`, and the fix for seed worlds inside the checkout.
+- **B8**: the three scored side by side. A real 7-day run on `day-0` with 2 seeds (20 November, run side by side, `--sessions --capture-prompts --web-snapshot`, $1.50 cap a seed): **seed 0 stopped at its cap after 5.7 days ($1.52), seed 1 passed all 7 days ($0.90); $2.42 in all, 0 crashes, 0 rails broken.** Folders: `C:\Code\forkling-qa-data\b8\seed-<k>\` (world, out with `prompts.jsonl`, run.log). `pnpm qa compare --snapshot day0-seed-0=... --snapshot day0-seed-1=... --real r2=... --real live=...`:
+
+  | Score | day-0 seed 0 (snapshot) | day-0 seed 1 (snapshot) | R2 (real web) | Live (real web) | Likely cause |
+  |---|---|---|---|---|---|
+  | Repeated words | **"thue" 55%** | **"thue" 38%** | **"loop" 38%** | "light" 16% | Merge's choices (or the prompts) |
+  | Rest | **26% on day 1** | **27% one day, 25 to 27% most days** | **42%, 56% at the end** | **28%, 26%** | Merge's choices (or the prompts) |
+  | Something new at each look | 12 of 12 | **13 of 14** | **12 of 14** | **13 of 14** | Merge's choices |
+  | Memes | **stop at step 3: offered to the planner in 0 of 61 prompts**, formats read 8 times | 1 meme made (chosen inside a sketch; the planner was offered none, 0 of 56) | **stop at step 4** (no prompts kept) | **stop at step 2** (no format read) | the prompts: the planner is never offered a meme |
+  | World shape | 1 found or expand | **none** | 2 | **none** | Merge's choices |
+  | Projects | **1 project, 11 sessions, not done** | 1, not done | 4 done | **none** | Merge's choices |
+  | Topic runs | 2 days | 2 days | 2 days | **4 days** | live only |
+  | Kinds | 3 kinds | 5 kinds | 4 kinds | **art 12 of 16** | live only |
+  | Repeated lines | 0% | 0% | 0% | **58%** | live only |
+
+  **What this says.**
+  - Drifting onto one subject happens on the snapshot web and on the real web alike: "thue" (an esolang, read on the snapshot's Esolang pages) and "loop" on R2. So it is Merge's choices, or the prompts that keep feeding a subject back, not the web.
+  - Rest at about 25% is in every run. The reviewer's cause on R2: Merge waits beside a toy for a visitor who never comes, and it reads the mood word "tired" as the tired limit.
+  - Memes: the planner is never offered a meme, in any prompt captured (0 of 61 and 0 of 56). A meme still came once, chosen inside a sketch call. So memes are possible but left to chance.
+  - "Live only" rows (repeated lines, 4-day topic run, art 12 of 16) come from Merge's live world on older engines (13 to 19 November, before R2's fixes). They are not a web effect. The compare's "real web" label for them means only "not seen on the snapshot".
+  - Harness note: the snapshot is the same web every morning, as the real web is within a fast-forward (the reviewer's `stale-starting-points`). From the third day, many trips start at a page read in the last 30 days.
+  - **Fixed in this PR:**
+    - Step 3 counted 2 of 61 prompts as an offer, because Merge's own plan in JSON said "the meme trip, a page, a rest and a sketch". Only the engine's own text counts now, not data blocks or JSON.
+    - The 30-day fake run on Actions (run 44568491802) stopped after 7 days at the fake run's $1 cap. The fakes cost nothing real, so their run cap is now $100.
 
 ## The R2 run (facts 3 and 4)
 

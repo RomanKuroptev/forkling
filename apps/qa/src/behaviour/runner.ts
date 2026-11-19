@@ -24,6 +24,8 @@ import { writeBehaviour } from './write.ts'
 
 export const MERGE_REPO = 'https://github.com/RomanKuroptev/merge'
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+/** The run cap of a fake run. The fakes cost nothing real, but the fast-forward prices their calls as if they did (about $0.14 a simulated day), and a $1 cap stopped the first 30-day run on Actions after 7 days. */
+export const FAKE_RUN_CAP_USD = 100
 
 export interface SeedRun {
   label: string
@@ -92,7 +94,7 @@ export async function runSeeds(o: BehaviourOptions): Promise<SeedRun[]> {
       await runFastForward({
         dir: world,
         days: o.days,
-        capUsd: 1,
+        capUsd: FAKE_RUN_CAP_USD,
         startMs: localMidnight(timezone, startDate),
         ...(o.durationMs ? { durationMs: o.durationMs } : {}),
         llm: fakeModel({ answers: scenarioAnswers(o.scenario ?? 'plain') }),
