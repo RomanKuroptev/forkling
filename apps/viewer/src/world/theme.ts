@@ -62,6 +62,101 @@ export const LIGHT = {
   rim: COLORS.cyan,
 } as const
 
+/**
+ * Inside a place (issues 358, 361). The walls inside are the palette's trim mixed towards the face colour, so a room has a colour of
+ * its own and is never the washed-out white of its outside pastel. Under a roof less of the sky's light reaches in, and at night the
+ * lamps throw warm pools of light.
+ */
+export const INTERIOR = {
+  /** The inside of the walls: the palette's trim, this far mixed towards `wallTowards`. */
+  wallMix: 0.55,
+  wallTowards: COLORS.face,
+  /**
+   * By day the inside walls read as the palette's own pale wall colour (look.md rules 1 and 2: a pastel room, not a dim one), mixed
+   * with just enough of its trim to keep some colour (`dayInteriorWall`), and they give off this much of their own colour so the
+   * pastel holds under the roof. At night they are the trim colour of `interiorWall`, as before.
+   */
+  daySelf: 0.45,
+  /** The least colour (saturation) a day wall may have, so it never reads as white or grey. */
+  dayWallColour: 0.24,
+  /** The share of the sky's light (the hemisphere light) that reaches the inside of a place. */
+  skyInside: 0.42,
+  /** The warm light of a lamp that is on, how strong it is by day and at night, and how far it reaches (meters). */
+  lampLight: COLORS.peach,
+  lampDay: 0.5,
+  lampNight: 4,
+  lampReach: 7,
+  /** How many lamps near the visitor light the room at once (a fixed number, so the shaders are made once). */
+  lamps: 4,
+} as const
+
+/**
+ * The light at night (look.md rules 2, 3 and 8). The flat light every surface gives off of its own colour drops at night, or pale
+ * walls and orange trim read as khaki and brown in the dark; the purple sky light carries the shade instead. Lit trim (the accent
+ * bands, title bars and window frames) glows a little in its own colour, more at night, and windows glow more than by day without
+ * turning white.
+ */
+export const NIGHT_LIGHT = {
+  /** The light every surface gives off of its own colour, by day and at night. */
+  selfDay: 0.22,
+  selfNight: 0.06,
+  /** The hemisphere light at night. */
+  hemiNightIntensity: 1.1,
+  /** A window or lamp: what it gives off of its own colour, by day and at night. */
+  glowDay: 0.9,
+  glowNight: 1.25,
+  /** A glowing thing takes this share of the light falling on it, so daylight does not wash it white. */
+  glowLit: 0.35,
+  /** Lit trim, by day (a little, so a yellow or orange band is not tan in shade) and at night. */
+  trimDay: 0.3,
+  trimNight: 0.7,
+} as const
+
+/** The inside wall colour of a palette with this trim (`INTERIOR`). */
+export function interiorWall(trim: string): string {
+  const a = Number.parseInt(trim.slice(1), 16)
+  const b = Number.parseInt(INTERIOR.wallTowards.slice(1), 16)
+  const mix = (shift: number) => Math.round(((a >> shift) & 255) * (1 - INTERIOR.wallMix) + ((b >> shift) & 255) * INTERIOR.wallMix)
+  return `#${((mix(16) << 16) | (mix(8) << 8) | mix(0)).toString(16).padStart(6, '0')}`
+}
+
+/** Hue (degrees), saturation and value (0 to 1) of a hex colour. */
+export function hsvOf(hex: string): [number, number, number] {
+  const n = Number.parseInt(hex.slice(1), 16)
+  const [r, g, b] = [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
+  const mx = Math.max(r, g, b)
+  const d = mx - Math.min(r, g, b)
+  let h = 0
+  if (d > 0) h = (mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60
+  return [(h + 360) % 360, mx ? d / mx : 0, mx]
+}
+
+const mixHex = (a: string, b: string, t: number): string => {
+  const x = Number.parseInt(a.slice(1), 16)
+  const y = Number.parseInt(b.slice(1), 16)
+  const m = (s: number) => Math.round(((x >> s) & 255) * (1 - t) + ((y >> s) & 255) * t)
+  return `#${((m(16) << 16) | (m(8) << 8) | m(0)).toString(16).padStart(6, '0')}`
+}
+
+/**
+ * The inside wall colour by day: the palette's wall, mixed with the least of its trim (in steps of 5 percent) that gives it at least
+ * `INTERIOR.dayWallColour` of colour and keeps it out of the warm beige and khaki hues look.md rule 3 forbids. Slate's wall has
+ * colour enough and stays itself; meadow's pale mint and paper's near-white lean towards their pink trim.
+ */
+export const dayInteriorWall = (colors: { wall: string; trim: string }): string => pastelWith(colors.wall, colors.trim)
+
+/** The floor inside by day, the same way: the palette's floor with the least of its wood colour that gives it colour. */
+export const dayInteriorFloor = (colors: { floor: string; wood: string }): string => pastelWith(colors.floor, colors.wood)
+
+function pastelWith(base: string, towards: string): string {
+  for (let k = 0; k <= 20; k++) {
+    const c = mixHex(base, towards, k / 20)
+    const [h, s] = hsvOf(c)
+    if (s >= INTERIOR.dayWallColour && !(h >= 15 && h <= 75)) return c
+  }
+  return towards
+}
+
 /** The mist at the world's edge and the fog, in the look's colours rather than white. */
 export const MIST = {
   fogDay: '#ff7ab8',

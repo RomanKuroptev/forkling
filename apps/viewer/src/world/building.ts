@@ -2,7 +2,7 @@ import type { Kit, KitPalette, Place } from '@forkling/schema'
 import { DOOR_HALF, placeCentre, toLandPlace } from '@forkling/sim'
 import { FLOOR_INSET, FLOOR_TOP, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose } from './matrix.ts'
-import { COLORS } from './theme.ts'
+import { COLORS, dayInteriorWall, interiorWall } from './theme.ts'
 
 /**
  * The building model of docs/spec/v4/look.md: every building is drawn from six slots (base, body, front, crown, hero, glow) and is a
@@ -32,6 +32,14 @@ export const RING_HEIGHT = 0.45
 /** The crown is this wide at its foot: steep and narrow. */
 export const CROWN_WIDTH = 3.2
 
+/** The frame round each window pane, as thick as the thinnest thing allowed, and how far it stands out of each face of the wall. */
+export const FRAME = 0.15
+export const FRAME_OUT = 0.1
+/** The pane stands this far out of each face of its frame: just enough to be seen, not a slab (issue 358). */
+export const PANE_OUT = 0.03
+/** The inside of the walls is lined with a thin panel in the room's own colour (`interiorWall`), this thick. */
+export const LINING = 0.025
+
 const WALL_THICKNESS = 0.4
 /**
  * Two faces in one plane fight in the depth buffer (stripes that shimmer as the visitor moves, issues 350, 353, 335, 337, 364, 370,
@@ -55,6 +63,8 @@ export interface BuildingModel {
   frontGlowArea: number
   /** The highest point of the outline above the ground slab's bottom. */
   outlineHeight: number
+  /** The lining of the walls inside, in the room's own colour, round the windows and the door: drawn only with the inside. */
+  inside: Instance[]
   /** Where the place's name is written on the title bar (the viewer paints the text): its middle, and its size. Null when the front has no bar. */
   titleBar: { text: string; position: [number, number, number]; width: number; height: number } | null
 }
@@ -88,6 +98,78 @@ export const CROWN_SHARE: Record<string, number> = { tower: 2 / 3, timber: 1 / 3
 /** The width of the front: the whole building, or the middle 8 m of one wider than 16 m. */
 export const frontWidth = (footprintWidth: number): number => (footprintWidth > WIDE_BUILDING ? NARROW_FRONT : footprintWidth)
 
+/** A wall of a floor: the back, the two sides, the front, or the two pieces of the front either side of the door. */
+export type WallSide = 'back' | 'left' | 'right' | 'front' | 'front-left' | 'front-right'
+
+/** Is this kit part a window (Merge may put one in a room, against a wall)? */
+const isWindowPart = (id: string) => id.startsWith('window-')
+
+/** The key of one placed part of a place: its room's index and its own index in that room. */
+export const partKey = (room: number, part: number) => `${room}/${part}`
+
+/**
+ * Where the windows of a building model are (issue 346). By default the windows of a wall are spread evenly along it, one for each
+ * 4 m. When Merge put window parts in a room against an outer wall, that wall's windows stand where those parts are instead, and
+ * the parts themselves are not drawn: one framed pane in the wall, not a part's pane floating beside the model's. `consumed` are
+ * those parts (`partKey`).
+ */
+export function windowLayout(place: Place): { along: (floor: number, side: WallSide) => number[]; consumed: Set<string> } {
+  const [px, pz] = placeCentre(toLandPlace(place))
+  const [fw, fd] = place.exterior.footprint
+  const taper = (f: number) => Math.min(TAPER * f, Math.min(fw, fd) / 4)
+  const out = new Map<string, number[]>()
+  const consumed = new Set<string>()
+  for (let f = 0; f < place.exterior.floors; f++) {
+    const t = taper(f)
+    const x0 = px - fw / 2 + INSET + t
+    const x1 = px + fw / 2 - INSET - t
+    const z0 = pz - fd / 2 + INSET + t
+    const z1 = pz + fd / 2 - INSET - t
+    // Each wall with windows: its side, its line (x or z it stands on), whether it runs along z, and its two ends.
+    const walls: { side: WallSide; fixed: number; alongZ: boolean; a: number; b: number }[] = [
+      { side: 'back', fixed: z0, alongZ: false, a: x0, b: x1 },
+      { side: 'left', fixed: x0, alongZ: true, a: z0, b: z1 },
+      { side: 'right', fixed: x1, alongZ: true, a: z0, b: z1 },
+      ...(f === 0
+        ? [
+            { side: 'front-left' as const, fixed: z1, alongZ: false, a: x0, b: px - DOOR_HALF },
+            { side: 'front-right' as const, fixed: z1, alongZ: false, a: px + DOOR_HALF, b: x1 },
+          ]
+        : []),
+    ]
+    for (const w of walls) {
+      const n = Math.floor((w.b - w.a) / WINDOW_EVERY)
+      const even = Array.from({ length: n }, (_, k) => w.a + ((w.b - w.a) * (k + 0.5)) / n)
+      // The window parts of the rooms on this floor that stand against this wall.
+      const parts: { key: string; along: number }[] = []
+      place.rooms.forEach((room, r) => {
+        if (room.floor !== f) return
+        room.parts.forEach((placed, k) => {
+          if (!isWindowPart(placed.part)) return
+          const x = px + room.at[0] + placed.at[0]
+          const z = pz + room.at[1] + placed.at[2]
+          const [line, along] = w.alongZ ? [x, z] : [z, x]
+          if (Math.abs(line - w.fixed) <= 0.9 && along >= w.a && along <= w.b) parts.push({ key: partKey(r, k), along })
+        })
+      })
+      if (n === 0 || parts.length === 0) {
+        out.set(`${f}/${w.side}`, even)
+        continue
+      }
+      // One window where each part is, kept clear of the wall's ends and of each other, and no more than the wall may have.
+      const lo = w.a + WINDOW_SIZE[0] / 2 + 0.2
+      const hi = w.b - WINDOW_SIZE[0] / 2 - 0.2
+      const kept: number[] = []
+      for (const along of parts.map((p) => Math.min(hi, Math.max(lo, p.along))).sort((p, q) => p - q)) {
+        if (kept.length < n && (kept.length === 0 || along - kept[kept.length - 1]! >= WINDOW_SIZE[0] + 0.6)) kept.push(along)
+      }
+      for (const p of parts) consumed.add(p.key)
+      out.set(`${f}/${w.side}`, kept)
+    }
+  }
+  return { along: (floor, side) => out.get(`${floor}/${side}`) ?? [], consumed }
+}
+
 /** The six slots of a building, or nothing for a style that is not drawn this way yet. */
 export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingModel | null {
   const style = place.exterior.style
@@ -104,8 +186,13 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
 
   const slots: BuildingModel['slots'] = { base: [], body: [], front: [], crown: [], hero: [], glow: [] }
   const add = (slot: keyof BuildingModel['slots'], shape: Shape, at: [number, number, number], size: [number, number, number], color: string, glow = false, rot: [number, number, number] = [0, 0, 0]): void => {
-    slots[slot].push({ shape, matrix: compose(at, rot, size), color, ...(glow ? { glow: true } : {}), ...(style === 'glass' && color === bodyColor && shape === 'box' ? { glass: true } : {}) })
+    slots[slot].push({ shape, matrix: compose(at, rot, size), color, ...(glow ? { glow: true } : {}), ...(!glow && color === c.accent ? { trim: true } : {}), ...(style === 'glass' && color === bodyColor && shape === 'box' ? { glass: true } : {}) })
   }
+  // The lining of the walls inside (not for a glass house, whose walls are see-through), in the room's own colour.
+  const inside: Instance[] = []
+  const lining = style === 'glass' ? null : interiorWall(palette.colors.trim)
+  const dayLining = dayInteriorWall(palette.colors)
+  const windows = windowLayout(place)
 
   // Base: a low marble slab, wider than the footprint, with a thin glowing edge.
   add('base', 'box', [px, baseY + BASE_HEIGHT / 2, pz], [fw + 2 * BASE_REACH, BASE_HEIGHT, fd + 2 * BASE_REACH], c.marble)
@@ -127,7 +214,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     const x1 = px + fw / 2 - INSET - t
     const z0 = pz - fd / 2 + INSET + t
     const z1 = pz + fd / 2 - INSET - t
-    const wall = (a: number, b: number, fixed: number, alongZ: boolean, dir: 1 | -1, windows: boolean, front = false, gap: 'none' | 'before' | 'after' = 'none') => {
+    const wall = (a: number, b: number, fixed: number, alongZ: boolean, dir: 1 | -1, side: WallSide, front = false, gap: 'none' | 'before' | 'after' = 'none') => {
       const length = b - a
       if (length < 0.5) return
       const mid = (a + b) / 2
@@ -149,26 +236,53 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       if (f === floors - 1) add('body', 'box', at(bodyMid, h - 0.125 + SKIN / 2), size(bodyLen + 0.1, 0.25 + SKIN, WALL_THICKNESS + 0.12), c.accent, false, rot)
       // The glowing band round the body (the hero), above the windows, on the top floor, on every side.
       if (style === 'tower' && f === floors - 1) add('hero', 'box', at(mid, ringUp, WALL_THICKNESS / 2 + 0.15), size(length + 1.1, RING_HEIGHT, 0.3), c.glow, true, rot)
-      if (!windows) return
-      const n = Math.floor(length / WINDOW_EVERY)
-      if (front) frontWindows += n
-      for (let k = 0; k < n; k++) {
-        const along = a + (length * (k + 0.5)) / n
-        const centre = at(along, h / 2)
-        add('glow', 'box', centre, size(WINDOW_SIZE[0], WINDOW_SIZE[1], WALL_THICKNESS + 0.5), c.glow, true)
+      const alongs = side === 'front' ? [] : windows.along(f, side)
+      if (front) frontWindows += alongs.length
+      const [ww, wh] = WINDOW_SIZE
+      for (const along of alongs) {
+        // A frame of the accent colour that stands out of both faces of the wall, and the pane just proud of the frame: one box
+        // each, so the frame shows as a border round the pane.
+        // The frame belongs to the window (the glow slot), so a place being built is drawn without it, as before.
+        add('glow', 'box', at(along, h / 2), size(ww + 2 * FRAME, wh + 2 * FRAME, WALL_THICKNESS + 2 * FRAME_OUT), c.accent, false, rot)
+        add('glow', 'box', at(along, h / 2), size(ww, wh, WALL_THICKNESS + 2 * FRAME_OUT + 2 * PANE_OUT), c.glow, true, rot)
       }
+      if (!lining) return
+      // The lining: from the foot band to the top band, from inner corner to inner corner (or to the door), round each window.
+      // At the door the lining stops `SKIN` short of the wall's end, so its end is not in the plane of the wall's (the door's reveal).
+      const from = gap === 'before' ? a + SKIN : a + WALL_THICKNESS / 2
+      const to = gap === 'after' ? b - SKIN : b - WALL_THICKNESS / 2
+      const lo = 0.25
+      const hi = h - 0.25
+      // `SKIN` clear of the wall's inner face, so the two are never in one plane.
+      const inward = -(WALL_THICKNESS / 2 + SKIN + LINING / 2)
+      const piece = (p: number, q: number, u0: number, u1: number) => {
+        if (q - p < 0.02 || u1 - u0 < 0.02) return
+        inside.push({ shape: 'box', matrix: compose(at((p + q) / 2, (u0 + u1) / 2, inward), rot, size(q - p, u1 - u0, LINING)), color: lining, inside: true, dayColor: dayLining })
+      }
+      let cursor = from
+      for (const along of alongs) {
+        piece(cursor, along - ww / 2, lo, hi)
+        piece(along - ww / 2, along + ww / 2, lo, h / 2 - wh / 2)
+        piece(along - ww / 2, along + ww / 2, h / 2 + wh / 2, hi)
+        cursor = along + ww / 2
+      }
+      piece(cursor, to, lo, hi)
     }
-    wall(x0, x1, z0, false, 1, true)
-    wall(z0, z1, x0, true, 1, true)
-    wall(z0, z1, x1, true, -1, true)
+    wall(x0, x1, z0, false, 1, 'back')
+    wall(z0, z1, x0, true, 1, 'left')
+    wall(z0, z1, x1, true, -1, 'right')
     if (f === 0) {
       // The door is in the middle of the front (+z) wall, as wide a gap as the body's own world leaves, with a lintel over it.
-      wall(x0, px - DOOR_HALF, z1, false, -1, true, true, 'after')
-      wall(px + DOOR_HALF, x1, z1, false, -1, true, true, 'before')
+      wall(x0, px - DOOR_HALF, z1, false, -1, 'front-left', true, 'after')
+      wall(px + DOOR_HALF, x1, z1, false, -1, 'front-right', true, 'before')
       // The band goes on over the door too, above it.
       if (style === 'tower' && floors === 1) add('hero', 'box', [px, y + ringUp * Math.cos(tilt), z1 - ringUp * lean + WALL_THICKNESS / 2 + 0.15], [DOOR_HALF * 2 + 1, RING_HEIGHT, 0.3], c.glow, true, [-tilt, 0, 0])
       const lintel = h - DOOR_HEIGHT
       if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1 - lean * (DOOR_HEIGHT + lintel / 2) - SKIN / 2], [DOOR_HALF * 2, lintel, WALL_THICKNESS - SKIN], bodyColor)
+      if (lining && h - 0.25 - DOOR_HEIGHT > 0.02) {
+        const up = (DOOR_HEIGHT + SKIN + h - 0.25) / 2
+        inside.push({ shape: 'box', matrix: compose([px, y + up, z1 - lean * up - WALL_THICKNESS / 2 - SKIN - LINING / 2], [0, 0, 0], [DOOR_HALF * 2 - 2 * SKIN, h - 0.25 - DOOR_HEIGHT - SKIN, LINING]), color: lining, inside: true, dayColor: dayLining })
+      }
       // A doorstep in the accent colour (the foot band going on across the door) runs from the room out over the slab and its glowing
       // edge, as high as the floor inside: the doorway shows a step, not white marble and a glowing line blown out to a white smear
       // (issue 350).
@@ -183,7 +297,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
         for (const [up, tiltPlank] of planks) slots.body.push({ shape: 'box', matrix: compose([px, y + up, z1 + 0.22], [0, 0, tiltPlank], [DOOR_HALF * 2 + 0.5, 0.26, 0.16]), color: c.chrome })
       }
     } else {
-      wall(x0, x1, z1, false, -1, false, true)
+      wall(x0, x1, z1, false, -1, 'front', true)
     }
   }
   // A flat chrome roof over the top floor, its top 2 cm over the wall tops (1 cm over the top band) so no two tops share a plane.
@@ -295,6 +409,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     instances,
     front: { width: fwid, height: fh, area: fwid * fh },
     frontGlowArea,
+    inside,
     outlineHeight: Math.max(fh + ch, bodyH + 1),
     titleBar,
   }

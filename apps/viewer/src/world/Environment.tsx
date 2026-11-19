@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { touchUi } from '../touch.ts'
-import { GRID, LIGHT, MIST, SKY } from './theme.ts'
+import { GRID, LIGHT, MIST, NIGHT_LIGHT, SKY } from './theme.ts'
 import { useWorld } from './WorldContext.tsx'
 
 const smoothstep = (e0: number, e1: number, x: number) => {
@@ -167,7 +167,7 @@ export function Environment() {
     }
     if (rim.current) rim.current.intensity = 0.9 * (1 - night) + 0.5 * night
     if (hemi.current) {
-      hemi.current.intensity = LIGHT.hemiDayIntensity - 1.6 * night
+      hemi.current.intensity = LIGHT.hemiDayIntensity + (NIGHT_LIGHT.hemiNightIntensity - LIGHT.hemiDayIntensity) * night
       hemi.current.color.copy(tmp.copy(colors.hemiDay).lerp(colors.hemiNight, night))
     }
   })

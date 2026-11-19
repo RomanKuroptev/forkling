@@ -19,6 +19,8 @@ export interface SceneObject {
   /** A part not drawn because it stands in a doorway, and the exhibits it holds (not drawn either). */
   inDoorway?: { holds: string[] }
   name?: string
+  /** For a place: its palette's wall colour. */
+  wall?: string
   text?: string
   letter?: number
   box: { min: [number, number, number]; max: [number, number, number] } | null

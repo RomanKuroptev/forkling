@@ -1,7 +1,7 @@
 import type { Kit, KitColor, KitPalette, KitPart, Place, PlaceRequest } from '@forkling/schema'
-import { DARK_GLOW, repaint } from './theme.ts'
+import { DARK_GLOW, dayInteriorFloor, repaint } from './theme.ts'
 import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
-import { buildingModel } from './building.ts'
+import { buildingModel, partKey, windowLayout } from './building.ts'
 import { constructionInstances } from './constructionGeometry.ts'
 import { wireframeInstances } from './wireframe.ts'
 import { plotInstances } from './plotGeometry.ts'
@@ -157,11 +157,18 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
   for (let f = 0; f < place.exterior.floors; f++) {
     // A floor reaches 3 cm under its storey's line, so the feet of the furniture and the walls standing on that line are inside it, not
     // in the plane of its underside (issue 335), and its top is 2 cm over the building's 0.12 m slab, not in its plane (issues 350, 353).
-    // It stops 1 cm short of the line where the walls' corner pieces end, for the same reason.
-    out.push({ shape: 'box', matrix: compose([px, baseY + f * height + (FLOOR_TOP - FLOOR_BELOW) / 2, pz], [0, 0, 0], [fw - 2 * FLOOR_INSET, FLOOR_TOP + FLOOR_BELOW, fd - 2 * FLOOR_INSET]), color: palette.colors.floor })
+    // It stops 1 cm short of the line where the walls' corner pieces end, for the same reason. By day it is a pastel of its own
+    // (`dayInteriorFloor`), not the grey a pale floor turns under the roof.
+    out.push({ shape: 'box', matrix: compose([px, baseY + f * height + (FLOOR_TOP - FLOOR_BELOW) / 2, pz], [0, 0, 0], [fw - 2 * FLOOR_INSET, FLOOR_TOP + FLOOR_BELOW, fd - 2 * FLOOR_INSET]), color: palette.colors.floor, dayColor: dayInteriorFloor(palette.colors) })
   }
-  for (const room of place.rooms) {
+  // A building drawn by the building model lines its walls inside in the room's own colour, and its windows stand where the rooms'
+  // window parts are, which are then not drawn again (issues 358, 346).
+  const model = buildingModel(place, kit, baseY)
+  const consumed = model ? windowLayout(place).consumed : new Set<string>()
+  if (model) out.push(...model.inside)
+  for (const [r, room] of place.rooms.entries()) {
     for (const [index, placed] of room.parts.entries()) {
+      if (consumed.has(partKey(r, index))) continue
       const part = kit.parts.find((p) => p.id === placed.part)
       if (!part) continue
       // Nothing stands in the doorway: the building draws the opening, and a frame or a door leaf there blocks it (issues 342, 345, 354).
@@ -183,6 +190,35 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
 
 /** The inside as primitives only. */
 export const interiorInstances = (place: Place, kit: Kit, baseY: number): Instance[] => interiorParts(place, kit, baseY).instances
+
+/** A lamp that is on, as a light: where its glowing part is. */
+export interface LampSpot {
+  position: [number, number, number]
+}
+
+/**
+ * The lamps of a place that is lit (its lamps on): one spot for each light part in its rooms, at the middle of its glowing parts. The
+ * viewer puts warm lights at the ones nearest the visitor, so a room at night has pools of lamp light (issue 361).
+ */
+export function lampSpots(place: Place, kit: Kit, baseY: number, lampsOn: boolean): LampSpot[] {
+  if (!lampsOn) return []
+  const { palette } = look(place, kit)
+  const [px, pz] = placeCentre(toLandPlace(place))
+  const height = floorHeight(place)
+  const out: LampSpot[] = []
+  for (const room of place.rooms) {
+    for (const placed of room.parts) {
+      const part = kit.parts.find((p) => p.id === placed.part)
+      if (!part || part.category !== 'light') continue
+      const at: [number, number, number] = [px + room.at[0] + placed.at[0], baseY + room.floor * height + placed.at[1], pz + room.at[1] + placed.at[2]]
+      const lit = partInstances(part, at, placed.rot, palette).filter((i) => i.glow)
+      if (lit.length === 0) continue
+      const mean = (k: number) => lit.reduce((n, i) => n + i.matrix[k]!, 0) / lit.length
+      out.push({ position: [mean(12), mean(13), mean(14)] })
+    }
+  }
+  return out
+}
 
 /** A wall the visitor cannot walk through, as an axis-aligned box from the ground up. */
 export interface WallBox {
@@ -226,6 +262,12 @@ export interface ShapeInstances {
   colors: Float32Array
   /** 1 for an instance that lights up at night (a window's glass, a lamp that is on), else 0. */
   glow: Float32Array
+  /** 1 for lit trim (an accent band, a title bar, a window frame), which glows a little at night, else 0. */
+  trim: Float32Array
+  /** 1 for the inside of a place, which gets less of the sky's light, else 0. */
+  inside: Float32Array
+  /** The colour by day (`Instance.dayColor`), linear RGB and 1, four floats each; all 0 for an instance with none. */
+  day: Float32Array
   count: number
 }
 
@@ -241,6 +283,8 @@ export type SceneInstances = Record<Shape, ShapeInstances> & {
   glassBox: ShapeInstances
   /** For each model file, the matrices of its instances (16 numbers each). */
   models: Record<string, Float32Array>
+  /** The lamps that are on in the insides drawn (`lampSpots`). */
+  lamps: LampSpot[]
 }
 
 /**
@@ -251,6 +295,7 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
   const lists: Record<Shape, Instance[]> = { box: [], sphere: [], cylinder: [], cone: [] }
   const glassList: Instance[] = []
   const modelLists: Record<string, Mat4[]> = {}
+  const lamps: LampSpot[] = []
   for (const place of places) {
     const [px, pz] = placeCentre(toLandPlace(place))
     const baseY = opts.heightAt(px, pz)
@@ -274,17 +319,20 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
       for (const i of constructionInstances(place, baseY, opts.nowMs)) lists[i.shape].push(i)
     }
     if (opts.interiors.has(place.id)) {
+      // Everything inside is marked so: under the roof it gets less of the sky's light.
+      const push = (i: Instance) => lists[i.shape].push({ ...i, inside: true })
       // Being built, the rooms are in the wireframe above; the things Merge keeps in them (souvenirs, works) are finished and stay.
       if (!wired) {
         const inside = interiorParts(place, kit, baseY, opts.models, { lampsOn })
-        for (const i of inside.instances) lists[i.shape].push(i)
+        for (const i of inside.instances) push(i)
         for (const m of inside.models) (modelLists[m.file] ??= []).push(m.matrix)
+        lamps.push(...lampSpots(place, kit, baseY, lampsOn))
       }
       const { palette } = look(place, kit)
-      for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
+      for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) push(lampsOn || !i.glow ? i : { ...i, glow: false })
       // The gallery wall's board (every finished work, a page at a time): one box; its painted face is drawn apart (`GalleryWalls`).
-      if (opts.shelf?.length) for (const wall of galleryWalls(place, kit, baseY, opts.shelf, exteriorInstances(place, kit, baseY))) for (const i of wallInstances(wall, palette.colors)) lists[i.shape].push(lampsOn ? i : { ...i, glow: false })
-      if (!wired) for (const i of neglectInstances(place, kit, baseY, level, 'interior')) lists[i.shape].push(i)
+      if (opts.shelf?.length) for (const wall of galleryWalls(place, kit, baseY, opts.shelf, exteriorInstances(place, kit, baseY))) for (const i of wallInstances(wall, palette.colors)) push(lampsOn ? i : { ...i, glow: false })
+      if (!wired) for (const i of neglectInstances(place, kit, baseY, level, 'interior')) push(i)
     }
   }
   // The plots staked by open requests (spec 10.3), each on its own ground.
@@ -299,18 +347,24 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     const matrices = new Float32Array(list.length * 16)
     const colors = new Float32Array(list.length * 3)
     const glow = new Float32Array(list.length)
+    const trim = new Float32Array(list.length)
+    const inside = new Float32Array(list.length)
+    const day = new Float32Array(list.length * 4)
     list.forEach((inst, k) => {
       matrices.set(inst.matrix, k * 16)
       colors.set(rgb(inst.color), k * 3)
       glow[k] = inst.glow ? 1 : 0
+      trim[k] = inst.trim ? 1 : 0
+      inside[k] = inst.inside ? 1 : 0
+      if (inst.dayColor) day.set([...rgb(inst.dayColor), 1], k * 4)
     })
-    return { matrices, colors, glow, count: list.length }
+    return { matrices, colors, glow, trim, inside, day, count: list.length }
   }
-  return { box: pack(lists.box), sphere: pack(lists.sphere), cylinder: pack(lists.cylinder), cone: pack(lists.cone), glassBox: pack(glassList), models }
+  return { box: pack(lists.box), sphere: pack(lists.sphere), cylinder: pack(lists.cylinder), cone: pack(lists.cone), glassBox: pack(glassList), models, lamps }
 }
 
 /** What drawing these costs: a draw call for each shape that has any and the triangles of every instance, and for each model file at most `MODEL_LIMITS`. */
-export function renderBudget(scene: Record<Shape, ShapeInstances> & { glassBox?: ShapeInstances; models?: Record<string, Float32Array> }): { drawCalls: number; triangles: number } {
+export function renderBudget(scene: Record<Shape, Omit<ShapeInstances, 'trim' | 'inside' | 'day'>> & { glassBox?: Omit<ShapeInstances, 'trim' | 'inside' | 'day'>; models?: Record<string, Float32Array> }): { drawCalls: number; triangles: number } {
   let drawCalls = 0
   let triangles = 0
   for (const matrices of Object.values(scene.models ?? {})) {

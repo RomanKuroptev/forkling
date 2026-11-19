@@ -14,6 +14,7 @@ import { plotSign } from './plotGeometry.ts'
 import { kitModelUrl } from './kitModels.ts'
 import { restyleMaterial } from './modelStyle.ts'
 import { nightFactor } from './night.ts'
+import { INTERIOR, NIGHT_LIGHT } from './theme.ts'
 import { Signs } from './Signs.tsx'
 import { TitleBars } from './TitleBars.tsx'
 import { WorkScreens } from './WorkScreens.tsx'
@@ -25,7 +26,7 @@ import { ExhibitCards } from './ExhibitCards.tsx'
 import { cardFaces } from './exhibitCards.ts'
 import { useSouvenirs } from './useSouvenirs.ts'
 import { signBoards } from './signGeometry.ts'
-import { ROUND_SEGMENTS, SPHERE_SEGMENTS, exteriorInstances, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
+import { ROUND_SEGMENTS, SPHERE_SEGMENTS, exteriorInstances, interiorsToLoad, modelFiles, type LampSpot, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
 import { worldLand } from './worldLand.ts'
 import { qaMode } from '../qa/params.ts'
@@ -48,18 +49,35 @@ const LIT_ALWAYS = new URLSearchParams(location.search).has('lit')
 /** How night it is, shared by every shape's material: windows and lamps glow in proportion to it. */
 const nightUniform = { value: 0 }
 
-/** A matte standard material that adds a warm glow to the instances marked to glow (a window's glass, a lamp that is on), at night. */
+const f = (n: number) => n.toFixed(3)
+
+/**
+ * A matte standard material that adds a glow to the instances marked to glow (a window's glass, a lamp that is on), stronger at night,
+ * a little glow at night to lit trim, and gives the inside of a place less of the sky's light (issues 358, 361; `NIGHT_LIGHT`, `INTERIOR`).
+ */
 function glowMaterial(): THREE.MeshStandardMaterial {
   const material = new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.45, metalness: 0.05 })
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = nightUniform
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float aGlow;\nvarying float vGlow;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = aGlow;')
-    // The warm glow is added to the light the surface gives off, so it shows in the dark and is lost in daylight.
+      .replace('#include <common>', '#include <common>\nattribute float aGlow;\nattribute float aTrim;\nattribute float aInside;\nattribute vec4 aDay;\nvarying float vGlow;\nvarying float vTrim;\nvarying float vInside;\nvarying vec4 vDay;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = aGlow;\nvTrim = aTrim;\nvInside = aInside;\nvDay = aDay;')
+    // What a surface gives off of its own colour: a little everywhere (less at night, or pale colours go khaki in the dark), a lot
+    // for a window or lamp (more at night), and some for lit trim at night.
+    const self = `mix(${f(NIGHT_LIGHT.selfDay)}, ${f(NIGHT_LIGHT.selfNight)}, uNight)`
+    const glow = `mix(${f(NIGHT_LIGHT.glowDay)}, ${f(NIGHT_LIGHT.glowNight)}, uNight)`
+    const keep = f(1 - NIGHT_LIGHT.glowLit)
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * (0.22 + vGlow * (1.6 + uNight * 1.6));')
+      .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;\nvarying float vTrim;\nvarying float vInside;\nvarying vec4 vDay;')
+      // By day a room's lining is its pastel day colour and gives off some of it, so the pastel holds under the roof; at night it is
+      // its trim colour as before.
+      .replace('#include <color_fragment>', `#include <color_fragment>\nfloat dayWall = vDay.w * (1.0 - uNight);\ndiffuseColor.rgb = mix(diffuseColor.rgb, vDay.rgb, dayWall);`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * (${self} + vGlow * ${glow} + vTrim * mix(${f(NIGHT_LIGHT.trimDay)}, ${f(NIGHT_LIGHT.trimNight)}, uNight) + dayWall * ${f(INTERIOR.daySelf)});`)
+      // Under a roof, less of the sky's light; a glowing thing takes only part of the light that falls on it, so it keeps its colour.
+      .replace(
+        '#include <lights_fragment_end>',
+        `irradiance *= mix(1.0, ${f(INTERIOR.skyInside)}, vInside);\n#include <lights_fragment_end>\nreflectedLight.directDiffuse *= 1.0 - vGlow * ${keep};\nreflectedLight.indirectDiffuse *= 1.0 - vGlow * ${keep};`,
+      )
   }
   return material
 }
@@ -71,6 +89,9 @@ function Shapes({ shape, data, glass = false }: { shape: Shape; data: ShapeInsta
   const geometry = useMemo(() => {
     const g = GEOMETRIES[shape].clone()
     g.setAttribute('aGlow', new THREE.InstancedBufferAttribute(data.glow, 1))
+    g.setAttribute('aTrim', new THREE.InstancedBufferAttribute(data.trim, 1))
+    g.setAttribute('aInside', new THREE.InstancedBufferAttribute(data.inside, 1))
+    g.setAttribute('aDay', new THREE.InstancedBufferAttribute(data.day, 4))
     return g
   }, [shape, data])
   const material = useMemo(() => {
@@ -100,6 +121,35 @@ function Shapes({ shape, data, glass = false }: { shape: Shape; data: ShapeInsta
   // The capacity is fixed when the mesh is made, so a different number of instances is a new mesh.
   return (
     <instancedMesh key={data.count} ref={mesh} args={[geometry, material, data.count]} castShadow={!glass} receiveShadow frustumCulled={false} />
+  )
+}
+
+/**
+ * Warm light from the lamps that are on, in the insides drawn: a few point lights, moved each frame to the lamps nearest the visitor,
+ * soft by day and strong at night, so a lived-in room has pools of lamp light (issue 361). The number of lights never changes, so
+ * the shaders are made once; a light with no lamp to stand at is off.
+ */
+function LampLights({ lamps }: { lamps: readonly LampSpot[] }) {
+  const { clock } = useWorld()
+  const lights = useRef<(THREE.PointLight | null)[]>([])
+  useFrame(() => {
+    const v = visitor.position
+    const near = v ? [...lamps].sort((a, b) => Math.hypot(a.position[0] - v.x, a.position[2] - v.z) - Math.hypot(b.position[0] - v.x, b.position[2] - v.z)).slice(0, INTERIOR.lamps) : []
+    const strength = INTERIOR.lampDay + (INTERIOR.lampNight - INTERIOR.lampDay) * nightFactor(clock.hour())
+    lights.current.forEach((light, k) => {
+      if (!light) return
+      const spot = near[k]
+      light.intensity = spot ? strength : 0
+      // Just under the lamp's glowing part, so it lights the room and not the inside of its own shade.
+      if (spot) light.position.set(spot.position[0], spot.position[1] - 0.12, spot.position[2])
+    })
+  })
+  return (
+    <>
+      {Array.from({ length: INTERIOR.lamps }, (_, k) => (
+        <pointLight key={k} ref={(l) => void (lights.current[k] = l)} color={INTERIOR.lampLight} intensity={0} distance={INTERIOR.lampReach} decay={2} />
+      ))}
+    </>
   )
 }
 
@@ -312,6 +362,7 @@ export function Places() {
       <Shapes shape="cylinder" data={scene.cylinder} />
       <Shapes shape="cone" data={scene.cone} />
       <Shapes shape="box" data={scene.glassBox} glass />
+      <LampLights lamps={scene.lamps} />
       {Object.entries(scene.models).map(([file, matrices]) => (loaded[file] ? <ModelShapes key={file} model={loaded[file]} matrices={matrices} /> : null))}
       <RigidBody type="fixed" colliders={false}>
         {/* Under ?qa=1 a fixture may plant a wall that stops the visitor but is not drawn (audit QW.7); none in normal mode. */}

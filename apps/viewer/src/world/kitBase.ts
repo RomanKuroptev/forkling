@@ -12,6 +12,12 @@ export interface Instance {
   color: string
   /** Lights up at night (a window's glass, a lamp): the draw adds a warm glow to it while it is dark. */
   glow?: boolean
+  /** Lit trim: an accent band, a title bar or a window frame, which glows a little in its own colour at night (look.md rule 8). */
+  trim?: boolean
+  /** Part of the inside of a place: under a roof, it gets less of the sky's light (issue 358). */
+  inside?: boolean
+  /** By day it is drawn in this colour instead, giving off some of it (the lining of a room: `dayInteriorWall`); at night in `color`. */
+  dayColor?: string
   /** Tinted, see-through glass: drawn apart from the rest, with some opacity (only boxes). */
   glass?: boolean
   /** The kit part it is a primitive of, as placed (`<room>/<index>`): the audit's check for surfaces that fight leaves one part's own primitives to its maker. */
