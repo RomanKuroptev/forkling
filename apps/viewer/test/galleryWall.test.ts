@@ -171,5 +171,9 @@ describe('the gallery wall in the drawing and the scene list', () => {
     expect(works.find((o) => o.ref === 'works/work-030')!.shows).toBe('picture')
     expect(works.find((o) => o.ref === 'works/work-029')!.shows).toBe('nothing')
     expect(new Set(list.map((o) => o.id)).size).toBe(list.length)
+    // A tile is told apart from a work on its slot: only exhibits carry the slot address a work's `installedIn` names.
+    for (const t of works) expect(t.at).toBeUndefined()
+    const workshopFile = starterPlaces().find((p) => p.id === 'workshop')!
+    for (const e of workshopFile.exhibits) expect(list.find((o) => o.id === `workshop/${e.id}`)?.at).toBe(`workshop/${e.slot}`)
   })
 })

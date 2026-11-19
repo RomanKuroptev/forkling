@@ -12,3 +12,19 @@ export function cutAtWord(text: string, max: number): string {
   const cut = at > 0 ? trimmed.slice(0, at) : head
   return cut.replace(/[\s,;:\-–—]+$/, '')
 }
+
+/**
+ * A text cut to at most `max` characters so it never ends in the middle of a sentence (issue #378): at the last sentence end that fits
+ * (a `.`, `!` or `?`, with any closing quote or bracket, followed by a space), when that keeps at least half of `max`; otherwise at the
+ * last whole word with an ellipsis, the ellipsis counted in `max`. A text that fits comes back with only the spaces at its ends removed.
+ * Pure.
+ */
+export function cutAtSentence(text: string, max: number): string {
+  const trimmed = text.trim()
+  if (trimmed.length <= max) return trimmed
+  const ends = /[.!?]["'”’)\]]*(?=\s)/g
+  let best = -1
+  for (let m = ends.exec(trimmed); m && m.index + m[0].length <= max; m = ends.exec(trimmed)) best = m.index + m[0].length
+  if (best >= max / 2) return trimmed.slice(0, best)
+  return `${cutAtWord(trimmed, max - 1).replace(/[.!?]+$/, '')}…`
+}

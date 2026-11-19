@@ -1,9 +1,10 @@
-import type { Kit, Place, PlaceRequest, SlotKind } from '@forkling/schema'
+import type { Kit, Place, PlaceRequest, SlotKind, Souvenir } from '@forkling/schema'
 import { placeCentre, toLandPlace } from '@forkling/sim'
 import * as THREE from 'three'
 import { buildingModel } from '../world/building.ts'
 import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots } from '../world/exhibitGeometry.ts'
 import { galleryWalls, slotOf, type GalleryWork } from '../world/galleryWall.ts'
+import { cardContent, cardPose, cardShows, type CardShows } from '../world/exhibitCards.ts'
 import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeometry.ts'
 import { compose } from '../world/matrix.ts'
 import { plotInstances } from '../world/plotGeometry.ts'
@@ -36,8 +37,15 @@ export interface QaObject {
   exhibitKind?: string
   /** The kind of slot an exhibit stands in (`screen`, `frame`, `shelf`, ...), or `gallery-wall` for a tile on the gallery wall. */
   slot?: SlotKind | 'gallery-wall'
+  /** Where an exhibit stands, as a work's `installedIn` names it: `<place>/<room>/<part index>/<slot index>`. A gallery wall tile has none. */
+  at?: string
   /** For a work or project on a screen or a gallery wall tile: what it shows as drawn, its picture or its title, or nothing (a plain lit panel). */
   shows?: ScreenShows
+  /**
+   * What an exhibit's card shows (issues 347, 355): a picture, its words, its title, or nothing, and the words on it. Every exhibit
+   * but a work screen has one. The souvenir files are read as the insides load, so before that a card shows the exhibit's label.
+   */
+  card?: { shows: CardShows; text: string }
   /** A place's or room's name, an exhibit's label. */
   name?: string
   /** The words painted on a sign or a title bar. */
@@ -88,6 +96,9 @@ export interface PlacesSnapshot {
   shelf?: readonly GalleryWork[]
   /** What each gallery wall tile shows as painted (`GalleryWalls`), by `<place>/<exhibit>/<work>`. */
   gallery?: ReadonlyMap<string, ScreenShows>
+  /** The souvenir files read so far, by an exhibit's ref, and how many works there are (the gallery's line). */
+  souvenirs?: ReadonlyMap<string, Souvenir | null>
+  workCount?: number
 }
 
 export type ScreenShows = 'picture' | 'title' | 'nothing'
@@ -119,7 +130,8 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
       const e = spot.exhibit
       const id = `${place.id}/${e.id}`
       const onScreen = spot.slotKind === 'screen' && (e.kind === 'work' || e.kind === 'project')
-      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
+      const card = cardPose(spot) ? cardShows(cardContent(e, spot.slotKind, e.ref ? s.souvenirs?.get(e.ref) : null, s.workCount ?? 0)) : null
+      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, at: `${place.id}/${e.slot}`, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
     }
     // Every finished work has a tile on the gallery wall, a page at a time: listed at its tile, as the drawing places it.
     if (s.shelf?.length) {

@@ -1,4 +1,4 @@
-import { cutAtWord } from './cut-at-word.ts'
+import { cutAtSentence } from './cut-at-word.ts'
 /** Spec v4 6: `self/about.md` is up to 80 words with up to 8 traits as a list, and it changes at most once a week: at least 6 days since the last change, so a review that ran a day late last week does not block this Sunday's (the 30% rule cannot work on 80 words). */
 export const ABOUT_MAX_WORDS = 80
 export const ABOUT_MAX_TRAITS = 8
@@ -74,12 +74,13 @@ export function checkPage(text: string, ctx: { prev: string; lastChangeDate: str
 }
 
 /**
- * The diary as it is kept (spec v4 6): the first 3 lines, each cut at a word to 140 characters. A diary that breaks the limits is
- * cut, not thrown away. Empty lines are not lines. Pure.
+ * The diary as it is kept (spec v4 6): the first 3 lines, each cut to 140 characters at its last sentence end, or at a word with an
+ * ellipsis when no sentence ends in time (`cutAtSentence`, issue #378). A diary that breaks the limits is cut, not thrown away. Empty
+ * lines are not lines. Pure.
  */
 export function fitDiaryLines(lines: readonly string[]): { lines: string[]; cut: boolean } {
   const kept = lines.map((l) => l.trim()).filter(Boolean)
-  const out = kept.slice(0, DIARY_LINES).map((l) => cutAtWord(l, DIARY_LINE_CHARS))
+  const out = kept.slice(0, DIARY_LINES).map((l) => cutAtSentence(l, DIARY_LINE_CHARS))
   return { lines: out, cut: kept.length > DIARY_LINES || out.some((l, i) => l !== kept[i]) }
 }
 

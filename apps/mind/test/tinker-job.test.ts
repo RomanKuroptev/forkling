@@ -191,7 +191,8 @@ describe('a remix job (spec 7.5)', () => {
 describe('manuals in a full work (spec 6.1: for tinker only)', () => {
   it('shows the manuals of the first two libraries it has never used to the call as data', async () => {
     const asked: string[] = []
-    const web = { fetchImpl: (async (url: string) => (asked.push(url), new Response('<html><head><title>p5 reference</title></head><body>circle(x, y, d)</body></html>'))) as FetchImpl, sleep: async () => undefined }
+    // No robots.txt on these hosts (a 404); the fetcher's robots.txt has its own tests in web-fetch.test.ts.
+    const web = { fetchImpl: (async (url: string) => (url.endsWith('/robots.txt') ? new Response('not found', { status: 404 }) : (asked.push(url), new Response('<html><head><title>p5 reference</title></head><body>circle(x, y, d)</body></html>')))) as FetchImpl, sleep: async () => undefined }
     const { llm, calls } = fakeLlm([output()])
     await handler(llm, checkerOf([{ ok: true }]), fakeGithub().client, web)(job, { dir, nowMs: NOW })
     expect(calls[0]!.user).toContain('<data source="manuals">')

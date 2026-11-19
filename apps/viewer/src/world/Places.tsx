@@ -21,6 +21,9 @@ import { GalleryWalls } from './GalleryWalls.tsx'
 import { galleryWalls, type GalleryWall, type GalleryWork } from './galleryWall.ts'
 import { screenFaces } from './screenFaces.ts'
 import { localFilesBase, worldFileUrl } from './worldData.ts'
+import { ExhibitCards } from './ExhibitCards.tsx'
+import { cardFaces } from './exhibitCards.ts'
+import { useSouvenirs } from './useSouvenirs.ts'
 import { signBoards } from './signGeometry.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, exteriorInstances, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
@@ -201,12 +204,23 @@ export function Places() {
     if (new URLSearchParams(location.search).has('debug')) Object.assign(window, { __forklingModels: () => [...loadedFiles].sort() })
   }, [loadedFiles])
 
+  // What each exhibit in a drawn inside holds, on a card in front of it (issues 347, 355): the souvenir files are read as the insides load.
+  const insidePlaces = useMemo(() => world.places.filter((p) => interiors.has(p.id)), [world, interiors])
+  const souvenirs = useSouvenirs(world, insidePlaces)
+  const cards = useMemo(() => {
+    const baseOf = (p: (typeof world.places)[number]) => {
+      const [x, z] = placeCentre(toLandPlace(p))
+      return land.heightAt(x, z)
+    }
+    return cardFaces(insidePlaces.flatMap((p) => exhibitSpots(p, kit, baseOf(p))), souvenirs, world.workIds.length)
+  }, [world, land, insidePlaces, souvenirs])
+
   // The audit harness (`?qa=1`) lists the places as they are drawn now (`window.__qa.scene()`).
   useEffect(() => {
     if (!qaMode) return
-    qaRegistry.places = { places: world.places, kit, heightAt: (x, z) => land.heightAt(x, z), interiors, nowMs, plots, wireAlways: WIRE_ALWAYS, plant: qaRegistry.plant, screens: qaRegistry.screens, shelf: world.shelf, gallery: qaRegistry.gallery }
+    qaRegistry.places = { places: world.places, kit, heightAt: (x, z) => land.heightAt(x, z), interiors, nowMs, plots, wireAlways: WIRE_ALWAYS, plant: qaRegistry.plant, screens: qaRegistry.screens, souvenirs, workCount: world.workIds.length, shelf: world.shelf, gallery: qaRegistry.gallery }
     qaRegistry.models.drawn = loadedFiles.size
-  }, [world, land, interiors, nowMs, plots, loadedFiles])
+  }, [world, land, interiors, nowMs, plots, loadedFiles, souvenirs])
 
   const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS, wireAlways: WIRE_ALWAYS, shelf: world.shelf }), [world, land, interiors, loadedFiles, nowMs, plots])
   // The board of each place's sign: its name and its sign text, painted on one texture.
@@ -291,6 +305,7 @@ export function Places() {
       <TitleBars places={world.places} baseOf={baseOfPlace} />
       <WorkScreens faces={faces} urlOf={urlOf} />
       <GalleryWalls walls={gallery} clock={clock} urlOf={urlOf} open={openWork} />
+      <ExhibitCards faces={cards} />
       <Shapes shape="box" data={scene.box} />
       <Shapes shape="sphere" data={scene.sphere} />
       <Shapes shape="cylinder" data={scene.cylinder} />

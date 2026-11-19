@@ -1,4 +1,4 @@
-import { addDays, localDate } from '@forkling/sim'
+import { addDays, cutAtSentence, localDate } from '@forkling/sim'
 import { esc } from './md.ts'
 
 /**
@@ -21,7 +21,7 @@ export interface DiaryInput {
 const MAX_PREVIEW = 140
 export const titleOf = (md: string) => /^# (.+)$/m.exec(md)?.[1] ?? ''
 
-/** The first lines of an entry without its heading, its date line or markup, cut to 140 characters. */
+/** The first lines of an entry without its heading, its date line or markup, cut to 140 characters at a sentence end (or a word, with an ellipsis). */
 export function previewOf(md: string): string {
   const text = md
     .split(/\r?\n/)
@@ -31,7 +31,7 @@ export function previewOf(md: string): string {
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\s+/g, ' ')
     .trim()
-  return text.length > MAX_PREVIEW ? `${text.slice(0, MAX_PREVIEW - 1).trimEnd()}…` : text
+  return cutAtSentence(text, MAX_PREVIEW)
 }
 
 const dayWords = (date: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${date}T12:00:00Z`)).replace(',', '')
