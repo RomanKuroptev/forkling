@@ -19,6 +19,8 @@ export interface SceneObject {
   /** A part not drawn because it stands in a doorway, and the exhibits it holds (not drawn either). */
   inDoorway?: { holds: string[] }
   name?: string
+  /** For a place: its footprint on the ground, in world meters. Its walls stand on the edge: the outer 0.8 m is wall. */
+  footprint?: { x0: number; z0: number; x1: number; z1: number }
   /** For a place: its palette's wall colour. */
   wall?: string
   text?: string
