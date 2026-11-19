@@ -82,14 +82,15 @@ function boardGeometry(boards: readonly SignBoard[]): THREE.BufferGeometry {
  * The signs by the doors (spec 4.6): a board for each place with its name and its sign text on it, all in one draw call. The board
  * glows a little (the emissive map is its own picture), so at night the words can still be read from the path.
  */
-export function Signs({ boards }: { boards: readonly SignBoard[] }) {
+export function Signs({ boards, missingTexture = false }: { boards: readonly SignBoard[]; missingTexture?: boolean }) {
   const { geometry, material } = useMemo(() => {
-    const map = paintAtlas(boards)
+    // `missingTexture` is only ever true under ?qa=1 with a planted flaw (audit QW.7): a texture whose picture never loaded.
+    const map = missingTexture ? new THREE.Texture() : paintAtlas(boards)
     return {
       geometry: boardGeometry(boards),
       material: new THREE.MeshStandardMaterial({ map, emissiveMap: map, emissive: new THREE.Color(WINDOW.body), emissiveIntensity: 0.5, roughness: 0.9 }),
     }
-  }, [boards])
+  }, [boards, missingTexture])
   useEffect(
     () => () => {
       geometry.dispose()

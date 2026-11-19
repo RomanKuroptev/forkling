@@ -1,4 +1,5 @@
 import type { Object3D } from 'three'
+import type { QaPlant } from './plant.ts'
 import type { PlacesSnapshot, QaKind } from './sceneList.ts'
 
 export type Vec3 = [number, number, number]
@@ -25,4 +26,6 @@ export const qaRegistry = {
     teleport(x: number, z: number, yaw?: number): void
   },
   camera: null as QaPose | null,
+  /** A planted flaw from the fixture's qa.json (audit QW.7); null in normal mode. */
+  plant: null as QaPlant | null,
 }

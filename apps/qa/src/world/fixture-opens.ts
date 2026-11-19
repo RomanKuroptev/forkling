@@ -6,8 +6,10 @@ import { FIXTURES, materialize, readQaJson } from '../fixtures/fixtures.ts'
 import { qaOut } from '../paths.ts'
 import type { CheckResult } from '../report/finding.ts'
 import type { Check } from '../run/check.ts'
-import { openWorld, sceneOf } from './open.ts'
+import { openWorld } from './open.ts'
 import { sceneListsFiles } from './scene-lists-files.ts'
+import { collectGeometry } from './collect.ts'
+import { geometryFindings } from './geometry.ts'
 import { buildViewer, serveWorld } from './serve.ts'
 
 /**
@@ -35,10 +37,13 @@ export async function checkWorldOpens(browser: Browser, viewer: string, world: s
         },
       ]
     }
+    // One second of world time, so the visitor has landed on the ground (it starts 1.5 m up) and the arrival view is the real one.
+    await page.evaluate(() => (globalThis as unknown as { __qa: { step(ms: number): Promise<void> } }).__qa.step(1000))
     mkdirSync(opts.out, { recursive: true })
     const shot = join(opts.out, `${opts.fixture}-start.png`)
     await page.screenshot({ path: shot })
-    const found = sceneListsFiles(world, await sceneOf(page), opts.fixture).map((f) => ({ ...f, evidence: [shot] }))
+    const geometry = await collectGeometry(page, world, opts.fixture, Date.parse(opts.now) + 1000)
+    const found = [...sceneListsFiles(world, geometry.scene, opts.fixture), ...geometryFindings(geometry)].map((f) => ({ ...f, evidence: [shot] }))
     await page.close()
     return found
   } finally {

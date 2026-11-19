@@ -7,6 +7,7 @@ import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeome
 import { plotInstances } from '../world/plotGeometry.ts'
 import { signBoards } from '../world/signGeometry.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
+import { plantBoards, type QaPlant } from './plant.ts'
 
 /**
  * What `window.__qa.scene()` lists (docs/spec/audit/spec.md 7.1): every place, room, exhibit, sign, label and plot, Merge and
@@ -71,6 +72,7 @@ export interface PlacesSnapshot {
   nowMs: number
   plots: readonly PlaceRequest[]
   wireAlways?: boolean
+  plant?: QaPlant | null
 }
 
 /** Every place's entries, worked out the way `sceneInstances` draws them. */
@@ -106,7 +108,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
       out.push({ id: `${place.id}/title`, kind: 'label', place: place.id, text: bar.text, box: { min: [round(bx - bar.width / 2), round(by - bar.height / 2), round(bz)], max: [round(bx + bar.width / 2), round(by + bar.height / 2), round(bz)] }, visible: true, material: 'solid' })
     }
   }
-  for (const board of signBoards(s.places, baseOf, s.kit)) {
+  for (const board of plantBoards(signBoards(s.places, baseOf, s.kit), s.plant ?? null)) {
     const [x, y, z] = board.position
     out.push({ id: `${board.id}/sign`, kind: 'sign', place: board.id, text: [...board.layout.name, ...board.layout.text].join(' '), box: { min: [round(x - SIGN_W / 2), round(y - SIGN_H / 2), round(z)], max: [round(x + SIGN_W / 2), round(y + SIGN_H / 2), round(z)] }, visible: true, material: 'solid' })
   }
