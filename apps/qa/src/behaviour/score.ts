@@ -154,6 +154,18 @@ export const SCORES: ScoreCheck[] = [
     },
   },
   {
+    // Issue #378: a diary line kept cut in the middle of a sentence. A kept line ends a sentence, or ends with an ellipsis where it had to be cut.
+    id: 'diary-cut',
+    title: 'Diary lines cut mid-sentence',
+    measure: (run) => {
+      const cut = run.diary.filter((d) => !/[.!?…]["'”’)\]]*$/.test(d.text))
+      return {
+        value: `${cut.length} of ${run.diary.length} diary lines`,
+        alarm: cut.length ? alarm('minor', 'code', `${cut.length} diary lines end in the middle of a sentence`, `For example: ${cut.slice(0, 3).map((d) => `${d.date} "${d.text}"`).join('; ')}.`, 'The diary reads broken to a visitor.', 'packages/sim/src/self-text.ts fitDiaryLines') : null,
+      }
+    },
+  },
+  {
     id: 'plan-rejections',
     title: 'Plans turned down',
     measure: (run, l) => {
