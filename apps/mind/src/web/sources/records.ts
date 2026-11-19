@@ -43,7 +43,10 @@ export async function imgflipTopLinks(f: Fetcher, n: number): Promise<ItemLink[]
   return (await formats(f)).slice(0, n).map((m) => ({ title: m.name, url: imgflipPage(m.id) }))
 }
 
-/** One format. Its links are the formats next to it in the ranking and the Wikipedia page for its name. */
+/**
+ * One format. Its links are the formats next to it in the ranking. No Wikipedia page is guessed from the name: most format
+ * names have no page there, and some name a different thing.
+ */
 export async function imgflipFormat(f: Fetcher, id: string): Promise<Item> {
   const all = await formats(f)
   const at = all.findIndex((m) => m.id === id)
@@ -57,7 +60,7 @@ export async function imgflipFormat(f: Fetcher, id: string): Promise<Item> {
     url: imgflipPage(m.id),
     title: m.name,
     text: `Meme format: ${m.name}\nRank among the 100 most-captioned formats of the last 30 days: ${at + 1}\nCaption boxes: ${m.boxes ?? 'unknown'}\nCaptions in the last 30 days: ${m.captions ?? 'unknown'}`,
-    links: capLinks([...near.map((n) => ({ title: n.name, url: imgflipPage(n.id) })), wikipediaTopicLink(m.name)], MAX_RECORD_LINKS),
+    links: capLinks(near.map((n) => ({ title: n.name, url: imgflipPage(n.id) })), MAX_RECORD_LINKS),
     images: [{ url: m.url, licence: null, credit: null }],
   }
 }

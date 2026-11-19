@@ -50,7 +50,7 @@ describe('Imgflip, the pulse of meme formats (spec 6.1)', () => {
     expect(links).toEqual([0, 1, 2, 3].map((n) => ({ title: `Format ${n}`, url: `https://imgflip.com/meme/${100 + n}` })))
   })
 
-  it('reads a format: its rank and caption count as text, its template picture, and the formats next to it and a Wikipedia page as links', async () => {
+  it('reads a format: its rank and caption count as text, its template picture, and the formats next to it as links', async () => {
     const item = await imgflipFormat(f(), '105')
     expect(item).toMatchObject({ source: 'api.imgflip.com', kind: 'record', tier: 'voices', url: 'https://imgflip.com/meme/105', title: 'Format 5' })
     expect(item.text).toContain('Rank among the 100 most-captioned formats of the last 30 days: 6')
@@ -59,7 +59,12 @@ describe('Imgflip, the pulse of meme formats (spec 6.1)', () => {
     expect(item.links.length).toBeGreaterThanOrEqual(4)
     expect(item.links.length).toBeLessThanOrEqual(MAX_RECORD_LINKS)
     expect(item.links.some((l) => l.url === 'https://imgflip.com/meme/104')).toBe(true)
-    expect(item.links.some((l) => l.url === 'https://en.wikipedia.org/wiki/Format_5')).toBe(true)
+  })
+
+  it('does not offer a format name as a guessed Wikipedia page (5 of 7 checked on 19 Nov 2026 were 404s, and Always_Has_Been is an EP)', async () => {
+    const item = await imgflipFormat(f(), '105')
+    expect(item.links.filter((l) => l.url.startsWith(`${wiki}/wiki/`))).toEqual([])
+    expect(item.links.some((l) => l.guess)).toBe(false)
   })
 
   it('is opened from a format page link, and a format that is not in the ranking is a 404', async () => {
@@ -339,8 +344,13 @@ describe('records', () => {
   it('offers the Wikipedia articles that use the picture, so a trip can cross from the picture into reading', async () => {
     const usage = '<div id="mw-imagepage-section-globalusage"><ul><li><a class="extiw" href="https://en.wikipedia.org/wiki/Hamburg">Hamburg</a></li><li><a href="//de.wikipedia.org/wiki/Hafen">de</a></li><li><a href="https://en.wikipedia.org/wiki/Category:Ports">cat</a></li><li><a href="https://en.wikipedia.org/wiki/Harbour_fog">Harbour fog</a></li></ul></div>'
     const item = await commonsFile(fake({ 'https://commons.wikimedia.org/wiki/File:Fog.jpg': fileHtml('CC0', usage) }), 'File:Fog.jpg')
-    expect(item.links.map((l) => l.url)).toEqual(['https://en.wikipedia.org/wiki/Hamburg', 'https://en.wikipedia.org/wiki/Harbour_fog', 'https://en.wikipedia.org/wiki/Fog'])
+    expect(item.links.map((l) => l.url)).toEqual(['https://en.wikipedia.org/wiki/Hamburg', 'https://en.wikipedia.org/wiki/Harbour_fog'])
     expect(item.links.length).toBeLessThanOrEqual(MAX_RECORD_LINKS)
+  })
+
+  it('does not offer the file name as a guessed Wikipedia page (the guess was a 404 on 19 Nov 2026)', async () => {
+    const item = await commonsFile(fake({ 'https://commons.wikimedia.org/wiki/File:Fog.jpg': fileHtml('CC0') }), 'File:Fog.jpg')
+    expect(item.links).toEqual([])
   })
 
   it('gives a licence the code cannot allow no licence at all, and refuses a page with no picture', async () => {
