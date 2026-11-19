@@ -41,12 +41,25 @@ export function QaProbe() {
       advance(seconds, true)
       drawn++
     }
+    // A frame that moves the world (the clock, physics, Merge, the walk) without drawing it. Drawing every stepped frame
+    // queues them all for the GPU, which in software rendering can take minutes to catch up, and a screenshot waits for it.
+    const silent = (ms: number) => {
+      const render = gl.render
+      gl.render = () => {}
+      try {
+        qaTime.elapsedMs += ms
+        seconds += ms / 1000
+        advance(seconds, true)
+      } finally {
+        gl.render = render
+      }
+    }
     const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
     const step = async (ms: number) => {
       let left = Math.max(0, ms)
       while (left > 0) {
         const dt = Math.min(QA_FRAME_MS, left)
-        frame(dt)
+        silent(dt)
         left -= dt
       }
       // React commits what the frames changed (the insides near the visitor, a model that loaded), then one more frame draws it.

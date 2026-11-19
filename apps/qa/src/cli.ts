@@ -17,11 +17,12 @@ import { gather } from './triage/gather.ts'
 import { GhTracker } from './triage/gh-tracker.ts'
 import { writeRunInfo } from './triage/run-info.ts'
 import { liveCommand, LIVE_USAGE } from './live/command.ts'
+import { WEB_SNAPSHOT_USAGE, webSnapshotCommand } from './snapshot/command.ts'
 import { SCORE_USAGE, scoreCommand } from './behaviour/score-cli.ts'
 import { BEHAVIOUR_USAGE, behaviourCommand } from './behaviour/command.ts'
 import { COMPARE_USAGE, compareCommand } from './behaviour/compare.ts'
-import { WEB_SNAPSHOT_USAGE, webSnapshotCommand } from './snapshot/command.ts'
 import { fixturesCommand, FIXTURES_USAGE, liveClone } from './fixtures/command.ts'
+import { exploreCommand, EXPLORE_USAGE } from './review/explore/command.ts'
 
 const USAGE = `pnpm qa <command>
 
@@ -37,11 +38,12 @@ const USAGE = `pnpm qa <command>
   fix-try <issue> --failed "<what was tried>" | --merged <pr>   a fixer's result; 2 failures label fix-failed
   digest  writes qa-out/digest.md   [--post] adds one comment on the pinned QA digest issue   [--mode nightly|weekly|release]
 ${LIVE_USAGE}
-  score   ${SCORE_USAGE}
 ${WEB_SNAPSHOT_USAGE}
+${FIXTURES_USAGE}
+${EXPLORE_USAGE}
+  score   ${SCORE_USAGE}
 ${BEHAVIOUR_USAGE}
-${COMPARE_USAGE}
-${FIXTURES_USAGE}`
+${COMPARE_USAGE}`
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv
@@ -87,10 +89,12 @@ async function main(argv: string[]): Promise<number> {
       return compareCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd(), out: qaOut('behaviour') })
     case 'behaviour':
       return behaviourCommand(rest)
-    case 'score':
-      return scoreCommand(rest)
     case 'web-snapshot':
       return webSnapshotCommand(rest)
+    case 'explore':
+      return exploreCommand(rest)
+    case 'score':
+      return scoreCommand(rest)
     case 'fixtures':
       return fixturesCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'live-clone':

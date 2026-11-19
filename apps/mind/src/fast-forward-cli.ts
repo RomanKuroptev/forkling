@@ -31,9 +31,9 @@ end it writes the run report and a short summary (path printed). Exit code 0 on 
   --out         where the summary goes (default a new temp dir)
   --sessions    give the loop build sessions (step 4): the build verb is on, and sessions run in this process with a local browser, not the
                 sandbox unit. They count against --cap, and a session over $1 fails the run (Roman's rule of 18 November). Default off
-  --capture-prompts  keep every model call's prompt in <out>/prompts.jsonl (for the audit harness; never inside the world). Default off
   --web-snapshot  read the web from a recorded copy (the audit harness's qa/web-snapshot) instead of the real web or the dry run's
                 empty one; an address not in it is missing. Real or dry run
+  --capture-prompts  keep every model call's prompt in <out>/prompts.jsonl (for the audit harness; never inside the world). Default off
   --dry-run     a smoke run with a fake model and a fake web: no key needed, nothing spent
 
 The model key comes from ANTHROPIC_API_KEY; without it only --dry-run runs.`
