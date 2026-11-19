@@ -6,6 +6,7 @@ import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots } from '../world/exhibit
 import { galleryWalls, slotOf, type GalleryWork } from '../world/galleryWall.ts'
 import { cardContent, cardPose, cardShows, type CardShows } from '../world/exhibitCards.ts'
 import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeometry.ts'
+import { doorwayBox, partInDoorway, placedPartBox } from '../world/doorway.ts'
 import { compose } from '../world/matrix.ts'
 import { plotInstances } from '../world/plotGeometry.ts'
 import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
@@ -14,7 +15,7 @@ import { wireframeInstances } from '../world/wireframe.ts'
 import { plantBoards, type QaPlant } from './plant.ts'
 
 /**
- * What `window.__qa.scene()` lists (docs/spec/audit/spec.md 7.1): every place, room, exhibit, sign, label and plot, Merge and
+ * What `window.__qa.scene()` lists (docs/spec/audit/spec.md 7.1): every place, its doorway, room, drawn part, exhibit, sign, label and plot, Merge and
  * the visitor, and the pieces in front of a building (columns), each with an id, a kind, a box in world meters and whether it is drawn. Places are drawn as a few instanced
  * meshes, so their entries come from the same geometry functions the drawing uses; Merge and the visitor come from their
  * three.js objects.
@@ -24,8 +25,12 @@ export interface QaBox {
   max: [number, number, number]
 }
 
-/** `column`: one solid piece a building stands in front of its front (its hero: porch columns, an arch, a screen), for the check that nothing hides a sign. */
-export type QaKind = 'place' | 'room' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor' | 'column'
+/**
+ * `part` is a piece of a room's furniture as drawn (id `<place>/<room>/<part index>`, name the kit part); `door` is a place's doorway,
+ * which must stay clear. `column`: one solid piece a building stands in front of its front (its hero: porch columns, an arch, a screen),
+ * for the check that nothing hides a sign.
+ */
+export type QaKind = 'place' | 'room' | 'part' | 'door' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor' | 'column'
 
 export interface QaObject {
   id: string
@@ -47,6 +52,11 @@ export interface QaObject {
    * but a work screen has one. The souvenir files are read as the insides load, so before that a card shows the exhibit's label.
    */
   card?: { shows: CardShows; text: string }
+  /**
+   * For a part that stands in a doorway and so is not drawn (`doorway.ts`): the ids of the exhibits it holds, which are not drawn
+   * either. Listed so that nothing is hidden silently (`world.in-doorway-holds`).
+   */
+  inDoorway?: { holds: string[] }
   /** A place's or room's name, an exhibit's label. */
   name?: string
   /** The words painted on a sign or a title bar. */
@@ -120,12 +130,24 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     out.push({ id: place.id, kind: 'place', name: place.name, box: instancesBox(outside), visible: true, material: wired ? 'wireframe' : 'solid' })
     const inside = s.interiors.has(place.id)
     const height = floorHeight(place)
+    const door = doorwayBox(place, baseY)
+    out.push({ id: `${place.id}/door`, kind: 'door', place: place.id, box: { min: door.min.map(round) as QaBox['min'], max: door.max.map(round) as QaBox['max'] }, visible: true, material: 'none' })
     for (const room of place.rooms) {
       const [w, d, h] = room.size
       const x = px + room.at[0]
       const z = pz + room.at[1]
       const y = baseY + room.floor * height
       out.push({ id: `${place.id}/${room.id}`, kind: 'room', place: place.id, name: room.name, box: { min: [round(x - w / 2), round(y), round(z - d / 2)], max: [round(x + w / 2), round(y + h), round(z + d / 2)] }, visible: inside, material: wired ? 'wireframe' : 'solid' })
+      // Each part as `interiorParts` draws it; a part in the doorway is not drawn, and is listed as not drawn with what it holds.
+      room.parts.forEach((placed, k) => {
+        const box = placedPartBox(place, s.kit, room, placed, baseY)
+        if (partInDoorway(place, s.kit, room, placed, baseY)) {
+          const holds = place.exhibits.filter((e) => e.slot.startsWith(`${room.id}/${k}/`)).map((e) => e.id)
+          out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, box: box ? { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] } : null, visible: false, material: 'none', inDoorway: { holds } })
+          return
+        }
+        if (box) out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, box: { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] }, visible: inside, material: wired ? 'wireframe' : 'solid' })
+      })
     }
     const palette = s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0]!
     for (const spot of exhibitSpots(place, s.kit, baseY)) {
