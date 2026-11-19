@@ -12,6 +12,8 @@ import { live } from './live.ts'
 import { createFaceScreen } from './FaceScreen.ts'
 import { faceState, type FaceState } from './face.ts'
 import { ThoughtBubble } from './ThoughtBubble.tsx'
+import { qaMode } from '../qa/params.ts'
+import { qaRegistry } from '../qa/registry.ts'
 
 const params = new URLSearchParams(location.search)
 /** `?clip=Sit` pins the forkling in front of the visitor looping one clip, to check animation by eye. */
@@ -46,6 +48,15 @@ export function Forkling() {
   const group = useRef<THREE.Group>(null)
   const scaler = useRef<THREE.Group>(null)
   const body = useRef<RapierRigidBody>(null)
+
+  // The audit harness (`?qa=1`) finds Merge's drawn body (without the thought pop-up) in `window.__qa.scene()`.
+  useEffect(() => {
+    if (!qaMode || !scaler.current) return
+    qaRegistry.objects.set('merge', { kind: 'merge', object: scaler.current })
+    return () => {
+      qaRegistry.objects.delete('merge')
+    }
+  }, [])
 
   const model = useMemo(() => {
     const root = clone(gltf.scene)
