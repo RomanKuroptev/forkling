@@ -9,6 +9,7 @@ import { live } from '../forkling/live.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { qaMode, qaTime } from './params.ts'
 import { qaRegistry, type QaPose, type Vec3 } from './registry.ts'
+import { frontPose } from './cameras.ts'
 import { objectEntry, placeObjects, type QaObject } from './sceneList.ts'
 
 /** One stepped frame: the world moves this many milliseconds each time the harness draws. */
@@ -90,9 +91,9 @@ export function QaProbe() {
       const snap = qaRegistry.places
       for (const p of snap?.places ?? []) {
         const [x, z] = placeCentre(toLandPlace(p))
-        const y = snap!.heightAt(x, z)
-        // The door is on the front (+z) side of every place.
-        out[`front:${p.id}`] = { position: [x, y + 1.6, z + p.exterior.footprint[1] / 2 + 7], target: [x, y + 2, z] }
+        // The door is on the front (+z) side of every place; a narrow picture (a phone) stands further back (issue 332).
+        const lens = camera as THREE.PerspectiveCamera
+        out[`front:${p.id}`] = frontPose(p, snap!.kit, snap!.heightAt(x, z), lens.aspect, lens.fov)
       }
       const pb = live.playback
       if (pb) {

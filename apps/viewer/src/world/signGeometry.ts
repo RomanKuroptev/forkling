@@ -1,5 +1,5 @@
 import type { Kit, Place } from '@forkling/schema'
-import { signLine } from '@forkling/sim'
+import { buildingWords, signLine } from '@forkling/sim'
 import { WINDOW } from './theme.ts'
 import { SIGN_BOTTOM, SIGN_H, SIGN_W, signSpot } from './exhibitGeometry.ts'
 
@@ -45,6 +45,9 @@ export interface SignLayout {
 
 const squash = (s: string) => s.trim().replace(/\s+/g, ' ')
 
+/** The words under the name: that it is being built and how long is left (issue 331), else its usual line (`signLine`: closed, its sign text or its purpose). */
+export const signWords = (place: Place, places: readonly Pick<Place, 'id' | 'name'>[], nowMs?: number): string => (place.state.closed ? signLine(place, places) : (buildingWords(place.state.construction, nowMs) ?? signLine(place, places)))
+
 /** Words onto lines of at most `max` characters; a word longer than a line is broken, so nothing runs off the board. */
 function wrap(text: string, max: number): string[] {
   const lines: string[] = []
@@ -65,7 +68,28 @@ function wrap(text: string, max: number): string[] {
     }
   }
   if (line) lines.push(line)
-  return lines
+  return lines.length === 2 ? balance(lines, max) : lines
+}
+
+/**
+ * Two lines broken in balance, so no word stands alone ("Lamps", the "24 h" of "ready in about 24 h"): at a " · " when both sides fit
+ * (the building words, "Building ·" over "ready in about 24 h"; the dot stays, so the words read the same), else between the words where the longer line is shortest.
+ */
+function balance(lines: string[], max: number): string[] {
+  const words = lines.join(' ').split(' ')
+  const at = (k: number): [string, string] => [words.slice(0, k).join(' '), words.slice(k).join(' ')]
+  const dot = words.indexOf('·')
+  if (dot > 0 && dot < words.length - 1) {
+    const [a, b] = at(dot + 1)
+    if (a.length <= max && b.length <= max) return [a, b]
+  }
+  let best = lines
+  for (let k = 1; k < words.length; k++) {
+    const [a, b] = at(k)
+    if (a.length > max || b.length > max) continue
+    if (Math.max(a.length, b.length) < Math.max(best[0]!.length, best[1]!.length)) best = [a, b]
+  }
+  return best
 }
 
 const maxChars = (px: number) => Math.max(1, Math.floor((SIGN_CELL.w - 2 * PAD) / (px * CHAR_WIDTH)))
@@ -75,10 +99,11 @@ const cut = (lines: string[], max: number): string[] => (lines.length <= 2 ? lin
 /**
  * The name and the sign text of a place laid out on its board: the largest type that puts the whole name on at most two lines
  * and the whole sign text below it on at most two smaller ones, all inside the cell. Text is plain characters, never markup.
+ * While the place is being built at `nowMs`, the sign text gives way to that and how long is left (issue 331).
  */
-export function signLayout(place: Place, places: readonly Pick<Place, 'id' | 'name'>[] = [place]): SignLayout {
+export function signLayout(place: Place, places: readonly Pick<Place, 'id' | 'name'>[] = [place], nowMs?: number): SignLayout {
   const nameText = squash(place.name)
-  const signText = squash(signLine(place, places))
+  const signText = squash(signWords(place, places, nowMs))
   const room = SIGN_CELL.h - TITLE_BAR - 2 * VERTICAL_PAD
   let chosen: { namePx: number; name: string[]; textPx: number; text: string[] } | undefined
   for (const namePx of NAME_SIZES) {
@@ -159,8 +184,8 @@ export interface SignBoard {
 /** How far in front of the board's slab its painted face stands, so the two never fight. */
 const FACE = 0.06
 
-/** One board for each place: where it stands (by the door, facing the path), what it says and the colours it is painted in. */
-export function signBoards(places: readonly Place[], baseOf: (place: Place) => number, kit: Kit): SignBoard[] {
+/** One board for each place: where it stands (by the door, facing the path), what it says at `nowMs` and the colours it is painted in. */
+export function signBoards(places: readonly Place[], baseOf: (place: Place) => number, kit: Kit, nowMs?: number): SignBoard[] {
   return places.map((place) => {
     const spot = signSpot(place, baseOf(place)).position
     const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
@@ -168,7 +193,7 @@ export function signBoards(places: readonly Place[], baseOf: (place: Place) => n
       id: place.id,
       position: [spot[0], spot[1] + SIGN_BOTTOM + SIGN_H / 2, spot[2] + FACE],
       size: [SIGN_W, SIGN_H],
-      layout: signLayout(place, places),
+      layout: signLayout(place, places, nowMs),
       colors: signColors(palette.colors.wood),
     }
   })

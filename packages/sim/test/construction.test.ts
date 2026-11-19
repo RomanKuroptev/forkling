@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { finishedBuildings, isBuilding } from '../src/construction.ts'
+import { buildingWords, finishedBuildings, isBuilding } from '../src/construction.ts'
 
 const building = (finishesAt: string) => ({ construction: { kind: 'expand' as const, finishesAt } })
 const NOW = Date.parse('2026-11-20T12:00:00Z')
@@ -32,3 +32,23 @@ describe('finishedBuildings (which places the mind should close the construction
     expect(finishedBuildings(places, NOW).map((p) => p.id)).toEqual(['done', 'now'])
   })
 })
+
+describe('buildingWords (issue 331: the site says it is being built and how far it is)', () => {
+  const at = (hours: number) => new Date(NOW + hours * 3_600_000).toISOString()
+  it('is null for a place that is not being built, or whose construction has ended', () => {
+    expect(buildingWords(null, NOW)).toBeNull()
+    expect(buildingWords({ finishesAt: at(-1) }, NOW)).toBeNull()
+  })
+
+  it('says how long is left, in plain words, rounded', () => {
+    expect(buildingWords({ finishesAt: at(0.4) }, NOW)).toBe('Building · ready within the hour')
+    expect(buildingWords({ finishesAt: at(3.2) }, NOW)).toBe('Building · ready in about 3 h')
+    expect(buildingWords({ finishesAt: at(23) }, NOW)).toBe('Building · ready in about 23 h')
+    expect(buildingWords({ finishesAt: at(24 * 3 + 2) }, NOW)).toBe('Building · ready in about 3 days')
+  })
+
+  it('says nothing without a clock to count from', () => {
+    expect(buildingWords({ finishesAt: at(5) })).toBeNull()
+  })
+})
+

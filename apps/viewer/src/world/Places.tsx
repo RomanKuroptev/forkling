@@ -235,7 +235,8 @@ export function Places() {
   )
   const openWork = useCallback((place: (typeof world.places)[number], wall: GalleryWall, work: GalleryWork) => void panelStore.open({ kind: 'exhibit', place, exhibit: { ...wall.exhibit, kind: 'work', ref: `works/${work.id}`, label: work.title } }, world), [world])
   // Under ?qa=1 a fixture may plant a lifted sign (`qa/plant.ts`); in normal mode the plant is null and the boards are as made.
-  const boards = useMemo(() => plantBoards(signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit), qaRegistry.plant), [world, land])
+  // A place being built says so on its sign, and how long is left (issue 331), so the boards follow the clock.
+  const boards = useMemo(() => plantBoards(signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit, nowMs), qaRegistry.plant), [world, land, nowMs])
   const walls = useMemo(
     () =>
       // Under ?qa=1 a fixture may plant a place whose walls do not stop the visitor (`qa/plant.ts`); null in normal mode.
@@ -259,9 +260,9 @@ export function Places() {
     return {
       exhibits: world.places.filter((p) => interiors.has(p.id)).flatMap((p) => exhibitSpots(p, kit, baseOf(p)).map((s) => ({ key: `${p.id}/${s.exhibit.id}`, position: s.position, rotY: s.rotY, title: p.name, text: s.exhibit.label, open: () => void panelStore.open({ kind: 'exhibit', place: p, exhibit: s.exhibit }, world) }))),
       plots: plots.map((r) => ({ key: r.id, position: plotSign(r, (x, z) => land.heightAt(x, z)).position, title: r.name, text: `${r.name}: ${r.status === 'building' ? 'Roman says he is building it' : 'waiting for Roman'}. ${r.purpose}`, open: () => void panelStore.open({ kind: 'plot', request: r }, world) })),
-      signs: world.places.map((p) => ({ key: p.id, position: signSpot(p, baseOf(p)).position, title: p.name, text: signHoverText(p), open: () => void panelStore.open({ kind: 'sign', place: p }, world) })),
+      signs: world.places.map((p) => ({ key: p.id, position: signSpot(p, baseOf(p)).position, title: p.name, text: signHoverText(p, nowMs), open: () => void panelStore.open({ kind: 'sign', place: p, nowMs }, world) })),
     }
-  }, [world, land, interiors, plots])
+  }, [world, land, interiors, plots, nowMs])
 
   // `?debug` lets a browser test find the staked plots too.
   useEffect(() => {

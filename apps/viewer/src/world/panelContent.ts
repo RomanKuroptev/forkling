@@ -1,4 +1,5 @@
 import { workFrame, type Place, type PlaceRequest, type Project, type Souvenir, type WorkMeta } from '@forkling/schema'
+import { buildingWords } from '@forkling/sim'
 import { LOCAL_REF } from './localWorld.ts'
 import type { WorldRef } from './route.ts'
 
@@ -12,7 +13,7 @@ export type PanelContent =
   | { kind: 'plaque'; heading: string; text: string }
   | { kind: 'trail'; heading: string; url: string | null }
   | { kind: 'gallery'; heading: string; works: { id: string; title: string; about: string; kind: string; url: string | null }[] }
-  | { kind: 'sign'; heading: string; purpose: string; founded: string; tags: string[]; related: string[]; history: { at: string; verb: string; summary: string }[]; pageUrl: string | null; closed: { on: string; reason: string } | null; away: { on: string; label: string; reason: string }[] }
+  | { kind: 'sign'; heading: string; purpose: string; building: string | null; founded: string; tags: string[]; related: string[]; history: { at: string; verb: string; summary: string }[]; pageUrl: string | null; closed: { on: string; reason: string } | null; away: { on: string; label: string; reason: string }[] }
   | { kind: 'plot'; heading: string; purpose: string; tags: string[]; body: string; souvenirs: number; written: string; status: string }
   | { kind: 'note'; heading: string; text: string }
 
@@ -66,11 +67,13 @@ export function galleryPanel(metas: readonly WorkMeta[], base: string | null): P
 }
 
 /** A place's sign: when it was founded, every change with Merge's one-line summary (newest first), and its page. */
-export function signPanel(place: Place, base: string | null): PanelContent {
+export function signPanel(place: Place, base: string | null, nowMs?: number): PanelContent {
   return {
     kind: 'sign',
     heading: place.name,
     purpose: place.purpose,
+    // Being built: that, and how long is left (issue 331).
+    building: buildingWords(place.state.construction, nowMs),
     founded: place.founded,
     tags: place.tags,
     related: place.related,
@@ -81,9 +84,11 @@ export function signPanel(place: Place, base: string | null): PanelContent {
   }
 }
 
-/** The words shown when the visitor points at a place's sign: what the place is for, or that it is closed and why. */
-export function signHoverText(place: Place): string {
-  return place.state.closed ? `${place.name} is closed: ${place.state.closed.reason}` : `${place.name}: ${place.purpose}`
+/** The words shown when the visitor points at a place's sign: what the place is for, or that it is closed and why, or that it is being built. */
+export function signHoverText(place: Place, nowMs?: number): string {
+  if (place.state.closed) return `${place.name} is closed: ${place.state.closed.reason}`
+  const building = buildingWords(place.state.construction, nowMs)
+  return building ? `${place.name}: ${building}. ${place.purpose}` : `${place.name}: ${place.purpose}`
 }
 
 /**
