@@ -1,11 +1,11 @@
-import { NowJson, Place } from '@forkling/schema'
+import { NowJson, Place, repairPlaceJson } from '@forkling/schema'
 
 /** The server's `/places.json`, or null when it does not fit: a rev, and at most 64 places that all fit the place schema. */
 function readPlacesResponse(json: unknown): { rev: string; places: Place[] } | null {
   if (typeof json !== 'object' || json === null) return null
   const { rev, places } = json as { rev?: unknown; places?: unknown }
   if (typeof rev !== 'string' || rev.length > 16 || !Array.isArray(places) || places.length > 64) return null
-  const parsed = places.map((p) => Place.safeParse(p))
+  const parsed = places.map((p) => Place.safeParse(repairPlaceJson(p)))
   return parsed.every((p) => p.success) ? { rev, places: parsed.map((p) => (p as { data: Place }).data) } : null
 }
 

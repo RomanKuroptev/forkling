@@ -105,3 +105,33 @@ export const Place = z
   })
   .strict()
 export type Place = z.infer<typeof Place>
+
+const PART_ID_MAX = 41
+const LOOSE_ID = /^[a-z0-9][a-z0-9-]*$/
+
+/**
+ * Repairs a place file before it is parsed: an exhibit id over PartId's 41 characters (install once cut `screen-<work id>`
+ * at 60) is cut to 41, never ending in a dash and kept unique. Without this one long id drops the whole place for every
+ * reader (Merge's Workshop, November 2026). Anything that is not such an id is left alone and still refused by `Place`.
+ * A file that needs no repair is returned as it is.
+ */
+export function repairPlaceJson(raw: unknown): unknown {
+  if (typeof raw !== 'object' || raw === null || !Array.isArray((raw as { exhibits?: unknown }).exhibits)) return raw
+  const exhibits = (raw as { exhibits: unknown[] }).exhibits
+  const idOf = (e: unknown) => (typeof e === 'object' && e !== null && typeof (e as { id?: unknown }).id === 'string' ? (e as { id: string }).id : null)
+  const tooLong = (id: string | null): id is string => id !== null && id.length > PART_ID_MAX && LOOSE_ID.test(id)
+  if (!exhibits.some((e) => tooLong(idOf(e)))) return raw
+  const used = new Set(exhibits.map(idOf).filter((id): id is string => id !== null && !tooLong(id)))
+  const cut = (s: string, n: number) => s.slice(0, n).replace(/-+$/, '')
+  return {
+    ...raw,
+    exhibits: exhibits.map((e) => {
+      const id = idOf(e)
+      if (!tooLong(id)) return e
+      let next = cut(id, PART_ID_MAX)
+      for (let n = 2; used.has(next); n++) next = `${cut(id, PART_ID_MAX - 1 - String(n).length)}-${n}`
+      used.add(next)
+      return { ...(e as object), id: next }
+    }),
+  }
+}
