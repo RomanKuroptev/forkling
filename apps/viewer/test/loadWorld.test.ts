@@ -200,6 +200,25 @@ describe('loadWorld works (W5)', () => {
     const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'works/b/meta.json': {}, 'works/a/meta.json': {}, 'works/a/index.html': 'x', 'works/c/thumb.png': 'x', 'notes/works/z/meta.json': {} }))
     expect(result.ok && result.world.workIds).toEqual(['a', 'b'])
   })
+
+  it('reads the finished works for the gallery wall, newest first, leaving out scraps, put-away works and files that do not fit', async () => {
+    const meta = (id: string, made: string, over: Record<string, unknown> = {}) => ({ id, title: `Title ${id}`, kind: 'art', about: `About ${id}.`, interest: null, made, status: 'shelf', size: 'sketch', ...over })
+    const result = await loadWorld(
+      ref,
+      deps({
+        'forkling.json': forkling,
+        'works/older/meta.json': meta('older', '2026-11-10T10:00:00Z'),
+        'works/newer/meta.json': meta('newer', '2026-11-12T10:00:00Z'),
+        'works/thrown/meta.json': meta('thrown', '2026-11-13T10:00:00Z', { status: 'scrap', scrapReason: 'It did not run.' }),
+        'works/away/meta.json': meta('away', '2026-11-14T10:00:00Z', { status: 'retired', retireReason: 'Roman took it down.' }),
+        'works/broken/meta.json': { id: 'broken' },
+      }),
+    )
+    expect(result.ok && result.world.shelf).toEqual([
+      { id: 'newer', title: 'Title newer', about: 'About newer.', made: '2026-11-12T10:00:00Z' },
+      { id: 'older', title: 'Title older', about: 'About older.', made: '2026-11-10T10:00:00Z' },
+    ])
+  })
 })
 
 describe('loadWorld requests (W6 slice 8)', () => {
