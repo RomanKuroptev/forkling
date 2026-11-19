@@ -1,13 +1,21 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { Place, Trail, WorkMeta, type Kit } from '@forkling/schema'
+import { Place, SLOT_ACCEPTS, Souvenir, Trail, WorkMeta, type Kit, type SlotKind } from '@forkling/schema'
 import { kit as engineKit } from '@forkling/schema/kit'
-import { createPrng, validatePlace, type Prng } from '@forkling/sim'
+import { choosePlacement, createPrng, toLandPlace, validatePlace, type Prng } from '@forkling/sim'
 
 /**
  * `day-30` by code (audit spec 4: it is for volume): day-7 plus 23 days of works, trails, places and rooms, made through the
- * schemas and the place rules with a seeded PRNG, no model and no clock. The words are plain placeholders; the shapes are
- * what Merge's own files look like, copied from day-7. Same seed, same files.
+ * schemas and the place rules with a seeded PRNG, no model and no clock. The words are plain placeholders; the shapes are what
+ * Merge's own files look like, and they grow the way the engine grows them, or the world explorer reports what this file made up
+ * (issues 333, 336, 338, 372):
+ * - a new place stands where founding puts it (`choosePlacement`: a chunk that touches the world on a side), so every place gets
+ *   its founding path;
+ * - it is built the way the fallback found build makes one (`found-build.ts`): a style and a palette from the kit, a footprint of
+ *   its own, 1 or 2 floors, 1 or 2 rooms of kit parts, and a door only on the ground floor;
+ * - an expand never changes the building (`expand.ts`): it adds a room on a floor the building already has, or a path;
+ * - a tend sets the place's care time and puts a souvenir on a free shelf, case or plaque.
+ * Same seed, same files.
  */
 
 const DAY = 86_400_000
@@ -17,30 +25,98 @@ const write = (dir: string, rel: string, value: unknown) => {
 }
 const readJson = (dir: string, rel: string): unknown => JSON.parse(readFileSync(join(dir, rel), 'utf8'))
 const pick = <T>(prng: Prng, list: readonly T[]): T => list[prng.int(list.length)]!
+const shuffle = <T>(prng: Prng, list: readonly T[]): T[] => {
+  const out = [...list]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = prng.int(i + 1)
+    ;[out[i], out[j]] = [out[j]!, out[i]!]
+  }
+  return out
+}
 
 // Not memes: a meme must name the format it looked at, which a placeholder cannot honestly do.
 const WORK_KINDS = ['art', 'game', 'tool', 'sound', 'zine'] as const
+const ROOM_HEIGHT = 3
+const FOOTPRINT_WIDTHS = [8, 10, 12, 14] as const
+const FOOTPRINT_DEPTHS = [8, 10, 12] as const
+/** The kinds of kit part a room is furnished from, by what they do: something to keep souvenirs on, a screen for works, a light, and the rest. */
+const KEEPERS = ['shelf-low', 'shelf-tall', 'case-glass', 'case-table', 'plaque-stand'] as const
+const SCREENS = ['screen-small', 'screen-large'] as const
+const LIGHTS = ['lamp-floor', 'lantern-ground'] as const
+const EXTRAS = ['table', 'bench', 'desk', 'chair', 'stool', 'plinth', 'cabinet', 'crate', 'cat-bed', 'bookcase', 'fern', 'bush', 'flower-patch', 'rock-small', 'lamp-floor', 'rug-round', 'rug-square'] as const
 
-/** The slots of a place's rooms that can show a work (a screen, a frame or a terminal) and are free. */
-function freeWorkSlots(place: Place, kit: Kit): string[] {
+type Room = Place['rooms'][number]
+type Placed = Room['parts'][number]
+
+/** The slots of a place's rooms of the given kinds that are free. */
+function freeSlots(place: Place, kit: Kit, kinds: readonly SlotKind[]): { id: string; kind: SlotKind }[] {
   const used = new Set(place.exhibits.map((e) => e.slot))
-  const out: string[] = []
+  const out: { id: string; kind: SlotKind }[] = []
   for (const room of place.rooms) {
     room.parts.forEach((placed, i) => {
       const part = kit.parts.find((p) => p.id === placed.part)
       part?.slots.forEach((slot, k) => {
         const id = `${room.id}/${i}/${k}`
-        if (['screen', 'frame', 'terminal'].includes(slot.kind) && !used.has(id)) out.push(id)
+        if (kinds.includes(slot.kind) && !used.has(id)) out.push({ id, kind: slot.kind })
       })
     })
   }
   return out
 }
 
-/** Chunks around the origin, nearest first: where new places go. */
-function* chunksOutward(): Generator<[number, number]> {
-  for (let r = 1; r < 12; r++) for (let x = -r; x <= r; x++) for (let z = -r; z <= r; z++) if (Math.max(Math.abs(x), Math.abs(z)) === r) yield [x, z]
+/**
+ * A room of `w` by `d` meters furnished from the kit: the style's door in the middle of the front wall (ground floor only), the
+ * style's window on the back wall and maybe one on a side, then something to keep souvenirs on, a screen, a light and a few more
+ * things, each against a wall facing in or standing free, never in the line from the door to the middle.
+ */
+function furnish(prng: Prng, kit: Kit, style: string, w: number, d: number, door: boolean): Placed[] {
+  const s = kit.styles.find((x) => x.id === style) ?? kit.styles[0]!
+  const parts: Placed[] = []
+  if (door) parts.push({ part: s.door, at: [0, 0, d / 2 - 0.1], rot: 0 })
+  parts.push({ part: s.window, at: [0, 1.2, -(d / 2 - 0.1)], rot: 0 })
+  if (prng.next() < 0.6) parts.push({ part: s.window, at: [(prng.next() < 0.5 ? -1 : 1) * (w / 2 - 0.1), 1.2, 0], rot: Math.PI / 2 })
+  // Spots against the walls, facing into the room, and spots standing free, off the door's line.
+  const back = d / 2 - 0.5
+  const side = w / 2 - 0.5
+  const wallSpots: [number, number, number][] = shuffle(prng, [
+    [-(w / 2 - 1.4), -back, 0],
+    [w / 2 - 1.4, -back, 0],
+    [-side, -d / 4, Math.PI / 2],
+    [-side, d / 4, Math.PI / 2],
+    [side, -d / 4, -Math.PI / 2],
+    [side, d / 4, -Math.PI / 2],
+  ])
+  const freeSpots: [number, number, number][] = shuffle(prng, [
+    [-w / 4, 0, 0],
+    [w / 4, 0, 0],
+    [-w / 4, d / 4 - 0.3, 0],
+    [w / 4, d / 4 - 0.3, 0],
+  ])
+  const against = (part: string) => {
+    const spot = wallSpots.shift()
+    if (spot) parts.push({ part, at: [spot[0], 0, spot[1]], rot: spot[2] })
+  }
+  const free = (part: string) => {
+    const spot = freeSpots.shift()
+    if (spot) parts.push({ part, at: [spot[0], 0, spot[1]], rot: spot[2] })
+  }
+  against(pick(prng, KEEPERS))
+  against(pick(prng, SCREENS))
+  free(pick(prng, LIGHTS))
+  if (prng.next() < 0.5) against(pick(prng, KEEPERS))
+  const more = 2 + prng.int(3)
+  for (let k = 0; k < more; k++) {
+    const part = pick(prng, EXTRAS)
+    if (part.startsWith('rug')) parts.push({ part, at: [0, 0, 0], rot: 0 })
+    else if (['bookcase', 'cabinet', 'desk'].includes(part)) against(part)
+    else free(part)
+  }
+  // A rug once at most.
+  return parts.filter((p, i) => !p.part.startsWith('rug') || parts.findIndex((q) => q.part.startsWith('rug')) === i)
 }
+
+/** Chooses `n` distinct items. */
+const some = <T>(prng: Prng, list: readonly T[], n: number): T[] => shuffle(prng, list).slice(0, n)
 
 export interface GrowOptions {
   seed: number
@@ -54,81 +130,129 @@ export interface GrowOptions {
 export function growDay30(dir: string, opts: GrowOptions): { places: number; rooms: number; works: number; trails: number } {
   const kit = opts.kit ?? engineKit
   const prng = createPrng(opts.seed)
+  const worldSeed = (readJson(dir, 'forkling.json') as { seed: number }).seed
   const placeFiles = readdirSync(join(dir, 'places')).filter((f) => f.endsWith('.json')).sort()
   const places = placeFiles.map((f) => Place.parse(readJson(dir, `places/${f}`)))
-  const templates = places.filter((p) => !['home', 'workshop'].includes(p.id))
-  const template = templates[0] ?? places[0]!
+  const tagPool = [...new Set(places.flatMap((p) => p.tags))].filter((t) => !['home', 'workshop'].includes(t)).sort()
   const workDirs = readdirSync(join(dir, 'works')).filter((d) => existsSync(join(dir, 'works', d, 'meta.json'))).sort()
   const workTemplate = WorkMeta.parse(readJson(dir, `works/${workDirs[0]}/meta.json`))
   const page = readFileSync(join(dir, 'works', workDirs[0]!, 'index.html'), 'utf8')
   const trailFile = readdirSync(join(dir, 'trails')).filter((f) => f.endsWith('.json')).sort()[0]!
   const trailTemplate = Trail.parse(readJson(dir, `trails/${trailFile}`))
+  const souvenirFiles = existsSync(join(dir, 'souvenirs')) ? readdirSync(join(dir, 'souvenirs')).filter((f) => f.endsWith('.json')).sort() : []
+  const souvenirs = souvenirFiles.map((f) => Souvenir.parse(readJson(dir, `souvenirs/${f}`)))
+  const onShow = new Set(places.flatMap((p) => p.exhibits.filter((e) => e.kind === 'souvenir' && e.ref).map((e) => e.ref!.slice('souvenirs/'.length))))
+  const changedSouvenirs = new Set<string>()
   const exists = (path: string) => existsSync(join(dir, path)) || existsSync(join(dir, `${path}.json`))
-  const chunks = chunksOutward()
-  const taken = new Set(places.map((p) => p.chunk.join(',')))
   const added = { places: 0, rooms: 0, works: 0, trails: 0 }
   const startMs = Date.parse(`${opts.start}T00:00:00Z`)
+  const grown = () => places.filter((p) => p.id.startsWith('grown-place-'))
+  const replace = (p: Place, next: Place) => {
+    places[places.indexOf(p)] = next
+  }
 
   for (let d = 0; d < opts.days; d++) {
     const date = new Date(startMs + d * DAY).toISOString().slice(0, 10)
     const at = (h: number) => new Date(startMs + d * DAY + h * 3_600_000).toISOString()
 
-    // Every third day, a new place, the shape of a place Merge founded, on the next free chunk.
+    // Every third day, a new place, where founding puts it and built the way the fallback found build makes one.
     if (d % 3 === 1) {
-      let chunk = chunks.next().value as [number, number]
-      while (taken.has(chunk.join(','))) chunk = chunks.next().value as [number, number]
-      taken.add(chunk.join(','))
       const n = places.length + 1
-      const room = { ...template.rooms[0]!, id: 'main-room' }
-      const place: Place = Place.parse({
-        ...template,
-        id: `grown-place-${n}`,
-        name: `Grown Place ${n}`,
-        purpose: `A place grown for the day-30 fixture on ${date}, the shape of one Merge founded.`,
-        founded: date,
-        chunk,
-        offset: [0, 0],
-        related: [pick(prng, places).id],
-        paths: [],
-        exterior: { ...template.exterior, sign: `GROWN PLACE ${n}`, palette: pick(prng, kit.palettes).id },
-        rooms: [room],
-        exhibits: [],
-        state: { ...template.state, construction: null, lastCareAt: at(9), closed: null },
-        away: [],
-        history: [{ at: at(9), verb: 'found', summary: `Founded for the day-30 fixture.` }],
-      })
-      places.push(place)
-      added.places++
+      const name = `Grown Place ${n}`
+      const tags = tagPool.length ? some(prng, tagPool, 1 + prng.int(2)) : ['places']
+      const related = [pick(prng, places).id]
+      const chunk = choosePlacement(places.map(toLandPlace), { tags, related }, worldSeed)
+      if (chunk) {
+        const style = pick(prng, kit.styles).id
+        const footprint: [number, number] = [pick(prng, FOOTPRINT_WIDTHS), pick(prng, FOOTPRINT_DEPTHS)]
+        const floors = prng.next() < 0.35 ? 2 : 1
+        const [w, dd] = [footprint[0] - 1, footprint[1] - 1]
+        const rooms: Room[] = [{ id: 'main-room', name: `Grown Room ${n}a`, size: [w, dd, ROOM_HEIGHT], at: [0, 0], floor: 0, parts: furnish(prng, kit, style, w, dd, true) }]
+        // A two-floor place may get its upper room when it is founded, or later from an expand.
+        if (floors === 2 && prng.next() < 0.5) rooms.push({ id: 'upper-room', name: `Grown Room ${n}b`, size: [w, dd, ROOM_HEIGHT], at: [0, 0], floor: 1, parts: furnish(prng, kit, style, w, dd, false) })
+        const place = Place.parse({
+          id: `grown-place-${n}`,
+          name,
+          purpose: `A place grown for the day-30 fixture on ${date}, the shape of one Merge founded.`,
+          tags,
+          founded: date,
+          chunk: [...chunk],
+          offset: [0, 0],
+          related,
+          paths: [],
+          exterior: { style, footprint, floors, palette: pick(prng, kit.palettes).id, sign: name.toUpperCase().slice(0, 24) },
+          rooms,
+          exhibits: [],
+          state: { construction: null, lastCareAt: at(9), neglect: 0, lamps: true, closed: null },
+          away: [],
+          history: [{ at: at(9), verb: 'found', summary: 'Founded for the day-30 fixture.' }],
+        })
+        const problems = validatePlace(place, { kit, exists })
+        if (problems.length) throw new Error(`grown place ${place.id} breaks the place rules: ${problems.join('; ')}`)
+        places.push(place)
+        added.places++
+      }
     }
 
-    // Every fourth day, a place that has room for it gets one more room, a copy of its first, beside it.
-    if (d % 4 === 2) {
-      const grown = places.filter((p) => p.rooms.length < 3 && p.id.startsWith('grown-place-'))
-      if (grown.length) {
-        const p = pick(prng, grown)
-        const first = p.rooms[0]!
-        const next = { ...first, id: `room-${p.rooms.length + 1}`, floor: p.rooms.length, at: first.at }
-        const candidate = { ...p, exterior: { ...p.exterior, floors: p.rooms.length + 1 }, rooms: [...p.rooms, next], history: [...p.history, { at: at(11), verb: 'expand' as const, summary: 'One more floor for the day-30 fixture.' }] }
-        if (validatePlace(candidate, { kit, exists }).length === 0) {
-          places[places.indexOf(p)] = Place.parse(candidate)
-          added.rooms++
+    // Every fourth day, an expand: the building never changes, so it is a room on an upper floor that has none yet, or a path.
+    if (d % 4 === 2 && grown().length) {
+      const p = pick(prng, grown())
+      const upperFree = p.exterior.floors === 2 && !p.rooms.some((r) => r.floor === 1)
+      let candidate: Place | null = null
+      if (upperFree) {
+        const [w, dd] = [p.exterior.footprint[0] - 1, p.exterior.footprint[1] - 1]
+        const room: Room = { id: 'upper-room', name: `${p.rooms[0]!.name.replace(/a$/, '')}b`, size: [w, dd, ROOM_HEIGHT], at: [0, 0], floor: 1, parts: furnish(prng, kit, p.exterior.style, w, dd, false) }
+        candidate = { ...p, rooms: [...p.rooms, room], history: [...p.history, { at: at(11), verb: 'expand', summary: 'A room upstairs for the day-30 fixture.' }] }
+      } else {
+        const others = places.filter((o) => o.id !== p.id && !p.paths.some((x) => x.to === o.id))
+        if (others.length) {
+          const to = pick(prng, others).id
+          candidate = { ...p, paths: [...p.paths, { to, at: date }], history: [...p.history, { at: at(11), verb: 'expand', summary: `A path to ${to} for the day-30 fixture.` }] }
+        }
+      }
+      if (candidate && validatePlace(candidate, { kit, exists }).length === 0) {
+        replace(p, Place.parse(candidate))
+        if (upperFree) added.rooms++
+      }
+    }
+
+    // Every other day, a tend: one grown place is cared for, and a souvenir not on show yet goes on a free shelf, case or plaque.
+    if (d % 2 === 0 && grown().length) {
+      const p = pick(prng, grown())
+      let next: Place = { ...p, state: { ...p.state, lastCareAt: at(10) }, history: [...p.history, { at: at(10), verb: 'tend', summary: 'Tended for the day-30 fixture.' }] }
+      const slots = freeSlots(p, kit, ['shelf', 'case', 'plaque'])
+      const kept = slots.flatMap((slot) => {
+        const fits = souvenirs.find((s) => !onShow.has(s.id) && (SLOT_ACCEPTS[slot.kind].souvenirs ?? []).includes(s.kind))
+        return fits ? [{ slot, souvenir: fits }] : []
+      })[0]
+      if (kept) {
+        const exhibit = { id: `kept-${kept.souvenir.id}`.slice(0, 41).replace(/-+$/, ''), kind: 'souvenir' as const, ref: `souvenirs/${kept.souvenir.id}`, slot: kept.slot.id, label: `A souvenir kept here for the day-30 fixture on ${date}.`, added: date }
+        next = { ...next, exhibits: [...next.exhibits, exhibit] }
+      }
+      if (validatePlace(next, { kit, exists }).length === 0) {
+        replace(p, Place.parse(next))
+        if (kept) {
+          onShow.add(kept.souvenir.id)
+          const s = souvenirs.find((x) => x.id === kept.souvenir.id)!
+          souvenirs[souvenirs.indexOf(s)] = { ...s, placedIn: p.id }
+          changedSouvenirs.add(s.id)
         }
       }
     }
 
-    // Two works a day, each on a free screen or frame somewhere, or only on the shelf when there is none.
+    // Two works a day, each on a free screen somewhere, or only on the shelf when there is none.
     for (let k = 0; k < 2; k++) {
       const id = `grown-work-${date}-${k + 1}`
       const meta = WorkMeta.parse({ ...workTemplate, id, title: `Grown Work ${date} ${k + 1}`, kind: pick(prng, WORK_KINDS), about: `A work grown for the day-30 fixture on ${date}.`, made: at(13 + k), titleHistory: [], status: 'shelf', installedIn: null })
       write(dir, `works/${id}/meta.json`, meta)
       write(dir, `works/${id}/index.html`, page)
       added.works++
-      const withRoom = places.map((p) => ({ p, slots: freeWorkSlots(p, kit) })).filter((x) => x.slots.length > 0)
+      const withRoom = places.map((p) => ({ p, slots: freeSlots(p, kit, ['screen']) })).filter((x) => x.slots.length > 0)
       if (withRoom.length && prng.next() < 0.8) {
         const { p, slots } = pick(prng, withRoom)
-        const slot = slots[0]!
+        const slot = slots[0]!.id
         const candidate = { ...p, exhibits: [...p.exhibits, { id: `screen-${id}`.slice(0, 41).replace(/-+$/, ''), kind: 'work', ref: `works/${id}`, slot, label: meta.title, added: date }] }
-        if (validatePlace(candidate, { kit, exists }).length === 0) places[places.indexOf(p)] = Place.parse(candidate)
+        if (validatePlace(candidate, { kit, exists }).length === 0) replace(p, Place.parse(candidate))
       }
     }
 
@@ -144,5 +268,6 @@ export function growDay30(dir: string, opts: GrowOptions): { places: number; roo
     if (problems.length) throw new Error(`grown place ${p.id} breaks the place rules: ${problems.join('; ')}`)
     write(dir, `places/${p.id}.json`, p)
   }
+  for (const s of souvenirs) if (changedSouvenirs.has(s.id)) write(dir, `souvenirs/${s.id}.json`, s)
   return added
 }

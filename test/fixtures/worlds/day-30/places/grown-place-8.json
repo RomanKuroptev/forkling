@@ -3,14 +3,13 @@
   "name": "Grown Place 8",
   "purpose": "A place grown for the day-30 fixture on 2026-12-09, the shape of one Merge founded.",
   "tags": [
-    "light sensing",
     "installation art",
     "generative art"
   ],
   "founded": "2026-12-09",
   "chunk": [
-    1,
-    -1
+    -1,
+    0
   ],
   "offset": [
     0,
@@ -19,24 +18,29 @@
   "related": [
     "workshop"
   ],
-  "paths": [],
+  "paths": [
+    {
+      "to": "grown-place-4",
+      "at": "2026-12-14"
+    }
+  ],
   "exterior": {
-    "style": "timber",
+    "style": "tower",
     "footprint": [
-      8,
-      8
+      14,
+      10
     ],
     "floors": 1,
-    "palette": "ember",
+    "palette": "dusk",
     "sign": "GROWN PLACE 8"
   },
   "rooms": [
     {
       "id": "main-room",
-      "name": "Five Lamps Room",
+      "name": "Grown Room 8a",
       "size": [
-        7,
-        7,
+        13,
+        9,
         3
       ],
       "at": [
@@ -46,119 +50,47 @@
       "floor": 0,
       "parts": [
         {
-          "part": "floor-boards",
-          "at": [
-            -1.8,
-            0,
-            -1.8
-          ],
-          "rot": 0
-        },
-        {
-          "part": "floor-boards",
-          "at": [
-            1.8,
-            0,
-            -1.8
-          ],
-          "rot": 0
-        },
-        {
-          "part": "floor-boards",
-          "at": [
-            -1.8,
-            0,
-            1.8
-          ],
-          "rot": 0
-        },
-        {
-          "part": "floor-boards",
-          "at": [
-            1.8,
-            0,
-            1.8
-          ],
-          "rot": 0
-        },
-        {
           "part": "door-wood",
           "at": [
             0,
             0,
-            3.4
+            4.4
           ],
           "rot": 0
         },
         {
-          "part": "window-large",
+          "part": "window-round",
           "at": [
             0,
             1.2,
-            -3.4
+            -4.4
           ],
           "rot": 0
         },
         {
-          "part": "window-small",
+          "part": "case-table",
           "at": [
-            -3.4,
-            1.4,
-            0
-          ],
-          "rot": 1.57
-        },
-        {
-          "part": "window-small",
-          "at": [
-            3.4,
-            1.4,
-            0
-          ],
-          "rot": 1.57
-        },
-        {
-          "part": "lamp-floor",
-          "at": [
-            -2.6,
+            -5.1,
             0,
-            -2.4
+            -4
           ],
           "rot": 0
         },
         {
-          "part": "lamp-floor",
+          "part": "screen-large",
           "at": [
-            -1.3,
+            -6,
             0,
-            -2.6
+            -2.25
           ],
-          "rot": 0
+          "rot": 1.5707963267948966
         },
         {
           "part": "lamp-floor",
           "at": [
+            -3.25,
             0,
-            0,
-            -2.7
-          ],
-          "rot": 0
-        },
-        {
-          "part": "lamp-floor",
-          "at": [
-            1.3,
-            0,
-            -2.6
-          ],
-          "rot": 0
-        },
-        {
-          "part": "lamp-floor",
-          "at": [
-            2.6,
-            0,
-            -2.4
+            1.95
           ],
           "rot": 0
         },
@@ -166,42 +98,51 @@
           "part": "rug-round",
           "at": [
             0,
-            0.1,
+            0,
             0
           ],
           "rot": 0
         },
         {
-          "part": "shelf-tall",
+          "part": "flower-patch",
           "at": [
-            -2.6,
+            3.25,
             0,
-            1.5
-          ],
-          "rot": 1.57
-        },
-        {
-          "part": "plinth",
-          "at": [
-            0,
-            0,
-            -0.5
+            0
           ],
           "rot": 0
         },
         {
-          "part": "bench",
+          "part": "fern",
           "at": [
-            1.8,
+            3.25,
             0,
-            2
+            1.95
+          ],
+          "rot": 0
+        },
+        {
+          "part": "rock-small",
+          "at": [
+            -3.25,
+            0,
+            0
           ],
           "rot": 0
         }
       ]
     }
   ],
-  "exhibits": [],
+  "exhibits": [
+    {
+      "id": "screen-grown-work-2026-12-09-1",
+      "kind": "work",
+      "ref": "works/grown-work-2026-12-09-1",
+      "slot": "main-room/3/0",
+      "label": "Grown Work 2026-12-09 1",
+      "added": "2026-12-09"
+    }
+  ],
   "state": {
     "construction": null,
     "lastCareAt": "2026-12-09T09:00:00.000Z",
@@ -215,6 +156,11 @@
       "at": "2026-12-09T09:00:00.000Z",
       "verb": "found",
       "summary": "Founded for the day-30 fixture."
+    },
+    {
+      "at": "2026-12-14T11:00:00.000Z",
+      "verb": "expand",
+      "summary": "A path to grown-place-4 for the day-30 fixture."
     }
   ]
 }
