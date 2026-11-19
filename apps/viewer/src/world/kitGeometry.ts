@@ -257,7 +257,7 @@ export interface ShapeInstances {
   trim: Float32Array
   /** 1 for the inside of a place, which gets less of the sky's light, else 0. */
   inside: Float32Array
-  /** How much brighter the instance is drawn by day (`Instance.dayLift`), else 0. */
+  /** How far the instance is mixed towards white by day (`Instance.dayLift`), else 0. */
   dayLift: Float32Array
   count: number
 }

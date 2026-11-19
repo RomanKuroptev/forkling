@@ -70,7 +70,7 @@ function glowMaterial(): THREE.MeshStandardMaterial {
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;\nvarying float vTrim;\nvarying float vInside;\nvarying float vDayLift;')
       // A dark lining is drawn lighter by day only, so a room is never dim at noon and its night look is unchanged.
-      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.0 + vDayLift * (1.0 - uNight);')
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), vDayLift * (1.0 - uNight));')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * (${self} + vGlow * ${glow} + vTrim * mix(${f(NIGHT_LIGHT.trimDay)}, ${f(NIGHT_LIGHT.trimNight)}, uNight));`)
       // Under a roof, less of the sky's light; a glowing thing takes only part of the light that falls on it, so it keeps its colour.
       .replace(

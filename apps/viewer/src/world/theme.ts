@@ -72,10 +72,10 @@ export const INTERIOR = {
   wallMix: 0.55,
   wallTowards: COLORS.face,
   /**
-   * By day the lining of a palette with a dark trim (slate, dusk) is lifted towards this light (the linear luminance of the colour,
-   * 0 to 1), so no room is darker than mid-lilac at noon; at night it is as it is (`dayLift`).
+   * By day the lining of a palette with a dark trim (slate, dusk) is mixed towards white until it has this light (the linear luminance
+   * of the colour, 0 to 1), so no room is darker than mid-lilac at noon; at night it is as it is (`dayLift`).
    */
-  dayWallLight: 0.5,
+  dayWallLight: 0.58,
   /** The share of the sky's light (the hemisphere light) that reaches the inside of a place. */
   skyInside: 0.42,
   /** The warm light of a lamp that is on, how strong it is by day and at night, and how far it reaches (meters). */
@@ -118,14 +118,15 @@ export function interiorWall(trim: string): string {
 }
 
 /**
- * How much brighter a lining colour is drawn by day: the factor (minus one) that lifts its linear luminance to `INTERIOR.dayWallLight`,
- * 0 for a colour already that light, at most 1. The shader fades it out at night.
+ * How far a lining colour is mixed towards white by day (0 to 1) so its linear luminance reaches `INTERIOR.dayWallLight`; 0 for a
+ * colour already that light. Mixing towards white keeps a saturated purple a pastel lilac instead of clipping it. The shader fades
+ * it out at night.
  */
 export function dayLift(hex: string): number {
   const n = Number.parseInt(hex.slice(1), 16)
   const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
   const l = 0.2126 * lin(((n >> 16) & 255) / 255) + 0.7152 * lin(((n >> 8) & 255) / 255) + 0.0722 * lin((n & 255) / 255)
-  return Math.min(1, Math.max(0, INTERIOR.dayWallLight / Math.max(l, 0.01) - 1))
+  return l >= INTERIOR.dayWallLight ? 0 : (INTERIOR.dayWallLight - l) / (1 - l)
 }
 
 /** The mist at the world's edge and the fog, in the look's colours rather than white. */

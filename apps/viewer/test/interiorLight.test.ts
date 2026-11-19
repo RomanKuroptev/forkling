@@ -143,14 +143,15 @@ describe('no room is dim by day (#405 look review)', () => {
     return 0.2126 * lin(((n >> 16) & 255) / 255) + 0.7152 * lin(((n >> 8) & 255) / 255) + 0.0722 * lin((n & 255) / 255)
   }
 
-  it('lifts the lining of a dark-trim palette (slate, dusk) by day to the day wall light, and leaves light ones alone', () => {
+  it('mixes the lining of a dark-trim palette (slate, dusk) towards white by day to the day wall light, and leaves light ones alone', () => {
     for (const palette of kit.palettes) {
       const c = interiorWall(palette.colors.trim)
-      const lift = dayLift(c)
-      expect(lift, palette.id).toBeGreaterThanOrEqual(0)
-      expect(lift, palette.id).toBeLessThanOrEqual(1)
-      expect(light(c) * (1 + lift), palette.id).toBeGreaterThanOrEqual(Math.min(INTERIOR.dayWallLight, light(c) * 2) - 1e-9)
-      if (light(c) >= INTERIOR.dayWallLight) expect(lift, palette.id).toBe(0)
+      const t = dayLift(c)
+      expect(t, palette.id).toBeGreaterThanOrEqual(0)
+      expect(t, palette.id).toBeLessThan(1)
+      // Mixed that far towards white, its light is the day wall light (linear light mixes linearly).
+      if (t > 0) expect(light(c) + t * (1 - light(c)), palette.id).toBeCloseTo(INTERIOR.dayWallLight, 6)
+      else expect(light(c), palette.id).toBeGreaterThanOrEqual(INTERIOR.dayWallLight)
     }
     expect(dayLift(interiorWall(kit.palettes.find((p) => p.id === 'slate')!.colors.trim))).toBeGreaterThan(0.3)
     expect(dayLift(interiorWall(kit.palettes.find((p) => p.id === 'dusk')!.colors.trim))).toBeGreaterThan(0.2)
