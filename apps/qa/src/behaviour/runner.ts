@@ -10,6 +10,7 @@ import { snapshotFetch } from '@forkling/mind/src/web/snapshot.ts'
 import { hashString, localDate } from '@forkling/sim'
 import { type Finding, SEVERITY_ORDER } from '../report/finding.ts'
 import { repoRoot } from '../paths.ts'
+import { didNotRun } from '../run/check.ts'
 import { readRun } from './read-run.ts'
 import { type Scenario, scenarioAnswers } from './scenarios.ts'
 import { type Levels, type Score, scoreRun } from './score.ts'
@@ -183,13 +184,28 @@ export function spreadTable(runs: { label: string; scores: Score[] }[]): string 
 export async function scoreRuns(runs: SeedRun[], levels: Levels, runLabel: string, outRoot: string, now: Date): Promise<{ findings: Finding[]; scored: { label: string; from: string; to: string; scores: Score[] }[] }> {
   const perSeed: { label: string; findings: Finding[] }[] = []
   const scored: { label: string; from: string; to: string; scores: Score[] }[] = []
+  const notRun: Finding[] = []
   for (const r of runs) {
-    const run = readRun({ world: r.world, outDir: existsSync(join(r.outDir, 'summary.md')) || existsSync(join(r.outDir, 'prompts.jsonl')) ? r.outDir : null, label: r.label })
+    let run: ReturnType<typeof readRun>
+    try {
+      run = readRun({ world: r.world, outDir: existsSync(join(r.outDir, 'summary.md')) || existsSync(join(r.outDir, 'prompts.jsonl')) ? r.outDir : null, label: r.label })
+    } catch (e) {
+      // A seed that never ran (no key, a crash before the first tick) is a check that did not run, never a crash of the whole score.
+      notRun.push({ ...didNotRun({ id: `behaviour:${runLabel}:${r.label}`, area: 'behaviour', title: `behaviour run ${runLabel} ${r.label}` }, e, now) })
+      continue
+    }
     const { scores, findings } = await scoreRun(run, levels, now)
     perSeed.push({ label: r.label, findings })
     scored.push({ label: r.label, from: run.from, to: run.to, scores })
   }
-  const findings = combineFindings(perSeed, runLabel)
+  const findings = [...notRun, ...combineFindings(perSeed, runLabel)]
   writeBehaviour(outRoot, scored, findings, `behaviour ${runLabel}`, spreadTable(scored))
   return { findings, scored }
+}
+
+/** The key file for a real run: the one given, else the repo root's `.env` (the file the mind's own scripts load), else none. */
+export function realEnvFile(given: string | undefined, exists: (p: string) => boolean = existsSync, root: string = repoRoot()): string | undefined {
+  if (given) return given
+  const path = join(root, '.env')
+  return exists(path) ? path : undefined
 }
