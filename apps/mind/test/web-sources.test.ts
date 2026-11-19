@@ -96,6 +96,8 @@ describe('items and links', () => {
     const link = wikipediaTopicLink('les Demoiselles d Avignon')
     expect(link.url).toBe(`${wiki}/wiki/Les_Demoiselles_d_Avignon`)
     expect(isAllowed(link.url)).toBe(true)
+    // A guess: no one has shown Merge this page, so it is never kept as a page Merge has seen.
+    expect(link.guess).toBe(true)
   })
 
   it('reads the licences it allows from the words a site uses, and nothing else', () => {
@@ -302,8 +304,17 @@ describe('records', () => {
     expect(item.text).toContain('# Sketch')
     expect(item.links.some((l) => l.url === 'https://github.com/b/loops')).toBe(true)
     expect(item.links.some((l) => l.url === 'https://github.com/a/sketch')).toBe(false)
-    expect(item.links.some((l) => l.url.startsWith(`${wiki}/wiki/`))).toBe(true)
     expect((await readUrl(f, 'https://github.com/a/sketch')).title).toBe('a/sketch')
+  })
+
+  it('does not offer a repository topic as a guessed Wikipedia page (Acpx, Creative-coding, Algorithmic-art all 404ed on 18 and 19 Nov 2026)', async () => {
+    const f = fake({
+      'https://api.github.com/repos/villares/sketch-a-day': { full_name: 'villares/sketch-a-day', html_url: 'https://github.com/villares/sketch-a-day', description: 'One sketch a day', topics: ['acpx', 'creative-coding', 'algorithmic-art'], stargazers_count: 50 },
+      'https://api.github.com/repos/villares/sketch-a-day/readme': `# Sketch a day\n${words(80)}`,
+    })
+    const item = await githubRepo(f, 'villares/sketch-a-day')
+    expect(item.text).toContain('Topics: acpx, creative-coding, algorithmic-art')
+    expect(item.links.filter((l) => l.url.startsWith(`${wiki}/wiki/`))).toEqual([])
   })
 
   const fileHtml = (licence: string, extra = '') => `<html><body><h1 id="firstHeading" class="firstHeading"><span>File:Fog.jpg</span></h1>

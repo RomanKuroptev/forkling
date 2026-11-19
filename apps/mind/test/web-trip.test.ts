@@ -260,6 +260,13 @@ describe('when a page cannot be read', () => {
     expect(r.seen).toEqual([1, 2, 3].map((n) => ({ title: `Lighthouse link ${n}`, url: `${wiki}/Lighthouse_${n}` })))
   })
 
+  it('does not keep a guessed link (a name made into a Wikipedia address) as a page Merge has seen', async () => {
+    const links = [{ title: 'Maya archaeology (Wikipedia)', url: `${wiki}/Maya_archaeology`, guess: true as const }, { title: 'Moon', url: `${wiki}/Moon` }]
+    const s = setup({ pages: { [`${wiki}/Lighthouse`]: page('Lighthouse', { links }) }, reads: [read({ next: null })] })
+    const r = await runTrip(s.deps, s.start)
+    expect(r.seen).toEqual([{ title: 'Moon', url: `${wiki}/Moon` }])
+  })
+
   it('ends the trip, with a note, when the read call gave nothing usable', async () => {
     const s = setup({ pages: { [`${wiki}/Lighthouse`]: page('Lighthouse') }, reads: [{ answer: null, souvenir: {}, usd: 0, note: 'over the budget' }] })
     const r = await runTrip(s.deps, s.start)

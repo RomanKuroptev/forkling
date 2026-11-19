@@ -134,7 +134,8 @@ export async function githubRepo(f: Fetcher, fullName: string): Promise<Item> {
     title: repo.full_name,
     text: cutToTokens(`${repo.full_name}: ${repo.description ?? ''}\nTopics: ${topics.join(', ')}\nStars: ${repo.stargazers_count}\n\n${htmlToText(readme)}`),
     links: capLinks(
-      [...similar.filter((n) => n !== repo.full_name).slice(0, 4).map((n) => ({ title: n, url: `https://github.com/${n}` })), ...topics.slice(0, 3).map(wikipediaTopicLink)],
+      // No Wikipedia link per topic: a repository topic is a tag ("creative-coding", "acpx"), not a page title, and every one followed was a 404.
+      similar.filter((n) => n !== repo.full_name).slice(0, 4).map((n) => ({ title: n, url: `https://github.com/${n}` })),
       MAX_RECORD_LINKS,
     ),
     images: [],
