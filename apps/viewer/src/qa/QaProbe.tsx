@@ -11,6 +11,7 @@ import { qaMode, qaTime } from './params.ts'
 import { qaRegistry, type QaPose, type Vec3 } from './registry.ts'
 import { frontPose } from './cameras.ts'
 import { objectEntry, placeObjects, type QaObject } from './sceneList.ts'
+import { coveredDoors, placeFights } from './fights.ts'
 
 /** One stepped frame: the world moves this many milliseconds each time the harness draws. */
 export const QA_FRAME_MS = 1000 / 30
@@ -125,6 +126,10 @@ export function QaProbe() {
       step,
       now: () => qaMode!.now + qaTime.elapsedMs,
       scene,
+      /** Every pair of box surfaces of the places that fight (z-fighting), outside and in: `fights.ts`. */
+      fights: () => (qaRegistry.places ? placeFights(qaRegistry.places) : []),
+      /** Door parts whose face lies just behind a face of the building, so it covers them: `fights.ts`. */
+      coveredDoors: () => (qaRegistry.places ? coveredDoors(qaRegistry.places) : []),
       renderer: () => ({
         drawCalls: gl.info.render.calls,
         triangles: gl.info.render.triangles,

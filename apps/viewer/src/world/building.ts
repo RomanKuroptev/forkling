@@ -1,6 +1,6 @@
 import type { Kit, KitPalette, Place } from '@forkling/schema'
 import { DOOR_HALF, placeCentre, toLandPlace } from '@forkling/sim'
-import { floorHeight, type Instance, type Shape } from './kitBase.ts'
+import { FLOOR_INSET, FLOOR_TOP, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose } from './matrix.ts'
 import { COLORS } from './theme.ts'
 
@@ -33,6 +33,11 @@ export const RING_HEIGHT = 0.45
 export const CROWN_WIDTH = 3.2
 
 const WALL_THICKNESS = 0.4
+/**
+ * Two faces in one plane fight in the depth buffer (stripes that shimmer as the visitor moves, issues 350, 353, 335, 337, 364, 370,
+ * 371). Where two shapes meet face to face, one stands this far proud of the other.
+ */
+const SKIN = 0.01
 /** How far inside the footprint's edge a wall's middle stands (the body cannot walk on the outer 0.8 m). */
 const INSET = 0.4
 const DOOR_HEIGHT = 2.2
@@ -104,7 +109,8 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
 
   // Base: a low marble slab, wider than the footprint, with a thin glowing edge.
   add('base', 'box', [px, baseY + BASE_HEIGHT / 2, pz], [fw + 2 * BASE_REACH, BASE_HEIGHT, fd + 2 * BASE_REACH], c.marble)
-  add('base', 'box', [px, baseY + 0.025, pz], [fw + 2 * BASE_REACH + 0.2, 0.05, fd + 2 * BASE_REACH + 0.2], c.glow, true)
+  // The edge reaches 1 cm under the slab, so their undersides are never in one plane (they would fight).
+  add('base', 'box', [px, baseY + 0.02, pz], [fw + 2 * BASE_REACH + 0.2, 0.06, fd + 2 * BASE_REACH + 0.2], c.glow, true)
 
   // Body: smooth wall panels on every floor, each leaning in a little and each floor a little narrower than the one below, with few
   // big glowing windows. `dir` is +1 for a wall whose inside is towards +x or +z (back and left), -1 for the front and right.
@@ -135,9 +141,12 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       }
       const size = (len: number, up: number, thick: number): [number, number, number] => (alongZ ? [thick, up, len] : [len, up, thick])
       const rot: [number, number, number] = alongZ ? [0, 0, -dir * tilt] : [dir * tilt, 0, 0]
-      add('body', 'box', at(bodyMid, h / 2), size(bodyLen, h / Math.cos(tilt), WALL_THICKNESS), bodyColor, false, rot)
+      // The outer face stands `SKIN` back from the wall's line, so a part the place file set flush with the line (a door on an upper
+      // floor) stands just in front of the wall and shows, instead of fighting it (issues 370, 371) or being covered by it.
+      add('body', 'box', at(bodyMid, h / 2, -SKIN / 2), size(bodyLen, h / Math.cos(tilt), WALL_THICKNESS - SKIN), bodyColor, false, rot)
       if (f === 0) add('body', 'box', at(bodyMid, 0.125), size(bodyLen + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent, false, rot)
-      if (f === floors - 1) add('body', 'box', at(bodyMid, h - 0.125), size(bodyLen + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent, false, rot)
+      // The top band rises `SKIN` over the wall top, so the two tops are not in one plane (issue 364).
+      if (f === floors - 1) add('body', 'box', at(bodyMid, h - 0.125 + SKIN / 2), size(bodyLen + 0.1, 0.25 + SKIN, WALL_THICKNESS + 0.12), c.accent, false, rot)
       // The glowing band round the body (the hero), above the windows, on the top floor, on every side.
       if (style === 'tower' && f === floors - 1) add('hero', 'box', at(mid, ringUp, WALL_THICKNESS / 2 + 0.15), size(length + 1.1, RING_HEIGHT, 0.3), c.glow, true, rot)
       if (!windows) return
@@ -159,7 +168,15 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       // The band goes on over the door too, above it.
       if (style === 'tower' && floors === 1) add('hero', 'box', [px, y + ringUp * Math.cos(tilt), z1 - ringUp * lean + WALL_THICKNESS / 2 + 0.15], [DOOR_HALF * 2 + 1, RING_HEIGHT, 0.3], c.glow, true, [-tilt, 0, 0])
       const lintel = h - DOOR_HEIGHT
-      if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1 - lean * (DOOR_HEIGHT + lintel / 2)], [DOOR_HALF * 2, lintel, WALL_THICKNESS], bodyColor)
+      if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1 - lean * (DOOR_HEIGHT + lintel / 2) - SKIN / 2], [DOOR_HALF * 2, lintel, WALL_THICKNESS - SKIN], bodyColor)
+      // A doorstep in the accent colour (the foot band going on across the door) runs from the room out over the slab and its glowing
+      // edge, as high as the floor inside: the doorway shows a step, not white marble and a glowing line blown out to a white smear
+      // (issue 350).
+      // It starts where the floor inside stops, so the two tops meet edge to edge and never overlap.
+      const stepFrom = pz + fd / 2 - FLOOR_INSET
+      const stepTo = pz + fd / 2 + BASE_REACH + 0.1 + SKIN
+      const stepFoot = 0.03
+      slots.base.push({ shape: 'box', matrix: compose([px, y + (FLOOR_TOP + stepFoot) / 2, (stepFrom + stepTo) / 2], [0, 0, 0], [DOOR_HALF * 2 - 2 * SKIN, FLOOR_TOP - stepFoot, stepTo - stepFrom]), color: c.accent })
       // A closed place has its door boarded: chrome planks nailed across the gap, a little crooked.
       if (place.state.closed) {
         const planks: [number, number][] = [[0.55, 0.05], [1.1, -0.06], [1.65, 0.04]]
@@ -169,9 +186,10 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       wall(x0, x1, z1, false, -1, false, true)
     }
   }
-  // A flat chrome roof over the top floor.
+  // A flat chrome roof over the top floor, its top 2 cm over the wall tops (1 cm over the top band) so no two tops share a plane.
   const top = taper(floors - 1)
-  add('body', 'box', [px, baseY + bodyH - 0.1, pz], [fw - 2 * INSET - 2 * top - 0.2, 0.2, fd - 2 * INSET - 2 * top - 0.2], c.chrome)
+  const roofTop = baseY + bodyH + 2 * SKIN
+  add('body', 'box', [px, roofTop - 0.11, pz], [fw - 2 * INSET - 2 * top - 0.2, 0.22, fd - 2 * INSET - 2 * top - 0.2], c.chrome)
 
   // Front: the door wall as a window on the desktop. It rises above the roof as a false front: a title bar in the accent colour with
   // three small buttons and the place's name, and a glowing screen below it.
@@ -182,8 +200,11 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   let screen = 0
   let titleBar: BuildingModel['titleBar'] = null
   if (panel >= TITLE_BAR + 0.5) {
-    add('front', 'box', [px, baseY + bodyH + panel / 2, frontZ], [fwid, panel, 0.5], bodyColor)
-    add('front', 'box', [px, baseY + fh - TITLE_BAR / 2, frontZ + 0.05], [fwid, TITLE_BAR, 0.6], c.accent)
+    // The panel reaches 2 cm down past the roof line and is 2 cm narrower on each side than the title bar, and the bar stands 2 cm
+    // proud of it at the top and the back, so no face of one is in the plane of a face of the other (issue 337: the back showed the
+    // fight as bits of text).
+    add('front', 'box', [px, baseY + bodyH + panel / 2 - 2 * SKIN / 2, frontZ], [fwid - 4 * SKIN, panel + 2 * SKIN, 0.5], bodyColor)
+    add('front', 'box', [px, baseY + fh - TITLE_BAR / 2 + SKIN, frontZ + 0.04], [fwid, TITLE_BAR + 2 * SKIN, 0.62], c.accent)
     for (let k = 0; k < 3; k++) add('front', 'box', [px + fwid / 2 - 0.55 - k * 0.6, baseY + fh - TITLE_BAR / 2, frontZ + 0.4], [0.4, 0.4, 0.3], c.marble)
     const nameW = Math.max(1, fwid - 2.6)
     // The whole name, on one line: the painter squeezes a long one into the bar, so it is never cut (issue 366).
@@ -202,11 +223,26 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   const crownY = baseY + fh
   const front0 = pz + fd / 2 - INSET - lean * bodyH
   let heroGlow = 0
+  /**
+   * The crown stands on the front's top, behind it, higher than the roof: a drum under it from the roof up to the crown's foot, so
+   * from the side and behind it does not float as a plate over the roof (issue 364).
+   */
+  const drum = (at: [number, number], w: number, d: number, color: string, shape: Shape = 'box') => {
+    const from = baseY + bodyH
+    if (crownY - from > 0.05) add('crown', shape, [at[0], (from + crownY) / 2, at[1]], [w, crownY - from, d], color)
+  }
   if (style === 'tower') {
-    if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ - 0.3 - CROWN_WIDTH / 2], [CROWN_WIDTH, ch, CROWN_WIDTH], c.glow, true)
+    if (ch > 0.2) {
+      add('crown', 'cone', [px, crownY + ch / 2, frontZ - 0.3 - CROWN_WIDTH / 2], [CROWN_WIDTH, ch, CROWN_WIDTH], c.glow, true)
+      drum([px, frontZ - 0.3 - CROWN_WIDTH / 2], CROWN_WIDTH * 0.6, CROWN_WIDTH * 0.6, c.chrome)
+    }
   } else if (style === 'timber') {
     // A pastel villa: a low chrome pyramid, and a porch of four thick white marble columns standing forward under a porch slab, clear of the door.
-    if (ch > 0.2) add('crown', 'cone', [px, crownY + ch / 2, frontZ - 0.3 - Math.min(6, fwid * 0.5) / 2], [Math.min(6, fwid * 0.5), ch, Math.min(6, fwid * 0.5)], c.chrome)
+    if (ch > 0.2) {
+      const w = Math.min(6, fwid * 0.5)
+      add('crown', 'cone', [px, crownY + ch / 2, frontZ - 0.3 - w / 2], [w, ch, w], c.chrome)
+      drum([px, frontZ - 0.3 - w / 2], w * 0.6, w * 0.6, c.chrome)
+    }
     const inner = Math.max(DOOR_HALF + 1.2, fw * 0.18)
     const outer = Math.max(inner + 1.2, fw / 2 - 1)
     for (const x of [-outer, -inner, inner, outer]) add('hero', 'cylinder', [px + x, baseY + bodyH / 2, front0 + 1.5], [0.8, bodyH, 0.8], c.marble)
@@ -216,6 +252,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     if (ch > 0.2) {
       const r = Math.min(5, fwid * 0.5)
       add('crown', 'sphere', [px, crownY, frontZ - 0.4 - r / 2], [r, Math.min(ch * 2, r * 1.1), r], c.marble)
+      drum([px, frontZ - 0.4 - r / 2], r * 0.6, r * 0.6, c.marble, 'cylinder')
     }
     const R = DOOR_HALF + 0.4
     const archZ = front0 + 0.4 + 0.3
@@ -235,7 +272,8 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     add('hero', 'box', [px - (DOOR_HALF + 0.1 + w / 2), baseY + 0.25 + hh / 2, front0 + 0.3], [w, hh, 0.5], c.glow, true)
     heroGlow = w * hh
     add('crown', 'box', [px, baseY + bodyH + 0.25, pz], [fw + 1.6, 0.5, fd + 1.6], c.chrome)
-    add('crown', 'box', [px, baseY + bodyH + 0.04, pz], [fw + 1.7, 0.08, fd + 1.7], c.glow, true)
+    // The neon edge sits 1 cm up inside the lid, so its underside is not in the plane of the lid's.
+    add('crown', 'box', [px, baseY + bodyH + 0.05, pz], [fw + 1.7, 0.08, fd + 1.7], c.glow, true)
   } else {
     // An arcade: a pale shiny metal body, three stepped blocks each smaller than the one below, and a neon sign standing above the top step.
     let signY = crownY + 0.6
@@ -243,6 +281,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       const step = ch / 3
       const widths = [Math.min(7, fwid * 0.55), Math.min(5, fwid * 0.4), Math.min(3, fwid * 0.25)]
       widths.forEach((w, k) => add('crown', 'box', [px, crownY + step * (k + 0.5), frontZ - 0.6], [w, step, 2.4 - k * 0.5], c.chrome))
+      drum([px, frontZ - 1.05], widths[0]! * 0.8, 1.5, c.chrome)
       signY = crownY + ch + 0.6
     }
     add('hero', 'box', [px, Math.min(baseY + MAX_OUTLINE_HEIGHT - 0.5, signY), frontZ - 0.6], [Math.min(6, fwid * 0.5), 0.9, 0.35], c.glow, true)
