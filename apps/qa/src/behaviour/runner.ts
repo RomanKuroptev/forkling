@@ -14,6 +14,7 @@ import { didNotRun } from '../run/check.ts'
 import { readRun } from './read-run.ts'
 import { type Scenario, scenarioAnswers } from './scenarios.ts'
 import { type Levels, type Score, scoreRun } from './score.ts'
+import { writeRunWeb } from './sources.ts'
 import { writeBehaviour } from './write.ts'
 
 /**
@@ -87,6 +88,8 @@ export async function runSeeds(o: BehaviourOptions): Promise<SeedRun[]> {
     const world = join(dir, 'world')
     const outDir = join(dir, 'out')
     mkdirSync(outDir, { recursive: true })
+    // The run says which web it read, so the sources score counts snapshot misses apart (they are not missing pages).
+    writeRunWeb(outDir, o.snapshot)
     seedWorld(o.world, world, k)
     const startDate = addDays(start, k)
     log(`${label}: ${o.mode} run, ${o.days} days from ${startDate}${o.mode === 'real' ? `, cap $${(o.capUsd / o.seeds).toFixed(2)}` : ''}`)

@@ -1,8 +1,11 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Trail } from '@forkling/schema'
 import { ratio, shares, topShare } from '@forkling/sim'
+import { createFetcher } from '@forkling/mind/src/web/fetch.ts'
+import { snapshotFetch } from '@forkling/mind/src/web/snapshot.ts'
+import { readUrl } from '@forkling/mind/src/web/sources/index.ts'
 import { HOST_PLANS } from '@forkling/mind/src/web/starts.ts'
 import type { CheckResult } from '../report/finding.ts'
 import type { SourceList } from '../sources/list.ts'
@@ -91,6 +94,63 @@ export function readWorldSources(dir: string, opts: { git?: boolean; since?: str
   return { trails, offered, works, souvenirs }
 }
 
+// ---- the web snapshot ----
+
+/** What a behaviour run's out folder says about the web it read (`web.json`, written by the runner). */
+export const RUN_WEB_FILE = 'web.json'
+
+/** The snapshot folder a run read, from its out folder, or null for a run on the real web (or one that does not say). */
+export function snapshotOfRun(outDir: string): string | null {
+  const w = readJson(join(outDir, RUN_WEB_FILE)) as { snapshot?: unknown } | null
+  return typeof w?.snapshot === 'string' ? w.snapshot : null
+}
+
+/** Written by the runner into each seed's out folder: the snapshot that seed read. */
+export function writeRunWeb(outDir: string, snapshot: string): void {
+  writeFileSync(join(outDir, RUN_WEB_FILE), `${JSON.stringify({ snapshot }, null, 2)}\n`)
+}
+
+/**
+ * The snapshot a world's run read: the one given, else what the run's out folder beside the world says (a behaviour seed is
+ * `<seed>/world` and `<seed>/out`). Null means the real web, where every 404 counts.
+ */
+export function snapshotForWorld(world: string, given?: string): string | null {
+  return given ?? snapshotOfRun(join(world, '..', 'out'))
+}
+
+/**
+ * The failed addresses the snapshot never recorded (snapshot misses). Each is read again the way the mind reads it (its own
+ * adapter, so github.com/a/b asks api.github.com), from the snapshot, with no network; an address is a miss when any request
+ * it made is not in the manifest. One whose requests are all in it failed for real (a recorded 404, a recorded failure).
+ */
+export async function snapshotMisses(dir: string, urls: readonly string[]): Promise<Set<string>> {
+  const manifest = readJson(join(dir, 'manifest.json')) as { entries?: { url?: unknown }[] } | null
+  const recorded = new Set((manifest?.entries ?? []).flatMap((e) => (typeof e.url === 'string' ? [e.url] : [])))
+  const answer = snapshotFetch(dir)
+  const missed = new Set<string>()
+  for (const url of new Set(urls)) {
+    let miss = false
+    const f = createFetcher({
+      verb: 'wander',
+      sleep: async () => undefined,
+      fetchImpl: (u, init) => {
+        if (!recorded.has(u)) miss = true
+        return answer(u, init)
+      },
+    })
+    try {
+      await readUrl(f, url)
+    } catch {
+      // A failure is expected here: it is what the trip met.
+    }
+    if (miss) missed.add(url)
+  }
+  return missed
+}
+
+/** Every failed page of the trails (the addresses `snapshotMisses` sorts). */
+export const failedUrls = (reads: SourceReads): string[] => reads.trails.flatMap((t) => t.pages.flatMap((p) => (p.failed && !READ_LATELY.test(p.failed) ? [p.url] : [])))
+
 // ---- scoring ----
 
 const hostOf = (url: string): string | null => {
@@ -140,12 +200,22 @@ export interface SourceSummary {
   skippedLately: number
   hit404: number
   invented: string[]
+  /** The web the run read: the recorded snapshot, or the real web (every 404 counts). */
+  web: 'snapshot' | 'live'
+  /** Snapshot runs: failed pages the snapshot never recorded. Real pages, most likely; counted apart, never an alarm. */
+  snapshotMisses: string[]
+  /** Failed pages reached by a guessed link (a name made into an address by code). */
+  guesses: string[]
   readTwice: string[]
   fed: string[]
   offered: Record<string, number> | 'unknown'
 }
 
-export function scoreSources(reads: SourceReads, list: SourceList, opts: { label: string; to?: string; days?: number }): { summary: SourceSummary; findings: CheckResult[] } {
+export function scoreSources(
+  reads: SourceReads,
+  list: SourceList,
+  opts: { label: string; to?: string; days?: number; snapshot?: { missed: ReadonlySet<string> } },
+): { summary: SourceSummary; findings: CheckResult[] } {
   const days = opts.days ?? 7
   const to = opts.to ?? reads.trails.map((t) => t.date).sort().at(-1) ?? new Date().toISOString().slice(0, 10)
   const from = daysBefore(to, days - 1)
@@ -158,6 +228,12 @@ export function scoreSources(reads: SourceReads, list: SourceList, opts: { label
   const readsBySource: Record<string, number> = {}
   const pageCount = new Map<string, number>()
   const invented: string[] = []
+  const snapshotMissed: string[] = []
+  const guesses: string[] = []
+  // On a snapshot run a failed page the snapshot never recorded is a snapshot miss, not Merge's or the source's fault; a page
+  // reached by a guessed link always counts. On the real web every failure counts.
+  const isMiss = (p: Trail['pages'][number]) => !!opts.snapshot && !!p.failed && !READ_LATELY.test(p.failed) && !p.guess && opts.snapshot.missed.has(p.url)
+  const counts = (p: Trail['pages'][number]) => !!p.failed && !READ_LATELY.test(p.failed) && !isMiss(p)
   let readNothing = 0
   let hit404 = 0
   let badTrips = 0
@@ -171,15 +247,19 @@ export function scoreSources(reads: SourceReads, list: SourceList, opts: { label
     // A trip that only met pages read lately is counted on its own: the 30-day rule skipped them, the source was fine
     // (and Merge is now told so, since the fix after R2).
     const onlySkippedLately = t.pages.every((p) => p.failed && READ_LATELY.test(p.failed))
-    const nothing = !onlySkippedLately && t.pages.every((p) => p.failed)
-    const missing = t.pages.some((p) => p.failed && /\b404\b/.test(p.failed))
+    const nothing = !onlySkippedLately && t.pages.every((p) => p.failed) && t.pages.some(counts)
+    const missing = t.pages.some((p) => counts(p) && /\b404\b/.test(p.failed!))
     if (onlySkippedLately) skippedLately++
     if (nothing) readNothing++
     if (missing) hit404++
     if (nothing || missing) badTrips++
     for (const p of t.pages) {
       if (p.failed) {
-        if (/\b404\b/.test(p.failed) && hostOf(p.url) === 'en.wikipedia.org') invented.push(p.url)
+        if (isMiss(p)) snapshotMissed.push(p.url)
+        else if (counts(p)) {
+          if (p.guess) guesses.push(p.url)
+          if (/\b404\b/.test(p.failed) && hostOf(p.url) === 'en.wikipedia.org') invented.push(p.url)
+        }
         continue
       }
       const sid = source(p.url) ?? hostOf(p.url) ?? 'other'
@@ -201,7 +281,7 @@ export function scoreSources(reads: SourceReads, list: SourceList, opts: { label
     }
   }
 
-  const summary: SourceSummary = { from, to, trips: trails.length, tripsBySource, tripsByDay, readsBySource, readNothing, skippedLately, hit404, invented, readTwice, fed, offered }
+  const summary: SourceSummary = { from, to, trips: trails.length, tripsBySource, tripsByDay, readsBySource, readNothing, skippedLately, hit404, invented, web: opts.snapshot ? 'snapshot' : 'live', snapshotMisses: snapshotMissed, guesses, readTwice, fed, offered }
   const findings: CheckResult[] = []
   const base = (id: string, key = '') => ({ id, fingerprint: `${id}|${opts.label}${key ? `|${key}` : ''}`, area: 'behaviour' as const, evidence: [] as string[], fixture: opts.label })
   const span = `${from} to ${to}`
@@ -257,6 +337,16 @@ export function scoreSources(reads: SourceReads, list: SourceList, opts: { label
       title: `Trips that only met pages read lately: ${skippedLately}`,
       what: `${skippedLately} of ${trails.length} trips, ${span}, only met pages read in the last 30 days and were skipped by the no-reread rule. Not a source fault; since the fix after R2 the plan is shown which start pages it read lately.`,
       causes: 'Measured for the report.',
+      fixKind: 'code',
+    })
+
+  if (snapshotMissed.length > 0)
+    findings.push({
+      ...base('sources.snapshot-misses'),
+      severity: 'info',
+      title: `Pages the web snapshot never recorded: ${snapshotMissed.length}`,
+      what: `${snapshotMissed.length} failed pages, ${span}, are not in the web snapshot, so this run could not read them; most are real pages. Not counted as missing pages or invented titles: ${snapshotMissed.slice(0, 5).join(', ')}${snapshotMissed.length > 5 ? ', ...' : ''}.`,
+      causes: 'Measured for the report: many misses are a reason to record the snapshot deeper.',
       fixKind: 'code',
     })
 

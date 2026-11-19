@@ -1,7 +1,7 @@
 import { MAX_TRIP_READS, Souvenir, type Trail, type TrailPage } from '@forkling/schema'
 import { similarity } from '@forkling/sim'
 import { WebError } from './fetch.ts'
-import type { Item } from './item.ts'
+import type { Item, ItemLink } from './item.ts'
 import type { SeenPage } from './lookup.ts'
 import { chosenLink, clampInterest, clampReaction, cleanTopics } from './read.ts'
 import type { LookOutcome } from './look.ts'
@@ -126,6 +126,14 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
   const visited = new Set<string>()
   const attempted = new Set<string>()
   const seen: SeenPage[] = []
+  /** Addresses reached by a guessed link: their pages say so, so a missing guess is not taken for a missing page. */
+  const guessed = new Set<string>()
+  const guessMark = (u: string): { guess?: true } => (guessed.has(u) ? { guess: true } : {})
+  const follow = (link: ItemLink | undefined): string | null => {
+    if (!link) return null
+    if (link.guess) guessed.add(link.url)
+    return link.url
+  }
   let reads = 0
   let failures = 0
   let skips = 0
@@ -154,11 +162,11 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
       reads++
       failures++
       const reason = describe(error)
-      pages.push({ url: url.slice(0, 500), title: lastSegment(url).slice(0, 200), fetchedAt: deps.now(), failed: reason.slice(0, 200), topics: [] })
+      pages.push({ url: url.slice(0, 500), title: lastSegment(url).slice(0, 200), fetchedAt: deps.now(), failed: reason.slice(0, 200), topics: [], ...guessMark(url) })
       stat(hostOf(url)).reads++
       stat(hostOf(url)).failures++
       notes.push(`could not read ${url}: ${reason}`)
-      url = failures >= 2 ? null : (untried()[0]?.url ?? null)
+      url = failures >= 2 ? null : follow(untried()[0])
       continue
     }
 
@@ -174,7 +182,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
       if (pages.length === 0) pages.push({ url: item.url.slice(0, 500), title: item.title.slice(0, 200), fetchedAt: deps.now(), failed: `skipped: ${outcome.skipped}`.slice(0, 200), topics: [] })
       // A page read lately is still a way in: the trip goes on from its links, not from where it started.
       if (outcome.skipped === READ_LATELY && previous === null) previous = item
-      url = skips >= MAX_SKIPS ? null : (untried()[0]?.url ?? null)
+      url = skips >= MAX_SKIPS ? null : follow(untried()[0])
       continue
     }
 
@@ -184,7 +192,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
     if (!outcome.answer) {
       const why = outcome.note ?? 'no usable answer'
       notes.push(`${item.title}: ${why}`)
-      pages.push({ url: item.url.slice(0, 500), title: item.title.slice(0, 200), fetchedAt: deps.now(), failed: why.slice(0, 200), topics: [] })
+      pages.push({ url: item.url.slice(0, 500), title: item.title.slice(0, 200), fetchedAt: deps.now(), failed: why.slice(0, 200), topics: [], ...guessMark(item.url) })
       break
     }
 
@@ -193,7 +201,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
     const topics = cleanTopics(answer.topics)
     const interest = clampInterest(answer.interest)
     if (interest <= BORING) stat(host).boring++
-    const page: TrailPage = { url: item.url.slice(0, 500), title: item.title.slice(0, 200), fetchedAt: deps.now(), reaction: clampReaction(answer.reaction), topics, interest }
+    const page: TrailPage = { url: item.url.slice(0, 500), title: item.title.slice(0, 200), fetchedAt: deps.now(), reaction: clampReaction(answer.reaction), topics, interest, ...guessMark(item.url) }
 
     for (const topic of topics) feeds.push({ topic, event: 'page', url: item.url, title: item.title })
 
@@ -225,7 +233,7 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
     previous = item
 
     const next = chosenLink(answer, item)
-    url = next && !visited.has(next.url) && !attempted.has(next.url) ? next.url : null
+    url = next && !visited.has(next.url) && !attempted.has(next.url) ? follow(next) : null
   }
 
   if (pages.length === 0) pages.push({ url: input.startUrl.slice(0, 500), title: lastSegment(input.startUrl).slice(0, 200), fetchedAt: deps.now(), failed: notes.at(-1)?.slice(0, 200) ?? 'not read', topics: [] })

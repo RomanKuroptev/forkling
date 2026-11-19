@@ -64,6 +64,8 @@ export const TrailPage = z.object({
   /** What it saw when it looked at the page's picture (spec 7.8). */
   look: z.string().max(600).optional(),
   failed: z.string().max(200).optional(),
+  /** Reached by a guessed link (a name made into a Wikipedia address by code, not a link the page had): it may not exist. */
+  guess: z.literal(true).optional(),
 })
 export type TrailPage = z.infer<typeof TrailPage>
 
