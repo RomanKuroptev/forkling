@@ -190,6 +190,7 @@ export function Forkling() {
     }
     body.current?.setNextKinematicTranslation({ x: view.shown.x, y, z: view.shown.z })
     mergeSpot.position = { x: view.shown.x, z: view.shown.z }
+    if (scaler.current) mergeSpot.scale = scaler.current.scale.x
 
     if (screen.current) {
       const now = clock.now()

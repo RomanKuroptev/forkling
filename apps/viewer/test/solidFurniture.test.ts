@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { furnitureBoxes } from '../src/world/solidFurniture.ts'
-import { KEEP_FROM_MERGE, keepAwayFrom } from '../src/player/keepAway.ts'
+import { KEEP_FROM_MERGE, keepAwayFrom, keepFor } from '../src/player/keepAway.ts'
 import { mergeClosePose } from '../src/qa/cameras.ts'
 import { wallBoxes } from '../src/world/kitGeometry.ts'
 
@@ -58,6 +58,14 @@ describe('the visitor keeps a small distance from Merge (issues 357, 349)', () =
   it('never pulls a visitor Merge walked up to closer, and never pushes one away', () => {
     const near = keepAwayFrom(merge, { x: 0.7, z: 0 }, { x: 0.5, z: 0 })!
     expect(Math.hypot(near.x, near.z)).toBeCloseTo(0.7)
+  })
+
+  it('grows with the size Merge is drawn at: 1.6 m indoors (1.35 times), 2.4 m on open land (twice), where its face is bigger', () => {
+    expect(keepFor(1.35)).toBeCloseTo(KEEP_FROM_MERGE)
+    expect(keepFor(2)).toBeCloseTo(2.4, 1)
+    // On open land its face is about 0.74 m wide; half of it fits in half a phone's width from there.
+    const halfWide = Math.atan(Math.tan((35 * Math.PI) / 180) * (390 / 844))
+    expect(Math.atan(0.37 / keepFor(2))).toBeLessThan(halfWide)
   })
 
   it('is far enough that its face is whole on a phone (390 wide, 70 deg tall), not cut by the edge', () => {

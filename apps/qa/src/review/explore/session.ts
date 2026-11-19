@@ -30,6 +30,7 @@ type Qa = {
   press(keys: string | string[], ms: number): Promise<void>
   stick(x: number, y: number, ms: number): Promise<void>
   visitor(): { x: number; y: number; z: number; yaw: number; pitch: number } | null
+  merge?(): { x: number; z: number; scale: number } | null
   teleport(x: number, z: number, yaw?: number): Promise<void>
   look(yaw: number, pitch: number): Promise<void>
   setCamera(pose: string | { position: V3; target: V3 } | null): Promise<void>
@@ -71,7 +72,9 @@ export class ExploreSession {
       .sort((a, b) => a.d - b.d)
       .slice(0, 5)
       .map(({ o, d }) => `${o.kind} ${o.id} ${d.toFixed(1)} m`)
-    return `at x ${v.x.toFixed(1)}, z ${v.z.toFixed(1)}, facing ${degrees(v.yaw)} deg, looking ${degrees(v.pitch)} deg up; ${inside ? `inside ${inside.id}` : 'outside'}; nearest: ${near.join(', ')}`
+    const m = await call(this.page, (qa) => (qa.merge ? qa.merge() : null))
+    const merge = m ? `; Merge stands at x ${m.x.toFixed(1)}, z ${m.z.toFixed(1)}, ${Math.hypot(m.x - v.x, m.z - v.z).toFixed(1)} m from the visitor, drawn ${m.scale.toFixed(2)} times its size` : ''
+    return `at x ${v.x.toFixed(1)}, z ${v.z.toFixed(1)}, facing ${degrees(v.yaw)} deg, looking ${degrees(v.pitch)} deg up; ${inside ? `inside ${inside.id}` : 'outside'}; nearest: ${near.join(', ')}${merge}`
   }
 
   async shot(name = 'view'): Promise<string> {

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { worldLand } from '../world/worldLand.ts'
 import { live } from '../forkling/live.ts'
+import { mergeSpot } from '../forkling/spot.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { qaMode, qaTime } from './params.ts'
 import { qaRegistry, type QaPose, type Vec3 } from './registry.ts'
@@ -189,6 +190,8 @@ export function QaProbe() {
         useJoystickStore.getState().resetJoystick()
         await step(QA_FRAME_MS)
       },
+      /** Where Merge stands as drawn (its middle on the ground) and its drawing scale: the point the visitor keeps its distance from. */
+      merge: () => (mergeSpot.position ? { ...mergeSpot.position, scale: mergeSpot.scale } : null),
       visitor: () => {
         const p = qaRegistry.player
         if (!p) return null

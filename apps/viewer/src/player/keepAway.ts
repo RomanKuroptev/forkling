@@ -6,8 +6,14 @@
  * pushes a visitor away: a step away from Merge, or one that stays far enough, is left alone.
  */
 
-/** How near the visitor's middle comes to Merge's, in meters: its face, 0.5 m wide, then fits on a phone held upright. */
-export const KEEP_FROM_MERGE = 1.2
+/** How near the visitor's middle comes to Merge's indoors, in meters: its face, 0.5 m wide there, then fits on a phone held upright, and
+ * shows whole in the lower part of the picture when the visitor looks a little down (nearer, the camera looks down onto its head). */
+export const KEEP_FROM_MERGE = 1.6
+/** Merge's drawn scale indoors (`INDOOR_SCALE` in `Forkling.tsx`), the size `KEEP_FROM_MERGE` is for. */
+const INDOOR_SCALE = 1.35
+
+/** The distance for Merge drawn at `scale`: on open land it is drawn bigger (twice), and its face with it, so the visitor stays further off. */
+export const keepFor = (scale: number): number => (KEEP_FROM_MERGE * scale) / INDOOR_SCALE
 
 interface Point {
   x: number

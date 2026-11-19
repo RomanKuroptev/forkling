@@ -11,7 +11,7 @@ import { visitor } from '../visitor.ts'
 import { applyLookDrag, lookEuler, type Look } from './look.ts'
 import { mergeMovement } from './touchInput.ts'
 import { keepOnLand } from './keepOnLand.ts'
-import { keepAwayFrom } from './keepAway.ts'
+import { keepAwayFrom, keepFor } from './keepAway.ts'
 import { mergeSpot } from '../forkling/spot.ts'
 import { worldLand } from '../world/worldLand.ts'
 import { qaMode } from '../qa/params.ts'
@@ -132,7 +132,7 @@ export function Player() {
     // And it keeps a small distance from Merge, so the camera is never on top of it (issues 357, 349).
     // Under ?qa=1 a fixture may plant a visitor that walks right up to Merge (`qa/plant.ts`); never in normal mode.
     const merge = qaMode && qaRegistry.plant?.mergeNear ? null : mergeSpot.position
-    const kept = (merge && keepAwayFrom(merge, lastOnLand.current, onLand ?? { x: p.x, z: p.z })) || onLand
+    const kept = (merge && keepAwayFrom(merge, lastOnLand.current, onLand ?? { x: p.x, z: p.z }, keepFor(mergeSpot.scale))) || onLand
     if (kept) {
       const v = b.body.linvel()
       b.body.setTranslation({ x: kept.x, y: p.y, z: kept.z }, true)
