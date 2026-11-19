@@ -1,9 +1,4 @@
 {
   "version": 1,
-  "entries": [
-    { "fingerprint": "world.work-shown|day-7", "issue": 291, "reason": "24 of 29 finished works hang nowhere in the 3D world: an engine gap (install step), fixed by its own PR." },
-    { "fingerprint": "world.work-shown|day-30", "issue": 291, "reason": "The same gap on day-30 (70 of 75 works)." },
-    { "fingerprint": "world.work-shown|night", "issue": 291, "reason": "The same gap: night is day-7 at night." },
-    { "fingerprint": "world.work-shown|building", "issue": 291, "reason": "The same gap: building is day-7 with a place being built." }
-  ]
+  "entries": []
 }
