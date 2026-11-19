@@ -15,7 +15,7 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('the world explorer helpers on d
   let session: ExploreSession
   beforeAll(async () => {
     const world = materialize('day-0', join(mkdtempSync(join(tmpdir(), 'qa-explore-')), 'world'))
-    served = await serveWorld(buildViewer(), world)
+    served = await serveWorld(await buildViewer(), world)
     browser = await launchChromium()
     session = new ExploreSession(await openWorld(browser, served.url, { now: readQaJson('day-0').now }), 'test')
   }, 180_000)
