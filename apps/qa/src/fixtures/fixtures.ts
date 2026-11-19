@@ -8,8 +8,7 @@ import { repoRoot } from '../paths.ts'
  * (`night`, `building`) holds only the files it changes and a `qa.json` naming its `base`. `live` is never committed: it is a
  * clone made at run time (`pnpm qa live-clone`).
  */
-// day-30 joins this list in its own PR, when its 23-day run on the fakes is done.
-export const FIXTURES = ['day-0', 'day-7', 'night', 'building'] as const
+export const FIXTURES = ['day-0', 'day-7', 'day-30', 'night', 'building'] as const
 export type FixtureName = (typeof FIXTURES)[number]
 
 /** `qa.json` beside `forkling.json`: the fixture's clock, and for a derived fixture the one it is made from. */

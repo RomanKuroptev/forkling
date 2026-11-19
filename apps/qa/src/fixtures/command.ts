@@ -5,13 +5,13 @@ import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { repoRoot } from '../paths.ts'
 import { deriveBuilding, deriveNight } from './derive.ts'
-import { FIXTURES, fixtureDir, materialize, QaJson, readQaJson, writeDerived } from './fixtures.ts'
+import { growDay30 } from './day30.ts'
+import { FIXTURES, fixtureDir, materialize, QaJson, readQaJson, worldFileList, writeDerived } from './fixtures.ts'
 import { worldSchemaIssues } from './schema.ts'
 import { trimWorld } from './trim.ts'
 
 export const FIXTURES_USAGE = `  fixtures                     rebuild day-0, night and building from the template and day-7 (pure edits, no model, no network)
            [--import-day7 <dir> [--about <text>]]  make day-7 from a fast-forward world copy (trimmed to about 2 MB)
-           [--day30]           make day-30: day-7 plus 23 days of the fast-forward on its fakes (--dry-run, free, a few hours)
   live-clone                   a fresh clone of Merge's repo in qa-out/live/world, remote removed (read-only, never committed)`
 
 /** The clock every Phase 1 fixture world is shown at, unless it says otherwise: a Thursday afternoon in Stockholm. */
@@ -63,24 +63,22 @@ export function cutLongExhibitIds(dir: string): string[] {
   return out
 }
 
-/** `day-30`: day-7 plus 23 days on the fast-forward's fakes (`--dry-run`: no key, nothing spent). */
-export function makeDay30(root = repoRoot()): string {
-  const work = mkdtempSync(join(tmpdir(), 'qa-day30-'))
-  const world = materialize('day-7', join(work, 'world'))
-  rmSync(join(world, 'qa.json'))
-  // The fast-forward commits to its copy and refuses one with a remote; a fresh repo has none.
-  const git = (...args: string[]) => execFileSync('git', ['-C', world, ...args], { stdio: 'ignore' })
-  git('init', '-q')
-  git('-c', 'user.name=qa', '-c', 'user.email=qa@localhost', 'add', '-A')
-  git('-c', 'user.name=qa', '-c', 'user.email=qa@localhost', 'commit', '-q', '-m', 'day-7')
+/** `day-30`: day-7 plus 23 grown days (`growDay30`), kept as the files it adds or changes on top of day-7. */
+export function makeDay30(): { files: Record<string, string>; qa: QaJson } {
+  const base = materialize('day-7', join(mkdtempSync(join(tmpdir(), 'qa-day7-')), 'world'))
+  const grown = materialize('day-7', join(mkdtempSync(join(tmpdir(), 'qa-day30-')), 'world'))
   const start = DAY_NOW.slice(0, 10)
-  execFileSync('pnpm', ['--filter', '@forkling/mind', 'fast-forward', '--world', world, '--days', '23', '--start', start, '--dry-run', '--out', join(work, 'out')], { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' })
-  const dir = fixtureDir('day-30')
-  const { bytes } = trimWorld(world, dir)
+  const added = growDay30(grown, { seed: 30, days: 23, start })
+  const files: Record<string, string> = {}
+  for (const rel of worldFileList(grown)) {
+    if (rel === 'qa.json') continue
+    const text = readFileSync(join(grown, rel), 'utf8')
+    if (!existsSync(join(base, rel)) || readFileSync(join(base, rel), 'utf8') !== text) files[rel] = text
+  }
   const end = new Date(Date.parse(`${start}T12:00:00Z`) + 23 * 86_400_000).toISOString().slice(0, 10)
-  writeQa(dir, { now: `${end}T14:00:00+01:00`, about: `day-7 plus 23 days of the fast-forward on its fakes (--dry-run), from ${start}.` })
-  console.log(`day-30: ${Math.round(bytes / 1024)} KB`)
-  return dir
+  const qa: QaJson = { base: 'day-7', now: `${end}T14:00:00+01:00`, about: `day-7 plus 23 grown days from ${start} (by code, seeded): ${added.places} places, ${added.rooms} rooms, ${added.works} works and ${added.trails} trails added.` }
+  writeDerived('day-30', { files, qa })
+  return { files, qa }
 }
 
 export function makeDerived(): void {
@@ -102,11 +100,11 @@ export function liveClone(out: string, url = 'https://github.com/RomanKuroptev/m
 }
 
 export function fixturesCommand(args: string[], ctx: { cwd: string }): number {
-  const { values } = parseArgs({ args, options: { 'import-day7': { type: 'string' }, about: { type: 'string' }, day30: { type: 'boolean', default: false } } })
+  const { values } = parseArgs({ args, options: { 'import-day7': { type: 'string' }, about: { type: 'string' } } })
   if (values['import-day7']) importDay7(resolve(ctx.cwd, values['import-day7']), values.about ?? 'A 7-day fast-forward world, trimmed.')
   makeDay0()
   makeDerived()
-  if (values.day30) makeDay30()
+  makeDay30()
   let bad = 0
   for (const name of FIXTURES) {
     if (!existsSync(join(fixtureDir(name), 'qa.json'))) {

@@ -1,0 +1,25 @@
+{
+  "id": "grown-work-2026-12-18-1",
+  "title": "Grown Work 2026-12-18 1",
+  "kind": "art",
+  "about": "A work grown for the day-30 fixture on 2026-12-18.",
+  "interest": "interactive art",
+  "made": "2026-12-18T13:00:00.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Start from a mistake and keep it.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-18-skymanbp-cc-tree",
+    "2026-11-18-fand-vfx-js"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

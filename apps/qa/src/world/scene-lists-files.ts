@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { Place } from '@forkling/schema'
+import { Place, repairPlaceJson } from '@forkling/schema'
 import type { CheckResult } from '../report/finding.ts'
 import type { SceneObject } from './open.ts'
 
@@ -31,7 +31,8 @@ function rawPlaces(dir: string): RawPlace[] {
       const file = `places/${f}`
       const fallback = f.replace(/\.json$/, '')
       try {
-        const data = JSON.parse(readFileSync(join(placesDir, f), 'utf8')) as Record<string, unknown>
+        // The same repair every reader makes (an over-long exhibit id is cut), and nothing more: a file it cannot save is still listed.
+        const data = repairPlaceJson(JSON.parse(readFileSync(join(placesDir, f), 'utf8'))) as Record<string, unknown>
         return { file, id: str(data?.id) ?? fallback, data, error: null }
       } catch (e) {
         return { file, id: fallback, data: null, error: `not JSON (${e instanceof Error ? e.message : String(e)})` }

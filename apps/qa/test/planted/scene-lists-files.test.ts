@@ -35,8 +35,8 @@ describe('every place, room and work in the files, and Merge, are in the scene',
     expect(sceneListsFiles(dir, [entry('home', 'place'), entry('home/main', 'room'), entry('home/w', 'work'), entry('merge', 'merge')], 'day-7')).toEqual([])
   })
 
-  it('planted: a place left out of the world (the engine wrote an exhibit id too long for the schema) is a major finding that says why', () => {
-    const dir = world({ home: place('home', [], []), workshop: { ...place('workshop', ['bench'], []), exhibits: [{ id: 'screen-a-door-that-opens-only-when-watched', kind: 'work' }] } })
+  it('planted: a place left out of the world (a room id too long for the schema, which no reader repairs) is a major finding that says why', () => {
+    const dir = world({ home: place('home', [], []), workshop: place('workshop', ['a-bench-room-with-a-name-far-too-long-for-it'], []) })
     const found = sceneListsFiles(dir, [entry('home', 'place'), entry('merge', 'merge')], 'day-7')
     const ws = found.find((f) => f.fingerprint === 'world.scene-lists-files|day-7|place|workshop')!
     expect(ws).toMatchObject({ severity: 'major', fixture: 'day-7', where: 'places/workshop.json' })

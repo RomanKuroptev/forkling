@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { PNG } from 'pngjs'
 import { Place, Project } from '@forkling/schema'
 import { describe, expect, it } from 'vitest'
+import { growDay30 } from '../src/fixtures/day30.ts'
 import { deriveBuilding, deriveNight } from '../src/fixtures/derive.ts'
 import { FIXTURES, fixtureDir, materialize, readQaJson, worldFileList } from '../src/fixtures/fixtures.ts'
 import { worldSchemaIssues } from '../src/fixtures/schema.ts'
@@ -16,8 +17,8 @@ const write = (dir: string, rel: string, data: string | Buffer) => {
 }
 
 describe('the committed fixture worlds (audit spec 4)', () => {
-  it('are day-0, day-7, night and building (day-30 follows), each with its clock in qa.json', () => {
-    expect([...FIXTURES]).toEqual(['day-0', 'day-7', 'night', 'building'])
+  it('are day-0, day-7, day-30, night and building, each with its clock in qa.json', () => {
+    expect([...FIXTURES]).toEqual(['day-0', 'day-7', 'day-30', 'night', 'building'])
     for (const name of FIXTURES) {
       const qa = readQaJson(name)
       expect(Number.isFinite(Date.parse(qa.now)), name).toBe(true)
@@ -42,6 +43,22 @@ describe('the committed fixture worlds (audit spec 4)', () => {
     expect(readFileSync(join(dir, 'self/seed.md'), 'utf8')).toContain('You are Merge')
     expect(files.some((f) => f.startsWith('works/') && f.endsWith('meta.json'))).toBe(false)
     expect(files.some((f) => f.startsWith('notes/') && f.endsWith('.json'))).toBe(false)
+  })
+
+  it('day-30 is day-7 with 23 grown days: many more places, rooms and works, each place within the place rules', () => {
+    expect(readQaJson('day-30').base).toBe('day-7')
+    const dir = materialize('day-30', join(temp('d30'), 'world'))
+    const files = worldFileList(dir)
+    expect(files.filter((f) => f.startsWith('places/')).length).toBeGreaterThanOrEqual(10)
+    expect(files.filter((f) => f.startsWith('works/') && f.endsWith('meta.json')).length).toBeGreaterThanOrEqual(70)
+    expect(files.filter((f) => f.startsWith('trails/')).length).toBeGreaterThanOrEqual(90)
+  })
+
+  it('day-30 grows the same way from the same seed', () => {
+    const a = materialize('day-7', join(temp('ga'), 'world'))
+    const b = materialize('day-7', join(temp('gb'), 'world'))
+    expect(growDay30(a, { seed: 30, days: 5, start: '2026-11-26' })).toEqual(growDay30(b, { seed: 30, days: 5, start: '2026-11-26' }))
+    for (const rel of worldFileList(a)) expect(readFileSync(join(b, rel), 'utf8'), rel).toBe(readFileSync(join(a, rel), 'utf8'))
   })
 
   it('night and building are day-7 with a few files changed', () => {
