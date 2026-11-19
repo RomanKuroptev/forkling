@@ -69,10 +69,20 @@ describe('tiredLimits', () => {
 
 describe('moodWords (shown to the model as words, never as instructions)', () => {
   it('names mood and energy', () => {
-    expect(moodWords(at(-0.3, -0.3))).toBe('low, tired')
+    expect(moodWords(at(-0.3, -0.3))).toBe('low, a bit worn')
     expect(moodWords(at(0, 0.5))).toBe('steady, rested')
     expect(moodWords(at(0.7, 0.2))).toBe('very good, steady')
-    expect(moodWords(at(-0.8, -0.8))).toBe('very low, exhausted')
+    expect(moodWords(at(-0.8, -0.8))).toBe('very low, tired')
+  })
+
+  it('says tired only when the tired limit holds (issue #324)', () => {
+    // The system prompt says "when you are tired (you are told)": the word must not claim a limit that is not reached.
+    for (let e = -1; e <= 1.0001; e += 0.01) {
+      const state = at(0, Math.round(e * 100) / 100)
+      expect(moodWords(state).endsWith(', tired')).toBe(tiredLimits(state).maxSteps !== null)
+    }
+    expect(moodWords(at(0, -0.5))).toBe('steady, a bit worn')
+    expect(moodWords(at(0, -0.51))).toBe('steady, tired')
   })
 })
 
