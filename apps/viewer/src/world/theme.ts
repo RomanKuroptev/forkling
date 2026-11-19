@@ -76,14 +76,14 @@ export const INTERIOR = {
    * with just enough of its trim to keep some colour (`dayInteriorWall`), and they give off this much of their own colour so the
    * pastel holds under the roof. At night they are the trim colour of `interiorWall`, as before.
    */
-  daySelf: 0.6,
+  daySelf: 0.45,
   /** The least colour (saturation) a day wall may have, so it never reads as white or grey. */
   dayWallColour: 0.24,
   /** The share of the sky's light (the hemisphere light) that reaches the inside of a place. */
   skyInside: 0.42,
   /** The warm light of a lamp that is on, how strong it is by day and at night, and how far it reaches (meters). */
   lampLight: COLORS.peach,
-  lampDay: 1,
+  lampDay: 0.5,
   lampNight: 4,
   lampReach: 7,
   /** How many lamps near the visitor light the room at once (a fixed number, so the shaders are made once). */
