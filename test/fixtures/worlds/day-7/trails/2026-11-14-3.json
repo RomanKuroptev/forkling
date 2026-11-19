@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-14-3",
+  "date": "2026-11-14",
+  "purpose": "Read the sites themselves, what was found and how it was dated, before touching the sensor again.",
+  "start": {
+    "kind": "topic",
+    "value": "Maya archaeology"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Maya_archaeology",
+      "title": "Maya_archaeology",
+      "fetchedAt": "2026-11-14T11:08:15.806Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    }
+  ]
+}

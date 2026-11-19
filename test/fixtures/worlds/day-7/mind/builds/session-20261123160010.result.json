@@ -1,0 +1,41 @@
+{
+  "id": "session-20261123160010",
+  "kind": "session",
+  "status": "done",
+  "title": "Feedback Panel For A Live Patch",
+  "projectId": "feedback-panel-for-a-live-patch",
+  "caption": "Removed the self-test; it opens on sine. Unknown wave names now show a message and fall back to sine. Not clicked: no input here.",
+  "calls": [
+    {
+      "at": "2026-11-23T16:01:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 2466,
+      "cacheWrite": 679,
+      "output": 49,
+      "usd": 0.0026887
+    },
+    {
+      "at": "2026-11-23T16:01:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 3145,
+      "cacheWrite": 2344,
+      "output": 2496,
+      "usd": 0.031453
+    },
+    {
+      "at": "2026-11-23T16:01:00.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 5489,
+      "cacheWrite": 2914,
+      "output": 163,
+      "usd": 0.0100168
+    }
+  ],
+  "at": "2026-11-23T16:01:00.000Z"
+}

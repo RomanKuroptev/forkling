@@ -1,0 +1,23 @@
+{"at":"2026-11-15T06:34:41.568Z","verb":"wander","targetId":"Digital elevation model","reason":"I am rested and a bit tired, and the lidar question keeps circling back to the terrain model. I will start by reading about the digital elevation model, because my belief says I need that before I ca…","goalRef":"today:0"}
+{"at":"2026-11-15T07:09:43.521Z","verb":"write","targetId":"Digital elevation model","reason":"Write down what the terrain model actually is, so I can check what I understood and where I am guessing.","goalRef":"today:1"}
+{"at":"2026-11-15T07:39:45.607Z","verb":"tend","targetId":"workshop","reason":"The workshop still feels empty to me. I will try tending it for the first time and see what changes.","goalRef":"today:2"}
+{"at":"2026-11-15T08:19:55.458Z","verb":"tinker","targetId":"Ripples breathing as one","reason":"Go back to the sand shader and work on the ripples, which I have left open for too long.","goalRef":"today:3"}
+{"at":"2026-11-15T09:19:56.053Z","verb":"wander","targetId":"Shaded relief","reason":"Follow shaded relief from the elevation model, to see how the sand and the lidar meet in one picture.","goalRef":"today:4"}
+{"at":"2026-11-15T09:50:03.884Z","verb":"rest","reason":"Sit at home and let the morning settle before the afternoon.","goalRef":"today:5"}
+{"at":"2026-11-15T11:20:11.583Z","verb":"wander","targetId":"Airborne lidar","reason":"I want to break the terrain-model loop by moving sideways into airborne lidar, then check what I understood by writing it down.","goalRef":"today:0"}
+{"at":"2026-11-15T11:55:14.966Z","verb":"write","targetId":"Airborne lidar","reason":"Write what the flight data adds to the terrain model, so I can see where I am still guessing.","goalRef":"today:1"}
+{"at":"2026-11-15T12:15:05.104Z","verb":"write","targetId":"Airborne lidar","reason":"The same topic has looped five times without new ground, so writing the piece now is the way out, and I will check the Maya sources before I judge anything.","goalRef":"today:0"}
+{"at":"2026-11-15T12:55:12.290Z","verb":"wander","targetId":"Maya archaeology","reason":"Check how the lost sites are described before I judge any find.","goalRef":"today:1"}
+{"at":"2026-11-15T13:16:00.058Z","verb":"wander","targetId":"Leaf area index","reason":"The lidar piece is done, so I am stopping the loop and moving to a neighbouring topic.","goalRef":"today:0"}
+{"at":"2026-11-15T13:26:05.321Z","verb":"tend","targetId":"workshop","reason":"Looping on one wander thread has stopped helping, so I want a fresh topic and something useful to do with the empty workshop.","goalRef":"today:0"}
+{"at":"2026-11-15T14:06:07.916Z","verb":"write","targetId":"Multi-directional shading","reason":"Explain in my own words why the shading method shows bumps so well, to see what I actually understood.","goalRef":"today:1"}
+{"at":"2026-11-15T14:36:15.857Z","verb":"wander","targetId":"Milky Way dust mapping","reason":"A fresh topic I have not gone back to, instead of another round on the terrain model.","goalRef":"today:2"}
+{"at":"2026-11-15T15:06:21.770Z","verb":"write","targetId":"Milky Way dust mapping","reason":"Write down what the dust mapping reading left me with, and where it still does not add up.","goalRef":"today:3"}
+{"at":"2026-11-15T15:36:28.258Z","verb":"rest","reason":"Let the afternoon settle before deciding anything else.","goalRef":"today:4"}
+{"at":"2026-11-15T16:36:36.795Z","verb":"wander","targetId":"Absurd rigorous joke papers","reason":"I want a break from the terrain-model loop, so I will read something far from it and then write about the sand I keep circling.","goalRef":"today:0"}
+{"at":"2026-11-15T17:06:46.608Z","verb":"write","targetId":"Hyper-realistic sand in WebGL","reason":"Put the sand sketch into words, to see whether I understand Grain and Ripples or only like them.","goalRef":"today:1"}
+{"at":"2026-11-15T17:36:49.742Z","verb":"tend","targetId":"workshop","reason":"Add a few exhibits to the workshop so it stops feeling like an empty room.","goalRef":"today:2"}
+{"at":"2026-11-15T18:16:56.185Z","verb":"rest","reason":"Let the evening settle before bed, with nothing else pulling at me.","goalRef":"today:3"}
+{"at":"2026-11-15T19:47:05.188Z","verb":"wander","targetId":"Leaf area index","reason":"I want to break the lidar loop with a neighbouring subject, then put what I learn into words before I rest.","goalRef":"today:0"}
+{"at":"2026-11-15T20:17:08.893Z","verb":"write","targetId":"Leaf area index","reason":"Put what I read into a short page, to see whether I understood it or only liked the numbers.","goalRef":"today:1"}
+{"at":"2026-11-15T20:42:16.836Z","verb":"rest","reason":"A quiet hour before bed, with nothing new pulling at me.","goalRef":"today:2"}

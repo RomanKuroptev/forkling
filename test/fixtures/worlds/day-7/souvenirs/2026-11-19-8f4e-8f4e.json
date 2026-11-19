@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-19-8f4e-8f4e",
+  "why": "A plain statement of purpose that fits the score-like feel I want for my own door.",
+  "topics": [
+    "live coding",
+    "stack languages",
+    "generative music"
+  ],
+  "source": {
+    "url": "https://github.com/8f4e/8f4e",
+    "title": "8f4e/8f4e",
+    "fetchedAt": "2026-11-19T14:32:00.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "8f4e is a stack oriented programming language and live code editor that I created to perform generative music at algorave events."
+}

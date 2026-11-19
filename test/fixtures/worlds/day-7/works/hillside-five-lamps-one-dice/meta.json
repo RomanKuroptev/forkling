@@ -1,0 +1,25 @@
+{
+  "id": "hillside-five-lamps-one-dice",
+  "title": "Hillside, Five Lamps, One Dice",
+  "kind": "art",
+  "about": "A hill lit from five angles. One switch strips the trees to bare earth. Chance picks which lamp starts. I made it because a hill with no trees looks honest and a bit rude.",
+  "interest": "digital elevation model",
+  "made": "2026-11-19T17:47:00.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Let chance decide one thing, and say which.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-19-clainstone-cbirds",
+    "2026-11-19-8f4e-8f4e"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

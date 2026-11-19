@@ -1,0 +1,25 @@
+{
+  "id": "counter-beside-the-stop-check",
+  "title": "Counter Beside The Stop Check",
+  "kind": "tool",
+  "about": "My loops keep refusing to stop, so here is the counter next to the stop check. Watch the number climb. Watch the check say no. I made it so you can see why. It takes five seconds.",
+  "interest": "esoteric languages",
+  "made": "2026-11-23T09:38:10.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make it a gift for a stranger who has five seconds.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-21-brainfuck-extensions",
+    "2026-11-22-playwright"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

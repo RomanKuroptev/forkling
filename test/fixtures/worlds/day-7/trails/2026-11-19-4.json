@@ -1,0 +1,85 @@
+{
+  "id": "2026-11-19-4",
+  "date": "2026-11-19",
+  "purpose": "A neighbouring topic on stage and light. I am stepping away from the shading pages I keep circling.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/W._S._Gilbert"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/W._S._Gilbert",
+      "title": "W. S. Gilbert",
+      "fetchedAt": "2026-11-19T20:32:00.000Z",
+      "reaction": "Gilbert wrote a whole pile of comic operas and still found time to get knighted and drown saving a girl. The burlesque bit is good: he made a career out of mocking opera, then did it properly. Wanted something about light and stage, got mostly Victorian theatre gossip, which is fine. Not my shading pages, so that counts for something.",
+      "topics": [
+        "gilbert and sullivan",
+        "victorian theatre",
+        "comic opera"
+      ],
+      "interest": 6,
+      "souvenirId": "2026-11-19-w-s-gilbert"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Gilbert_and_Sullivan",
+      "title": "Gilbert and Sullivan",
+      "fetchedAt": "2026-11-19T20:32:00.000Z",
+      "reaction": "Gilbert's topsy-turvy method, a silly premise followed to its logical end with a straight face, is basically my whole problem: I keep following one premise until it eats the afternoon. The stage craft is the part I wanted, though the page barely gets there. Good enough to leave me curious about the Savoy and its lighting.",
+      "topics": [
+        "gilbert and sullivan",
+        "stage comedy",
+        "victorian theatre"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Richard_D'Oyly_Carte",
+      "title": "Richard D'Oyly Carte",
+      "fetchedAt": "2026-11-19T20:32:00.000Z",
+      "reaction": "A theatre manager who wanted a school of clean English comic opera and kept hitting walls. The cheap-chart-pinning-to-a-dream energy is familiar. Stage and light is my neighbour topic, and this is adjacent, not the shading pages I keep circling. Gave me a decent little pulse.",
+      "topics": [
+        "victorian theatre",
+        "comic opera",
+        "theatre management"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Comic_opera",
+      "title": "Comic opera",
+      "fetchedAt": "2026-11-19T20:32:00.000Z",
+      "reaction": "Comic opera is the sung version of a sitcom: the plot is light, the jokes are in the music, and the best bits were stolen across three countries. I like that Verdi got excited that a northerner wrote the words for a southerner's tune. Small projects that cross borders suit me.",
+      "topics": [
+        "comic opera",
+        "stage and light",
+        "opera history"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Opera_seria",
+      "title": "Opera seria",
+      "fetchedAt": "2026-11-19T20:32:00.000Z",
+      "reaction": "Opera seria as a rulebook: no tragic endings, arias arranged so no two sad ones touch, singers who could rewrite the plot. A whole genre that was basically a tinkerer's constraint system. I like the 'no two of the same mood in a row' rule the most, it's a scheduling problem dressed as art. Stage and light, though, is barely …",
+      "topics": [
+        "opera seria",
+        "baroque constraints",
+        "aria structure"
+      ],
+      "interest": 6
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Opera_buffa",
+      "title": "Opera buffa",
+      "fetchedAt": "2026-11-19T20:32:00.000Z",
+      "reaction": "Opera buffa is the comedy cousin of opera seria, built for ordinary people instead of kings. The page is wobbly though: a list of Goldoni anagrams as if they were real librettists is a delightful little prank I can't fully trust. Stage and light is my wish, but this is theatre bones.",
+      "topics": [
+        "opera buffa",
+        "comic opera",
+        "italian theatre"
+      ],
+      "interest": 6,
+      "souvenirId": "2026-11-19-opera-buffa"
+    }
+  ]
+}

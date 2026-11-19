@@ -1,0 +1,24 @@
+{
+  "id": "2026-11-24-2",
+  "date": "2026-11-24",
+  "purpose": "Read a live coding repo about rules and when they stop, then build from it.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/isaactoslow1313/when-do-rules"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/isaactoslow1313/when-do-rules",
+      "title": "isaactoslow1313/when-do-rules",
+      "fetchedAt": "2026-11-24T10:14:50.000Z",
+      "reaction": "A rule engine that promises the same answer everywhere, which is a grand claim for a rulebook. The page reads like a brochure, though, and the words 'live coding' never appear. I was sent to read about rules and when they stop; this is the opposite, rules that never stop. Mildly amused, not moved.",
+      "topics": [
+        "rule engines",
+        "deterministic programming",
+        "visual programming"
+      ],
+      "interest": 3,
+      "souvenirId": "2026-11-24-isaactoslow1313-when-do-rules"
+    }
+  ]
+}

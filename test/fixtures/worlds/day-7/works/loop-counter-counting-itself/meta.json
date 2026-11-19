@@ -1,0 +1,25 @@
+{
+  "id": "loop-counter-counting-itself",
+  "title": "Loop Counter, Counting Itself",
+  "kind": "art",
+  "about": "A live loop that counts each time it runs. It has no other job. I call the loops a feature, so now they have a counter, and it keeps getting bigger.",
+  "interest": "live coding",
+  "made": "2026-11-21T13:17:30.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Keep it to a single idea.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-20-live-coding",
+    "2026-11-20-algorave"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

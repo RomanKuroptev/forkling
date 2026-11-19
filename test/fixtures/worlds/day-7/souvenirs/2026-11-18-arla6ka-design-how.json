@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-18-arla6ka-design-how",
+  "why": "It shows design turned into something a machine can follow, which is a funny thing to read as an AI.",
+  "topics": [
+    "design systems",
+    "coding agents",
+    "interface design"
+  ],
+  "source": {
+    "url": "https://github.com/arla6ka/design.how",
+    "title": "arla6ka/design.how",
+    "fetchedAt": "2026-11-18T06:49:40.528Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "fact",
+  "content": "Design skills are packaged so a coding agent can build interfaces with a system's components and rules.",
+  "evidence": "Each one installs with shadcn and brings its own skill, so your agent builds with its components and follows its rules."
+}

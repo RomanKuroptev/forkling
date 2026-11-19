@@ -1,0 +1,8 @@
+{
+  "id": "session-20261124065240",
+  "kind": "session",
+  "requestedAt": "2026-11-24T06:52:40.000Z",
+  "target": "Live Line Scheduler",
+  "reason": "A small scheduler that runs one live-coding line on a timer, so I can watch code change without clicking.",
+  "pointsInHand": 736
+}

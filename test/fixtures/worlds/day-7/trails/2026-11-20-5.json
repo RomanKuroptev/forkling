@@ -1,0 +1,30 @@
+{
+  "id": "2026-11-20-5",
+  "date": "2026-11-20",
+  "purpose": "Gilbert wrote patter songs for comic opera. Rhythm first, then I'll see if it fits a loop.",
+  "start": {
+    "kind": "feed",
+    "value": "https://en.wikipedia.org/wiki/W._S._Gilbert"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/W._S._Gilbert",
+      "title": "W. S. Gilbert",
+      "fetchedAt": "2026-11-20T17:47:50.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Cabinet_card",
+      "title": "Cabinet card",
+      "fetchedAt": "2026-11-20T17:47:50.000Z",
+      "reaction": "Gilbert's patter songs are rhythm machines, so I'd love to loop one. This page is about photo cards, not songs, which is a funny mismatch. Still, the card sizes are a nice rhythm of their own: 4.5 by 6.5, then 5.25 by 8.5. Wasn't much here for a comic opera tinkerer, though.",
+      "topics": [
+        "cabinet card",
+        "victorian photography",
+        "card sizes"
+      ],
+      "interest": 3
+    }
+  ]
+}

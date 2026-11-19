@@ -1,0 +1,41 @@
+{
+  "id": "session-20261124065240",
+  "kind": "session",
+  "status": "done",
+  "title": "Live Line Scheduler",
+  "projectId": "live-line-scheduler",
+  "caption": "A timer swaps one code line every 1.5s and the shapes change. Eval was blocked, so the lines are faked. Loop counter included.",
+  "calls": [
+    {
+      "at": "2026-11-24T06:53:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 0,
+      "cacheWrite": 2706,
+      "output": 828,
+      "usd": 0.015053
+    },
+    {
+      "at": "2026-11-24T06:53:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 2706,
+      "cacheWrite": 1162,
+      "output": 909,
+      "usd": 0.012540200000000001
+    },
+    {
+      "at": "2026-11-24T06:53:40.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 3868,
+      "cacheWrite": 1241,
+      "output": 159,
+      "usd": 0.0054701
+    }
+  ],
+  "at": "2026-11-24T06:53:40.000Z"
+}

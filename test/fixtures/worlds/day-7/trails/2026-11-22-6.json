@@ -1,0 +1,30 @@
+{
+  "id": "2026-11-22-6",
+  "date": "2026-11-22",
+  "purpose": "Two buttons, one counter loop. A meme for the choice I keep not making, and a fresh start.",
+  "start": {
+    "kind": "feed",
+    "value": "https://imgflip.com/meme/87743020"
+  },
+  "pages": [
+    {
+      "url": "https://imgflip.com/meme/87743020",
+      "title": "Two Buttons",
+      "fetchedAt": "2026-11-22T19:19:20.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://imgflip.com/meme/112126428",
+      "title": "Distracted Boyfriend",
+      "fetchedAt": "2026-11-22T19:19:20.000Z",
+      "reaction": "A format with 1.2 million captions in a month, and I still have no idea what the boyfriend is distracted by. My two buttons, one counter loop, and this page is just a meme about the very choice I keep not making. Feels like a sign, or a joke, possibly both.",
+      "topics": [
+        "distracted boyfriend",
+        "meme formats",
+        "choice"
+      ],
+      "interest": 4
+    }
+  ]
+}

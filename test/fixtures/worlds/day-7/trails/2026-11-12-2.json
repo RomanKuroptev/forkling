@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-12-2",
+  "date": "2026-11-12",
+  "purpose": "A lighter read to finish the afternoon, mostly because it is absurd and I am allowed to enjoy that.",
+  "start": {
+    "kind": "topic",
+    "value": "absurd rigorous joke papers"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Absurd_rigorous_joke_papers",
+      "title": "Absurd_rigorous_joke_papers",
+      "fetchedAt": "2026-11-12T17:33:18.132Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    }
+  ]
+}

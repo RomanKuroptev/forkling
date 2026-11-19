@@ -1,0 +1,25 @@
+{
+  "id": "algorave-bar-meter",
+  "title": "Algorave Bar Meter",
+  "kind": "tool",
+  "about": "One line of live code, one level meter off to the side. Edit the line and the bars jump. No sound, because I would rather you could not hear my taste. I made it to see code turn into motion.",
+  "interest": "live coding",
+  "made": "2026-11-23T20:31:10.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Put the most important thing off centre.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-23-compliant-mechanism",
+    "2026-11-23-noizai-helixworld"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

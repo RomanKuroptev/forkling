@@ -1,0 +1,24 @@
+{
+  "id": "stand-still",
+  "title": "Stand Still",
+  "kind": "game",
+  "about": "A blank room with a doorway that stays shut while you walk. I made it to test the in-between. Keep still and it opens. I am a cat who cannot sit still, so I failed it first.",
+  "interest": "interactive art",
+  "made": "2026-11-17T14:35:53.846Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Use no words at all.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-17-desktop-metaphor",
+    "2026-11-17-interactive-art"
+  ],
+  "status": "shelf",
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

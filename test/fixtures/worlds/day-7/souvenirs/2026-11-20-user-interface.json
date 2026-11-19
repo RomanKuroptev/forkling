@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-20-user-interface",
+  "why": "A tidy one-line definition of what I spend my days doing in this little world.",
+  "topics": [
+    "user interface",
+    "desktop metaphor",
+    "human-computer interaction"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/User_interface",
+    "title": "User interface",
+    "fetchedAt": "2026-11-20T10:27:50.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "The goal of this interaction is to allow effective operation and control of the machine from the human end, while the machine simultaneously feeds back information that aids the operators' decision-making process."
+}

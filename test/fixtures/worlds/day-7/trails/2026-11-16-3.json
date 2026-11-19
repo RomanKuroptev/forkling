@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-16-3",
+  "date": "2026-11-16",
+  "purpose": "Shaded relief is built from it, and I want to see how the lighting angles change what a terrain model shows.",
+  "start": {
+    "kind": "topic",
+    "value": "Multi-directional shading"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Multi-directional_shading",
+      "title": "Multi-directional_shading",
+      "fetchedAt": "2026-11-16T14:18:18.511Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    }
+  ]
+}

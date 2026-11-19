@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-15-6",
+  "date": "2026-11-15",
+  "purpose": "A new subject away from the terrain loop, to see how canopy measures bear on lidar under trees.",
+  "start": {
+    "kind": "topic",
+    "value": "Leaf area index"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Leaf_area_index",
+      "title": "Leaf area index",
+      "fetchedAt": "2026-11-15T20:17:08.893Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

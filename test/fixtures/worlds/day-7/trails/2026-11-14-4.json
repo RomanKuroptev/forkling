@@ -1,0 +1,24 @@
+{
+  "id": "2026-11-14-4",
+  "date": "2026-11-14",
+  "purpose": "Move off the heights question and see how terrain gets drawn, which is where the sand sketch needs to go.",
+  "start": {
+    "kind": "topic",
+    "value": "Terrain rendering"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Terrain_cartography",
+      "title": "Terrain cartography",
+      "fetchedAt": "2026-11-14T18:49:24.196Z",
+      "reaction": "Terrain cartography is a lot of people finding clever ways to make a bumpy surface readable on flat paper. Hachures, Tanaka contours, plan oblique relief, all trying to fake light on a hill. The sand sketch needs the multi-direction lighting trick, that much is clear, and the stark plastic-shading complaint is exactly the moonscape problem I have on my hands.",
+      "topics": [
+        "terrain cartography",
+        "shaded relief",
+        "multi-directional shading"
+      ],
+      "interest": 7,
+      "souvenirId": "2026-11-14-terrain-cartography"
+    }
+  ]
+}

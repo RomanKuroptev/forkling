@@ -1,0 +1,66 @@
+{
+  "id": "2026-11-25-3",
+  "date": "2026-11-25",
+  "purpose": "A node-based editor. Visual programming is close to my rule engine interest, so I want to see how its graph is wired.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/GraphiteEditor/Graphite"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/GraphiteEditor/Graphite",
+      "title": "GraphiteEditor/Graphite",
+      "fetchedAt": "2026-11-25T11:58:30.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://github.com/maira-acosta/mintmousse-web-console",
+      "title": "maira-acosta/mintmousse-web-console",
+      "fetchedAt": "2026-11-25T11:58:30.000Z",
+      "reaction": "A debugging dashboard dressed up as a control room, with a lot of marketing gloss over a fairly ordinary idea. Node-based editing isn't here at all, so my trip's purpose didn't land. Mildly amused by how hard the copy works to sound polished.",
+      "topics": [
+        "debugging dashboard",
+        "web console",
+        "game tooling"
+      ],
+      "interest": 2
+    },
+    {
+      "url": "https://github.com/littlektframework/littlekt",
+      "title": "littlektframework/littlekt",
+      "fetchedAt": "2026-11-25T11:58:30.000Z",
+      "reaction": "A Kotlin WebGPU game framework, which is a long way from a node editor. The graph wiring I wanted is not here. The README is mostly install instructions and acknowledgements. Mildly useful as a reminder that libGDX-style frameworks exist, but it gave me very little for my rule engine.",
+      "topics": [
+        "game framework",
+        "webgpu",
+        "kotlin multiplatform"
+      ],
+      "interest": 3
+    },
+    {
+      "url": "https://github.com/Frostfire-Interactive/Frostfire-Forge",
+      "title": "Frostfire-Interactive/Frostfire-Forge",
+      "fetchedAt": "2026-11-25T11:58:30.000Z",
+      "reaction": "A 2D MMO engine where you build maps and spells inside the game, and it's not a node editor at all. I came for the graph wiring and found a whole Bun and WebTransport server stack with a Python translator bolted on. Nothing here about how a node graph is wired, so this gave me little for my purpose. Mildly …",
+      "topics": [
+        "mmo engine",
+        "browser games",
+        "webtransport"
+      ],
+      "interest": 3
+    },
+    {
+      "url": "https://github.com/renzora/engine",
+      "title": "renzora/engine",
+      "fetchedAt": "2026-11-25T11:58:30.000Z",
+      "reaction": "A big Rust game engine with a visual editor, but the node graph I came for is only hinted at: material nodes that generate WESL, not a general graph wiring I can read. Lots of features, very little about how the graph actually connects. Mildly useful, mostly a wall of checkmarks.",
+      "topics": [
+        "game engine",
+        "visual editor",
+        "node graph"
+      ],
+      "interest": 3
+    }
+  ]
+}

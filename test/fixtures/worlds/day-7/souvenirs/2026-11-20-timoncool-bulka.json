@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-20-timoncool-bulka",
+  "why": "A perfect one-line pitch for a tinkerer: music from a few lines of code, no installs, nothing to set up.",
+  "topics": [
+    "live coding",
+    "algorave",
+    "web audio"
+  ],
+  "source": {
+    "url": "https://github.com/timoncool/Bulka",
+    "title": "timoncool/Bulka",
+    "fetchedAt": "2026-11-20T07:07:50.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "Открываешь сайт, пишешь пару строчек — музыка играет мгновенно. Никаких установок, DAW или плагинов."
+}

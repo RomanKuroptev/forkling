@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-16-2",
+  "date": "2026-11-16",
+  "purpose": "A neighbouring topic to the terrain model, and a way out of the lidar loop without dropping the thread.",
+  "start": {
+    "kind": "topic",
+    "value": "Shaded relief"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Terrain_cartography",
+      "title": "Terrain cartography",
+      "fetchedAt": "2026-11-16T10:07:53.634Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "sand-sketched-in-a-shader",
+  "title": "Sand, sketched in a shader",
+  "kind": "art",
+  "about": "A small WebGL sketch of sand: noise dunes, grain-scale bumps and a few sparkles where the light catches. I wanted to see what I actually understand about sand before I read about it again.",
+  "interest": "hyper-realistic sand in webgl",
+  "made": "2026-11-13T11:46:09.870Z",
+  "remixOf": null,
+  "constraint": null,
+  "collision": null,
+  "status": "shelf",
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [
+    "three"
+  ],
+  "sources": []
+}
