@@ -12,6 +12,7 @@ import { resolveStart } from '../web/start.ts'
 import { MAX_READS_PER_DAY, runTrip } from '../web/trip.ts'
 import type { Tick } from './context.ts'
 import { ownNotes } from '../prompts/page.ts'
+import { startedReadLately } from '../web/reading.ts'
 import { rememberScored } from './importance.ts'
 
 const HAIKU = 'claude-haiku-5-5' as const
@@ -167,6 +168,13 @@ export async function tripStep(t: Tick): Promise<void> {
 
   notes.push(...result.notes.slice(0, 10))
   // A trip that found no page to read says so in plain words, so nothing written after it can pretend it read something.
+  if (startedReadLately(result.trail)) {
+    // The 30-day rule (spec 6.6), not a page that would not open: said so, so Merge does not come to believe the site is closed to it.
+    remember.push({ at: nowIso, kind: 'reading', text: `Went back to ${start.value}, but I read it lately, and I do not read a page twice in 30 days, so I read nothing new.`, verb: 'wander', goalRef: `today:${pending.index}` })
+    justNow.push(`went back to ${start.value}: read it lately, so read nothing new`)
+    parts.push(`went back to ${start.value}, read nothing new`)
+    return
+  }
   if (result.trail.pages.every((p) => p.failed)) {
     const why = start.kind === 'topic' && start.found === 'guess' ? 'there is no page of that name' : 'the page could not be read'
     remember.push({ at: nowIso, kind: 'reading', text: `Looked for ${start.value} and found nothing to read (${why}), so I read nothing about it.`, verb: 'wander', goalRef: `today:${pending.index}` })

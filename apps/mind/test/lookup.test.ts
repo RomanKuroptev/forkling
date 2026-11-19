@@ -95,4 +95,17 @@ describe('readingFor (what the write step is told about what it read)', () => {
     const later = trail({ id: '2026-11-16-1', date: '2026-11-16', start: { kind: 'topic', value: 'Shaded relief' }, pages: [{ url: 'https://en.wikipedia.org/wiki/Shaded_relief', title: 'Shaded relief', fetchedAt: '2026-11-16T10:00:00Z', failed: 'timeout', topics: [] }] })
     expect(readingFor([good, later], 'Shaded relief')).toEqual({ kind: 'nothing', looked: 'Shaded relief' })
   })
+
+  // The R2 fast-forward: pages read the day before were skipped by the 30-day rule, and Merge was told "there was no page".
+  const lately = (date: string) => trail({ id: `${date}-1`, date, start: { kind: 'topic', value: 'Shaded relief' }, pages: [{ url: 'https://en.wikipedia.org/wiki/Shaded_relief', title: 'Shaded relief', fetchedAt: `${date}T10:00:00Z`, failed: 'skipped: read in the last 30 days', topics: [] }] })
+
+  it('uses the earlier reading when the newest trip only met pages it read lately', () => {
+    const r = readingFor([good, lately('2026-11-16')], 'Shaded relief')
+    expect(r).toMatchObject({ kind: 'read' })
+    expect(r && r.kind === 'read' && r.pages.map((p) => p.title)).toEqual(['Shaded relief', 'Hillshade'])
+  })
+
+  it('still says it read nothing when no earlier trip read it', () => {
+    expect(readingFor([lately('2026-11-16')], 'Shaded relief')).toEqual({ kind: 'nothing', looked: 'Shaded relief' })
+  })
 })
