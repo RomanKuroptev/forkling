@@ -232,7 +232,8 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       for (const along of alongs) {
         // A frame of the accent colour that stands out of both faces of the wall, and the pane just proud of the frame: one box
         // each, so the frame shows as a border round the pane.
-        add('body', 'box', at(along, h / 2), size(ww + 2 * FRAME, wh + 2 * FRAME, WALL_THICKNESS + 2 * FRAME_OUT), c.accent, false, rot)
+        // The frame belongs to the window (the glow slot), so a place being built is drawn without it, as before.
+        add('glow', 'box', at(along, h / 2), size(ww + 2 * FRAME, wh + 2 * FRAME, WALL_THICKNESS + 2 * FRAME_OUT), c.accent, false, rot)
         add('glow', 'box', at(along, h / 2), size(ww, wh, WALL_THICKNESS + 2 * FRAME_OUT + 2 * PANE_OUT), c.glow, true, rot)
       }
       if (!lining) return

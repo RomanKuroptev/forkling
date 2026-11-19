@@ -57,7 +57,7 @@ describe('each window pane is framed and is not a slab (issue 358)', () => {
       const m = buildingModel(p, kit, 0)!
       const accent = kit.palettes.find((q) => q.id === p.exterior.palette)!.colors.accent
       for (const pane of panes(p)) {
-        const frame = m.slots.body.find((i) => i.color === accent && Math.hypot(...at(i).map((v, k) => v - at(pane)[k]!)) < 1e-6)
+        const frame = m.slots.glow.find((i) => i.color === accent && Math.hypot(...at(i).map((v, k) => v - at(pane)[k]!)) < 1e-6)
         expect(frame, `frame at ${at(pane).join(',')}`).toBeDefined()
         expect(half(frame!)[1] * 2).toBeCloseTo(WINDOW_SIZE[1] + 2 * FRAME, 5)
         expect(frame!.trim).toBe(true)
