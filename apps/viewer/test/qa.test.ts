@@ -94,6 +94,21 @@ describe('the scene list', () => {
     expect(list.find((o) => o.id === `${places[0]!.id}/sign`)!.text).toContain('Under way')
   })
 
+  it('says what each work screen shows: its picture or its title as drawn, and nothing until it is drawn', () => {
+    const places = starterPlaces()
+    const workshop = places.find((p) => p.id === 'workshop')!
+    const room = workshop.rooms[0]!
+    const screens = room.parts.flatMap((pp, i) => (pp.part === 'screen-small' ? [i] : []))
+    workshop.exhibits = [
+      { id: 'a', kind: 'work', ref: 'works/a', slot: `${room.id}/${screens[0]}/0`, label: 'A', added: '2026-11-20' },
+      { id: 'b', kind: 'work', ref: 'works/b', slot: `${room.id}/${screens[1]}/0`, label: 'B', added: '2026-11-20' },
+    ]
+    const screensDrawn = new Map([['workshop/a', 'picture' as const]])
+    const list = placeObjects({ places, kit, heightAt: flat, interiors: new Set(['workshop']), nowMs: NOW, plots: [], screens: screensDrawn })
+    expect(list.find((o) => o.id === 'workshop/a')).toMatchObject({ slot: 'screen', shows: 'picture' })
+    expect(list.find((o) => o.id === 'workshop/b')).toMatchObject({ slot: 'screen', shows: 'nothing' })
+  })
+
   it('boxes a drawn object (Merge, the visitor) from the three.js scene, with whether it is shown', () => {
     const group = new THREE.Group()
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ wireframe: false }))

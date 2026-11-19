@@ -70,6 +70,12 @@ describe('what an exhibit looks like', () => {
     expect(exhibitInstances(at('frame'), palette.colors).some((i) => i.color === palette.colors.glow)).toBe(false)
     expect(exhibitInstances(at('shelf'), palette.colors).some((i) => i.color === palette.colors.glow)).toBe(false)
   })
+  it('makes the lit panel of a screen and a terminal glow at night, as a window does (issue 362)', () => {
+    const at = (slotKind: string) => ({ ...spots[0]!, slotKind: slotKind as never })
+    expect(exhibitInstances(at('screen'), palette.colors).every((i) => i.glow === true)).toBe(true)
+    expect(exhibitInstances(at('terminal'), palette.colors).every((i) => i.glow === true)).toBe(true)
+    expect(exhibitInstances(at('frame'), palette.colors).some((i) => i.glow)).toBe(false)
+  })
 })
 
 describe('how neglect shows (spec 4.4)', () => {

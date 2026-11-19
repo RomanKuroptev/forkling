@@ -1,4 +1,4 @@
-import type { Kit, Place, PlaceRequest } from '@forkling/schema'
+import type { Kit, Place, PlaceRequest, SlotKind } from '@forkling/schema'
 import { placeCentre, toLandPlace } from '@forkling/sim'
 import * as THREE from 'three'
 import { buildingModel } from '../world/building.ts'
@@ -31,6 +31,10 @@ export interface QaObject {
   ref?: string | null
   /** The exhibit's kind in the place file. */
   exhibitKind?: string
+  /** The kind of slot an exhibit stands in (`screen`, `frame`, `shelf`, ...). */
+  slot?: SlotKind
+  /** For a work or project on a screen: what its screen shows as drawn now, its picture or its title, or nothing (a plain lit panel). */
+  shows?: ScreenShows
   /** A place's or room's name, an exhibit's label. */
   name?: string
   /** The words painted on a sign or a title bar. */
@@ -75,7 +79,11 @@ export interface PlacesSnapshot {
   plots: readonly PlaceRequest[]
   wireAlways?: boolean
   plant?: QaPlant | null
+  /** What each screen face shows once it is drawn (`WorkScreens`), by `<place>/<exhibit>`. */
+  screens?: ReadonlyMap<string, ScreenShows>
 }
+
+export type ScreenShows = 'picture' | 'title' | 'nothing'
 
 /** Every place's entries, worked out the way `sceneInstances` draws them. */
 export function placeObjects(s: PlacesSnapshot): QaObject[] {
@@ -102,7 +110,9 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     const palette = s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0]!
     for (const spot of exhibitSpots(place, s.kit, baseY)) {
       const e = spot.exhibit
-      out.push({ id: `${place.id}/${e.id}`, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
+      const id = `${place.id}/${e.id}`
+      const onScreen = spot.slotKind === 'screen' && (e.kind === 'work' || e.kind === 'project')
+      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
     }
     const bar = buildingModel(place, s.kit, baseY)?.titleBar
     if (bar) {
