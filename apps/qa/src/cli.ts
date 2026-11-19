@@ -15,6 +15,7 @@ import { recordFix } from './triage/fix-try.ts'
 import { gather } from './triage/gather.ts'
 import { GhTracker } from './triage/gh-tracker.ts'
 import { writeRunInfo } from './triage/run-info.ts'
+import { liveCommand, LIVE_USAGE } from './live/command.ts'
 
 const USAGE = `pnpm qa <command>
 
@@ -28,7 +29,8 @@ const USAGE = `pnpm qa <command>
   gather  merges qa-out/findings.json, qa-out/actions/** (Actions artefacts) and qa-out/review/*.json (reviewers)
           into qa-out/findings.json and run.json   [--from <dir>]... [--areas world,behaviour,...]
   fix-try <issue> --failed "<what was tried>" | --merged <pr>   a fixer's result; 2 failures label fix-failed
-  digest  writes qa-out/digest.md   [--post] adds one comment on the pinned QA digest issue   [--mode nightly|weekly|release]`
+  digest  writes qa-out/digest.md   [--post] adds one comment on the pinned QA digest issue   [--mode nightly|weekly|release]
+${LIVE_USAGE}`
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv
@@ -68,6 +70,8 @@ async function main(argv: string[]): Promise<number> {
       console.log(`${findings.length} findings; report in ${out}`)
       return 0
     }
+    case 'live':
+      return liveCommand(rest, { out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'triage':
       return triageCommand(rest, { root: repoRoot(), out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'gather': {
