@@ -1,0 +1,110 @@
+import { describe, expect, it } from 'vitest'
+import { kit } from '@forkling/schema/kit'
+import { starterPlaces } from '@forkling/sim'
+import type { Place } from '@forkling/schema'
+import * as THREE from 'three'
+import { createWorldClock } from '../src/clock.ts'
+import { QA_DEFAULT_NOW, qaParams } from '../src/qa/params.ts'
+import { instancesBox, objectEntry, placeObjects } from '../src/qa/sceneList.ts'
+import { compose } from '../src/world/matrix.ts'
+
+const flat = () => 0
+const NOW = Date.parse('2026-11-26T13:00:00Z')
+
+describe('?qa=1 (the audit harness hooks)', () => {
+  it('is off without qa=1, so normal mode installs nothing', () => {
+    expect(qaParams('')).toBeNull()
+    expect(qaParams('?world=local&now=2026-11-26T13:00:00Z&seed=3')).toBeNull()
+    expect(qaParams('?qa=0')).toBeNull()
+  })
+  it('reads the frozen moment and the seed from the address', () => {
+    expect(qaParams('?qa=1&now=2026-11-26T14:00:00%2B01:00&seed=7')).toEqual({ now: NOW, seed: 7 })
+  })
+  it('has a fixed moment and seed 1 when the address gives none or nonsense', () => {
+    expect(qaParams('?qa=1')).toEqual({ now: QA_DEFAULT_NOW, seed: 1 })
+    expect(qaParams('?qa=1&now=yesterday&seed=x')).toEqual({ now: QA_DEFAULT_NOW, seed: 1 })
+  })
+})
+
+describe('the world clock under ?qa=1', () => {
+  it('stands still at the address moment and moves only when the harness steps it', () => {
+    const time = { elapsedMs: 0 }
+    const clock = createWorldClock('Europe/Stockholm', '?qa=1&now=2026-11-26T13:00:00Z', time)
+    expect(clock.now()).toBe(NOW)
+    expect(clock.now()).toBe(NOW)
+    time.elapsedMs = 1500
+    expect(clock.now()).toBe(NOW + 1500)
+    expect(clock.hour()).toBeCloseTo(14, 1)
+    // The world is shown as it is at that moment, not as a stale copy, so Merge's face is its real face.
+    expect(clock.synced).toBe(true)
+  })
+  it('is the real clock as before without qa=1', () => {
+    const clock = createWorldClock('Europe/Stockholm', '', { elapsedMs: 99_999 })
+    expect(clock.synced).toBe(true)
+    expect(Math.abs(clock.now() - Date.now())).toBeLessThan(1000)
+  })
+})
+
+describe('the scene list', () => {
+  it('boxes a unit box instance by its matrix', () => {
+    const box = instancesBox([{ shape: 'box', matrix: compose([1, 2, 3], [0, 0, 0], [2, 4, 6]), color: '#ffffff' }])
+    expect(box).toEqual({ min: [0, 0, 0], max: [2, 4, 6] })
+    expect(instancesBox([])).toBeNull()
+  })
+
+  it('lists every place, its rooms, its sign and its exhibits, with the works marked as works', () => {
+    const places = starterPlaces()
+    const workshop = places.find((p) => p.id === 'workshop')!
+    const room = workshop.rooms[0]!
+    const slotPart = room.parts.findIndex((pp) => (kit.parts.find((k) => k.id === pp.part)?.slots.length ?? 0) > 0)
+    expect(slotPart).toBeGreaterThanOrEqual(0)
+    workshop.exhibits = [{ id: 'a-work', kind: 'work', ref: 'works/a-work', slot: `${room.id}/${slotPart}/0`, label: 'A work', added: '2026-11-20' }]
+    const list = placeObjects({ places, kit, heightAt: flat, interiors: new Set(['workshop']), nowMs: NOW, plots: [] })
+    const ids = (kind: string) => list.filter((o) => o.kind === kind).map((o) => o.id)
+    expect(ids('place').sort()).toEqual(places.map((p) => p.id).sort())
+    expect(ids('room').sort()).toEqual(places.flatMap((p) => p.rooms.map((r) => `${p.id}/${r.id}`)).sort())
+    expect(ids('sign').sort()).toEqual(places.map((p) => `${p.id}/sign`).sort())
+    const work = list.find((o) => o.kind === 'work')!
+    expect(work).toMatchObject({ id: 'workshop/a-work', place: 'workshop', ref: 'works/a-work', visible: true })
+    expect(work.box).not.toBeNull()
+    for (const o of list.filter((x) => x.kind === 'place')) {
+      expect(o.box!.min[1]).toBeCloseTo(0, 1)
+      expect(o.material).toBe('solid')
+    }
+  })
+
+  it('says an exhibit is not drawn while its place has no inside loaded', () => {
+    const places = starterPlaces()
+    const home = places.find((p) => p.id === 'home')!
+    const room = home.rooms[0]!
+    const slotPart = room.parts.findIndex((pp) => (kit.parts.find((k) => k.id === pp.part)?.slots.length ?? 0) > 0)
+    home.exhibits = [{ id: 'keep', kind: 'souvenir', ref: 'souvenirs/keep', slot: `${room.id}/${slotPart}/0`, label: 'Kept', added: '2026-11-20' }]
+    const list = placeObjects({ places, kit, heightAt: flat, interiors: new Set(), nowMs: NOW, plots: [] })
+    expect(list.find((o) => o.id === 'home/keep')).toMatchObject({ kind: 'exhibit', visible: false })
+    expect(list.filter((o) => o.kind === 'room').every((o) => !o.visible)).toBe(true)
+  })
+
+  it('marks a place being built as wireframe and puts the sign text in the list', () => {
+    const places: Place[] = starterPlaces()
+    places[0]!.state = { ...places[0]!.state, construction: { kind: 'found', finishesAt: '2026-11-27T13:00:00Z' } }
+    places[0]!.exterior = { ...places[0]!.exterior, sign: 'Under way' }
+    const list = placeObjects({ places, kit, heightAt: flat, interiors: new Set(), nowMs: NOW, plots: [] })
+    expect(list.find((o) => o.id === places[0]!.id)!.material).toBe('wireframe')
+    expect(list.find((o) => o.id === places[1]!.id)!.material).toBe('solid')
+    expect(list.find((o) => o.id === `${places[0]!.id}/sign`)!.text).toContain('Under way')
+  })
+
+  it('boxes a drawn object (Merge, the visitor) from the three.js scene, with whether it is shown', () => {
+    const group = new THREE.Group()
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ wireframe: false }))
+    mesh.position.set(5, 0.5, 5)
+    group.add(mesh)
+    group.updateMatrixWorld(true)
+    const entry = objectEntry('merge', 'merge', group)
+    expect(entry.box!.min[0]).toBeCloseTo(4.5)
+    expect(entry.box!.max[1]).toBeCloseTo(1)
+    expect(entry.visible).toBe(true)
+    group.visible = false
+    expect(objectEntry('merge', 'merge', group).visible).toBe(false)
+  })
+})

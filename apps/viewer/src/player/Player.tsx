@@ -10,6 +10,8 @@ import { live } from '../forkling/live.ts'
 import { visitor } from '../visitor.ts'
 import { applyLookDrag, lookEuler, type Look } from './look.ts'
 import { mergeMovement } from './touchInput.ts'
+import { qaMode } from '../qa/params.ts'
+import { qaRegistry } from '../qa/registry.ts'
 
 const CAPSULE_RADIUS = 0.3
 const CAPSULE_HALF_HEIGHT = 0.45
@@ -51,6 +53,21 @@ export function Player() {
     events.compute = (_event, state) => {
       state.pointer.set(0, 0)
       state.raycaster.setFromCamera(state.pointer, state.camera)
+    }
+    // The audit harness (`?qa=1`) reads and moves the visitor through `window.__qa`.
+    if (qaMode) {
+      qaRegistry.player = {
+        position: () => (body.current ? (body.current.currPos.toArray() as [number, number, number]) : [spawn.x, spawn.y, spawn.z]),
+        look: () => ({ ...look.current }),
+        setLook: (yaw, pitch) => {
+          look.current = { yaw, pitch }
+        },
+        teleport: (x, z, yaw) => {
+          body.current?.body.setTranslation({ x, y: simWorld.heightAt(x, z) + 1.5, z }, true)
+          body.current?.body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+          if (yaw !== undefined) look.current = { yaw, pitch: 0 }
+        },
+      }
     }
     if (clipMode) {
       const forward = { x: Math.sin(spawn.yaw), z: Math.cos(spawn.yaw) }
@@ -112,6 +129,13 @@ export function Player() {
       return
     }
     if (clipMode) return
+    // A camera the audit harness set stands in for the eyes until it clears it.
+    const pose = qaMode ? qaRegistry.camera : null
+    if (pose) {
+      camera.position.set(...pose.position)
+      camera.lookAt(...pose.target)
+      return
+    }
     camera.position.set(p.x, p.y + EYE_OFFSET, p.z)
     camera.quaternion.setFromEuler(lookEuler(look.current))
     // The cursor is the middle of the screen, so what it points at changes as the visitor walks and turns, with no pointer move.

@@ -1,4 +1,4 @@
-import { Forkling, forklingPackIssues, Goals, parseRequest, Place, type PlaceRequest, type SpeciesPack } from '@forkling/schema'
+import { Forkling, forklingPackIssues, Goals, parseRequest, Place, type PlaceRequest, repairPlaceJson, type SpeciesPack } from '@forkling/schema'
 import { starterPlaces } from '@forkling/sim'
 import type { WorldRef } from './route.ts'
 
@@ -159,7 +159,7 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
       await Promise.all(
         placePaths.map(async (path) => {
           try {
-            const parsed = Place.safeParse(await raw(deps, ref, commit.sha, path))
+            const parsed = Place.safeParse(repairPlaceJson(await raw(deps, ref, commit.sha, path)))
             return parsed.success ? parsed.data : null
           } catch {
             return null
