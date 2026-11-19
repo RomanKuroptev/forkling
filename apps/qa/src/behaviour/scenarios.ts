@@ -28,9 +28,11 @@ export const memeFormat = (user: string): string | null => /looked \| (https:\/\
 const page = (title: string, n: number) =>
   `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title></head><body><canvas id="c" width="400" height="300"></canvas><script>const g=document.getElementById('c').getContext('2d');g.fillStyle='hsl(${(n * 47) % 360},60%,50%)';g.fillRect(0,0,400,300);g.fillStyle='#000';g.fillText(${JSON.stringify(title)},20,150)</script></body></html>`
 
+/** A short line that differs from the last few: two of the fake's titles, paired differently each time. */
+const say = (n: number) => `${TITLES[n % TITLES.length]!.toLowerCase()} and ${TITLES[(n * 7 + 3) % TITLES.length]!.toLowerCase()} are on my mind.`
+
 export function scenarioAnswers(scenario: Scenario): FakeAnswers {
   let sketches = 0
-  let memesToday = ''
   return {
     morning: (req: LlmRequest, n: number) => {
       const starts = startingPoints(req.user)
@@ -44,18 +46,21 @@ export function scenarioAnswers(scenario: Scenario): FakeAnswers {
           : [step('wander', a, 30, 'I want to read where the day starts.'), step('tinker', `sketch ${n}`, 45, 'I want to make a small thing.', { size: 'sketch' }), step('wander', b, 30, 'I want to read one more place.'), step('tinker', `sketch ${n}b`, 45, 'One more small thing.', { size: 'sketch' }), step('rest', null, 30, 'A rest at the end.')]
       return { thought: 'A day of reading and making.', longGoal: null, dropLongGoal: false, plan, planReason: 'Read, make, read, make.', stayUpLate: null }
     },
-    decide: () => ({ thought: 'Nothing to change.', longGoal: null, dropLongGoal: false, plan: null, planReason: null, stayUpLate: null }),
-    read: () => ({ reaction: 'I read it and kept a little of it.', topics: [], interest: 5, souvenir: null, next: null, look: null }),
+    // A different line each time, as a repeated thought is a finding of its own.
+    decide: (_req: LlmRequest, n: number) => ({ thought: `The plan holds; ${say(n)}`, longGoal: null, dropLongGoal: false, plan: null, planReason: null, stayUpLate: null }),
+    read: (_req: LlmRequest, n: number) => ({ reaction: `I read it: ${say(n + 7)}`, topics: [], interest: 5, souvenir: null, next: null, look: null }),
     sketch: (req: LlmRequest) => {
       sketches++
       const format = memeFormat(req.user)
-      const day = /\b(\d{4}-\d{2}-\d{2})\b/.exec(req.user)?.[1] ?? String(sketches)
-      if (format && scenario !== 'no-memes' && memesToday !== day) {
-        memesToday = day
-        return { meta: { title: `Meme ${sketches}`, kind: 'meme', about: 'Me, in two panels: one more page, or the thing itself.', interest: null, sources: [{ role: 'looked', url: format }, { role: 'read', url: format }] }, html: page(`Meme ${sketches}`, sketches) }
+      // One sketch in four is a meme when a format is on offer: memes among other things, not instead of them. Titles and
+      // captions share no word, so the plain fake alone never trips the repeated-words alarm.
+      const a = TITLES[(sketches * 3) % TITLES.length]!
+      const b = TITLES[(sketches * 3 + 1) % TITLES.length]!
+      if (format && scenario !== 'no-memes' && sketches % 4 === 1) {
+        return { meta: { title: `${a} vs ${b}`, kind: 'meme', about: `${a.toLowerCase()} vs ${b.toLowerCase()}.`, interest: null, sources: [{ role: 'looked', url: format }, { role: 'read', url: format }] }, html: page(`${a} vs ${b}`, sketches) }
       }
-      const title = scenario === 'same-topic' ? `Loop Counter ${sketches}` : `${TITLES[sketches % TITLES.length]} ${Math.floor(sketches / TITLES.length) + 1}`
-      const about = scenario === 'same-topic' ? 'The loop counter counts its own loop, and the loop goes round again.' : `A small ${KINDS[sketches % KINDS.length]} about ${TITLES[sketches % TITLES.length]!.toLowerCase()}.`
+      const title = scenario === 'same-topic' ? `Loop Counter ${sketches}` : `${a} ${Math.floor(sketches / TITLES.length) + 1}`
+      const about = scenario === 'same-topic' ? 'The loop counter counts its own loop, and the loop goes round again.' : `${KINDS[sketches % KINDS.length]}: ${a.toLowerCase()}.`
       return { meta: { title, kind: KINDS[sketches % KINDS.length], about, interest: null, sources: [] }, html: page(title, sketches) }
     },
   }

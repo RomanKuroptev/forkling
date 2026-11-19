@@ -38,6 +38,13 @@ describe('the eight meme steps, planted', () => {
     expect(results[0]!.what).toContain('in 0 of 2 morning and decide prompts')
   })
 
+  it('stops at 3 when "meme" is only in a line about who it is, never offered as something to make', () => {
+    const seed = 'You keep an eye on what the internet is laughing about and answer it with your own memes, sketches and toys.'
+    const { trail, results } = trailOf({ prompts: planner(`Starting points: ${FORMAT}. Verbs: tinker makes a sketch for 30 points.`, seed), trails: readFormat })
+    expect(trail.stoppedAt?.step).toBe(3)
+    expect(results[0]!.what).toContain('the word "meme" was in 2, but not as something it can make')
+  })
+
   it('live, with no prompts, step 3 is unknown (never 0) and the stop is the first real zero', () => {
     const { trail, results } = trailOf({ trails: readFormat }, true)
     expect(trail.steps[2]).toMatchObject({ count: null })
@@ -47,7 +54,7 @@ describe('the eight meme steps, planted', () => {
 
   it('stops at 5 when every meme plan was turned down', () => {
     const { trail } = trailOf({
-      prompts: planner(`You can make a meme. ${FORMAT}`),
+      prompts: planner(`Tinker kinds: art, game, meme (a meme costs 30 points). ${FORMAT}`),
       trails: readFormat,
       plans: () => ['1. **tinker** (a meme), 30 min: I want to make a meme of my day.'],
       notes: () => ['plan turned down (step 1: a meme needs a format you read): asking again'],
@@ -56,17 +63,17 @@ describe('the eight meme steps, planted', () => {
   })
 
   it('stops at 6 when the meme answer was unusable', () => {
-    const { trail } = trailOf({ prompts: planner(`You can make a meme. ${FORMAT}`), trails: readFormat, works: [meme({ status: 'scrap', scrapReason: 'the model gave no usable answer (sources: too many)' })] })
+    const { trail } = trailOf({ prompts: planner(`Tinker kinds: art, game, meme (a meme costs 30 points). ${FORMAT}`), trails: readFormat, works: [meme({ status: 'scrap', scrapReason: 'the model gave no usable answer (sources: too many)' })] })
     expect(trail.stoppedAt?.step).toBe(6)
   })
 
   it('stops at 7 when the browser check turned the meme down', () => {
-    const { trail } = trailOf({ prompts: planner(`You can make a meme. ${FORMAT}`), trails: readFormat, works: [meme({ status: 'scrap', scrapReason: 'the page was blank' })] })
+    const { trail } = trailOf({ prompts: planner(`Tinker kinds: art, game, meme (a meme costs 30 points). ${FORMAT}`), trails: readFormat, works: [meme({ status: 'scrap', scrapReason: 'the page was blank' })] })
     expect(trail.stoppedAt?.step).toBe(7)
   })
 
   it('a meme that made it through raises no alarm, and goes to the look reviewer with its picture', () => {
-    const { trail, results } = trailOf({ prompts: planner(`You can make a meme. ${FORMAT}`), trails: readFormat, works: [meme()] })
+    const { trail, results } = trailOf({ prompts: planner(`Tinker kinds: art, game, meme (a meme costs 30 points). ${FORMAT}`), trails: readFormat, works: [meme()] })
     expect(trail.stoppedAt).toBeNull()
     expect(trail.steps.map((s) => s.count)).toEqual([2, 2, 2, 1, 1, 1, 1, 1])
     expect(results).toEqual([expect.objectContaining({ id: 'behaviour.meme-look', severity: 'info', fixKind: 'look' })])
