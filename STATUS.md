@@ -24,7 +24,8 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 
 - Plan approved (B1 to B9, [`lanes/b.md`](docs/spec/audit/lanes/b.md)).
 - **B1 (#274, merged):** the pure measures in `packages/sim/src/behaviour-measures.ts`: topic variety and runs, top word, repetition share, rest by day and its rising run, something new at each look, kind shares. Built on `topicClusters` and `maxSimilarity`.
-- **B2 (#278):** `fast-forward --capture-prompts` writes every model call's prompt to `<out>/prompts.jsonl`, never in the world, and `fakeModel` takes a scripted answer per call kind (`answers`). Without them the fakes and `--dry-run` behave as before.
+- **B2 (#278, merged):** `fast-forward --capture-prompts` writes every model call's prompt to `<out>/prompts.jsonl`, never in the world, and `fakeModel` takes a scripted answer per call kind (`answers`). Without them the fakes and `--dry-run` behave as before.
+- **B3 (#282):** `pnpm qa score --world <w> [--out <ff out>]` reads a run (`apps/qa/src/behaviour/read-run.ts`) and scores 13 of the 9.2 scores (`score.ts`), levels in `qa/behaviour.json`. **On R2 (`C:\Code\forkling-qa-data\r2\`) it finds on its own: "loop" in 38% of titles and captions, rest at 42% and 56% on the last two days, and 2 of 14 visitor looks with nothing new.**
 
 ### Lane S (QS)
 

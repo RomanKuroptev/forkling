@@ -1,0 +1,15 @@
+{
+  "$comment": "Alarm levels for the behaviour scores (docs/spec/audit/spec.md 9.2). Alarms for us, never rules for Merge: nothing here reaches a prompt, a plan check or Merge's repo. First guesses from the spec table; tune with a reason in docs/decisions.md.",
+  "topicVariety": { "minClusters": 5, "maxTopShare": 0.4 },
+  "topicRuns": { "maxDays": 3 },
+  "repeatedWords": { "maxShare": 0.25 },
+  "kinds": { "min": 3, "maxShare": 0.5 },
+  "somethingNew": { "looks": ["10:00", "18:00"], "maxMisses": 0 },
+  "visualEveryDay": { "maxMisses": 0 },
+  "rest": { "maxDayShare": 0.25, "maxRisingDays": 2 },
+  "repetition": { "maxShare": 0.1 },
+  "planRejections": { "maxPerDay": 6 },
+  "money": { "sessionMaxUsd": 1 },
+  "worldShape": { "minChanges": 1, "minDays": 7 },
+  "projects": { "minStarted": 1, "minDays": 7, "maxSessions": 10 }
+}

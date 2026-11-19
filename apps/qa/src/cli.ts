@@ -16,6 +16,7 @@ import { gather } from './triage/gather.ts'
 import { GhTracker } from './triage/gh-tracker.ts'
 import { writeRunInfo } from './triage/run-info.ts'
 import { liveCommand, LIVE_USAGE } from './live/command.ts'
+import { SCORE_USAGE, scoreCommand } from './behaviour/score-cli.ts'
 import { fixturesCommand, FIXTURES_USAGE, liveClone } from './fixtures/command.ts'
 
 const USAGE = `pnpm qa <command>
@@ -32,6 +33,7 @@ const USAGE = `pnpm qa <command>
   fix-try <issue> --failed "<what was tried>" | --merged <pr>   a fixer's result; 2 failures label fix-failed
   digest  writes qa-out/digest.md   [--post] adds one comment on the pinned QA digest issue   [--mode nightly|weekly|release]
 ${LIVE_USAGE}
+  score   ${SCORE_USAGE}
 ${FIXTURES_USAGE}`
 
 async function main(argv: string[]): Promise<number> {
@@ -74,6 +76,8 @@ async function main(argv: string[]): Promise<number> {
     }
     case 'live':
       return liveCommand(rest, { out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
+    case 'score':
+      return scoreCommand(rest)
     case 'fixtures':
       return fixturesCommand(rest, { cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'live-clone':

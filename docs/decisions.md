@@ -5,7 +5,9 @@ Dated log of choices that shape the project, newest first. Add an entry when a d
 **Audit harness lanes (until QR is done):** add your decisions as bullets at the end of your lane's own 2026-11-19 entry below, not as new entries at the top, so parallel PRs do not conflict.
 
 ## 2026-11-19: Behaviour scoring choices (audit QB, lane B)
-- Lane B adds its decisions here.
+- **Repeated words count titles with their captions** (a work's title and about, and written page titles), share of texts with the word. Spec 9.2 says "titles, captions and diary"; diary lines are many and short and water the share down. On R2 this finds "loop" in 38% (level 25%); over titles alone it found "counter" at 23%.
+- **Topic runs use only what Merge made and wrote; topic variety also counts what it read.** A day's many Wikipedia reads (R2: 63 clusters) hide the topic it kept making. On R2, topic runs stay at 2 days: the "loop" drift moves through names (loop, counter, the counter toy, a visitor for it), so repeated words is the score that catches it, as spec 9.2 expects.
+- **Rest is counted from the stream's `step` lines**: rest steps over all steps started that day.
 
 ## 2026-11-19: `?qa=1` draws a frame only when the harness steps it (audit Q1, lane W)
 - **Why.** A picture must depend only on the address and the steps taken, or the world checks cannot compare two runs. With the clock frozen but the frame loop free, the visitor's capsule and Merge's animations still moved with real frame times.
