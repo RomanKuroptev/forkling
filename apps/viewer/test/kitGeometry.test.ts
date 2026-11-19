@@ -4,6 +4,7 @@ import { kit } from '@forkling/schema/kit'
 import { DOOR_HALF, WALL, createLand, placeCentre, toLandPlace } from '@forkling/sim'
 import { FIXTURE_NOW, makeFixtureWorld } from '@forkling/sim/fixture'
 import { compose, multiply } from '../src/world/matrix.ts'
+import { partInDoorway } from '../src/world/doorway.ts'
 import { MODEL_LIMITS, SHAPES, SHAPE_TRIANGLES, exteriorInstances, floorHeight, interiorInstances, interiorsToLoad, modelFiles, partInstances, renderBudget, resolveColor, sceneInstances, wallBoxes } from '../src/world/kitGeometry.ts'
 
 const fixture = makeFixtureWorld(1, 10)
@@ -159,7 +160,10 @@ describe('the walls you cannot walk through (the same walls the cat\'s world has
 describe('the inside of a building (spec 4.6: only the place the visitor is in, and its neighbours, are loaded in full)', () => {
   it('is the furniture of each room, on its floor', () => {
     const home = place('home')
-    const count = home.rooms.flatMap((r) => r.parts).reduce((n, p) => n + kit.parts.find((k) => k.id === p.part)!.primitives.length, 0)
+    // But for the starter's large frame, hung over the door: nothing is drawn in a doorway (issues 342, 354; doorway.test.ts).
+    const drawn = home.rooms.flatMap((r) => r.parts.filter((p) => !partInDoorway(home, kit, r, p, 0)))
+    expect(home.rooms.flatMap((r) => r.parts).length - drawn.length).toBe(1)
+    const count = drawn.reduce((n, p) => n + kit.parts.find((k) => k.id === p.part)!.primitives.length, 0)
     expect(interiorInstances(home, kit, 0)).toHaveLength(count + 1) // and the floor
   })
   it('loads the places in the visitor\'s chunk and the chunks around it, and no others', () => {
