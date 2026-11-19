@@ -246,6 +246,20 @@ describe('a wander step', () => {
     expect(result.summary).toMatch(/read nothing/)
   })
 
+  it('says it read the page lately, not that it could not be read, when the 30-day rule skips where it started', async () => {
+    // A trail from two days ago read both pages, so today's trip to the same topic skips them (spec 6.6).
+    writeJson('trails/2026-11-01-1.json', Trail.parse({ id: '2026-11-01-1', date: '2026-11-01', purpose: 'p', start: { kind: 'topic', value: 'logic gates' }, pages: [
+      { url: `${wiki}/wiki/Logic_gate`, title: 'Logic gate', fetchedAt: '2026-11-01T10:00:00Z', topics: [], interest: 6 },
+      { url: `${wiki}/wiki/Boolean_algebra`, title: 'Boolean algebra', fetchedAt: '2026-11-01T10:05:00Z', topics: [], interest: 6 },
+    ] }))
+    const { web } = webWith()
+    const { result } = await wander({ web })
+    const stream = readFileSync(file(`memory/stream/${DAY}.jsonl`), 'utf8')
+    expect(stream).toMatch(/I read it lately, and I do not read a page twice in 30 days/)
+    expect(stream).not.toMatch(/could not be read/)
+    expect(result.summary).toMatch(/read nothing new/)
+  })
+
   describe('what the write step is told about what it read', () => {
     const writeAfter = async (topic: string, target: string) => {
       const llm = fake(plan([step('wander', topic), step('write', target), step('rest', null)]))
