@@ -24,6 +24,8 @@ import { Land } from './world/Land.tsx'
 import { Notes } from './world/Notes.tsx'
 import { Paths } from './world/Paths.tsx'
 import { Places } from './world/Places.tsx'
+import { qaMode } from './qa/params.ts'
+import { QaProbe } from './qa/QaProbe.tsx'
 
 const keyboardMap: KeyboardControlsEntry[] = [
   { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
@@ -57,6 +59,8 @@ export function App() {
           dpr={touchUi ? [1, 1.25] : [1, 1.5]}
           camera={{ fov: 70, near: 0.1, far: 400 }}
           raycaster={{ far: OPEN_RANGE }}
+          // The audit harness (`?qa=1`) draws every frame itself (`window.__qa.step`); normal mode runs the loop as always.
+          {...(qaMode ? { frameloop: 'never' as const } : {})}
         >
           <Suspense fallback={null}>
             <Environment />
@@ -69,6 +73,7 @@ export function App() {
               <Forkling />
               <Player />
             </Physics>
+            {qaMode && <QaProbe />}
           </Suspense>
           <Effects />
           {debug && <Stats />}
