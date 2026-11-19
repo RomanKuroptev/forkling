@@ -187,7 +187,7 @@ describe('mood and energy (spec 3.2)', () => {
     patchForkling({ mood: -0.3, energy: -0.3 })
     const llm = fakeLlm()
     await runTick(dir, at(NOW, { llm }))
-    expect(llm.calls[0]!.user).toMatch(/mood: low, tired/)
+    expect(llm.calls[0]!.user).toMatch(/mood: low, a bit worn/)
     expect(llm.calls[0]!.user).not.toMatch(/-0\.3/)
   })
 })
@@ -217,6 +217,7 @@ describe('the nine verbs in the tick', () => {
     patchForkling({ energy: -0.6 })
     const llm = fakeLlm({ ...morning, plan: fiveSteps() })
     await runTick(dir, at(NOW, { llm }))
+    expect(llm.calls[0]!.user).toMatch(/mood: [a-z ]+, tired$/m)
     expect(stateOf().rejections[0]!.reasons.join(' ')).toMatch(/at most 4 steps/)
   })
 

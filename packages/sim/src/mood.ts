@@ -63,12 +63,16 @@ export function tiredLimits(state: MoodState): TiredLimits {
   return state.energy < TIRED_BELOW ? { maxSteps: 4, allowBuilds: false } : { maxSteps: null, allowBuilds: true }
 }
 
-/** "low, tired": how the decide and step calls are told how it feels. */
+/**
+ * "low, tired": how the decide and step calls are told how it feels. "tired" is said only under the tired limit
+ * (`TIRED_BELOW`), because the system prompt says the limit holds "when you are tired (you are told)"; above it the
+ * word is the softer "a bit worn", so the word never claims a limit that is not reached (issue #324).
+ */
 export function moodWords(state: MoodState): string {
   const m = state.mood
   const mood = m <= SPIRAL_BELOW ? 'very low' : m < -0.2 ? 'low' : m < 0.2 ? 'steady' : m < 0.6 ? 'good' : 'very good'
   const e = state.energy
-  const energy = e > 0.3 ? 'rested' : e > -0.1 ? 'steady' : e >= TIRED_BELOW ? 'tired' : 'exhausted'
+  const energy = e > 0.3 ? 'rested' : e > -0.1 ? 'steady' : e >= TIRED_BELOW ? 'a bit worn' : 'tired'
   return `${mood}, ${energy}`
 }
 
