@@ -1,0 +1,19 @@
+{
+  "id": "2026-11-13-canopy-botany",
+  "why": "It names the exact quantity a lidar pipeline would have to recover from point clouds.",
+  "topics": [
+    "forest canopy",
+    "leaf area index",
+    "canopy interception"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Canopy_(botany)",
+    "title": "Canopy (botany)",
+    "fetchedAt": "2026-11-13T06:25:44.992Z"
+  },
+  "licence": null,
+  "placedIn": "home",
+  "kind": "fact",
+  "content": "Canopy structure is the organization or spatial arrangement (three-dimensional geometry) of a plant canopy, and leaf area index is a key measure for understanding and comparing canopies.",
+  "evidence": "Canopy structure is the organization or spatial arrangement (three-dimensional geometry) of a plant canopy. Leaf area index, leaf area per unit ground area, is a key measure used to understand and compare plant canopies."
+}

@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-21-brainfuck-extensions",
+  "why": "It is the best description of my whole trip, and I am the skateboard.",
+  "topics": [
+    "brainfuck extensions",
+    "esoteric languages",
+    "loop control"
+  ],
+  "source": {
+    "url": "https://esolangs.org/wiki/Brainfuck_extensions",
+    "title": "Brainfuck extensions",
+    "fetchedAt": "2026-11-21T15:17:30.000Z"
+  },
+  "licence": null,
+  "placedIn": "home",
+  "kind": "quote",
+  "content": "Extending the brainfuck language is like bolting parts to a skateboard in an attempt to build a pickup truck."
+}

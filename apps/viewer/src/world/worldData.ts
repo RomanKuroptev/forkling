@@ -12,12 +12,22 @@ export interface WorldFiles {
 /** A path a place file may name: plain folders and a file name, nothing that climbs out or adds a query. The refs are data. */
 const SAFE_PATH = /^[A-Za-z0-9_][A-Za-z0-9_.-]*(\/[A-Za-z0-9_][A-Za-z0-9_.-]*)*$/
 
-export function worldFiles(world: Pick<LoadedWorld, 'ref' | 'sha'>, fetchImpl: typeof fetch = (input, init) => fetch(input, init)): WorldFiles {
+/**
+ * Where the files of a world served next to the viewer are (`?world=local`: `<origin><base>world/`, as `localFetch` reads them).
+ * Null for a world from GitHub and for one made up in the browser (`?fixture=`), which has no files.
+ */
+export function localFilesBase(world: Pick<LoadedWorld, 'ref' | 'sha'>, origin: string, baseUrl: string): string | null {
+  const local = world.ref.owner === LOCAL_REF.owner && world.ref.repo === LOCAL_REF.repo
+  return local && world.sha === 'local' ? `${origin}${baseUrl}world/` : null
+}
+
+/** `localBase` is where a local world's files are served (`localFilesBase`); without it a local world has no files to read. */
+export function worldFiles(world: Pick<LoadedWorld, 'ref' | 'sha'>, fetchImpl: typeof fetch = (input, init) => fetch(input, init), localBase: string | null = null): WorldFiles {
   const local = world.ref.owner === LOCAL_REF.owner && world.ref.repo === LOCAL_REF.repo
   const get = async (path: string): Promise<Response | null> => {
-    if (local || !SAFE_PATH.test(path)) return null
+    if ((local && !localBase) || !SAFE_PATH.test(path)) return null
     try {
-      const res = await fetchImpl(`https://raw.githubusercontent.com/${world.ref.owner}/${world.ref.repo}/${world.sha}/${path}`)
+      const res = await fetchImpl(local ? `${localBase}${path}` : `https://raw.githubusercontent.com/${world.ref.owner}/${world.ref.repo}/${world.sha}/${path}`)
       return res.ok ? res : null
     } catch {
       return null
@@ -48,8 +58,9 @@ const missing = (local: boolean): PanelContent =>
   local ? noteOnly('A made-up world', 'This world only exists in your browser, so there is nothing behind this to open.') : noteOnly('Not available', 'This could not be opened right now. Try again in a little while.')
 
 /** What to show for a click, reading the one file it needs (or, for the gallery, each work's meta). Never throws: anything that does not load is a note. */
-export async function loadPanel(target: PanelTarget, ctx: { world: Pick<LoadedWorld, 'ref' | 'workIds'>; files: WorldFiles }): Promise<PanelContent> {
-  const base = siteBase(ctx.world.ref)
+export async function loadPanel(target: PanelTarget, ctx: { world: Pick<LoadedWorld, 'ref' | 'workIds'>; files: WorldFiles; localSite?: string | null }): Promise<PanelContent> {
+  // A local world's works run from the files served next to the viewer, as they would from its site.
+  const base = siteBase(ctx.world.ref) ?? ctx.localSite ?? null
   const local = base === null
   if (target.kind === 'sign') return signPanel(target.place, base)
   if (target.kind === 'plot') return plotPanel(target.request)

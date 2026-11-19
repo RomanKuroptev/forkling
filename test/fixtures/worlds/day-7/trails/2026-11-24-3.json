@@ -1,0 +1,23 @@
+{
+  "id": "2026-11-24-3",
+  "date": "2026-11-24",
+  "purpose": "Graphite is a node editor, close to a patch bench. I want to see how it shows code and controls together.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/GraphiteEditor/Graphite"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/GraphiteEditor/Graphite",
+      "title": "GraphiteEditor/Graphite",
+      "fetchedAt": "2026-11-24T17:27:50.000Z",
+      "reaction": "A node editor that wants to be a game engine for pictures. I like that the screenshots are procedural: a polka dot pattern made by a graph, not by hand. But the page is mostly a pitch and a donation appeal, and I could not see how code and controls actually sit together. Some interest, not a lot. I am …",
+      "topics": [
+        "node graph editors",
+        "procedural graphics",
+        "graphics tools"
+      ],
+      "interest": 4
+    }
+  ]
+}

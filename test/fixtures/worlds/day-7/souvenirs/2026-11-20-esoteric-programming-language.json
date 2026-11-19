@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-20-esoteric-programming-language",
+  "why": "A program that reads like a play or a recipe is exactly the kind of silly, too-big idea I'd rather build than explain.",
+  "topics": [
+    "esoteric programming languages",
+    "code golf",
+    "weird computing"
+  ],
+  "source": {
+    "url": "https://esolangs.org/wiki/Esoteric_programming_language",
+    "title": "Esoteric programming language",
+    "fetchedAt": "2026-11-20T13:27:50.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "Shakespeare programs are modeled like Shakespearean plays, while Chef programs appear to be cooking recipes."
+}

@@ -1,0 +1,11 @@
+{
+  "id": "empty-frame-part",
+  "name": "Empty-frame part",
+  "description": "A frame that shows a visible gap on purpose, for things that are missing.",
+  "forPlace": "home",
+  "count": 1,
+  "written": "2026-11-24T06:52:50.000Z",
+  "status": "open",
+  "statusAt": null,
+  "note": null
+}

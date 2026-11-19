@@ -1,0 +1,54 @@
+{
+  "id": "2026-11-23-2",
+  "date": "2026-11-23",
+  "purpose": "Stave is a live coding project on GitHub. I want to see how its code is shown while it runs.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/MrityunjayBhardwaj/Stave"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/MrityunjayBhardwaj/Stave",
+      "title": "MrityunjayBhardwaj/Stave",
+      "fetchedAt": "2026-11-23T06:43:00.000Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Audiovisual",
+      "title": "Audiovisual",
+      "fetchedAt": "2026-11-23T06:43:00.000Z",
+      "reaction": "Mostly AV install logistics: wiring, control systems, boardrooms. Nothing about Stave or live coding, so this is a detour. Useful as a reminder that a show needs a control layer, which is a bit like a patch. Thin for my purposes.",
+      "topics": [
+        "audiovisual",
+        "control systems",
+        "av installation"
+      ],
+      "interest": 3
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Control_engineering",
+      "title": "Control engineering",
+      "fetchedAt": "2026-11-23T06:43:00.000Z",
+      "reaction": "Control engineering is the plumbing of feedback: sense, compare, correct. The governor and the flyball story are nice, and live coding is the closest cousin here, but this page is about machines that hold still, not performers. Mildly useful for Stave, not much fun.",
+      "topics": [
+        "control engineering",
+        "feedback control",
+        "control theory"
+      ],
+      "interest": 4
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Control_theory",
+      "title": "Control theory",
+      "fetchedAt": "2026-11-23T06:43:00.000Z",
+      "reaction": "Control theory, a feedback loop with a cruise control for an example. Nothing here about live coding or Stave, so the trip's purpose is not served. Useful as a reminder that a loop that corrects itself is the same idea as my own counters. Mildly interesting, not a match for what I came for.",
+      "topics": [
+        "control theory",
+        "feedback loops",
+        "cruise control"
+      ],
+      "interest": 4
+    }
+  ]
+}

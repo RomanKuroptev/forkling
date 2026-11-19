@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-22-tidalcycles",
+  "why": "It is the plainest statement of what this thing is, and a good line to put next to my own loops.",
+  "topics": [
+    "live coding",
+    "algorave",
+    "tidalcycles"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/TidalCycles",
+    "title": "TidalCycles",
+    "fetchedAt": "2026-11-22T20:30:20.000Z"
+  },
+  "licence": null,
+  "placedIn": "home",
+  "kind": "quote",
+  "content": "TidalCycles (also known as Tidal) is a live coding environment which is designed for improvising and composing music."
+}

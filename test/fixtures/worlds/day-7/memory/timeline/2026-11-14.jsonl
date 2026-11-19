@@ -1,0 +1,23 @@
+{"at":"2026-11-14T06:33:58.159Z","verb":"wander","targetId":"Digital elevation model","reason":"I woke with 450 points and a whole day. Lidar needs a terrain model before I can judge any find, so I start by reading about digital elevation models, then write down what I actually understood.","goalRef":"today:0"}
+{"at":"2026-11-14T07:04:01.067Z","verb":"write","targetId":"Digital elevation model","reason":"Writing the terrain model down will show whether I followed the read or only recognised the words.","goalRef":"today:1"}
+{"at":"2026-11-14T07:34:01.965Z","verb":"tend","targetId":"home","reason":"The doors in this house are still unfinished, and the place needs looking after.","goalRef":"today:2"}
+{"at":"2026-11-14T08:14:09.970Z","verb":"rest","reason":"A proper pause after the reading and the tidying.","goalRef":"today:3"}
+{"at":"2026-11-14T09:14:17.080Z","verb":"wander","targetId":"Leaf area index","reason":"Forest canopy keeps returning to the lidar work, and leaf area index is how the canopy gets counted.","goalRef":"today:4"}
+{"at":"2026-11-14T09:54:20.387Z","verb":"write","targetId":"Leaf area index","reason":"Putting the canopy counting into words will show what I can actually explain about it.","goalRef":"today:5"}
+{"at":"2026-11-14T10:33:06.165Z","verb":"rest","reason":"The canopy loop has gone round five times with nothing new, so I need a different angle rather than another pass at the same page.","goalRef":"today:0"}
+{"at":"2026-11-14T10:38:11.838Z","verb":"wander","targetId":"Maya archaeology","reason":"The canopy loop has gone around without giving me anything new, so I want to come at the sites from the ground up instead of from the sensor.","goalRef":"today:0"}
+{"at":"2026-11-14T11:08:15.806Z","verb":"write","targetId":"Maya archaeology","reason":"Put down in my own words what a site looks like on the ground, not what the lidar says about it.","goalRef":"today:1"}
+{"at":"2026-11-14T11:48:20.150Z","verb":"rest","reason":"Let the writing settle before I go back to any terrain model.","goalRef":"today:2"}
+{"at":"2026-11-14T12:18:29.488Z","verb":"tend","targetId":"home","reason":"The doors are still unfinished, and the house has been neglected while I looped.","goalRef":"today:3"}
+{"at":"2026-11-14T12:58:30.805Z","verb":"rest","reason":"A long rest at home once the reading, the writing and the tending are done.","goalRef":"today:4"}
+{"at":"2026-11-14T13:58:39.318Z","verb":"write","targetId":"Digital elevation model","reason":"I have looped on lidar and sand for hours, so I want to ground the terrain model first, then put the sand into a small sketch.","goalRef":"today:0"}
+{"at":"2026-11-14T14:28:49.365Z","verb":"tend","targetId":"workshop","reason":"The workshop is still empty to me, so I will arrange it a little.","goalRef":"today:1"}
+{"at":"2026-11-14T14:29:09.736Z","verb":"write","targetId":"Digital elevation model","reason":"Roman built both my places before I could arrange either, so I will do the work that does not need a door.","goalRef":"today:0"}
+{"at":"2026-11-14T14:59:17.056Z","verb":"tinker","targetId":"hyper-realistic sand in webgl","reason":"Try the grain under a low sun as a quick sketch, not a full build.","goalRef":"today:1"}
+{"at":"2026-11-14T16:29:26.145Z","verb":"write","targetId":"hyper-realistic sand in webgl","reason":"Write down what the sketch showed me about the grain and the light.","goalRef":"today:2"}
+{"at":"2026-11-14T16:59:31.536Z","verb":"rest","reason":"Sit still while the new buildings are still under construction and let the day settle.","goalRef":"today:3"}
+{"at":"2026-11-14T17:59:36.322Z","verb":"wander","targetId":"Airborne lidar","reason":"The terrain model is still the thing I can't yet explain well, so I want to read around it and then put what I understood into words.","goalRef":"today:0"}
+{"at":"2026-11-14T18:19:18.042Z","verb":"wander","targetId":"Terrain rendering","reason":"I have circled the heights question long enough, so I will move to terrain rendering and make something from the sand sketch instead of re-reading the same lidar pages.","goalRef":"today:0"}
+{"at":"2026-11-14T18:49:24.196Z","verb":"write","targetId":"Terrain rendering","reason":"Put what I learned about drawing terrain into a short page, so I can check what I actually understood.","goalRef":"today:1"}
+{"at":"2026-11-14T19:19:31.663Z","verb":"tinker","targetId":"grain under a low sun","reason":"Return to the sand shader and finish the grain sketch, instead of circling the lidar heights again.","goalRef":"today:2"}
+{"at":"2026-11-14T20:19:39.223Z","verb":"rest","reason":"Sit still for the last hour and let the day settle before bed.","goalRef":"today:3"}

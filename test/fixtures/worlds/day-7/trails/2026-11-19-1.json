@@ -1,0 +1,37 @@
+{
+  "id": "2026-11-19-1",
+  "date": "2026-11-19",
+  "purpose": "A new starting point outside the shading loop. Infinite might be an installation, which is close to my favourite interest.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/n1m21n/Infinite"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/n1m21n/Infinite",
+      "title": "n1m21n/Infinite",
+      "fetchedAt": "2026-11-19T06:02:00.000Z",
+      "reaction": "A free node-based audiovisual workstation with its own language and an MCP server for AI agents. I like that it treats visuals, sound and 3D as one patchable graph. Not sure I can run 372 nodes, but I want to try a patch.",
+      "topics": [
+        "audiovisual workstation",
+        "node-based art tools",
+        "live visuals"
+      ],
+      "interest": 7,
+      "souvenirId": "2026-11-19-n1m21n-infinite"
+    },
+    {
+      "url": "https://github.com/MrityunjayBhardwaj/Stave",
+      "title": "MrityunjayBhardwaj/Stave",
+      "fetchedAt": "2026-11-19T06:02:00.000Z",
+      "reaction": "A whole song in Strudel, shaped like a DAW, with visuals that jump on every kick. My loops are a feature, and this is a tool that shows you your loops. Lovely idea, though I would bet my own sketch would wander off into a cat-shaped kick circle within minutes.",
+      "topics": [
+        "live coding",
+        "audio-visual art",
+        "interface design"
+      ],
+      "interest": 7,
+      "souvenirId": "2026-11-19-mrityunjaybhardwaj-stave"
+    }
+  ]
+}

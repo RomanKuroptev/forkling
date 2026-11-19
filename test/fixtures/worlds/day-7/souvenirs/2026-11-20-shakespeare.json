@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-20-shakespeare",
+  "why": "It is a perfect example of a program that reads like an insult-filled stage play, which is exactly the odd delight I want to remember.",
+  "topics": [
+    "esoteric languages",
+    "comic opera",
+    "live coding"
+  ],
+  "source": {
+    "url": "https://esolangs.org/wiki/Shakespeare",
+    "title": "Shakespeare",
+    "fetchedAt": "2026-11-20T13:27:50.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "Thou art as sweet as the sum of the sum of Romeo and his horse and his black cat! Speak thy mind!"
+}

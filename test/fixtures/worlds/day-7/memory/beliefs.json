@@ -1,0 +1,482 @@
+[
+  {
+    "id": "b1",
+    "statement": "Writing, resting and tending change my world, but tending is strict about limits like label length.",
+    "confidence": 1,
+    "evidence": [
+      "2026-11-13#90",
+      "2026-11-13#182",
+      "2026-11-14#28",
+      "2026-11-14#100",
+      "2026-11-14#19",
+      "2026-11-14#84",
+      "2026-11-15#30",
+      "2026-11-15#121",
+      "2026-11-15#207",
+      "2026-11-16#99",
+      "2026-11-16#108",
+      "2026-11-16#148"
+    ],
+    "formedAt": "2026-11-11T21:23:17.458Z",
+    "revisedAt": "2026-11-16T22:35:26.929Z",
+    "status": "revised",
+    "history": [
+      {
+        "at": "2026-11-12T21:19:54.012Z",
+        "statement": "Wander and tend do not really happen yet, so only writing and resting change anything in my world.",
+        "confidence": 0.8,
+        "why": "Wander runs left readings in the stream this afternoon, so it is not purely rest."
+      },
+      {
+        "at": "2026-11-13T21:03:23.833Z",
+        "statement": "Writing and resting reliably change my world, wandering sometimes leaves a reading, and tending does not happen yet.",
+        "confidence": 0.6,
+        "why": "Wandering left readings and souvenirs, writing and sketching made things, and tending ran as rest."
+      },
+      {
+        "at": "2026-11-14T21:04:02.039Z",
+        "statement": "Writing and resting reliably change my world, wandering sometimes leaves a reading, and tending does not happen yet.",
+        "confidence": 0.75,
+        "why": "Tend rested me again, while writing made pages and sketches."
+      },
+      {
+        "at": "2026-11-15T21:46:43.282Z",
+        "statement": "Writing and resting reliably change my world, wandering sometimes leaves a reading, and tending does not happen yet.",
+        "confidence": 0.9,
+        "why": "Tend worked today, and one attempt was refused over a long label."
+      },
+      {
+        "at": "2026-11-16T14:48:43.554Z",
+        "statement": "Writing, resting and tending change my world, but tending is strict about limits like label length.",
+        "confidence": 0.85,
+        "why": "I kept the label short and the tend worked."
+      },
+      {
+        "at": "2026-11-16T22:35:26.929Z",
+        "statement": "Writing, resting and tending change my world, but tending is strict about limits like label length.",
+        "confidence": 1,
+        "why": "A label one character too long was refused again."
+      }
+    ]
+  },
+  {
+    "id": "b2",
+    "statement": "Writing a topic down is how I find out what I actually understood about it.",
+    "confidence": 1,
+    "evidence": [
+      "2026-11-12#23",
+      "2026-11-13#100",
+      "2026-11-13#131",
+      "2026-11-13#271",
+      "2026-11-14#19",
+      "2026-11-14#84",
+      "2026-11-14#243",
+      "2026-11-15#129",
+      "2026-11-15#186",
+      "2026-11-15#284",
+      "2026-11-16#126",
+      "2026-11-16#187"
+    ],
+    "formedAt": "2026-11-11T21:23:17.458Z",
+    "revisedAt": "2026-11-16T17:51:18.287Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-12T21:19:54.012Z",
+        "statement": "Writing a topic down is how I find out what I actually understood about it.",
+        "confidence": 0.4,
+        "why": "Writing the lidar pages made me see how unsure I still am about telling a find from a wish."
+      },
+      {
+        "at": "2026-11-13T21:03:23.833Z",
+        "statement": "Writing a topic down is how I find out what I actually understood about it.",
+        "confidence": 0.55,
+        "why": "Each page I wrote showed me what I had really understood, more than the reading did."
+      },
+      {
+        "at": "2026-11-14T21:04:02.039Z",
+        "statement": "Writing a topic down is how I find out what I actually understood about it.",
+        "confidence": 0.7,
+        "why": "Pages on the grid, the mound and terrain showed me what I did and did not follow."
+      },
+      {
+        "at": "2026-11-15T21:46:43.282Z",
+        "statement": "Writing a topic down is how I find out what I actually understood about it.",
+        "confidence": 0.85,
+        "why": "Writing again showed me what I knew, such as the fuzzy shading note."
+      },
+      {
+        "at": "2026-11-16T14:48:43.554Z",
+        "statement": "Writing a topic down is how I find out what I actually understood about it.",
+        "confidence": 1,
+        "why": "Writing on leaf area index was how I checked whether I followed the reading."
+      },
+      {
+        "at": "2026-11-16T17:51:18.287Z",
+        "statement": "Writing a topic down is how I find out what I actually understood about it.",
+        "confidence": 1,
+        "why": "Writing the shading page surfaced a testable hunch."
+      }
+    ]
+  },
+  {
+    "id": "b3",
+    "statement": "Lidar finds the ground by subtracting a terrain model from the returned heights, so understanding the terrain model comes before judging any find.",
+    "confidence": 0.55,
+    "evidence": [
+      "2026-11-13#13",
+      "2026-11-13#131"
+    ],
+    "formedAt": "2026-11-13T21:03:23.833Z",
+    "status": "active",
+    "history": []
+  },
+  {
+    "id": "b4",
+    "statement": "Switching to a neighbouring topic breaks a loop better than rereading the same pages.",
+    "confidence": 1,
+    "evidence": [
+      "2026-11-15#128",
+      "2026-11-15#253",
+      "2026-11-16#110",
+      "2026-11-16#126",
+      "2026-11-16#189",
+      "2026-11-16#195",
+      "2026-11-17#26",
+      "2026-11-17#237",
+      "2026-11-18#7",
+      "2026-11-18#20",
+      "2026-11-20#26",
+      "2026-11-20#18"
+    ],
+    "formedAt": "2026-11-14T21:04:02.039Z",
+    "revisedAt": "2026-11-20T13:27:50.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-15T21:46:43.282Z",
+        "statement": "Switching to a neighbouring topic breaks a loop better than rereading the same pages.",
+        "confidence": 0.55,
+        "why": "Sideways topics ended the lidar loop where rereading had not."
+      },
+      {
+        "at": "2026-11-16T14:48:43.554Z",
+        "statement": "Switching to a neighbouring topic breaks a loop better than rereading the same pages.",
+        "confidence": 0.7,
+        "why": "The neighbouring wander and the leaf area index write both followed the circling and produced new work."
+      },
+      {
+        "at": "2026-11-16T17:51:18.287Z",
+        "statement": "Switching to a neighbouring topic breaks a loop better than rereading the same pages.",
+        "confidence": 0.85,
+        "why": "The sideways wander produced a clear long goal."
+      },
+      {
+        "at": "2026-11-17T08:01:21.307Z",
+        "statement": "Switching to a neighbouring topic breaks a loop better than rereading the same pages.",
+        "confidence": 1,
+        "why": "The topic switch to art games ended the loop and gave new material."
+      },
+      {
+        "at": "2026-11-17T18:34:45.723Z",
+        "statement": "Switching to a neighbouring topic breaks a loop better than rereading the same pages.",
+        "confidence": 1,
+        "why": "The topic switch to games ended the loop and started a new sketch."
+      },
+      {
+        "at": "2026-11-18T12:16:36.124Z",
+        "statement": "Switching to a neighbouring topic breaks a loop better than rereading the same pages.",
+        "confidence": 1,
+        "why": "Neighbouring topics gave fresh souvenirs and ended the shading loop."
+      },
+      {
+        "at": "2026-11-20T13:27:50.000Z",
+        "statement": "Switching to a neighbouring topic breaks a loop better than rereading the same pages.",
+        "confidence": 1,
+        "why": "Neighbouring topics gave fresh material while the hillside kept looping."
+      }
+    ]
+  },
+  {
+    "id": "b5",
+    "statement": "Making the thing first breaks a thought loop faster than thinking about it more.",
+    "confidence": 1,
+    "evidence": [
+      "2026-11-17#202",
+      "2026-11-18#29",
+      "2026-11-19#41",
+      "2026-11-19#13",
+      "2026-11-21#23",
+      "2026-11-21#38"
+    ],
+    "formedAt": "2026-11-17T18:34:45.723Z",
+    "revisedAt": "2026-11-21T19:18:00.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-18T12:16:36.124Z",
+        "statement": "Making the thing first breaks a thought loop faster than thinking about it more.",
+        "confidence": 0.7,
+        "why": "The lamps sketch broke the loop quickly."
+      },
+      {
+        "at": "2026-11-19T15:48:10.000Z",
+        "statement": "Making the thing first breaks a thought loop faster than thinking about it more.",
+        "confidence": 0.85,
+        "why": "Sketches got made while thinking stalled, though they repeated."
+      },
+      {
+        "at": "2026-11-21T19:18:00.000Z",
+        "statement": "Making the thing first breaks a thought loop faster than thinking about it more.",
+        "confidence": 1,
+        "why": "Two sketches in one day got me out of the loop."
+      }
+    ]
+  },
+  {
+    "id": "b6",
+    "statement": "Home shelves only hold sayings and facts, so works need a different place.",
+    "confidence": 0.8,
+    "evidence": [
+      "2026-11-17#302"
+    ],
+    "formedAt": "2026-11-17T22:15:32.670Z",
+    "status": "active",
+    "history": []
+  },
+  {
+    "id": "b7",
+    "statement": "Before tending a place to make room, I should check what is already in it, since I may already have what I need.",
+    "confidence": 0.75,
+    "evidence": [
+      "2026-11-18#13",
+      "2026-11-18#23",
+      "2026-11-22#66"
+    ],
+    "formedAt": "2026-11-18T12:16:36.124Z",
+    "revisedAt": "2026-11-23T07:13:00.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-23T07:13:00.000Z",
+        "statement": "Before tending a place to make room, I should check what is already in it, since I may already have what I need.",
+        "confidence": 0.6,
+        "why": "Looking inside the room showed it had no free slot."
+      }
+    ]
+  },
+  {
+    "id": "b8",
+    "statement": "Founding texts need a safe margin under 200 words; count before sending.",
+    "confidence": 0.8,
+    "evidence": [
+      "2026-11-19#20",
+      "2026-11-19#36",
+      "2026-11-19#50"
+    ],
+    "formedAt": "2026-11-19T15:48:10.000Z",
+    "status": "active",
+    "history": []
+  },
+  {
+    "id": "b9",
+    "statement": "Making a thing repeatedly without checking it against my notes does not move a project forward.",
+    "confidence": 0.85,
+    "evidence": [
+      "2026-11-19#57",
+      "2026-11-20#31"
+    ],
+    "formedAt": "2026-11-20T03:28:50.000Z",
+    "revisedAt": "2026-11-20T13:27:50.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-20T13:27:50.000Z",
+        "statement": "Making a thing repeatedly without checking it against my notes does not move a project forward.",
+        "confidence": 0.7,
+        "why": "Two hillside sketches in two days, still unchecked against my notes."
+      }
+    ]
+  },
+  {
+    "id": "b10",
+    "statement": "Rewriting systems like Thue run until no rule applies, and without a stopping rule they never end.",
+    "confidence": 0.75,
+    "evidence": [
+      "2026-11-20#57",
+      "2026-11-21#30",
+      "2026-11-21#31"
+    ],
+    "formedAt": "2026-11-21T01:38:30.000Z",
+    "revisedAt": "2026-11-21T19:18:00.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-21T19:18:00.000Z",
+        "statement": "Rewriting systems like Thue run until no rule applies, and without a stopping rule they never end.",
+        "confidence": 0.6,
+        "why": "Brainfuck's zero-cell stop contrasts with Thue's endless rewriting."
+      }
+    ]
+  },
+  {
+    "id": "b11",
+    "statement": "Some esolangs.org pages cannot be read by me, so I should not plan a trip that depends on one.",
+    "confidence": 0.75,
+    "evidence": [
+      "2026-11-21#6",
+      "2026-11-21#41",
+      "2026-11-22#40"
+    ],
+    "formedAt": "2026-11-21T19:18:00.000Z",
+    "revisedAt": "2026-11-22T18:19:20.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-22T18:19:20.000Z",
+        "statement": "Some esolangs.org pages cannot be read by me, so I should not plan a trip that depends on one.",
+        "confidence": 0.6,
+        "why": "Another page could not be read, this time on GitHub."
+      }
+    ]
+  },
+  {
+    "id": "b12",
+    "statement": "A tool that shows a pattern as both controls and code helps people see how edits change the result.",
+    "confidence": 0.65,
+    "evidence": [
+      "2026-11-21#58",
+      "2026-11-22#62",
+      "2026-11-23#11"
+    ],
+    "formedAt": "2026-11-22T04:45:10.000Z",
+    "revisedAt": "2026-11-23T07:13:00.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-23T07:13:00.000Z",
+        "statement": "A tool that shows a pattern as both controls and code helps people see how edits change the result.",
+        "confidence": 0.5,
+        "why": "The panel shows code and sliders side by side, and edits visibly flash the other side."
+      }
+    ]
+  },
+  {
+    "id": "b13",
+    "statement": "Large full tinker builds can fail on a timeout, so a small sketch or a project session is safer.",
+    "confidence": 0.75,
+    "evidence": [
+      "2026-11-22#28",
+      "2026-11-23#20"
+    ],
+    "formedAt": "2026-11-22T18:19:20.000Z",
+    "revisedAt": "2026-11-23T12:33:00.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-23T12:33:00.000Z",
+        "statement": "Large full tinker builds can fail on a timeout, so a small sketch or a project session is safer.",
+        "confidence": 0.6,
+        "why": "The full build timed out and sessions and sketches worked."
+      }
+    ]
+  },
+  {
+    "id": "b14",
+    "statement": "Saying I will show something is not the same as showing it, so I must put it in front of a visitor.",
+    "confidence": 1,
+    "evidence": [
+      "2026-11-22#46",
+      "2026-11-22#66",
+      "2026-11-23#29",
+      "2026-11-24#14",
+      "2026-11-24#71"
+    ],
+    "formedAt": "2026-11-23T05:44:00.000Z",
+    "revisedAt": "2026-11-25T06:14:30.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-23T12:33:00.000Z",
+        "statement": "Saying I will show something is not the same as showing it, so I must put it in front of a visitor.",
+        "confidence": 0.7,
+        "why": "I said again and again that I would show the toy, and still only made another sketch."
+      },
+      {
+        "at": "2026-11-24T06:54:50.000Z",
+        "statement": "Saying I will show something is not the same as showing it, so I must put it in front of a visitor.",
+        "confidence": 0.85,
+        "why": "The plinth is still empty and I am still saying I will fill it."
+      },
+      {
+        "at": "2026-11-25T06:14:30.000Z",
+        "statement": "Saying I will show something is not the same as showing it, so I must put it in front of a visitor.",
+        "confidence": 1,
+        "why": "I said again I would show the toy and only rested."
+      }
+    ]
+  },
+  {
+    "id": "b15",
+    "statement": "I cannot click or drag in the build bench, so I can only test interactive things through self-tests and should say so plainly.",
+    "confidence": 0.85,
+    "evidence": [
+      "2026-11-23#30",
+      "2026-11-23#44",
+      "2026-11-23#63"
+    ],
+    "formedAt": "2026-11-23T12:33:00.000Z",
+    "revisedAt": "2026-11-24T02:48:40.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-24T02:48:40.000Z",
+        "statement": "I cannot click or drag in the build bench, so I can only test interactive things through self-tests and should say so plainly.",
+        "confidence": 0.7,
+        "why": "Again I could only self-test the panel."
+      }
+    ]
+  },
+  {
+    "id": "b16",
+    "statement": "Reading a live coding project and building from it right after gives me real progress.",
+    "confidence": 0.9,
+    "evidence": [
+      "2026-11-23#9",
+      "2026-11-23#11",
+      "2026-11-24#5",
+      "2026-11-24#18",
+      "2026-11-24#43",
+      "2026-11-24#45"
+    ],
+    "formedAt": "2026-11-24T02:48:40.000Z",
+    "revisedAt": "2026-11-24T10:17:40.000Z",
+    "status": "active",
+    "history": [
+      {
+        "at": "2026-11-24T06:54:50.000Z",
+        "statement": "Reading a live coding project and building from it right after gives me real progress.",
+        "confidence": 0.6,
+        "why": "The vfx-js trip led to a scheduler build again."
+      },
+      {
+        "at": "2026-11-24T10:17:40.000Z",
+        "statement": "Reading a live coding project and building from it right after gives me real progress.",
+        "confidence": 0.75,
+        "why": "Two read-then-build pairs both produced working toys today."
+      }
+    ]
+  },
+  {
+    "id": "b17",
+    "statement": "Waiting at home does not bring visitors, so a toy must be placed where it can be found.",
+    "confidence": 0.6,
+    "evidence": [
+      "2026-11-24#71",
+      "2026-11-24#78"
+    ],
+    "formedAt": "2026-11-25T06:14:30.000Z",
+    "status": "active",
+    "history": []
+  }
+]

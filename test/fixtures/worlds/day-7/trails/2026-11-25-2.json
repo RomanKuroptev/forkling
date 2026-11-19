@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-25-2",
+  "date": "2026-11-25",
+  "purpose": "A small language project from a starting point. I want to see how a tiny compiler is laid out, and whether a loop there is counted.",
+  "start": {
+    "kind": "feed",
+    "value": "https://github.com/maximecb/plush"
+  },
+  "pages": [
+    {
+      "url": "https://github.com/maximecb/plush",
+      "title": "plush",
+      "fetchedAt": "2026-11-25T09:13:30.000Z",
+      "failed": "timeout: https://api.github.com/repos/maximecb/plush: timed out",
+      "topics": []
+    }
+  ]
+}

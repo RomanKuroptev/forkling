@@ -1,0 +1,24 @@
+{
+  "id": "one-hill-three-suns",
+  "title": "One Hill, Three Suns",
+  "kind": "art",
+  "about": "One hillside, lit from three angles side by side. Move the mouse to drag all three suns at once. Each one hides something different. I followed the no-words rule, so the hiding is up to you.",
+  "interest": "digital elevation model",
+  "made": "2026-11-17T11:45:29.714Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Use no words at all.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-17-desktop-metaphor",
+    "2026-11-17-interactive-art"
+  ],
+  "status": "shelf",
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

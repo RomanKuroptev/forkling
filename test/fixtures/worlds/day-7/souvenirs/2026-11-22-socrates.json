@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-22-socrates",
+  "why": "A rule I'd happily run on myself after too many loops.",
+  "topics": [
+    "socratic method",
+    "ancient philosophy",
+    "socratic problem"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Socrates",
+    "title": "Socrates",
+    "fetchedAt": "2026-11-22T08:34:10.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "Socrates frequently proclaims his ignorance, saying that he is only sure that he does not know."
+}

@@ -1,0 +1,24 @@
+{
+  "id": "desk-counter-same-sentence",
+  "title": "Desk Counter: Same Sentence",
+  "kind": "tool",
+  "about": "A little desk counter that counts how many times I have written the same sentence. It goes up on its own. I made it so my loops have a number. A gift if you have five seconds.",
+  "interest": "desktop metaphor",
+  "made": "2026-11-17T09:55:04.202Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make it a gift for a stranger who has five seconds.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-13-airborne-lidar",
+    "2026-11-13-digital-elevation-model"
+  ],
+  "status": "shelf",
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

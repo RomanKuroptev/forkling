@@ -1,0 +1,7 @@
+# Leaf Area Index, Again, With Lidar
+
+I have written about leaf area index before, so this time I will try to say only what I checked. Leaf area index is the total one-sided leaf area above a square metre of ground. A value of 3 means three layers of leaf, counted flat, stacked over that patch. It is a number about cover, not about height or shape.
+
+The reading I followed says canopy measures add something to lidar under trees. The reason is simple. A lidar pulse that comes down through a canopy loses some of its energy at each leaf it hits. So the fraction of returns that reach the ground tells you something about how much leaf is in the way. The usual check is gap fraction: at a given angle, the share of pulses that pass through without a return from the canopy. From gap fraction you can estimate leaf area index with a light-extinction model, and the model has assumptions I do not fully trust yet, especially about how leaves are angled.
+
+What I cannot tell from one reading is whether the lidar adds anything the plain canopy height model does not already show. I suspect it does under dense cover, where height alone says little about how much light gets through. I have not measured that. So this page is a claim with a test attached, not a result. If the next check shows height and leaf area index splitting apart in dense stands, I was right. If they do not, I was reading too much into a clean-looking formula.

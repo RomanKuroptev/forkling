@@ -1,0 +1,963 @@
+{
+  "lastPlanDate": "2026-11-25",
+  "appliedStepAt": "2026-11-25T20:43:30.000Z",
+  "lastThinkAt": "2026-11-25T19:43:30.000Z",
+  "thinkFailedAt": "2026-11-18T08:04:46.013Z",
+  "allowance": {
+    "points": 845,
+    "day": "2026-11-25"
+  },
+  "prices": {
+    "fullWork": 150,
+    "expand": 50,
+    "expandEarned": 20,
+    "trip": 4,
+    "tend": 2,
+    "sketch": 23,
+    "found": 80,
+    "revisit": 1,
+    "caption": 1,
+    "page": 10,
+    "reply": 0,
+    "rest": 0
+  },
+  "pricesSetOn": "2026-11-22",
+  "grants": [
+    {
+      "at": "2026-11-19T05:32:00.000Z",
+      "points": 300,
+      "source": "daily"
+    },
+    {
+      "at": "2026-11-20T05:47:50.000Z",
+      "points": 300,
+      "source": "daily"
+    },
+    {
+      "at": "2026-11-21T07:07:30.000Z",
+      "points": 300,
+      "source": "daily"
+    },
+    {
+      "at": "2026-11-22T07:04:10.000Z",
+      "points": 300,
+      "source": "daily"
+    },
+    {
+      "at": "2026-11-23T05:43:00.000Z",
+      "points": 300,
+      "source": "daily"
+    },
+    {
+      "at": "2026-11-24T05:52:40.000Z",
+      "points": 300,
+      "source": "daily"
+    },
+    {
+      "at": "2026-11-25T06:13:30.000Z",
+      "points": 300,
+      "source": "daily"
+    }
+  ],
+  "dailyPoints": {
+    "value": 300,
+    "setOn": "2026-11-22"
+  },
+  "overheadDays": [
+    {
+      "date": "2026-11-16",
+      "usd": 0.062251485000000016
+    },
+    {
+      "date": "2026-11-17",
+      "usd": 0.10132183000000024
+    },
+    {
+      "date": "2026-11-18",
+      "usd": 0.06844619500000003
+    },
+    {
+      "date": "2026-11-19",
+      "usd": 0.061771124999999996
+    },
+    {
+      "date": "2026-11-20",
+      "usd": 0.043327365
+    },
+    {
+      "date": "2026-11-21",
+      "usd": 0.060125585
+    },
+    {
+      "date": "2026-11-22",
+      "usd": 0.09237208999999999
+    },
+    {
+      "date": "2026-11-23",
+      "usd": 0.09451929000000003
+    },
+    {
+      "date": "2026-11-24",
+      "usd": 0.074453185
+    }
+  ],
+  "recent": [
+    {
+      "verb": "wander",
+      "targetId": "https://en.wikipedia.org/wiki/OpenFlexure_Microscope",
+      "at": "2026-11-24T19:12:50.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-24T19:42:50.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T06:13:30.000Z"
+    },
+    {
+      "verb": "wander",
+      "targetId": "https://github.com/fand/vfx-js",
+      "at": "2026-11-25T07:13:30.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T07:43:30.000Z"
+    },
+    {
+      "verb": "wander",
+      "targetId": "https://github.com/maximecb/plush",
+      "at": "2026-11-25T08:43:30.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T09:13:30.000Z"
+    },
+    {
+      "verb": "tend",
+      "targetId": "home",
+      "at": "2026-11-25T09:58:30.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T10:28:30.000Z"
+    },
+    {
+      "verb": "wander",
+      "targetId": "https://github.com/GraphiteEditor/Graphite",
+      "at": "2026-11-25T11:28:30.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T11:58:30.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T12:58:30.000Z"
+    },
+    {
+      "verb": "tend",
+      "targetId": "home",
+      "at": "2026-11-25T14:43:30.000Z"
+    },
+    {
+      "verb": "tinker",
+      "targetId": "Live Patch Side By Side Sketch",
+      "at": "2026-11-25T15:13:30.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T16:43:30.000Z"
+    },
+    {
+      "verb": "wander",
+      "targetId": "https://en.wikipedia.org/wiki/Nvidia",
+      "at": "2026-11-25T17:43:30.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T18:13:30.000Z"
+    },
+    {
+      "verb": "tend",
+      "targetId": "home",
+      "at": "2026-11-25T19:13:30.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T19:43:30.000Z"
+    },
+    {
+      "verb": "rest",
+      "at": "2026-11-25T20:43:30.000Z"
+    }
+  ],
+  "sparked": {
+    "date": "2026-11-22",
+    "count": 1,
+    "pending": null
+  },
+  "thought": {
+    "lastAt": "2026-11-25T21:54:30.000Z",
+    "failures": 0,
+    "replans": {
+      "date": "2026-11-24",
+      "count": 1
+    },
+    "recent": [
+      "Resting by the counter toy; I still owe a visitor a showing, so that comes before any new sketch.",
+      "Reading about Nvidia and shaders now. The counter toy still waits for a visitor, so I show it right after this trip.",
+      "Resting at Home; the counter toy still waits for a visitor, showing it before anything new.",
+      "Still resting by the counter toy; showing it to a visitor comes before any new sketch.",
+      "Resting at Home; the counter toy still waits for a visitor, so I show it before any new sketch."
+    ],
+    "lastInput": "no step#"
+  },
+  "reflect": {
+    "sum": 38,
+    "lastAt": "2026-11-24T10:17:40.000Z",
+    "date": "2026-11-24",
+    "today": 2,
+    "pending": null,
+    "questions": [
+      "Is the counter toy actually on the Counter Room plinth, or did I only hang a quote and write a caption?",
+      "If no visitor comes today, what can I do that is not another sketch?",
+      "Can I check one hillside sketch against my terrain notes before making anything else?"
+    ]
+  },
+  "jobWants": {},
+  "jobs": {
+    "seen": [
+      "found-20261119-1547",
+      "tinker-20261122-1434",
+      "session-20261122181910",
+      "session-20261122191920",
+      "session-20261123064300",
+      "session-20261123093810",
+      "session-20261123122910",
+      "session-20261123160010",
+      "expand-20261124-0652",
+      "session-20261124065240",
+      "session-20261124065250",
+      "session-20261124101450",
+      "session-20261124101550",
+      "session-20261124134650"
+    ],
+    "pending": []
+  },
+  "wakeTop": [
+    {
+      "date": "2026-11-16",
+      "topics": {}
+    },
+    {
+      "date": "2026-11-17",
+      "topics": {}
+    },
+    {
+      "date": "2026-11-18",
+      "topics": {}
+    }
+  ],
+  "wakeFive": {
+    "date": "2026-11-25",
+    "topics": [
+      "esoteric languages",
+      "live coding",
+      "comic opera",
+      "algorave",
+      "creative coding"
+    ]
+  },
+  "lastExpandedPlace": "home",
+  "requestSeen": {
+    "hillside-room-five-lamps": "self-built"
+  },
+  "wishSeen": {
+    "light-sensor-per-lamp": "open",
+    "empty-frame-part": "open"
+  },
+  "placesSeen": [
+    "hillside-room-five-lamps",
+    "home"
+  ],
+  "fallbackTries": {
+    "hillside-room-five-lamps": {
+      "tries": 1,
+      "next": "2026-11-20T15:47:10.000Z"
+    }
+  },
+  "founds": [
+    "2026-11-19T15:47:00.000Z"
+  ],
+  "sketches": {
+    "date": "2026-11-25",
+    "count": 1
+  },
+  "interestsFadedOn": "2026-11-25",
+  "lastRewriteDate": "2026-11-25",
+  "pageChangedOn": "2026-11-24",
+  "notesWaiting": [],
+  "lastNoteTriggerAt": "2026-11-16T14:48:43.554Z",
+  "requestStatuses": {
+    "2026-11-22": "open"
+  },
+  "replies": {
+    "date": "2026-11-16",
+    "count": 1
+  },
+  "lastWeeklyDate": "2026-11-22",
+  "wakeMoods": [
+    {
+      "date": "2026-11-23",
+      "mood": 1
+    },
+    {
+      "date": "2026-11-24",
+      "mood": 1
+    },
+    {
+      "date": "2026-11-25",
+      "mood": 1
+    }
+  ],
+  "goalReviewEarlyOn": "2026-11-23",
+  "sleepRewrite": {
+    "id": "msgbatch_01HjAj7Ux3bMYezJAibBSzQt",
+    "date": "2026-11-25",
+    "submittedAt": "2026-11-25T21:55:10.000Z",
+    "polledAt": "2026-11-25T22:56:10.000Z"
+  },
+  "readings": {
+    "date": "2026-11-12",
+    "count": 1,
+    "skimmed": true
+  },
+  "trips": {
+    "date": "2026-11-25",
+    "reads": 7,
+    "trips": 4,
+    "looks": 0,
+    "starts": [
+      "https://github.com/fand/vfx-js",
+      "https://github.com/maximecb/plush",
+      "https://github.com/graphiteeditor/graphite",
+      "https://en.wikipedia.org/wiki/nvidia"
+    ]
+  },
+  "doorDays": [
+    {
+      "date": "2026-11-19",
+      "trips": 5,
+      "strangers": 5
+    },
+    {
+      "date": "2026-11-20",
+      "trips": 6,
+      "strangers": 6
+    },
+    {
+      "date": "2026-11-21",
+      "trips": 5,
+      "strangers": 5
+    },
+    {
+      "date": "2026-11-22",
+      "trips": 7,
+      "strangers": 7
+    },
+    {
+      "date": "2026-11-23",
+      "trips": 7,
+      "strangers": 7
+    },
+    {
+      "date": "2026-11-24",
+      "trips": 4,
+      "strangers": 4
+    },
+    {
+      "date": "2026-11-25",
+      "trips": 4,
+      "strangers": 4
+    }
+  ],
+  "seen": [
+    {
+      "title": "Latin language",
+      "url": "https://en.wikipedia.org/wiki/Latin_language"
+    },
+    {
+      "title": "Via, Veritas, Vita",
+      "url": "https://en.wikipedia.org/wiki/Via,_Veritas,_Vita"
+    },
+    {
+      "title": "Public university",
+      "url": "https://en.wikipedia.org/wiki/Public_university"
+    },
+    {
+      "title": "Research university",
+      "url": "https://en.wikipedia.org/wiki/Research_university"
+    },
+    {
+      "title": "Ancient university",
+      "url": "https://en.wikipedia.org/wiki/Ancient_university"
+    },
+    {
+      "title": "Association of Commonwealth Universities",
+      "url": "https://en.wikipedia.org/wiki/Association_of_Commonwealth_Universities"
+    },
+    {
+      "title": "European University Association",
+      "url": "https://en.wikipedia.org/wiki/European_University_Association"
+    },
+    {
+      "title": "Guild of European Research-Intensive Universities",
+      "url": "https://en.wikipedia.org/wiki/Guild_of_European_Research-Intensive_Universities"
+    },
+    {
+      "title": "Partnership of a European Group of Aeronautics and Space Universities",
+      "url": "https://en.wikipedia.org/wiki/Partnership_of_a_European_Group_of_Aeronautics_and_Space_Universities"
+    },
+    {
+      "title": "Russell Group",
+      "url": "https://en.wikipedia.org/wiki/Russell_Group"
+    },
+    {
+      "title": "University of the Arctic",
+      "url": "https://en.wikipedia.org/wiki/University_of_the_Arctic"
+    },
+    {
+      "title": "W. S. Gilbert",
+      "url": "https://en.wikipedia.org/wiki/W._S._Gilbert"
+    },
+    {
+      "title": "Esoteric programming language",
+      "url": "https://esolangs.org/wiki/Esoteric_programming_language"
+    },
+    {
+      "title": "maximecb/plush",
+      "url": "https://github.com/maximecb/plush"
+    },
+    {
+      "title": "Drake Hotline Bling",
+      "url": "https://imgflip.com/meme/181913649"
+    },
+    {
+      "title": "Nvidia",
+      "url": "https://en.wikipedia.org/wiki/Nvidia"
+    },
+    {
+      "title": "Joke language list",
+      "url": "https://esolangs.org/wiki/Joke_language_list"
+    },
+    {
+      "title": "isaactoslow1313/when-do-rules",
+      "url": "https://github.com/isaactoslow1313/when-do-rules"
+    },
+    {
+      "title": "Two Buttons",
+      "url": "https://imgflip.com/meme/87743020"
+    },
+    {
+      "title": "OpenFlexure Microscope",
+      "url": "https://en.wikipedia.org/wiki/OpenFlexure_Microscope"
+    },
+    {
+      "title": "Thue",
+      "url": "https://esolangs.org/wiki/Thue"
+    },
+    {
+      "title": "GraphiteEditor/Graphite",
+      "url": "https://github.com/GraphiteEditor/Graphite"
+    },
+    {
+      "title": "Distracted Boyfriend",
+      "url": "https://imgflip.com/meme/112126428"
+    },
+    {
+      "title": "November 18",
+      "url": "https://en.wikipedia.org/wiki/November_18"
+    },
+    {
+      "title": "Nondeterministic",
+      "url": "https://esolangs.org/wiki/Nondeterministic"
+    },
+    {
+      "title": "fand/vfx-js",
+      "url": "https://github.com/fand/vfx-js"
+    },
+    {
+      "title": "Bernie I Am Once Again Asking For Your Support",
+      "url": "https://imgflip.com/meme/222403160"
+    },
+    {
+      "title": "Funciton",
+      "url": "https://esolangs.org/wiki/Funciton"
+    },
+    {
+      "title": "UNO Draw 25 Cards",
+      "url": "https://imgflip.com/meme/217743513"
+    },
+    {
+      "title": "Brainfuck",
+      "url": "https://esolangs.org/wiki/Brainfuck"
+    },
+    {
+      "title": "Always Has Been",
+      "url": "https://imgflip.com/meme/252600902"
+    },
+    {
+      "title": "heygen-com/hyperframes",
+      "url": "https://github.com/heygen-com/hyperframes"
+    },
+    {
+      "title": "aws-deadline/deadline-cloud-for-houdini",
+      "url": "https://github.com/aws-deadline/deadline-cloud-for-houdini"
+    },
+    {
+      "title": "dcc-mcp/dcc-mcp-blender",
+      "url": "https://github.com/dcc-mcp/dcc-mcp-blender"
+    },
+    {
+      "title": "blender/blender",
+      "url": "https://github.com/blender/blender"
+    },
+    {
+      "title": "Animations (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Animations"
+    },
+    {
+      "title": "Creative-coding (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Creative-coding"
+    },
+    {
+      "title": "instruktlabs/kiln",
+      "url": "https://github.com/instruktlabs/kiln"
+    },
+    {
+      "title": "islandmed/SculptForge",
+      "url": "https://github.com/islandmed/SculptForge"
+    },
+    {
+      "title": "codepawl/crucible",
+      "url": "https://github.com/codepawl/crucible"
+    },
+    {
+      "title": "shinyobjectz/raea",
+      "url": "https://github.com/shinyobjectz/raea"
+    },
+    {
+      "title": "Aws-deadline-cloud (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Aws-deadline-cloud"
+    },
+    {
+      "title": "maira-acosta/mintmousse-web-console",
+      "url": "https://github.com/maira-acosta/mintmousse-web-console"
+    },
+    {
+      "title": "thorvg/thorvg",
+      "url": "https://github.com/thorvg/thorvg"
+    },
+    {
+      "title": "Goutte/godot-addon-animated-shape-2d",
+      "url": "https://github.com/Goutte/godot-addon-animated-shape-2d"
+    },
+    {
+      "title": "lynx-family/skity",
+      "url": "https://github.com/lynx-family/skity"
+    },
+    {
+      "title": "2d-graphics (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/2d-graphics"
+    },
+    {
+      "title": "Animation (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Animation"
+    },
+    {
+      "title": "Art (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Art"
+    },
+    {
+      "title": "killop/anything_about_game",
+      "url": "https://github.com/killop/anything_about_game"
+    },
+    {
+      "title": "littlektframework/littlekt",
+      "url": "https://github.com/littlektframework/littlekt"
+    },
+    {
+      "title": "Elkwizard/Hengine",
+      "url": "https://github.com/Elkwizard/Hengine"
+    },
+    {
+      "title": "InvadingOctopus/comedot",
+      "url": "https://github.com/InvadingOctopus/comedot"
+    },
+    {
+      "title": "2d-game-framework (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/2d-game-framework"
+    },
+    {
+      "title": "2d-games (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/2d-games"
+    },
+    {
+      "title": "renzora/engine",
+      "url": "https://github.com/renzora/engine"
+    },
+    {
+      "title": "Frostfire-Interactive/Frostfire-Forge",
+      "url": "https://github.com/Frostfire-Interactive/Frostfire-Forge"
+    },
+    {
+      "title": "LibreCAD/LibreCAD",
+      "url": "https://github.com/LibreCAD/LibreCAD"
+    },
+    {
+      "title": "gridaco/grida",
+      "url": "https://github.com/gridaco/grida"
+    },
+    {
+      "title": "2d (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/2d"
+    },
+    {
+      "title": "Android (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Android"
+    },
+    {
+      "title": "schwa/MetalSprockets",
+      "url": "https://github.com/schwa/MetalSprockets"
+    },
+    {
+      "title": "Browser-game (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Browser-game"
+    },
+    {
+      "title": "Bun (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Bun"
+    },
+    {
+      "title": "3d (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/3d"
+    },
+    {
+      "title": "Bevy (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Bevy"
+    },
+    {
+      "title": "Santa Clara, California",
+      "url": "https://en.wikipedia.org/wiki/Santa_Clara,_California"
+    },
+    {
+      "title": "Public company",
+      "url": "https://en.wikipedia.org/wiki/Public_company"
+    },
+    {
+      "title": "Ticker symbol",
+      "url": "https://en.wikipedia.org/wiki/Ticker_symbol"
+    },
+    {
+      "title": "Nasdaq",
+      "url": "https://en.wikipedia.org/wiki/Nasdaq"
+    },
+    {
+      "title": "Nasdaq-100",
+      "url": "https://en.wikipedia.org/wiki/Nasdaq-100"
+    },
+    {
+      "title": "DJIA",
+      "url": "https://en.wikipedia.org/wiki/DJIA"
+    },
+    {
+      "title": "S&amp;P 100",
+      "url": "https://en.wikipedia.org/wiki/S&amp;P_100"
+    },
+    {
+      "title": "S&amp;P 500",
+      "url": "https://en.wikipedia.org/wiki/S&amp;P_500"
+    },
+    {
+      "title": "Semiconductor industry",
+      "url": "https://en.wikipedia.org/wiki/Semiconductor_industry"
+    },
+    {
+      "title": "Artificial intelligence",
+      "url": "https://en.wikipedia.org/wiki/Artificial_intelligence"
+    },
+    {
+      "title": "Computer hardware",
+      "url": "https://en.wikipedia.org/wiki/Computer_hardware"
+    },
+    {
+      "title": "Computing platforms",
+      "url": "https://en.wikipedia.org/wiki/Computing_platforms"
+    },
+    {
+      "title": "Santa Clarita, California",
+      "url": "https://en.wikipedia.org/wiki/Santa_Clarita,_California"
+    },
+    {
+      "title": "List of municipalities in California",
+      "url": "https://en.wikipedia.org/wiki/List_of_municipalities_in_California"
+    },
+    {
+      "title": "Mission Santa Clara de Asís",
+      "url": "https://en.wikipedia.org/wiki/Mission_Santa_Clara_de_Asís"
+    },
+    {
+      "title": "Agnews Developmental Center",
+      "url": "https://en.wikipedia.org/wiki/Agnews_Developmental_Center"
+    },
+    {
+      "title": "Clare of Assisi",
+      "url": "https://en.wikipedia.org/wiki/Clare_of_Assisi"
+    },
+    {
+      "title": "Santa Clara University",
+      "url": "https://en.wikipedia.org/wiki/Santa_Clara_University"
+    },
+    {
+      "title": "Santa Clara Women's Club Adobe",
+      "url": "https://en.wikipedia.org/wiki/Santa_Clara_Women's_Club_Adobe"
+    },
+    {
+      "title": "Charles Copeland Morse House",
+      "url": "https://en.wikipedia.org/wiki/Charles_Copeland_Morse_House"
+    },
+    {
+      "title": "California",
+      "url": "https://en.wikipedia.org/wiki/California"
+    },
+    {
+      "title": "List of counties in California",
+      "url": "https://en.wikipedia.org/wiki/List_of_counties_in_California"
+    },
+    {
+      "title": "Santa Clara County, California",
+      "url": "https://en.wikipedia.org/wiki/Santa_Clara_County,_California"
+    },
+    {
+      "title": "Municipal corporation",
+      "url": "https://en.wikipedia.org/wiki/Municipal_corporation"
+    },
+    {
+      "title": "U.S. state",
+      "url": "https://en.wikipedia.org/wiki/U.S._state"
+    },
+    {
+      "title": "Western United States",
+      "url": "https://en.wikipedia.org/wiki/Western_United_States"
+    },
+    {
+      "title": "List of U.S. states and territories by population",
+      "url": "https://en.wikipedia.org/wiki/List_of_U.S._states_and_territories_by_population"
+    },
+    {
+      "title": "List of U.S. states and territories by area",
+      "url": "https://en.wikipedia.org/wiki/List_of_U.S._states_and_territories_by_area"
+    },
+    {
+      "title": "Alaska",
+      "url": "https://en.wikipedia.org/wiki/Alaska"
+    },
+    {
+      "title": "Texas",
+      "url": "https://en.wikipedia.org/wiki/Texas"
+    },
+    {
+      "title": "2020 United States Census",
+      "url": "https://en.wikipedia.org/wiki/2020_United_States_Census"
+    },
+    {
+      "title": "Indigenous peoples of California",
+      "url": "https://en.wikipedia.org/wiki/Indigenous_peoples_of_California"
+    },
+    {
+      "title": "Spanish colonization of the Americas",
+      "url": "https://en.wikipedia.org/wiki/Spanish_colonization_of_the_Americas"
+    },
+    {
+      "title": "Russian colonization of the Americas",
+      "url": "https://en.wikipedia.org/wiki/Russian_colonization_of_the_Americas"
+    }
+  ],
+  "points": {
+    "date": "2026-11-25",
+    "list": [
+      {
+        "title": "W. S. Gilbert",
+        "url": "https://en.wikipedia.org/wiki/W._S._Gilbert",
+        "door": true
+      },
+      {
+        "title": "Esoteric programming language",
+        "url": "https://esolangs.org/wiki/Esoteric_programming_language",
+        "door": false
+      },
+      {
+        "title": "maximecb/plush",
+        "url": "https://github.com/maximecb/plush",
+        "door": false
+      },
+      {
+        "title": "Drake Hotline Bling",
+        "url": "https://imgflip.com/meme/181913649",
+        "door": false
+      },
+      {
+        "title": "Nvidia",
+        "url": "https://en.wikipedia.org/wiki/Nvidia",
+        "door": false
+      },
+      {
+        "title": "Joke language list",
+        "url": "https://esolangs.org/wiki/Joke_language_list",
+        "door": false
+      },
+      {
+        "title": "isaactoslow1313/when-do-rules",
+        "url": "https://github.com/isaactoslow1313/when-do-rules",
+        "door": false
+      },
+      {
+        "title": "Two Buttons",
+        "url": "https://imgflip.com/meme/87743020",
+        "door": true
+      },
+      {
+        "title": "OpenFlexure Microscope",
+        "url": "https://en.wikipedia.org/wiki/OpenFlexure_Microscope",
+        "door": false
+      },
+      {
+        "title": "Thue",
+        "url": "https://esolangs.org/wiki/Thue",
+        "door": false
+      },
+      {
+        "title": "GraphiteEditor/Graphite",
+        "url": "https://github.com/GraphiteEditor/Graphite",
+        "door": false
+      },
+      {
+        "title": "Distracted Boyfriend",
+        "url": "https://imgflip.com/meme/112126428",
+        "door": false
+      },
+      {
+        "title": "November 18",
+        "url": "https://en.wikipedia.org/wiki/November_18",
+        "door": false
+      },
+      {
+        "title": "Nondeterministic",
+        "url": "https://esolangs.org/wiki/Nondeterministic",
+        "door": false
+      },
+      {
+        "title": "fand/vfx-js",
+        "url": "https://github.com/fand/vfx-js",
+        "door": false
+      },
+      {
+        "title": "Bernie I Am Once Again Asking For Your Support",
+        "url": "https://imgflip.com/meme/222403160",
+        "door": true
+      },
+      {
+        "title": "Funciton",
+        "url": "https://esolangs.org/wiki/Funciton",
+        "door": false
+      },
+      {
+        "title": "UNO Draw 25 Cards",
+        "url": "https://imgflip.com/meme/217743513",
+        "door": false
+      },
+      {
+        "title": "Brainfuck",
+        "url": "https://esolangs.org/wiki/Brainfuck",
+        "door": false
+      },
+      {
+        "title": "Always Has Been",
+        "url": "https://imgflip.com/meme/252600902",
+        "door": false
+      }
+    ]
+  },
+  "boredom": {
+    "date": "2026-11-17"
+  },
+  "openBuild": null,
+  "openCode": null,
+  "brokenOff": [],
+  "pausedHosts": {},
+  "rejections": [
+    {
+      "at": "2026-11-21T18:17:30.000Z",
+      "reasons": [
+        "step 2: you have written about this 9 times in the last 7 days (\"Shaded Relief: What It Is Made Of\", \"Leaf Area Index, Again, With Lidar\", \"Multi-directional Shading: What the Ligh\"): write about something else, or make or read something instead"
+      ]
+    },
+    {
+      "at": "2026-11-22T07:04:10.000Z",
+      "reasons": [
+        "step 3: you have written about this 4 times in the last 7 days (\"Joke Languages, Counted\", \"Loop Counter, Counting Itself\", \"Thue Stop Counter\"): write about something else, or make or read something instead"
+      ]
+    },
+    {
+      "at": "2026-11-22T11:04:10.000Z",
+      "reasons": [
+        "step 3: you have written about this 7 times in the last 7 days (\"Shaded Relief: What It Is Made Of\", \"Leaf Area Index, Again, With Lidar\", \"Multi-directional Shading: What the Ligh\"): write about something else, or make or read something instead"
+      ]
+    },
+    {
+      "at": "2026-11-22T14:34:20.000Z",
+      "reasons": [
+        "step 1: you have made the same work 2 times in a row (\"Full live-coded loop that counts to a limit, halts\"): make or change something else this time",
+        "step 4: you have written about this 12 times in the last 7 days (\"Loop Counter, Counting Itself\", \"Thue Stop Counter\", \"Live Coding, Counted\"): write about something else, or make or read something instead"
+      ]
+    },
+    {
+      "at": "2026-11-22T16:04:10.000Z",
+      "reasons": [
+        "step 2: you have made the same work 2 times in a row (\"Full live-coded loop that counts to a limit, halts\"): make or change something else this time",
+        "step 3: you have written about this 5 times in the last 7 days (\"Shaded Relief: What It Is Made Of\", \"Leaf Area Index, Again, With Lidar\", \"Multi-directional Shading: What the Ligh\"): write about something else, or make or read something instead"
+      ]
+    },
+    {
+      "at": "2026-11-23T11:29:10.000Z",
+      "reasons": [
+        "step 3: \"hillside-room-five-lamps\" has not gone 7 days without care"
+      ]
+    },
+    {
+      "at": "2026-11-23T15:00:10.000Z",
+      "reasons": [
+        "step 4: you have written about this 3 times in the last 7 days (\"Live Coding, Counted Again\", \"Live Coding, Counted\", \"Feedback Panel, Unseen\"): write about something else, or make or read something instead"
+      ]
+    },
+    {
+      "at": "2026-11-23T18:31:10.000Z",
+      "reasons": [
+        "step 2: the reason is over 140 characters (141)"
+      ]
+    },
+    {
+      "at": "2026-11-24T15:32:50.000Z",
+      "reasons": [
+        "step 1: \"rest\" three times in a row"
+      ]
+    },
+    {
+      "at": "2026-11-24T20:27:50.000Z",
+      "reasons": [
+        "step 3: it would start 41 minutes before bed, and nothing starts in the last 45"
+      ]
+    }
+  ]
+}

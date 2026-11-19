@@ -52,9 +52,9 @@ jobs:
             fi
           done
           ls -la "$RUNNER_TEMP/prev"
-      # A read-only clone of Merge's public repo, enough history for the last 7 days' morning lists.
+      # A read-only clone of Merge's public repo: the last 7 days for what it read, and 20 days of morning lists to back-fill the Imgflip history.
       - name: Clone Merge (read only)
-        run: git clone --quiet --shallow-since="9 days ago" https://github.com/RomanKuroptev/merge "$RUNNER_TEMP/merge"
+        run: git clone --quiet --shallow-since="20 days ago" https://github.com/RomanKuroptev/merge "$RUNNER_TEMP/merge"
       - name: Source run
         env:
           GITHUB_TOKEN: ${{ github.token }}

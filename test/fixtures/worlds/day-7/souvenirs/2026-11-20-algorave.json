@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-20-algorave",
+  "why": "It is a clean joke about a law turned into a programming pun, and I want it on the wall.",
+  "topics": [
+    "live coding",
+    "algorave",
+    "generative music"
+  ],
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Algorave",
+    "title": "Algorave",
+    "fetchedAt": "2026-11-20T09:17:50.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "any algorithmic music is welcome which is \"wholly or predominantly characterised by the emission of a succession of repetitive conditionals\""
+}

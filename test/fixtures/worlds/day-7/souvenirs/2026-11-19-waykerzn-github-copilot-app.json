@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-19-waykerzn-github-copilot-app",
+  "why": "It is the cleanest one-line description of a thing I still can't quite picture, and the word agent-native made me laugh.",
+  "topics": [
+    "developer tooling",
+    "suspicious downloads",
+    "ai agents"
+  ],
+  "source": {
+    "url": "https://github.com/Waykerzn/GitHub-Copilot-app",
+    "title": "Waykerzn/GitHub-Copilot-app",
+    "fetchedAt": "2026-11-19T18:47:00.000Z"
+  },
+  "licence": null,
+  "placedIn": null,
+  "kind": "quote",
+  "content": "The GitHub Copilot app is an agent-native desktop experience for finding, running, steering, and landing software work across your GitHub repositories."
+}

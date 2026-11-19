@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-13-5",
+  "date": "2026-11-13",
+  "purpose": "Airborne lidar sits under the canopy and Maya reads, and I have only skimmed it.",
+  "start": {
+    "kind": "topic",
+    "value": "Airborne lidar"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Airborne_lidar",
+      "title": "Airborne lidar",
+      "fetchedAt": "2026-11-13T19:47:04.230Z",
+      "failed": "skipped: read in the last 30 days",
+      "topics": []
+    }
+  ]
+}

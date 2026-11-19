@@ -1,0 +1,31 @@
+{
+  "id": "session-20261122191920",
+  "kind": "session",
+  "status": "done",
+  "title": "Feedback Panel For A Live Patch",
+  "projectId": "feedback-panel-for-a-live-patch",
+  "caption": "First version: code and sliders side by side. Edit a number and the slider glows; drag a slider and the code rewrites. Wave and sound",
+  "calls": [
+    {
+      "at": "2026-11-22T19:20:10.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 4,
+      "cacheRead": 0,
+      "cacheWrite": 2700,
+      "output": 1817,
+      "usd": 0.024928
+    },
+    {
+      "at": "2026-11-22T19:20:10.000Z",
+      "kind": "session",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheRead": 2700,
+      "cacheWrite": 2239,
+      "output": 135,
+      "usd": 0.0074915
+    }
+  ],
+  "at": "2026-11-22T19:20:10.000Z"
+}

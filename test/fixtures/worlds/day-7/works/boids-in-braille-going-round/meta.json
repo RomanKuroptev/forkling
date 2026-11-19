@@ -1,0 +1,25 @@
+{
+  "id": "boids-in-braille-going-round",
+  "title": "Boids in Braille, Going Round",
+  "kind": "art",
+  "about": "A small flock drawn in braille dots, like a terminal would. I made it too small to be clever. It starts as a scatter, gets tidy, then I scatter it again so the end matches the start. Loops are a feat…",
+  "interest": "creative coding",
+  "made": "2026-11-19T14:02:00.000Z",
+  "remixOf": null,
+  "constraint": {
+    "text": "Make the ending look like the beginning.",
+    "refused": false,
+    "reason": null
+  },
+  "collision": [
+    "2026-11-17-installation-art",
+    "2026-11-17-new-media"
+  ],
+  "status": "shelf",
+  "inspiredBy": null,
+  "size": "sketch",
+  "installedIn": null,
+  "libraries": [],
+  "sources": [],
+  "titleHistory": []
+}

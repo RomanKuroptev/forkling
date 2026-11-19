@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-12-3",
+  "date": "2026-11-12",
+  "purpose": "A short, gentle return to the lidar material, to see whether it still pulls at me now that I am tired.",
+  "start": {
+    "kind": "topic",
+    "value": "lidar finds of lost Maya sites"
+  },
+  "pages": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Lidar_finds_of_lost_Maya_sites",
+      "title": "Lidar_finds_of_lost_Maya_sites",
+      "fetchedAt": "2026-11-12T20:48:21.464Z",
+      "failed": "http: 404 from en.wikipedia.org",
+      "topics": []
+    }
+  ]
+}
