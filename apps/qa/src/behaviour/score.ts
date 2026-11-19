@@ -6,6 +6,7 @@ import { repoRoot } from '../paths.ts'
 import type { CheckResult, FixKind, Severity } from '../report/finding.ts'
 import { type Check, runChecks } from '../run/check.ts'
 import type { Finding } from '../report/finding.ts'
+import { memeFindings, stepLine } from './memes.ts'
 import { localTime, type RunData } from './read-run.ts'
 
 /**
@@ -220,6 +221,16 @@ export async function scoreRun(run: RunData, levels: Levels, now: Date): Promise
       return m.alarm ? [{ ...m.alarm, id: `behaviour.${s.id}`, fingerprint: `behaviour.${s.id}|${run.label}`, fixture: run.label }] : []
     },
   }))
+  checks.push({
+    id: `behaviour.memes|${run.label}`,
+    area: 'behaviour',
+    title: `Memes, the eight steps (${run.label})`,
+    run: async () => {
+      const { trail, results } = memeFindings(run)
+      scores.push({ id: 'memes', title: 'Memes (the eight steps)', value: trail.steps.map(stepLine).join('; '), alarm: trail.stoppedAt !== null })
+      return results
+    },
+  })
   const findings = await runChecks(checks, { now })
   return { scores, findings }
 }

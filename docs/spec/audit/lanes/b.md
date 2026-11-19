@@ -22,6 +22,8 @@ Status: **plan approved** by the coordinator (19 November 2026), B1 to B9 as bel
   | Rails, money | 0 crashes, 0 rails; $1.34 of $3, dearest session $0.05 |
   | World shape, projects | 2 founds or expands; 4 projects, all done |
 
+- **B4** (`claude/qa-b-memes`, stacked on B3 with B2 merged in): `apps/qa/src/behaviour/memes.ts`, the eight steps, as one more check in `scoreRun`. On R2 it says: **memes stop at step 4, "chosen"**. Imgflip formats were reached 6 times and read 5 times. Step 3 is unknown because R2 kept no prompts, and no plan step or work ever was a meme. The B8 real run with `--capture-prompts` will measure step 3. The end-to-end test (`apps/qa/test/behaviour/meme-e2e.test.ts`) makes a meme through the real loop with scripted fakes and a fake web with one Imgflip format, so the machinery works.
+
   Also seen in the R2 files: the one full-size tinker on 22 November failed with "Streaming is required for operations that may take longer than 10 minutes" (`mind/builds/tinker-20261122-1434.result.json`). That is an engine bug for B4's "made" step or lane T's triage.
 
 ## The R2 run (facts 3 and 4)

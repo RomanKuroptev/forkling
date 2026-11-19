@@ -75,7 +75,7 @@ export interface RunData {
   days: string[]
   report: RunReport
   /** Works made in range, with what Merge said each is about. */
-  made: { at: string; date: string; kind: string; id: string; title: string; about: string; status: string; sources: { url: string; role: string }[] }[]
+  made: { at: string; date: string; kind: string; id: string; title: string; about: string; status: string; scrapReason: string; sources: { url: string; role: string }[] }[]
   written: WrittenPage[]
   read: ReadPage[]
   /** Every page a trip in range touched, read or not (`failed` says why not). */
@@ -193,7 +193,7 @@ export function readRun(o: ReadRunOptions): RunData {
     const meta = readJson(join(world, 'works', id, 'meta.json'))
     if (!isRecord(meta) || !inRange(str(meta.made))) continue
     const sources = Array.isArray(meta.sources) ? meta.sources.filter(isRecord).map((s) => ({ url: str(s.url), role: str(s.role) })) : []
-    made.push({ at: str(meta.made), date: dayOf(str(meta.made)), kind: str(meta.kind) || 'work', id: str(meta.id) || id, title: str(meta.title), about: str(meta.about), status: str(meta.status), sources })
+    made.push({ at: str(meta.made), date: dayOf(str(meta.made)), kind: str(meta.kind) || 'work', id: str(meta.id) || id, title: str(meta.title), about: str(meta.about), status: str(meta.status), scrapReason: str(meta.scrapReason), sources })
   }
   made.sort((a, b) => a.at.localeCompare(b.at))
 
