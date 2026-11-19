@@ -37,6 +37,11 @@ describe('report', () => {
     expect(blocking([f('major', 'a')])).toBe(true)
   })
 
+  it('a finding that waits for Roman does not block a PR (no PR can make his choice), but a blocker always does', () => {
+    expect(blocking([{ ...f('major', 'a'), fixKind: 'roman' }])).toBe(false)
+    expect(blocking([{ ...f('blocker', 'a'), fixKind: 'roman' }])).toBe(true)
+  })
+
   it('writes findings.json and report.md', () => {
     const dir = mkdtempSync(join(tmpdir(), 'qa-'))
     writeRun(dir, [f('info', 'Note')], { title: 'fast' })

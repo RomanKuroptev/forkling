@@ -2,6 +2,12 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+## 2026-11-19: The source list of the audit harness (audit QS, lane S)
+- **`qa/sources.json`, not `qa/coverage.json`.** Spec 9.4 puts the sources in `qa/coverage.json`; steps.md names `qa/sources.json`, and steps.md wins. `coverage.json` stays Phase 2's mockup file.
+- **Lemmy memes is `trial failed`, not a `code` fix.** Spec 9.4 calls Lemmy "a passed trial that just needs wiring", but its report (`docs/spec/w2-trials/lemmy.world.md`) fails readable at 63% (mark 80%). The report wins: it is for Roman, recommended "rerun the trial against a text-heavier community, or drop". Mastodon trends: Roman, recommended "drop: robots.txt blocks ClaudeBot by name". Show HN: Roman, recommended "drop" (10% of items have 120 words; the projects are on sites Merge may not read).
+- **Show HN counts as a pulse source** (spec 6.1 lists it among the feeds, "the daily pulse"), so it is `major` like Lemmy and Mastodon. Lobsters (maker, blocked by robots.txt) is `minor`.
+- **A major that waits for Roman (`fixKind: roman`) does not fail a PR.** No PR can make his choice, and it would hold every PR until he decides. It stays in the report; a blocker always fails.
+
 ## 2026-11-19: Triage keeps its state in the issues, pictures on an orphan branch (audit QT, lane T)
 - **Clean runs and fix tries live in a hidden line in each issue body** (`<!-- qa-state {...} -->`). The issue is already the one record per fingerprint, so any PC can run triage and no state file is committed. A `qa` issue without that line (the hand-filed `phase-2` issues, the digest) is never touched.
 - **"The evidence changed"** means a change in severity, the `what` text or the evidence file names. Picture bytes are left out: a re-render differs by a pixel every run and would comment every night.
