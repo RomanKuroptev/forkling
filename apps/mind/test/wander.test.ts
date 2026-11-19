@@ -156,7 +156,10 @@ describe('the morning', () => {
     const user = llm.calls[0]!.user
     expect(user).toContain('<data source="pages-seen">')
     expect(user).toContain(`Shaded relief | ${wiki}/wiki/Shaded_relief`)
-    expect(user).not.toContain('Hillshade |')
+    const seenBlock = user.split('<data source="pages-seen">')[1]!.split('</data>')[0]!
+    expect(seenBlock).not.toContain('Hillshade |')
+    // It read Hillshade lately, so it is listed as read lately instead.
+    expect(user.split('<data source="read-lately">')[1]!.split('</data>')[0]).toContain('Hillshade |')
     // Octopus is also a starting point today (a front-page link), so it is not listed twice.
     expect(user.match(/Octopus \|/g)).toHaveLength(1)
   })
@@ -244,6 +247,17 @@ describe('a wander step', () => {
     expect(stream).toMatch(/found nothing to read/)
     expect(stream).not.toMatch(/Wandered from absurd rigorous joke papers: 1 page/)
     expect(result.summary).toMatch(/read nothing/)
+  })
+
+  it('shows the plan the pages its trips started from in the last 30 days, so it does not plan a trip that reads nothing new', async () => {
+    writeJson('trails/2026-11-01-1.json', Trail.parse({ id: '2026-11-01-1', date: '2026-11-01', purpose: 'p', start: { kind: 'topic', value: 'logic gates' }, pages: [{ url: `${wiki}/wiki/Logic_gate`, title: 'Logic gate', fetchedAt: '2026-11-01T10:00:00Z', topics: [], interest: 6 }] }))
+    writeJson('trails/2026-09-01-1.json', Trail.parse({ id: '2026-09-01-1', date: '2026-09-01', purpose: 'p', start: { kind: 'topic', value: 'moss' }, pages: [{ url: `${wiki}/wiki/Moss`, title: 'Moss', fetchedAt: '2026-09-01T10:00:00Z', topics: [], interest: 6 }] }))
+    const llm = fake(wanderPlan)
+    await tick(MORNING, llm)
+    const user = llm.calls[0]!.user
+    expect(user).toContain('<data source="read-lately">')
+    expect(user).toContain(`Logic gate | ${wiki}/wiki/Logic_gate`)
+    expect(user).not.toContain(`${wiki}/wiki/Moss`)
   })
 
   it('says it read the page lately, not that it could not be read, when the 30-day rule skips where it started', async () => {

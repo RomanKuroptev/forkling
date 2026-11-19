@@ -117,6 +117,17 @@ describe('prompt golden files', () => {
     }
     await expect(buildUser(withLimits)).toMatchFileSnapshot('golden/user-decide-limits.txt')
   })
+  it('decide user prompt that shows the start pages it read in the last 30 days, so it does not plan a trip that reads nothing new', async () => {
+    const withReadLately = {
+      ...input('decide'),
+      limits: { reasonChars: 140, readLately: [{ title: 'Thue', url: 'https://esolangs.org/wiki/Thue' }, { title: 'Esoteric programming language', url: 'https://esolangs.org/wiki/Esoteric_programming_language' }] },
+      startingPoints: [
+        { title: 'Esoteric programming language', url: 'https://esolangs.org/wiki/Esoteric_programming_language', door: false, readLately: true },
+        { title: 'Hillshade', url: 'https://en.wikipedia.org/wiki/Hillshade', door: true },
+      ],
+    }
+    await expect(buildUser(withReadLately)).toMatchFileSnapshot('golden/user-decide-read-lately.txt')
+  })
   it('shows only the reason cap when nothing else limits it', () => {
     const text = buildUser({ ...input('decide'), limits: { reasonChars: 140 } })
     expect(text).toContain('at most 140 characters')
