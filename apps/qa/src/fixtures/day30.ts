@@ -75,12 +75,13 @@ function furnish(prng: Prng, kit: Kit, style: string, w: number, d: number, door
   if (door) parts.push({ part: s.door, at: [0, 0, d / 2 - 0.1], rot: 0 })
   parts.push({ part: s.window, at: [0, 1.2, -(d / 2 - 0.1)], rot: 0 })
   if (prng.next() < 0.6) parts.push({ part: s.window, at: [(prng.next() < 0.5 ? -1 : 1) * (w / 2 - 0.1), 1.2, 0], rot: Math.PI / 2 })
-  // Spots against the walls, facing into the room, and spots standing free, off the door's line.
-  const back = d / 2 - 0.5
-  const side = w / 2 - 0.5
+  // Spots against the walls, facing into the room, and spots standing free, off the door's line. An upper floor's walls stand a
+  // little further in than the room's edge, so a thing against a wall keeps a metre from the edge.
+  const back = d / 2 - 1
+  const side = w / 2 - 1
   const wallSpots: [number, number, number][] = shuffle(prng, [
-    [-(w / 2 - 1.4), -back, 0],
-    [w / 2 - 1.4, -back, 0],
+    [-(w / 2 - 1.5), -back, 0],
+    [w / 2 - 1.5, -back, 0],
     [-side, -d / 4, Math.PI / 2],
     [-side, d / 4, Math.PI / 2],
     [side, -d / 4, -Math.PI / 2],

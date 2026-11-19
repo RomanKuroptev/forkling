@@ -77,12 +77,22 @@ describe('surfaces that fight (z-fighting) in the drawn places', () => {
 describe('doors the building covers', () => {
   const snapshot = (places: Place[]) => ({ places, kit, heightAt: () => 0, nowMs: 0 })
 
-  it('none in the fixture worlds: the upper floor door of grown places 5 and 9 stands in front of its wall (issue 370, second try)', () => {
-    expect(coveredDoors(snapshot(fixturePlaces()))).toEqual([])
+  /**
+   * A two-floor place whose upper room has a door part set flush with the front wall: what the old day-30 generator made of the
+   * hillside room (grown place 5), kept here since day-30 now grows the engine's way and no longer copies the ground room's door upstairs.
+   */
+  const upperDoor = (): Place => {
+    const hillside = fixturePlaces().find((p) => p.id === 'day-7/hillside-room-five-lamps')!
+    const first = hillside.rooms[0]!
+    return { ...hillside, id: 'upper-door', exterior: { ...hillside.exterior, floors: 2, palette: 'ember' }, rooms: [{ ...first, id: 'main-room' }, { ...first, id: 'room-2', floor: 1 }] }
+  }
+
+  it('none in the fixture worlds, nor on an upper floor door set flush with its wall: it stands in front of it (issue 370, second try)', () => {
+    expect(coveredDoors(snapshot([...fixturePlaces(), upperDoor()]))).toEqual([])
   })
 
   it('planted: a door pushed 1.5 cm into the wall it was flush with is found, with the wall in front of it', () => {
-    const base = fixturePlaces().find((p) => p.id === 'day-30/grown-place-5')!
+    const base = upperDoor()
     const room = base.rooms.find((r) => r.floor === 1)!
     const index = room.parts.findIndex((p) => p.part.startsWith('door'))
     expect(index).toBeGreaterThanOrEqual(0)
