@@ -77,6 +77,11 @@ function Body({ content }: { content: PanelContent }) {
               <strong>Closed</strong> since {content.closed.on}: {content.closed.reason}
             </p>
           )}
+          {content.building && (
+            <p>
+              <strong>{content.building}</strong>
+            </p>
+          )}
           <p>{content.purpose}</p>
           <p>
             Founded {content.founded}. {content.tags.length > 0 && `About ${content.tags.join(', ')}.`}

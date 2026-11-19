@@ -12,6 +12,8 @@ const MAX_SOUVENIRS = 300
 export interface WanderState {
   /** Whether a page was read on a trail in the last 30 days. */
   readRecently(url: string): boolean
+  /** Whether a page was read on any trail: a real page, so a plan may start from its address. */
+  readBefore(url: string): boolean
   souvenirs: KnownSouvenir[]
   trailsToday: number
 }
@@ -34,12 +36,17 @@ function parse<T>(dir: string, folder: string, file: string, schema: { safeParse
 export function readWanderState(dir: string, today: string): WanderState {
   const cutoff = new Date(Date.parse(`${today}T00:00:00Z`) - RECENT_DAYS * DAY_MS).toISOString().slice(0, 10)
   const recent = new Set<string>()
+  const ever = new Set<string>()
   let trailsToday = 0
   for (const file of files(dir, 'trails')) {
     const trail = parse(dir, 'trails', file, Trail)
     if (!trail) continue
     if (trail.date === today) trailsToday++
-    if (trail.date >= cutoff) for (const page of trail.pages) if (!page.failed) recent.add(page.url)
+    for (const page of trail.pages) {
+      if (page.failed) continue
+      ever.add(page.url)
+      if (trail.date >= cutoff) recent.add(page.url)
+    }
   }
   const souvenirs = files(dir, 'souvenirs')
     .slice(-MAX_SOUVENIRS)
@@ -47,7 +54,7 @@ export function readWanderState(dir: string, today: string): WanderState {
       const s = parse(dir, 'souvenirs', file, Souvenir)
       return s ? [{ id: s.id, url: s.source.url, content: s.content }] : []
     })
-  return { readRecently: (url) => recent.has(url), souvenirs, trailsToday }
+  return { readRecently: (url) => recent.has(url), readBefore: (url) => ever.has(url), souvenirs, trailsToday }
 }
 
 /** The trails of the last `days` days (today included), oldest first, for what the write step is told about what it read. */

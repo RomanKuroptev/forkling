@@ -5,7 +5,7 @@ import { makeFixtureWorld } from '@forkling/sim/fixture'
 import { describe, expect, it } from 'vitest'
 import { buildingModel } from '../src/world/building.ts'
 import { floorHeight } from '../src/world/kitBase.ts'
-import { renderBudget, sceneInstances } from '../src/world/kitGeometry.ts'
+import { interiorParts, renderBudget, sceneInstances } from '../src/world/kitGeometry.ts'
 import { WIRE_THICKNESS, wireframeInstances } from '../src/world/wireframe.ts'
 import { WIREFRAME } from '../src/world/theme.ts'
 
@@ -107,5 +107,70 @@ describe('a place being built is its finished model as cyan wireframe', () => {
     const cost = renderBudget(sceneInstances(places, kit, { heightAt: () => 0, interiors: new Set(), nowMs: NOW }))
     expect(cost.drawCalls).toBeLessThanOrEqual(4)
     expect(cost.triangles).toBeLessThanOrEqual(300000)
+  })
+})
+
+/** The two ends of a line from its matrix. */
+const endOf = (m: readonly number[], k: number): number[] => [m[12]! + k * m[0]!, m[13]! + k * m[1]!, m[14]! + k * m[2]!]
+const endsOf = (m: readonly number[]): [number[], number[]] => [endOf(m, -0.5), endOf(m, 0.5)]
+/** How far a point is from a segment. */
+function toSegment(p: readonly number[], a: readonly number[], b: readonly number[]): number {
+  const d = [b[0]! - a[0]!, b[1]! - a[1]!, b[2]! - a[2]!]
+  const len2 = d[0]! ** 2 + d[1]! ** 2 + d[2]! ** 2
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0]! - a[0]!) * d[0]! + (p[1]! - a[1]!) * d[1]! + (p[2]! - a[2]!) * d[2]!) / len2))
+  return Math.hypot(p[0]! - a[0]! - t * d[0]!, p[1]! - a[1]! - t * d[1]!, p[2]! - a[2]! - t * d[2]!)
+}
+
+describe('the wireframe is thin single lines, and the inside is wireframe too (issues 330, 329)', () => {
+  it('draws hairlines: each line is at most 5 cm thick', () => {
+    expect(WIRE_THICKNESS).toBeLessThanOrEqual(0.05)
+  })
+
+  it('never doubles a line: no line lies along another within 20 cm', () => {
+    for (const style of kit.styles) {
+      const lines = wireframeInstances(building(base, style.id), kit, 0, NOW)!.map((l) => endsOf(l.matrix))
+      for (let i = 0; i < lines.length; i++) {
+        for (let j = 0; j < lines.length; j++) {
+          if (i === j) continue
+          const [a, b] = lines[i]!
+          const [c, d] = lines[j]!
+          const along = toSegment(a, c, d) < 0.2 && toSegment(b, c, d) < 0.2
+          expect(along, `${style.id}: line ${i} doubles line ${j}`).toBe(false)
+        }
+      }
+    }
+  })
+
+  it('draws the inside of a place being built as cyan lines too, not as finished furniture', () => {
+    const p: Place = { ...building(base), exhibits: [] }
+    expect(interiorParts(p, kit, 0).instances.length).toBeGreaterThan(5)
+    const scene = sceneInstances([p], kit, { heightAt: () => 0, interiors: new Set([p.id]), nowMs: NOW })
+    const cyan = WIREFRAME.pole
+    const [r, g, b] = [1, 3, 5].map((k) => Number.parseInt(cyan.slice(k, k + 2), 16) / 255).map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+    for (const shape of ['box', 'sphere', 'cylinder', 'cone'] as const) {
+      const s = scene[shape]
+      for (let k = 0; k < s.count; k++) {
+        expect([s.colors[k * 3]!, s.colors[k * 3 + 1]!, s.colors[k * 3 + 2]!].map((c) => Math.round(c * 1000)), `${shape} ${k} is not a cyan line`).toEqual([r!, g!, b!].map((c) => Math.round(c * 1000)))
+      }
+    }
+    expect(scene.glassBox.count).toBe(0)
+    expect(Object.keys(scene.models)).toEqual([])
+    // More lines than the outside alone: the furniture is there, as lines.
+    expect(scene.box.count).toBeGreaterThan(wireframeInstances(p, kit, 0, NOW)!.length)
+  })
+
+  it('keeps the way in clear inside too: no line of the inside across the door below the lintel', () => {
+    const p: Place = { ...building(base), exhibits: [] }
+    const [px, pz] = placeCentre(toLandPlace(p))
+    const frontZ = pz + p.exterior.footprint[1] / 2
+    const scene = sceneInstances([p], kit, { heightAt: () => 0, interiors: new Set([p.id]), nowMs: NOW })
+    for (let k = 0; k < scene.box.count; k++) {
+      const m = [...scene.box.matrices.slice(k * 16, k * 16 + 16)]
+      for (let s = 0; s <= 8; s++) {
+        const f = s / 8 - 0.5
+        const [x, y, z] = [m[12]! + f * m[0]!, m[13]! + f * m[1]!, m[14]! + f * m[2]!]
+        expect(Math.abs(z - frontZ) < 1 && Math.abs(x - px) < DOOR_HALF - 0.05 && y < 2.2 && y > 0.2, `a line in the doorway at ${x}, ${y}, ${z}`).toBe(false)
+      }
+    }
   })
 })

@@ -103,9 +103,19 @@ export async function tripStep(t: Tick): Promise<void> {
   if (!llm) return skip('there is no model this tick')
   const readsLeft = MAX_READS_PER_DAY - t.trips.reads
   if (readsLeft <= 0) return skip(`the ${MAX_READS_PER_DAY} reads of the day are used`)
-  // A topic is matched with the titles of pages it has really seen (no search: robots.txt allows none), before its own page is tried.
+  // A topic is matched with the titles of pages it has really seen (no search: robots.txt allows none); nothing is guessed into an address.
   const pool: SeenPage[] = [...(t.mind.seen ?? []), ...t.startingPoints.map((p) => ({ title: p.title, url: p.url }))]
-  const start = resolveStart(step.targetId ?? '', t.wander.souvenirs, pool)
+  const target = step.targetId ?? ''
+  const start = resolveStart(target, t.wander.souvenirs, pool, t.wander.readBefore)
+  if (!start.ok && start.unseen) {
+    // A title or address it was never shown: no fetch, no trail, and said as plainly as a trip that read nothing.
+    const looked = target.trim().slice(0, 200)
+    notes.push(`wander: ${start.reason}, so nothing was fetched`)
+    remember.push({ at: nowIso, kind: 'reading', text: `Looked for ${looked}, but I have not seen a page called that, so I read nothing about it.`, verb: 'wander', goalRef: `today:${pending.index}` })
+    justNow.push(`looked for ${looked}: have not seen a page called that, so read nothing`)
+    parts.push(`looked for ${looked}, read nothing`)
+    return
+  }
   if (!start.ok) return skip(start.reason)
 
   /** A model call booked in the ledger and the tick log. A call that never happened is only noted. */
@@ -176,7 +186,7 @@ export async function tripStep(t: Tick): Promise<void> {
     return
   }
   if (result.trail.pages.every((p) => p.failed)) {
-    const why = start.kind === 'topic' && start.found === 'guess' ? 'there is no page of that name' : 'the page could not be read'
+    const why = 'the page could not be read'
     remember.push({ at: nowIso, kind: 'reading', text: `Looked for ${start.value} and found nothing to read (${why}), so I read nothing about it.`, verb: 'wander', goalRef: `today:${pending.index}` })
     justNow.push(`looked for ${start.value}: found nothing to read, so read nothing`)
     parts.push(`looked for ${start.value}, read nothing`)

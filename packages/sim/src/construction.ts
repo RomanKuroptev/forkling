@@ -16,3 +16,16 @@ export function isBuilding(state: Building, nowMs?: number): boolean {
 export function finishedBuildings<T extends { state: Building }>(places: readonly T[], nowMs: number): T[] {
   return places.filter((p) => p.state.construction !== null && !isBuilding(p.state, nowMs))
 }
+
+/**
+ * What a place's sign says while it is being built (issue 331): that it is being built and about how long is left, in plain words
+ * from its construction's finish time. Null when it is not being built at `nowMs`, and without a clock (nothing to count from).
+ */
+export function buildingWords(construction: { finishesAt: string } | null, nowMs?: number): string | null {
+  if (nowMs === undefined || !isBuilding({ construction }, nowMs)) return null
+  const hours = (Date.parse(construction!.finishesAt) - nowMs) / 3_600_000
+  if (hours < 1) return 'Building · ready within the hour'
+  if (hours < 48) return `Building · ready in about ${Math.round(hours)} h`
+  return `Building · ready in about ${Math.round(hours / 24)} days`
+}
+

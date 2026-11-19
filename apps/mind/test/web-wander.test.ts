@@ -100,6 +100,9 @@ describe('what a tick knows about earlier trips', () => {
     expect(state.readRecently('https://en.wikipedia.org/wiki/Recent')).toBe(true)
     expect(state.readRecently('https://en.wikipedia.org/wiki/Today')).toBe(true)
     expect(state.readRecently('https://en.wikipedia.org/wiki/Old')).toBe(false)
+    // Read on any trip ever: a real page, which a plan may name by its address.
+    expect(state.readBefore('https://en.wikipedia.org/wiki/Old')).toBe(true)
+    expect(state.readBefore('https://en.wikipedia.org/wiki/Never')).toBe(false)
     expect(state.souvenirs).toEqual([{ id: '2026-10-25-a', url: 'https://en.wikipedia.org/wiki/Recent', content: 'A quote.' }])
     expect(state.trailsToday).toBe(2)
   })

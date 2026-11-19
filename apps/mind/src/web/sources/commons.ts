@@ -1,7 +1,7 @@
 import { isAllowed } from '../allowlist.ts'
 import { cutToTokens, htmlToText } from '../clean.ts'
 import { WebError, type Fetcher } from '../fetch.ts'
-import { capLinks, normalizeLicence, wikipediaTopicLink, type Item, MAX_RECORD_LINKS } from '../item.ts'
+import { capLinks, normalizeLicence, type Item, MAX_RECORD_LINKS } from '../item.ts'
 import { pageTitle, wikiLinks, wikiPath } from './mediawiki.ts'
 
 const HOST = 'commons.wikimedia.org'
@@ -21,7 +21,6 @@ export async function commonsFile(f: Fetcher, title: string): Promise<Item> {
   const licenceName = htmlToText(/class="licensetpl_short"[^>]*>([\s\S]*?)<\/span>/i.exec(html)?.[1] ?? '')
   const credit = htmlToText(/id="fileinfotpl_aut"[^>]*>[\s\S]*?<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/i.exec(html)?.[1] ?? '') || null
   const description = htmlToText(/<div class="description[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(html)?.[1] ?? '')
-  const bare = heading.replace(/^File:/, '').replace(/\.[a-z0-9]+$/i, '').replace(/_/g, ' ')
   return {
     source: HOST,
     kind: 'record',
@@ -29,8 +28,8 @@ export async function commonsFile(f: Fetcher, title: string): Promise<Item> {
     url: `https://${HOST}/wiki/${wikiPath(heading)}`,
     title: heading,
     text: cutToTokens([`File: ${heading}`, description, `Licence: ${licenceName || 'unknown'}`, credit ? `Credit: ${credit}` : ''].filter(Boolean).join('\n')),
-    // The Wikipedia articles that use the picture, then the article for what it shows: a way back into reading.
-    links: capLinks([...wikiLinks(html, 'en.wikipedia.org', '', false), wikipediaTopicLink(bare)], MAX_RECORD_LINKS),
+    // The Wikipedia articles that use the picture: a way back into reading. No article is guessed from the file name.
+    links: capLinks(wikiLinks(html, 'en.wikipedia.org', '', false), MAX_RECORD_LINKS),
     images: [{ url, licence: normalizeLicence(licenceName), credit }],
   }
 }

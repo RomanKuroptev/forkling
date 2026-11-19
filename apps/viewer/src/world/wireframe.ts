@@ -4,8 +4,13 @@ import { buildingModel } from './building.ts'
 import type { Instance, Shape } from './kitBase.ts'
 import { WIREFRAME } from './theme.ts'
 
-/** How thick the glowing lines are, in meters. They are neon, so the thin-part rule does not apply. */
-export const WIRE_THICKNESS = 0.14
+/**
+ * How thick the glowing lines are, in meters: a hairline with a soft glow, as in the mockups (issue 330: 14 cm bars read as
+ * scaffolding from a block game and blew out to flat cyan). They are neon, so the thin-part rule does not apply.
+ */
+export const WIRE_THICKNESS = 0.03
+/** Two edges whose ends both lie this close to one line are that one line, drawn once (a wall's inner and outer face, a thin post). */
+const SAME_LINE = 0.25
 /** Pieces thinner than this (bands, the roof slab, small buttons) are left out: they are detail, not the shape. */
 const MIN_PIECE = 0.35
 
@@ -53,22 +58,42 @@ function line(a: V3, b: V3): Instance | null {
 /** How big a piece is across its thinnest axis, from its matrix. */
 const thinnest = (m: readonly number[]) => Math.min(Math.hypot(m[0]!, m[1]!, m[2]!), Math.hypot(m[4]!, m[5]!, m[6]!), Math.hypot(m[8]!, m[9]!, m[10]!))
 
+/** How far a point is from the segment `a`-`b`. */
+function toSegment(p: V3, a: V3, b: V3): number {
+  const d: V3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]]
+  const len2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2]
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1] + (p[2] - a[2]) * d[2]) / len2))
+  return Math.hypot(p[0] - a[0] - t * d[0], p[1] - a[1] - t * d[1], p[2] - a[2] - t * d[2])
+}
+
+/** The edges once each: longest first, an edge that lies along one already kept (both ends within `SAME_LINE`) is left out. */
+function single(edges: [V3, V3][]): [V3, V3][] {
+  const sorted = [...edges].sort((x, y) => Math.hypot(y[1][0] - y[0][0], y[1][1] - y[0][1], y[1][2] - y[0][2]) - Math.hypot(x[1][0] - x[0][0], x[1][1] - x[0][1], x[1][2] - x[0][2]))
+  const kept: [V3, V3][] = []
+  for (const [a, b] of sorted) {
+    if (kept.some(([c, d]) => toSegment(a, c, d) < SAME_LINE && toSegment(b, c, d) < SAME_LINE)) continue
+    kept.push([a, b])
+  }
+  return kept
+}
+
 /**
  * A place that is being built (spec 4.5) is its finished model drawn as glowing cyan lines: the edges of the very same pieces the
  * finished building is made of (body with its lean, front, crown and hero), so the base shape, taper, pyramid, dome, columns, arch and
  * sign all carry over. It becomes solid when it is done. Nothing is drawn for a place that is not being built (`nowMs` is the world
  * clock; without one a construction written in the file counts as going on). The way in stays clear: edges in the doorway are cut.
+ * `inside` are the pieces of its inside when that is drawn (the floor, the furniture, the lamps): they are lines too, every small
+ * one of them, so no finished room stands in the wire shell (issue 329). Every line is drawn once (issue 330).
  */
-export function wireframeInstances(place: Place, kit: Kit, baseY: number, nowMs?: number, force = false): Instance[] | null {
+export function wireframeInstances(place: Place, kit: Kit, baseY: number, nowMs?: number, force = false, inside: readonly Pick<Instance, 'shape' | 'matrix'>[] = []): Instance[] | null {
   if (!force && !isBuilding(place.state, nowMs)) return []
   const model = buildingModel(place, kit, baseY)
   if (!model) return null
   const [px, pz] = placeCentre(toLandPlace(place))
   const frontZ = pz + place.exterior.footprint[1] / 2
-  const out: Instance[] = []
-  const pieces = [...model.slots.body, ...model.slots.front, ...model.slots.crown, ...model.slots.hero]
-  for (const piece of pieces) {
-    if (thinnest(piece.matrix) < MIN_PIECE) continue
+  const edges: [V3, V3][] = []
+  const outside = [...model.slots.body, ...model.slots.front, ...model.slots.crown, ...model.slots.hero].filter((piece) => thinnest(piece.matrix) >= MIN_PIECE)
+  for (const piece of [...outside, ...inside]) {
     const shape = SHAPES[piece.shape]
     const world = shape.corners.map((c) => apply(piece.matrix, c))
     for (const [i, j] of shape.edges) {
@@ -77,9 +102,13 @@ export function wireframeInstances(place: Place, kit: Kit, baseY: number, nowMs?
       const mid: V3 = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]
       // Cut every edge in the doorway: beside the door gap, near the front wall, below the lintel.
       if (Math.abs(mid[0] - px) <= DOOR_HALF + 0.3 && Math.abs(mid[2] - frontZ) < 1.2 && Math.min(a[1], b[1]) < baseY + 2.3) continue
-      const l = line(a, b)
-      if (l) out.push(l)
+      edges.push([a, b])
     }
+  }
+  const out: Instance[] = []
+  for (const [a, b] of single(edges)) {
+    const l = line(a, b)
+    if (l) out.push(l)
   }
   return out
 }

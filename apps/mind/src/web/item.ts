@@ -16,6 +16,8 @@ export interface ItemImage {
 export interface ItemLink {
   title: string
   url: string
+  /** A name made into a Wikipedia address by code, not a link the page had: it may not exist, so it is never kept as a page Merge has seen. */
+  guess?: true
 }
 
 /** What one read gives the read call: cleaned text (cut to 3,000 tokens), links it may follow, pictures it may look at. */
@@ -48,7 +50,7 @@ export function capLinks(links: readonly ItemLink[], max = MAX_LINKS, ok: (url: 
 export function wikipediaTopicLink(topic: string): ItemLink {
   const t = topic.trim().replace(/\s+/g, ' ').slice(0, 100)
   const title = t.charAt(0).toUpperCase() + t.slice(1)
-  return { title: `${title} (Wikipedia)`, url: `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_')).replace(/%3A/gi, ':')}` }
+  return { title: `${title} (Wikipedia)`, url: `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_')).replace(/%3A/gi, ':')}`, guess: true }
 }
 
 /** The licences the code allows (spec 6.3), from the words a site uses. Anything it cannot read is null. */

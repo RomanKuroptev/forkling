@@ -41,6 +41,12 @@ describe('prompt golden files', () => {
     const system = buildSystem({ seed: DEFAULT_SEED })
     await expect(system).toMatchFileSnapshot('golden/system.txt')
   })
+  it('says a wander topic is only matched with pages it was shown, and never tried as a made-up Wikipedia page (#318)', () => {
+    const wander = buildSystem({ seed: DEFAULT_SEED }).split('\n').find((l) => l.startsWith('- wander:'))!
+    expect(wander).toContain('A topic is matched with the titles of pages you have been shown links to')
+    expect(wander).toContain('nothing is fetched, you read nothing and you are told so')
+    expect(wander).not.toMatch(/tried as the Wikipedia page/)
+  })
   it('system prompt where build sessions can run (spec-v4 3.2)', async () => {
     await expect(buildSystem({ seed: DEFAULT_SEED, build: true })).toMatchFileSnapshot('golden/system-build.txt')
   })

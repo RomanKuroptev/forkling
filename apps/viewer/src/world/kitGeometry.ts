@@ -7,7 +7,7 @@ import { wireframeInstances } from './wireframe.ts'
 import { plotInstances } from './plotGeometry.ts'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
 import { galleryWalls, wallInstances, type GalleryWork } from './galleryWall.ts'
-import { SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
+import { FLOOR_BELOW, FLOOR_INSET, FLOOR_TOP, SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
 import { partInDoorway } from './doorway.ts'
 
@@ -155,8 +155,11 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
   const out: Instance[] = []
   const modelOut: ModelInstance[] = []
   for (let f = 0; f < place.exterior.floors; f++) {
-    // By day the floor is a pastel of its own (`dayInteriorFloor`), not the grey a pale floor turns under the roof.
-    out.push({ shape: 'box', matrix: compose([px, baseY + f * height + 0.06, pz], [0, 0, 0], [fw - 1, 0.12, fd - 1]), color: palette.colors.floor, dayColor: dayInteriorFloor(palette.colors) })
+    // A floor reaches 3 cm under its storey's line, so the feet of the furniture and the walls standing on that line are inside it, not
+    // in the plane of its underside (issue 335), and its top is 2 cm over the building's 0.12 m slab, not in its plane (issues 350, 353).
+    // It stops 1 cm short of the line where the walls' corner pieces end, for the same reason. By day it is a pastel of its own
+    // (`dayInteriorFloor`), not the grey a pale floor turns under the roof.
+    out.push({ shape: 'box', matrix: compose([px, baseY + f * height + (FLOOR_TOP - FLOOR_BELOW) / 2, pz], [0, 0, 0], [fw - 2 * FLOOR_INSET, FLOOR_TOP + FLOOR_BELOW, fd - 2 * FLOOR_INSET]), color: palette.colors.floor, dayColor: dayInteriorFloor(palette.colors) })
   }
   // A building drawn by the building model lines its walls inside in the room's own colour, and its windows stand where the rooms'
   // window parts are, which are then not drawn again (issues 358, 346).
@@ -164,8 +167,8 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
   const consumed = model ? windowLayout(place).consumed : new Set<string>()
   if (model) out.push(...model.inside)
   for (const [r, room] of place.rooms.entries()) {
-    for (const [k, placed] of room.parts.entries()) {
-      if (consumed.has(partKey(r, k))) continue
+    for (const [index, placed] of room.parts.entries()) {
+      if (consumed.has(partKey(r, index))) continue
       const part = kit.parts.find((p) => p.id === placed.part)
       if (!part) continue
       // Nothing stands in the doorway: the building draws the opening, and a frame or a door leaf there blocks it (issues 342, 345, 354).
@@ -177,7 +180,8 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
       } else {
         const off = part.category === 'light' && opts.lampsOn === false
         // A lamp that is off is dark: it does not glow either.
-        out.push(...partInstances(part, at, placed.rot, off ? dark : palette).map((i) => (off ? { ...i, glow: false } : i)))
+        const group = `${room.id}/${index}`
+        out.push(...partInstances(part, at, placed.rot, off ? dark : palette).map((i) => (off ? { ...i, glow: false, group } : { ...i, group })))
       }
     }
   }
@@ -302,8 +306,11 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     // A place whose lamps are on (or that is cared for, spec 4.4) has lit windows; one with its lamps off, or neglected, is dark.
     // A place that is being built is its finished model as cyan wireframe until its finish time (spec 4.5); a style the building model
     // does not draw keeps the scaffolding.
-    const wire = wireframeInstances(place, kit, baseY, opts.nowMs, opts.wireAlways)
-    if (wire && wire.length > 0) {
+    // Its inside, when it is drawn, is lines too: the floor, the furniture and the lamps (issue 329), from their plain shapes.
+    const wireInside = opts.interiors.has(place.id) ? interiorParts(place, kit, baseY).instances : []
+    const wire = wireframeInstances(place, kit, baseY, opts.nowMs, opts.wireAlways, wireInside)
+    const wired = wire !== null && wire.length > 0
+    if (wired) {
       for (const i of wire) lists[i.shape].push(i)
     } else {
       // The tinted see-through glass of a glass house goes to its own draw call.
@@ -314,15 +321,18 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     if (opts.interiors.has(place.id)) {
       // Everything inside is marked so: under the roof it gets less of the sky's light.
       const push = (i: Instance) => lists[i.shape].push({ ...i, inside: true })
-      const inside = interiorParts(place, kit, baseY, opts.models, { lampsOn })
-      for (const i of inside.instances) push(i)
-      for (const m of inside.models) (modelLists[m.file] ??= []).push(m.matrix)
+      // Being built, the rooms are in the wireframe above; the things Merge keeps in them (souvenirs, works) are finished and stay.
+      if (!wired) {
+        const inside = interiorParts(place, kit, baseY, opts.models, { lampsOn })
+        for (const i of inside.instances) push(i)
+        for (const m of inside.models) (modelLists[m.file] ??= []).push(m.matrix)
+        lamps.push(...lampSpots(place, kit, baseY, lampsOn))
+      }
       const { palette } = look(place, kit)
       for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) push(lampsOn || !i.glow ? i : { ...i, glow: false })
       // The gallery wall's board (every finished work, a page at a time): one box; its painted face is drawn apart (`GalleryWalls`).
       if (opts.shelf?.length) for (const wall of galleryWalls(place, kit, baseY, opts.shelf, exteriorInstances(place, kit, baseY))) for (const i of wallInstances(wall, palette.colors)) push(lampsOn ? i : { ...i, glow: false })
-      for (const i of neglectInstances(place, kit, baseY, level, 'interior')) push(i)
-      lamps.push(...lampSpots(place, kit, baseY, lampsOn))
+      if (!wired) for (const i of neglectInstances(place, kit, baseY, level, 'interior')) push(i)
     }
   }
   // The plots staked by open requests (spec 10.3), each on its own ground.

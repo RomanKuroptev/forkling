@@ -162,7 +162,8 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
       continue
     }
 
-    for (const l of item.links.slice(0, SEEN_PER_PAGE)) if (!seen.some((x) => x.url === l.url)) seen.push({ title: l.title.slice(0, 200), url: l.url.slice(0, 500) })
+    // A guessed link (a name made into an address) is not a page Merge was shown, so a later plan never starts from it.
+    for (const l of item.links.filter((x) => !x.guess).slice(0, SEEN_PER_PAGE)) if (!seen.some((x) => x.url === l.url)) seen.push({ title: l.title.slice(0, 200), url: l.url.slice(0, 500) })
     const outcome = await deps.read(item)
     usd += outcome.usd
     deps.onRead?.(item, outcome)
