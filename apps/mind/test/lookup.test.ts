@@ -45,15 +45,17 @@ describe('rememberSeen', () => {
 
 describe('resolveStart with the pages Merge has seen', () => {
   it('goes to the page it has seen when a topic matches one', () => {
-    expect(resolveStart('shaded relief', [], seen)).toEqual({ ok: true, kind: 'topic', value: 'shaded relief', url: 'https://en.wikipedia.org/wiki/Shaded_relief', found: 'seen' })
+    expect(resolveStart('shaded relief', [], seen)).toEqual({ ok: true, kind: 'topic', value: 'shaded relief', url: 'https://en.wikipedia.org/wiki/Shaded_relief' })
   })
 
-  it("falls back on the topic's own Wikipedia page, and says it is only a guess", () => {
-    expect(resolveStart('Lighthouses', [], seen)).toEqual({ ok: true, kind: 'topic', value: 'Lighthouses', url: 'https://en.wikipedia.org/wiki/Lighthouses', found: 'guess' })
+  it("does not fall back on a guessed Wikipedia page of the topic's name: it says it has not seen one", () => {
+    expect(resolveStart('Lighthouses', [], seen)).toEqual({ ok: false, unseen: true, reason: 'I have not seen a page called Lighthouses' })
   })
 
-  it('leaves an address and a souvenir as they were', () => {
-    expect(resolveStart('https://en.wikipedia.org/wiki/Moss', [], seen)).toMatchObject({ ok: true, kind: 'feed' })
+  it('leaves an address it has seen or read and a souvenir as they were', () => {
+    expect(resolveStart('https://en.wikipedia.org/wiki/Shaded_relief', [], seen)).toMatchObject({ ok: true, kind: 'feed', url: 'https://en.wikipedia.org/wiki/Shaded_relief' })
+    expect(resolveStart('https://en.wikipedia.org/wiki/Moss', [], seen, (u) => u.endsWith('/Moss'))).toMatchObject({ ok: true, kind: 'feed' })
+    expect(resolveStart('https://en.wikipedia.org/wiki/Moss', [], seen)).toMatchObject({ ok: false, unseen: true })
     expect(resolveStart('s1', [{ id: 's1', url: 'https://en.wikipedia.org/wiki/Moss', content: 'x' }], seen)).toMatchObject({ ok: true, kind: 'souvenir' })
   })
 })

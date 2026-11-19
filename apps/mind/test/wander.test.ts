@@ -103,6 +103,8 @@ const tick = (now: Date | string, llm: LlmClient | null, over: Partial<TickDeps>
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'wander-'))
   copyFileSync(join(merge, 'forkling.json'), file('forkling.json'))
+  // Merge has been shown a link to Logic gates, so a trip may start there by its title (a topic is never guessed into an address).
+  writeJson('mind/state.json', MindState.parse({ seen: [{ title: 'Logic gates', url: `${wiki}/wiki/Logic_gates` }] }))
 })
 
 describe('the morning', () => {
@@ -263,15 +265,31 @@ describe('a wander step', () => {
     expect(Trail.parse(readJson(`trails/${DAY}-1.json`)).start).toEqual({ kind: 'topic', value: 'boolean algebra' })
   })
 
-  it('reads nothing for a topic with no page, and says so plainly instead of calling it a trip of 1 page', async () => {
-    const { llm, result } = await wander({}, undefined, plan([step('wander', 'absurd rigorous joke papers'), step('rest', null), step('write', 'home')]))
-    const trail = Trail.parse(readJson(`trails/${DAY}-1.json`))
-    expect(trail.pages).toHaveLength(1)
-    expect(trail.pages[0]!.failed).toMatch(/404|not.?found/i)
-    expect(llm.kinds().filter((k) => k === 'read')).toHaveLength(0)
-    const stream = readFileSync(file(`memory/stream/${DAY}.jsonl`), 'utf8')
-    expect(stream).toMatch(/found nothing to read/)
-    expect(stream).not.toMatch(/Wandered from absurd rigorous joke papers: 1 page/)
+  // The made-up titles of Merge's live trips, 13 to 19 Nov 2026 (issues #318 and #317): each was guessed into /wiki/<Title> and 404ed.
+  it.each(['Maya archaeology', 'Milky Way dust mapping', 'Absurd rigorous joke papers', 'Multi-directional shading'])(
+    'reads nothing for %s, a title it has not seen, without fetching a guessed address, and says so plainly',
+    async (made) => {
+      const { web, asked } = webWith()
+      const { llm, result } = await wander({ web }, undefined, plan([step('wander', made), step('rest', null), step('write', 'home')]))
+      const guessed = `${wiki}/wiki/${made.replace(/ /g, '_')}`
+      expect(asked).not.toContain(guessed)
+      expect(asked.filter((u) => u.startsWith(`${wiki}/wiki/`) && !u.endsWith('Main_Page'))).toEqual([])
+      expect(existsSync(file(`trails/${DAY}-1.json`))).toBe(false)
+      expect(llm.kinds().filter((k) => k === 'read')).toHaveLength(0)
+      const stream = readFileSync(file(`memory/stream/${DAY}.jsonl`), 'utf8')
+      expect(stream).toContain(`Looked for ${made}, but I have not seen a page called that, so I read nothing about it.`)
+      expect(stream).not.toMatch(/Wandered from/)
+      expect(result.summary).toMatch(/read nothing/)
+      const trips = MindState.parse(readJson('mind/state.json')).trips
+      expect([trips?.reads ?? 0, trips?.trips ?? 0]).toEqual([0, 0])
+    },
+  )
+
+  it('does not fetch an address it never saw that matches no title it has seen (/wiki/Creativecoding, 18 Nov 2026)', async () => {
+    const { web, asked } = webWith()
+    const { result } = await wander({ web }, undefined, plan([step('wander', `${wiki}/wiki/Creativecoding`), step('rest', null), step('write', 'home'), pointStep]))
+    expect(asked).not.toContain(`${wiki}/wiki/Creativecoding`)
+    expect(existsSync(file(`trails/${DAY}-1.json`))).toBe(false)
     expect(result.summary).toMatch(/read nothing/)
   })
 
@@ -323,10 +341,18 @@ describe('a wander step', () => {
     }
 
     it('says plainly that it read nothing when the trip found no page, so it cannot write as if it had', async () => {
-      const user = await writeAfter('absurd rigorous joke papers', 'absurd rigorous joke papers')
+      // A trail whose only page failed (a page that would not open): the write step is told it read nothing.
+      writeJson('trails/2026-11-02-1.json', Trail.parse({ id: '2026-11-02-1', date: '2026-11-02', purpose: 'p', start: { kind: 'topic', value: 'tide clocks' }, pages: [{ url: `${wiki}/wiki/Tide_clock`, title: 'Tide clock', fetchedAt: '2026-11-02T10:00:00Z', failed: 'http: 500 from en.wikipedia.org', topics: [] }] }))
+      const user = await writeAfter('logic gates', 'tide clocks')
       expect(user).toMatch(/found nothing to read/)
       expect(user).toMatch(/You read nothing about it/)
       expect(user).toMatch(/Do not write as if you had read/)
+    })
+
+    it('does not tell the write step it read about a title it had not seen, and the trip fetched nothing for it', async () => {
+      const user = await writeAfter('absurd rigorous joke papers', 'absurd rigorous joke papers')
+      expect(user).toMatch(/not read about this on a trip lately/)
+      expect(user).toMatch(/do not say you read it/)
     })
 
     it('shows the pages it really read, with what it made of them', async () => {
