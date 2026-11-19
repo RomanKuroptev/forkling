@@ -23,7 +23,7 @@ Everything here needs `?debug`. Press **F3** for the overlay: mood and energy, a
 | `?timescale=10` | Run the whole world, sun and forkling, that many times faster |
 | `?ref=my-branch` | View a branch of the world repo instead of its default branch |
 | `?clip=Sit` | Pin the forkling in front of you looping one animation, to check it by eye |
-| `?world=local` | Read the world from this site's own `/world/manifest.json` instead of GitHub |
+| `?world=local` | Read the world from this site's own `/world/manifest.json` instead of GitHub; the screens, gallery and work panels read their files (and run their works) from the same `/world/` folder |
 | `?world=local&fixture=10` | The made-up 10-place world from `packages/sim` |
 | `?stand=x,z,yaw` and `?pitch=deg` | Start the visitor somewhere, facing a heading, looking up or down: for screenshots |
 | `?fx=0` | No glow and no scanlines |
