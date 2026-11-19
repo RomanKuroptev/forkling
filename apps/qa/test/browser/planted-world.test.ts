@@ -45,6 +45,18 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('planted flaws in day-7, found b
     expect(found.some((f) => f.id === 'world.places-overlap' && f.fingerprint.includes('workshop') && f.fingerprint.includes('hillside-room-five-lamps'))).toBe(true)
   }, 120_000)
 
+  it('a missing texture: the sign boards drawn with a texture that never loaded (planted in qa.json), found on the pictures', async () => {
+    const world = day7()
+    edit(world, 'qa.json', (q) => (q.plant = { missingTexture: ['signs'] }))
+    const found = await checkWorldOpens(browser, viewer, world, { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')), pictures: true, qaOut: mkdtempSync(join(tmpdir(), 'qa-out-')) })
+    expect(found.filter((f) => f.id === 'world.missing-texture').map((f) => f.fingerprint)).toEqual(['world.missing-texture|day-7|signs'])
+  }, 240_000)
+
+  it('the pictures of clean day-7 have no missing texture, blank view or bad light', async () => {
+    const found = await checkWorldOpens(browser, viewer, day7(), { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')), pictures: true, qaOut: mkdtempSync(join(tmpdir(), 'qa-out-')) })
+    expect(found.filter((f) => ['world.missing-texture', 'world.blank', 'world.too-dark', 'world.too-bright'].includes(f.id))).toEqual([])
+  }, 240_000)
+
   it('a floating sign (planted in qa.json: the files cannot say it)', async () => {
     const world = day7()
     edit(world, 'qa.json', (q) => (q.plant = { raise: [{ id: 'home/sign', dy: 3 }] }))
