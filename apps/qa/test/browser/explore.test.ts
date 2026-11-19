@@ -22,7 +22,7 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('the world explorer helpers on d
   afterAll(async () => {
     await browser?.close()
     await served?.close()
-  })
+  }, 60_000)
 
   it('takes a picture and says where the visitor is', async () => {
     const r = await session.run('shot', ['start'])
