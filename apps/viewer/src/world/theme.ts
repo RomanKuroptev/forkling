@@ -102,7 +102,8 @@ export const NOTE_PAPER = { new: '#fff7d6', found: '#fff27a', replied: '#ff9ad8'
 export const NOTE_POST = '#4a2a8a'
 
 /** Merge's screen: terminal green on near black. */
-export const SCREEN = { on: COLORS.green, off: '#04140b' } as const
+/** `dim` is the frames, dates and page strip of the gallery wall's tiles: the same green, quieter. */
+export const SCREEN = { on: COLORS.green, off: '#04140b', dim: '#1f9a55' } as const
 
 /** The place signs and labels are small windows: face-coloured body, ink text, a gradient title bar. */
 export const WINDOW = { body: COLORS.face, ink: COLORS.ink, barFrom: COLORS.purple, barTo: COLORS.hotPink, barText: COLORS.white } as const

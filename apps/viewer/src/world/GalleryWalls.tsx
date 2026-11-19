@@ -14,8 +14,7 @@ import { SCREEN } from './theme.ts'
 const PLANE = new THREE.PlaneGeometry(1, 1)
 /** The face's canvas, in pixels a meter: a tile's picture is then about 370 px wide, as sharp as a screen's. */
 const PER_METER = 512
-/** The dim green of the frames round a title tile, the dates and the page strip. */
-const DIM = '#1f9a55'
+const DIM = SCREEN.dim
 const FONT = '"Press Start 2P", ui-monospace, monospace'
 
 type Picture = HTMLImageElement | 'loading' | 'failed'

@@ -8,6 +8,7 @@ import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeome
 import { compose } from '../world/matrix.ts'
 import { plotInstances } from '../world/plotGeometry.ts'
 import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
+import { COLORS } from '../world/theme.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
 import { plantBoards, type QaPlant } from './plant.ts'
 
@@ -126,7 +127,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
         wall.works.forEach((work, k) => {
           const slot = slotOf(wall, k)
           const id = `${place.id}/${wall.exhibit.id}/${work.id}`
-          out.push({ id, kind: 'work', place: place.id, ref: `works/${work.id}`, exhibitKind: 'gallery', slot: 'gallery-wall', shows: s.gallery?.get(id) ?? 'nothing', name: work.title, box: instancesBox([{ shape: 'box', matrix: compose(slot.position, [0, wall.rotY, 0], [slot.size[0], slot.size[1], 0.01]), color: '#000000' }]), visible: inside, material: 'solid' })
+          out.push({ id, kind: 'work', place: place.id, ref: `works/${work.id}`, exhibitKind: 'gallery', slot: 'gallery-wall', shows: s.gallery?.get(id) ?? 'nothing', name: work.title, box: instancesBox([{ shape: 'box', matrix: compose(slot.position, [0, wall.rotY, 0], [slot.size[0], slot.size[1], 0.01]), color: COLORS.ink }]), visible: inside, material: 'solid' })
         })
       }
     }
