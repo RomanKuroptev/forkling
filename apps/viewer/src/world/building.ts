@@ -52,7 +52,7 @@ const DOOR_HEIGHT = 2.2
 /** Each floor of a tower stands this far in from the one below, on every side. */
 const TAPER = 0.35
 /** How far in from the footprint's edge the inside face of the walls is, lining included: the furniture stands inside this (`insideWalls.ts`). */
-export const INNER_FACE = INSET + WALL_THICKNESS / 2 + LINING
+export const INNER_FACE = INSET + WALL_THICKNESS / 2 + SKIN + LINING
 /** How far each floor's walls stand in from the ground floor's, on every side. */
 export function floorTaper(place: Place, floor: number): number {
   const [fw, fd] = place.exterior.footprint
@@ -85,6 +85,15 @@ const colorsOf = (palette: KitPalette): Colors => ({
   chrome: palette.colors.metal,
   marble: COLORS.white,
 })
+
+/**
+ * How far in from the footprint's edge the inside face of a ground-floor wall is (its lining), `up` meters above the floor: where a
+ * thing hung in a corner touches the wall. A tower's walls lean in as they rise.
+ */
+export function innerWallFace(place: Place, up: number): number {
+  const lean = place.exterior.style === 'tower' ? Math.sin(Math.atan2(LEAN, floorHeight(place))) * up : 0
+  return INSET + WALL_THICKNESS / 2 + SKIN + LINING + lean
+}
 
 /** The height of the front: as tall as the larger of 1.5 times the body or the body plus 2.5 m, and no taller than the 12 m clamp. */
 export function frontHeight(bodyHeight: number): number {
@@ -237,8 +246,13 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       const rot: [number, number, number] = alongZ ? [0, 0, -dir * tilt] : [dir * tilt, 0, 0]
       // The outer face stands `SKIN` back from the wall's line, so a part the place file set flush with the line (a door on an upper
       // floor) stands just in front of the wall and shows, instead of fighting it (issues 370, 371) or being covered by it.
-      add('body', 'box', at(bodyMid, h / 2, -SKIN / 2), size(bodyLen, h / Math.cos(tilt), WALL_THICKNESS - SKIN), bodyColor, false, rot)
-      if (f === 0) add('body', 'box', at(bodyMid, 0.125), size(bodyLen + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent, false, rot)
+      // On the ground floor, how far up the wall (along its lean) a leaning box of this height and thickness centred `up` must start
+      // so its lowest corner is on the floor's line, not under the ground (a tower's walls dipped 8 cm into it). Zero when upright.
+      const rise = (up: number, height: number, thick: number) => (f === 0 ? Math.max(0, -(up * Math.cos(tilt) - (height / 2) * Math.cos(tilt) - (thick / 2) * lean) / Math.cos(tilt)) : 0)
+      const wallH = h / Math.cos(tilt)
+      const bodyRise = rise(h / 2, wallH, WALL_THICKNESS - SKIN)
+      add('body', 'box', at(bodyMid, h / 2 + bodyRise / 2, -SKIN / 2), size(bodyLen, wallH - bodyRise, WALL_THICKNESS - SKIN), bodyColor, false, rot)
+      if (f === 0) add('body', 'box', at(bodyMid, 0.125 + rise(0.125, 0.25, WALL_THICKNESS + 0.12)), size(bodyLen + 0.1, 0.25, WALL_THICKNESS + 0.12), c.accent, false, rot)
       // The top band rises `SKIN` over the wall top, so the two tops are not in one plane (issue 364).
       if (f === floors - 1) add('body', 'box', at(bodyMid, h - 0.125 + SKIN / 2), size(bodyLen + 0.1, 0.25 + SKIN, WALL_THICKNESS + 0.12), c.accent, false, rot)
       // The glowing band round the body (the hero), above the windows, on the top floor, on every side.

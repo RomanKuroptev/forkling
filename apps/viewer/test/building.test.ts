@@ -196,3 +196,22 @@ describe('the title bar', () => {
     expect(buildingModel(longest, kit, 0)!.titleBar!.text).toBe('THE OBSERVATORY OF PATIENT LITTLE BIRDS!')
   })
 })
+
+describe('a building stands on its slab (day-30 found grown places 4 and 8, towers, sunk 8 cm)', () => {
+  /** The lowest point of a box instance: its eight corners through its matrix. */
+  const lowest = (m: readonly number[]) => {
+    let min = Infinity
+    for (const sx of [-0.5, 0.5]) for (const sy of [-0.5, 0.5]) for (const sz of [-0.5, 0.5]) min = Math.min(min, m[1]! * sx + m[5]! * sy + m[9]! * sz + m[13]!)
+    return min
+  }
+  it('no box of any style reaches more than 2 cm under the ground it stands on, a tower with its leaning walls too', () => {
+    const base = makeFixtureWorld(1, 10).places.find((p) => p.id !== 'home' && p.id !== 'workshop')!
+    for (const style of Object.keys(CROWN_SHARE)) {
+      for (const floors of [1, 2]) {
+        const place = { ...base, exterior: { ...base.exterior, style, floors } }
+        const model = buildingModel(place, kit, 0)!
+        for (const i of model.instances.filter((x) => x.shape === 'box')) expect(lowest(i.matrix), `${style} ${floors}`).toBeGreaterThanOrEqual(-0.02)
+      }
+    }
+  })
+})
