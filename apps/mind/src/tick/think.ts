@@ -6,6 +6,7 @@ import { readRecentPast } from '../past.ts'
 import { foldName, hiddenVisitor, livePrices, moodWords, openPlaceRequests, sameWorkStreak, tiredLimits, topicWriteCounts } from '@forkling/sim'
 import { expandablePlaces } from './expand.ts'
 import { unreadSeen } from '../web/lookup.ts'
+import { readTrailsSince } from '../web/wander-state.ts'
 import { canFoundNow, foundGate } from './found.ts'
 import { checkPlan, placeIds } from './plan.ts'
 import { readProjects } from '../builds/projects.ts'
@@ -14,6 +15,18 @@ import { readWrittenPages } from './variety.ts'
 
 const MAX_SHOWN_FOUND = 10
 const MAX_SHOWN_KEPT = 5
+/** The most start pages read lately shown to a plan. */
+const MAX_SHOWN_READ_LATELY = 10
+
+/** The first page each trip of the last 30 days really read, newest first and once each: where a wander would read nothing new. */
+function readLatelyStarts(t: Tick): { title: string; url: string }[] {
+  const out: { title: string; url: string }[] = []
+  for (const trail of readTrailsSince(t.dir, t.today, 30).reverse()) {
+    const first = trail.pages.find((p) => !p.failed)
+    if (first && !out.some((o) => o.url === first.url)) out.push({ title: first.title, url: first.url })
+  }
+  return out.slice(0, MAX_SHOWN_READ_LATELY)
+}
 
 /** The notes shown to a decide call: those found and not answered (oldest first, so none waits for ever) and the latest it kept, to quote or build from. */
 function noteLines(t: Tick) {
@@ -45,6 +58,10 @@ function planLimits(t: Tick): PlanLimits {
     ...(tired.maxSteps !== null ? { tired: { maxSteps: tired.maxSteps, blocked: t.deps.sessions ? ['expand', 'found', 'tinker', 'build'] : ['expand', 'found', 'tinker'] } } : {}),
     reasonChars: 140,
     ...(t.trips.date === t.today && t.trips.starts.length > 0 ? { tripsToday: t.trips.starts } : {}),
+    ...(() => {
+      const lately = readLatelyStarts(t)
+      return lately.length > 0 ? { readLately: lately } : {}
+    })(),
   }
 }
 
@@ -76,7 +93,7 @@ export async function think(t: Tick): Promise<void> {
     memory: t.w.summary,
     interests: t.interests,
     past: readRecentPast(t.dir, t.today, t.w.art),
-    startingPoints: t.startingPoints,
+    startingPoints: t.startingPoints.map((p) => (t.wander.readRecently(p.url) ? { ...p, readLately: true } : p)),
     seenPages: unreadSeen(t.mind.seen ?? [], { not: t.startingPoints.map((p) => p.url), readRecently: t.wander.readRecently }),
     notes: noteLines(t),
     ...(t.deps.sessions ? { projects: projectLines(t) } : {}),
