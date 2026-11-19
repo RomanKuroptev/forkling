@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
 import { qaMode } from '../qa/params.ts'
 import { qaRegistry } from '../qa/registry.ts'
-import { SCREEN } from './theme.ts'
+import { paintTitle } from './paintTitle.ts'
 import type { ScreenFace } from './screenFaces.ts'
 
 const PLANE = new THREE.PlaneGeometry(1, 1)
@@ -14,41 +14,7 @@ function titleCard(title: string): THREE.CanvasTexture {
   const canvas = document.createElement('canvas')
   canvas.width = CARD.w
   canvas.height = CARD.h
-  const g = canvas.getContext('2d')!
-  g.fillStyle = SCREEN.off
-  g.fillRect(0, 0, CARD.w, CARD.h)
-  g.fillStyle = SCREEN.on
-  g.textAlign = 'center'
-  g.textBaseline = 'middle'
-  const room = CARD.w - 2 * CARD.pad
-  let px = 44
-  let lines: string[] = []
-  // The biggest letters that fit the title in four lines.
-  for (; px >= 22; px -= 4) {
-    g.font = `700 ${px}px "Press Start 2P", ui-monospace, monospace`
-    lines = []
-    let line = ''
-    for (const word of title.split(/\s+/).filter(Boolean)) {
-      const next = line ? `${line} ${word}` : word
-      if (g.measureText(next).width <= room || !line) line = next
-      else {
-        lines.push(line)
-        line = word
-      }
-    }
-    if (line) lines.push(line)
-    if (lines.length <= 4 && lines.every((l) => g.measureText(l).width <= room)) break
-  }
-  if (lines.length > 4) lines = [...lines.slice(0, 3), `${lines[3]}…`]
-  const lead = px * 1.35
-  lines.forEach((l, i) => {
-    const width = g.measureText(l).width
-    g.save()
-    g.translate(CARD.w / 2, CARD.h / 2 + (i - (lines.length - 1) / 2) * lead)
-    g.scale(width > room ? room / width : 1, 1)
-    g.fillText(l, 0, 0)
-    g.restore()
-  })
+  paintTitle(canvas.getContext('2d')!, title, { x: 0, y: 0, w: CARD.w, h: CARD.h }, { pad: CARD.pad, maxPx: 44, minPx: 22 })
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 4

@@ -3,10 +3,13 @@ import { placeCentre, toLandPlace } from '@forkling/sim'
 import * as THREE from 'three'
 import { buildingModel } from '../world/building.ts'
 import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots } from '../world/exhibitGeometry.ts'
+import { galleryWalls, slotOf, type GalleryWork } from '../world/galleryWall.ts'
 import { cardContent, cardPose, cardShows, type CardShows } from '../world/exhibitCards.ts'
 import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeometry.ts'
+import { compose } from '../world/matrix.ts'
 import { plotInstances } from '../world/plotGeometry.ts'
 import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
+import { COLORS } from '../world/theme.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
 import { plantBoards, type QaPlant } from './plant.ts'
 
@@ -32,9 +35,11 @@ export interface QaObject {
   ref?: string | null
   /** The exhibit's kind in the place file. */
   exhibitKind?: string
-  /** The kind of slot an exhibit stands in (`screen`, `frame`, `shelf`, ...). */
-  slot?: SlotKind
-  /** For a work or project on a screen: what its screen shows as drawn now, its picture or its title, or nothing (a plain lit panel). */
+  /** The kind of slot an exhibit stands in (`screen`, `frame`, `shelf`, ...), or `gallery-wall` for a tile on the gallery wall. */
+  slot?: SlotKind | 'gallery-wall'
+  /** Where an exhibit stands, as a work's `installedIn` names it: `<place>/<room>/<part index>/<slot index>`. A gallery wall tile has none. */
+  at?: string
+  /** For a work or project on a screen or a gallery wall tile: what it shows as drawn, its picture or its title, or nothing (a plain lit panel). */
   shows?: ScreenShows
   /**
    * What an exhibit's card shows (issues 347, 355): a picture, its words, its title, or nothing, and the words on it. Every exhibit
@@ -87,6 +92,10 @@ export interface PlacesSnapshot {
   plant?: QaPlant | null
   /** What each screen face shows once it is drawn (`WorkScreens`), by `<place>/<exhibit>`. */
   screens?: ReadonlyMap<string, ScreenShows>
+  /** The finished works, newest first: each has a tile on the gallery wall. */
+  shelf?: readonly GalleryWork[]
+  /** What each gallery wall tile shows as painted (`GalleryWalls`), by `<place>/<exhibit>/<work>`. */
+  gallery?: ReadonlyMap<string, ScreenShows>
   /** The souvenir files read so far, by an exhibit's ref, and how many works there are (the gallery's line). */
   souvenirs?: ReadonlyMap<string, Souvenir | null>
   workCount?: number
@@ -122,7 +131,17 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
       const id = `${place.id}/${e.id}`
       const onScreen = spot.slotKind === 'screen' && (e.kind === 'work' || e.kind === 'project')
       const card = cardPose(spot) ? cardShows(cardContent(e, spot.slotKind, e.ref ? s.souvenirs?.get(e.ref) : null, s.workCount ?? 0)) : null
-      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
+      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, at: `${place.id}/${e.slot}`, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
+    }
+    // Every finished work has a tile on the gallery wall, a page at a time: listed at its tile, as the drawing places it.
+    if (s.shelf?.length) {
+      for (const wall of galleryWalls(place, s.kit, baseY, s.shelf, outside)) {
+        wall.works.forEach((work, k) => {
+          const slot = slotOf(wall, k)
+          const id = `${place.id}/${wall.exhibit.id}/${work.id}`
+          out.push({ id, kind: 'work', place: place.id, ref: `works/${work.id}`, exhibitKind: 'gallery', slot: 'gallery-wall', shows: s.gallery?.get(id) ?? 'nothing', name: work.title, box: instancesBox([{ shape: 'box', matrix: compose(slot.position, [0, wall.rotY, 0], [slot.size[0], slot.size[1], 0.01]), color: COLORS.ink }]), visible: inside, material: 'solid' })
+        })
+      }
     }
     const bar = buildingModel(place, s.kit, baseY)?.titleBar
     if (bar) {

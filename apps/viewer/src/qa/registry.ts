@@ -21,6 +21,8 @@ export const qaRegistry = {
   objects: new Map<string, { kind: QaKind; object: Object3D }>(),
   /** What each work screen shows as drawn (`WorkScreens`), by `<place>/<exhibit>`: its picture once loaded, else its title. */
   screens: new Map<string, ScreenShows>(),
+  /** What each gallery wall tile shows as painted (`GalleryWalls`), by `<place>/<exhibit>/<work>`: its picture once loaded, else its title. */
+  gallery: new Map<string, ScreenShows>(),
   player: null as null | {
     position(): Vec3
     look(): { yaw: number; pitch: number }

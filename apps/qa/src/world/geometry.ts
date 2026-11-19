@@ -122,7 +122,9 @@ export function geometryFindings(input: GeometryInput): CheckResult[] {
   for (const w of input.works) {
     if (w.status !== 'shelf' || !w.installedIn) continue
     const place = w.installedIn.split('/')[0]
-    if (!works.some((s) => s.ref === `works/${w.id}` && s.place === place)) add('world.work-not-installed', w.id, 'major', `The work ${w.id} is not where its file says`, `Its meta.json says it is installed in ${w.installedIn}, but ${place} shows no such work.`, 'The site and the diary send visitors to a work that is not there.', 'code', `works/${w.id}/meta.json`)
+    // At the slot its file names (`at`, `<place>/<room>/<part>/<slot>`), not just anywhere with its ref: a tile on the gallery wall
+    // shows every finished work, so it never counts as the work being installed. A viewer that gives no `at` is matched by place.
+    if (!works.some((s) => s.ref === `works/${w.id}` && s.place === place && s.slot !== 'gallery-wall' && (s.at === undefined || s.at === w.installedIn))) add('world.work-not-installed', w.id, 'major', `The work ${w.id} is not where its file says`, `Its meta.json says it is installed in ${w.installedIn}, but ${place} shows no such work.`, 'The site and the diary send visitors to a work that is not there.', 'code', `works/${w.id}/meta.json`)
   }
   const finished = input.works.filter((w) => w.status === 'shelf')
   const unseen = finished.filter((w) => !shownRefs.has(`works/${w.id}`))

@@ -209,6 +209,29 @@ describe('loadWorld work pictures (issue 352)', () => {
   })
 })
 
+describe('loadWorld finished works for the gallery wall (issues 291, 307)', () => {
+  it('reads the finished works newest first, with whether each has a picture, leaving out scraps, put-away works and files that do not fit', async () => {
+    const meta = (id: string, made: string, over: Record<string, unknown> = {}) => ({ id, title: `Title ${id}`, kind: 'art', about: `About ${id}.`, interest: null, made, status: 'shelf', size: 'sketch', ...over })
+    const result = await loadWorld(
+      ref,
+      deps({
+        'forkling.json': forkling,
+        'works/older/meta.json': meta('older', '2026-11-10T10:00:00Z'),
+        'works/older/thumb.png': 'x',
+        'works/newer/meta.json': meta('newer', '2026-11-12T10:00:00Z'),
+        'works/thrown/meta.json': meta('thrown', '2026-11-13T10:00:00Z', { status: 'scrap', scrapReason: 'It did not run.' }),
+        'works/away/meta.json': meta('away', '2026-11-14T10:00:00Z', { status: 'retired', retireReason: 'Roman took it down.' }),
+        'works/broken/meta.json': { id: 'broken' },
+        'works/other/meta.json': meta('not-other', '2026-11-15T10:00:00Z'),
+      }),
+    )
+    expect(result.ok && result.world.shelf).toEqual([
+      { id: 'newer', title: 'Title newer', about: 'About newer.', made: '2026-11-12T10:00:00Z', thumb: false },
+      { id: 'older', title: 'Title older', about: 'About older.', made: '2026-11-10T10:00:00Z', thumb: true },
+    ])
+  })
+})
+
 describe('loadWorld requests (W6 slice 8)', () => {
   const request = (over: Record<string, unknown> = {}) =>
     formatRequest(PlaceRequest.parse({ id: 'lantern-hall', kind: 'place', name: 'Lantern Hall', purpose: 'Where the lidar finds hold up.', tags: ['maya lidar'], chunk: [1, 0], related: [], souvenirs: [], written: '2026-11-14T10:00:00Z', status: 'open', statusAt: null, note: null, body: 'I want a lamp over each find.', ...over }))

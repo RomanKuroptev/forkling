@@ -17,13 +17,15 @@ import { nightFactor } from './night.ts'
 import { Signs } from './Signs.tsx'
 import { TitleBars } from './TitleBars.tsx'
 import { WorkScreens } from './WorkScreens.tsx'
+import { GalleryWalls } from './GalleryWalls.tsx'
+import { galleryWalls, type GalleryWall, type GalleryWork } from './galleryWall.ts'
 import { screenFaces } from './screenFaces.ts'
 import { localFilesBase, worldFileUrl } from './worldData.ts'
 import { ExhibitCards } from './ExhibitCards.tsx'
 import { cardFaces } from './exhibitCards.ts'
 import { useSouvenirs } from './useSouvenirs.ts'
 import { signBoards } from './signGeometry.ts'
-import { ROUND_SEGMENTS, SPHERE_SEGMENTS, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
+import { ROUND_SEGMENTS, SPHERE_SEGMENTS, exteriorInstances, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
 import { worldLand } from './worldLand.ts'
 import { qaMode } from '../qa/params.ts'
@@ -216,16 +218,22 @@ export function Places() {
   // The audit harness (`?qa=1`) lists the places as they are drawn now (`window.__qa.scene()`).
   useEffect(() => {
     if (!qaMode) return
-    qaRegistry.places = { places: world.places, kit, heightAt: (x, z) => land.heightAt(x, z), interiors, nowMs, plots, wireAlways: WIRE_ALWAYS, plant: qaRegistry.plant, screens: qaRegistry.screens, souvenirs, workCount: world.workIds.length }
+    qaRegistry.places = { places: world.places, kit, heightAt: (x, z) => land.heightAt(x, z), interiors, nowMs, plots, wireAlways: WIRE_ALWAYS, plant: qaRegistry.plant, screens: qaRegistry.screens, souvenirs, workCount: world.workIds.length, shelf: world.shelf, gallery: qaRegistry.gallery }
     qaRegistry.models.drawn = loadedFiles.size
   }, [world, land, interiors, nowMs, plots, loadedFiles, souvenirs])
 
-  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS, wireAlways: WIRE_ALWAYS }), [world, land, interiors, loadedFiles, nowMs, plots])
+  const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS, wireAlways: WIRE_ALWAYS, shelf: world.shelf }), [world, land, interiors, loadedFiles, nowMs, plots])
   // The board of each place's sign: its name and its sign text, painted on one texture.
   const baseOfPlace = useCallback((p: (typeof world.places)[number]) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, [land])
   // What each work screen in a drawn inside shows: the work's thumbnail, or its title (issues 352, 341, 362).
   const faces = useMemo(() => screenFaces(world.places.filter((p) => interiors.has(p.id)), kit, baseOfPlace, new Set(world.workThumbs)), [world, interiors, baseOfPlace])
   const urlOf = useCallback((path: string) => worldFileUrl(world, path, localFilesBase(world, location.origin, import.meta.env.BASE_URL)), [world])
+  // Every finished work, a page at a time, on the gallery wall over the gallery terminal (spec 7.2, issues 291, 307).
+  const gallery = useMemo(
+    () => world.places.filter((p) => interiors.has(p.id)).flatMap((p) => galleryWalls(p, kit, baseOfPlace(p), world.shelf, exteriorInstances(p, kit, baseOfPlace(p))).map((wall) => ({ key: `${p.id}/${wall.exhibit.id}`, wall, place: p }))),
+    [world, interiors, baseOfPlace],
+  )
+  const openWork = useCallback((place: (typeof world.places)[number], wall: GalleryWall, work: GalleryWork) => void panelStore.open({ kind: 'exhibit', place, exhibit: { ...wall.exhibit, kind: 'work', ref: `works/${work.id}`, label: work.title } }, world), [world])
   // Under ?qa=1 a fixture may plant a lifted sign (`qa/plant.ts`); in normal mode the plant is null and the boards are as made.
   const boards = useMemo(() => plantBoards(signBoards(world.places, (p) => { const [x, z] = placeCentre(toLandPlace(p)); return land.heightAt(x, z) }, kit), qaRegistry.plant), [world, land])
   const walls = useMemo(
@@ -296,6 +304,7 @@ export function Places() {
       <Signs boards={boards} missingTexture={qaRegistry.plant?.missingTexture.includes('signs') ?? false} />
       <TitleBars places={world.places} baseOf={baseOfPlace} />
       <WorkScreens faces={faces} urlOf={urlOf} />
+      <GalleryWalls walls={gallery} clock={clock} urlOf={urlOf} open={openWork} />
       <ExhibitCards faces={cards} />
       <Shapes shape="box" data={scene.box} />
       <Shapes shape="sphere" data={scene.sphere} />

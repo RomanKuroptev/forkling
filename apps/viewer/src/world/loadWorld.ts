@@ -1,5 +1,6 @@
-import { Forkling, forklingPackIssues, Goals, parseRequest, Place, type PlaceRequest, repairPlaceJson, type SpeciesPack } from '@forkling/schema'
+import { Forkling, forklingPackIssues, Goals, parseRequest, Place, type PlaceRequest, repairPlaceJson, type SpeciesPack, WorkMeta } from '@forkling/schema'
 import { starterPlaces } from '@forkling/sim'
+import type { GalleryWork } from './galleryWall.ts'
 import type { WorldRef } from './route.ts'
 
 export interface LoadedWorld {
@@ -18,6 +19,8 @@ export interface LoadedWorld {
   workIds: string[]
   /** The ids of the works that have a thumbnail (`works/<id>/thumb.png`), in name order: a screen a work is installed on shows it. */
   workThumbs: string[]
+  /** The finished works (status `shelf`), newest first: every one hangs on the gallery wall (spec 7.2, issue 291). */
+  shelf: GalleryWork[]
   /** `mind/goals.json`, or empty for a world whose forkling has no mind yet. */
   goals: Goals
   /** What it has made, newest first. Only the latest few are read, and one that doesn't fit is left out, never an error. */
@@ -53,6 +56,8 @@ export function placesOrStarter(places: Place[]): Place[] {
 const MAX_PLACES = 64
 /** The most requests read; the open ones are at most 2, so this is a ceiling, not a limit anyone meets. */
 const MAX_REQUESTS = 24
+/** The most work files read for the gallery wall: a year of works at a few a day. */
+const MAX_WORKS = 400
 
 class LoadFailure extends Error {
   constructor(readonly error: WorldError) {
@@ -189,6 +194,25 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
       .filter((r): r is PlaceRequest => r !== null)
       .sort((a, b) => a.id.localeCompare(b.id))
 
+    // The finished works, read like requests (one that does not fit is left out): each hangs on the gallery wall.
+    const workIds = paths.flatMap((p) => /^works\/([^/]+)\/meta\.json$/.exec(p)?.[1] ?? []).sort()
+    const workThumbs = paths.flatMap((p) => /^works\/([^/]+)\/thumb\.png$/.exec(p)?.[1] ?? []).sort()
+    const thumbs = new Set(workThumbs)
+    const shelf = (
+      await Promise.all(
+        workIds.slice(-MAX_WORKS).map(async (id): Promise<GalleryWork | null> => {
+          try {
+            const parsed = WorkMeta.safeParse(await raw(deps, ref, commit.sha, `works/${id}/meta.json`))
+            return parsed.success && parsed.data.status === 'shelf' && parsed.data.id === id ? { id, title: parsed.data.title, about: parsed.data.about, made: parsed.data.made, thumb: thumbs.has(id) } : null
+          } catch {
+            return null
+          }
+        }),
+      )
+    )
+      .filter((w): w is GalleryWork => w !== null)
+      .sort((a, b) => b.made.localeCompare(a.made) || a.id.localeCompare(b.id))
+
     if (problems.length > 0 || !forkling) {
       problems.sort((a, b) => (a.file === 'forkling.json' ? -1 : b.file === 'forkling.json' ? 1 : a.file.localeCompare(b.file)))
       return fail({
@@ -209,8 +233,9 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         pack: forkling.pack,
         places: placesOrStarter(places),
         requests,
-        workIds: paths.flatMap((p) => /^works\/([^/]+)\/meta\.json$/.exec(p)?.[1] ?? []).sort(),
-        workThumbs: paths.flatMap((p) => /^works\/([^/]+)\/thumb\.png$/.exec(p)?.[1] ?? []).sort(),
+        workIds,
+        workThumbs,
+        shelf,
         goals: goals ?? {},
       },
     }

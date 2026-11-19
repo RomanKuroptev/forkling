@@ -9,7 +9,9 @@ export interface SceneObject {
   exhibitKind?: string
   /** The kind of slot an exhibit stands in (`screen`, `frame`, `shelf`, ...). */
   slot?: string
-  /** For a work or project on a screen: what the screen shows as drawn now. */
+  /** Where an exhibit stands, as a work's `installedIn` names it: `<place>/<room>/<part index>/<slot index>`. A gallery wall tile has none. */
+  at?: string
+  /** For a work or project on a screen, or a work on a gallery wall tile: what it shows as drawn. */
   shows?: 'picture' | 'title' | 'nothing'
   /** What an exhibit's card shows and the words on it; every exhibit but a work screen has one. */
   card?: { shows: 'picture' | 'text' | 'title' | 'nothing'; text: string }
