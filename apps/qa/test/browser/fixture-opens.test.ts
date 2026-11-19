@@ -18,7 +18,7 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('a fixture world in the real vie
   }, 180_000)
   afterAll(async () => {
     await browser?.close()
-  })
+  }, 60_000)
 
   it('day-0 opens, gets ready and lists its places, rooms and Merge', async () => {
     const world = materialize('day-0', join(mkdtempSync(join(tmpdir(), 'qa-open-')), 'world'))
