@@ -16,6 +16,8 @@ export interface LoadedWorld {
   requests: PlaceRequest[]
   /** The ids of the works in the repo (`works/<id>/meta.json`), in name order: what the Workshop's terminal lists. Their files are read when it opens. */
   workIds: string[]
+  /** The ids of the works that have a thumbnail (`works/<id>/thumb.png`), in name order: a screen a work is installed on shows it. */
+  workThumbs: string[]
   /** `mind/goals.json`, or empty for a world whose forkling has no mind yet. */
   goals: Goals
   /** What it has made, newest first. Only the latest few are read, and one that doesn't fit is left out, never an error. */
@@ -208,6 +210,7 @@ export async function loadWorld(ref: WorldRef, deps: LoadDeps): Promise<LoadResu
         places: placesOrStarter(places),
         requests,
         workIds: paths.flatMap((p) => /^works\/([^/]+)\/meta\.json$/.exec(p)?.[1] ?? []).sort(),
+        workThumbs: paths.flatMap((p) => /^works\/([^/]+)\/thumb\.png$/.exec(p)?.[1] ?? []).sort(),
         goals: goals ?? {},
       },
     }

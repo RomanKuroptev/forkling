@@ -191,7 +191,9 @@ describe('the manuals offered to a sketch (spec 6.1: for tinker only; 12.4: untr
     const asked: string[] = []
     // The morning tick reads front pages through the same web; only the manuals are counted here.
     const manuals = () => asked.filter((u) => /p5js\.org|tonejs\.github\.io|threejs\.org|developer\.mozilla\.org/.test(u))
-    return { manuals, web: { fetchImpl: (async (url: string) => (asked.push(url), answer(url))) as FetchImpl, sleep: async () => undefined } }
+    // No host here has a robots.txt (a 404, which sets no rules); the fetcher's robots.txt has its own tests in web-fetch.test.ts.
+    const fetchImpl = (async (url: string) => (url.endsWith('/robots.txt') ? new Response('not found', { status: 404 }) : (asked.push(url), answer(url)))) as FetchImpl
+    return { manuals, web: { fetchImpl, sleep: async () => undefined } }
   }
 
   it('reads the manuals of the first two libraries it has never used, and shows them to the call as data', async () => {

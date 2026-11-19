@@ -56,6 +56,8 @@ function webWith(extra: Record<string, string> = {}) {
     web: {
       sleep: async () => {},
       fetchImpl: async (url: string) => {
+        // No host here has a robots.txt (a 404, which sets no rules); the fetcher's robots.txt has its own tests in web-fetch.test.ts.
+        if (url.endsWith('/robots.txt')) return new Response('not found', { status: 404 })
         asked.push(url)
         const body = pages[url]
         return body === undefined ? new Response('not here', { status: 404 }) : new Response(body, { status: 200, headers: { 'content-type': 'text/html' } })

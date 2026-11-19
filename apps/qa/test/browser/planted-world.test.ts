@@ -85,6 +85,19 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('planted flaws in day-7, found b
     expect(found.filter((f) => f.id === 'world.budget')).toEqual([])
   }, 300_000)
 
+  it('a souvenir with no words to show on its card (files), and clean day-7 has no blank exhibit (issues 347, 355)', async () => {
+    const clean = await run(day7())
+    expect(clean.filter((f) => f.id === 'world.exhibit-blank')).toEqual([])
+    const world = day7()
+    edit(world, 'places/home.json', (p) => {
+      const first = (p.exhibits as { kind: string; ref: string | null; label: string }[]).find((e) => e.kind === 'souvenir')!
+      first.ref = null
+      first.label = ''
+    })
+    const found = await run(world)
+    expect(found.filter((f) => f.id === 'world.exhibit-blank').map((f) => f.fingerprint)).toEqual(['world.exhibit-blank|day-7|home/canopy-botany-note'])
+  }, 240_000)
+
   it('a floating sign (planted in qa.json: the files cannot say it)', async () => {
     const world = day7()
     edit(world, 'qa.json', (q) => (q.plant = { raise: [{ id: 'home/sign', dy: 3 }] }))

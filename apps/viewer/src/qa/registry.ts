@@ -1,6 +1,6 @@
 import type { Object3D } from 'three'
 import type { QaPlant } from './plant.ts'
-import type { PlacesSnapshot, QaKind } from './sceneList.ts'
+import type { PlacesSnapshot, QaKind, ScreenShows } from './sceneList.ts'
 
 export type Vec3 = [number, number, number]
 
@@ -19,6 +19,8 @@ export const qaRegistry = {
   /** Kit model files that have loaded or failed, and how many there are to wait for. */
   models: { settled: 0, total: 0, drawn: 0 },
   objects: new Map<string, { kind: QaKind; object: Object3D }>(),
+  /** What each work screen shows as drawn (`WorkScreens`), by `<place>/<exhibit>`: its picture once loaded, else its title. */
+  screens: new Map<string, ScreenShows>(),
   player: null as null | {
     position(): Vec3
     look(): { yaw: number; pitch: number }

@@ -7,10 +7,11 @@ import { MANUAL_HOSTS, MANUAL_START, manualPage, manualPagesFor } from '../src/w
 
 const PAGE = '<html><head><title>p5 reference</title></head><body><nav><a href="/reference/p5/circle/">circle</a></nav><p>circle(x, y, d) draws a circle.</p></body></html>'
 
-/** A fetch that answers every URL with a page and remembers what it was asked. */
+/** A fetch that answers every URL with a page and remembers what it was asked (robots.txt aside: no host here has one). */
 function web(answer: (url: string) => Response | Promise<Response> = () => new Response(PAGE, { headers: { 'content-type': 'text/html' } })) {
   const asked: string[] = []
   const fetchImpl: FetchImpl = async (url) => {
+    if (url.endsWith('/robots.txt')) return new Response('not found', { status: 404 })
     asked.push(url)
     return answer(url)
   }

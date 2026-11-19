@@ -202,6 +202,13 @@ describe('loadWorld works (W5)', () => {
   })
 })
 
+describe('loadWorld work pictures (issue 352)', () => {
+  it('lists the works that have a thumbnail, so a screen can show it', async () => {
+    const result = await loadWorld(ref, deps({ 'forkling.json': forkling, 'works/b/meta.json': {}, 'works/b/thumb.png': 'x', 'works/a/meta.json': {}, 'works/c/thumb.png': 'x', 'notes/works/z/thumb.png': 'x' }))
+    expect(result.ok && result.world.workThumbs).toEqual(['b', 'c'])
+  })
+})
+
 describe('loadWorld requests (W6 slice 8)', () => {
   const request = (over: Record<string, unknown> = {}) =>
     formatRequest(PlaceRequest.parse({ id: 'lantern-hall', kind: 'place', name: 'Lantern Hall', purpose: 'Where the lidar finds hold up.', tags: ['maya lidar'], chunk: [1, 0], related: [], souvenirs: [], written: '2026-11-14T10:00:00Z', status: 'open', statusAt: null, note: null, body: 'I want a lamp over each find.', ...over }))
