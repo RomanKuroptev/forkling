@@ -4,8 +4,9 @@ Status: plan approved by the coordinator (19 November), including fix PRs mergin
 
 ## Progress
 
-- **T1** (branch `claude/qa-t-triage`): built. `apps/qa/src/triage/` (tracker, gh-tracker, marker, plan, apply, command, run-info), the sample findings file and PNG, with tests. `pnpm qa fast` now also writes `qa-out/run.json`. Changes from the plan: `info` findings never open issues. Real read-only dry run on the sample (19 November): 7 issues to open, 2 of them `needs-roman`, 4 picks, no existing issue touched.
-- T2, T3: not started.
+- **T1** (#272, branch `claude/qa-t-triage`): built. `apps/qa/src/triage/` (tracker, gh-tracker, marker, plan, apply, command, run-info), the sample findings file and PNG, with tests. `pnpm qa fast` now also writes `qa-out/run.json`. Changes from the plan: `info` findings never open issues. Real read-only dry run on the sample (19 November): 7 issues to open, 2 of them `needs-roman`, 4 picks, no existing issue touched.
+- **T2** (branch `claude/qa-t-digest`): built. `gather.ts`, `fix-try.ts`, `digest.ts`, `config.ts`, `qa/triage.json`; `Tracker.getIssue`; the marker keeps `fixedBy`, so the close says "fixed by #PR" (cleared if the issue comes back). Other lanes can put a short `qa-out/behaviour/summary.md` and `qa-out/sources/summary.md` in the run; the digest shows their first 15 lines. A `needs-roman` issue's recommended answer is the line `**Recommended answer:** …` in its body (the skill writes it). After a dry-run triage the digest says nothing changed on GitHub.
+- T3: not started.
 
 Built against `apps/qa/test/fixtures/sample-findings.json` (a stand-in with one finding per area and fixKind, a `qa.check-did-not-run`, a PNG evidence file and a `needs-roman` case) until lanes W, B and S merge real findings. Every GitHub call goes through one small interface (`Tracker`); tests use an in-memory fake and never touch GitHub.
 
