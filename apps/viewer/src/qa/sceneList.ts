@@ -13,6 +13,7 @@ import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
 import { COLORS } from '../world/theme.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
 import { plantBoards, type QaPlant } from './plant.ts'
+import { settledPlace } from '../world/insideWalls.ts'
 
 /**
  * What `window.__qa.scene()` lists (docs/spec/audit/spec.md 7.1): every place, its doorway, room, drawn part, exhibit, sign, label and plot, Merge and
@@ -59,6 +60,8 @@ export interface QaObject {
   inDoorway?: { holds: string[] }
   /** A place's or room's name, an exhibit's label. */
   name?: string
+  /** For a place: its footprint on the ground, in world meters (its walls stand on the edge: the outer 0.8 m is wall). */
+  footprint?: { x0: number; z0: number; x1: number; z1: number }
   /** For a place: its palette's wall colour, which the inside walls must read close to by day (`world.room-wall-colour`). */
   wall?: string
   /** The words painted on a sign or a title bar. */
@@ -123,14 +126,16 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     const [x, z] = placeCentre(toLandPlace(p))
     return s.heightAt(x, z)
   }
-  for (const place of s.places) {
+  for (const raw of s.places) {
+    // As drawn: rooms and furniture inside the walls (`insideWalls.ts`).
+    const place = settledPlace(raw, s.kit)
     const baseY = baseOf(place)
     const [px, pz] = placeCentre(toLandPlace(place))
     const wire = wireframeInstances(place, s.kit, baseY, s.nowMs, s.wireAlways)
     const outside = exteriorInstances(place, s.kit, baseY)
     const wired = wire !== null && wire.length > 0
     const wall = (s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0])?.colors.wall
-    out.push({ id: place.id, kind: 'place', name: place.name, ...(wall ? { wall } : {}), box: instancesBox(outside), visible: true, material: wired ? 'wireframe' : 'solid' })
+    out.push({ id: place.id, kind: 'place', name: place.name, ...(wall ? { wall } : {}), footprint: { x0: round(px - place.exterior.footprint[0] / 2), z0: round(pz - place.exterior.footprint[1] / 2), x1: round(px + place.exterior.footprint[0] / 2), z1: round(pz + place.exterior.footprint[1] / 2) }, box: instancesBox(outside), visible: true, material: wired ? 'wireframe' : 'solid' })
     const inside = s.interiors.has(place.id)
     const height = floorHeight(place)
     const door = doorwayBox(place, baseY)

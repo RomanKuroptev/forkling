@@ -10,6 +10,7 @@ import { galleryWalls, wallInstances, type GalleryWork } from './galleryWall.ts'
 import { FLOOR_BELOW, FLOOR_INSET, FLOOR_TOP, SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
 import { partInDoorway } from './doorway.ts'
+import { settledPlace } from './insideWalls.ts'
 
 export { SHAPES, floorHeight, type Instance, type Shape }
 
@@ -146,6 +147,7 @@ export interface ModelInstance {
  * is a model instance once its file is in `models` (it has loaded), and its primitives until then, or for good if it never loads.
  */
 export function interiorParts(place: Place, kit: Kit, baseY: number, models: ReadonlySet<string> = new Set(), opts: { lampsOn?: boolean } = {}): { instances: Instance[]; models: ModelInstance[] } {
+  place = settledPlace(place, kit)
   const { palette } = look(place, kit)
   // Lamps that are off are dark: the glow of their palette is replaced by a dull grey.
   const dark: KitPalette = { ...palette, colors: { ...palette.colors, glow: DARK_GLOW } }
@@ -201,6 +203,7 @@ export interface LampSpot {
  * viewer puts warm lights at the ones nearest the visitor, so a room at night has pools of lamp light (issue 361).
  */
 export function lampSpots(place: Place, kit: Kit, baseY: number, lampsOn: boolean): LampSpot[] {
+  place = settledPlace(place, kit)
   if (!lampsOn) return []
   const { palette } = look(place, kit)
   const [px, pz] = placeCentre(toLandPlace(place))

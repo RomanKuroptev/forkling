@@ -5,6 +5,7 @@ import { floorHeight, type Instance } from './kitBase.ts'
 import { compose, multiply } from './matrix.ts'
 import { TERMINAL_TILT, cardPose } from './exhibitCards.ts'
 import { partInDoorway } from './doorway.ts'
+import { settledPlace } from './insideWalls.ts'
 
 /**
  * What stands in a place's slots, and how neglect shows (spec 4.4, 5.1, 4.6), as plain arrays like the rest of the kit's geometry.
@@ -24,6 +25,7 @@ export interface ExhibitSpot {
 
 /** Each exhibit at its slot (`room / part index / slot index`) on its part, in the world. An exhibit whose slot is not there is left out. */
 export function exhibitSpots(place: Place, kit: Kit, baseY: number): ExhibitSpot[] {
+  place = settledPlace(place, kit)
   const [px, pz] = placeCentre(toLandPlace(place))
   const height = floorHeight(place)
   const spots: ExhibitSpot[] = []

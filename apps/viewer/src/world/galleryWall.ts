@@ -2,6 +2,7 @@ import type { Kit, KitPalette, Place } from '@forkling/schema'
 import { placeCentre, toLandPlace } from '@forkling/sim'
 import { floorHeight, type Instance } from './kitBase.ts'
 import { compose } from './matrix.ts'
+import { settledPlace } from './insideWalls.ts'
 
 /** A finished work (status `shelf`), as the gallery wall needs it. */
 export interface GalleryWork {
@@ -140,6 +141,7 @@ function layout(n: number, w: number, h: number): { cols: number; rows: number; 
  */
 export function galleryWalls(place: Place, kit: Kit, baseY: number, shelf: readonly GalleryWork[], outside: readonly Instance[]): GalleryWall[] {
   if (shelf.length === 0) return []
+  place = settledPlace(place, kit)
   const [px, pz] = placeCentre(toLandPlace(place))
   const height = floorHeight(place)
   const [fw, fd] = place.exterior.footprint
