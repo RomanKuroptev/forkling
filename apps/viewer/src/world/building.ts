@@ -207,7 +207,8 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     add('front', 'box', [px, baseY + fh - TITLE_BAR / 2 + SKIN, frontZ + 0.04], [fwid, TITLE_BAR + 2 * SKIN, 0.62], c.accent)
     for (let k = 0; k < 3; k++) add('front', 'box', [px + fwid / 2 - 0.55 - k * 0.6, baseY + fh - TITLE_BAR / 2, frontZ + 0.4], [0.4, 0.4, 0.3], c.marble)
     const nameW = Math.max(1, fwid - 2.6)
-    titleBar = { text: place.name.toUpperCase().slice(0, 24), position: [px - fwid / 2 + 0.3 + nameW / 2, baseY + fh - TITLE_BAR / 2, frontZ + 0.37], width: nameW, height: TITLE_BAR * 0.6 }
+    // The whole name, on one line: the painter squeezes a long one into the bar, so it is never cut (issue 366).
+    titleBar = { text: place.name.trim().replace(/\s+/g, ' ').toUpperCase(), position: [px - fwid / 2 + 0.3 + nameW / 2, baseY + fh - TITLE_BAR / 2, frontZ + 0.37], width: nameW, height: TITLE_BAR * 0.6 }
     const screenW = Math.max(1, fwid - 1.5)
     // The screen fills the panel under the title bar and, when that is too little for 16 percent of the front, runs down over the front wall.
     const barTop = fh - TITLE_BAR - 0.1

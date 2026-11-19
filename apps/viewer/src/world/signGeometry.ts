@@ -1,10 +1,12 @@
 import type { Kit, Place } from '@forkling/schema'
+import { signLine } from '@forkling/sim'
 import { WINDOW } from './theme.ts'
 import { SIGN_BOTTOM, SIGN_H, SIGN_W, signSpot } from './exhibitGeometry.ts'
 
 /**
  * What a place's sign says and how it is painted, as plain data so it can be tested without a renderer. The board shows the place's
- * name in large type and, below it, the sign text a tend can rewrite (`exterior.sign`). The words are laid out in a "design cell"
+ * name in large type and, below it, one line about the place (`signLine` in packages/sim): the sign text a tend can rewrite
+ * (`exterior.sign`) when it says something of its own, otherwise what the place is for, never the name twice or another place's name. The words are laid out in a "design cell"
  * of 512 by 236 pixels; the atlas scales it onto each sign's own smaller cell.
  */
 export const SIGN_CELL = { w: 512, h: 236 } as const
@@ -74,9 +76,9 @@ const cut = (lines: string[], max: number): string[] => (lines.length <= 2 ? lin
  * The name and the sign text of a place laid out on its board: the largest type that puts the whole name on at most two lines
  * and the whole sign text below it on at most two smaller ones, all inside the cell. Text is plain characters, never markup.
  */
-export function signLayout(place: Place): SignLayout {
+export function signLayout(place: Place, places: readonly Pick<Place, 'id' | 'name'>[] = [place]): SignLayout {
   const nameText = squash(place.name)
-  const signText = place.state.closed ? squash(`Closed: ${place.state.closed.reason}`) : squash(place.exterior.sign)
+  const signText = squash(signLine(place, places))
   const room = SIGN_CELL.h - TITLE_BAR - 2 * VERTICAL_PAD
   let chosen: { namePx: number; name: string[]; textPx: number; text: string[] } | undefined
   for (const namePx of NAME_SIZES) {
@@ -166,7 +168,7 @@ export function signBoards(places: readonly Place[], baseOf: (place: Place) => n
       id: place.id,
       position: [spot[0], spot[1] + SIGN_BOTTOM + SIGN_H / 2, spot[2] + FACE],
       size: [SIGN_W, SIGN_H],
-      layout: signLayout(place),
+      layout: signLayout(place, places),
       colors: signColors(palette.colors.wood),
     }
   })
