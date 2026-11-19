@@ -70,7 +70,7 @@ export function galleryPanel(metas: readonly WorkMeta[], base: string | null): P
 export function signPanel(place: Place, base: string | null, nowMs?: number): PanelContent {
   return {
     kind: 'sign',
-    heading: place.exterior.sign || place.name,
+    heading: place.name,
     purpose: place.purpose,
     // Being built: that, and how long is left (issue 331).
     building: buildingWords(place.state.construction, nowMs),

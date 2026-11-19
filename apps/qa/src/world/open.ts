@@ -3,7 +3,8 @@ import type { Browser, Page } from 'playwright'
 /** One entry of `window.__qa.scene()` (apps/viewer/src/qa/sceneList.ts). */
 export interface SceneObject {
   id: string
-  kind: 'place' | 'room' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor'
+  /** `column`: a solid piece in front of a building's front (porch columns, an arch), listed for the hidden-sign check. */
+  kind: 'place' | 'room' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor' | 'column'
   place?: string
   ref?: string | null
   exhibitKind?: string

@@ -1,5 +1,5 @@
 import type { Place, WorkMeta } from '@forkling/schema'
-import { boxGap, buildingWords, footprintOverlap, inView, volumeOverlap, type Box, type Vec3 } from '@forkling/sim'
+import { boardHiddenShare, boxGap, buildingWords, footprintOverlap, inView, signLine, signLineProblem, volumeOverlap, type Box, type Vec3 } from '@forkling/sim'
 import type { CheckResult } from '../report/finding.ts'
 import type { SceneObject } from './open.ts'
 
@@ -109,10 +109,17 @@ export function geometryFindings(input: GeometryInput): CheckResult[] {
   for (const s of of('sign')) {
     const file = files.get(s.place ?? '')
     if (!file) continue
-    // A place being built says so in place of its sign text, and how long is left (issue 331).
-    const words = file.state.closed ? `Closed: ${file.state.closed.reason}` : (buildingWords(file.state.construction, input.now) ?? file.exterior.sign)
-    const expected = squash(`${file.name} ${words}`)
+    // The line under the name is the sign text Merge wrote, or what the place is for when that only repeats a name (`signLine`).
+    // A place being built (and not closed) says so instead, and how long is left (issue 331).
+    const building = file.state.closed ? null : buildingWords(file.state.construction, input.now)
+    const expected = squash(`${file.name} ${building ?? signLine(file, input.places)}`)
     const shown = squash(s.text ?? '')
+    // Under the name, a sign says something about the place: never the name again, never another place (issues 359, 363).
+    const name = squash(file.name)
+    const line = shown.toLowerCase().startsWith(name.toLowerCase()) ? shown.slice(name.length).trim() : shown
+    const problem = signLineProblem(line, file, input.places)
+    if (problem === 'repeats-name') add('world.sign-repeats-name', s.id, 'major', `The sign of ${file.id} only says its name again`, `It shows "${shown}": the line under the name is the name again.`, 'With the title bar above the door a visitor reads one word three times and nothing about what the place is for.', 'code', `places/${file.id}.json`)
+    else if (problem) add('world.sign-names-other', s.id, 'major', `The sign of ${file.id} names another place`, `It shows "${shown}", which names ${problem.names}.`, 'A visitor at the door reads the name of another place and cannot tell which building they are at.', 'code', `places/${file.id}.json`)
     if (shown.includes('…')) add('world.label-cut', s.id, 'minor', `The sign ${s.id} is cut short`, `It shows "${shown}"; the file says "${expected}".`, 'A visitor reads half a sentence.', 'look', `places/${file.id}.json`)
     else if (shown.replace(/ /g, '') !== expected.replace(/ /g, '')) add('world.label-text', s.id, 'major', `The sign ${s.id} does not say what its file says`, `It shows "${shown}"; the file says "${expected}".`, 'A visitor reads words Merge did not write.', 'code', `places/${file.id}.json`)
   }
@@ -148,6 +155,15 @@ export function geometryFindings(input: GeometryInput): CheckResult[] {
   if (unseen.length) add('world.work-shown', '', 'major', 'Finished works are shown nowhere in the 3D world', `${unseen.length} of ${finished.length} finished works hang on no screen, frame or shelf (only on the site or in a gallery list): ${unseen.slice(0, 10).map((w) => w.id).join(', ')}${unseen.length > 10 ? ', ...' : ''}.`, 'A visitor walking the world never sees most of what Merge made.', 'code')
   // The fingerprint of the count finding has no key part.
   for (const f of out) if (f.fingerprint.endsWith('|')) f.fingerprint = f.fingerprint.slice(0, -1)
+
+  // Nothing of a building stands between the path and its sign (issues 356, 366): seen from 6 m straight in front at eye height,
+  // no porch column, arch or screen hides any of the board.
+  const columns = of('column')
+  for (const s of of('sign')) {
+    const [x, , z] = centre(s.box)
+    const share = boardHiddenShare(s.box, input.ground(x, z).y, columns.map((c) => c.box))
+    if (share > 0) add('world.sign-hidden', s.id, 'major', `Columns hide the sign ${s.id}`, `From 6 m straight in front of it, ${Math.round(share * 100)}% of the board is behind a column or other piece of its building.`, 'A visitor cannot read the name of the place from its front.', 'look', s.place ? `places/${s.place}.json` : undefined)
+  }
 
   // Small parts that touch nothing (a sign far from its place).
   for (const s of of('sign')) {

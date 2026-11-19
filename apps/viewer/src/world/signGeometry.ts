@@ -1,11 +1,12 @@
 import type { Kit, Place } from '@forkling/schema'
-import { buildingWords } from '@forkling/sim'
+import { buildingWords, signLine } from '@forkling/sim'
 import { WINDOW } from './theme.ts'
 import { SIGN_BOTTOM, SIGN_H, SIGN_W, signSpot } from './exhibitGeometry.ts'
 
 /**
  * What a place's sign says and how it is painted, as plain data so it can be tested without a renderer. The board shows the place's
- * name in large type and, below it, the sign text a tend can rewrite (`exterior.sign`). The words are laid out in a "design cell"
+ * name in large type and, below it, one line about the place (`signLine` in packages/sim): the sign text a tend can rewrite
+ * (`exterior.sign`) when it says something of its own, otherwise what the place is for, never the name twice or another place's name. The words are laid out in a "design cell"
  * of 512 by 236 pixels; the atlas scales it onto each sign's own smaller cell.
  */
 export const SIGN_CELL = { w: 512, h: 236 } as const
@@ -44,8 +45,8 @@ export interface SignLayout {
 
 const squash = (s: string) => s.trim().replace(/\s+/g, ' ')
 
-/** The words under the name: the reason it is closed, or that it is being built and how long is left, or its sign text. */
-export const signWords = (place: Place, nowMs?: number): string => (place.state.closed ? `Closed: ${place.state.closed.reason}` : (buildingWords(place.state.construction, nowMs) ?? place.exterior.sign))
+/** The words under the name: that it is being built and how long is left (issue 331), else its usual line (`signLine`: closed, its sign text or its purpose). */
+export const signWords = (place: Place, places: readonly Pick<Place, 'id' | 'name'>[], nowMs?: number): string => (place.state.closed ? signLine(place, places) : (buildingWords(place.state.construction, nowMs) ?? signLine(place, places)))
 
 /** Words onto lines of at most `max` characters; a word longer than a line is broken, so nothing runs off the board. */
 function wrap(text: string, max: number): string[] {
@@ -67,15 +68,28 @@ function wrap(text: string, max: number): string[] {
     }
   }
   if (line) lines.push(line)
-  // A last line of one or two letters (the "h" of "24 h") takes the word before it along, so a number keeps its unit.
-  const last = lines.at(-1)
-  const before = lines.at(-2)
-  if (last !== undefined && before !== undefined && last.length <= 2 && before.includes(' ')) {
-    const cut = before.lastIndexOf(' ')
-    const moved = `${before.slice(cut + 1)} ${last}`
-    if (moved.length <= max) lines.splice(-2, 2, before.slice(0, cut), moved)
+  return lines.length === 2 ? balance(lines, max) : lines
+}
+
+/**
+ * Two lines broken in balance, so no word stands alone ("Lamps", the "24 h" of "ready in about 24 h"): at a " · " when both sides fit
+ * (the building words, "Building ·" over "ready in about 24 h"; the dot stays, so the words read the same), else between the words where the longer line is shortest.
+ */
+function balance(lines: string[], max: number): string[] {
+  const words = lines.join(' ').split(' ')
+  const at = (k: number): [string, string] => [words.slice(0, k).join(' '), words.slice(k).join(' ')]
+  const dot = words.indexOf('·')
+  if (dot > 0 && dot < words.length - 1) {
+    const [a, b] = at(dot + 1)
+    if (a.length <= max && b.length <= max) return [a, b]
   }
-  return lines
+  let best = lines
+  for (let k = 1; k < words.length; k++) {
+    const [a, b] = at(k)
+    if (a.length > max || b.length > max) continue
+    if (Math.max(a.length, b.length) < Math.max(best[0]!.length, best[1]!.length)) best = [a, b]
+  }
+  return best
 }
 
 const maxChars = (px: number) => Math.max(1, Math.floor((SIGN_CELL.w - 2 * PAD) / (px * CHAR_WIDTH)))
@@ -87,9 +101,9 @@ const cut = (lines: string[], max: number): string[] => (lines.length <= 2 ? lin
  * and the whole sign text below it on at most two smaller ones, all inside the cell. Text is plain characters, never markup.
  * While the place is being built at `nowMs`, the sign text gives way to that and how long is left (issue 331).
  */
-export function signLayout(place: Place, nowMs?: number): SignLayout {
+export function signLayout(place: Place, places: readonly Pick<Place, 'id' | 'name'>[] = [place], nowMs?: number): SignLayout {
   const nameText = squash(place.name)
-  const signText = squash(signWords(place, nowMs))
+  const signText = squash(signWords(place, places, nowMs))
   const room = SIGN_CELL.h - TITLE_BAR - 2 * VERTICAL_PAD
   let chosen: { namePx: number; name: string[]; textPx: number; text: string[] } | undefined
   for (const namePx of NAME_SIZES) {
@@ -179,7 +193,7 @@ export function signBoards(places: readonly Place[], baseOf: (place: Place) => n
       id: place.id,
       position: [spot[0], spot[1] + SIGN_BOTTOM + SIGN_H / 2, spot[2] + FACE],
       size: [SIGN_W, SIGN_H],
-      layout: signLayout(place, nowMs),
+      layout: signLayout(place, places, nowMs),
       colors: signColors(palette.colors.wood),
     }
   })

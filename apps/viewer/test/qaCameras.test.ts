@@ -28,10 +28,18 @@ function inPicture(pose: ReturnType<typeof frontPose>, aspect: number, p: readon
 }
 
 describe('the front camera of a place (issue 332)', () => {
-  it('keeps the desktop picture as it was: 7 m in front of the front, at eye height', () => {
-    const p = places[0]!
-    const [x, z] = placeCentre(toLandPlace(p))
-    expect(frontPose(p, kit, 0, DESKTOP, FOV)).toEqual({ position: [x, 1.6, z + p.exterior.footprint[1] / 2 + 7], target: [x, 2, z] })
+  it('stands at eye height, at least 7 m in front of the front, and further back on a phone than on a laptop', () => {
+    for (const p of places) {
+      const [x, z] = placeCentre(toLandPlace(p))
+      const front = z + p.exterior.footprint[1] / 2
+      const pose = frontPose(p, kit, 0, DESKTOP, FOV)
+      expect(pose.position[0]).toBe(x)
+      expect(pose.position[1]).toBe(1.6)
+      expect(pose.target).toEqual([x, 2, z])
+      expect(pose.position[2] - front, p.id).toBeGreaterThanOrEqual(7)
+      // A phone stands further back than a laptop.
+      expect(frontPose(p, kit, 0, PHONE, FOV).position[2], p.id).toBeGreaterThan(pose.position[2])
+    }
   })
 
   it('on a phone too, the whole front, its title bar and its sign are in the picture', () => {
