@@ -1,4 +1,4 @@
-import { newSince } from '@forkling/sim'
+import { checkImgflipFreshness, type ImgflipHistory } from './imgflip.ts'
 import type { ReadVerb } from '@forkling/mind/src/web/allowlist.ts'
 import { wordCount } from '@forkling/mind/src/web/clean.ts'
 import { createFetcher, type FetchImpl, type Fetcher } from '@forkling/mind/src/web/fetch.ts'
@@ -9,6 +9,7 @@ import { frontPageLinks, githubTopicRepos, imgflipTopLinks, wikipediaArticle, wi
 import { HOST_PLANS } from '@forkling/mind/src/web/starts.ts'
 import { DID_NOT_RUN, type CheckResult } from '../report/finding.ts'
 import type { SourceList } from '../sources/list.ts'
+export { backfillImgflip, checkImgflipFreshness, mergeHistory, type HistoryEntry, type ImgflipHistory } from './imgflip.ts'
 
 // Source health (audit spec 9.4, steps QS.2): the real fetch code against the real hosts, read only. robots.txt first, the
 // allowlist only (createFetcher refuses anything else), each host's normal gap between requests. Only `pnpm qa live` and
@@ -125,74 +126,6 @@ export const PROBES: readonly Probe[] = [
   manualProbe('threejs', MANUAL_START.three),
   manualProbe('mdn', 'https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API'),
 ]
-
-// ---- Imgflip freshness ----
-
-export interface ImgflipHistory {
-  version: 1
-  /** One per day, oldest first, the last 8 kept. */
-  entries: { date: string; ids: string[] }[]
-}
-const KEEP = 8
-const STALE_DAYS = 14
-
-const daysBefore = (date: string, n: number): string => {
-  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
-  return new Date(Date.UTC(y, m - 1, d - n)).toISOString().slice(0, 10)
-}
-
-/**
- * How many of today's formats are new since the last run (info), and whether nothing is new against the list of two weeks
- * ago or more (major: Merge's memes cannot follow the pulse with it). No history yet is info, never a pass.
- */
-export function checkImgflipFreshness(history: ImgflipHistory | null, today: string, ids: readonly string[]): { findings: CheckResult[]; history: ImgflipHistory } {
-  const earlier = (history?.entries ?? []).filter((e) => e.date < today)
-  const next: ImgflipHistory = { version: 1, entries: [...earlier, { date: today, ids: [...ids] }].slice(-KEEP) }
-  const base = { evidence: ['qa-out/imgflip-history.json'], where: 'apps/mind/src/web/sources/records.ts' }
-  const last = earlier.at(-1)
-  if (!last)
-    return {
-      history: next,
-      findings: [
-        {
-          ...base,
-          id: 'sources.imgflip-freshness',
-          fingerprint: 'sources.imgflip-freshness',
-          severity: 'info',
-          title: 'Imgflip freshness: no history yet',
-          what: `There is no history yet (the first run, or the last one's artefact expired), so freshness is not known. Today's list has ${ids.length} formats.`,
-          causes: 'Nothing is known about whether the list moves until the next run.',
-          fixKind: 'code',
-        },
-      ],
-    }
-  const fresh = newSince([last.ids], ids)
-  const findings: CheckResult[] = [
-    {
-      ...base,
-      id: 'sources.imgflip-freshness',
-      fingerprint: 'sources.imgflip-freshness',
-      severity: 'info',
-      title: `Imgflip freshness: ${fresh.length} new formats since ${last.date}`,
-      what: `${fresh.length} of ${ids.length} formats in today's ranking were not in it on ${last.date}.`,
-      causes: 'Measured for the report.',
-      fixKind: 'code',
-    },
-  ]
-  const ref = earlier.filter((e) => e.date <= daysBefore(today, STALE_DAYS)).at(-1)
-  if (ref && newSince([ref.ids], ids).length === 0)
-    findings.push({
-      ...base,
-      id: 'sources.imgflip-stale',
-      fingerprint: 'sources.imgflip-stale',
-      severity: 'major',
-      title: "Imgflip's meme list has not changed in two weeks",
-      what: `No format in today's ranking is new since ${ref.date}. get_memes is close to an all-time top list. Recommended: Roman picks a pulse source that moves (see the promised-missing findings: Lemmy memes needs a new trial, Mastodon and Show HN are best dropped).`,
-      causes: "Merge's memes cannot follow what is going round now: the same formats every morning.",
-      fixKind: 'roman',
-    })
-  return { findings, history: next }
-}
 
 // ---- the run ----
 
