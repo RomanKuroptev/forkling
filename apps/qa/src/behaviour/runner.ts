@@ -55,9 +55,14 @@ export interface BehaviourOptions {
 /** The start world when none is given: lane W's `day-0` fixture, the fresh start (steps.md fact 5). */
 export const day0 = (): string => join(repoRoot(), 'test', 'fixtures', 'worlds', 'day-0')
 
-/** A fresh copy of the world for one seed: no `.git` (so nothing can be pushed), its own world seed. */
+/**
+ * A fresh copy of the world for one seed, with its own world seed. The copy's `.git` is left out, and the copy becomes a new,
+ * empty repository with no remote: inside this checkout (`qa-out/`), git would otherwise find the engine repo and its `origin`,
+ * and the fast-forward rightly refuses a world that could be pushed.
+ */
 export function seedWorld(from: string, to: string, k: number): void {
   cpSync(from, to, { recursive: true, filter: (src) => !/[\\/]\.git([\\/]|$)/.test(src) })
+  execFileSync('git', ['init', '--quiet', to])
   const path = join(to, 'forkling.json')
   const f = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>
   f.seed = hashString(`qa-behaviour-seed-${k}`)
