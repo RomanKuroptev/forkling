@@ -96,7 +96,13 @@ describe('the short texts of spec v4 6', () => {
       const r = fitDiaryLines(['', long, '  '])
       expect(r.lines).toHaveLength(1)
       expect(r.lines[0]!.length).toBeLessThanOrEqual(140)
-      expect(r.lines[0]!.endsWith('word')).toBe(true)
+      expect(r.lines[0]!.endsWith('word…')).toBe(true)
+      expect(r.cut).toBe(true)
+    })
+    it('cuts a long line at its last sentence end, never in the middle of a sentence (issue #378, the R2 diary of 2026-11-19)', () => {
+      const r2 = 'I sketched the hillside again and put it in the Five Lamps room. Still no check against my terrain notes. A cat polishing a map it never walked.'
+      const r = fitDiaryLines([r2])
+      expect(r.lines).toEqual(['I sketched the hillside again and put it in the Five Lamps room. Still no check against my terrain notes.'])
       expect(r.cut).toBe(true)
     })
     it('keeps a line of exactly 140 characters', () => {

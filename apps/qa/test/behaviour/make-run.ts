@@ -32,6 +32,8 @@ export interface RunShape {
   notes?: (day: number) => string[]
   /** Captured prompts (`prompts.jsonl` in the output folder). */
   prompts?: { kind: string; user: string; system?: string }[]
+  /** Diary lines per day, as `journal/<date>.md` keeps them (after a title and a date line). Default: no diary. */
+  diary?: (day: number) => string[] | undefined
 }
 
 const SUBJECTS = [
@@ -85,6 +87,8 @@ export function makeRun(shape: RunShape): { world: string; out: string } {
     const plans = shape.plans?.(d)
     if (plans) w(`notebook/plans/${date}.md`, `# Plan for ${date}\n\n${plans.join('\n')}\n`)
     const trails = shape.trails?.(d)
+    const diary = shape.diary?.(d)
+    if (diary) w(`journal/${date}.md`, `# A day\n\n*${date}*\n\n${diary.join('\n\n')}\n`)
     if (trails) w(`trails/${date}-1.json`, JSON.stringify({ id: `${date}-1`, date, purpose: 'to read', start: { kind: 'feed', value: trails[0]?.url ?? '' }, pages: trails.map((p) => ({ ...p, fetchedAt: `${date}T09:00:00.000Z`, topics: [] })) }))
   })
   if (shape.found ?? true) w('places/home.json', JSON.stringify({ id: 'home', name: 'Home', history: [{ verb: 'found', at: `${shape.days[1] ?? shape.days[0]}T10:00:00.000Z`, summary: 'a room' }] }))

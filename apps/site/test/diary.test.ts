@@ -13,6 +13,15 @@ describe('previewOf', () => {
     expect(previewOf(`# T\n\n${'word '.repeat(80)}`).length).toBeLessThanOrEqual(140)
     expect(previewOf('# only a title\n')).toBe('')
   })
+  it('ends the preview at a sentence end, not in the middle of a word (issue #378, the R2 entry of 2026-11-19)', () => {
+    const md = "# Three Foundings and a Hillside\n\n*2026-11-19*\n\nThe Hillside Room took three tries. The first two failed by a handful of words, and the third worked once I wrote it shorter.\n\nI sketched the hillside again and put it in the Five Lamps room.\n"
+    expect(previewOf(md)).toBe('The Hillside Room took three tries. The first two failed by a handful of words, and the third worked once I wrote it shorter.')
+  })
+  it('ends at a whole word with an ellipsis when no sentence ends in time', () => {
+    const p = previewOf(`# T\n\n${'lidar '.repeat(40)}`)
+    expect(p.length).toBeLessThanOrEqual(140)
+    expect(p).toMatch(/ lidar…$/)
+  })
 })
 
 describe('diaryBody', () => {
