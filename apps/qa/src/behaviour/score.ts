@@ -166,6 +166,23 @@ export const SCORES: ScoreCheck[] = [
     },
   },
   {
+    // Issue #394: the same toy on the shelf three times. A work on the shelf with the title of an earlier one on the shelf, made
+    // with no `remixOf`, is a copy the engine did not link: a step named the earlier work and code did not know it.
+    id: 'work-copies',
+    title: 'The same work on the shelf twice',
+    measure: (run) => {
+      const shelf = run.made.filter((m) => m.status === 'shelf')
+      const copies = shelf.filter((m, i) => m.remixOf === null && shelf.slice(0, i).some((e) => e.title.trim().toLowerCase() === m.title.trim().toLowerCase()))
+      const titles = [...new Set(copies.map((c) => c.title))]
+      return {
+        value: `${copies.length} of ${shelf.length} works on the shelf`,
+        alarm: copies.length
+          ? alarm('minor', 'code', `${titles.map((t) => `"${t}"`).join(', ')} on the shelf more than once`, `Works on the shelf with the title of an earlier one and no remixOf: ${copies.slice(0, 6).map((c) => `${c.id} (${c.date})`).join(', ')}.`, 'The gallery and the screens repeat one work, and the counts count it twice.', 'apps/mind/src/tick/work.ts earlierWork')
+          : null,
+      }
+    },
+  },
+  {
     id: 'plan-rejections',
     title: 'Plans turned down',
     measure: (run, l) => {
