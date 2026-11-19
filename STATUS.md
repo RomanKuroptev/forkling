@@ -17,10 +17,12 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 ### Lane W (Q1, QW)
 
 - **Lane W** ([`lanes/w.md`](docs/spec/audit/lanes/w.md), plan approved, W1 to W8): **W1 (this PR)** the viewer's `?qa=1&now=&seed=`: frames drawn only by `window.__qa.step`, a frozen clock, seeded randomness, and `__qa` with `ready`, `scene()`, `renderer()`, `cameras`, `setCamera`, `fps`, `press`, `stick`, `visitor`, `teleport`, `look`. Normal mode pixel-identical before and after. Check `world.viewer-math-random` in `pnpm qa fast`.
+- **W2 (this PR):** `?world=local` reads the screens', gallery's and work panels' files from the same `/world/` folder as the world, and a work's page runs from there, so panels can be looked at before they go live. A made-up world (`?fixture=`) still has none.
 
 ### Lane B (QB)
 
 - Plan approved (B1 to B9, [`lanes/b.md`](docs/spec/audit/lanes/b.md)).
+- **B1 (#274, merged):** the pure measures in `packages/sim/src/behaviour-measures.ts`: topic variety and runs, top word, repetition share, rest by day and its rising run, something new at each look, kind shares. Built on `topicClusters` and `maxSimilarity`.
 - **B2 (#278):** `fast-forward --capture-prompts` writes every model call's prompt to `<out>/prompts.jsonl`, never in the world, and `fakeModel` takes a scripted answer per call kind (`answers`). Without them the fakes and `--dry-run` behave as before.
 
 ### Lane S (QS)
