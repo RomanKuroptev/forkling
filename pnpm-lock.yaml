@@ -48,6 +48,9 @@ importers:
       '@forkling/mind':
         specifier: workspace:*
         version: link:../mind
+      '@forkling/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
       '@forkling/sim':
         specifier: workspace:*
         version: link:../../packages/sim

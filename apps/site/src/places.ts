@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { Place, Souvenir, workFrame, type PlaceVerb } from '@forkling/schema'
+import { Place, repairPlaceJson, Souvenir, workFrame, type PlaceVerb } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { allPaths, isBuilding, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
 import { esc, markdown } from './md.ts'
@@ -16,7 +16,7 @@ export function loadPlaces(world: string): Place[] {
     .filter((f) => f.endsWith('.json'))
     .flatMap((f) => {
       try {
-        const parsed = Place.safeParse(JSON.parse(readFileSync(join(folder, f), 'utf8')))
+        const parsed = Place.safeParse(repairPlaceJson(JSON.parse(readFileSync(join(folder, f), 'utf8'))))
         return parsed.success && parsed.data.id === f.slice(0, -5) ? [parsed.data] : []
       } catch {
         return []

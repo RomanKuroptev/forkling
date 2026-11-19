@@ -2,18 +2,37 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
-## 2026-11-19: How the behaviour scores read a run (audit QB, lane B)
+**Audit harness lanes (until QR is done):** add your decisions as bullets at the end of your lane's own 2026-11-19 entry below, not as new entries at the top, so parallel PRs do not conflict.
+
+## 2026-11-19: Behaviour scoring choices (audit QB, lane B)
 - **Repeated words count titles with their captions** (a work's title and about, and written page titles), share of texts with the word. Spec 9.2 says "titles, captions and diary"; diary lines are many and short and water the share down. On R2 this finds "loop" in 38% (level 25%); over titles alone it found "counter" at 23%.
 - **Topic runs use only what Merge made and wrote; topic variety also counts what it read.** A day's many Wikipedia reads (R2: 63 clusters) hide the topic it kept making. On R2, topic runs stay at 2 days: the "loop" drift moves through names (loop, counter, the counter toy, a visitor for it), so repeated words is the score that catches it, as spec 9.2 expects.
 - **Rest is counted from the stream's `step` lines**: rest steps over all steps started that day.
 - **The eight meme steps follow the engine's meme path.** A meme is a kind picked inside a sketch or tinker call, not a plan verb. So "chosen" counts plan steps that name a meme plus meme works (a scrapped meme is still a choice). "Allowed" takes away plans turned down over a meme and memes scrapped for their sources. "Made" takes away unusable answers, "passed" takes away scraps, and "shown" needs a `thumb.png`. "Offered" and "seen by the planner" read the captured morning and decide prompts (a format URL in them, and the word "meme" outside a URL). Without prompts, step 3 is `unknown`, never 0. A meme that was shown means memes did not stop, even when an earlier count is 0.
 - **The meme `info` finding hands each shown meme's picture to the look reviewer.** Whether it reads as a meme is the reviewer's call, not code's.
 
+## 2026-11-19: `?qa=1` draws a frame only when the harness steps it (audit Q1, lane W)
+- **Why.** A picture must depend only on the address and the steps taken, or the world checks cannot compare two runs. With the clock frozen but the frame loop free, the visitor's capsule and Merge's animations still moved with real frame times.
+- **What.** Under `?qa=1&now=&seed=` the Canvas runs with `frameloop="never"`, and `window.__qa.step(ms)` draws frames of 1/30 s that also move the world clock. `Math.random` is replaced by the seeded PRNG before any other module loads (`apps/viewer/src/qa/seedRandom.ts`), so library code that draws randomly is seeded too, and a check (`world.viewer-math-random`) keeps the viewer's own code free of `Math.random()` calls. Places are drawn as a few instanced meshes, so `__qa.scene()` lists them from the same geometry functions the drawing uses; Merge and the visitor come from their three.js objects. Normal mode is unchanged: pictures before and after at the same camera and clock are pixel-identical (Playwright's fake page clock).
+
 ## 2026-11-19: The source list of the audit harness (audit QS, lane S)
 - **`qa/sources.json`, not `qa/coverage.json`.** Spec 9.4 puts the sources in `qa/coverage.json`; steps.md names `qa/sources.json`, and steps.md wins. `coverage.json` stays Phase 2's mockup file.
 - **Lemmy memes is `trial failed`, not a `code` fix.** Spec 9.4 calls Lemmy "a passed trial that just needs wiring", but its report (`docs/spec/w2-trials/lemmy.world.md`) fails readable at 63% (mark 80%). The report wins: it is for Roman, recommended "rerun the trial against a text-heavier community, or drop". Mastodon trends: Roman, recommended "drop: robots.txt blocks ClaudeBot by name". Show HN: Roman, recommended "drop" (10% of items have 120 words; the projects are on sites Merge may not read).
 - **Show HN counts as a pulse source** (spec 6.1 lists it among the feeds, "the daily pulse"), so it is `major` like Lemmy and Mastodon. Lobsters (maker, blocked by robots.txt) is `minor`.
 - **A major that waits for Roman (`fixKind: roman`) does not fail a PR.** No PR can make his choice, and it would hold every PR until he decides. It stays in the report; a blocker always fails.
+- **Imgflip freshness keeps last week's list as an Actions artefact** (`imgflip-history`, 90 days), not a committed file: no commits from the live job and no PR noise for a 2 KB file. When it has expired the check says "no history yet" (info), never a pass.
+- **The live source run fails only on a blocker** (a robots.txt that now disallows). Majors (a source with 0 items, a stale Imgflip list) are in the report and go to triage; a run that is red every day would hide the one that matters.
+
+## 2026-11-19: Triage keeps its state in the issues, pictures on an orphan branch (audit QT, lane T)
+- **Clean runs and fix tries live in a hidden line in each issue body** (`<!-- qa-state {...} -->`). The issue is already the one record per fingerprint, so any PC can run triage and no state file is committed. A `qa` issue without that line (the hand-filed `phase-2` issues, the digest) is never touched.
+- **"The evidence changed"** means a change in severity, the `what` text or the evidence file names. Picture bytes are left out: a re-render differs by a pixel every run and would comment every night.
+- **A missing finding counts as clean only in an area the run looked at** (`qa-out/run.json`), and not where a check did not run, so a nightly run without the explorer cannot close a world issue.
+- **A fingerprint that comes back reopens its closed issue** instead of opening a second one. **`info` findings never become issues** (measured, no action; they go in the digest).
+- **Pictures:** the issues API takes no uploads, so PNG evidence is committed through the contents API to an orphan branch `qa-evidence` of the forkling repo (public) and linked from the issue. Only `pnpm qa triage` writes there, only `.png` files under safe paths; never `main`, never Merge's repo.
+- **Gather:** the same fingerprint from several sources is one finding with the highest severity (a look reviewer confirming an explorer's minor makes it major), the earliest first-seen date and all evidence. A findings file that does not parse is a `qa.check-did-not-run` in the area its path names, so its area is not counted clean.
+- **The digest lists only issues triage manages** (with the hidden line); the hand-filed `phase-2` issues are Roman's backlog already. A recommended answer for Roman is a `**Recommended answer:**` line in the issue body.
+- **New checks are not `qa-rules`.** A fixer adds a code check with a new planted test for each confirmed explorer finding (steps QW.2); only changing or removing an existing level in `qa/` or an existing planted test needs a `qa-rules` PR (steps.md, fact 6).
+- **Fix PRs from `/qa` merge themselves, gated** as Roman's audit prompt ([`docs/spec/audit/prompt.md`](spec/audit/prompt.md), "Merge rules") says, which is more specific than the general CLAUDE.md line about engine PRs: code after green CI including `qa.yml` (`gh pr checks` exits 0 with checks present); look after that and a separate look reviewer passing the before and after pictures; prompt after the written checks, a 3-day real run and a reviewer agent. `qa-rules` and `needs-roman` PRs are never merged by Claude.
 
 ## 2026-11-19: The audit harness is its own package, `apps/qa` (audit Q0)
 - **Why.** The harness measures forkling without steering Merge (audit spec 1). Keeping it in its own package keeps sim pure and keeps every score and finding out of the mind's code paths.

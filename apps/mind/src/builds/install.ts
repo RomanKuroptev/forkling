@@ -79,8 +79,11 @@ export function planInstalls(place: Place, works: readonly WorkMeta[], kit: Kit,
     const taken = new Set(exhibits.map((e) => e.slot))
     const slot = slots.find((s) => !taken.has(s))
     if (!slot) break
-    let id = `screen-${w.id}`.slice(0, 60)
-    for (let n = 2; usedIds.has(id); n++) id = `${`screen-${w.id}`.slice(0, 56)}-${n}`
+    // An exhibit id is a PartId (at most 41 characters); a longer one makes every reader drop the whole place.
+    const base = `screen-${w.id}`
+    const cut = (n: number) => base.slice(0, n).replace(/-+$/, '')
+    let id = cut(41)
+    for (let n = 2; usedIds.has(id); n++) id = `${cut(40 - String(n).length)}-${n}`
     usedIds.add(id)
     exhibits.push({ id, kind: 'work', ref: refOf(w.id), slot, label: clampText(`${w.title}: ${w.about}`, 120), added: nowIso.slice(0, 10) })
     setInstalled(w, where(place, slot))
