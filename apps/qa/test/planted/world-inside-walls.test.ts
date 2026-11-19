@@ -39,6 +39,8 @@ describe('nothing pokes through an outer wall, and every room with exhibits has 
     expect(found[0]!.what).toContain('home/skateboard')
     // The same room holding nothing is not a finding: nobody misses an empty corner.
     expect(insideWallsFindings('test', [...clean(), counter])).toEqual([])
+    // Nor is it once its things stand out of the wall, in the house beside it, where a visitor sees and reaches them.
+    expect(insideWallsFindings('test', [...clean(), counter, o('home/skateboard', 'exhibit', [12.95, 1, 18], [13.25, 1.3, 18.1], { at: 'home/counter-room/2/0' })])).toEqual([])
   })
 
   it('leaves alone a place the viewer gave no footprint, and things not drawn now', () => {

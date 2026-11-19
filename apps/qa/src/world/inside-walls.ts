@@ -8,6 +8,8 @@ import type { SceneObject } from './open.ts'
  * thick, `apps/viewer/src/world/building.ts`). Anything reaching past it is seen from outside.
  */
 const OUTER_FACE = 0.2
+/** How far in from the footprint's edge the inside face of a building's wall is. Anything whose middle is further out is in the wall. */
+const INNER_FACE = 0.6
 /** A room needs at least this much floor, across and deep, inside the wall ring for a visitor to stand in it. */
 const STAND = 0.5
 
@@ -20,8 +22,10 @@ const STRUCTURE = new Set(kit.parts.filter((p) => p.category === 'structure').ma
  * - `world.through-wall`: a drawn piece of furniture, an exhibit or a work on a screen reaches past the outer face of its building's
  *   walls, so it pokes out where the house is seen from outside (Tiny Patch's screen and the Counter Room's plinth through Home's
  *   east corner). A part only inside the wall is hidden, not leaking, and the walls' own pieces belong in the wall.
- * - `world.room-no-way-in`: a room holding exhibits has less than half a meter of floor, across or deep, inside the 0.8 m wall ring
- *   the visitor cannot walk on (`WALL`), so no one can go in to see them (Home's 1 m Counter Room).
+ * - `world.room-no-way-in`: a room has less than half a meter of floor, across or deep, inside the 0.8 m wall ring the visitor
+ *   cannot walk on (`WALL`), and something it holds stands in the wall (its middle past the wall's inside face), so no one can go
+ *   in to see it (Home's 1 m Counter Room). A room in the ring whose things the drawing brought out into the house is no finding:
+ *   they are seen and reached from the floor beside them.
  *
  * Only ground-level footprints are used: the upper floors of a tower stand further in, which this does not count.
  */
@@ -59,7 +63,13 @@ export function insideWallsFindings(fixture: string, scene: readonly SceneObject
     const f = footprints.get(room.place)
     if (!f) continue
     const prefix = `${room.id}/`
-    const held = scene.filter((e) => (e.kind === 'exhibit' || e.kind === 'work') && e.at?.startsWith(prefix)).map((e) => e.id)
+    const inWall = (e: SceneObject) => {
+      if (!e.box) return false
+      const x = (e.box.min[0] + e.box.max[0]) / 2
+      const z = (e.box.min[2] + e.box.max[2]) / 2
+      return x < f.x0 + INNER_FACE || x > f.x1 - INNER_FACE || z < f.z0 + INNER_FACE || z > f.z1 - INNER_FACE
+    }
+    const held = scene.filter((e) => (e.kind === 'exhibit' || e.kind === 'work') && e.at?.startsWith(prefix) && inWall(e)).map((e) => e.id)
     if (held.length === 0) continue
     const b = room.box
     const across = Math.min(b.max[0], f.x1 - WALL) - Math.max(b.min[0], f.x0 + WALL)
@@ -70,7 +80,7 @@ export function insideWallsFindings(fixture: string, scene: readonly SceneObject
       fingerprint: `world.room-no-way-in|${fixture}|${room.id}`,
       severity: 'minor',
       title: `${room.name ?? room.id} at ${room.place} has no way in, and ${held.length === 1 ? 'an exhibit is' : `${held.length} exhibits are`} shut inside it`,
-      what: `The room ${room.id} is drawn from ${fmt(b)}, but only ${Math.max(0, across).toFixed(2)} m across and ${Math.max(0, deep).toFixed(2)} m deep of it is inside the ${WALL} m wall ring a visitor cannot walk on. It holds ${held.join(', ')}.`,
+      what: `The room ${room.id} is drawn from ${fmt(b)}, but only ${Math.max(0, across).toFixed(2)} m across and ${Math.max(0, deep).toFixed(2)} m deep of it is inside the ${WALL} m wall ring a visitor cannot walk on. Shut in the wall: ${held.join(', ')}.`,
       causes: 'A room Merge made, and what it put there, cannot be visited at all.',
       evidence: [],
       fixKind: 'data',

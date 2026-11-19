@@ -5,7 +5,7 @@ import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { WALL, starterPlaces } from '@forkling/sim'
 import { INNER_FACE } from '../src/world/building.ts'
-import { settledPlace } from '../src/world/insideWalls.ts'
+import { OFF_WALL, settledPlace } from '../src/world/insideWalls.ts'
 import { placeObjects } from '../src/qa/sceneList.ts'
 
 const day7 = (id: string): Place => Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL(`../../../test/fixtures/worlds/day-7/places/${id}.json`, import.meta.url)), 'utf8')))
@@ -26,30 +26,35 @@ describe('nothing of the inside stands in or through the walls (issues 339, 373)
     }
   })
 
-  it('draws every room where a visitor can walk: inside the wall ring, so the Counter Room has a way in', () => {
+  it("brings the Counter Room's things out of the wall to where a visitor walks: each within reach of the floor inside the wall ring", () => {
     const list = scene(places())
-    const footprints = new Map(list.filter((o) => o.kind === 'place').map((o) => [o.id, o.footprint!]))
-    for (const room of list.filter((o) => o.kind === 'room')) {
-      const f = footprints.get(room.place!)!
-      const b = room.box!
-      expect(b.min[0] >= f.x0 + WALL - 1e-3 && b.max[0] <= f.x1 - WALL + 1e-3 && b.min[2] >= f.z0 + WALL - 1e-3 && b.max[2] <= f.z1 - WALL + 1e-3, `${room.id} ${JSON.stringify(b)}`).toBe(true)
+    const f = list.find((o) => o.id === 'home')!.footprint!
+    const held = list.filter((o) => (o.kind === 'exhibit' || o.kind === 'work') && o.at?.startsWith('home/counter-room/'))
+    expect(held.map((o) => o.id).sort()).toEqual(['home/brainfuck-extensions-skateboard', 'home/screen-tiny-patch-mostly-empty'])
+    for (const o of held) {
+      const cx = (o.box!.min[0] + o.box!.max[0]) / 2
+      const cz = (o.box!.min[2] + o.box!.max[2]) / 2
+      // Its middle is in front of the inside face of the walls, so it shows and can be pointed at from the walkable floor.
+      expect(cx <= f.x1 - INNER_FACE && cz >= f.z0 + INNER_FACE, `${o.id} ${JSON.stringify(o.box)}`).toBe(true)
+      expect(Math.max(0, cx - (f.x1 - WALL)) + Math.max(0, f.z0 + WALL - cz)).toBeLessThan(0.5)
     }
   })
 
-  it('keeps the parts of a moved room where they stood when they already fit, and windows and doors where Merge put them', () => {
+  it('moves a part no further than it must, keeps the rooms as Merge made them, and leaves windows and doors where Merge put them', () => {
     const home = day7('home')
     const settled = settledPlace(home, kit)
+    const before = home.rooms.find((r: Place['rooms'][number]) => r.id === 'counter-room')!
     const counter = settled.rooms.find((r: Place['rooms'][number]) => r.id === 'counter-room')!
-    expect(counter.at[0]).toBeCloseTo(home.exterior.footprint[0] / 2 - WALL - 0.5)
-    // The room is as deep as the footprint, so it is drawn as deep as the inside; it keeps its height.
-    expect(counter.size).toEqual([1, home.exterior.footprint[1] - 2 * WALL, 3.2])
+    // The room itself is not drawn, and moving it would put it through the main room: it keeps its place and size.
+    expect(counter.at).toEqual(before.at)
+    expect(counter.size).toEqual(before.size)
     // The plinth (0.7 m wide) is pulled in until it clears the wall's inner face, and the notice board (1.2 m wide, turned to face
-    // along x) only until it clears the front wall's: each moves no further than it must.
-    const plinth = counter.at[0] + counter.parts[0]!.at[0]
-    expect(plinth).toBeCloseTo(home.exterior.footprint[0] / 2 - INNER_FACE - 0.35)
-    expect(counter.at[1] + counter.parts[5]!.at[2]).toBeCloseTo(home.exterior.footprint[1] / 2 - INNER_FACE - 0.6, 2)
-    // The main room fits, so nothing in it moves.
-    expect(settled.rooms[0]).toEqual(home.rooms[0])
+    // along x) only until it clears the front wall's, each a little in front of the face so the two do not fight.
+    expect(counter.at[0] + counter.parts[0]!.at[0]).toBeCloseTo(home.exterior.footprint[0] / 2 - INNER_FACE - OFF_WALL - 0.35)
+    expect(counter.at[1] + counter.parts[5]!.at[2]).toBeCloseTo(home.exterior.footprint[1] / 2 - INNER_FACE - OFF_WALL - 0.6, 2)
+    // Heights and turns never change; the main room fits, so nothing in it moves.
+    counter.parts.forEach((p, i) => expect([p.at[1], p.rot]).toEqual([before.parts[i]!.at[1], before.parts[i]!.rot]))
+    expect(settled.rooms[0]).toBe(home.rooms[0])
   })
 
   it('leaves a place that already fits as it is, and is the same when done twice', () => {
