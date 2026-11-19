@@ -109,7 +109,10 @@ export async function applyPlan(plan: TriagePlan, tracker: Tracker, opts: ApplyO
         break
       case 'close':
         await tracker.editBody(a.issue.number, withMarker(a.issue.body, a.state))
-        await tracker.close(a.issue.number, `This was not seen for ${CLOSE_AFTER_CLEAN_RUNS} runs in a row (the last on ${opts.date}), so it is closed. If a fix PR is linked above, that fixed it.`)
+        await tracker.close(
+          a.issue.number,
+          `This was not seen for ${CLOSE_AFTER_CLEAN_RUNS} runs in a row (the last on ${opts.date}), so it is closed${a.state.fixedBy ? `: fixed by #${a.state.fixedBy}.` : '.'}`,
+        )
         result.closed.push(a.issue.number)
         break
     }

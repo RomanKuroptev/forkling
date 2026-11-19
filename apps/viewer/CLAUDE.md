@@ -34,6 +34,7 @@ Everything here needs `?debug`. Press **F3** for the overlay: mood and energy, a
 | `?look=forkling` with `&dist=1&camy=1.3` | Put the camera that far in front of Merge and that high, to look at its face (add `&clip=Idle` to pin it in the open) |
 | `?clipat=x,z` | With `?clip=`, put Merge there, to see it on open land |
 | `?face=awake` (or `step`, `asleep`, `nosignal`) | Show that face whatever the state is |
+| `?qa=1&now=<iso>&seed=<n>` | The audit harness's mode (no `?debug` needed): the clock stands at `now`, frames are drawn only by `window.__qa.step(ms)`, randomness comes from the seed, and `window.__qa` lists the scene, the renderer's counts, named cameras and walk helpers (`apps/viewer/src/qa/`). Never changes the look |
 
 GitHub can take up to a minute to serve a new commit. The repo state counts from the forkling's own `lastTickAt`, not the commit time, so commits that leave `forkling.json` alone (works, souvenirs, the tick log) do not move it.
 - Stack: React Three Fiber, drei, `@react-three/rapier` for physics, `ecctrl` for the walking controller. Assets are CC0 low-poly packs (Kenney, KayKit, Quaternius); keep the art style coherent across species.

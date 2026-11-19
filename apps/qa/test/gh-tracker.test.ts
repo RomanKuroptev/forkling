@@ -29,6 +29,13 @@ describe('gh tracker', () => {
     expect(issues).toEqual([{ number: 7, title: 'T', body: 'B', state: 'closed', labels: ['qa', 'fix-failed'], createdAt: '2026-11-19T10:00:00Z', comments: [] }])
   })
 
+  it('reads one issue', async () => {
+    const one = JSON.stringify({ number: 9, title: 'T', body: 'B', state: 'OPEN', labels: [{ name: 'qa' }], createdAt: '2026-11-19T10:00:00Z' })
+    const { exec, calls } = fakeExec({ 'issue view': one })
+    expect(await new GhTracker(repo, exec).getIssue(9)).toMatchObject({ number: 9, state: 'open', labels: ['qa'] })
+    expect(calls[0]!.args).toEqual(['issue', 'view', '9', '--repo', repo, '--json', 'number,title,body,state,labels,createdAt'])
+  })
+
   it('creates an issue with the body on stdin and reads the number from the URL', async () => {
     const { exec, calls } = fakeExec({ 'issue create': 'https://github.com/RomanKuroptev/forkling/issues/301\n' })
     const n = await new GhTracker(repo, exec).createIssue({ title: 'A title', body: 'Body', labels: ['qa', 'needs-roman'] })

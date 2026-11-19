@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { Place } from '@forkling/schema'
+import { Place, repairPlaceJson } from '@forkling/schema'
 
 /** The places in a world repo (`places/<id>.json`), in id order. A file that does not fit the schema is left out, never guessed at. */
 export function readPlaces(dir: string): Place[] {
@@ -18,7 +18,7 @@ export function parsePlaces(texts: readonly string[]): Place[] {
   const places: Place[] = []
   for (const text of texts) {
     try {
-      const parsed = Place.safeParse(JSON.parse(text))
+      const parsed = Place.safeParse(repairPlaceJson(JSON.parse(text)))
       if (parsed.success) places.push(parsed.data)
     } catch {
       // Not JSON: not a place.

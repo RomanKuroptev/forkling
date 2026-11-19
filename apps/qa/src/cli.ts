@@ -4,10 +4,16 @@ import { parseArgs } from 'node:util'
 import { readWorldSources, scoreSources } from './behaviour/sources.ts'
 import { fastChecks } from './fast.ts'
 import { qaOut, repoRoot } from './paths.ts'
+import { Area } from './report/finding.ts'
 import { blocking, writeRun } from './report/write.ts'
-import { runChecks, type Check } from './run/check.ts'
+import { runChecks, stockholmDate, type Check } from './run/check.ts'
 import { readSourceList } from './sources/list.ts'
-import { triageCommand } from './triage/command.ts'
+import { FORKLING_REPO, triageCommand } from './triage/command.ts'
+import { loadConfig } from './triage/config.ts'
+import { digestCommand } from './triage/digest.ts'
+import { recordFix } from './triage/fix-try.ts'
+import { gather } from './triage/gather.ts'
+import { GhTracker } from './triage/gh-tracker.ts'
 import { writeRunInfo } from './triage/run-info.ts'
 import { liveCommand, LIVE_USAGE } from './live/command.ts'
 
@@ -20,6 +26,10 @@ const USAGE = `pnpm qa <command>
   triage  findings to GitHub issues labelled qa, by fingerprint; picks up to 5 to fix (qa-out/triage.json)
           [--findings <file>] [--areas world,behaviour,...] [--dry-run] [--repo owner/name]
           --dry-run only reads GitHub and prints what it would open, comment, close and pick
+  gather  merges qa-out/findings.json, qa-out/actions/** (Actions artefacts) and qa-out/review/*.json (reviewers)
+          into qa-out/findings.json and run.json   [--from <dir>]... [--areas world,behaviour,...]
+  fix-try <issue> --failed "<what was tried>" | --merged <pr>   a fixer's result; 2 failures label fix-failed
+  digest  writes qa-out/digest.md   [--post] adds one comment on the pinned QA digest issue   [--mode nightly|weekly|release]
 ${LIVE_USAGE}`
 
 async function main(argv: string[]): Promise<number> {
@@ -64,6 +74,32 @@ async function main(argv: string[]): Promise<number> {
       return liveCommand(rest, { out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'triage':
       return triageCommand(rest, { root: repoRoot(), out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
+    case 'gather': {
+      const { values } = parseArgs({ args: rest, options: { from: { type: 'string', multiple: true, default: [] }, areas: { type: 'string', default: '' } } })
+      const cwd = process.env.INIT_CWD ?? process.cwd()
+      const { findings, files } = gather({
+        out: qaOut(),
+        now: new Date(),
+        from: values.from.map((d) => resolve(cwd, d)),
+        extraAreas: Area.array().parse(values.areas.split(',').filter(Boolean)),
+      })
+      console.log(`${files.length} findings files, ${findings.length} findings after merging; written to ${qaOut('findings.json')}`)
+      return 0
+    }
+    case 'fix-try': {
+      const { values, positionals } = parseArgs({ args: rest, allowPositionals: true, options: { failed: { type: 'string' }, merged: { type: 'string' } } })
+      const issue = Number(positionals[0])
+      if (!Number.isInteger(issue) || (values.failed === undefined) === (values.merged === undefined)) {
+        console.log('pnpm qa fix-try <issue> --failed "<what was tried>" | --merged <pr>')
+        return 2
+      }
+      const result = values.merged !== undefined ? { issue, merged: Number(values.merged) } : { issue, failed: values.failed! }
+      const r = await recordFix(new GhTracker(FORKLING_REPO), result, { out: qaOut(), date: stockholmDate(new Date()) })
+      console.log(`#${r.issue}: ${r.result}`)
+      return 0
+    }
+    case 'digest':
+      return digestCommand(rest, { out: qaOut(), tracker: new GhTracker(FORKLING_REPO), digestIssue: loadConfig(repoRoot()).digestIssue })
     default:
       console.log(USAGE)
       return command === undefined || command === 'help' ? 0 : 2

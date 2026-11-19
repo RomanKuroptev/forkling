@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util'
 import { Area, Findings } from '../report/finding.ts'
 import { stockholmDate } from '../run/check.ts'
 import { applyPlan } from './apply.ts'
+import { loadConfig } from './config.ts'
 import { GhTracker } from './gh-tracker.ts'
 import { planTriage } from './plan.ts'
 import { readRunInfo } from './run-info.ts'
@@ -31,7 +32,7 @@ export async function triageCommand(argv: string[], deps: TriageCommandDeps): Pr
   const real = deps.tracker ?? new GhTracker(values.repo)
   const dry = values['dry-run'] ? new DryRunTracker(real) : null
   const tracker = dry ?? real
-  const plan = planTriage({ findings, issues: await tracker.listIssues('qa'), coveredAreas: areas, date })
+  const plan = planTriage({ findings, issues: await tracker.listIssues('qa'), coveredAreas: areas, date, maxPicks: loadConfig(deps.root).maxFixes })
   const result = await applyPlan(plan, tracker, { root: deps.root, date })
 
   const summary = {

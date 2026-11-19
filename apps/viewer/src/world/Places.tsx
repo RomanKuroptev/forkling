@@ -20,6 +20,8 @@ import { signBoards } from './signGeometry.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, interiorsToLoad, modelFiles, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
 import { worldLand } from './worldLand.ts'
+import { qaMode } from '../qa/params.ts'
+import { qaRegistry } from '../qa/registry.ts'
 
 /** The unit shapes every part is made of; an instance scales them to its primitive's size. */
 const GEOMETRIES: Record<Shape, THREE.BufferGeometry> = {
@@ -159,11 +161,17 @@ export function Places() {
   useEffect(() => {
     let cancelled = false
     const loader = new GLTFLoader()
+    // The audit harness (`?qa=1`) waits until every model file has loaded or failed before it calls the world ready.
+    const settled = () => {
+      if (qaMode) qaRegistry.models.settled++
+    }
+    if (qaMode) qaRegistry.models.total = modelFiles(kit).filter((file) => kitModelUrl(file)).length
     for (const file of modelFiles(kit)) {
       const url = kitModelUrl(file)
       if (!url) continue
       loader.loadAsync(url).then(
         (gltf) => {
+          settled()
           if (cancelled) return
           gltf.scene.updateMatrixWorld(true)
           const parts: LoadedModel['parts'] = []
@@ -172,7 +180,10 @@ export function Places() {
           })
           setLoaded((was) => ({ ...was, [file]: { parts } }))
         },
-        (error) => console.warn(`kit model ${file} did not load, so its parts stay as primitives:`, error),
+        (error) => {
+          settled()
+          console.warn(`kit model ${file} did not load, so its parts stay as primitives:`, error)
+        },
       )
     }
     return () => {
@@ -183,6 +194,13 @@ export function Places() {
   useEffect(() => {
     if (new URLSearchParams(location.search).has('debug')) Object.assign(window, { __forklingModels: () => [...loadedFiles].sort() })
   }, [loadedFiles])
+
+  // The audit harness (`?qa=1`) lists the places as they are drawn now (`window.__qa.scene()`).
+  useEffect(() => {
+    if (!qaMode) return
+    qaRegistry.places = { places: world.places, kit, heightAt: (x, z) => land.heightAt(x, z), interiors, nowMs, plots, wireAlways: WIRE_ALWAYS }
+    qaRegistry.models.drawn = loadedFiles.size
+  }, [world, land, interiors, nowMs, plots, loadedFiles])
 
   const scene = useMemo(() => sceneInstances(world.places, kit, { heightAt: (x, z) => land.heightAt(x, z), interiors, models: loadedFiles, nowMs, plots, litAlways: LIT_ALWAYS, wireAlways: WIRE_ALWAYS }), [world, land, interiors, loadedFiles, nowMs, plots])
   // The board of each place's sign: its name and its sign text, painted on one texture.
