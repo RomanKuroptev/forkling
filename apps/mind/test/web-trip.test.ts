@@ -267,6 +267,22 @@ describe('when a page cannot be read', () => {
     expect(r.seen).toEqual([{ title: 'Moon', url: `${wiki}/Moon` }])
   })
 
+  it('marks a page it reached by a guessed link, read or not, so a missing guess is told apart from a missing page', async () => {
+    const links = [{ title: 'Two Buttons (Wikipedia)', url: `${wiki}/Two_Buttons`, guess: true as const }, { title: 'Moon', url: `${wiki}/Moon` }]
+    const missing = setup({ pages: { [`${wiki}/Lighthouse`]: page('Lighthouse', { links }), [`${wiki}/Moon`]: page('Moon') }, reads: [read({ next: 1 }), read({ next: null })] })
+    const a = await runTrip(missing.deps, missing.start)
+    expect(Trail.safeParse(a.trail).success).toBe(true)
+    expect(a.trail.pages.map((p) => [p.url, p.failed ? 'failed' : 'read', p.guess ?? false])).toEqual([
+      [`${wiki}/Lighthouse`, 'read', false],
+      [`${wiki}/Two_Buttons`, 'failed', true],
+      [`${wiki}/Moon`, 'read', false],
+    ])
+    const found = setup({ pages: { [`${wiki}/Lighthouse`]: page('Lighthouse', { links }), [`${wiki}/Two_Buttons`]: page('Two_Buttons') }, reads: [read({ next: 1 }), read({ next: null })] })
+    const b = await runTrip(found.deps, found.start)
+    expect(b.trail.pages[1]).toMatchObject({ url: `${wiki}/Two_Buttons`, guess: true })
+    expect(Trail.parse(b.trail).pages[1]!.guess).toBe(true)
+  })
+
   it('ends the trip, with a note, when the read call gave nothing usable', async () => {
     const s = setup({ pages: { [`${wiki}/Lighthouse`]: page('Lighthouse') }, reads: [{ answer: null, souvenir: {}, usd: 0, note: 'over the budget' }] })
     const r = await runTrip(s.deps, s.start)
