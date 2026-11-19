@@ -21,6 +21,17 @@ export function localFilesBase(world: Pick<LoadedWorld, 'ref' | 'sha'>, origin: 
   return local && world.sha === 'local' ? `${origin}${baseUrl}world/` : null
 }
 
+/**
+ * The address of one file of a world, for things the browser loads itself (a work's thumbnail on a screen): at its commit on
+ * GitHub, or under `localBase` for a local world. Null for a made-up world, or a path that is not a plain path.
+ */
+export function worldFileUrl(world: Pick<LoadedWorld, 'ref' | 'sha'>, path: string, localBase: string | null): string | null {
+  if (!SAFE_PATH.test(path)) return null
+  const local = world.ref.owner === LOCAL_REF.owner && world.ref.repo === LOCAL_REF.repo
+  if (local) return localBase ? `${localBase}${path}` : null
+  return `https://raw.githubusercontent.com/${world.ref.owner}/${world.ref.repo}/${world.sha}/${path}`
+}
+
 /** `localBase` is where a local world's files are served (`localFilesBase`); without it a local world has no files to read. */
 export function worldFiles(world: Pick<LoadedWorld, 'ref' | 'sha'>, fetchImpl: typeof fetch = (input, init) => fetch(input, init), localBase: string | null = null): WorldFiles {
   const local = world.ref.owner === LOCAL_REF.owner && world.ref.repo === LOCAL_REF.repo

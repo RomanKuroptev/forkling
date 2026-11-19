@@ -7,6 +7,10 @@ export interface SceneObject {
   place?: string
   ref?: string | null
   exhibitKind?: string
+  /** The kind of slot an exhibit stands in (`screen`, `frame`, `shelf`, ...). */
+  slot?: string
+  /** For a work or project on a screen: what the screen shows as drawn now. */
+  shows?: 'picture' | 'title' | 'nothing'
   name?: string
   text?: string
   letter?: number

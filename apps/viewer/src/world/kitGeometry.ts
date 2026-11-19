@@ -266,7 +266,7 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
       for (const i of inside.instances) lists[i.shape].push(i)
       for (const m of inside.models) (modelLists[m.file] ??= []).push(m.matrix)
       const { palette } = look(place, kit)
-      for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) lists[i.shape].push(i)
+      for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
       for (const i of neglectInstances(place, kit, baseY, level, 'interior')) lists[i.shape].push(i)
     }
   }

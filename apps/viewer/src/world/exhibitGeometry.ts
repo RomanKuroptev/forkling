@@ -51,9 +51,9 @@ export function exhibitInstances(spot: ExhibitSpot, colors: KitPalette['colors']
     case 'frame':
       return [at([0.46, 0.36, 0.03], colors.accent)]
     case 'screen':
-      return [at([0.8, 0.5, 0.03], colors.glow)]
+      return [{ ...at([0.8, 0.5, 0.03], colors.glow), glow: true }]
     case 'terminal':
-      return [at([0.45, 0.3, 0.03], colors.glow)]
+      return [{ ...at([0.45, 0.3, 0.03], colors.glow), glow: true }]
     case 'plaque':
       return [at([0.38, 0.2, 0.02], BRASS)]
     case 'shelf':
