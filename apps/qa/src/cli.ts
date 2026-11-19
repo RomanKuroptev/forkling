@@ -6,6 +6,7 @@ import { fastChecks } from './fast.ts'
 import { qaOut, repoRoot } from './paths.ts'
 import { Area } from './report/finding.ts'
 import { blocking, writeRun } from './report/write.ts'
+import { loadKnown } from './report/known.ts'
 import { runChecks, stockholmDate, type Check } from './run/check.ts'
 import { readSourceList } from './sources/list.ts'
 import { FORKLING_REPO, triageCommand } from './triage/command.ts'
@@ -45,7 +46,7 @@ async function main(argv: string[]): Promise<number> {
       writeRun(out, findings, { title: 'fast' })
       writeRunInfo(out, { title: 'fast', areas: fastChecks.map((c) => c.area) })
       console.log(`${fastChecks.length} checks, ${findings.length} findings; report in ${out}`)
-      return blocking(findings) ? 1 : 0
+      return blocking(findings, loadKnown(repoRoot())) ? 1 : 0
     }
     case 'sources': {
       const { values } = parseArgs({ args: rest, options: { world: { type: 'string' }, to: { type: 'string' }, label: { type: 'string' } } })

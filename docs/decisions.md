@@ -40,6 +40,7 @@ Dated log of choices that shape the project, newest first. Add an entry when a d
 ## 2026-11-19: The audit harness is its own package, `apps/qa` (audit Q0)
 - **Why.** The harness measures forkling without steering Merge (audit spec 1). Keeping it in its own package keeps sim pure and keeps every score and finding out of the mind's code paths.
 - **What.** `@forkling/qa`, run as `pnpm qa <command>` (`qa`, not `audit`, because `pnpm audit` is built in). Every check returns findings in one Zod format (`apps/qa/src/report/finding.ts`); a check that throws or returns a malformed finding gives `qa.check-did-not-run` (major), never a silent pass. A new blocker or major fails `qa.yml`. Pictures are PNG via pngjs (pure JS, works the same on Windows and Linux).
+- **Known findings (19 November).** Spec 5 blocks a PR only on a *new* blocker or major. `qa/known-findings.json` lists majors already tracked in an open `qa` issue (fingerprint, issue, reason); they stay in every report but do not fail `qa.yml`. A blocker always blocks. The fix PR removes its entry. Chosen over marking an engine gap `fixKind: roman`, which would say it waits for Roman when it does not.
 
 ## 2026-11-17: Prices that favour what you can see, 300 points a day, a formula on Sundays (spec v4 step 2, slice B)
 - **Why.** Merge held 420 of 450 points and wrote about 4 pages a day, because a page cost 1 point and was always on offer, while a sketch cost 50 against a real cost of about $0.012. Roman decided on 16 November that visible things are priced under their cost and standalone text over it.
