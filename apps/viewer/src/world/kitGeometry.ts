@@ -7,7 +7,7 @@ import { wireframeInstances } from './wireframe.ts'
 import { plotInstances } from './plotGeometry.ts'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
 import { galleryWalls, wallInstances, type GalleryWork } from './galleryWall.ts'
-import { SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
+import { FLOOR_BELOW, FLOOR_INSET, FLOOR_TOP, SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
 
 export { SHAPES, floorHeight, type Instance, type Shape }
@@ -153,10 +153,13 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
   const out: Instance[] = []
   const modelOut: ModelInstance[] = []
   for (let f = 0; f < place.exterior.floors; f++) {
-    out.push({ shape: 'box', matrix: compose([px, baseY + f * height + 0.06, pz], [0, 0, 0], [fw - 1, 0.12, fd - 1]), color: palette.colors.floor })
+    // A floor reaches 3 cm under its storey's line, so the feet of the furniture and the walls standing on that line are inside it, not
+    // in the plane of its underside (issue 335), and its top is 2 cm over the building's 0.12 m slab, not in its plane (issues 350, 353).
+    // It stops 1 cm short of the line where the walls' corner pieces end, for the same reason.
+    out.push({ shape: 'box', matrix: compose([px, baseY + f * height + (FLOOR_TOP - FLOOR_BELOW) / 2, pz], [0, 0, 0], [fw - 2 * FLOOR_INSET, FLOOR_TOP + FLOOR_BELOW, fd - 2 * FLOOR_INSET]), color: palette.colors.floor })
   }
   for (const room of place.rooms) {
-    for (const placed of room.parts) {
+    for (const [index, placed] of room.parts.entries()) {
       const part = kit.parts.find((p) => p.id === placed.part)
       if (!part) continue
       const at: [number, number, number] = [px + room.at[0] + placed.at[0], baseY + room.floor * height + placed.at[1], pz + room.at[1] + placed.at[2]]
@@ -166,7 +169,8 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
       } else {
         const off = part.category === 'light' && opts.lampsOn === false
         // A lamp that is off is dark: it does not glow either.
-        out.push(...partInstances(part, at, placed.rot, off ? dark : palette).map((i) => (off ? { ...i, glow: false } : i)))
+        const group = `${room.id}/${index}`
+        out.push(...partInstances(part, at, placed.rot, off ? dark : palette).map((i) => (off ? { ...i, glow: false, group } : { ...i, group })))
       }
     }
   }
