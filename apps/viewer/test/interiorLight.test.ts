@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { FRAME, WINDOW_SIZE, buildingModel, partKey, windowLayout } from '../src/world/building.ts'
 import { interiorInstances, lampSpots, sceneInstances, SHAPES } from '../src/world/kitGeometry.ts'
 import type { Instance } from '../src/world/kitBase.ts'
-import { INTERIOR, NIGHT_LIGHT, interiorWall, repaint } from '../src/world/theme.ts'
+import { INTERIOR, NIGHT_LIGHT, dayLift, interiorWall, repaint } from '../src/world/theme.ts'
 
 const fixture = (world: string, id: string) => Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL(`../../../test/fixtures/worlds/${world}/places/${id}.json`, import.meta.url)), 'utf8')))
 const lamps = fixture('day-7', 'hillside-room-five-lamps')
@@ -133,5 +133,34 @@ describe('warm lamp light at night (issue 361)', () => {
     expect(NIGHT_LIGHT.glowNight).toBeGreaterThan(NIGHT_LIGHT.glowDay)
     expect(NIGHT_LIGHT.selfNight).toBeLessThan(NIGHT_LIGHT.selfDay)
     expect(INTERIOR.skyInside).toBeLessThan(1)
+  })
+})
+
+describe('no room is dim by day (#405 look review)', () => {
+  const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+  const light = (hex: string) => {
+    const n = Number.parseInt(hex.slice(1), 16)
+    return 0.2126 * lin(((n >> 16) & 255) / 255) + 0.7152 * lin(((n >> 8) & 255) / 255) + 0.0722 * lin((n & 255) / 255)
+  }
+
+  it('lifts the lining of a dark-trim palette (slate, dusk) by day to the day wall light, and leaves light ones alone', () => {
+    for (const palette of kit.palettes) {
+      const c = interiorWall(palette.colors.trim)
+      const lift = dayLift(c)
+      expect(lift, palette.id).toBeGreaterThanOrEqual(0)
+      expect(lift, palette.id).toBeLessThanOrEqual(1)
+      expect(light(c) * (1 + lift), palette.id).toBeGreaterThanOrEqual(Math.min(INTERIOR.dayWallLight, light(c) * 2) - 1e-9)
+      if (light(c) >= INTERIOR.dayWallLight) expect(lift, palette.id).toBe(0)
+    }
+    expect(dayLift(interiorWall(kit.palettes.find((p) => p.id === 'slate')!.colors.trim))).toBeGreaterThan(0.3)
+    expect(dayLift(interiorWall(kit.palettes.find((p) => p.id === 'dusk')!.colors.trim))).toBeGreaterThan(0.2)
+  })
+
+  it('gives the lift to the lining of the Workshop and packs it for the shader, and gives none to the outside', () => {
+    const lining = buildingModel(workshop, kit, 0)!.inside
+    for (const i of lining) expect(i.dayLift).toBeGreaterThan(0.3)
+    expect(buildingModel(workshop, kit, 0)!.instances.every((i) => !i.dayLift)).toBe(true)
+    const scene = sceneInstances([workshop], kit, { heightAt: () => 0, interiors: new Set([workshop.id]) })
+    expect([...scene.box.dayLift].filter((v) => v > 0).length).toBe(lining.length)
   })
 })

@@ -8,7 +8,7 @@ import type { CheckResult } from '../report/finding.ts'
 import { contactSheet, type Box, type Tile } from '../report/sheet.ts'
 import type { SceneObject } from './open.ts'
 import type { FrameCost } from './budget.ts'
-import { flicker, muddyShare, nearWhiteShare, paletteShare, pictureStats } from './picture.ts'
+import { flicker, middleLight, muddyShare, nearWhiteShare, paletteShare, pictureStats } from './picture.ts'
 
 /**
  * The picture checks of one opened world (audit spec 7.3, 7.4): the fixed cameras (aerial, each place's front, Merge close) and
@@ -37,6 +37,8 @@ export const PICTURE_LEVELS = {
   palette: 0.75,
   /** More than this share of near-white pixels in a picture taken inside a room is blown out (issue 358; the before pictures were 0.46 to 0.57). */
   roomNearWhite: 0.4,
+  /** By day, a picture inside a room whose middle band (mostly the walls) is darker than this reads as dusk (the dull violet Workshop at noon was 105; Home, 150). */
+  roomDayMiddle: 115,
   /** More than this share of brown, olive or khaki pixels in a night picture breaks look.md rule 3 (issue 361; the before pictures were 0.13). */
   nightMuddy: 0.08,
   /** More than this share of pixels jumping when the camera moves 1 mm is flicker. */
@@ -65,6 +67,8 @@ export function judgeShot(shot: Shot, ctx: { fixture: string; night: boolean; fi
   if (shot.name.startsWith('room:')) {
     const white = nearWhiteShare(img)
     if (white > PICTURE_LEVELS.roomNearWhite) add('world.room-blown-out', 'major', `The room in "${shot.name}" is washed out`, `${(white * 100).toFixed(0)}% of the picture is near white (at most ${PICTURE_LEVELS.roomNearWhite * 100}%).`, 'The room looks like an empty, overlit showroom: its walls and floor lose their colours.')
+    const middle = middleLight(img)
+    if (!ctx.night && middle < PICTURE_LEVELS.roomDayMiddle) add('world.room-too-dark', 'major', `The room in "${shot.name}" is dim by day`, `The walls in the middle of the picture have a mean light of ${middle.toFixed(0)} of 255 (at least ${PICTURE_LEVELS.roomDayMiddle} by day).`, 'At noon the room looks like dusk: its walls read as a dull dark colour.')
   }
   if (ctx.night) {
     const muddy = muddyShare(img)

@@ -2,7 +2,7 @@ import type { Kit, KitPalette, Place } from '@forkling/schema'
 import { DOOR_HALF, placeCentre, toLandPlace } from '@forkling/sim'
 import { floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose } from './matrix.ts'
-import { COLORS, interiorWall } from './theme.ts'
+import { COLORS, dayLift, interiorWall } from './theme.ts'
 
 /**
  * The building model of docs/spec/v4/look.md: every building is drawn from six slots (base, body, front, crown, hero, glow) and is a
@@ -186,6 +186,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   // The lining of the walls inside (not for a glass house, whose walls are see-through), in the room's own colour.
   const inside: Instance[] = []
   const lining = style === 'glass' ? null : interiorWall(palette.colors.trim)
+  const lift = lining ? dayLift(lining) : 0
   const windows = windowLayout(place)
 
   // Base: a low marble slab, wider than the footprint, with a thin glowing edge.
@@ -245,7 +246,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       const inward = -(WALL_THICKNESS / 2 + LINING / 2)
       const piece = (p: number, q: number, u0: number, u1: number) => {
         if (q - p < 0.02 || u1 - u0 < 0.02) return
-        inside.push({ shape: 'box', matrix: compose(at((p + q) / 2, (u0 + u1) / 2, inward), rot, size(q - p, u1 - u0, LINING)), color: lining, inside: true })
+        inside.push({ shape: 'box', matrix: compose(at((p + q) / 2, (u0 + u1) / 2, inward), rot, size(q - p, u1 - u0, LINING)), color: lining, inside: true, ...(lift > 0 ? { dayLift: lift } : {}) })
       }
       let cursor = from
       for (const along of alongs) {
@@ -269,7 +270,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       if (lintel > 0.05) add('body', 'box', [px, y + DOOR_HEIGHT + lintel / 2, z1 - lean * (DOOR_HEIGHT + lintel / 2)], [DOOR_HALF * 2, lintel, WALL_THICKNESS], bodyColor)
       if (lining && h - 0.25 - DOOR_HEIGHT > 0.02) {
         const up = (DOOR_HEIGHT + h - 0.25) / 2
-        inside.push({ shape: 'box', matrix: compose([px, y + up, z1 - lean * up - WALL_THICKNESS / 2 - LINING / 2], [0, 0, 0], [DOOR_HALF * 2, h - 0.25 - DOOR_HEIGHT, LINING]), color: lining, inside: true })
+        inside.push({ shape: 'box', matrix: compose([px, y + up, z1 - lean * up - WALL_THICKNESS / 2 - LINING / 2], [0, 0, 0], [DOOR_HALF * 2, h - 0.25 - DOOR_HEIGHT, LINING]), color: lining, inside: true, ...(lift > 0 ? { dayLift: lift } : {}) })
       }
       // A closed place has its door boarded: chrome planks nailed across the gap, a little crooked.
       if (place.state.closed) {

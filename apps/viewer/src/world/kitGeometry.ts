@@ -257,6 +257,8 @@ export interface ShapeInstances {
   trim: Float32Array
   /** 1 for the inside of a place, which gets less of the sky's light, else 0. */
   inside: Float32Array
+  /** How much brighter the instance is drawn by day (`Instance.dayLift`), else 0. */
+  dayLift: Float32Array
   count: number
 }
 
@@ -332,20 +334,22 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     const glow = new Float32Array(list.length)
     const trim = new Float32Array(list.length)
     const inside = new Float32Array(list.length)
+    const dayLift = new Float32Array(list.length)
     list.forEach((inst, k) => {
       matrices.set(inst.matrix, k * 16)
       colors.set(rgb(inst.color), k * 3)
       glow[k] = inst.glow ? 1 : 0
       trim[k] = inst.trim ? 1 : 0
       inside[k] = inst.inside ? 1 : 0
+      dayLift[k] = inst.dayLift ?? 0
     })
-    return { matrices, colors, glow, trim, inside, count: list.length }
+    return { matrices, colors, glow, trim, inside, dayLift, count: list.length }
   }
   return { box: pack(lists.box), sphere: pack(lists.sphere), cylinder: pack(lists.cylinder), cone: pack(lists.cone), glassBox: pack(glassList), models, lamps }
 }
 
 /** What drawing these costs: a draw call for each shape that has any and the triangles of every instance, and for each model file at most `MODEL_LIMITS`. */
-export function renderBudget(scene: Record<Shape, Omit<ShapeInstances, 'trim' | 'inside'>> & { glassBox?: Omit<ShapeInstances, 'trim' | 'inside'>; models?: Record<string, Float32Array> }): { drawCalls: number; triangles: number } {
+export function renderBudget(scene: Record<Shape, Omit<ShapeInstances, 'trim' | 'inside' | 'dayLift'>> & { glassBox?: Omit<ShapeInstances, 'trim' | 'inside' | 'dayLift'>; models?: Record<string, Float32Array> }): { drawCalls: number; triangles: number } {
   let drawCalls = 0
   let triangles = 0
   for (const matrices of Object.values(scene.models ?? {})) {

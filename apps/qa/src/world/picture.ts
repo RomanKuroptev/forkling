@@ -35,6 +35,23 @@ const hsv = (r: number, g: number, b: number): [number, number, number] => {
 }
 
 /**
+ * The mean light (0 to 255) of the middle band of a picture, from 35 to 70 percent of its height: in a picture taken inside a room at
+ * eye height that is mostly the walls, without the ceiling and the floor. A room whose walls are dark by day reads as dusk.
+ */
+export function middleLight(p: PNG): number {
+  let sum = 0
+  let n = 0
+  for (let y = Math.floor(p.height * 0.35); y < Math.ceil(p.height * 0.7); y++) {
+    for (let x = 0; x < p.width; x++) {
+      const i = (y * p.width + x) * 4
+      sum += lum(p.data[i]!, p.data[i + 1]!, p.data[i + 2]!)
+      n++
+    }
+  }
+  return n ? sum / n : 0
+}
+
+/**
  * The share of near-white pixels: bright (light 185 of 255 and up) with almost no colour (saturation 0.2 at most). A room whose
  * walls and floor are mostly this is blown out: the light has washed its colours away (issue 358).
  */
