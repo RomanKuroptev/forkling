@@ -6,12 +6,29 @@ Read this first. Update it before every commit and before you stop.
 
 Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session builds Phase 1 (Q0 base, then lanes W, B, S, T in worktrees), then QR (run it, fix, release). Lanes write progress to `docs/spec/audit/lanes/<lane>.md`; real-run spend is tracked in `docs/spec/audit/lanes/spend.md` (harness budget $10 a month). Nothing runs on a schedule. After QR: the Merge fresh start ([`docs/spec/v4/merge-fresh-start.md`](docs/spec/v4/merge-fresh-start.md)), on Roman's go.
 
-- **Docs:** this PR commits the audit spec and the fresh-start plan.
-- **Docs merged** (#261).
-- **Q0 (this PR):** `apps/qa` (`pnpm qa fast`), the Finding schema, `findings.json` and `report.md`, PNG contact sheets, the check runner (a throwing check gives `qa.check-did-not-run`, planted test), `qa.yml` on PRs and main. Labels `qa`, `phase-2`, `needs-roman`, `fix-failed`, `qa-rules`. Site gaps filed as `qa` + `phase-2`: #262 to #268. Pinned digest issue: #269.
-- **Next:** lanes W, B, S, T in worktrees, each plan approved before it builds.
+**Lanes: edit only your own subsection below** (append a bullet at its end), so parallel PRs do not conflict here.
+
+### Coordinator
+
+- **Docs** (#261) and **Q0** (#270) merged: `apps/qa` (`pnpm qa fast`), the Finding schema, `findings.json` and `report.md`, PNG contact sheets, the check runner (a throwing check gives `qa.check-did-not-run`, planted test), `qa.yml` on PRs and main. Labels `qa`, `phase-2`, `needs-roman`, `fix-failed`, `qa-rules`. Site gaps filed as `qa` + `phase-2`: #262 to #268. Pinned digest issue: #269.
+- **All four lane plans approved (19 November).** The R2 fast-forward output is kept on Roman's PC at `C:\Code\forkling-qa-data\r2\` (`ff-r2a-world`, `ff-r2a-out`, copied out of an old scratchpad; not in the repo), so `day-7` needs no new real run.
+- **Waiting for Roman:** this repo does not let GitHub Actions open pull requests, so the web-snapshot refresh job pushes its branch and stops. Recommended: switch on Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"; until then the coordinator opens that PR by hand.
+
+### Lane W (Q1, QW)
+
+- **Lane W** ([`lanes/w.md`](docs/spec/audit/lanes/w.md), plan approved, W1 to W8): **W1 (this PR)** the viewer's `?qa=1&now=&seed=`: frames drawn only by `window.__qa.step`, a frozen clock, seeded randomness, and `__qa` with `ready`, `scene()`, `renderer()`, `cameras`, `setCamera`, `fps`, `press`, `stick`, `visitor`, `teleport`, `look`. Normal mode pixel-identical before and after. Check `world.viewer-math-random` in `pnpm qa fast`.
+
+### Lane B (QB)
+
+- Plan approved (B1 to B9, [`lanes/b.md`](docs/spec/audit/lanes/b.md)).
+
+### Lane S (QS)
+
 - **Lane S (data sources, plan in `docs/spec/audit/lanes/s.md`):** S1 (#271, merged): `qa/sources.json` and two `fast` checks: the list matches the allowlist both ways, and every promised source not on the list is a finding (Lemmy memes, Mastodon trends and Show HN major, Lobsters minor, all for Roman with a recommended answer). A `roman` major no longer fails a PR. S2 (#273, merged): `pnpm qa sources --world <dir>` scores what Merge read over 7 days (pure counts in `packages/sim/src/source-mix.ts`). **On a clone of Merge (13 to 19 November): 81% of 32 trips started on Wikipedia, 9 of 32 hit a 404 on a made-up Wikipedia title (counted apart: 12 trips that only met pages read in the last 30 days, the rule fixed on main), Commons and the Art Institute never offered or read.** S3 (#277, merged): `pnpm qa live --sources [--world <clone>] [--imgflip-history <file>]`, the real fetch code with robots.txt first (a disallow is a blocker), items per source, a sample Wikipedia page, Imgflip freshness against last run's list, the snapshot's age and sources; the snapshot's format and allowlist check is in `fast`. **First live run (20 November): the p5.js reference start page is over the 2 MB cap and the Tone.js docs start page is a meta refresh, so the tinker step gets neither manual today** (engine bugs, for the triage). S4 (#279): `.github/workflows/qa-live.yml`, `workflow_dispatch` only (planned times as comments): the `sources` job (last run's Imgflip history as an artefact, a read-only clone of Merge, `pnpm qa live --sources`) and the `web-snapshot` job (lane B's recorder, then a PR). **For Roman: "Allow GitHub Actions to create and approve pull requests" is off in this repo**, so the snapshot job pushes its branch and stops with a note; recommended: switch it on, or open that PR by hand. Next: run the source job twice on Actions.
-- **Lane T (QT, plan in `docs/spec/audit/lanes/t.md`):** T1 (this PR): `pnpm qa triage [--dry-run]`, findings to issues labelled `qa` by fingerprint (open, comment when the evidence changed, close after 2 clean runs in a covered area, reopen when it comes back), PNG evidence on the orphan `qa-evidence` branch, up to 5 picks in `qa-out/triage.json`; GitHub only through a `Tracker` interface with a fake in tests. Next: T2 (gather, fix tries, digest), T3 (the `/qa` skill, the fixer, `qa/nightly.ps1`).
+
+### Lane T (QT)
+
+- **Lane T (QT, plan in `docs/spec/audit/lanes/t.md`):** T1 (#272): `pnpm qa triage [--dry-run]`, findings to issues labelled `qa` by fingerprint (open, comment when the evidence changed, close after 2 clean runs in a covered area, reopen when it comes back), PNG evidence on the orphan `qa-evidence` branch, up to 5 picks in `qa-out/triage.json`; GitHub only through a `Tracker` interface with a fake in tests. T2 (this PR): `pnpm qa gather` (fast, Actions artefacts and reviewer files into one findings.json and run.json), `pnpm qa fix-try` (2 failed tries label `fix-failed`; a merged fix is named when the issue closes), `pnpm qa digest [--post]` (`qa-out/digest.md`, one comment on #269), `qa/triage.json` (digest issue, at most 5 fixes). Next: T3 (the `/qa` skill, the fixer, `qa/nightly.ps1`).
 
 ## Spec v4, parallel build (started 17 November)
 

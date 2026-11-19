@@ -62,8 +62,11 @@ export function planTriage({ findings, issues, coveredAreas, date, maxPicks = 5 
     }
     const { issue, state } = hit
     const next = { ...state, area: finding.area, clean: 0, evidence }
-    if (issue.state === 'closed') actions.push({ kind: 'reopen', issue, finding, state: next })
-    else if (state.evidence !== evidence) actions.push({ kind: 'comment', issue, finding, state: next })
+    if (issue.state === 'closed') {
+      // It came back, so whatever fix was merged did not hold.
+      const { fixedBy: _gone, ...reopened } = next
+      actions.push({ kind: 'reopen', issue, finding, state: reopened })
+    } else if (state.evidence !== evidence) actions.push({ kind: 'comment', issue, finding, state: next })
     else if (state.clean > 0) actions.push({ kind: 'update', issue, state: next })
   }
 

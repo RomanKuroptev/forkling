@@ -2,6 +2,15 @@
 
 Dated log of choices that shape the project, newest first. Add an entry when a decision is made, with the reason. Dates are from the commit that introduced the decision.
 
+**Audit harness lanes (until QR is done):** add your decisions as bullets at the end of your lane's own 2026-11-19 entry below, not as new entries at the top, so parallel PRs do not conflict.
+
+## 2026-11-19: Behaviour scoring choices (audit QB, lane B)
+- Lane B adds its decisions here.
+
+## 2026-11-19: `?qa=1` draws a frame only when the harness steps it (audit Q1, lane W)
+- **Why.** A picture must depend only on the address and the steps taken, or the world checks cannot compare two runs. With the clock frozen but the frame loop free, the visitor's capsule and Merge's animations still moved with real frame times.
+- **What.** Under `?qa=1&now=&seed=` the Canvas runs with `frameloop="never"`, and `window.__qa.step(ms)` draws frames of 1/30 s that also move the world clock. `Math.random` is replaced by the seeded PRNG before any other module loads (`apps/viewer/src/qa/seedRandom.ts`), so library code that draws randomly is seeded too, and a check (`world.viewer-math-random`) keeps the viewer's own code free of `Math.random()` calls. Places are drawn as a few instanced meshes, so `__qa.scene()` lists them from the same geometry functions the drawing uses; Merge and the visitor come from their three.js objects. Normal mode is unchanged: pictures before and after at the same camera and clock are pixel-identical (Playwright's fake page clock).
+
 ## 2026-11-19: The source list of the audit harness (audit QS, lane S)
 - **`qa/sources.json`, not `qa/coverage.json`.** Spec 9.4 puts the sources in `qa/coverage.json`; steps.md names `qa/sources.json`, and steps.md wins. `coverage.json` stays Phase 2's mockup file.
 - **Lemmy memes is `trial failed`, not a `code` fix.** Spec 9.4 calls Lemmy "a passed trial that just needs wiring", but its report (`docs/spec/w2-trials/lemmy.world.md`) fails readable at 63% (mark 80%). The report wins: it is for Roman, recommended "rerun the trial against a text-heavier community, or drop". Mastodon trends: Roman, recommended "drop: robots.txt blocks ClaudeBot by name". Show HN: Roman, recommended "drop" (10% of items have 120 words; the projects are on sites Merge may not read).
@@ -16,6 +25,8 @@ Dated log of choices that shape the project, newest first. Add an entry when a d
 - **A missing finding counts as clean only in an area the run looked at** (`qa-out/run.json`), and not where a check did not run, so a nightly run without the explorer cannot close a world issue.
 - **A fingerprint that comes back reopens its closed issue** instead of opening a second one. **`info` findings never become issues** (measured, no action; they go in the digest).
 - **Pictures:** the issues API takes no uploads, so PNG evidence is committed through the contents API to an orphan branch `qa-evidence` of the forkling repo (public) and linked from the issue. Only `pnpm qa triage` writes there, only `.png` files under safe paths; never `main`, never Merge's repo.
+- **Gather:** the same fingerprint from several sources is one finding with the highest severity (a look reviewer confirming an explorer's minor makes it major), the earliest first-seen date and all evidence. A findings file that does not parse is a `qa.check-did-not-run` in the area its path names, so its area is not counted clean.
+- **The digest lists only issues triage manages** (with the hidden line); the hand-filed `phase-2` issues are Roman's backlog already. A recommended answer for Roman is a `**Recommended answer:**` line in the issue body.
 - **Fix PRs from `/qa` merge themselves, gated** as Roman's audit prompt ([`docs/spec/audit/prompt.md`](spec/audit/prompt.md), "Merge rules") says, which is more specific than the general CLAUDE.md line about engine PRs: code after green CI including `qa.yml` (`gh pr checks` exits 0 with checks present); look after that and a separate look reviewer passing the before and after pictures; prompt after the written checks, a 3-day real run and a reviewer agent. `qa-rules` and `needs-roman` PRs are never merged by Claude.
 
 ## 2026-11-19: The audit harness is its own package, `apps/qa` (audit Q0)

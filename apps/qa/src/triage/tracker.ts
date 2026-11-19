@@ -17,6 +17,7 @@ export type NewIssue = { title: string; body: string; labels: string[] }
 export interface Tracker {
   // Every issue with this label, open and closed.
   listIssues(label: string): Promise<Issue[]>
+  getIssue(issue: number): Promise<Issue>
   createIssue(issue: NewIssue): Promise<number>
   comment(issue: number, body: string): Promise<void>
   editBody(issue: number, body: string): Promise<void>
@@ -48,6 +49,10 @@ export class FakeTracker implements Tracker {
 
   async listIssues(label: string): Promise<Issue[]> {
     return this.issues.filter((i) => i.labels.includes(label)).map((i) => ({ ...i, labels: [...i.labels], comments: [...i.comments] }))
+  }
+  async getIssue(n: number): Promise<Issue> {
+    const i = this.get(n)
+    return { ...i, labels: [...i.labels], comments: [...i.comments] }
   }
   async createIssue({ title, body, labels }: NewIssue): Promise<number> {
     this.calls.push(`open ${title}`)
@@ -94,6 +99,9 @@ export class DryRunTracker implements Tracker {
 
   listIssues(label: string): Promise<Issue[]> {
     return this.real.listIssues(label)
+  }
+  getIssue(n: number): Promise<Issue> {
+    return this.real.getIssue(n)
   }
   async createIssue({ title, labels }: NewIssue): Promise<number> {
     const n = this.next--
