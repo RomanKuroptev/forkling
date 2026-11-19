@@ -62,6 +62,56 @@ export const LIGHT = {
   rim: COLORS.cyan,
 } as const
 
+/**
+ * Inside a place (issues 358, 361). The walls inside are the palette's trim mixed towards the face colour, so a room has a colour of
+ * its own and is never the washed-out white of its outside pastel. Under a roof less of the sky's light reaches in, and at night the
+ * lamps throw warm pools of light.
+ */
+export const INTERIOR = {
+  /** The inside of the walls: the palette's trim, this far mixed towards `wallTowards`. */
+  wallMix: 0.55,
+  wallTowards: COLORS.face,
+  /** The share of the sky's light (the hemisphere light) that reaches the inside of a place. */
+  skyInside: 0.42,
+  /** The warm light of a lamp that is on, how strong it is by day and at night, and how far it reaches (meters). */
+  lampLight: COLORS.peach,
+  lampDay: 1,
+  lampNight: 4,
+  lampReach: 7,
+  /** How many lamps near the visitor light the room at once (a fixed number, so the shaders are made once). */
+  lamps: 4,
+} as const
+
+/**
+ * The light at night (look.md rules 2, 3 and 8). The flat light every surface gives off of its own colour drops at night, or pale
+ * walls and orange trim read as khaki and brown in the dark; the purple sky light carries the shade instead. Lit trim (the accent
+ * bands, title bars and window frames) glows a little in its own colour, more at night, and windows glow more than by day without
+ * turning white.
+ */
+export const NIGHT_LIGHT = {
+  /** The light every surface gives off of its own colour, by day and at night. */
+  selfDay: 0.22,
+  selfNight: 0.06,
+  /** The hemisphere light at night. */
+  hemiNightIntensity: 1.1,
+  /** A window or lamp: what it gives off of its own colour, by day and at night. */
+  glowDay: 0.9,
+  glowNight: 1.25,
+  /** A glowing thing takes this share of the light falling on it, so daylight does not wash it white. */
+  glowLit: 0.35,
+  /** Lit trim, by day (a little, so a yellow or orange band is not tan in shade) and at night. */
+  trimDay: 0.3,
+  trimNight: 0.7,
+} as const
+
+/** The inside wall colour of a palette with this trim (`INTERIOR`). */
+export function interiorWall(trim: string): string {
+  const a = Number.parseInt(trim.slice(1), 16)
+  const b = Number.parseInt(INTERIOR.wallTowards.slice(1), 16)
+  const mix = (shift: number) => Math.round(((a >> shift) & 255) * (1 - INTERIOR.wallMix) + ((b >> shift) & 255) * INTERIOR.wallMix)
+  return `#${((mix(16) << 16) | (mix(8) << 8) | mix(0)).toString(16).padStart(6, '0')}`
+}
+
 /** The mist at the world's edge and the fog, in the look's colours rather than white. */
 export const MIST = {
   fogDay: '#ff7ab8',

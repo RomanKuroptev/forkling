@@ -4,6 +4,7 @@ import { kit } from '@forkling/schema/kit'
 import { DOOR_HALF, WALL, createLand, placeCentre, toLandPlace } from '@forkling/sim'
 import { FIXTURE_NOW, makeFixtureWorld } from '@forkling/sim/fixture'
 import { compose, multiply } from '../src/world/matrix.ts'
+import { buildingModel, partKey, windowLayout } from '../src/world/building.ts'
 import { MODEL_LIMITS, SHAPES, SHAPE_TRIANGLES, exteriorInstances, floorHeight, interiorInstances, interiorsToLoad, modelFiles, partInstances, renderBudget, resolveColor, sceneInstances, wallBoxes } from '../src/world/kitGeometry.ts'
 
 const fixture = makeFixtureWorld(1, 10)
@@ -157,10 +158,13 @@ describe('the walls you cannot walk through (the same walls the cat\'s world has
 })
 
 describe('the inside of a building (spec 4.6: only the place the visitor is in, and its neighbours, are loaded in full)', () => {
-  it('is the furniture of each room, on its floor', () => {
+  it('is the furniture of each room, on its floor, and the lining of the walls', () => {
     const home = place('home')
-    const count = home.rooms.flatMap((r) => r.parts).reduce((n, p) => n + kit.parts.find((k) => k.id === p.part)!.primitives.length, 0)
-    expect(interiorInstances(home, kit, 0)).toHaveLength(count + 1) // and the floor
+    const { consumed } = windowLayout(home)
+    const count = home.rooms.flatMap((r, ri) => r.parts.filter((_, k) => !consumed.has(partKey(ri, k)))).reduce((n, p) => n + kit.parts.find((k) => k.id === p.part)!.primitives.length, 0)
+    const lining = buildingModel(home, kit, 0)!.inside.length
+    expect(lining).toBeGreaterThan(0)
+    expect(interiorInstances(home, kit, 0)).toHaveLength(count + 1 + lining) // and the floor
   })
   it('loads the places in the visitor\'s chunk and the chunks around it, and no others', () => {
     const land = createLand(1, fixture.places.map(toLandPlace))
