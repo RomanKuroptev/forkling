@@ -22,6 +22,7 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 ### Lane B (QB)
 
 - Plan approved (B1 to B9, [`lanes/b.md`](docs/spec/audit/lanes/b.md)).
+- **B1 (#274):** the pure measures in `packages/sim/src/behaviour-measures.ts`: topic variety and runs, top word, repetition share, rest by day and its rising run, something new at each look, kind shares. Built on `topicClusters` and `maxSimilarity`.
 
 ### Lane S (QS)
 
