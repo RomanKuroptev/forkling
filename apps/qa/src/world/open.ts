@@ -3,8 +3,8 @@ import type { Browser, Page } from 'playwright'
 /** One entry of `window.__qa.scene()` (apps/viewer/src/qa/sceneList.ts). */
 export interface SceneObject {
   id: string
-  /** `column`: a solid piece in front of a building's front (porch columns, an arch), listed for the hidden-sign check. */
-  kind: 'place' | 'room' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor' | 'column'
+  /** `column`: a solid piece in front of a building's front (porch columns, an arch), listed for the hidden-sign check. `part`: a drawn piece of furniture; `door`: a place's doorway, which must stay clear. */
+  kind: 'place' | 'room' | 'part' | 'door' | 'work' | 'exhibit' | 'sign' | 'label' | 'plot' | 'merge' | 'visitor' | 'column'
   place?: string
   ref?: string | null
   exhibitKind?: string
@@ -16,6 +16,8 @@ export interface SceneObject {
   shows?: 'picture' | 'title' | 'nothing'
   /** What an exhibit's card shows and the words on it; every exhibit but a work screen has one. */
   card?: { shows: 'picture' | 'text' | 'title' | 'nothing'; text: string }
+  /** A part not drawn because it stands in a doorway, and the exhibits it holds (not drawn either). */
+  inDoorway?: { holds: string[] }
   name?: string
   text?: string
   letter?: number
