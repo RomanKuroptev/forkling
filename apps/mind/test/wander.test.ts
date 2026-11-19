@@ -177,6 +177,30 @@ describe('the morning', () => {
     expect(user).toContain(`Moon | ${wiki}/wiki/Moon`)
   })
 
+  it('shows the morning plan that a sketch can be a meme, with the meme formats it read on its trips (issue #328)', async () => {
+    writeJson('trails/2026-11-02-1.json', Trail.parse({ id: '2026-11-02-1', date: '2026-11-02', purpose: 'p', start: { kind: 'feed', value: 'https://imgflip.com/meme/181913649' }, pages: [{ url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling', fetchedAt: '2026-11-02T10:00:00Z', topics: [], interest: 6, reaction: 'No, then yes.' }] }))
+    const llm = fake(wanderPlan)
+    await tick(MORNING, llm)
+    const user = llm.calls[0]!.user
+    expect(user).toMatch(/<memes>\nA sketch can be a meme/)
+    expect(user.split('<data source="meme-formats">')[1]!.split('</data>')[0]).toContain('Drake Hotline Bling | https://imgflip.com/meme/181913649')
+  })
+
+  it('reads an Imgflip format from the morning list like any other starting point, by its title or its address (issue #328)', async () => {
+    const memes = [{ id: '100', name: 'Two Buttons', url: 'https://i.imgflip.com/1.jpg', box_count: 2, captions: 1000 }, { id: '101', name: 'Drake Hotline Bling', url: 'https://i.imgflip.com/2.jpg', box_count: 2, captions: 900 }]
+    for (const target of ['Two Buttons', 'https://imgflip.com/meme/100']) {
+      dir = mkdtempSync(join(tmpdir(), 'wander-'))
+      copyFileSync(join(merge, 'forkling.json'), file('forkling.json'))
+      const { web } = webWith({ 'https://api.imgflip.com/get_memes': JSON.stringify({ success: true, data: { memes } }) })
+      const llm = fake(plan([step('wander', target), step('rest', null), step('write', 'home'), pointStep]))
+      await tick(MORNING, llm, { web })
+      await tick(at(31), llm, { web })
+      const trail = Trail.parse(readJson(`trails/${DAY}-1.json`))
+      expect(trail.pages[0]).toMatchObject({ url: 'https://imgflip.com/meme/100', title: 'Two Buttons' })
+      expect(trail.pages[0]!.failed).toBeUndefined()
+    }
+  })
+
   it('still plans when Imgflip is down, says so, and keeps the other starting points', async () => {
     const llm = fake(wanderPlan)
     const { web } = webWith()

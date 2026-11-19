@@ -9,6 +9,7 @@ import { unreadSeen } from '../web/lookup.ts'
 import { readTrailsSince } from '../web/wander-state.ts'
 import { canFoundNow, foundGate } from './found.ts'
 import { checkPlan, placeIds } from './plan.ts'
+import { memeSeeds } from '../builds/memes.ts'
 import { readProjects } from '../builds/projects.ts'
 import { clock, weekday } from './util.ts'
 import { readWrittenPages } from './variety.ts'
@@ -98,6 +99,7 @@ export async function think(t: Tick): Promise<void> {
     past: readRecentPast(t.dir, t.today, t.w.art),
     startingPoints: t.startingPoints.map((p) => (t.wander.readRecently(p.url) ? { ...p, readLately: true } : p)),
     seenPages: unreadSeen(t.mind.seen ?? [], { not: t.startingPoints.map((p) => p.url), readRecently: t.wander.readRecently }),
+    memeFormats: memeSeeds(t.dir).formats.map((f) => ({ title: f.title, url: f.url })),
     notes: noteLines(t),
     ...(t.deps.sessions ? { projects: projectLines(t) } : {}),
   })
