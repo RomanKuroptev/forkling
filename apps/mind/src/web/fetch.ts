@@ -1,14 +1,17 @@
 import { hostRule, isAllowed, USER_AGENT, type ReadVerb } from './allowlist.ts'
+import { robotsAllows } from './robots.ts'
 
 /** The most one response may be, in bytes (spec 6.2). */
 export const MAX_BYTES = 2 * 1024 * 1024
 export const TIMEOUT_MS = 10_000
 const MAX_REDIRECTS = 5
 const PAUSE_MS = 24 * 3_600_000
+/** How long a host's robots.txt is kept before it is read again. */
+const ROBOTS_MS = 24 * 3_600_000
 
 export type FetchImpl = (url: string, init?: RequestInit) => Promise<Response>
 
-export type WebErrorCode = 'not-allowed' | 'redirect-not-allowed' | 'too-many-redirects' | 'paused' | 'timeout' | 'network' | 'too-big' | 'http'
+export type WebErrorCode = 'not-allowed' | 'redirect-not-allowed' | 'too-many-redirects' | 'paused' | 'timeout' | 'network' | 'too-big' | 'http' | 'robots'
 
 export class WebError extends Error {
   readonly code: WebErrorCode
@@ -26,7 +29,10 @@ export interface FetchLine {
   at: string
   url: string
   host: string
-  /** `ok`, `redirect`, `not-allowed`, `paused`, `timeout`, `network`, `too-big` or `http-<status>`. */
+  /**
+   * `ok`, `redirect`, `not-allowed`, `paused`, `timeout`, `network`, `too-big`, `http-<status>`, `robots-disallowed` (the
+   * host's robots.txt says no) or `robots-unreachable` (its robots.txt could not be read).
+   */
   outcome: string
 }
 
@@ -98,7 +104,10 @@ async function readCapped(res: Response, url: string): Promise<Uint8Array> {
 /**
  * The only way the mind reads the web. Read-only GETs, allowed hosts only, redirects followed one by one and only to allowed
  * hosts, a 10 second timeout, a 2 MB cap, each host's own rate, and a 24 hour pause for a host that answers 429 or 403 with
- * no retry. Every request and every refusal goes in `log`.
+ * no retry. Before the first request to a host it reads the host's robots.txt (kept for 24 hours, the same User-Agent, the
+ * host's gap) and refuses a path it disallows. A host with no robots.txt (404) sets no rules; one whose robots.txt could not
+ * be read is not read, as in the source trials (`mayReadHost`), and is asked again next time. Every request and every
+ * refusal goes in `log`.
  */
 export function createFetcher(options: FetcherOptions = {}): Fetcher {
   const fetchImpl: FetchImpl = options.fetchImpl ?? ((url, init) => fetch(url, init))
@@ -107,6 +116,9 @@ export function createFetcher(options: FetcherOptions = {}): Fetcher {
   const pausedUntil = new Map<string, number>(Object.entries(options.paused ?? {}).map(([host, iso]) => [host, Date.parse(iso)]))
   const lastAt = new Map<string, number>()
   const log: FetchLine[] = []
+  /** Each host's robots.txt (`''` for none) and when it was read. */
+  const robots = new Map<string, { txt: string; at: number }>()
+  const reading = new Map<string, Promise<string | null>>()
 
   const note = (url: string, outcome: string) => log.push({ at: new Date(now()).toISOString(), url, host: hostOf(url), outcome })
 
@@ -120,7 +132,43 @@ export function createFetcher(options: FetcherOptions = {}): Fetcher {
     return true
   }
 
+  const isRobotsTxt = (url: string): boolean => {
+    try {
+      return new URL(url).pathname === '/robots.txt'
+    } catch {
+      return false
+    }
+  }
+
+  /** The host's robots.txt (`''` when it has none), or null when it could not be read. */
+  function robotsOf(host: string): Promise<string | null> {
+    const kept = robots.get(host)
+    if (kept && now() - kept.at < ROBOTS_MS) return Promise.resolve(kept.txt)
+    let pending = reading.get(host)
+    if (!pending) {
+      pending = get(`https://${host}/robots.txt`, 'text/plain')
+        .then(() => robots.get(host)?.txt ?? null)
+        .catch((error) => (error instanceof WebError && error.status === 404 ? '' : null))
+        .finally(() => reading.delete(host))
+      reading.set(host, pending)
+    }
+    return pending
+  }
+
   async function get(start: string, accept: string): Promise<{ bytes: Uint8Array; res: Response; url: string }> {
+    // A robots.txt asked for (by robotsOf, or by a trial) is fetched plainly and kept for its host.
+    const robotsHost = isRobotsTxt(start) ? hostOf(start) : null
+    try {
+      const got = await hops(start, accept)
+      if (robotsHost) robots.set(robotsHost, { txt: new TextDecoder().decode(got.bytes), at: now() })
+      return got
+    } catch (error) {
+      if (robotsHost && error instanceof WebError && error.status === 404) robots.set(robotsHost, { txt: '', at: now() })
+      throw error
+    }
+  }
+
+  async function hops(start: string, accept: string): Promise<{ bytes: Uint8Array; res: Response; url: string }> {
     let url = start
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       const host = hostOf(url)
@@ -131,6 +179,22 @@ export function createFetcher(options: FetcherOptions = {}): Fetcher {
       if (pausedNow(host)) {
         note(url, 'paused')
         throw new WebError('paused', `${host} is paused until ${new Date(pausedUntil.get(host)!).toISOString()}`)
+      }
+      if (!isRobotsTxt(url)) {
+        const txt = await robotsOf(host)
+        if (txt === null) {
+          note(url, 'robots-unreachable')
+          throw new WebError('robots', `the robots.txt of ${host} could not be read, so ${url} is not read`)
+        }
+        const u = new URL(url)
+        if (!robotsAllows(txt, `${u.pathname}${u.search}`)) {
+          note(url, 'robots-disallowed')
+          throw new WebError('robots', `the robots.txt of ${host} does not allow ${u.pathname}`)
+        }
+        if (pausedNow(host)) {
+          note(url, 'paused')
+          throw new WebError('paused', `${host} is paused until ${new Date(pausedUntil.get(host)!).toISOString()}`)
+        }
       }
       const wait = (lastAt.get(host) ?? -Infinity) + hostRule(host)!.gapMs - now()
       if (wait > 0) await sleep(wait)

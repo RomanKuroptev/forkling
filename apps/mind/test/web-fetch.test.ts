@@ -4,12 +4,20 @@ import { createFetcher, WebError, type FetchImpl } from '../src/web/fetch.ts'
 
 const NOW = Date.parse('2026-11-18T10:00:00Z')
 
-/** A fetch that answers from a table, records every call, and a clock the test moves by hand. */
+/**
+ * A fetch that answers from a table, records every call, and a clock the test moves by hand. Every host has no robots.txt
+ * (a 404) unless the table gives one; those requests go in `robotsCalls`, not in `calls` (robots.txt has its own tests below).
+ */
 function setup(answers: Record<string, () => Response | Promise<Response>>, paused: Record<string, string> = {}, authorization: Record<string, string> = {}) {
   const calls: { url: string; init?: RequestInit }[] = []
+  const robotsCalls: string[] = []
   const sleeps: number[] = []
   let now = NOW
   const fetchImpl: FetchImpl = async (url, init) => {
+    if (url.endsWith('/robots.txt') && !answers[url]) {
+      robotsCalls.push(url)
+      return new Response('not found', { status: 404 })
+    }
     calls.push({ url, init })
     const answer = answers[url]
     if (!answer) throw new Error(`no answer for ${url}`)
@@ -25,7 +33,7 @@ function setup(answers: Record<string, () => Response | Promise<Response>>, paus
     paused,
     authorization,
   })
-  return { fetcher, calls, sleeps, advance: (ms: number) => (now += ms), clock: () => now }
+  return { fetcher, calls, robotsCalls, sleeps, advance: (ms: number) => (now += ms), clock: () => now }
 }
 
 const ok = (body: string, headers: Record<string, string> = {}) => () => new Response(body, { status: 200, headers })
@@ -95,7 +103,7 @@ describe('a fetch', () => {
     expect(await fetcher.text('https://en.wikipedia.org/wiki/A')).toBe('B')
     expect(calls.map((c) => c.url)).toEqual(['https://en.wikipedia.org/wiki/A', 'https://en.wikipedia.org/wiki/B'])
     expect(calls.every((c) => (c.init as RequestInit).redirect === 'manual')).toBe(true)
-    expect(fetcher.log.map((l) => l.outcome)).toEqual(['redirect', 'ok'])
+    expect(fetcher.log.map((l) => l.outcome)).toEqual(['http-404', 'redirect', 'ok'])
   })
 
   it('refuses a redirect to a host that is not on the list, without following it', async () => {
@@ -138,7 +146,7 @@ describe('a fetch', () => {
     await expect(n.fetcher.text('https://api.github.com/down')).rejects.toMatchObject({ code: 'network' })
     const s = setup({ 'https://api.github.com/missing': () => new Response('no', { status: 404 }) })
     await expect(s.fetcher.text('https://api.github.com/missing')).rejects.toMatchObject({ code: 'http', status: 404 })
-    expect([t, n, s].map((x) => x.fetcher.log[0]!.outcome)).toEqual(['timeout', 'network', 'http-404'])
+    expect([t, n, s].map((x) => x.fetcher.log.at(-1)!.outcome)).toEqual(['timeout', 'network', 'http-404'])
   })
 })
 
@@ -171,19 +179,23 @@ describe('the rate of each host', () => {
       'https://en.wikipedia.org/b': ok('b'),
       'https://api.github.com/a': ok('c'),
     })
+    // The first request to a host waits out the gap after its robots.txt; the second waits out the gap after the first.
     await fetcher.text('https://en.wikipedia.org/a')
-    await fetcher.text('https://api.github.com/a')
-    expect(sleeps).toEqual([])
-    await fetcher.text('https://en.wikipedia.org/b')
     expect(sleeps).toEqual([2000])
+    await fetcher.text('https://en.wikipedia.org/b')
+    expect(sleeps).toEqual([2000, 2000])
+    // Another host waits only for its own robots.txt, not for Wikipedia.
+    await fetcher.text('https://api.github.com/a')
+    expect(sleeps).toEqual([2000, 2000, 1000])
   })
 
   it('does not wait when the gap has already passed', async () => {
     const { fetcher, sleeps, advance } = setup({ 'https://api.github.com/a': ok('a'), 'https://api.github.com/b': ok('b') })
     await fetcher.text('https://api.github.com/a')
+    expect(sleeps).toEqual([1000])
     advance(1500)
     await fetcher.text('https://api.github.com/b')
-    expect(sleeps).toEqual([])
+    expect(sleeps).toEqual([1000])
   })
 })
 
@@ -193,7 +205,8 @@ describe('a host that says no', () => {
       const { fetcher, calls, advance } = setup({ 'https://api.github.com/a': () => new Response('slow down', { status }) })
       await expect(fetcher.text('https://api.github.com/a')).rejects.toMatchObject({ code: 'http', status })
       expect(calls).toHaveLength(1)
-      expect(fetcher.pausedHosts()).toEqual({ 'api.github.com': new Date(NOW + 24 * 3_600_000).toISOString() })
+      // The 429 or 403 came one gap (1 s) after the robots.txt request, and the pause runs 24 hours from then.
+      expect(fetcher.pausedHosts()).toEqual({ 'api.github.com': new Date(NOW + 1000 + 24 * 3_600_000).toISOString() })
       await expect(fetcher.text('https://api.github.com/a')).rejects.toMatchObject({ code: 'paused' })
       expect(calls).toHaveLength(1)
       advance(24 * 3_600_000 + 1)
@@ -228,8 +241,125 @@ describe('the log', () => {
     await fetcher.text('https://api.github.com/a')
     await fetcher.text('https://example.com/').catch(() => {})
     expect(fetcher.log.map((l) => [l.host, l.outcome])).toEqual([
+      ['api.github.com', 'http-404'],
       ['api.github.com', 'ok'],
       ['example.com', 'not-allowed'],
     ])
+  })
+})
+
+describe("each host's robots.txt", () => {
+  /** A fetch with a robots.txt per host (a string, or a status for one that cannot be read), and a clock the test moves. */
+  function withRobots(robots: Record<string, string | number>, pages: Record<string, string>) {
+    const calls: { url: string; init?: RequestInit }[] = []
+    const sleeps: number[] = []
+    let now = NOW
+    const fetchImpl: FetchImpl = async (url, init) => {
+      calls.push({ url, init })
+      const u = new URL(url)
+      if (u.pathname === '/robots.txt') {
+        const r = robots[u.hostname] ?? 404
+        return typeof r === 'number' ? new Response('no', { status: r }) : new Response(r, { status: 200, headers: { 'content-type': 'text/plain' } })
+      }
+      if (pages[url] === undefined) throw new Error(`no answer for ${url}`)
+      return new Response(pages[url], { status: 200 })
+    }
+    const fetcher = createFetcher({
+      fetchImpl,
+      now: () => now,
+      sleep: async (ms) => {
+        sleeps.push(ms)
+        now += ms
+      },
+    })
+    const robotsCalls = () => calls.filter((c) => c.url.endsWith('/robots.txt'))
+    return { fetcher, calls, sleeps, robotsCalls, advance: (ms: number) => (now += ms) }
+  }
+
+  it('is read before the first request to a host, with the same User-Agent', async () => {
+    const { fetcher, calls } = withRobots({ 'en.wikipedia.org': 'User-agent: *\nDisallow: /w/\n' }, { 'https://en.wikipedia.org/wiki/Moon': 'moon' })
+    expect(await fetcher.text('https://en.wikipedia.org/wiki/Moon')).toBe('moon')
+    expect(calls.map((c) => c.url)).toEqual(['https://en.wikipedia.org/robots.txt', 'https://en.wikipedia.org/wiki/Moon'])
+    expect((calls[0]!.init!.headers as Record<string, string>)['User-Agent']).toBe(USER_AGENT)
+  })
+
+  it('refuses a path it disallows, without fetching it, and logs the refusal', async () => {
+    const { fetcher, calls } = withRobots({ 'en.wikipedia.org': 'User-agent: *\nDisallow: /w/\n' }, { 'https://en.wikipedia.org/w/api.php': 'api' })
+    await expect(fetcher.text('https://en.wikipedia.org/w/api.php')).rejects.toMatchObject({ code: 'robots' })
+    expect(calls.map((c) => c.url)).toEqual(['https://en.wikipedia.org/robots.txt'])
+    expect(fetcher.log.at(-1)).toMatchObject({ url: 'https://en.wikipedia.org/w/api.php', host: 'en.wikipedia.org', outcome: 'robots-disallowed' })
+  })
+
+  it('follows the group that names forkling, and the query string counts', async () => {
+    const { fetcher } = withRobots(
+      { 'esolangs.org': 'User-agent: *\nAllow: /\n\nUser-agent: forkling\nDisallow: /index.php?\n' },
+      { 'https://esolangs.org/index.php?title=X': 'x', 'https://esolangs.org/wiki/X': 'x' },
+    )
+    await expect(fetcher.text('https://esolangs.org/index.php?title=X')).rejects.toMatchObject({ code: 'robots' })
+    expect(await fetcher.text('https://esolangs.org/wiki/X')).toBe('x')
+  })
+
+  it('lets a host with no robots.txt (404) be read', async () => {
+    const { fetcher, calls } = withRobots({}, { 'https://api.github.com/a': 'a' })
+    expect(await fetcher.text('https://api.github.com/a')).toBe('a')
+    expect(calls.map((c) => c.url)).toEqual(['https://api.github.com/robots.txt', 'https://api.github.com/a'])
+  })
+
+  it('refuses a host whose robots.txt cannot be read, as the trials do, and asks again next time', async () => {
+    const { fetcher, robotsCalls, advance } = withRobots({ 'api.artic.edu': 500 }, { 'https://api.artic.edu/a': 'a' })
+    await expect(fetcher.text('https://api.artic.edu/a')).rejects.toMatchObject({ code: 'robots' })
+    expect(fetcher.log.at(-1)).toMatchObject({ outcome: 'robots-unreachable' })
+    advance(60_000)
+    await expect(fetcher.text('https://api.artic.edu/a')).rejects.toMatchObject({ code: 'robots' })
+    expect(robotsCalls()).toHaveLength(2)
+  })
+
+  it('is read once per host per day, and again after 24 hours', async () => {
+    const { fetcher, robotsCalls, advance } = withRobots(
+      { 'en.wikipedia.org': 'User-agent: *\nDisallow: /w/\n' },
+      { 'https://en.wikipedia.org/wiki/A': 'a', 'https://en.wikipedia.org/wiki/B': 'b', 'https://api.github.com/a': 'c' },
+    )
+    await fetcher.text('https://en.wikipedia.org/wiki/A')
+    await fetcher.text('https://en.wikipedia.org/wiki/B')
+    await fetcher.text('https://api.github.com/a')
+    await fetcher.text('https://en.wikipedia.org/w/x').catch(() => {})
+    expect(robotsCalls().map((c) => c.url)).toEqual(['https://en.wikipedia.org/robots.txt', 'https://api.github.com/robots.txt'])
+    advance(24 * 3_600_000 + 1)
+    await fetcher.text('https://en.wikipedia.org/wiki/A')
+    expect(robotsCalls()).toHaveLength(3)
+  })
+
+  it('reads robots.txt once when two requests to a new host start together', async () => {
+    const { fetcher, robotsCalls } = withRobots({}, { 'https://api.github.com/a': 'a', 'https://api.github.com/b': 'b' })
+    await Promise.all([fetcher.text('https://api.github.com/a'), fetcher.text('https://api.github.com/b')])
+    expect(robotsCalls()).toHaveLength(1)
+  })
+
+  it('counts the robots.txt request against the gap of its host', async () => {
+    const { fetcher, sleeps } = withRobots({}, { 'https://en.wikipedia.org/wiki/A': 'a' })
+    await fetcher.text('https://en.wikipedia.org/wiki/A')
+    expect(sleeps).toEqual([2000])
+  })
+
+  it('is checked for the host a redirect goes to', async () => {
+    const calls: string[] = []
+    const fetcher = createFetcher({
+      sleep: async () => undefined,
+      fetchImpl: async (url) => {
+        calls.push(url)
+        if (url === 'https://en.wikipedia.org/wiki/A') return new Response(null, { status: 302, headers: { location: 'https://commons.wikimedia.org/w/x' } })
+        if (url === 'https://commons.wikimedia.org/robots.txt') return new Response('User-agent: *\nDisallow: /w/\n')
+        return new Response('no', { status: 404 })
+      },
+    })
+    await expect(fetcher.text('https://en.wikipedia.org/wiki/A')).rejects.toMatchObject({ code: 'robots' })
+    expect(calls).not.toContain('https://commons.wikimedia.org/w/x')
+  })
+
+  it('asked for itself (as a trial does) is fetched plainly and fills the cache', async () => {
+    const { fetcher, robotsCalls } = withRobots({ 'en.wikipedia.org': 'User-agent: *\nDisallow: /w/\n' }, { 'https://en.wikipedia.org/wiki/A': 'a' })
+    expect(await fetcher.text('https://en.wikipedia.org/robots.txt')).toContain('Disallow')
+    await fetcher.text('https://en.wikipedia.org/wiki/A')
+    expect(robotsCalls()).toHaveLength(1)
   })
 })
