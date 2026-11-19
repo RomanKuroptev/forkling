@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { ALLOWLIST, hostRule, isAllowed, isReadable } from '../src/web/allowlist.ts'
-import { createFetcher, type FetchImpl } from '../src/web/fetch.ts'
+import { wordCount } from '../src/web/clean.ts'
+import { createFetcher, MAX_BYTES, type FetchImpl } from '../src/web/fetch.ts'
 import { MANUAL_HOSTS, MANUAL_START, manualPage, manualPagesFor } from '../src/web/sources/manuals.ts'
 
 const PAGE = '<html><head><title>p5 reference</title></head><body><nav><a href="/reference/p5/circle/">circle</a></nav><p>circle(x, y, d) draws a circle.</p></body></html>'
@@ -83,7 +85,7 @@ describe('manualPage', () => {
 
 describe('manualPagesFor (the manuals offered to a tinker call, spec 12.4: untried things)', () => {
   it('starts each library at its own manual', () => {
-    expect(MANUAL_START).toEqual({ p5: 'https://p5js.org/reference/', tone: 'https://tonejs.github.io/docs/', three: 'https://threejs.org/docs/' })
+    expect(MANUAL_START).toEqual({ p5: 'https://p5js.org/tutorials/get-started/', tone: 'https://tonejs.github.io/docs/', three: 'https://threejs.org/docs/' })
   })
 
   it('reads at most 2 pages, for the first libraries named, in order', async () => {
@@ -111,5 +113,56 @@ describe('manualPagesFor (the manuals offered to a tinker call, spec 12.4: untri
     const { fetchImpl } = web(() => new Response(long))
     const [page] = await manualPagesFor(createFetcher({ fetchImpl, verb: 'tinker', ...noWait }), ['p5'])
     expect(page!.text.length).toBeLessThan(8_000)
+  })
+})
+
+/** Pages recorded from the live manuals on 2026-11-19 (QA issues #314 and #315). */
+const recorded = (name: string) => readFileSync(new URL(`./fixtures/manuals/${name}`, import.meta.url), 'utf8')
+const html = (body: string) => new Response(body, { headers: { 'content-type': 'text/html' } })
+
+describe('the manual start pages as the hosts answer them (QA #314, #315)', () => {
+  it('starts p5 at a page under the 2 MB cap: the whole reference index is over it', async () => {
+    const page = recorded('p5-get-started.html')
+    expect(new TextEncoder().encode(page).length).toBeLessThan(MAX_BYTES / 4)
+    const { fetchImpl } = web((url) => (url === MANUAL_START.p5 ? html(page) : new Response('missing', { status: 404 })))
+    const item = await manualPage(createFetcher({ fetchImpl, verb: 'tinker', ...noWait }), MANUAL_START.p5)
+    expect(new URL(item.url).hostname).toBe('p5js.org')
+    expect(item.title).toBe('Get Started')
+    expect(wordCount(item.text)).toBeGreaterThan(100)
+  })
+
+  it('follows a meta refresh on the same host to the real Tone.js docs, which have words', async () => {
+    const pages: Record<string, string> = {
+      'https://tonejs.github.io/docs/': recorded('tone-docs.html'),
+      'https://tonejs.github.io/docs/latest/index.html': recorded('tone-docs-latest.html'),
+      'https://tonejs.github.io/docs/15.1.22/index.html': recorded('tone-docs-15.1.22.html'),
+    }
+    const { asked, fetchImpl } = web((url) => (pages[url] ? html(pages[url]) : new Response('missing', { status: 404 })))
+    const item = await manualPage(createFetcher({ fetchImpl, verb: 'tinker', ...noWait }), MANUAL_START.tone)
+    expect(asked).toEqual(Object.keys(pages))
+    expect(item).toMatchObject({ source: 'tonejs.github.io', url: 'https://tonejs.github.io/docs/15.1.22/index.html', title: 'Tone.js' })
+    expect(wordCount(item.text)).toBeGreaterThan(100)
+    expect(item.links.length).toBeGreaterThan(0)
+    expect(item.links.every((l) => new URL(l.url).hostname === 'tonejs.github.io')).toBe(true)
+  })
+
+  it('does not follow a meta refresh to another host, even an allowed one', async () => {
+    const { asked, fetchImpl } = web(() => html(`<meta http-equiv="refresh" content="0; url=https://threejs.org/docs/">`))
+    const item = await manualPage(createFetcher({ fetchImpl, verb: 'tinker', ...noWait }), MANUAL_START.tone)
+    expect(asked).toEqual([MANUAL_START.tone])
+    expect(item.url).toBe(MANUAL_START.tone)
+  })
+
+  it('stops after a few meta refreshes, so a loop cannot read forever', async () => {
+    let n = 0
+    const { asked, fetchImpl } = web(() => html(`<meta http-equiv="refresh" content="0;URL=/docs/${++n}/">`))
+    await manualPage(createFetcher({ fetchImpl, verb: 'tinker', ...noWait }), MANUAL_START.tone)
+    expect(asked.length).toBe(4)
+  })
+
+  it('still offers the page when it is a refresh with nowhere to go', async () => {
+    const { fetchImpl } = web(() => html(`<html><head><title>T</title><meta http-equiv="refresh" content="30"></head><body><p>Some words here.</p></body></html>`))
+    const item = await manualPage(createFetcher({ fetchImpl, verb: 'tinker', ...noWait }), MANUAL_START.tone)
+    expect(item.text).toContain('Some words here.')
   })
 })
