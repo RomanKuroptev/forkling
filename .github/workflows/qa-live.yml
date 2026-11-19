@@ -1,0 +1,115 @@
+name: QA live
+
+# The audit harness's live run (docs/spec/audit/spec.md section 11, steps QS.5). Read only: GET requests to the hosts on
+# the engine's allowlist (robots.txt first, the normal gaps between requests), a read-only clone of Merge's public repo,
+# and the GitHub API with this workflow's own token. It never posts, never pushes to Merge's repo, never touches the server.
+#
+# Started by hand only (Roman, 19 November 2026: no schedules in Phase 1): the "Run workflow" button, or
+#   gh workflow run qa-live.yml                      (the source run)
+#   gh workflow run qa-live.yml -f run=web-snapshot  (refresh the web snapshot as a pull request)
+#
+# Planned times, switched on only when Roman says so:
+# on:
+#   schedule:
+#     - cron: '30 5 * * *'   # sources: 06:30 Stockholm in winter (05:30 UTC; 04:30 UTC in summer time)
+#     - cron: '0 5 * * 1'    # web-snapshot: weekly, Monday 06:00 Stockholm in winter
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: What to run
+        type: choice
+        options: [sources, web-snapshot]
+        default: sources
+
+jobs:
+  sources:
+    if: inputs.run == 'sources'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Last week's Imgflip list: the history artefact of the newest earlier run that has one. Artefacts expire after 90
+      # days; with none, the check says "no history yet" (info), never a pass on freshness.
+      - name: Fetch the last Imgflip history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/prev"
+          for id in $(gh run list --workflow qa-live.yml --status success --limit 20 --json databaseId --jq '.[].databaseId'); do
+            if gh run download "$id" --name imgflip-history --dir "$RUNNER_TEMP/prev" 2>/dev/null; then
+              echo "Imgflip history from run $id"
+              break
+            fi
+          done
+          ls -la "$RUNNER_TEMP/prev"
+      # A read-only clone of Merge's public repo, enough history for the last 7 days' morning lists.
+      - name: Clone Merge (read only)
+        run: git clone --quiet --shallow-since="9 days ago" https://github.com/RomanKuroptev/merge "$RUNNER_TEMP/merge"
+      - name: Source run
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pnpm qa live --sources --world "$RUNNER_TEMP/merge" --imgflip-history "$RUNNER_TEMP/prev/imgflip-history.json"
+      - if: always()
+        run: '[ -f qa-out/report.md ] && cat qa-out/report.md >> "$GITHUB_STEP_SUMMARY" || true'
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-live-out
+          path: qa-out/
+          if-no-files-found: warn
+          retention-days: 30
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: imgflip-history
+          path: qa-out/imgflip-history.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+  web-snapshot:
+    if: inputs.run == 'web-snapshot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Lane B's recorder (real fetch code, robots.txt respected, allowlist only).
+      - run: pnpm qa web-snapshot
+      - name: Open a pull request with the new snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain qa/web-snapshot)" ]; then
+            echo "The snapshot did not change."
+            exit 0
+          fi
+          branch="qa-web-snapshot/$(date -u +%Y-%m-%d)-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add qa/web-snapshot
+          git commit -q -m "chore(qa): refresh the web snapshot"
+          git push -q origin "$branch"
+          body="The weekly web snapshot (QB.4), recorded by the qa-live workflow, run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Merge after green CI: the fast tier checks its format and allowlist."
+          if ! gh pr create --base main --head "$branch" --title "chore(qa): refresh the web snapshot" --body "$body"; then
+            echo "::error::GitHub Actions may not open pull requests in this repository. The snapshot is pushed on branch $branch. For Roman: recommended, allow it under Settings > Actions > General > Workflow permissions ('Allow GitHub Actions to create and approve pull requests'); until then open the PR from that branch by hand."
+            exit 1
+          fi
