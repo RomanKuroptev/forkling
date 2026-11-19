@@ -20,6 +20,7 @@ import { liveCommand, LIVE_USAGE } from './live/command.ts'
 import { WEB_SNAPSHOT_USAGE, webSnapshotCommand } from './snapshot/command.ts'
 import { SCORE_USAGE, scoreCommand } from './behaviour/score-cli.ts'
 import { fixturesCommand, FIXTURES_USAGE, liveClone } from './fixtures/command.ts'
+import { exploreCommand, EXPLORE_USAGE } from './review/explore/command.ts'
 
 const USAGE = `pnpm qa <command>
 
@@ -36,8 +37,9 @@ const USAGE = `pnpm qa <command>
   digest  writes qa-out/digest.md   [--post] adds one comment on the pinned QA digest issue   [--mode nightly|weekly|release]
 ${LIVE_USAGE}
 ${WEB_SNAPSHOT_USAGE}
-  score   ${SCORE_USAGE}
-${FIXTURES_USAGE}`
+${FIXTURES_USAGE}
+${EXPLORE_USAGE}
+  score   ${SCORE_USAGE}`
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv
@@ -81,6 +83,8 @@ async function main(argv: string[]): Promise<number> {
       return liveCommand(rest, { out: qaOut(), cwd: process.env.INIT_CWD ?? process.cwd() })
     case 'web-snapshot':
       return webSnapshotCommand(rest)
+    case 'explore':
+      return exploreCommand(rest)
     case 'score':
       return scoreCommand(rest)
     case 'fixtures':
