@@ -72,10 +72,13 @@ export const INTERIOR = {
   wallMix: 0.55,
   wallTowards: COLORS.face,
   /**
-   * By day the lining of a palette with a dark trim (slate, dusk) is mixed towards white until it has this light (the linear luminance
-   * of the colour, 0 to 1), so no room is darker than mid-lilac at noon; at night it is as it is (`dayLift`).
+   * By day the inside walls read as the palette's own pale wall colour (look.md rules 1 and 2: a pastel room, not a dim one), mixed
+   * with just enough of its trim to keep some colour (`dayInteriorWall`), and they give off this much of their own colour so the
+   * pastel holds under the roof. At night they are the trim colour of `interiorWall`, as before.
    */
-  dayWallLight: 0.58,
+  daySelf: 0.6,
+  /** The least colour (saturation) a day wall may have, so it never reads as white or grey. */
+  dayWallColour: 0.24,
   /** The share of the sky's light (the hemisphere light) that reaches the inside of a place. */
   skyInside: 0.42,
   /** The warm light of a lamp that is on, how strong it is by day and at night, and how far it reaches (meters). */
@@ -117,16 +120,41 @@ export function interiorWall(trim: string): string {
   return `#${((mix(16) << 16) | (mix(8) << 8) | mix(0)).toString(16).padStart(6, '0')}`
 }
 
-/**
- * How far a lining colour is mixed towards white by day (0 to 1) so its linear luminance reaches `INTERIOR.dayWallLight`; 0 for a
- * colour already that light. Mixing towards white keeps a saturated purple a pastel lilac instead of clipping it. The shader fades
- * it out at night.
- */
-export function dayLift(hex: string): number {
+/** Hue (degrees), saturation and value (0 to 1) of a hex colour. */
+export function hsvOf(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16)
-  const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
-  const l = 0.2126 * lin(((n >> 16) & 255) / 255) + 0.7152 * lin(((n >> 8) & 255) / 255) + 0.0722 * lin((n & 255) / 255)
-  return l >= INTERIOR.dayWallLight ? 0 : (INTERIOR.dayWallLight - l) / (1 - l)
+  const [r, g, b] = [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
+  const mx = Math.max(r, g, b)
+  const d = mx - Math.min(r, g, b)
+  let h = 0
+  if (d > 0) h = (mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60
+  return [(h + 360) % 360, mx ? d / mx : 0, mx]
+}
+
+const mixHex = (a: string, b: string, t: number): string => {
+  const x = Number.parseInt(a.slice(1), 16)
+  const y = Number.parseInt(b.slice(1), 16)
+  const m = (s: number) => Math.round(((x >> s) & 255) * (1 - t) + ((y >> s) & 255) * t)
+  return `#${((m(16) << 16) | (m(8) << 8) | m(0)).toString(16).padStart(6, '0')}`
+}
+
+/**
+ * The inside wall colour by day: the palette's wall, mixed with the least of its trim (in steps of 5 percent) that gives it at least
+ * `INTERIOR.dayWallColour` of colour and keeps it out of the warm beige and khaki hues look.md rule 3 forbids. Slate's wall has
+ * colour enough and stays itself; meadow's pale mint and paper's near-white lean towards their pink trim.
+ */
+export const dayInteriorWall = (colors: { wall: string; trim: string }): string => pastelWith(colors.wall, colors.trim)
+
+/** The floor inside by day, the same way: the palette's floor with the least of its wood colour that gives it colour. */
+export const dayInteriorFloor = (colors: { floor: string; wood: string }): string => pastelWith(colors.floor, colors.wood)
+
+function pastelWith(base: string, towards: string): string {
+  for (let k = 0; k <= 20; k++) {
+    const c = mixHex(base, towards, k / 20)
+    const [h, s] = hsvOf(c)
+    if (s >= INTERIOR.dayWallColour && !(h >= 15 && h <= 75)) return c
+  }
+  return towards
 }
 
 /** The mist at the world's edge and the fog, in the look's colours rather than white. */

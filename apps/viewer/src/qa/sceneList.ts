@@ -59,6 +59,8 @@ export interface QaObject {
   inDoorway?: { holds: string[] }
   /** A place's or room's name, an exhibit's label. */
   name?: string
+  /** For a place: its palette's wall colour, which the inside walls must read close to by day (`world.room-wall-colour`). */
+  wall?: string
   /** The words painted on a sign or a title bar. */
   text?: string
   /** The height of the smallest letters on a sign, in meters (for the readable-label check). */
@@ -126,7 +128,8 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     const [px, pz] = placeCentre(toLandPlace(place))
     const wire = wireframeInstances(place, s.kit, baseY, s.nowMs, s.wireAlways)
     const outside = exteriorInstances(place, s.kit, baseY)
-    out.push({ id: place.id, kind: 'place', name: place.name, box: instancesBox(outside), visible: true, material: wire && wire.length > 0 ? 'wireframe' : 'solid' })
+    const wall = (s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0])?.colors.wall
+    out.push({ id: place.id, kind: 'place', name: place.name, ...(wall ? { wall } : {}), box: instancesBox(outside), visible: true, material: wire && wire.length > 0 ? 'wireframe' : 'solid' })
     const inside = s.interiors.has(place.id)
     const height = floorHeight(place)
     const door = doorwayBox(place, baseY)

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { FRAME, WINDOW_SIZE, buildingModel, partKey, windowLayout } from '../src/world/building.ts'
 import { interiorInstances, lampSpots, sceneInstances, SHAPES } from '../src/world/kitGeometry.ts'
 import type { Instance } from '../src/world/kitBase.ts'
-import { INTERIOR, NIGHT_LIGHT, dayLift, interiorWall, repaint } from '../src/world/theme.ts'
+import { INTERIOR, NIGHT_LIGHT, dayInteriorWall, hsvOf, interiorWall, repaint } from '../src/world/theme.ts'
 
 const fixture = (world: string, id: string) => Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL(`../../../test/fixtures/worlds/${world}/places/${id}.json`, import.meta.url)), 'utf8')))
 const lamps = fixture('day-7', 'hillside-room-five-lamps')
@@ -136,32 +136,33 @@ describe('warm lamp light at night (issue 361)', () => {
   })
 })
 
-describe('no room is dim by day (#405 look review)', () => {
-  const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
-  const light = (hex: string) => {
-    const n = Number.parseInt(hex.slice(1), 16)
-    return 0.2126 * lin(((n >> 16) & 255) / 255) + 0.7152 * lin(((n >> 8) & 255) / 255) + 0.0722 * lin((n & 255) / 255)
-  }
-
-  it('mixes the lining of a dark-trim palette (slate, dusk) towards white by day to the day wall light, and leaves light ones alone', () => {
+describe('by day a room reads as its palette pale wall (#405 look review)', () => {
+  it('is the palette wall itself, or mixed with the least trim that gives it colour; never white, grey, beige or khaki', () => {
     for (const palette of kit.palettes) {
-      const c = interiorWall(palette.colors.trim)
-      const t = dayLift(c)
-      expect(t, palette.id).toBeGreaterThanOrEqual(0)
-      expect(t, palette.id).toBeLessThan(1)
-      // Mixed that far towards white, its light is the day wall light (linear light mixes linearly).
-      if (t > 0) expect(light(c) + t * (1 - light(c)), palette.id).toBeCloseTo(INTERIOR.dayWallLight, 6)
-      else expect(light(c), palette.id).toBeGreaterThanOrEqual(INTERIOR.dayWallLight)
+      const c = dayInteriorWall(palette.colors)
+      const [h, s, v] = hsvOf(c)
+      expect(s, `${palette.id} ${c}`).toBeGreaterThanOrEqual(INTERIOR.dayWallColour)
+      expect(h >= 15 && h <= 75, `${palette.id} ${c} is not beige or khaki`).toBe(false)
+      // As light as the palette's own pale wall, near enough: a pastel, not a dim room.
+      expect(v, `${palette.id} ${c}`).toBeGreaterThanOrEqual(hsvOf(palette.colors.wall)[2] - 0.06)
     }
-    expect(dayLift(interiorWall(kit.palettes.find((p) => p.id === 'slate')!.colors.trim))).toBeGreaterThan(0.3)
-    expect(dayLift(interiorWall(kit.palettes.find((p) => p.id === 'dusk')!.colors.trim))).toBeGreaterThan(0.2)
+    // Slate's wall (#c9c6ff) has colour enough: the Workshop's day wall is close to it.
+    const slate = kit.palettes.find((p) => p.id === 'slate')!.colors
+    const d = dayInteriorWall(slate)
+    const ch = (hex: string, k: number) => (Number.parseInt(hex.slice(1), 16) >> k) & 255
+    for (const k of [16, 8, 0]) expect(Math.abs(ch(d, k) - ch(slate.wall, k))).toBeLessThan(24)
   })
 
-  it('gives the lift to the lining of the Workshop and packs it for the shader, and gives none to the outside', () => {
+  it('gives the day colour to the lining and the floor only, packs it for the shader, and keeps the night colour as before', () => {
     const lining = buildingModel(workshop, kit, 0)!.inside
-    for (const i of lining) expect(i.dayLift).toBeGreaterThan(0.3)
-    expect(buildingModel(workshop, kit, 0)!.instances.every((i) => !i.dayLift)).toBe(true)
+    const colors = kit.palettes.find((p) => p.id === workshop.exterior.palette)!.colors
+    for (const i of lining) {
+      expect(i.dayColor).toBe(dayInteriorWall(colors))
+      expect(i.color).toBe(interiorWall(colors.trim))
+    }
+    expect(buildingModel(workshop, kit, 0)!.instances.every((i) => !i.dayColor)).toBe(true)
     const scene = sceneInstances([workshop], kit, { heightAt: () => 0, interiors: new Set([workshop.id]) })
-    expect([...scene.box.dayLift].filter((v) => v > 0).length).toBe(lining.length)
+    const flagged = Array.from({ length: scene.box.count }, (_, k) => scene.box.day[k * 4 + 3]).filter((w) => w === 1).length
+    expect(flagged).toBe(lining.length + workshop.exterior.floors) // and the floor of each storey
   })
 })

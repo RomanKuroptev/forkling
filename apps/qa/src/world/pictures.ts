@@ -8,7 +8,7 @@ import type { CheckResult } from '../report/finding.ts'
 import { contactSheet, type Box, type Tile } from '../report/sheet.ts'
 import type { SceneObject } from './open.ts'
 import type { FrameCost } from './budget.ts'
-import { flicker, middleLight, muddyShare, nearWhiteShare, paletteShare, pictureStats } from './picture.ts'
+import { flicker, hexValueSaturation, middleLight, muddyShare, nearWhiteShare, paletteShare, pictureStats, wallBand } from './picture.ts'
 
 /**
  * The picture checks of one opened world (audit spec 7.3, 7.4): the fixed cameras (aerial, each place's front, Merge close) and
@@ -39,6 +39,13 @@ export const PICTURE_LEVELS = {
   roomNearWhite: 0.4,
   /** By day, a picture inside a room whose middle band (mostly the walls) is darker than this reads as dusk (the dull violet Workshop at noon was 105; Home, 150). */
   roomDayMiddle: 115,
+  /**
+   * By day the walls of a room (the median of the middle band) must read close to the palette's wall colour: no more than this much
+   * darker in value, and, for a wall with colour (saturation 0.1 and up), keeping at least this share of its saturation. The dim
+   * grey-mauve Workshop of #405 was 0.6 in value against slate's 1.0.
+   */
+  roomWallDarker: 0.25,
+  roomWallSaturation: 0.5,
   /** More than this share of brown, olive or khaki pixels in a night picture breaks look.md rule 3 (issue 361; the before pictures were 0.13). */
   nightMuddy: 0.08,
   /** More than this share of pixels jumping when the camera moves 1 mm is flicker. */
@@ -53,7 +60,7 @@ export interface Shot {
 }
 
 /** The judgement of one picture on its own: blank, too dark or bright, off the palette. */
-export function judgeShot(shot: Shot, ctx: { fixture: string; night: boolean; file: string }): CheckResult[] {
+export function judgeShot(shot: Shot, ctx: { fixture: string; night: boolean; file: string; wall?: string }): CheckResult[] {
   const img = PNG.sync.read(shot.png)
   const { light, spread } = pictureStats(img)
   const out: CheckResult[] = []
@@ -67,6 +74,13 @@ export function judgeShot(shot: Shot, ctx: { fixture: string; night: boolean; fi
   if (shot.name.startsWith('room:')) {
     const white = nearWhiteShare(img)
     if (white > PICTURE_LEVELS.roomNearWhite) add('world.room-blown-out', 'major', `The room in "${shot.name}" is washed out`, `${(white * 100).toFixed(0)}% of the picture is near white (at most ${PICTURE_LEVELS.roomNearWhite * 100}%).`, 'The room looks like an empty, overlit showroom: its walls and floor lose their colours.')
+    if (!ctx.night && ctx.wall) {
+      const band = wallBand(img)
+      const want = hexValueSaturation(ctx.wall)
+      const darker = band.value < want.value - PICTURE_LEVELS.roomWallDarker
+      const greyer = want.saturation >= 0.1 && band.saturation < want.saturation * PICTURE_LEVELS.roomWallSaturation
+      if (darker || greyer) add('world.room-wall-colour', 'major', `The walls in "${shot.name}" are ${darker ? 'darker' : 'greyer'} than the palette's wall by day`, `The walls read at value ${band.value.toFixed(2)} and saturation ${band.saturation.toFixed(2)}; the palette's wall ${ctx.wall} is ${want.value.toFixed(2)} and ${want.saturation.toFixed(2)} (at most ${PICTURE_LEVELS.roomWallDarker} darker, at least ${PICTURE_LEVELS.roomWallSaturation * 100}% of its colour).`, 'At noon the room reads as if its lights were off: the pastels turn grey (look.md rules 1 and 2).')
+    }
     const middle = middleLight(img)
     if (!ctx.night && middle < PICTURE_LEVELS.roomDayMiddle) add('world.room-too-dark', 'major', `The room in "${shot.name}" is dim by day`, `The walls in the middle of the picture have a mean light of ${middle.toFixed(0)} of 255 (at least ${PICTURE_LEVELS.roomDayMiddle} by day).`, 'At noon the room looks like dusk: its walls read as a dull dark colour.')
   }
@@ -124,7 +138,10 @@ export async function pictureChecks(page: Page, opts: { fixture: string; scene: 
   }
   const take = async (name: string, boxes: () => Promise<Box[]> = async () => []) => {
     const { png, file } = await shoot(name)
-    findings.push(...judgeShot({ name, png }, { fixture, night: opts.night, file }))
+    // A room's pictures are judged against its place's wall colour (the pose name is `room:<place>/<room>:<side>`).
+    const placeId = name.startsWith('room:') ? name.slice(5).split('/')[0] : undefined
+    const wall = placeId ? scene.find((o) => o.kind === 'place' && o.id === placeId)?.wall : undefined
+    findings.push(...judgeShot({ name, png }, { fixture, night: opts.night, file, ...(wall ? { wall } : {}) }))
     costs.push({ view: name, ...(await qa(page, (q) => q.renderer())) })
     tiles.push({ png: shrinkPng(png, 320), boxes: (await boxes()).map((b) => ({ x: Math.round(b.x / 2), y: Math.round(b.y / 2), w: Math.max(1, Math.round(b.w / 2)), h: Math.max(1, Math.round(b.h / 2)) })) })
     return { png, file }

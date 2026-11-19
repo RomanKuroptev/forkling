@@ -1,5 +1,5 @@
 import type { Kit, KitColor, KitPalette, KitPart, Place, PlaceRequest } from '@forkling/schema'
-import { DARK_GLOW, repaint } from './theme.ts'
+import { DARK_GLOW, dayInteriorFloor, repaint } from './theme.ts'
 import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
 import { buildingModel, partKey, windowLayout } from './building.ts'
 import { constructionInstances } from './constructionGeometry.ts'
@@ -155,7 +155,8 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
   const out: Instance[] = []
   const modelOut: ModelInstance[] = []
   for (let f = 0; f < place.exterior.floors; f++) {
-    out.push({ shape: 'box', matrix: compose([px, baseY + f * height + 0.06, pz], [0, 0, 0], [fw - 1, 0.12, fd - 1]), color: palette.colors.floor })
+    // By day the floor is a pastel of its own (`dayInteriorFloor`), not the grey a pale floor turns under the roof.
+    out.push({ shape: 'box', matrix: compose([px, baseY + f * height + 0.06, pz], [0, 0, 0], [fw - 1, 0.12, fd - 1]), color: palette.colors.floor, dayColor: dayInteriorFloor(palette.colors) })
   }
   // A building drawn by the building model lines its walls inside in the room's own colour, and its windows stand where the rooms'
   // window parts are, which are then not drawn again (issues 358, 346).
@@ -261,8 +262,8 @@ export interface ShapeInstances {
   trim: Float32Array
   /** 1 for the inside of a place, which gets less of the sky's light, else 0. */
   inside: Float32Array
-  /** How far the instance is mixed towards white by day (`Instance.dayLift`), else 0. */
-  dayLift: Float32Array
+  /** The colour by day (`Instance.dayColor`), linear RGB and 1, four floats each; all 0 for an instance with none. */
+  day: Float32Array
   count: number
 }
 
@@ -338,22 +339,22 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     const glow = new Float32Array(list.length)
     const trim = new Float32Array(list.length)
     const inside = new Float32Array(list.length)
-    const dayLift = new Float32Array(list.length)
+    const day = new Float32Array(list.length * 4)
     list.forEach((inst, k) => {
       matrices.set(inst.matrix, k * 16)
       colors.set(rgb(inst.color), k * 3)
       glow[k] = inst.glow ? 1 : 0
       trim[k] = inst.trim ? 1 : 0
       inside[k] = inst.inside ? 1 : 0
-      dayLift[k] = inst.dayLift ?? 0
+      if (inst.dayColor) day.set([...rgb(inst.dayColor), 1], k * 4)
     })
-    return { matrices, colors, glow, trim, inside, dayLift, count: list.length }
+    return { matrices, colors, glow, trim, inside, day, count: list.length }
   }
   return { box: pack(lists.box), sphere: pack(lists.sphere), cylinder: pack(lists.cylinder), cone: pack(lists.cone), glassBox: pack(glassList), models, lamps }
 }
 
 /** What drawing these costs: a draw call for each shape that has any and the triangles of every instance, and for each model file at most `MODEL_LIMITS`. */
-export function renderBudget(scene: Record<Shape, Omit<ShapeInstances, 'trim' | 'inside' | 'dayLift'>> & { glassBox?: Omit<ShapeInstances, 'trim' | 'inside' | 'dayLift'>; models?: Record<string, Float32Array> }): { drawCalls: number; triangles: number } {
+export function renderBudget(scene: Record<Shape, Omit<ShapeInstances, 'trim' | 'inside' | 'day'>> & { glassBox?: Omit<ShapeInstances, 'trim' | 'inside' | 'day'>; models?: Record<string, Float32Array> }): { drawCalls: number; triangles: number } {
   let drawCalls = 0
   let triangles = 0
   for (const matrices of Object.values(scene.models ?? {})) {

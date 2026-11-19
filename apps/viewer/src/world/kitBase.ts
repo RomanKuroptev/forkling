@@ -16,8 +16,8 @@ export interface Instance {
   trim?: boolean
   /** Part of the inside of a place: under a roof, it gets less of the sky's light (issue 358). */
   inside?: boolean
-  /** Mixed this far towards white by day, not at night (the lining of a room with a dark palette trim, `dayLift`). */
-  dayLift?: number
+  /** By day it is drawn in this colour instead, giving off some of it (the lining of a room: `dayInteriorWall`); at night in `color`. */
+  dayColor?: string
   /** Tinted, see-through glass: drawn apart from the rest, with some opacity (only boxes). */
   glass?: boolean
 }

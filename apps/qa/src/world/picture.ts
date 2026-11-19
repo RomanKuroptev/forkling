@@ -52,6 +52,36 @@ export function middleLight(p: PNG): number {
 }
 
 /**
+ * The colour of the walls in a picture taken inside a room: the median value and saturation (0 to 1) of the middle band (35 to 70
+ * percent of its height, mostly the walls). Medians, so windows, screens and furniture in front of the walls count for little.
+ */
+export function wallBand(p: PNG): { value: number; saturation: number } {
+  const values: number[] = []
+  const sats: number[] = []
+  for (let y = Math.floor(p.height * 0.35); y < Math.ceil(p.height * 0.7); y++) {
+    for (let x = 0; x < p.width; x++) {
+      const i = (y * p.width + x) * 4
+      const [, s, v] = hsv(p.data[i]!, p.data[i + 1]!, p.data[i + 2]!)
+      values.push(v)
+      sats.push(s)
+    }
+  }
+  const median = (a: number[]) => {
+    if (a.length === 0) return 0
+    const b = [...a].sort((m, n) => m - n)
+    return b[Math.floor(b.length / 2)]!
+  }
+  return { value: median(values), saturation: median(sats) }
+}
+
+/** Value and saturation (0 to 1) of a `#rrggbb` colour. */
+export function hexValueSaturation(hex: string): { value: number; saturation: number } {
+  const n = Number.parseInt(hex.slice(1), 16)
+  const [, s, v] = hsv((n >> 16) & 255, (n >> 8) & 255, n & 255)
+  return { value: v, saturation: s }
+}
+
+/**
  * The share of near-white pixels: bright (light 185 of 255 and up) with almost no colour (saturation 0.2 at most). A room whose
  * walls and floor are mostly this is blown out: the light has washed its colours away (issue 358).
  */

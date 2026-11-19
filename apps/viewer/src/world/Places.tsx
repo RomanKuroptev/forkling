@@ -60,18 +60,19 @@ function glowMaterial(): THREE.MeshStandardMaterial {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = nightUniform
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float aGlow;\nattribute float aTrim;\nattribute float aInside;\nattribute float aDayLift;\nvarying float vGlow;\nvarying float vTrim;\nvarying float vInside;\nvarying float vDayLift;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = aGlow;\nvTrim = aTrim;\nvInside = aInside;\nvDayLift = aDayLift;')
+      .replace('#include <common>', '#include <common>\nattribute float aGlow;\nattribute float aTrim;\nattribute float aInside;\nattribute vec4 aDay;\nvarying float vGlow;\nvarying float vTrim;\nvarying float vInside;\nvarying vec4 vDay;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = aGlow;\nvTrim = aTrim;\nvInside = aInside;\nvDay = aDay;')
     // What a surface gives off of its own colour: a little everywhere (less at night, or pale colours go khaki in the dark), a lot
     // for a window or lamp (more at night), and some for lit trim at night.
     const self = `mix(${f(NIGHT_LIGHT.selfDay)}, ${f(NIGHT_LIGHT.selfNight)}, uNight)`
     const glow = `mix(${f(NIGHT_LIGHT.glowDay)}, ${f(NIGHT_LIGHT.glowNight)}, uNight)`
     const keep = f(1 - NIGHT_LIGHT.glowLit)
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;\nvarying float vTrim;\nvarying float vInside;\nvarying float vDayLift;')
-      // A dark lining is drawn lighter by day only, so a room is never dim at noon and its night look is unchanged.
-      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), vDayLift * (1.0 - uNight));')
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * (${self} + vGlow * ${glow} + vTrim * mix(${f(NIGHT_LIGHT.trimDay)}, ${f(NIGHT_LIGHT.trimNight)}, uNight));`)
+      .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;\nvarying float vTrim;\nvarying float vInside;\nvarying vec4 vDay;')
+      // By day a room's lining is its pastel day colour and gives off some of it, so the pastel holds under the roof; at night it is
+      // its trim colour as before.
+      .replace('#include <color_fragment>', `#include <color_fragment>\nfloat dayWall = vDay.w * (1.0 - uNight);\ndiffuseColor.rgb = mix(diffuseColor.rgb, vDay.rgb, dayWall);`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * (${self} + vGlow * ${glow} + vTrim * mix(${f(NIGHT_LIGHT.trimDay)}, ${f(NIGHT_LIGHT.trimNight)}, uNight) + dayWall * ${f(INTERIOR.daySelf)});`)
       // Under a roof, less of the sky's light; a glowing thing takes only part of the light that falls on it, so it keeps its colour.
       .replace(
         '#include <lights_fragment_end>',
@@ -90,7 +91,7 @@ function Shapes({ shape, data, glass = false }: { shape: Shape; data: ShapeInsta
     g.setAttribute('aGlow', new THREE.InstancedBufferAttribute(data.glow, 1))
     g.setAttribute('aTrim', new THREE.InstancedBufferAttribute(data.trim, 1))
     g.setAttribute('aInside', new THREE.InstancedBufferAttribute(data.inside, 1))
-    g.setAttribute('aDayLift', new THREE.InstancedBufferAttribute(data.dayLift, 1))
+    g.setAttribute('aDay', new THREE.InstancedBufferAttribute(data.day, 4))
     return g
   }, [shape, data])
   const material = useMemo(() => {
