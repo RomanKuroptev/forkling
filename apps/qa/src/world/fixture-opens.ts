@@ -18,6 +18,7 @@ import { walkChecks } from './walk.ts'
 import { budgetFindings } from './budget.ts'
 import { claimFindings, claimsFromSite } from './claims.ts'
 import { exhibitFindings } from './exhibits.ts'
+import { collectFights, fightFindings } from './fights.ts'
 import { buildSite } from '@forkling/site/build'
 import { buildViewer, serveWorld } from './serve.ts'
 
@@ -52,7 +53,7 @@ export async function checkWorldOpens(browser: Browser, viewer: string, world: s
     const shot = join(opts.out, `${opts.fixture}-start.png`)
     await page.screenshot({ path: shot })
     const geometry = await collectGeometry(page, world, opts.fixture, Date.parse(opts.now) + 1000)
-    const found = [...sceneListsFiles(world, geometry.scene, opts.fixture), ...geometryFindings(geometry), ...screenFindings(opts.fixture, geometry.scene), ...exhibitFindings(geometry.scene, opts.fixture), ...galleryFindings(opts.fixture, geometry.scene)].map((f) => ({ ...f, evidence: [shot] }))
+    const found = [...sceneListsFiles(world, geometry.scene, opts.fixture), ...geometryFindings(geometry), ...screenFindings(opts.fixture, geometry.scene), ...exhibitFindings(geometry.scene, opts.fixture), ...galleryFindings(opts.fixture, geometry.scene), ...fightFindings(await collectFights(page), opts.fixture)].map((f) => ({ ...f, evidence: [shot] }))
     if (opts.pictures) {
       // Night is after sunset and before sunrise in Stockholm (look.md's night colours); the levels for light differ.
       const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Stockholm', hour: '2-digit', hourCycle: 'h23' }).format(new Date(opts.now)))
