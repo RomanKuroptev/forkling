@@ -2,20 +2,23 @@ import { describe, expect, it } from 'vitest'
 import { parsePlan, parseSummary, readRun, type RunData } from '../../src/behaviour/read-run.ts'
 import { readLevels, SCORES, scoreRun } from '../../src/behaviour/score.ts'
 import { DID_NOT_RUN } from '../../src/report/finding.ts'
-import { makeRun, WEEK } from './make-run.ts'
+import { makeRun, WEEK, WITH_A_MEME } from './make-run.ts'
 
 const levels = readLevels()
 const NOW = new Date('2026-11-26T12:00:00Z')
+// Every run here made a meme, so only the planted flaw raises an alarm (memes have their own tests).
 const score = async (shape: Parameters<typeof makeRun>[0]) => {
-  const { world, out } = makeRun(shape)
-  return scoreRun(readRun({ world, outDir: out, label: 'test' }), levels, NOW)
+  const { world, out } = makeRun({ ...WITH_A_MEME, ...shape })
+  return alarmsOnly(await scoreRun(readRun({ world, outDir: out, label: 'test' }), levels, NOW))
 }
+/** The meme's `info` finding for the look reviewer is not an alarm. */
+const alarmsOnly = <T extends { findings: { severity: string }[] }>(r: T): T => ({ ...r, findings: r.findings.filter((f) => f.severity !== 'info') })
 const ids = (f: { id: string }[]) => f.map((x) => x.id).sort()
 
 describe('a healthy run', () => {
   it('measures every score and raises no alarm', async () => {
     const r = await score({ days: WEEK })
-    expect(r.scores.map((s) => s.id).sort()).toEqual(SCORES.map((s) => s.id).sort())
+    expect(r.scores.map((s) => s.id).sort()).toEqual([...SCORES.map((s) => s.id), 'memes'].sort())
     expect(r.findings).toEqual([])
   })
 })
@@ -68,12 +71,13 @@ describe('planted: rails and money from the summary', () => {
 
 describe('a score that cannot be measured', () => {
   it('gives qa.check-did-not-run, and the others still run', async () => {
-    const { world, out } = makeRun({ days: WEEK })
+    const { world, out } = makeRun({ ...WITH_A_MEME, days: WEEK })
     const run = readRun({ world, outDir: out, label: 'test' })
     const broken = { ...run, report: { ...run.report, made: null } } as unknown as RunData
-    const r = await scoreRun(broken, levels, NOW)
+    const r = alarmsOnly(await scoreRun(broken, levels, NOW))
     expect(r.findings).toEqual([expect.objectContaining({ id: DID_NOT_RUN, fingerprint: `${DID_NOT_RUN}|behaviour.kinds|test` })])
-    expect(r.scores.length).toBe(SCORES.length - 1)
+    // Every score but the broken one, and memes.
+    expect(r.scores.length).toBe(SCORES.length)
   })
   it('a folder that is not a world cannot be read', () => {
     expect(() => readRun({ world: 'no-such-folder', label: 'x' })).toThrow(/not a world/)

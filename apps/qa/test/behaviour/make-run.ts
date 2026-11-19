@@ -26,6 +26,12 @@ export interface RunShape {
   found?: boolean
   project?: boolean
   summary?: string | null
+  /** More works, as their meta (merged over a default made on the first day). */
+  works?: Record<string, unknown>[]
+  /** Tick notes per day. */
+  notes?: (day: number) => string[]
+  /** Captured prompts (`prompts.jsonl` in the output folder). */
+  prompts?: { kind: string; user: string; system?: string }[]
 }
 
 const SUBJECTS = [
@@ -75,7 +81,7 @@ export function makeRun(shape: RunShape): { world: string; out: string } {
     const thoughts = shape.thoughts?.(d) ?? [`On day ${d} the ${SUBJECTS[d % SUBJECTS.length]} stayed with me.`, `Later I kept thinking about ${SUBJECTS[(d + 5) % SUBJECTS.length]} for a while.`]
     thoughts.forEach((t, i) => stream.push(JSON.stringify({ id: `${date}#t${i}`, at: `${date}T${String(8 + i).padStart(2, '0')}:30:00.000Z`, kind: 'thought', text: t })))
     w(`memory/stream/${date}.jsonl`, `${stream.join('\n')}\n`)
-    w(`mind/ticks/${date}.jsonl`, `${JSON.stringify({ at: `${date}T08:00:00.000Z`, asleep: false, calls: [{ kind: 'decide', model: 'claude-haiku-5-5', usd: 0.002, ok: true }], notes: [] })}\n`)
+    w(`mind/ticks/${date}.jsonl`, `${JSON.stringify({ at: `${date}T08:00:00.000Z`, asleep: false, calls: [{ kind: 'decide', model: 'claude-haiku-5-5', usd: 0.002, ok: true }], notes: shape.notes?.(d) ?? [] })}\n`)
     const plans = shape.plans?.(d)
     if (plans) w(`notebook/plans/${date}.md`, `# Plan for ${date}\n\n${plans.join('\n')}\n`)
     const trails = shape.trails?.(d)
@@ -85,12 +91,32 @@ export function makeRun(shape: RunShape): { world: string; out: string } {
   if (shape.project ?? true) w('projects/clock/project.json', JSON.stringify({ id: 'clock', name: 'Clock', status: 'building', sessions: [{ at: `${shape.days[0]}T15:00:00.000Z` }] }))
   const first = shape.days[0]!
   const last = shape.days.at(-1)!
+  for (const extra of shape.works ?? []) {
+    const meta: Record<string, unknown> = { title: 'Extra', kind: 'art', about: 'an extra work', made: `${first}T12:00:00.000Z`, status: 'shelf', sources: [], ...extra }
+    const id = String(meta.id ?? `x${n++}`)
+    w(`works/${id}/meta.json`, JSON.stringify({ ...meta, id }))
+    if (meta.status !== 'scrap') w(`works/${id}/thumb.png`, 'png')
+  }
+  if (shape.prompts) {
+    mkdirSync(out, { recursive: true })
+    writeFileSync(join(out, 'prompts.jsonl'), shape.prompts.map((p) => JSON.stringify({ at: `${first}T08:00:00.000Z`, model: 'claude-haiku-5-5', system: p.system ?? '', user: p.user, kind: p.kind, parsed: true })).join('\n'))
+  }
   const summary = shape.summary === undefined ? `# Fast-forward: PASS\n\n- Simulated: ${first} to ${last} (${shape.days.length} days asked), 100 ticks\n- Spent: $1.000 of a $3 cap; the daily pace is $0.42\n\n## Crashes: 0\n\n\n## Rails broken: 0\n\n` : shape.summary
   if (summary !== null) {
     mkdirSync(out, { recursive: true })
     writeFileSync(join(out, 'summary.md'), summary)
   }
   return { world, out }
+}
+
+/** A run in which one meme made it all the way through: the planner was offered a format and told it may make a meme. */
+export const WITH_A_MEME: Omit<RunShape, 'days'> = {
+  prompts: [
+    { kind: 'morning', user: 'You can make a meme. Starting points: https://imgflip.com/meme/181913649' },
+    { kind: 'decide', user: 'You can make a meme. Starting points: https://imgflip.com/meme/181913649' },
+  ],
+  trails: (d) => (d === 0 ? [{ url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling', reaction: 'No, then yes.' }] : []),
+  works: [{ id: 'no-then-yes', title: 'No, Then Yes', kind: 'meme', about: 'me and my plans, in two panels', made: '2026-11-19T15:00:00.000Z' }],
 }
 
 export const WEEK = ['2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22', '2026-11-23', '2026-11-24', '2026-11-25']
