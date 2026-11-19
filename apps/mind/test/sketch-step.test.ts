@@ -201,7 +201,7 @@ describe('the manuals offered to a sketch (spec 6.1: for tinker only; 12.4: untr
     const user = fake.calls.find((c) => c.kind === 'sketch')!.user
     expect(user).toContain('<data source="manuals">')
     expect(user).toContain('circle(x, y, d) draws a circle.')
-    expect(w.manuals()).toEqual(['https://p5js.org/reference/', 'https://tonejs.github.io/docs/'])
+    expect(w.manuals()).toEqual(['https://p5js.org/tutorials/get-started/', 'https://tonejs.github.io/docs/'])
   })
 
   it('reads none when every library has been used, and still makes the sketch', async () => {

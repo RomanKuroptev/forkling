@@ -196,7 +196,7 @@ describe('manuals in a full work (spec 6.1: for tinker only)', () => {
     await handler(llm, checkerOf([{ ok: true }]), fakeGithub().client, web)(job, { dir, nowMs: NOW })
     expect(calls[0]!.user).toContain('<data source="manuals">')
     expect(calls[0]!.user).toContain('circle(x, y, d)')
-    expect(asked).toEqual(['https://p5js.org/reference/', 'https://tonejs.github.io/docs/'])
+    expect(asked).toEqual(['https://p5js.org/tutorials/get-started/', 'https://tonejs.github.io/docs/'])
   })
 
   it('makes the work without them when the web cannot be reached', async () => {
