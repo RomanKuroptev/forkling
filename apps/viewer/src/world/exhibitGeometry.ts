@@ -5,6 +5,7 @@ import { floorHeight, type Instance } from './kitBase.ts'
 import { compose, multiply } from './matrix.ts'
 import { TERMINAL_TILT, cardPose } from './exhibitCards.ts'
 import { partInDoorway } from './doorway.ts'
+import { innerWallFace } from './building.ts'
 
 /**
  * What stands in a place's slots, and how neglect shows (spec 4.4, 5.1, 4.6), as plain arrays like the rest of the kit's geometry.
@@ -115,6 +116,10 @@ const DUST = EXHIBIT.dust
 const WEB = EXHIBIT.web
 const VINE = EXHIBIT.vine
 const LEAF = EXHIBIT.leaf
+/** A cobweb's strands: this thick (a neon line), this far under the ceiling (just under the top band), and this far from the corner along each wall. */
+const WEB_STRAND = 0.025
+const WEB_DROP = 0.32
+const WEB_RINGS = [0.3, 0.6, 0.9] as const
 
 /** A number from a place's id, so the same place always gets the same dust. */
 function seedOf(id: string): number {
@@ -141,10 +146,26 @@ export function neglectInstances(place: Place, _kit: Kit, baseY: number, level: 
   const hz = Math.max(0.5, fd / 2 - 1.2)
   if (part === 'interior') {
     for (let i = 0; i < look.dust; i++) piece('box', [px + prng.range(-hx, hx), baseY + 0.13, pz + prng.range(-hz, hz)], [0.35, 0.015, 0.3], DUST, prng.range(0, Math.PI))
+    // A cobweb is a few neon strands strung across a corner just under the top band, each from one wall to the other, and two from
+    // the corner out to the widest one: thin lines are neon (look.md), and every strand hangs from a wall (issue 336: a grey slab
+    // 2 cm thick read as a plank floating under the ceiling).
+    const up = height - WEB_DROP
+    const face = innerWallFace(place, up)
     for (let i = 0; i < look.cobwebs; i++) {
       const sx = i % 2 === 0 ? -1 : 1
       const sz = i < 2 ? -1 : 1
-      piece('box', [px + sx * (fw / 2 - 1), baseY + height - 0.35, pz + sz * (fd / 2 - 1)], [0.9, 0.02, 0.6], WEB, Math.PI / 4)
+      const cx = px + sx * (fw / 2 - face)
+      const cz = pz + sz * (fd / 2 - face)
+      const strand = (at: [number, number], length: number, rotY: number) => out.push({ shape: 'box', matrix: compose([at[0], baseY + up, at[1]], [0, rotY, 0], [length, WEB_STRAND, WEB_STRAND]), color: WEB, glow: true })
+      // Across the corner, `d` from it along each wall: its local x runs from the wall at x = cx to the wall at z = cz.
+      for (const d of WEB_RINGS) strand([cx - (sx * d) / 2, cz - (sz * d) / 2], d * Math.SQRT2, Math.atan2(-sz, -sx))
+      // From the corner out to the middle of the widest strand, and a little to each side of it.
+      const reach = WEB_RINGS[WEB_RINGS.length - 1]! / 2
+      for (const turn of [-0.3, 0.3]) {
+        const a = Math.atan2(sz, -sx) + turn
+        const len = (reach * Math.SQRT2) / Math.cos(turn)
+        strand([cx + (Math.cos(a) * len) / 2, cz - (Math.sin(a) * len) / 2], len, a)
+      }
     }
     for (let i = 0; i < look.grass; i++) piece('cone', [px + prng.range(-hx, hx), baseY + 0.32, pz + prng.range(-hz, hz)], [0.18, 0.4, 0.18], LEAF)
     return out
