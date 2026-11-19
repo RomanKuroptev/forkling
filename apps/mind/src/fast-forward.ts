@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { BudgetLedger, Health } from '@forkling/schema'
 import { localDate } from '@forkling/sim'
@@ -68,6 +68,34 @@ export interface FastForwardOptions {
   log?: (line: string) => void
   /** A shorter run than `days` whole days, for a test. The days judged are still `days`. */
   durationMs?: number
+  /** Keep every model call's prompt in `<outDir>/prompts.jsonl`, for the audit harness (QB). Off when absent. */
+  capturePrompts?: boolean
+}
+
+/**
+ * The model client that writes one line per call to `file` (the audit harness reads it; Merge never does): the simulated
+ * time, the kind, the model, the prompt and whether the answer parsed. A batch it sends has `parsed: null` (its answer comes
+ * later). The build sessions' turns are not model calls of this client and are not in it.
+ */
+export function capturingModel(llm: LlmClient, file: string, clock: () => number): LlmClient {
+  mkdirSync(dirname(file), { recursive: true })
+  const write = (line: Record<string, unknown>) => appendFileSync(file, `${JSON.stringify(line)}\n`)
+  return {
+    async complete(req) {
+      const at = new Date(clock()).toISOString()
+      const result = await llm.complete(req)
+      write({ at, kind: req.kind, model: req.model, system: req.system, user: req.user, parsed: result.parsed !== null, stopReason: result.stopReason })
+      return result
+    },
+    async submitBatch(req) {
+      const at = new Date(clock()).toISOString()
+      const id = await llm.submitBatch(req)
+      write({ at, kind: req.kind, model: req.model, system: req.system, user: req.user, parsed: null, batch: true })
+      return id
+    },
+    fetchBatch: (id, schema) => llm.fetchBatch(id, schema),
+    cancelBatch: (id) => llm.cancelBatch(id),
+  }
 }
 
 export interface Crash {
@@ -233,7 +261,7 @@ export async function runFastForward(o: FastForwardOptions): Promise<FastForward
   let now = o.startMs
   const endMs = o.startMs + (o.durationMs ?? o.days * DAY)
   const clock = () => now
-  const capped = cappedModel(o.llm, o.capUsd)
+  const capped = cappedModel(o.capturePrompts ? capturingModel(o.llm, join(outDir, 'prompts.jsonl'), clock) : o.llm, o.capUsd)
   const railsBroken: string[] = []
   const offList: string[] = []
   const web = { fetchImpl: watchedFetch(o.fetchImpl, offList, o.realSleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)))) }

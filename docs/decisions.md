@@ -5,7 +5,9 @@ Dated log of choices that shape the project, newest first. Add an entry when a d
 **Audit harness lanes (until QR is done):** add your decisions as bullets at the end of your lane's own 2026-11-19 entry below, not as new entries at the top, so parallel PRs do not conflict.
 
 ## 2026-11-19: Behaviour scoring choices (audit QB, lane B)
-- Lane B adds its decisions here.
+- **Repeated words count titles with their captions** (a work's title and about, and written page titles), share of texts with the word. Spec 9.2 says "titles, captions and diary"; diary lines are many and short and water the share down. On R2 this finds "loop" in 38% (level 25%); over titles alone it found "counter" at 23%.
+- **Topic runs use only what Merge made and wrote; topic variety also counts what it read.** A day's many Wikipedia reads (R2: 63 clusters) hide the topic it kept making. On R2, topic runs stay at 2 days: the "loop" drift moves through names (loop, counter, the counter toy, a visitor for it), so repeated words is the score that catches it, as spec 9.2 expects.
+- **Rest is counted from the stream's `step` lines**: rest steps over all steps started that day.
 
 ## 2026-11-19: `?qa=1` draws a frame only when the harness steps it (audit Q1, lane W)
 - **Why.** A picture must depend only on the address and the steps taken, or the world checks cannot compare two runs. With the clock frozen but the frame loop free, the visitor's capsule and Merge's animations still moved with real frame times.
@@ -39,6 +41,7 @@ Dated log of choices that shape the project, newest first. Add an entry when a d
 ## 2026-11-19: The audit harness is its own package, `apps/qa` (audit Q0)
 - **Why.** The harness measures forkling without steering Merge (audit spec 1). Keeping it in its own package keeps sim pure and keeps every score and finding out of the mind's code paths.
 - **What.** `@forkling/qa`, run as `pnpm qa <command>` (`qa`, not `audit`, because `pnpm audit` is built in). Every check returns findings in one Zod format (`apps/qa/src/report/finding.ts`); a check that throws or returns a malformed finding gives `qa.check-did-not-run` (major), never a silent pass. A new blocker or major fails `qa.yml`. Pictures are PNG via pngjs (pure JS, works the same on Windows and Linux).
+- **Known findings (19 November).** Spec 5 blocks a PR only on a *new* blocker or major. `qa/known-findings.json` lists majors already tracked in an open `qa` issue (fingerprint, issue, reason); they stay in every report but do not fail `qa.yml`. A blocker always blocks. The fix PR removes its entry. Chosen over marking an engine gap `fixKind: roman`, which would say it waits for Roman when it does not.
 
 ## 2026-11-17: Prices that favour what you can see, 300 points a day, a formula on Sundays (spec v4 step 2, slice B)
 - **Why.** Merge held 420 of 450 points and wrote about 4 pages a day, because a page cost 1 point and was always on offer, while a sketch cost 50 against a real cost of about $0.012. Roman decided on 16 November that visible things are priced under their cost and standalone text over it.
