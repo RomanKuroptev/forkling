@@ -23,7 +23,8 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 ### Lane B (QB)
 
 - Plan approved (B1 to B9, [`lanes/b.md`](docs/spec/audit/lanes/b.md)).
-- **B1 (#274):** the pure measures in `packages/sim/src/behaviour-measures.ts`: topic variety and runs, top word, repetition share, rest by day and its rising run, something new at each look, kind shares. Built on `topicClusters` and `maxSimilarity`.
+- **B1 (#274, merged):** the pure measures in `packages/sim/src/behaviour-measures.ts`: topic variety and runs, top word, repetition share, rest by day and its rising run, something new at each look, kind shares. Built on `topicClusters` and `maxSimilarity`.
+- **B2 (#278):** `fast-forward --capture-prompts` writes every model call's prompt to `<out>/prompts.jsonl`, never in the world, and `fakeModel` takes a scripted answer per call kind (`answers`). Without them the fakes and `--dry-run` behave as before.
 
 ### Lane S (QS)
 
