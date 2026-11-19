@@ -9,6 +9,7 @@ import type { SceneObject } from './open.ts'
  * the walking grid's path; a walk that gets stuck is a place a visitor cannot reach (behind a drawn obstacle) or an invisible
  * wall (nothing drawn in the way). From behind each place it walks straight at the back wall, which must stop it. Rays from
  * the middle of every room must meet a wall on every side but the door. The camera must never be inside a mesh on the way.
+ * Running at the end of the land, in each of four directions, must leave the visitor on the land (issues 340, 351).
  */
 
 type Hit = { distance: number; object: string } | null
@@ -20,7 +21,9 @@ type Qa = {
   look(yaw: number, pitch: number): Promise<void>
   setCamera(pose: null): Promise<void>
   ray(origin: Vec3, dir: Vec3, far: number): Hit
+  ground(points: [number, number][]): Ground[]
 }
+type Ground = { y: number; chunk: 'owned' | 'edge' | 'fog' }
 const qa = <T>(page: Page, fn: (q: Qa, arg: never) => T | Promise<T>, arg?: unknown) =>
   page.evaluate(({ src, arg }) => (0, eval)(`(${src})`)((globalThis as unknown as { __qa: Qa }).__qa, arg), { src: fn.toString(), arg }) as Promise<T>
 
@@ -39,6 +42,23 @@ export function holesFrom(hits: { heading: number; hit: Hit }[]): number[] {
 /** The camera is inside a mesh when every ray from it meets something almost at once. */
 export function enclosed(hits: Hit[], within = 0.25): boolean {
   return hits.length > 0 && hits.every((h) => h !== null && h.distance < within)
+}
+
+/** The headings the edge walk runs in (radians, 0 along +z): the four ways off the land. */
+export const EDGE_HEADINGS = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2]
+
+/**
+ * How far along a line of ground samples (`step` meters apart, the first at the start) the land ends: the distance of the
+ * first sample in the fog, or null when the line never leaves the land.
+ */
+export function landEndsAt(samples: readonly Ground[], step: number): number | null {
+  const i = samples.findIndex((g) => g.chunk === 'fog')
+  return i < 0 ? null : i * step
+}
+
+/** The visitor has left the land when it stands over the fog (no ground there) or has fallen more than a meter below the ground. */
+export function offLand(visitor: { y: number }, ground: Ground): boolean {
+  return ground.chunk === 'fog' || visitor.y < ground.y - 1
 }
 
 export interface WalkInput {
@@ -132,6 +152,22 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     const hits = await qa(page, (q, a: [Vec3, number[], number]) => a[1].map((h) => ({ heading: h, hit: q.ray(a[0], [Math.sin(h), 0, Math.cos(h)], a[2]) })), [origin, ROOM_RAYS, far])
     const holes = holesFrom(hits)
     if (holes.length) add('world.hole', r.id, 'major', `The room ${r.id} has a hole in its walls`, `From its middle, rays heading ${holes.map((h) => `${Math.round((h * 180) / Math.PI)} deg`).join(', ')} leave the room without meeting anything within ${far.toFixed(0)} m.`, 'A visitor sees out through a wall that should be solid.')
+  }
+  // The end of the land must stop a visitor who runs at it (issues 340, 351): past it there is no ground.
+  const STEP = 2
+  for (const heading of EDGE_HEADINGS) {
+    const dir = { x: Math.sin(heading), z: Math.cos(heading) }
+    const line = Array.from({ length: 200 }, (_, i) => [input.start.x + dir.x * i * STEP, input.start.z + dir.z * i * STEP] as [number, number])
+    const end = landEndsAt(await qa(page, (q, a: [number, number][]) => q.ground(a), line), STEP)
+    if (end === null) continue
+    const from = Math.max(0, end - 8)
+    await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [input.start.x + dir.x * from, input.start.z + dir.z * from, heading])
+    await qa(page, (q) => q.press(['KeyW', 'ShiftLeft'], 4000))
+    const v = await where()
+    const [g] = await qa(page, (q, a: [number, number][]) => q.ground(a), [[v.x, v.z]])
+    const deg = Math.round((heading * 180) / Math.PI)
+    if (g && offLand(v, g))
+      add('world.walk-off-edge', `heading-${deg}`, 'major', 'A visitor can walk off the edge of the land', `Running at the end of the land heading ${deg} deg, the visitor ends at x ${v.x.toFixed(1)}, z ${v.z.toFixed(1)}, ${g.chunk === 'fog' ? 'over the fog, where there is no ground' : `${(g.y - v.y).toFixed(1)} m below the ground`}.`, 'A visitor who walks away from the places falls under the world, loses it and can only get back by reloading.')
   }
   await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [input.start.x, input.start.z, input.start.yaw])
   return out

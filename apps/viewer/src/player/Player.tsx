@@ -2,7 +2,7 @@ import { useKeyboardControls } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Ecctrl, type EcctrlHandle } from 'ecctrl'
 import { useButtonStore, useJoystickStore } from 'ecctrl/input'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { parseStand } from '../world/at.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { touchUi } from '../touch.ts'
@@ -10,6 +10,8 @@ import { live } from '../forkling/live.ts'
 import { visitor } from '../visitor.ts'
 import { applyLookDrag, lookEuler, type Look } from './look.ts'
 import { mergeMovement } from './touchInput.ts'
+import { keepOnLand } from './keepOnLand.ts'
+import { worldLand } from '../world/worldLand.ts'
 import { qaMode } from '../qa/params.ts'
 import { qaRegistry } from '../qa/registry.ts'
 
@@ -32,13 +34,16 @@ const clipMode = new URLSearchParams(location.search).has('clip')
  * faces, so turning the view turns the walk. Dragging on the canvas (mouse or one finger) looks around.
  */
 export function Player() {
-  const { simWorld } = useWorld()
+  const { simWorld, world } = useWorld()
+  const land = useMemo(() => worldLand(world), [world])
   // `?stand=x,z,yaw` starts the visitor somewhere else, to look at a part of the world.
   const at = parseStand(location.search)
   const spawn = at ? { x: at.x, z: at.z, y: simWorld.heightAt(at.x, at.z), yaw: at.yaw } : simWorld.visitorSpawn
   const body = useRef<EcctrlHandle>(null)
   const look = useRef<Look>({ yaw: spawn.yaw, pitch: (Number(new URLSearchParams(location.search).get('pitch')) || 0) * (Math.PI / 180) })
   const frame = useRef(0)
+  /** Where the visitor stood last frame, on the land: a step over its end is cut there (`keepOnLand`). */
+  const lastOnLand = useRef({ x: spawn.x, z: spawn.z })
   const [, getKeys] = useKeyboardControls()
   const gl = useThree((s) => s.gl)
   const camera = useThree((s) => s.camera)
@@ -65,6 +70,7 @@ export function Player() {
         teleport: (x, z, yaw) => {
           body.current?.body.setTranslation({ x, y: simWorld.heightAt(x, z) + 1.5, z }, true)
           body.current?.body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+          lastOnLand.current = { x, z }
           if (yaw !== undefined) look.current = { yaw, pitch: 0 }
         },
       }
@@ -119,6 +125,15 @@ export function Player() {
     const stick = touchUi ? (useJoystickStore.getState().joysticks.default ?? { x: 0, y: 0, active: false }) : undefined
     b.setMovement(mergeMovement(getKeys(), stick, { jump: useButtonStore.getState().buttons.jump }))
     const p = b.currPos
+    // The land ends where the fog does: past it there is no ground, so the visitor stops there, whatever moved it.
+    const kept = keepOnLand(land, lastOnLand.current, { x: p.x, z: p.z })
+    if (kept) {
+      const v = b.body.linvel()
+      b.body.setTranslation({ x: kept.x, y: p.y, z: kept.z }, true)
+      b.body.setLinvel({ x: kept.x === p.x ? v.x : 0, y: v.y, z: kept.z === p.z ? v.z : 0 }, true)
+      p.set(kept.x, p.y, kept.z)
+    }
+    lastOnLand.current = { x: p.x, z: p.z }
     visitor.position = { x: p.x, z: p.z }
     const pb = live.playback
     if (lookAtForkling && pb) {
