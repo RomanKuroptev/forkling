@@ -12,6 +12,7 @@ import { qaRegistry, type QaPose, type Vec3 } from './registry.ts'
 import { frontPose } from './cameras.ts'
 import { objectEntry, placeObjects, type QaObject } from './sceneList.ts'
 import { coveredDoors, placeFights } from './fights.ts'
+import { thinMarks } from './marks.ts'
 
 /** One stepped frame: the world moves this many milliseconds each time the harness draws. */
 export const QA_FRAME_MS = 1000 / 30
@@ -130,6 +131,8 @@ export function QaProbe() {
       fights: () => (qaRegistry.places ? placeFights(qaRegistry.places) : []),
       /** Door parts whose face lies just behind a face of the building, so it covers them: `fights.ts`. */
       coveredDoors: () => (qaRegistry.places ? coveredDoors(qaRegistry.places) : []),
+      /** Thin marks of neglect that hang in a room and do not glow (a plank under the ceiling): `marks.ts`. */
+      thinMarks: () => (qaRegistry.places ? thinMarks(qaRegistry.places) : []),
       renderer: () => ({
         drawCalls: gl.info.render.calls,
         triangles: gl.info.render.triangles,

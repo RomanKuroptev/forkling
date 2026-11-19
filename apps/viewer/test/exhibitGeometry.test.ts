@@ -4,6 +4,7 @@ import { kit } from '@forkling/schema/kit'
 import { createLand, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
 import { FIXTURE_NOW, makeFixtureWorld } from '@forkling/sim/fixture'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from '../src/world/exhibitGeometry.ts'
+import { innerWallFace } from '../src/world/building.ts'
 import { exteriorInstances, interiorParts, renderBudget, sceneInstances, interiorsToLoad } from '../src/world/kitGeometry.ts'
 
 const fixture = makeFixtureWorld(1, 10)
@@ -122,6 +123,43 @@ describe('how neglect shows (spec 4.4)', () => {
       const [x, , z] = pos(i.matrix)
       expect(Math.abs(x - px)).toBeLessThanOrEqual(fw / 2 + 0.6)
       expect(Math.abs(z - pz)).toBeLessThanOrEqual(fd / 2 + 0.6)
+    }
+  })
+})
+
+describe('cobwebs (issue 336: two pale planks floated under the ceiling)', () => {
+  const scale = (m: number[]) => [Math.hypot(m[0]!, m[1]!, m[2]!), Math.hypot(m[4]!, m[5]!, m[6]!), Math.hypot(m[8]!, m[9]!, m[10]!)]
+  const hanging = (p: Place) => neglectInstances(p, kit, 0, 2, 'interior').filter((i) => pos(i.matrix)[1] > 0.5)
+  const styles = ['timber', 'stone', 'glass', 'tin-shack', 'tower']
+
+  it('are neon strands: anything thinner than 0.15 m that hangs in a room glows (look.md)', () => {
+    for (const style of styles) {
+      const p = { ...stocked, exterior: { ...stocked.exterior, style } }
+      expect(hanging(p).length, style).toBeGreaterThan(0)
+      for (const i of hanging(p)) if (Math.min(...scale(i.matrix)) < 0.15) expect(i.glow, `${style} ${pos(i.matrix).join(',')}`).toBe(true)
+    }
+  })
+
+  it('hang in the corners from the walls: every strand has an end on a wall, none floats in the room', () => {
+    for (const style of styles) {
+      const p = { ...stocked, exterior: { ...stocked.exterior, style } }
+      const [px, pz] = placeCentre(toLandPlace(p))
+      const [fw, fd] = p.exterior.footprint
+      for (const i of hanging(p)) {
+        const [x, y, z] = pos(i.matrix)
+        const face = innerWallFace(p, y)
+        // The strand's long axis is its local x: its two ends.
+        const half = scale(i.matrix)[0]! / 2
+        const dir = [i.matrix[0]! / (2 * half), i.matrix[2]! / (2 * half)]
+        const ends = [-1, 1].map((s) => [x + s * dir[0]! * half, z + s * dir[1]! * half] as const)
+        const onWall = ([ex, ez]: readonly [number, number]) => Math.abs(Math.abs(ex - px) - (fw / 2 - face)) < 0.05 || Math.abs(Math.abs(ez - pz) - (fd / 2 - face)) < 0.05
+        expect(ends.some(onWall), `${style} strand at ${x.toFixed(2)}, ${z.toFixed(2)}`).toBe(true)
+        // And never reaches through the wall to the outside.
+        for (const [ex, ez] of ends) {
+          expect(Math.abs(ex - px)).toBeLessThan(fw / 2 - face + 0.05)
+          expect(Math.abs(ez - pz)).toBeLessThan(fd / 2 - face + 0.05)
+        }
+      }
     }
   })
 })

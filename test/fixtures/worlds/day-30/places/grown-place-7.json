@@ -3,37 +3,35 @@
   "name": "Grown Place 7",
   "purpose": "A place grown for the day-30 fixture on 2026-12-06, the shape of one Merge founded.",
   "tags": [
-    "light sensing",
-    "installation art",
     "generative art"
   ],
   "founded": "2026-12-06",
   "chunk": [
-    0,
-    1
+    -1,
+    -2
   ],
   "offset": [
     0,
     0
   ],
   "related": [
-    "hillside-room-five-lamps"
+    "grown-place-4"
   ],
   "paths": [],
   "exterior": {
-    "style": "timber",
+    "style": "glass",
     "footprint": [
       8,
       8
     ],
     "floors": 1,
-    "palette": "ember",
+    "palette": "harbour",
     "sign": "GROWN PLACE 7"
   },
   "rooms": [
     {
       "id": "main-room",
-      "name": "Five Lamps Room",
+      "name": "Grown Room 7a",
       "size": [
         7,
         7,
@@ -46,43 +44,7 @@
       "floor": 0,
       "parts": [
         {
-          "part": "floor-boards",
-          "at": [
-            -1.8,
-            0,
-            -1.8
-          ],
-          "rot": 0
-        },
-        {
-          "part": "floor-boards",
-          "at": [
-            1.8,
-            0,
-            -1.8
-          ],
-          "rot": 0
-        },
-        {
-          "part": "floor-boards",
-          "at": [
-            -1.8,
-            0,
-            1.8
-          ],
-          "rot": 0
-        },
-        {
-          "part": "floor-boards",
-          "at": [
-            1.8,
-            0,
-            1.8
-          ],
-          "rot": 0
-        },
-        {
-          "part": "door-wood",
+          "part": "door-glass",
           "at": [
             0,
             0,
@@ -100,111 +62,100 @@
           "rot": 0
         },
         {
-          "part": "window-small",
-          "at": [
-            -3.4,
-            1.4,
-            0
-          ],
-          "rot": 1.57
-        },
-        {
-          "part": "window-small",
+          "part": "window-large",
           "at": [
             3.4,
-            1.4,
+            1.2,
             0
           ],
-          "rot": 1.57
+          "rot": 1.5707963267948966
         },
         {
-          "part": "lamp-floor",
+          "part": "shelf-low",
           "at": [
-            -2.6,
+            -2,
             0,
-            -2.4
+            -2.5
           ],
           "rot": 0
         },
         {
-          "part": "lamp-floor",
+          "part": "screen-small",
           "at": [
-            -1.3,
+            2.5,
             0,
-            -2.6
+            -1.75
           ],
-          "rot": 0
+          "rot": -1.5707963267948966
         },
         {
           "part": "lamp-floor",
           "at": [
+            -1.75,
             0,
-            0,
-            -2.7
-          ],
-          "rot": 0
-        },
-        {
-          "part": "lamp-floor",
-          "at": [
-            1.3,
-            0,
-            -2.6
-          ],
-          "rot": 0
-        },
-        {
-          "part": "lamp-floor",
-          "at": [
-            2.6,
-            0,
-            -2.4
-          ],
-          "rot": 0
-        },
-        {
-          "part": "rug-round",
-          "at": [
-            0,
-            0.1,
             0
           ],
           "rot": 0
         },
         {
-          "part": "shelf-tall",
+          "part": "case-glass",
           "at": [
-            -2.6,
+            -2.5,
             0,
-            1.5
+            1.75
           ],
-          "rot": 1.57
+          "rot": 1.5707963267948966
         },
         {
-          "part": "plinth",
+          "part": "stool",
           "at": [
+            1.75,
             0,
-            0,
-            -0.5
+            1.45
           ],
           "rot": 0
         },
         {
-          "part": "bench",
+          "part": "rock-small",
           "at": [
-            1.8,
+            1.75,
             0,
-            2
+            0
           ],
           "rot": 0
         }
       ]
     }
   ],
-  "exhibits": [],
+  "exhibits": [
+    {
+      "id": "screen-grown-work-2026-12-06-2",
+      "kind": "work",
+      "ref": "works/grown-work-2026-12-06-2",
+      "slot": "main-room/4/0",
+      "label": "Grown Work 2026-12-06 2",
+      "added": "2026-12-06"
+    },
+    {
+      "id": "kept-2026-11-17-liminality",
+      "kind": "souvenir",
+      "ref": "souvenirs/2026-11-17-liminality",
+      "slot": "main-room/3/0",
+      "label": "A souvenir kept here for the day-30 fixture on 2026-12-08.",
+      "added": "2026-12-08"
+    },
+    {
+      "id": "kept-2026-11-17-road-verge",
+      "kind": "souvenir",
+      "ref": "souvenirs/2026-11-17-road-verge",
+      "slot": "main-room/3/1",
+      "label": "A souvenir kept here for the day-30 fixture on 2026-12-12.",
+      "added": "2026-12-12"
+    }
+  ],
   "state": {
     "construction": null,
-    "lastCareAt": "2026-12-06T09:00:00.000Z",
+    "lastCareAt": "2026-12-12T10:00:00.000Z",
     "neglect": 0,
     "lamps": true,
     "closed": null
@@ -215,6 +166,16 @@
       "at": "2026-12-06T09:00:00.000Z",
       "verb": "found",
       "summary": "Founded for the day-30 fixture."
+    },
+    {
+      "at": "2026-12-08T10:00:00.000Z",
+      "verb": "tend",
+      "summary": "Tended for the day-30 fixture."
+    },
+    {
+      "at": "2026-12-12T10:00:00.000Z",
+      "verb": "tend",
+      "summary": "Tended for the day-30 fixture."
     }
   ]
 }

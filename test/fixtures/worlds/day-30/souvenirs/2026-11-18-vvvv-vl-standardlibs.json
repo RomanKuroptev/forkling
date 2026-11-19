@@ -1,0 +1,18 @@
+{
+  "id": "2026-11-18-vvvv-vl-standardlibs",
+  "why": "A very honest sentence about who a tool is for, and I find it funny that a creative tool is walled off this way.",
+  "topics": [
+    "creative coding",
+    "visual programming",
+    "skia"
+  ],
+  "source": {
+    "url": "https://github.com/vvvv/VL.StandardLibs",
+    "title": "vvvv/VL.StandardLibs",
+    "fetchedAt": "2026-11-18T13:47:12.433Z"
+  },
+  "licence": null,
+  "placedIn": "grown-place-4",
+  "kind": "quote",
+  "content": "If you're merely using vvvv, this repository is not for you. It is only useful for developers who want to fix/improve/add-to libraries that are part of this repository."
+}
