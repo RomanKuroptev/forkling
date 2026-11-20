@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { Place, type Kit, type PlaceRequest } from '@forkling/schema'
 import { clampText } from '../decision.ts'
 import { dataBlock } from '../web/read.ts'
+import { WALL } from '@forkling/sim'
 import { RoomDraft, kitSummary } from './expand.ts'
 
 /** A plain place is a few rooms of parts; the limit is generous, since thinking at low effort counts as output. */
@@ -47,7 +48,7 @@ export function buildFoundBuildUser(i: FoundBuildPromptInput): string {
     '',
     'Rules for the plain place:',
     `- 1 to ${FOUND_BUILD_LIMITS.rooms} rooms, and at most ${FOUND_BUILD_LIMITS.parts} parts in all, counted over every room.`,
-    `- The footprint is at most ${FOUND_BUILD_LIMITS.footprint} by ${FOUND_BUILD_LIMITS.footprint} meters, 1 or 2 floors. Every room fits inside the footprint and does not overlap another room on the same floor; its position is where its middle is, in meters from the middle of the building.`,
+    `- The footprint is at most ${FOUND_BUILD_LIMITS.footprint} by ${FOUND_BUILD_LIMITS.footprint} meters, 1 or 2 floors. Every room stands inside the walls: the outer ${WALL} m of the footprint is wall, so a room keeps ${WALL} m in from every edge of the footprint. It does not overlap another room on the same floor; its position is where its middle is, in meters from the middle of the building.`,
     '- Use only kit parts from the list above. You never write 3D code. A part sits inside its room, and its position is in meters from the middle of the room, y up.',
     "- Choose a style and a palette that suit the place. The name and the purpose are the request's, the sign is made from the name, and there are no exhibits: they come later, when you tend the place.",
   ].join('\n')
