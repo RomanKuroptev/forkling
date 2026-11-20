@@ -79,7 +79,8 @@ export function segmentHitsBox(a: readonly number[], b: readonly number[], box: 
  * face reads; issue 348's second look), how far away it may stand, and how high the lens may rise to look over furniture.
  */
 export const CLOSE_MAX_TURN = 45
-const CLOSE_TURNS = [0, 15, -15, 30, -30, 45, -45].map((d) => (d * Math.PI) / 180)
+// The last turn stays 5 deg inside the limit: a pose at exactly 45 deg came out a hair over it once measured from the drawn Merge.
+const CLOSE_TURNS = [0, 15, -15, 30, -30, 40, -40].map((d) => (d * Math.PI) / 180)
 const CLOSE_DISTANCES = [1.5, 1.2, 1.0]
 const CLOSE_HEIGHTS = [0.7, 1.1, 1.5]
 /** The lens keeps this far from any box, so nothing is right in front of it. */

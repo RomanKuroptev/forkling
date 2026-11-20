@@ -176,7 +176,7 @@ describe('the merge-close camera stands clear of furniture (issue 348)', () => {
       for (const z of [13, 15, 17, 18.3]) {
         for (let h = -Math.PI; h < Math.PI; h += Math.PI / 6) {
           const pose = mergeClosePose({ x, z }, h, ground, obstacles)
-          expect(offFace(pose, { x, z }, h), `${x}, ${z}, ${h}`).toBeLessThanOrEqual(CLOSE_MAX_TURN + 0.01)
+          expect(offFace(pose, { x, z }, h), `${x}, ${z}, ${h}`).toBeLessThan(CLOSE_MAX_TURN - 1)
         }
       }
     }
