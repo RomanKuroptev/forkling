@@ -1,4 +1,4 @@
-import { hostRule, isAllowed, USER_AGENT, type ReadVerb } from './allowlist.ts'
+import { hostRule, isAllowed, USER_AGENT, type HostRule, type ReadVerb } from './allowlist.ts'
 import { robotsAllows } from './robots.ts'
 
 /** The most one response may be, in bytes (spec 6.2). */
@@ -49,6 +49,11 @@ export interface FetcherOptions {
    * that host only: a redirect to another host is a new request with the headers of that host.
    */
   authorization?: Record<string, string>
+  /**
+   * Hosts a source trial may read that are not on the allowlist (spec 6.5), each with its own gap. Only the trial CLI passes
+   * these (`TRIAL_HOSTS` in `trial-plans.ts`); the mind never does, so for it the allowlist stays the whole list.
+   */
+  trialHosts?: readonly HostRule[]
 }
 
 export interface Got {
@@ -116,6 +121,17 @@ export function createFetcher(options: FetcherOptions = {}): Fetcher {
   const pausedUntil = new Map<string, number>(Object.entries(options.paused ?? {}).map(([host, iso]) => [host, Date.parse(iso)]))
   const lastAt = new Map<string, number>()
   const log: FetchLine[] = []
+  /** The trial rule for a URL: https, no port, no login, and a host the trial CLI passed. */
+  const trialRule = (url: string): HostRule | undefined => {
+    if (!options.trialHosts) return undefined
+    try {
+      const u = new URL(url)
+      if (u.protocol !== 'https:' || u.port !== '' || u.username !== '' || u.password !== '') return undefined
+      return options.trialHosts.find((r) => r.host === u.hostname)
+    } catch {
+      return undefined
+    }
+  }
   /** Each host's robots.txt (`''` for none) and when it was read. */
   const robots = new Map<string, { txt: string; at: number }>()
   const reading = new Map<string, Promise<string | null>>()
@@ -172,7 +188,7 @@ export function createFetcher(options: FetcherOptions = {}): Fetcher {
     let url = start
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       const host = hostOf(url)
-      if (!isAllowed(url, options.verb)) {
+      if (!isAllowed(url, options.verb) && !trialRule(url)) {
         note(url, 'not-allowed')
         throw new WebError(hop === 0 ? 'not-allowed' : 'redirect-not-allowed', `${url} is not on the allowlist`)
       }
@@ -196,7 +212,7 @@ export function createFetcher(options: FetcherOptions = {}): Fetcher {
           throw new WebError('paused', `${host} is paused until ${new Date(pausedUntil.get(host)!).toISOString()}`)
         }
       }
-      const wait = (lastAt.get(host) ?? -Infinity) + hostRule(host)!.gapMs - now()
+      const wait = (lastAt.get(host) ?? -Infinity) + (trialRule(url) ?? hostRule(host))!.gapMs - now()
       if (wait > 0) await sleep(wait)
       lastAt.set(host, now())
 
