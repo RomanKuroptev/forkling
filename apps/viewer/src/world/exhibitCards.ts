@@ -21,6 +21,17 @@ export interface CardContent {
   text: string
   /** An image souvenir's picture (https only), drawn above its credit line once it has loaded. */
   picture: { url: string; credit: string; licence: string } | null
+  /** In a place being built: the card is drawn as wire, its words in glowing cyan lines on no face, and no picture (issue 426). */
+  wire?: true
+}
+
+/**
+ * A card in a place being built (issue 426): the finished model there is cyan wire, so its card is too. Its words are kept, drawn
+ * as glowing lines with no face behind them; a picture waits until the place is done, and its card shows its title and credit.
+ */
+export function wireCard(content: CardContent): CardContent {
+  const shows: CardShows = content.shows === 'picture' ? (content.title !== '' || content.text !== '' ? 'text' : 'nothing') : content.shows
+  return { ...content, shows, picture: null, wire: true }
 }
 
 const squash = (s: string) => s.trim().replace(/\s+/g, ' ')
@@ -126,15 +137,16 @@ export interface CardFace {
   content: CardContent
 }
 
-/** Every card of the given spots. The souvenirs are the files read so far, by the exhibit's `ref`. */
-export function cardFaces(spots: readonly ExhibitSpot[], souvenirs: ReadonlyMap<string, Souvenir | null>, workCount: number): CardFace[] {
+/** Every card of the given spots. The souvenirs are the files read so far, by the exhibit's `ref`; `building` are the places being built, whose cards are wire. */
+export function cardFaces(spots: readonly ExhibitSpot[], souvenirs: ReadonlyMap<string, Souvenir | null>, workCount: number, building: ReadonlySet<string> = new Set()): CardFace[] {
   const out: CardFace[] = []
   for (const spot of spots) {
     const pose = cardPose(spot)
     if (!pose) continue
     const e = spot.exhibit
     const { corners, normal } = cardCorners(spot, pose)
-    out.push({ key: `${spot.placeId}/${e.id}`, corners, normal, aspect: pose.size[1] / pose.size[0], content: cardContent(e, spot.slotKind, e.ref ? souvenirs.get(e.ref) : null, workCount) })
+    const content = cardContent(e, spot.slotKind, e.ref ? souvenirs.get(e.ref) : null, workCount)
+    out.push({ key: `${spot.placeId}/${e.id}`, corners, normal, aspect: pose.size[1] / pose.size[0], content: building.has(spot.placeId) ? wireCard(content) : content })
   }
   return out
 }
