@@ -3,13 +3,16 @@ import { bodyWorldFor, findPath, type Box, type Point2, type Vec3 } from '@forkl
 import type { Page } from 'playwright'
 import type { CheckResult } from '../report/finding.ts'
 import type { SceneObject } from './open.ts'
+import { CAPSULE, MERGE_GAP, gapToBox, gridWithFurniture, solidParts, walkedInto } from './bump.ts'
 
 /**
  * The walking checks (audit spec 7.4): with the real W key, the visitor walks from the arrival point into every place along
  * the walking grid's path; a walk that gets stuck is a place a visitor cannot reach (behind a drawn obstacle) or an invisible
  * wall (nothing drawn in the way). From behind each place it walks straight at the back wall, which must stop it. Rays from
  * the middle of every room must meet a wall on every side but the door. The camera must never be inside a mesh on the way.
- * Running at the end of the land, in each of four directions, must leave the visitor on the land (issues 340, 351).
+ * Running at the end of the land, in each of four directions, must leave the visitor on the land (issues 340, 351). Walking straight
+ * at a piece of furniture in each place, and at Merge, must stop the visitor before it (issues 357, 349); the walks into places
+ * go round the furniture, on a fine grid with it in.
  */
 
 type Hit = { distance: number; object: string } | null
@@ -22,6 +25,7 @@ type Qa = {
   setCamera(pose: null): Promise<void>
   ray(origin: Vec3, dir: Vec3, far: number): Hit
   ground(points: [number, number][]): Ground[]
+  scene(): SceneObject[]
 }
 type Ground = { y: number; chunk: 'owned' | 'edge' | 'fog' }
 const qa = <T>(page: Page, fn: (q: Qa, arg: never) => T | Promise<T>, arg?: unknown) =>
@@ -74,8 +78,9 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
   const out: CheckResult[] = []
   const add = (id: string, key: string, severity: CheckResult['severity'], title: string, what: string, causes: string, where?: string) =>
     out.push({ id, fingerprint: `${id}|${fixture}|${key}`, severity, title, what, causes, evidence: [], fixKind: 'code', fixture, ...(where ? { where } : {}) })
-  const grid = bodyWorldFor({ seed: input.seed, places: input.places as Place[] }).grid
   const boxed = input.scene.filter((o): o is SceneObject & { box: Box } => o.box !== null)
+  const furniture = solidParts(input.scene)
+  const grid = gridWithFurniture(bodyWorldFor({ seed: input.seed, places: input.places as Place[] }).grid, furniture.map((p) => p.box))
   const places = boxed.filter((o) => o.kind === 'place')
   const where = async () => {
     const v = await qa(page, (q) => q.visitor())
@@ -168,6 +173,73 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     const deg = Math.round((heading * 180) / Math.PI)
     if (g && offLand(v, g))
       add('world.walk-off-edge', `heading-${deg}`, 'major', 'A visitor can walk off the edge of the land', `Running at the end of the land heading ${deg} deg, the visitor ends at x ${v.x.toFixed(1)}, z ${v.z.toFixed(1)}, ${g.chunk === 'fog' ? 'over the fog, where there is no ground' : `${(g.y - v.y).toFixed(1)} m below the ground`}.`, 'A visitor who walks away from the places falls under the world, loses it and can only get back by reloading.')
+  }
+  // Furniture stops the visitor (issue 357): in each place, a walk straight at one piece from 1.5 m off must end before it.
+  const rooms = new Map(boxed.filter((o) => o.kind === 'room').map((r) => [r.id, r.box]))
+  const wired = new Set(places.filter((p) => p.material === 'wireframe').map((p) => p.id))
+  const inside = (b: Box, x: number, z: number, m: number) => x > b.min[0] + m && x < b.max[0] - m && z > b.min[2] + m && z < b.max[2] - m
+  const near = (b: Box, x: number, z: number, m: number) => x > b.min[0] - m && x < b.max[0] + m && z > b.min[2] - m && z < b.max[2] + m
+  for (const place of places.filter((p) => !wired.has(p.id))) {
+    const walk = furnitureWalk(place.id)
+    if (!walk) continue
+    const { part, start, dir } = walk
+    await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [start.x, start.z, Math.atan2(dir.x, dir.z)])
+    await qa(page, (q) => q.press('KeyW', 2000))
+    const end = await where()
+    if (walkedInto(start, dir, part.box, end))
+      add('world.walk-through-furniture', part.id, 'major', `A visitor walks into the ${part.name ?? 'furniture'} in ${place.id}`, `Walking straight at ${part.id} ("${part.name}") from x ${start.x.toFixed(1)}, z ${start.z.toFixed(1)}, the visitor ends at x ${end.x.toFixed(1)}, z ${end.z.toFixed(1)}, inside it or past it.`, 'Furniture feels like cardboard, and the camera ends up inside it.', 'apps/viewer/src/world/solidFurniture.ts')
+  }
+  function furnitureWalk(placeId: string): { part: (typeof furniture)[number]; start: Point2; dir: Point2 } | null {
+    for (const part of furniture.filter((f) => f.place === placeId).sort((a, b) => a.id.localeCompare(b.id))) {
+      const room = rooms.get(part.id.split('/').slice(0, 2).join('/'))
+      if (!room) continue
+      const [px, , pz] = centre(part.box)
+      const [rx, , rz] = centre(room)
+      // From the room's middle side first, then round.
+      const toward = Math.atan2(rx - px, rz - pz)
+      for (const turn of [0, 1, -1, 2, -2, 3, -3, 4].map((k) => (k * Math.PI) / 4)) {
+        const out = { x: Math.sin(toward + turn), z: Math.cos(toward + turn) }
+        const half = Math.abs(out.x) * (part.box.max[0] - part.box.min[0]) / 2 + Math.abs(out.z) * (part.box.max[2] - part.box.min[2]) / 2
+        const start = { x: px + out.x * (half + 1.5), z: pz + out.z * (half + 1.5) }
+        if (!inside(room, start.x, start.z, 0.6)) continue
+        // A clear run: no other piece on the way, nor where the visitor stands.
+        const others = furniture.filter((f) => f !== part)
+        const run = 1.5 / (half + 1.5)
+        const clear = [0, 0.25, 0.5, 0.75, 1].every((t) => !others.some((f) => near(f.box, start.x + (px - start.x) * t * run, start.z + (pz - start.z) * t * run, CAPSULE + 0.1)))
+        if (clear) return { part, start, dir: { x: -out.x, z: -out.z } }
+      }
+    }
+    return null
+  }
+
+  // The visitor stops short of Merge (issues 357, 349): a walk straight at it from 3 m must leave the visitor outside its drawn box.
+  // Merge walks about: where it is now, not when the scene was first read.
+  const merge = (await qa(page, (q) => q.scene())).find((o): o is SceneObject & { box: Box } => o.kind === 'merge' && o.box !== null)
+  if (merge) {
+    const [mx, , mz] = centre(merge.box)
+    const room = boxed.find((o) => o.kind === 'room' && near(o.box, mx, mz, 0) && o.box.min[1] <= merge.box.min[1] + 0.5 && o.box.max[1] > merge.box.min[1])
+    const toward = room ? Math.atan2(centre(room.box)[0] - mx, centre(room.box)[2] - mz) : headingTo({ x: mx, z: mz }, input.start)
+    for (const turn of [0, 1, -1, 2, -2, 3, -3, 4].map((k) => (k * Math.PI) / 4)) {
+      const out = { x: Math.sin(toward + turn), z: Math.cos(toward + turn) }
+      const start = { x: mx + out.x * 3, z: mz + out.z * 3 }
+      if (room && !inside(room.box, start.x, start.z, 0.6)) continue
+      if (!room && places.some((p) => near(p.box, start.x, start.z, 0.5))) continue
+      if (furniture.some((f) => [0, 0.25, 0.5, 0.75].some((t) => near(f.box, start.x - out.x * 3 * t, start.z - out.z * 3 * t, CAPSULE + 0.1)))) continue
+      await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [start.x, start.z, Math.atan2(-out.x, -out.z)])
+      // In short presses, keeping the nearest the visitor came: one that slid round Merge's small collider walked on past it.
+      let gap = Infinity
+      let end: Point2 = start
+      for (let i = 0; i < 10; i++) {
+        await qa(page, (q) => q.press('KeyW', 250))
+        const v = await where()
+        const now = (await qa(page, (q) => q.scene())).find((o) => o.kind === 'merge')?.box ?? merge.box
+        const g = gapToBox(v, now)
+        if (g < gap) [gap, end] = [g, { x: v.x, z: v.z }]
+      }
+      if (gap < MERGE_GAP)
+        add('world.walk-into-merge', 'merge', 'major', 'A visitor walks right up onto Merge', `Walking straight at Merge from x ${start.x.toFixed(1)}, z ${start.z.toFixed(1)}, the visitor comes to x ${end.x.toFixed(1)}, z ${end.z.toFixed(1)}, ${gap.toFixed(2)} m from its drawn body; at least ${MERGE_GAP} m keeps the camera off it.`, 'The camera ends up on top of Merge, its face cut by the edge of the screen.', 'apps/viewer/src/player/keepAway.ts')
+      break
+    }
   }
   await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [input.start.x, input.start.z, input.start.yaw])
   return out

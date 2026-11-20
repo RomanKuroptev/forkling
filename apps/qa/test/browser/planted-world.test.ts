@@ -72,6 +72,21 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('planted flaws in day-7, found b
     expect(found.filter((f) => ['world.cannot-reach', 'world.invisible-wall', 'world.walk-through-wall', 'world.hole', 'world.camera-in-mesh'].includes(f.id))).toEqual([])
   }, 300_000)
 
+  it('furniture you can walk through, and a visitor that walks right up onto Merge (planted in qa.json; issues 357, 349)', async () => {
+    const world = day7()
+    // Home's colliders are off (its bench, desk and shelves stop no one), and the visitor keeps no distance from Merge.
+    edit(world, 'qa.json', (q) => (q.plant = { walkThrough: ['home'], mergeNear: true }))
+    const found = await checkWorldOpens(browser, viewer, world, { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')), walk: true, qaOut: mkdtempSync(join(tmpdir(), 'qa-out-')) })
+    const ids = found.map((f) => f.fingerprint)
+    expect(ids.some((f) => f.startsWith('world.walk-through-furniture|day-7|home/'))).toBe(true)
+    expect(ids).toContain('world.walk-into-merge|day-7|merge')
+  }, 300_000)
+
+  it('clean day-7: furniture stops the visitor, the visitor stops short of Merge, and the merge-close picture is clear (issues 357, 349, 348)', async () => {
+    const found = await checkWorldOpens(browser, viewer, day7(), { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')), walk: true, pictures: true, qaOut: mkdtempSync(join(tmpdir(), 'qa-out-')) })
+    expect(found.filter((f) => ['world.walk-through-furniture', 'world.walk-into-merge', 'world.merge-close-blocked', 'world.merge-close-side'].includes(f.id))).toEqual([])
+  }, 400_000)
+
   it('a work the site says is on show in the Workshop, in a slot the Workshop does not have (files)', async () => {
     const world = day7()
     edit(world, 'places/workshop.json', (p) => {
