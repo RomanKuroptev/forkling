@@ -4,6 +4,7 @@ import blobJson from './fixtures/blob.species.json'
 import { resolveSlot } from '../src/animation.ts'
 import { createForkling, stepForkling, STEP, toRepoIntention, type StepContext } from '../src/forkling.ts'
 import { buildBodyWorld } from '../src/body-world.ts'
+import { findPath } from '../src/nav.ts'
 import { starterPlaces } from '../src/starter-places.ts'
 import { runHeadless, type HeadlessOptions } from '../src/headless.ts'
 
@@ -75,6 +76,51 @@ describe('micro-behaviors', () => {
     const run = simulate({ seed: 4, startHour: 18.8, seconds: 600, behaviors, visitor: { arrive: 60, leave: 200 } })
     expect(run.offGrid).toBe(0)
     expect(run.maxStuckSteps).toBeLessThan(30)
+  })
+})
+
+describe('a visitor standing in the way', () => {
+  // Merge walking out of Home's door with a visitor standing in it (the night fixture): it walked straight on through the visitor,
+  // whose keep-away only stops the visitor's own steps, and the camera ended up inside Merge.
+  const walkOutThrough = (seed: number, visitor: { x: number; z: number }) => {
+    const state = createForkling(blob, [], seed, { x: 8, z: 15 })
+    const ctx: StepContext = { grid: world.grid, visitor, timeOfDay: 12, spots: {} }
+    state.noticed = true
+    state.action = blob.actions.find((a) => a.id === 'roam')!
+    state.phase = 'moving'
+    state.path = findPath(world.grid, state.pos, { x: 8, z: 28 })!
+    state.goal = { x: 8, z: 28 }
+    let nearest = Infinity
+    for (let i = 0; i < 200; i++) {
+      stepForkling(state, STEP, ctx)
+      nearest = Math.min(nearest, Math.hypot(state.pos.x - visitor.x, state.pos.z - visitor.z))
+    }
+    return { state, nearest }
+  }
+
+  it('never walks nearer a visitor than it goes to greet one, on any seed or line', () => {
+    for (let seed = 1; seed <= 12; seed++)
+      for (const visitor of [{ x: 8, z: 19 }, { x: 8.4, z: 18.2 }, { x: 7.7, z: 21 }]) {
+        expect(walkOutThrough(seed, visitor).nearest).toBeGreaterThanOrEqual(1.3 - 1e-9)
+      }
+  })
+
+  it('steps out of the way of a visitor instead of standing in it', () => {
+    // Standing still 1.3 m in front of them, it held a visitor walking in through Home's door (day-0): the visitor keeps 1.6 m
+    // from its face, so in the doorway neither could pass.
+    for (let seed = 1; seed <= 12; seed++) {
+      const state = createForkling(blob, [], seed, { x: 8, z: 15 })
+      const visitor = { x: 8, z: 19 }
+      const ctx: StepContext = { grid: world.grid, visitor, timeOfDay: 12, spots: {} }
+      state.noticed = true
+      state.action = blob.actions.find((a) => a.id === 'roam')!
+      state.phase = 'moving'
+      state.path = findPath(world.grid, state.pos, { x: 8, z: 28 })!
+      const pausing = () => state.intention.type === 'pause' && (state.phase as string) === 'acting'
+      for (let i = 0; i < 100 && !pausing(); i++) stepForkling(state, STEP, ctx)
+      expect(pausing()).toBe(true)
+      expect(Math.abs(state.pos.x - visitor.x)).toBeGreaterThanOrEqual(1.5)
+    }
   })
 })
 
