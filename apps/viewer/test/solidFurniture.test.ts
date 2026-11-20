@@ -19,9 +19,11 @@ describe('furniture stops the visitor (issue 357)', () => {
 
   it("gives Home's bench, desk, chair and low shelf a box each, where they are drawn", () => {
     for (const id of ['bench', 'desk', 'chair', 'shelf-low', 'shelf-tall', 'lamp-floor']) expect(named(id), id).toHaveLength(1)
-    // The bench just inside the door, at (8, 19), 1.6 m wide and 0.5 m deep.
+    // The bench Merge set just inside the door, at (8, 19), 1.6 m wide and 0.5 m deep, drawn slid aside out of the way in, to
+    // (10.15, 19) (issue 451, `insideWalls.ts`): its box is where it is drawn.
     const [bench] = named('bench')
-    expect(contains(bench!, 8, 19)).toBe(true)
+    expect(contains(bench!, 10.15, 19)).toBe(true)
+    expect(contains(bench!, 8, 19)).toBe(false)
     expect(bench!.max[0] - bench!.min[0]).toBeCloseTo(1.6)
     expect(bench!.max[1]).toBeCloseTo(0.5)
     // The low shelf the sensor-sensitivity exhibit stands on (the walk ended inside it).
@@ -148,6 +150,10 @@ describe('the merge-close camera stands clear of furniture (issue 348)', () => {
     ...furnitureBoxes(home, kit, 0),
     ...wallBoxes(home).map((w) => ({ min: [w.x0, 0, w.z0] as [number, number, number], max: [w.x1, w.height, w.z1] as [number, number, number] })),
   ]
+  // The bench as Merge's file sets it, square across the way in at (8, 19): drawn aside now (issue 451), it is kept here as an
+  // obstacle so the camera's way round a bench right behind Merge is still tested.
+  const doorBench: Box = { min: [7.2, 0, 18.75], max: [8.8, 0.5, 19.25] }
+  const withBench = [...obstacles, doorBench]
   const ground = () => 0
   const crosses = (from: number[], to: number[], b: Box) => {
     for (let i = 0; i <= 50; i++) {
@@ -184,18 +190,18 @@ describe('the merge-close camera stands clear of furniture (issue 348)', () => {
 
   it('raises the lens over the bench rather than swinging round to the side, when no eye-level pose in front is clear', () => {
     // Merge just in front of the bench, facing the door past it: every eye-level pose within 45 deg is over the bench.
-    const pose = mergeClosePose({ x: 8, z: 17.9 }, 0, ground, obstacles)
+    const pose = mergeClosePose({ x: 8, z: 17.9 }, 0, ground, withBench)
     expect(offFace(pose, { x: 8, z: 17.9 }, 0)).toBeLessThanOrEqual(CLOSE_MAX_TURN)
     expect(pose.position[1]).toBeGreaterThan(0.7)
   })
 
   it('moves off the bench: Merge at (8, 17.5) facing the door had the camera over the bench (day-7 picture 006)', () => {
-    const pose = mergeClosePose({ x: 8, z: 17.5 }, 0, ground, obstacles)
-    const bench = furnitureBoxes(home, kit, 0).find((b) => b.part === 'bench')!
+    const pose = mergeClosePose({ x: 8, z: 17.5 }, 0, ground, withBench)
+    const bench = doorBench
     // Not just over the bench top: it rises well over it, or stands clear of it.
     expect(contains(bench, pose.position[0], pose.position[2]) && pose.position[1] < bench.max[1] + 0.25).toBe(false)
     expect(offFace(pose, { x: 8, z: 17.5 }, 0)).toBeLessThanOrEqual(CLOSE_MAX_TURN)
-    for (const b of obstacles) {
+    for (const b of withBench) {
       // Nothing between the lens and Merge's face, its feet or its middle.
       for (const y of [0.05, 0.4, 0.8]) expect(crosses(pose.position, [8, y, 17.5], b), JSON.stringify(b)).toBe(false)
     }

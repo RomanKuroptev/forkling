@@ -36,7 +36,7 @@ export function screenStands(place: Place, kit: Kit): Map<string, number> {
 function settledWith(place: Place, kit: Kit): Settled {
   const cached = memo.get(place)
   if (cached && cached.kit === kit && cached.rooms === place.rooms && sameBesideRooms(cached.settled.place, place)) return cached.settled
-  const pulled = settle(place, kit)
+  const pulled = clearDoorLane(settle(place, kit), kit)
   const settled = raiseScreens(pulled, kit)
   memo.set(place, { kit, rooms: place.rooms, settled })
   return settled
@@ -132,6 +132,86 @@ function settle(place: Place, kit: Kit): Place {
     return { ...room, parts }
   })
   return changed ? { ...place, rooms } : place
+}
+
+/** Lower than this a part is walked over (a rug, floor boards, a cat bed), as the solid furniture has it (`solidFurniture.ts`, `STEP_OVER`). */
+const WALK_OVER = 0.35
+/** How far a part slid out of the way in keeps from the lane's edge and from the furniture beside it. */
+const LANE_CLEAR = 0.1
+
+/**
+ * The way in to a place, in place space: from the door gap straight in to the middle of the room the door opens into, as wide as the
+ * door (`DOOR_HALF` either side of the door's middle). A place with no room behind its door gets a lane to its own middle.
+ */
+export function doorLane(place: Place): { x0: number; x1: number; z0: number; z1: number } {
+  const [, fd] = place.exterior.footprint
+  const inner = fd / 2 - INNER_FACE
+  const room = place.rooms.find((r) => r.floor === 0 && Math.abs(r.at[0]) <= r.size[0] / 2 && Math.abs(inner - 0.3 - r.at[1]) <= r.size[1] / 2)
+  return { x0: -DOOR_HALF, x1: DOOR_HALF, z0: Math.min(room ? room.at[1] : 0, inner), z1: inner }
+}
+
+/**
+ * A clear walk in (issue 451). Merge set Home's bench a step inside the door, square across the way in, and a visitor walking in to
+ * say hi stopped against it in the doorway. Like `settle`, only the drawing reads this: a piece of furniture standing on the ground
+ * floor in the lane from the door to the room's middle (`doorLane`) is drawn slid sideways until it clears the lane, to the side it
+ * already leans to, else the other, else back behind the lane's end, wherever it stays inside the walls and off the other furniture.
+ * What stands on it moves with it. Rugs and floor boards are walked over and stay; structure (doors, windows) stays; a part that fits
+ * nowhere stays where it is. The place file does not change, and the body walks the place as it is.
+ */
+function clearDoorLane(place: Place, kit: Kit): Place {
+  const [fw, fd] = place.exterior.footprint
+  const lane = doorLane(place)
+  const all = footings(place, kit)
+  // Where each footing is drawn as the lane is cleared, by footing.
+  const at = new Map(all.map((f) => [f, { x: f.x, z: f.z }]))
+  const box = (f: Footing) => ({ x0: at.get(f)!.x - f.hx, x1: at.get(f)!.x + f.hx, z0: at.get(f)!.z - f.hz, z1: at.get(f)!.z + f.hz })
+  const overlaps = (a: { x0: number; x1: number; z0: number; z1: number }, b: { x0: number; x1: number; z0: number; z1: number }, gap = 0) => Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) > 1e-6 - gap && Math.min(a.z1, b.z1) - Math.max(a.z0, b.z0) > 1e-6 - gap
+  const stackOf = (root: Footing): Footing[] => {
+    const out = [root]
+    for (let i = 0; i < out.length; i++) for (const g of all) if (!out.includes(g) && supportOf(g, all) === out[i]) out.push(g)
+    return out
+  }
+  const fx = fw / 2 - INNER_FACE - OFF_WALL
+  const fz = fd / 2 - INNER_FACE - OFF_WALL
+  let changed = false
+  for (const f of all) {
+    if (f.floor !== 0 || f.y > STACK || f.part.category === 'structure' || f.part.size[1] < WALK_OVER) continue
+    if (!overlaps(box(f), lane)) continue
+    const stack = stackOf(f)
+    const { x, z } = at.get(f)!
+    const side = x < 0 ? -1 : 1
+    const candidates = [
+      { x: side * (DOOR_HALF + f.hx + LANE_CLEAR), z },
+      { x: -side * (DOOR_HALF + f.hx + LANE_CLEAR), z },
+      { x, z: lane.z0 - f.hz - LANE_CLEAR },
+    ]
+    // Furniture it already stands against or in (Merge's own layout) does not stop it; it must not run into anything new.
+    const against = new Set(all.filter((g) => overlaps(box(f), box(g), LANE_CLEAR)))
+    const fits = (c: { x: number; z: number }) => {
+      const b = { x0: c.x - f.hx, x1: c.x + f.hx, z0: c.z - f.hz, z1: c.z + f.hz }
+      if (b.x0 < -fx - 1e-9 || b.x1 > fx + 1e-9 || b.z0 < -fz - 1e-9 || b.z1 > fz + 1e-9) return false
+      return all.every((g) => stack.includes(g) || against.has(g) || g.floor !== 0 || g.part.category === 'structure' || g.part.size[1] < WALK_OVER || g.y > STACK || !overlaps(b, box(g), LANE_CLEAR))
+    }
+    const to = candidates.find(fits)
+    if (!to) continue
+    const dx = to.x - x
+    const dz = to.z - z
+    for (const g of stack) at.set(g, { x: at.get(g)!.x + dx, z: at.get(g)!.z + dz })
+    changed = true
+  }
+  if (!changed) return place
+  const rooms = place.rooms.map((room, r): Room => {
+    let moved = false
+    const parts = room.parts.map((placed, index) => {
+      const f = all.find((g) => g.room === r && g.index === index)
+      const now = f && at.get(f)
+      if (!f || !now || (now.x === f.x && now.z === f.z)) return placed
+      moved = true
+      return { ...placed, at: [placed.at[0] + now.x - f.x, placed.at[1], placed.at[2] + now.z - f.z] as [number, number, number] }
+    })
+    return moved ? { ...room, parts } : room
+  })
+  return { ...place, rooms }
 }
 
 /** A screen's middle is drawn this high above its floor (meters): eye height for a visitor standing in front of it (issue 431). */

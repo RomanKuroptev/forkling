@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import type { WorkChecker } from '../src/builds/browser-check.ts'
 import type { SessionModel } from '../src/builds/session.ts'
 import { fakeFetch, fakeModel, fakeSandbox, fakeSessionModel } from '../src/fast-forward-fakes.ts'
-import { cappedModel, capturingModel, localMidnight, remotesOf, runFastForward, watchedFetch, type FastForwardOptions } from '../src/fast-forward.ts'
+import { cappedModel, capturingModel, localMidnight, remotesOf, runFastForward, SIMULATED_VISITS_A_DAY, simulatedVisits, watchedFetch, type FastForwardOptions } from '../src/fast-forward.ts'
 import type { LlmRequest } from '../src/llm.ts'
 import { loadSpecies } from '../src/species.ts'
 
@@ -68,6 +68,46 @@ describe('localMidnight', () => {
   it('is midnight in the world\'s time zone, summer or winter', () => {
     expect(new Date(localMidnight('Europe/Stockholm', '2026-11-03')).toISOString()).toBe('2026-11-02T23:00:00.000Z')
     expect(new Date(localMidnight('Europe/Stockholm', '2026-07-01')).toISOString()).toBe('2026-06-30T22:00:00.000Z')
+  })
+})
+
+describe('simulated visits (issue #422: a fast-forward has no real visitors)', () => {
+  const tz = 'Europe/Stockholm'
+  const at = (clock: string) => START + (Number(clock.slice(0, 2)) * 60 + Number(clock.slice(3))) * 60_000
+
+  it('gives a few visits a day at set local times, each standing at Home and in one more place, and each only once', () => {
+    let now = START
+    const v = simulatedVisits({ clock: () => now, timezone: tz, placeIds: () => ['home', 'library', 'workshop'] })
+    expect(v.drain()).toEqual({ visitors: 0, places: {} })
+    now = at('10:39')
+    expect(v.drain()).toEqual({ visitors: 0, places: {} })
+    now = at('10:40')
+    const first = v.drain()
+    expect(first.visitors).toBe(1)
+    expect(first.places.home).toBe(1)
+    expect(Object.keys(first.places)).toHaveLength(2)
+    expect(v.drain()).toEqual({ visitors: 0, places: {} })
+    now = at('23:59')
+    expect(v.drain().visitors).toBe(SIMULATED_VISITS_A_DAY.length - 1)
+    now = START + 2 * 86_400_000 - 1
+    expect(v.drain().visitors).toBe(SIMULATED_VISITS_A_DAY.length)
+  })
+
+  it('is the same every run (no randomness)', () => {
+    const run = () => {
+      let now = START
+      const v = simulatedVisits({ clock: () => now, timezone: tz, placeIds: () => ['home', 'library', 'workshop'] })
+      now = START + 3 * 86_400_000
+      return v.drain()
+    }
+    expect(run()).toEqual(run())
+  })
+
+  it('with only Home, every visit stands at Home', () => {
+    let now = START
+    const v = simulatedVisits({ clock: () => now, timezone: tz, placeIds: () => ['home'] })
+    now = at('23:59')
+    expect(v.drain()).toEqual({ visitors: SIMULATED_VISITS_A_DAY.length, places: { home: SIMULATED_VISITS_A_DAY.length } })
   })
 })
 
@@ -140,6 +180,11 @@ describe('a short run with the fakes', () => {
     // The tick log carries the engine it ran on.
     const tickLog = readFileSync(join(dir, 'mind/ticks/2026-11-03.jsonl'), 'utf8')
     expect(tickLog).toContain('"engine":"test-engine-abc123"')
+    // The simulated visit of the morning reached the day's count (issue #422).
+    const state = JSON.parse(readFileSync(join(dir, 'mind/state.json'), 'utf8')) as { visits?: { date: string; visitors: number; places: Record<string, number> } }
+    expect(state.visits?.date).toBe('2026-11-03')
+    expect(state.visits?.visitors).toBe(1)
+    expect(state.visits?.places.home).toBe(1)
   }, 300_000)
 
   it('stops cleanly at the cap and fails, saying why', async () => {

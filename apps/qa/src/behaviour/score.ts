@@ -7,6 +7,7 @@ import type { CheckResult, FixKind, Severity } from '../report/finding.ts'
 import { type Check, runChecks } from '../run/check.ts'
 import type { Finding } from '../report/finding.ts'
 import { memeFindings, stepLine } from './memes.ts'
+import { seenFindings } from './seen.ts'
 import { localTime, type RunData } from './read-run.ts'
 
 /**
@@ -259,6 +260,12 @@ export async function scoreRun(run: RunData, levels: Levels, now: Date): Promise
       scores.push({ id: 'memes', title: 'Memes (the eight steps)', value: trail.steps.map(stepLine).join('; '), alarm: trail.stoppedAt !== null })
       return results
     },
+  })
+  checks.push({
+    id: `behaviour.seen|${run.label}`,
+    area: 'behaviour',
+    title: `The planner is shown its visits and its work check results (${run.label})`,
+    run: async () => seenFindings(run),
   })
   const findings = await runChecks(checks, { now })
   return { scores, findings }

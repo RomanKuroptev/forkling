@@ -20,6 +20,8 @@ export interface LiveSyncDeps {
   knownRev: string | null
   /** The places changed on the server: show these. */
   onPlaces: (places: Place[], rev: string) => void
+  /** The id of the place the visitor stands in now, or null out on the land (issue #422). Absent names no place. */
+  here?: () => string | null
 }
 
 /**
@@ -33,10 +35,21 @@ export function startLiveSync(deps: LiveSyncDeps): () => void {
   let known = deps.knownRev
   let stopped = false
   let timer: unknown = null
+  // Real visits (issue #422): the first poll that reaches the server says a visit started, and the first after the visitor walks
+  // into a place names it, once per page load. Nothing else is sent: no id, no position, nothing stored in the browser.
+  let visitSaid = false
+  const placesSaid = new Set<string>()
 
   const poll = async () => {
     try {
-      const nowRes = await deps.fetch(`${base}/now.json`, { cache: 'no-store' })
+      const params = new URLSearchParams()
+      if (!visitSaid) params.set('visit', '1')
+      const place = deps.here?.() ?? null
+      if (place && !placesSaid.has(place)) params.set('in', place)
+      const query = params.toString()
+      const nowRes = await deps.fetch(`${base}/now.json${query ? `?${query}` : ''}`, { cache: 'no-store' })
+      visitSaid = true
+      if (place) placesSaid.add(place)
       const now = NowJson.safeParse(await nowRes.json())
       if (now.success && now.data.placesRev && now.data.placesRev !== known) {
         const res = await deps.fetch(`${base}/places.json`, { cache: 'no-store' })

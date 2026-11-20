@@ -113,11 +113,17 @@ export function makeRun(shape: RunShape): { world: string; out: string } {
   return { world, out }
 }
 
+/** The work check block a planner prompt carries once a work was made (issue #400), as the engine writes it. */
+export const WORKS_CHECKED =
+  '\n\n<works-checked>\nEach work you make is run once in a sandboxed browser for a few seconds before it is kept (the work check). What it found for your recent works:\n- "No, Then Yes" (sketch, made 2026-11-19): ran in the check and drew something to see\n</works-checked>'
+/** The visits block a planner prompt carries (issue #422), as the engine writes it. */
+export const VISITS = '\n\n<data source="visits">\nvisitors today: 1\nplaces they stood in: home (1)\n</data>'
+
 /** A run in which one meme made it all the way through: the planner was offered a format and told it may make a meme. */
 export const WITH_A_MEME: Omit<RunShape, 'days'> = {
   prompts: [
-    { kind: 'morning', user: 'Tinker kinds: art, game, meme (a meme costs 30 points). Starting points: https://imgflip.com/meme/181913649' },
-    { kind: 'decide', user: 'Tinker kinds: art, game, meme (a meme costs 30 points). Starting points: https://imgflip.com/meme/181913649' },
+    { kind: 'morning', user: `Tinker kinds: art, game, meme (a meme costs 30 points). Starting points: https://imgflip.com/meme/181913649${VISITS}${WORKS_CHECKED}` },
+    { kind: 'decide', user: `Tinker kinds: art, game, meme (a meme costs 30 points). Starting points: https://imgflip.com/meme/181913649${VISITS}${WORKS_CHECKED}` },
   ],
   trails: (d) => (d === 0 ? [{ url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling', reaction: 'No, then yes.' }] : []),
   works: [{ id: 'no-then-yes', title: 'No, Then Yes', kind: 'meme', about: 'me and my plans, in two panels', made: '2026-11-19T15:00:00.000Z' }],

@@ -1,4 +1,4 @@
-import type { Place, Souvenir } from '@forkling/schema'
+import type { KitPart, Place, Souvenir } from '@forkling/schema'
 import type { ExhibitSpot } from './exhibitGeometry.ts'
 import { safeUrl } from './panelContent.ts'
 
@@ -102,8 +102,37 @@ export function cardPose(spot: Pick<ExhibitSpot, 'slotKind' | 'position' | 'part
   }
 }
 
-/** A card on a shelf stands on the shelf board near its front edge (`front`, from the slot), leaning back, with a thin backing behind it. */
-export const SHELF_CARD = { w: 0.36, h: 0.27, front: 0.16, tilt: -0.2 } as const
+/**
+ * A card on a shelf stands on the shelf board at its front edge (`front`, from the slot), leaning back a little, with a thin backing
+ * behind it. Set further in and leaning further back, Home's low shelf's top board hid the first line of its cards from a visitor
+ * standing at it (issue 453): standing at the edge, the card's whole face shows under the board above from up against the shelf
+ * (`cardView`).
+ */
+export const SHELF_CARD = { w: 0.36, h: 0.27, front: 0.19, tilt: -0.08 } as const
+/** A visitor's eyes are this high above the floor (`apps/viewer/src/player/Player.tsx`: about 1.6 m). */
+export const VISITOR_EYE = 1.6
+/** A visitor reads a card from this far in front of the part's front: up against it (its capsule's radius), a step back, and further. */
+const READ_FROM = [0.3, 0.6, 1.2] as const
+
+type V3 = [number, number, number]
+
+/**
+ * What a visitor sees of a card, in the frame of the part it stands on (x across, y up from the part's foot, z out of its front):
+ * the visitor's eyes straight in front of the card at the distances it reads from, points of the card's face (its corners and the
+ * middle of its top edge, a centimetre in), and the box of each primitive of the part. The audit checks that no box stands between
+ * an eye and a point of the face (`world.card-covered`, issue 453). `foot` is how high above its floor the part's foot is drawn.
+ */
+export function cardView(pose: CardPose, slotAt: readonly [number, number, number], part: KitPart, foot: number): { eyes: V3[]; face: V3[]; boards: { min: V3; max: V3 }[] } {
+  const ct = Math.cos(pose.tilt)
+  const st = Math.sin(pose.tilt)
+  const [hw, hh] = [pose.size[0] / 2 - 0.01, pose.size[1] / 2 - 0.01]
+  const point = (x: number, y: number): V3 => [slotAt[0] + pose.local[0] + x, slotAt[1] + pose.local[1] + y * ct, slotAt[2] + pose.local[2] + y * st]
+  const face = [point(-hw, -hh), point(hw, -hh), point(hw, hh), point(-hw, hh), point(0, hh), point(0, 0)]
+  const eyes = READ_FROM.map((d): V3 => [slotAt[0] + pose.local[0], VISITOR_EYE - foot, part.size[2] / 2 + d])
+  const boards = part.primitives.map((p) => ({ min: [p.at[0] - p.size[0] / 2, p.at[1] - p.size[1] / 2, p.at[2] - p.size[2] / 2] as V3, max: [p.at[0] + p.size[0] / 2, p.at[1] + p.size[1] / 2, p.at[2] + p.size[2] / 2] as V3 }))
+  return { eyes, face, boards }
+}
+
 /** A card on a case stands on its top. */
 export const CASE_CARD = { w: 0.28, h: 0.21 } as const
 

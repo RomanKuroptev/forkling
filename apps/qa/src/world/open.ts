@@ -16,6 +16,8 @@ export interface SceneObject {
   shows?: 'picture' | 'title' | 'nothing'
   /** What an exhibit's card shows and the words on it; every exhibit but a work screen has one. */
   card?: { shows: 'picture' | 'text' | 'title' | 'nothing'; text: string }
+  /** For an exhibit with a card, in the frame of the part it stands on: a visitor's eyes in front of it, points of the card's face, the part's pieces. */
+  view?: { eyes: [number, number, number][]; face: [number, number, number][]; boards: { min: [number, number, number]; max: [number, number, number] }[] }
   /** A part not drawn because it stands in a doorway, and the exhibits it holds (not drawn either). */
   inDoorway?: { holds: string[] }
   /** A part drawn with a foot or stand that stands in mid-air: on no floor, no other part and no wall. */

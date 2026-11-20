@@ -11,6 +11,8 @@ import { canFoundNow, foundGate } from './found.ts'
 import { checkPlan, placeIds } from './plan.ts'
 import { memeSeeds } from '../builds/memes.ts'
 import { readProjects } from '../builds/projects.ts'
+import { checkedWorks, readWorks } from '../builds/works.ts'
+import { visitsForPrompt } from '../visits.ts'
 import { clock, weekday } from './util.ts'
 import { readWrittenPages } from './variety.ts'
 
@@ -102,6 +104,8 @@ export async function think(t: Tick): Promise<void> {
     memeFormats: memeSeeds(t.dir).formats.map((f) => ({ title: f.title, url: f.url })),
     notes: noteLines(t),
     ...(t.deps.sessions ? { projects: projectLines(t) } : {}),
+    worksChecked: checkedWorks(readWorks(t.dir), { nowMs, timezone: tz }),
+    ...(t.deps.visits ? { visits: visitsForPrompt(t.mind.visits, t.today) } : {}),
   })
   let asking = user
   // A plan the body cannot carry out gets one more chance, with the reasons, before the body falls back on itself.

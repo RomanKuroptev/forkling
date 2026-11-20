@@ -4,6 +4,10 @@ Dated log of choices that shape the project, newest first. Add an entry when a d
 
 **Audit harness lanes (until QR is done):** add your decisions as bullets at the end of your lane's own 2026-11-19 entry below, not as new entries at the top, so parallel PRs do not conflict.
 
+## 2026-11-20: Merge sees real visits and its work check results (#400, #422, #327)
+Roman's answer to the stuck loop. Real visits are counted from the viewer's existing poll of `GET /now.json`: `visit=1` on the first poll of a page load and `in=<place id>` on the first poll inside a place, counted by the server only from Merge's Pages origin, as numbers only. The plan sees today's visitors and places as a data block, and the work check's result for its recent works. The build verb says a session is how to run and test a toy. The fast-forward gets 3 simulated visits a day.
+**Why:** a visitor who left no note was invisible, so a goal of being seen could never be met or let go, and Merge never learned that its sketches had already run. Plain information instead of a rule about resting or waiting (rule 9). No new route, host or personal data.
+
 ## 2026-11-19: Behaviour scoring choices (audit QB, lane B)
 - **HTML is trimmed and cut to keep it small enough to commit.** Scripts, styles, comments, svg, link and meta tags, and `style` and `data-*` attributes go, and a page is cut at 100 KB on a tag boundary. The engine keeps at most 3,000 tokens of text and the links near the top. Front pages (`Main_Page`) stay whole. Untrimmed, one Wikipedia page was 1.5 MB; the whole snapshot is 3.7 MB.
 - **The recorder reads robots.txt itself.** The mind's fetcher does not (only the source trials do), so the recorder reads each host's robots.txt first and skips every address it forbids.
