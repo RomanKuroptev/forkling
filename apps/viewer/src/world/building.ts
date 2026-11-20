@@ -274,9 +274,9 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       }
       if (!lining) return
       // From inside, each pane is covered by a thin pane `SKIN` clear of the glass: by day the palette's glow, as from outside; at night
-      // a warm glow of its own, not the flat lemon that read as the sun still out (issue 435).
+      // a glow in the look's pink, not the flat lemon that read as the sun still out (issue 435).
       const paneIn = -(WALL_THICKNESS / 2 + FRAME_OUT + PANE_OUT + SKIN + INSIDE_PANE / 2)
-      for (const along of alongs) insidePanes.push({ shape: 'box', matrix: compose(at(along, h / 2, paneIn), rot, size(ww, wh, INSIDE_PANE)), color: INTERIOR.windowNight, dayColor: c.glow, trim: true, inside: true })
+      for (const along of alongs) insidePanes.push({ shape: 'box', matrix: compose(at(along, h / 2, paneIn), rot, size(ww, wh, INSIDE_PANE)), color: INTERIOR.windowNight, dayColor: c.glow, glow: true, inside: true })
       // The lining: from the foot band to the top band, from inner corner to inner corner (or to the door), round each window.
       // At the door the lining stops `SKIN` short of the wall's end, so its end is not in the plane of the wall's (the door's reveal).
       const from = gap === 'before' ? a + SKIN : a + WALL_THICKNESS / 2
@@ -316,11 +316,12 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       // A doorstep in the accent colour (the foot band going on across the door) runs from the room out over the slab and its glowing
       // edge, as high as the floor inside: the doorway shows a step, not white marble and a glowing line blown out to a white smear
       // (issue 350).
-      // It starts where the floor inside stops, so the two tops meet edge to edge and never overlap.
+      // It starts where the floor inside stops, so the two tops meet edge to edge and never overlap. It is lit trim like the foot band,
+      // so a yellow step is not khaki at night (issue 409).
       const stepFrom = pz + fd / 2 - FLOOR_INSET
       const stepTo = pz + fd / 2 + BASE_REACH + 0.1 + SKIN
       const stepFoot = 0.03
-      slots.base.push({ shape: 'box', matrix: compose([px, y + (FLOOR_TOP + stepFoot) / 2, (stepFrom + stepTo) / 2], [0, 0, 0], [DOOR_HALF * 2 - 2 * SKIN, FLOOR_TOP - stepFoot, stepTo - stepFrom]), color: c.accent })
+      slots.base.push({ shape: 'box', matrix: compose([px, y + (FLOOR_TOP + stepFoot) / 2, (stepFrom + stepTo) / 2], [0, 0, 0], [DOOR_HALF * 2 - 2 * SKIN, FLOOR_TOP - stepFoot, stepTo - stepFrom]), color: c.accent, trim: true })
       // A closed place has its door boarded: chrome planks nailed across the gap, a little crooked.
       if (place.state.closed) {
         const planks: [number, number][] = [[0.55, 0.05], [1.1, -0.06], [1.65, 0.04]]

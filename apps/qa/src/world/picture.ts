@@ -20,7 +20,7 @@ export function pictureStats(p: PNG): { light: number; spread: number } {
 }
 
 /** Hue (0 to 360), saturation and value (0 to 1) of one pixel. */
-const hsv = (r: number, g: number, b: number): [number, number, number] => {
+export const hsv = (r: number, g: number, b: number): [number, number, number] => {
   const mx = Math.max(r, g, b) / 255
   const mn = Math.min(r, g, b) / 255
   const d = mx - mn
@@ -96,6 +96,9 @@ export function nearWhiteShare(p: PNG): number {
   return n / (p.width * p.height)
 }
 
+/** The muddy colours of `muddyShare`: a hue from 15 to 130 degrees with saturation 0.08 and up, dull below value 0.7. */
+export const MUDDY = { hue: [15, 130], saturation: 0.08, value: 0.7 } as const
+
 /**
  * The share of glare in the lower half of a picture, where a room's floor is: pure white pixels (every channel 245 and up) in
  * patches that fade into white, as light does (issue 429: the floor by Grown Place 10's door, lit to a white blob). A white thing
@@ -135,7 +138,7 @@ export function muddyShare(p: PNG): number {
   let n = 0
   for (let i = 0; i < p.data.length; i += 4) {
     const [h, s, v] = hsv(p.data[i]!, p.data[i + 1]!, p.data[i + 2]!)
-    if (h >= 15 && h <= 130 && s >= 0.08 && v < 0.7) n++
+    if (h >= MUDDY.hue[0] && h <= MUDDY.hue[1] && s >= MUDDY.saturation && v < MUDDY.value) n++
   }
   return n / (p.width * p.height)
 }

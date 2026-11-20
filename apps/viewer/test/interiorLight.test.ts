@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { FRAME, WINDOW_SIZE, buildingModel, partKey, windowLayout } from '../src/world/building.ts'
 import { interiorInstances, lampSpots, sceneInstances, SHAPES } from '../src/world/kitGeometry.ts'
 import type { Instance } from '../src/world/kitBase.ts'
-import { INTERIOR, NIGHT_LIGHT, dayInteriorWall, hsvOf, interiorWall, repaint } from '../src/world/theme.ts'
+import { DARK_GLOW, INTERIOR, NIGHT_LIGHT, dayInteriorWall, hsvOf, interiorWall, repaint } from '../src/world/theme.ts'
 
 const fixture = (world: string, id: string) => Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL(`../../../test/fixtures/worlds/${world}/places/${id}.json`, import.meta.url)), 'utf8')))
 const lamps = fixture('day-7', 'hillside-room-five-lamps')
@@ -153,7 +153,7 @@ describe('by day a room reads as its palette pale wall (#405 look review)', () =
     for (const k of [16, 8, 0]) expect(Math.abs(ch(d, k) - ch(slate.wall, k))).toBeLessThan(24)
   })
 
-  it('gives the day colour to the lining and the floor only, packs it for the shader, and keeps the night colour as before', () => {
+  it('gives the day colour to the lining, the floor and the furniture only, packs it for the shader, and keeps the night colour as before', () => {
     const lining = buildingModel(workshop, kit, 0)!.inside
     const colors = kit.palettes.find((p) => p.id === workshop.exterior.palette)!.colors
     for (const i of lining) {
@@ -163,7 +163,14 @@ describe('by day a room reads as its palette pale wall (#405 look review)', () =
     expect(buildingModel(workshop, kit, 0)!.instances.every((i) => !i.dayColor)).toBe(true)
     const scene = sceneInstances([workshop], kit, { heightAt: () => 0, interiors: new Set([workshop.id]) })
     const flagged = Array.from({ length: scene.box.count }, (_, k) => scene.box.day[k * 4 + 3]).filter((w) => w === 1).length
+    // A piece of furniture is its own furniture colour by day too, giving off some of it (issue 430): every primitive of a furniture,
+    // display or light part but a glowing one and a dark screen, and nothing of the structure.
+    const furniture = interiorInstances(workshop, kit, 0).filter((i) => i.group && kit.parts.find((p) => p.id === workshop.rooms.find((r) => r.id === i.group!.split('/')[0])!.parts[Number(i.group!.split('/')[1])]!.part)!.category !== 'structure')
+    const lit = (i: Instance) => !i.glow && i.color !== DARK_GLOW
+    for (const i of furniture) expect(i.dayColor).toBe(lit(i) ? i.color : undefined)
+    const furnitureBoxes = furniture.filter((i) => i.shape === 'box' && lit(i)).length
+    expect(furnitureBoxes).toBeGreaterThan(0)
     // And the floor of each storey, and the panes over the windows from inside (issue 435: the glow by day, warm at night).
-    expect(flagged).toBe(lining.length + buildingModel(workshop, kit, 0)!.insidePanes.length + workshop.exterior.floors)
+    expect(flagged).toBe(lining.length + workshop.exterior.floors + furnitureBoxes + buildingModel(workshop, kit, 0)!.insidePanes.length)
   })
 })

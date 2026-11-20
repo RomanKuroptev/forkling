@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
-import { CARD } from './theme.ts'
+import { CARD, WIREFRAME } from './theme.ts'
 import { CARD_CELL, MAX_CARDS, cardAtlas, cardLayout, type CardFace, type CardLayout } from './exhibitCards.ts'
 
 const BODY_FONT = (px: number) => `${px}px VT323, monospace`
@@ -21,6 +21,20 @@ function line(g: CanvasRenderingContext2D, text: string, x: number, y: number, r
 function paintCard(g: CanvasRenderingContext2D, face: CardFace, l: CardLayout) {
   const { style } = face.content
   const pad = 12
+  if (face.content.wire) {
+    // In a place being built (issue 426): no face, only the words in the wire's glowing cyan; the card's outline is the wire's own.
+    g.clearRect(0, 0, l.w, l.h)
+    g.fillStyle = WIREFRAME.pole
+    if (l.title) {
+      g.font = BAR_FONT
+      g.textBaseline = 'middle'
+      line(g, l.title, l.w / 2, 5 + (l.bar - 7) / 2 + 1, l.w - 24, 'center')
+    }
+    g.font = BODY_FONT(l.px)
+    g.textBaseline = 'alphabetic'
+    l.lines.forEach((text, i) => line(g, text, l.w / 2, l.top + i * l.lineHeight, l.w - 2 * pad, 'center'))
+    return
+  }
   if (style === 'paper') {
     g.fillStyle = CARD.ink
     g.fillRect(0, 0, l.w, l.h)
@@ -133,7 +147,8 @@ export function ExhibitCards({ faces: all }: { faces: readonly CardFace[] }) {
     texture.colorSpace = THREE.SRGBColorSpace
     texture.anisotropy = 4
     // Lit by the room, and glowing a little of their own, so the words can be read in a room whose lamps are off.
-    const material = new THREE.MeshStandardMaterial({ map: texture, emissiveMap: texture, emissive: new THREE.Color(CARD.barText), emissiveIntensity: 0.35, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -1 })
+    // A wire card (a place being built) is only its words: the clear rest of its cell is cut away (`alphaTest`).
+    const material = new THREE.MeshStandardMaterial({ map: texture, emissiveMap: texture, emissive: new THREE.Color(CARD.barText), emissiveIntensity: 0.35, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -1, alphaTest: 0.4 })
     return { geometry: cardGeometry(faces), material, canvas, texture }
     // `fontsReady` repaints once the fonts are there.
   }, [faces, fontsReady])

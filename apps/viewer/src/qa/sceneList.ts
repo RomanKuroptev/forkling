@@ -2,10 +2,10 @@ import type { Kit, Place, PlaceRequest, SlotKind, Souvenir } from '@forkling/sch
 import { placeCentre, toLandPlace } from '@forkling/sim'
 import * as THREE from 'three'
 import { buildingModel } from '../world/building.ts'
-import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots } from '../world/exhibitGeometry.ts'
+import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots, signSpot } from '../world/exhibitGeometry.ts'
 import { galleryWalls, slotOf, type GalleryWork } from '../world/galleryWall.ts'
-import { cardContent, cardPose, cardShows, type CardShows } from '../world/exhibitCards.ts'
-import { exteriorInstances, floorHeight, type Instance } from '../world/kitGeometry.ts'
+import { cardContent, cardPose, cardShows, wireCard, type CardShows } from '../world/exhibitCards.ts'
+import { exteriorInstances, floorHeight, signPostInstances, siteInside, type Instance } from '../world/kitGeometry.ts'
 import { doorwayBox, partInDoorway, placedPartBox } from '../world/doorway.ts'
 import { compose } from '../world/matrix.ts'
 import { plotInstances } from '../world/plotGeometry.ts'
@@ -13,7 +13,7 @@ import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
 import { COLORS } from '../world/theme.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
 import { plantBoards, type QaPlant } from './plant.ts'
-import { partsInAir, settledPlace } from '../world/insideWalls.ts'
+import { partsInAir, screenStands, settledPlace } from '../world/insideWalls.ts'
 
 /**
  * What `window.__qa.scene()` lists (docs/spec/audit/spec.md 7.1): every place, its doorway, room, drawn part, exhibit, sign, label and plot, Merge and
@@ -68,6 +68,13 @@ export interface QaObject {
   wall?: string
   /** The words painted on a sign or a title bar. */
   text?: string
+  /**
+   * For a sign: the boxes of the solid pieces drawn under its board that could hold it up (its posts), as drawn now. A sign with
+   * none that stands on the ground and reaches the board floats (issue 427, `world.sign-unsupported`).
+   */
+  support?: QaBox[]
+  /** For a place drawn as wire: every glowing line, its two ends in world meters, as drawn now (inside too when that is drawn; issue 330). */
+  wire?: [[number, number, number], [number, number, number]][]
   /** The height of the smallest letters on a sign, in meters (for the readable-label check). */
   letter?: number
   box: QaBox | null
@@ -121,9 +128,16 @@ export interface PlacesSnapshot {
 
 export type ScreenShows = 'picture' | 'title' | 'nothing'
 
+/** The two ends of a wire line from its matrix (its long axis is its first column). */
+const lineEnds = (m: readonly number[]): [[number, number, number], [number, number, number]] => [
+  [round(m[12]! - m[0]! / 2), round(m[13]! - m[1]! / 2), round(m[14]! - m[2]! / 2)],
+  [round(m[12]! + m[0]! / 2), round(m[13]! + m[1]! / 2), round(m[14]! + m[2]! / 2)],
+]
+
 /** Every place's entries, worked out the way `sceneInstances` draws them. */
 export function placeObjects(s: PlacesSnapshot): QaObject[] {
   const out: QaObject[] = []
+  const supports = new Map<string, QaBox[]>()
   const baseOf = (p: Place) => {
     const [x, z] = placeCentre(toLandPlace(p))
     return s.heightAt(x, z)
@@ -131,18 +145,24 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
   for (const raw of s.places) {
     // As drawn: rooms and furniture inside the walls (`insideWalls.ts`).
     const place = settledPlace(raw, s.kit)
+    const stands = screenStands(raw, s.kit)
     const baseY = baseOf(place)
     const [px, pz] = placeCentre(toLandPlace(place))
-    const wire = wireframeInstances(place, s.kit, baseY, s.nowMs, s.wireAlways)
+    const inside = s.interiors.has(place.id)
+    const wire = wireframeInstances(place, s.kit, baseY, s.nowMs, s.wireAlways, inside ? siteInside(place, s.kit, baseY) : [])
+    // The building's box stands on its base: the sign's posts, which reach down a slope to the ground under them, are left out of it.
     const outside = exteriorInstances(place, s.kit, baseY)
     const wired = wire !== null && wire.length > 0
+    // What holds the sign up, as drawn: the solid pieces of the outside (or, while it is wire, the sign post drawn solid) under its board.
+    const [sx, , sz] = signSpot(place, baseY).position
+    supports.set(place.id, (wired ? signPostInstances(place, s.kit, baseY, s.heightAt) : exteriorInstances(place, s.kit, baseY, s.heightAt)).map((i) => instancesBox([i])!).filter((b) => b.max[1] - b.min[1] > 0.5 && b.min[0] >= sx - SIGN_W / 2 - 0.3 && b.max[0] <= sx + SIGN_W / 2 + 0.3 && Math.abs((b.min[2] + b.max[2]) / 2 - sz) < 0.5))
     const wall = (s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0])?.colors.wall
-    out.push({ id: place.id, kind: 'place', name: place.name, ...(wall ? { wall } : {}), footprint: { x0: round(px - place.exterior.footprint[0] / 2), z0: round(pz - place.exterior.footprint[1] / 2), x1: round(px + place.exterior.footprint[0] / 2), z1: round(pz + place.exterior.footprint[1] / 2) }, box: instancesBox(outside), visible: true, material: wired ? 'wireframe' : 'solid' })
-    const inside = s.interiors.has(place.id)
+    const lines = wired ? { wire: wire.map((l) => lineEnds(l.matrix)) } : {}
+    out.push({ id: place.id, kind: 'place', name: place.name, ...(wall ? { wall } : {}), ...lines, footprint: { x0: round(px - place.exterior.footprint[0] / 2), z0: round(pz - place.exterior.footprint[1] / 2), x1: round(px + place.exterior.footprint[0] / 2), z1: round(pz + place.exterior.footprint[1] / 2) }, box: instancesBox(outside), visible: true, material: wired ? 'wireframe' : 'solid' })
     const height = floorHeight(place)
     const door = doorwayBox(place, baseY)
     out.push({ id: `${place.id}/door`, kind: 'door', place: place.id, box: { min: door.min.map(round) as QaBox['min'], max: door.max.map(round) as QaBox['max'] }, visible: true, material: 'none' })
-    const inAir = partsInAir(place, s.kit)
+    const inAir = partsInAir(raw, s.kit)
     for (const room of place.rooms) {
       const [w, d, h] = room.size
       const x = px + room.at[0]
@@ -157,6 +177,8 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
           out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, box: box ? { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] } : null, visible: false, material: 'none', inDoorway: { holds } })
           return
         }
+        // A screen on its tall stand reaches down to its floor (`screenStands`).
+        if (box && stands.has(`${room.id}/${k}`)) box.min[1] = y
         if (box) out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, ...(inAir.has(`${room.id}/${k}`) ? { inAir: true as const } : {}), box: { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] }, visible: inside, material: wired ? 'wireframe' : 'solid' })
       })
     }
@@ -165,8 +187,10 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
       const e = spot.exhibit
       const id = `${place.id}/${e.id}`
       const onScreen = spot.slotKind === 'screen' && (e.kind === 'work' || e.kind === 'project')
-      const card = cardPose(spot) ? cardShows(cardContent(e, spot.slotKind, e.ref ? s.souvenirs?.get(e.ref) : null, s.workCount ?? 0)) : null
-      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, at: `${place.id}/${e.slot}`, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: 'solid' })
+      // In a place being built its pieces are lines and its card is wire (issue 426), as `sceneInstances` and `ExhibitCards` draw them.
+      const content = cardContent(e, spot.slotKind, e.ref ? s.souvenirs?.get(e.ref) : null, s.workCount ?? 0)
+      const card = cardPose(spot) ? cardShows(wired ? wireCard(content) : content) : null
+      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, at: `${place.id}/${e.slot}`, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: wired ? 'wireframe' : 'solid' })
     }
     // Every finished work has a tile on the gallery wall, a page at a time: listed at its tile, as the drawing places it.
     if (s.shelf?.length) {
@@ -188,7 +212,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
   }
   for (const board of plantBoards(signBoards(s.places, baseOf, s.kit, s.nowMs), s.plant ?? null)) {
     const [x, y, z] = board.position
-    out.push({ id: `${board.id}/sign`, kind: 'sign', place: board.id, text: [...board.layout.name, ...board.layout.text].join(' '), letter: round((Math.min(...board.layout.ops.map((op) => op.px), SIGN_CELL.h) / SIGN_CELL.h) * SIGN_H), box: { min: [round(x - SIGN_W / 2), round(y - SIGN_H / 2), round(z)], max: [round(x + SIGN_W / 2), round(y + SIGN_H / 2), round(z)] }, visible: true, material: 'solid' })
+    out.push({ id: `${board.id}/sign`, kind: 'sign', place: board.id, support: supports.get(board.id) ?? [], text: [...board.layout.name, ...board.layout.text].join(' '), letter: round((Math.min(...board.layout.ops.map((op) => op.px), SIGN_CELL.h) / SIGN_CELL.h) * SIGN_H), box: { min: [round(x - SIGN_W / 2), round(y - SIGN_H / 2), round(z)], max: [round(x + SIGN_W / 2), round(y + SIGN_H / 2), round(z)] }, visible: true, material: 'solid' })
   }
   for (const plot of s.plots) out.push({ id: `plot/${plot.id}`, kind: 'plot', name: plot.name, box: instancesBox(plotInstances(plot, s.heightAt)), visible: true, material: 'solid' })
   return out

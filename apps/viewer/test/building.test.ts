@@ -223,10 +223,11 @@ describe('the windows from inside at night (issue 435)', () => {
   const glassPanes = (p: Place) => model(p).slots.glow.filter((i) => i.glow)
   const insidePanes = (p: Place) => model(p).insidePanes
 
-  it('each window has a pane on its inside that glows warm at night, not the flat lemon of its outside, and is the glow by day', () => {
+  it('each window has a pane on its inside that glows the look pink at night, not the flat lemon of its outside, and is the glow by day', () => {
+    // The look's own pink (look.md palette), with colour: not the yellow of the sun, and not brown (look.md rule 3).
+    expect(INTERIOR.windowNight).toBe(COLORS.pink)
     const [hue, sat] = hsvOf(INTERIOR.windowNight)
-    // Warm (red to orange), with colour: not the yellow of the sun, and not brown (look.md rule 3).
-    expect(hue < 30 || hue > 340).toBe(true)
+    expect(hue > 280 || hue < 30).toBe(true)
     expect(sat).toBeGreaterThan(0.3)
     for (const style of STYLES.filter((s) => s !== 'glass')) {
       const p = styled(style)
@@ -234,9 +235,8 @@ describe('the windows from inside at night (issue 435)', () => {
       expect(insidePanes(p).length, style).toBe(frames(p).length)
       for (const i of insidePanes(p)) {
         expect(i.inside, style).toBe(true)
-        // Lit trim: it gives off a little of its own colour, more at night; it is not a lamp.
-        expect(i.trim, style).toBe(true)
-        expect(i.glow, style).toBeUndefined()
+        // It glows, in its own colour, stronger at night (look.md rule 8), as the glass does from outside.
+        expect(i.glow, style).toBe(true)
         expect(i.dayColor, style).toBe(kit.palettes.find((q) => q.id === p.exterior.palette)!.colors.glow)
       }
     }
