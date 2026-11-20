@@ -28,6 +28,7 @@ import { useSouvenirs } from './useSouvenirs.ts'
 import { signBoards } from './signGeometry.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, exteriorInstances, interiorsToLoad, modelFiles, type LampSpot, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
+import { furnitureBoxes } from './solidFurniture.ts'
 import { worldLand } from './worldLand.ts'
 import { qaMode } from '../qa/params.ts'
 import { qaRegistry } from '../qa/registry.ts'
@@ -300,6 +301,19 @@ export function Places() {
       }),
     [world, land],
   )
+  // The furniture stops the visitor as the walls do (issue 357): one fixed box each.
+  const furniture = useMemo(
+    () =>
+      // A place planted to be walked through (`qa/plant.ts`) has no furniture colliders either; null in normal mode.
+      world.places.filter((place) => !qaRegistry.plant?.walkThrough.includes(place.id)).flatMap((place) => {
+        const [px, pz] = placeCentre(toLandPlace(place))
+        return furnitureBoxes(place, kit, land.heightAt(px, pz)).map((b) => ({
+          position: [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2] as [number, number, number],
+          half: [(b.max[0] - b.min[0]) / 2, (b.max[1] - b.min[1]) / 2, (b.max[2] - b.min[2]) / 2] as [number, number, number],
+        }))
+      }),
+    [world, land],
+  )
 
   // Invisible targets over each exhibit in the places that are loaded, and over every sign, so the visitor can point at them.
   const targets = useMemo(() => {
@@ -371,6 +385,9 @@ export function Places() {
         ))}
         {walls.map((w, i) => (
           <CuboidCollider key={i} args={w.half} position={w.position} />
+        ))}
+        {furniture.map((f, i) => (
+          <CuboidCollider key={`f-${i}`} args={f.half} position={f.position} />
         ))}
       </RigidBody>
     </>

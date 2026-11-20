@@ -9,6 +9,7 @@ import { visitor } from '../visitor.ts'
 import { disposeParts, partsGroup } from '../world/primitives.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { live } from './live.ts'
+import { mergeSpot } from './spot.ts'
 import { createFaceScreen } from './FaceScreen.ts'
 import { faceState, type FaceState } from './face.ts'
 import { ThoughtBubble } from './ThoughtBubble.tsx'
@@ -188,6 +189,9 @@ export function Forkling() {
       group.current.rotation.y = view.heading
     }
     body.current?.setNextKinematicTranslation({ x: view.shown.x, y, z: view.shown.z })
+    mergeSpot.position = { x: view.shown.x, z: view.shown.z }
+    if (scaler.current) mergeSpot.scale = scaler.current.scale.x
+    mergeSpot.heading = view.heading
 
     if (screen.current) {
       const now = clock.now()

@@ -6,10 +6,13 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { worldLand } from '../world/worldLand.ts'
 import { live } from '../forkling/live.ts'
+import { mergeSpot } from '../forkling/spot.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { qaMode, qaTime } from './params.ts'
 import { qaRegistry, type QaPose, type Vec3 } from './registry.ts'
-import { frontPose } from './cameras.ts'
+import { frontPose, mergeClosePose, type PoseBox } from './cameras.ts'
+import { furnitureBoxes } from '../world/solidFurniture.ts'
+import { wallBoxes } from '../world/kitGeometry.ts'
 import { objectEntry, placeObjects, type QaObject } from './sceneList.ts'
 import { coveredDoors, placeFights } from './fights.ts'
 import { thinMarks } from './marks.ts'
@@ -100,9 +103,13 @@ export function QaProbe() {
       const pb = live.playback
       if (pb) {
         const { pos, heading } = pb.state
-        const y = simWorld.heightAt(pos.x, pos.z)
-        // In front of its face, low, like `?look=forkling`.
-        out['merge-close'] = { position: [pos.x + Math.sin(heading) * 1.5, y + 0.7, pos.z + Math.cos(heading) * 1.5], target: [pos.x, y + 0.4, pos.z] }
+        // In front of its face, low, like `?look=forkling`, round Merge when furniture or a wall is in the way (issue 348).
+        const obstacles: PoseBox[] = (snap?.places ?? []).flatMap((p) => {
+          const [px, pz] = placeCentre(toLandPlace(p))
+          const base = snap!.heightAt(px, pz)
+          return [...furnitureBoxes(p, snap!.kit, base), ...wallBoxes(p).map((w) => ({ min: [w.x0, base, w.z0], max: [w.x1, base + w.height, w.z1] }))]
+        })
+        out['merge-close'] = mergeClosePose(pos, heading, (x, z) => simWorld.heightAt(x, z), obstacles)
       }
       return out
     }
@@ -183,6 +190,8 @@ export function QaProbe() {
         useJoystickStore.getState().resetJoystick()
         await step(QA_FRAME_MS)
       },
+      /** Where Merge stands as drawn (its middle on the ground, the point the visitor keeps its distance from), its drawing scale, and the way it faces (radians, 0 along +z). */
+      merge: () => (mergeSpot.position ? { ...mergeSpot.position, scale: mergeSpot.scale, heading: mergeSpot.heading } : null),
       visitor: () => {
         const p = qaRegistry.player
         if (!p) return null
@@ -198,7 +207,8 @@ export function QaProbe() {
       /** The ground height at each point, and whether its chunk holds a place, is edge land or fog. */
       /**
        * What a ray from `origin` along `dir` first meets among the drawn things (not the invisible click targets, not the
-       * visitor): its distance, or null when it meets nothing within `far` meters.
+       * visitor): its distance and, for a part of a listed object such as Merge, that object's id (`of`); null when it meets
+       * nothing within `far` meters.
        */
       ray: (origin: Vec3, dir: Vec3, far: number) => {
         const caster = new THREE.Raycaster(new THREE.Vector3(...origin), new THREE.Vector3(...dir).normalize(), 0, far)
@@ -209,7 +219,10 @@ export function QaProbe() {
           for (let o = hit.object.parent; o && shown; o = o.parent) shown = o.visible
           if (!shown || list.length === 0 || list.every((m) => m.transparent && m.opacity === 0)) continue
           if (hit.object.type === 'Line' || hit.object.type === 'LineSegments' || hit.object.type === 'Points' || hit.object.type === 'Sprite') continue
-          return { distance: hit.distance, object: hit.object.name || hit.object.type }
+          // Which listed object (Merge) the mesh is part of, if any: its animated body can reach outside its listed box.
+          let of: string | undefined
+          for (let o: THREE.Object3D | null = hit.object; o && !of; o = o.parent) for (const [id, e] of qaRegistry.objects) if (e.object === o) of = id
+          return { distance: hit.distance, object: hit.object.name || hit.object.type, ...(of ? { of } : {}) }
         }
         return null
       },

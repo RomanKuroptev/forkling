@@ -7,6 +7,7 @@ import { WALL, starterPlaces } from '@forkling/sim'
 import { INNER_FACE } from '../src/world/building.ts'
 import { OFF_WALL, hungParts, partsInAir, settledPlace } from '../src/world/insideWalls.ts'
 import { interiorParts } from '../src/world/kitGeometry.ts'
+import { furnitureBoxes } from '../src/world/solidFurniture.ts'
 import { instancesBox } from '../src/qa/sceneList.ts'
 import { placeObjects } from '../src/qa/sceneList.ts'
 
@@ -140,5 +141,19 @@ describe('nothing drawn with a foot stands in mid-air (the look review of #412)'
     expect(scene([moved]).find((o) => o.id === 'home/counter-room/1')!.inAir).toBe(true)
     // A lantern on its chain is made to hang, and is never in mid-air.
     expect([...partsInAir(home, kit)]).toEqual([])
+  })
+})
+
+describe('the visitor bumps into furniture where it is drawn (issue 357 with 339)', () => {
+  it("gives the Counter Room's plinth its collider where it is drawn, pulled in from the wall, not where the file puts it", () => {
+    const home = day7('home')
+    const list = scene([home])
+    const f = list.find((o) => o.id === 'home')!.footprint!
+    const drawn = list.find((o) => o.id === 'home/counter-room/0')!.box!
+    const solid = furnitureBoxes(home, kit, 0).filter((b) => b.part === 'plinth')
+    expect(solid).toHaveLength(1)
+    solid[0]!.min.forEach((n, k) => expect(n).toBeCloseTo(drawn.min[k]!, 2))
+    solid[0]!.max.forEach((n, k) => expect(n).toBeCloseTo(drawn.max[k]!, 2))
+    expect(solid[0]!.max[0]).toBeLessThanOrEqual(f.x1 - INNER_FACE)
   })
 })
