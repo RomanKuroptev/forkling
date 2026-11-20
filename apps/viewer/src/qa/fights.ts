@@ -1,6 +1,7 @@
 import { placeCentre, surfaceFights, toLandPlace, type DrawnBox } from '@forkling/sim'
 import { buildingModel } from '../world/building.ts'
 import { exhibitInstances, exhibitSpots, signSpot } from '../world/exhibitGeometry.ts'
+import { signFaceInstance } from '../world/signGeometry.ts'
 import { galleryWalls, wallInstances } from '../world/galleryWall.ts'
 import { exteriorInstances, interiorParts, partInstances, type Instance } from '../world/kitGeometry.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
@@ -25,6 +26,20 @@ type Snapshot = Pick<PlacesSnapshot, 'places' | 'kit' | 'heightAt' | 'nowMs' | '
 /** A drawn box of a place, with what it is: the building's slot, a floor, a room's part (and its kit id), an exhibit. */
 type PlaceBox = DrawnBox & { what: string; part?: string; building?: boolean }
 
+/**
+ * The sign of a place: its post's boxes (one group, left to the kit's maker) and the painted face in front of them, which `Signs.tsx`
+ * draws as a flat quad lit by its own picture (issue 406: the face lay in the plane of the posts' fronts and shimmered).
+ */
+export function signFightBoxes(place: Snapshot['places'][number], kit: Snapshot['kit'], baseY: number): PlaceBox[] {
+  const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
+  const post = kit.parts.find((p) => p.id === 'sign-post')
+  const out: PlaceBox[] = []
+  for (const i of post ? partInstances(post, signSpot(place, baseY).position, 0, palette) : []) if (i.shape === 'box') out.push({ matrix: i.matrix, color: i.color, group: 'sign-post', what: 'the sign post' })
+  const face = signFaceInstance(place, baseY)
+  out.push({ matrix: face.matrix, color: face.color, glow: true, what: 'the sign board' })
+  return out
+}
+
 /** Every drawn box of a place, outside and in, and the ground under it; null for a place drawn as cyan lines (being built). */
 function placeBoxes(place: Snapshot['places'][number], s: Snapshot): { boxes: PlaceBox[]; baseY: number } | null {
   const [px, pz] = placeCentre(toLandPlace(place))
@@ -44,10 +59,10 @@ function placeBoxes(place: Snapshot['places'][number], s: Snapshot): { boxes: Pl
   const model = buildingModel(place, s.kit, baseY)
   if (model) {
     for (const [slot, list] of Object.entries(model.slots)) push(list, () => `the ${slot} of the building`, () => ({ building: true }))
-    const post = s.kit.parts.find((p) => p.id === 'sign-post')
-    if (post) push(partInstances(post, signSpot(place, baseY).position, 0, palette), () => 'the sign post', () => ({ group: 'sign-post' }))
+    boxes.push(...signFightBoxes(place, s.kit, baseY))
   } else {
     push(exteriorInstances(place, s.kit, baseY), () => 'the outside', () => ({ building: true }))
+    boxes.push(...signFightBoxes(place, s.kit, baseY).filter((b) => b.what === 'the sign board'))
   }
   const partOf = (group: string) => place.rooms.find((r) => r.id === group.split('/')[0])?.parts[Number(group.split('/')[1])]?.part
   push(interiorParts(place, s.kit, baseY).instances, (i) => (i.group ? `part ${i.group} (${partOf(i.group) ?? 'part'})` : 'a floor'), (i) => {

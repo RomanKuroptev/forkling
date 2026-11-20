@@ -3,8 +3,8 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import { starterPlaces } from '@forkling/sim'
-import { coveredDoors, placeFights } from '../src/qa/fights.ts'
+import { starterPlaces, surfaceFights } from '@forkling/sim'
+import { coveredDoors, placeFights, signFightBoxes } from '../src/qa/fights.ts'
 import { buildingModel } from '../src/world/building.ts'
 import { interiorInstances } from '../src/world/kitGeometry.ts'
 
@@ -29,6 +29,14 @@ const describeFight = (f: ReturnType<typeof fights>[number]) => `${f.place}: ${f
 describe('surfaces that fight (z-fighting) in the drawn places', () => {
   it('none in the fixture worlds, outside or in (issues 350, 353, 335, 337, 364, 370, 371)', () => {
     expect(fights(fixturePlaces()).map(describeFight)).toEqual([])
+  })
+
+  it("the sign board's painted face is in the list, and fights neither its board nor its posts (issue 406)", () => {
+    const home = starterPlaces()[0]!
+    const boxes = signFightBoxes(home, kit, 0)
+    expect(boxes.map((b) => b.what)).toContain('the sign board')
+    expect(boxes.filter((b) => b.what === 'the sign post').length).toBeGreaterThan(0)
+    expect(surfaceFights(boxes)).toEqual([])
   })
 
   it('none in any style of the building model, one to three floors high (the outside and its floors)', () => {
