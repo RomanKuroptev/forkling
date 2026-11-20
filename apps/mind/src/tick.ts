@@ -5,7 +5,7 @@ import { applyDecision } from './tick/apply-decision.ts'
 import { finishStep } from './tick/apply-step.ts'
 import type { TickDeps, TickOutcome, TickResult } from './tick/context.ts'
 import { createTick } from './tick/create.ts'
-import { feel } from './tick/feel.ts'
+import { feel, wake } from './tick/feel.ts'
 import { buildNow } from './tick/now.ts'
 import { settleJobs } from './tick/jobs.ts'
 import { thoughtTick } from './tick/thought.ts'
@@ -54,6 +54,9 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   finishStep(t)
   route(t)
   await morningStep(t)
+  // Waking resets energy before anything thinks this tick, so the morning plan is made rested, not with last night's energy.
+  // After morningStep, which keeps the mood at wake from before the reset for the spiral warning.
+  wake(t)
   await tripStep(t)
   await noteStep(t)
   await workStep(t)
