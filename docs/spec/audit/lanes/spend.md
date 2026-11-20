@@ -10,3 +10,4 @@ Budget: $10 a month (D1), separate from Merge's $23. Every real run has its own 
 | 2026-11-19 | QR | PR #388 3-day check, reworded (`day-0`, 1 seed, sessions) | $1.00 | $0.33 | $3.63 |
 | 2026-11-19 | QR | PR #401 3-day check (`day-0`, 1 seed, sessions) | $1.00 | $0.35 | $3.98 |
 | 2026-11-20 | QR | `/qa release` real run on `day-7`, 7 days, 2 seeds, sessions (seed 0 on 8eee38e, seed 1 on fc490a6) | $3.00 ($1.50 a seed) | $1.65 (seed 0 $0.50, seed 1 $1.16) | $5.63 |
+| 2026-11-20 | QR | #304 Lemmy source trial, c/showerthoughts and c/microblogmemes (offline done; real run not made, no API key in the fixer worktree) | $0.10 ($0.05 a community) | $0.00 | $5.63 |

@@ -36,6 +36,8 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 
 - **v0.19.0 (20 November, Roman said "release now"):** all of the audit harness QR fixes (#285, #380 to #443, #413). Steps as for v0.18.0: release PR, tag on its merge commit, `deploy.yml` with the tag, `/health`, then one commit to `RomanKuroptev/merge` changing only `FORKLING_REF` in its four workflows. Then `/qa` on the live world.
 
+- **#304 Lemmy source trial rerun (PR open, `needs-roman`):** trial-only plans in `apps/mind/src/web/trial-plans.ts` (not on the allowlist, not in `HOST_PLANS`; the fetcher reads them only when given `trialHosts`, which only `trial-cli.ts` passes). A post is read through Lemmy's API with its five top comments, one request a minute (`Crawl-delay: 60`). Offline on lemmy.world: c/showerthoughts readable 100% (6 of 12 without comments), c/microblogmemes 100% (all screenshots), c/dadjokes 67%. Real run ($0.05 a community) still to do: no API key in the fixer's worktree. Reports `docs/spec/w2-trials/lemmy.world-c-*.md`.
+
 ### Lane W (Q1, QW)
 
 - **Lane W** ([`lanes/w.md`](docs/spec/audit/lanes/w.md), plan approved, W1 to W8): **W1 (#280, merged)** the viewer's `?qa=1&now=&seed=`: frames drawn only by `window.__qa.step`, a frozen clock, seeded randomness, and `__qa` with `ready`, `scene()`, `renderer()`, `cameras`, `setCamera`, `fps`, `press`, `stick`, `visitor`, `teleport`, `look`. Normal mode pixel-identical before and after. Check `world.viewer-math-random` in `pnpm qa fast`.
