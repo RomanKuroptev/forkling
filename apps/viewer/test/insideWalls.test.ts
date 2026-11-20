@@ -55,17 +55,18 @@ describe('nothing of the inside stands in or through the walls (issues 339, 373)
     // along x) only until it clears the front wall's, each a little in front of the face so the two do not fight.
     expect(counter.at[0] + counter.parts[0]!.at[0]).toBeCloseTo(home.exterior.footprint[0] / 2 - INNER_FACE - OFF_WALL - 0.35)
     expect(counter.at[1] + counter.parts[5]!.at[2]).toBeCloseTo(home.exterior.footprint[1] / 2 - INNER_FACE - OFF_WALL - 0.6, 2)
-    // Heights and turns never change; the main room fits, so nothing in it moves.
+    // Heights and turns never change; the main room fits, so nothing in it moves but the bench, slid out of the way in (issue 451).
     counter.parts.forEach((p, i) => expect([p.at[1], p.rot]).toEqual([before.parts[i]!.at[1], before.parts[i]!.rot]))
-    expect(settled.rooms[0]).toBe(home.rooms[0])
+    home.rooms[0]!.parts.forEach((p, i) => (p.part === 'bench' ? expect(settled.rooms[0]!.parts[i]).not.toEqual(p) : expect(settled.rooms[0]!.parts[i]).toEqual(p)))
   })
 
   it('leaves a place that already fits as it is, and is the same when done twice', () => {
-    // Home fits as it is. The Workshop does too, but for its four floor-standing screens, which are hung at eye height (issue 431).
+    // Home fits as it is, but for its bench, slid out of the way in (issue 451). The Workshop does too, but for its four
+    // floor-standing screens, which are hung at eye height (issue 431).
+    const moves = (id: string, part: string) => (id === 'workshop' ? part === 'screen-small' : part === 'bench')
     for (const p of starterPlaces()) {
       const settled = settledPlace(p, kit)
-      if (p.id !== 'workshop') expect(settled).toEqual(p)
-      else p.rooms.forEach((room, r) => room.parts.forEach((part, i) => (part.part === 'screen-small' ? expect(settled.rooms[r]!.parts[i]).not.toEqual(part) : expect(settled.rooms[r]!.parts[i]).toEqual(part))))
+      p.rooms.forEach((room, r) => room.parts.forEach((part, i) => (moves(p.id, part.part) ? expect(settled.rooms[r]!.parts[i]).not.toEqual(part) : expect(settled.rooms[r]!.parts[i]).toEqual(part))))
       expect(settledPlace(settled, kit)).toEqual(settled)
     }
     const once = settledPlace(day7('home'), kit)
