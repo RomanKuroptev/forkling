@@ -1,5 +1,5 @@
 import type { Place } from '@forkling/schema'
-import { bodyWorldFor, findPath, type Box, type Point2, type Vec3 } from '@forkling/sim'
+import { bodyWorldFor, findPath, placeCentre, toLandPlace, type Box, type Point2, type Vec3 } from '@forkling/sim'
 import type { Page } from 'playwright'
 import type { CheckResult } from '../report/finding.ts'
 import type { SceneObject } from './open.ts'
@@ -148,8 +148,9 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     if (after.z > p.box.min[2] + 1.2 && after.x > p.box.min[0] && after.x < p.box.max[0]) add('world.walk-through-wall', p.id, 'major', `A visitor walks through the back wall of ${p.id}`, `Walking straight at the back wall from x ${back.x.toFixed(1)}, z ${back.z.toFixed(1)}, the visitor ends inside, at z ${after.z.toFixed(1)}.`, 'A visitor walks through walls: the building feels like a picture, not a place.', `places/${p.id}.json`)
   }
 
-  // Every room upstairs is reached on foot (issue 333): along the grid to the foot of its stairs, up them, and on to its middle.
-  // A room with no stairs at all is `world.upper-room-no-stairs`, from the files.
+  // Every room upstairs is reached on foot (issue 333): from in front of its place's door (the walk from the arrival point to the
+  // place is checked above), along the grid to the foot of its stairs, up them, and on to its middle. A room with no stairs at all
+  // is `world.upper-room-no-stairs`, from the files.
   /** Walks straight toward a point with the W key, facing it, until within `near` meters or stuck; true when it got there. */
   const walkStraight = async (to: Point2, near = 0.5): Promise<boolean> => {
     let last = Infinity
@@ -175,12 +176,14 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     if (!route) continue
     const legs = routePoints(place as Place, route)
     const [cx, , cz] = centre(r.box)
-    await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [input.start.x, input.start.z, input.start.yaw])
-    const path = findPath(grid, input.start, legs[0]!.stand)
+    const [px, pz] = placeCentre(toLandPlace(place as Place))
+    const door = { x: px, z: pz + place.exterior.footprint[1] / 2 + 2 }
+    await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [door.x, door.z, Math.PI])
+    const path = findPath(grid, door, legs[0]!.stand)
     let stuckAt = ''
-    if (!path) stuckAt = 'the walking grid finds no way to the foot of its stairs'
+    if (!path) stuckAt = 'the walking grid finds no way from the door to the foot of its stairs'
     else {
-      for (const wp of path) if (!stuckAt && !(await walkStraight(wp, 0.6))) stuckAt = 'on the way to the foot of its stairs'
+      for (const wp of path) if (!stuckAt && !(await walkStraight(wp, 0.6))) stuckAt = `on the way from the door to the foot of its stairs, heading for x ${wp.x.toFixed(1)}, z ${wp.z.toFixed(1)}`
     }
     for (const [k, leg] of legs.entries()) {
       if (stuckAt) break
@@ -190,7 +193,7 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     if (!stuckAt && !(await walkStraight({ x: cx, z: cz }, 0.8))) stuckAt = 'on the way from the top of the stairs to the middle of the room'
     const v = await where()
     if (!reachedRoom(v, r.box))
-      add('world.upper-room-unreachable', r.id, 'major', `A visitor cannot walk up to ${r.id}`, `Walking from the arrival point to the foot of its stairs, up them and on to its middle, the visitor ends at x ${v.x.toFixed(1)}, y ${v.y.toFixed(1)}, z ${v.z.toFixed(1)}${stuckAt ? `, stuck ${stuckAt}` : ''}; the room's floor is at y ${r.box.min[1].toFixed(1)}.`, 'A visitor sees the room from outside but cannot get in.', `places/${r.place}.json`)
+      add('world.upper-room-unreachable', r.id, 'major', `A visitor cannot walk up to ${r.id}`, `Walking from its place's door to the foot of its stairs, up them and on to its middle, the visitor ends at x ${v.x.toFixed(1)}, y ${v.y.toFixed(1)}, z ${v.z.toFixed(1)}${stuckAt ? `, stuck ${stuckAt}` : ''}; the room's floor is at y ${r.box.min[1].toFixed(1)}.`, 'A visitor sees the room from outside but cannot get in.', `places/${r.place}.json`)
   }
 
   // Rays from the middle of each room, on every side but the door.

@@ -53,15 +53,6 @@
           "rot": 0
         },
         {
-          "part": "stairs",
-          "at": [
-            -4.55,
-            0,
-            -1.7000000000000002
-          ],
-          "rot": 0
-        },
-        {
           "part": "window-small",
           "at": [
             0,
@@ -130,6 +121,15 @@
             4,
             0,
             -3.5
+          ],
+          "rot": 0
+        },
+        {
+          "part": "stairs",
+          "at": [
+            -4.55,
+            0,
+            -1.7000000000000002
           ],
           "rot": 0
         }
@@ -220,7 +220,7 @@
       "id": "screen-grown-work-2026-12-15-1",
       "kind": "work",
       "ref": "works/grown-work-2026-12-15-1",
-      "slot": "main-room/4/0",
+      "slot": "main-room/3/0",
       "label": "Grown Work 2026-12-15 1",
       "added": "2026-12-15"
     },

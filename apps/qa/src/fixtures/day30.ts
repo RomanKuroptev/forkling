@@ -84,7 +84,6 @@ function furnish(prng: Prng, kit: Kit, style: string, w: number, d: number, door
   // A 2-floor place has stairs in its ground room, as found and expand require (issue 333): along the left wall, the foot near the
   // back with room to stand in front of it, climbing toward the front. Nothing else stands there, nor over the stairwell upstairs.
   const clear = stairwell ? { x0: -w / 2, x1: -w / 2 + STAIR_CLEAR[0], z0: -d / 2, z1: -d / 2 + STAIR_CLEAR[1] } : null
-  if (stairwell === 'stairs') parts.push({ part: 'stairs', at: [-(w / 2 - STAIR_FROM_SIDE), 0, -d / 2 + STAIR_FOOT + 1.5], rot: 0 })
   parts.push({ part: s.window, at: [0, 1.2, -(d / 2 - 0.1)], rot: 0 })
   if (prng.next() < 0.6) {
     const side = prng.next() < 0.5 && !clear ? -1 : 1
@@ -139,6 +138,8 @@ function furnish(prng: Prng, kit: Kit, style: string, w: number, d: number, door
     else if (['bookcase', 'cabinet', 'desk'].includes(part)) against(part)
     else free(part)
   }
+  // The stairs go in last, so the room's other parts keep the indices they had before rooms had stairs.
+  if (stairwell === 'stairs') parts.push({ part: 'stairs', at: [-(w / 2 - STAIR_FROM_SIDE), 0, -d / 2 + STAIR_FOOT + 1.5], rot: 0 })
   // A rug once at most.
   return parts.filter((p, i) => !p.part.startsWith('rug') || parts.findIndex((q) => q.part.startsWith('rug')) === i)
 }

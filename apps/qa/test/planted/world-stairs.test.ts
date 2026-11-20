@@ -3,6 +3,8 @@ import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { placeCentre, toLandPlace } from '@forkling/sim'
 import { reachedRoom, routePoints, stairRoute, stairsFindings } from '../../src/world/stairs.ts'
+import { solidParts } from '../../src/world/bump.ts'
+import type { SceneObject } from '../../src/world/open.ts'
 
 /** Grown Place 10 of day-30, as the fixture now builds it: 12 by 10, two floors, stairs along the left wall of the ground room. */
 const tall = (stairs = true): Place =>
@@ -57,5 +59,11 @@ describe('every room upstairs has a way up, and a visitor gets there (issue 333;
     expect(reachedRoom({ x: 48, y: 1, z: -48 }, room)).toBe(false)
     expect(reachedRoom({ x: 48, y: 4, z: -48 }, room)).toBe(true)
     expect(reachedRoom({ x: 41, y: 4, z: -48 }, room)).toBe(false)
+  })
+
+  it('the stairs are walked up, not bumped into: the furniture walk leaves them out', () => {
+    const room: SceneObject = { id: 'grown-place-10/main-room', kind: 'room', place: 'grown-place-10', box: { min: [42.5, 0, -52.5], max: [53.5, 3, -43.5] }, visible: true, material: 'solid' }
+    const part = (k: number, name: string, min: [number, number, number], max: [number, number, number]): SceneObject => ({ id: `grown-place-10/main-room/${k}`, kind: 'part', place: 'grown-place-10', name, box: { min, max }, visible: true, material: 'solid' })
+    expect(solidParts([room, part(1, 'stairs', [42.85, 0, -51.2], [44.05, 3, -48.2]), part(2, 'cabinet', [51, 0, -52], [52, 1.8, -51.5])]).map((p) => p.name)).toEqual(['cabinet'])
   })
 })
