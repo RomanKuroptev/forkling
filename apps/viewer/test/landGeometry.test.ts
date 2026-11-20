@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { chunkAt, chunkCentre, createLand, toLandPlace } from '@forkling/sim'
 import { makeFixtureWorld } from '@forkling/sim/fixture'
-import { fogWalls, landMesh, visibleChunks } from '../src/world/landGeometry.ts'
+import { fogWalls, LAND_LIP, LAND_SEGMENTS, LAND_SIDE_DEPTH, landLip, landMesh, landSides, visibleChunks } from '../src/world/landGeometry.ts'
 
 const fixture = makeFixtureWorld(1, 10)
 const land = createLand(1, fixture.places.map(toLandPlace))
@@ -100,6 +100,83 @@ describe('the fog at the world\'s edge', () => {
         expect(keys.has(`${cx + dx},${cz + dz},${rot === 1 ? Math.PI / 2 : 0}`), `${c.chunk} ${dx},${dz}`).toBe(faces === 'fog')
       }
     }
+  })
+})
+
+describe('the side of the land (issue 454: the walk stops at the end of the land, so the end must show)', () => {
+  const sides = landSides(land)
+  const tris = sides.positions.length / 9
+  const at = (m: { positions: Float32Array }, k: number) => [m.positions[k * 3]!, m.positions[k * 3 + 1]!, m.positions[k * 3 + 2]!] as const
+
+  it('is drawn: triangles with a tone for each vertex, a bright band at the top and the side under it', () => {
+    expect(tris).toBeGreaterThan(0)
+    expect(sides.tone.length).toBe(sides.positions.length / 3)
+    expect(new Set(sides.tone)).toEqual(new Set([0, 1]))
+  })
+
+  it('has a bright strip on top along the end, lifted off the ground and facing up, so it shows from where the walk stops', () => {
+    const lip = landLip(land)
+    expect(lip.length).toBeGreaterThan(0)
+    for (let k = 0; k < lip.length / 3; k++) {
+      const [x, y, z] = [lip[k * 3]!, lip[k * 3 + 1]!, lip[k * 3 + 2]!]
+      expect(y).toBeGreaterThan(land.heightAt(x, z))
+      const near = [-LAND_LIP.width - 0.01, LAND_LIP.width + 0.01].flatMap((dx) => [-LAND_LIP.width - 0.01, LAND_LIP.width + 0.01].map((dz) => land.classify(chunkAt(x + dx, z + dz))))
+      expect(near, `${x},${z}`).toContain('fog')
+    }
+    for (let t = 0; t < lip.length / 9; t++) {
+      const p = (k: number, c: number) => lip[t * 9 + k * 3 + c]!
+      const ny = (p(1, 2) - p(0, 2)) * (p(2, 0) - p(0, 0)) - (p(1, 0) - p(0, 0)) * (p(2, 2) - p(0, 2))
+      expect(ny, `triangle ${t}`).toBeGreaterThan(0)
+    }
+    // The visitor stops EDGE_MARGIN (1 m) in, so the strip is between the visitor and the end.
+    expect(LAND_LIP.width).toBeLessThan(1)
+  })
+
+  it('stands where the walk stops: every vertex is on a border between a drawn chunk and the fog', () => {
+    for (let k = 0; k < sides.positions.length / 3; k++) {
+      const [x, , z] = at(sides, k)
+      const near = [-0.5, 0.5].flatMap((dx) => [-0.5, 0.5].map((dz) => land.classify(chunkAt(x + dx, z + dz))))
+      expect(near, `${x},${z}`).toContain('fog')
+      expect(near.some((c) => c !== 'fog'), `${x},${z}`).toBe(true)
+    }
+  })
+
+  it('meets the top of the land without a gap and reaches LAND_SIDE_DEPTH below it, so the land reads as a slab', () => {
+    for (let k = 0; k < sides.positions.length / 3; k++) {
+      const [x, y, z] = at(sides, k)
+      expect(y).toBeLessThanOrEqual(land.heightAt(x, z) + 1e-4)
+    }
+    // Each triangle's top corner is on the land's own height, and its lowest at least LAND_SIDE_DEPTH under the edge's top.
+    const tops = new Set<string>()
+    for (let k = 0; k < sides.positions.length / 3; k++) {
+      const [x, y, z] = at(sides, k)
+      if (Math.abs(y - land.heightAt(x, z)) < 1e-4) tops.add(`${x},${z}`)
+    }
+    expect(tops.size).toBeGreaterThan(0)
+    const ys = Array.from({ length: sides.positions.length / 3 }, (_, k) => at(sides, k)[1])
+    expect(Math.min(...ys)).toBeLessThanOrEqual(Math.min(...[...tops].map((t) => land.heightAt(...(t.split(',').map(Number) as [number, number])))) - LAND_SIDE_DEPTH + 1e-4)
+  })
+
+  it('faces out, towards the fog, so it is seen from outside the land', () => {
+    for (let t = 0; t < tris; t++) {
+      const [a, b, c] = [at(sides, t * 3), at(sides, t * 3 + 1), at(sides, t * 3 + 2)]
+      const e1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]]
+      const e2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]]
+      const nx = e1[1]! * e2[2]! - e1[2]! * e2[1]!
+      const nz = e1[0]! * e2[1]! - e1[1]! * e2[0]!
+      const len = Math.hypot(nx, nz)
+      const mx = (a[0] + b[0] + c[0]) / 3
+      const mz = (a[2] + b[2] + c[2]) / 3
+      expect(land.classify(chunkAt(mx + (nx / len) * 0.5, mz + (nz / len) * 0.5)), `triangle ${t}`).toBe('fog')
+      expect(land.classify(chunkAt(mx - (nx / len) * 0.5, mz - (nz / len) * 0.5)), `triangle ${t}`).not.toBe('fog')
+    }
+  })
+
+  it('runs along every border that faces fog and no other: 12 for a world of one place', () => {
+    const per = landSides(single).positions.length / 9 / LAND_SEGMENTS
+    expect(per % 12).toBe(0)
+    expect(landSides(single).positions.length / 9).toBe(12 * LAND_SEGMENTS * (per / 12))
+    expect(fogWalls(single).filter((w) => w.inset === 0)).toHaveLength(12)
   })
 })
 

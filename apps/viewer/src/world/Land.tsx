@@ -2,13 +2,15 @@ import { worldLand } from './worldLand.ts'
 import { RigidBody, TrimeshCollider } from '@react-three/rapier'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { LAND_SEGMENTS, landMesh, visibleChunks } from './landGeometry.ts'
+import { LAND_SEGMENTS, landLip, landMesh, landSides, visibleChunks } from './landGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
 import { GRID, LAND } from './theme.ts'
 
 const GRASS = new THREE.Color(LAND.grass)
 const DARK_GRASS = new THREE.Color(LAND.darkGrass)
 const MEADOW = new THREE.Color(LAND.meadow)
+const SIDE = new THREE.Color(LAND.side)
+const RIM = new THREE.Color(LAND.rim)
 /** A thin line of the look's grid on the ground itself, so the land has scale; it fades out with distance (the theme sets spacing and fade). */
 function gridOnLand(shader: { uniforms: Record<string, { value: unknown }>; vertexShader: string; fragmentShader: string }) {
   shader.uniforms.uGridColor = { value: new THREE.Color(GRID.landLine) }
@@ -60,6 +62,29 @@ export function Land() {
     return { geometry, vertices: mesh.positions, indices: mesh.indices }
   }, [world])
 
+  // The side of the land and the bright strip along its end (issue 454): the walk stops there, so the end shows.
+  const edge = useMemo(() => {
+    const land = worldLand(world)
+    const sides = landSides(land, LAND_SEGMENTS)
+    const side = new THREE.BufferGeometry()
+    side.setAttribute('position', new THREE.BufferAttribute(sides.positions, 3))
+    const colors = new Float32Array(sides.positions.length)
+    for (let k = 0; k < sides.tone.length; k++) (sides.tone[k] ? RIM : SIDE).toArray(colors, k * 3)
+    side.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+    side.computeVertexNormals()
+    const lip = new THREE.BufferGeometry()
+    lip.setAttribute('position', new THREE.BufferAttribute(landLip(land, LAND_SEGMENTS), 3))
+    lip.computeVertexNormals()
+    return { side, lip }
+  }, [world])
+  useEffect(
+    () => () => {
+      edge.side.dispose()
+      edge.lip.dispose()
+    },
+    [edge],
+  )
+
   // `?debug` lets a browser test know how far the land reaches, to go and look at its edge.
   useEffect(() => {
     if (!new URLSearchParams(location.search).has('debug')) return
@@ -80,6 +105,12 @@ export function Land() {
       <TrimeshCollider args={[vertices, indices]} />
       <mesh geometry={geometry} receiveShadow>
         <meshStandardMaterial vertexColors flatShading roughness={0.55} metalness={0.05} onBeforeCompile={gridOnLand} />
+      </mesh>
+      <mesh name="land-side" geometry={edge.side}>
+        <meshStandardMaterial vertexColors flatShading roughness={0.6} metalness={0.05} />
+      </mesh>
+      <mesh name="land-rim" geometry={edge.lip}>
+        <meshBasicMaterial color={RIM} toneMapped={false} />
       </mesh>
     </RigidBody>
   )
