@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import type { Score } from './score.ts'
+import { snapshotOfRun } from './sources.ts'
 
 /**
  * Puts behaviour runs side by side (QB.8) and says, for each alarm, where it most likely comes from (audit spec 9.4):
@@ -27,6 +28,18 @@ export const readScores = (dir: string): ScoredRun[] => {
   const path = join(dir, 'scores.json')
   if (!existsSync(path)) throw new Error(`${dir} has no scores.json: run pnpm qa score or pnpm qa behaviour first`)
   return JSON.parse(readFileSync(path, 'utf8')) as ScoredRun[]
+}
+
+/**
+ * The web a run folder read, from each seed's `seed-<n>/out/web.json` (the runner writes it): the web snapshot when every seed
+ * names one, the real web when none does (and for a folder with no seeds, such as a live score). A run whose seeds read
+ * different webs cannot be put on one side, so it is an error.
+ */
+export function webOfRun(dir: string): Web {
+  const seeds = existsSync(dir) ? readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory() && /^seed-\d+$/.test(d.name)) : []
+  const webs = new Set(seeds.map((d): Web => (snapshotOfRun(join(dir, d.name, 'out')) ? 'snapshot' : 'real')))
+  if (webs.size > 1) throw new Error(`${dir}: its seeds read mixed webs (some the snapshot, some the real web)`)
+  return webs.has('snapshot') ? 'snapshot' : 'real'
 }
 
 export function cause(alarmIn: { web: Web; alarm: boolean }[]): string {
@@ -64,17 +77,19 @@ export function writeComparison(out: string, runs: ComparedRun[]): string {
   return text
 }
 
-export const COMPARE_USAGE = `  compare --snapshot <name>=<dir> --real <name>=<dir> ...   behaviour runs side by side, with the likely cause of each alarm
-          (fake web, real web, or Merge's choices); <dir> is a qa-out/behaviour/<label> folder. Writes qa-out/behaviour/compare.md`
+export const COMPARE_USAGE = `  compare <name>=<dir> <name>=<dir> ...   behaviour runs side by side, with the likely cause of each alarm (fake web, real
+          web, or Merge's choices); <dir> is a qa-out/behaviour/<label> folder, and which web it read comes from its
+          seed-*/out/web.json. --snapshot <name>=<dir> or --real <name>=<dir> overrides that. Writes qa-out/behaviour/compare.md`
 
 export function compareCommand(args: string[], o: { cwd: string; out: string }): number {
-  const { values } = parseArgs({ args, options: { snapshot: { type: 'string', multiple: true }, real: { type: 'string', multiple: true } } })
-  const parse = (web: Web) => (spec: string): ComparedRun => {
+  const { values, positionals } = parseArgs({ args, allowPositionals: true, options: { snapshot: { type: 'string', multiple: true }, real: { type: 'string', multiple: true } } })
+  const parse = (web: Web | null) => (spec: string): ComparedRun => {
     const at = spec.indexOf('=')
-    if (at < 1) throw new Error(`--${web} takes <name>=<dir>, not ${spec}`)
-    return { name: spec.slice(0, at), web, dir: resolve(o.cwd, spec.slice(at + 1)) }
+    if (at < 1) throw new Error(`${web ? `--${web} takes ` : 'a run is '}<name>=<dir>, not ${spec}`)
+    const dir = resolve(o.cwd, spec.slice(at + 1))
+    return { name: spec.slice(0, at), web: web ?? webOfRun(dir), dir }
   }
-  const runs = [...(values.snapshot ?? []).map(parse('snapshot')), ...(values.real ?? []).map(parse('real'))]
+  const runs = [...positionals.map(parse(null)), ...(values.snapshot ?? []).map(parse('snapshot')), ...(values.real ?? []).map(parse('real'))]
   if (runs.length < 2) {
     console.log(COMPARE_USAGE)
     return 2
