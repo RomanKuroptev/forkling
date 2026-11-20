@@ -149,11 +149,12 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     const [px, pz] = placeCentre(toLandPlace(place))
     const inside = s.interiors.has(place.id)
     const wire = wireframeInstances(place, s.kit, baseY, s.nowMs, s.wireAlways, inside ? siteInside(place, s.kit, baseY) : [])
+    // The building's box stands on its base: the sign's posts, which reach down a slope to the ground under them, are left out of it.
     const outside = exteriorInstances(place, s.kit, baseY)
     const wired = wire !== null && wire.length > 0
     // What holds the sign up, as drawn: the solid pieces of the outside (or, while it is wire, the sign post drawn solid) under its board.
     const [sx, , sz] = signSpot(place, baseY).position
-    supports.set(place.id, (wired ? signPostInstances(place, s.kit, baseY) : outside).map((i) => instancesBox([i])!).filter((b) => b.max[1] - b.min[1] > 0.5 && b.min[0] >= sx - SIGN_W / 2 - 0.3 && b.max[0] <= sx + SIGN_W / 2 + 0.3 && Math.abs((b.min[2] + b.max[2]) / 2 - sz) < 0.5))
+    supports.set(place.id, (wired ? signPostInstances(place, s.kit, baseY, s.heightAt) : exteriorInstances(place, s.kit, baseY, s.heightAt)).map((i) => instancesBox([i])!).filter((b) => b.max[1] - b.min[1] > 0.5 && b.min[0] >= sx - SIGN_W / 2 - 0.3 && b.max[0] <= sx + SIGN_W / 2 + 0.3 && Math.abs((b.min[2] + b.max[2]) / 2 - sz) < 0.5))
     const wall = (s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0])?.colors.wall
     const lines = wired ? { wire: wire.map((l) => lineEnds(l.matrix)) } : {}
     out.push({ id: place.id, kind: 'place', name: place.name, ...(wall ? { wall } : {}), ...lines, footprint: { x0: round(px - place.exterior.footprint[0] / 2), z0: round(pz - place.exterior.footprint[1] / 2), x1: round(px + place.exterior.footprint[0] / 2), z1: round(pz + place.exterior.footprint[1] / 2) }, box: instancesBox(outside), visible: true, material: wired ? 'wireframe' : 'solid' })

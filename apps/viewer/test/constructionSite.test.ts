@@ -84,6 +84,27 @@ describe('the site sign stands on its posts (issue 427)', () => {
   })
 })
 
+describe('a sign on a slope stands on the ground (issue 427)', () => {
+  it('its posts reach down to the ground under each of them, built or being built', () => {
+    // The ground falls away toward the front: under the sign it is 40 cm below the place's base.
+    const p0 = building(hillside)
+    const [, , sz] = signSpot(p0, 0).position
+    const heightAt = (_x: number, z: number) => (z > sz - 1 ? -0.4 : 0)
+    for (const p of [p0, { ...p0, state: { ...p0.state, construction: null } }]) {
+      const scene = sceneInstances([p], kit, { heightAt, interiors: new Set(), nowMs: NOW })
+      const [sx] = signSpot(p, 0).position
+      const feet: number[] = []
+      for (let k = 0; k < scene.box.count; k++) {
+        const m = [...scene.box.matrices.slice(k * 16, k * 16 + 16)]
+        const h = Math.hypot(m[4]!, m[5]!, m[6]!)
+        if (Math.abs(m[14]! - sz) < 0.3 && Math.abs(m[12]! - sx) < 1.5 && h > 1.5 && m[13]! + h / 2 >= SIGN_BOTTOM) feet.push(m[13]! - h / 2)
+      }
+      expect(feet.length, p.state.construction ? 'building' : 'built').toBeGreaterThanOrEqual(2)
+      for (const y of feet) expect(y).toBeCloseTo(-0.4, 2)
+    }
+  })
+})
+
 describe('no solid exhibit inside a place being built (issue 426)', () => {
   it('its exhibits are cyan lines, not solid pieces: the only solid things at the site are its sign and posts', () => {
     const p = building(withExhibits)

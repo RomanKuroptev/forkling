@@ -71,10 +71,10 @@ function look(place: Place, kit: Kit) {
 }
 
 /** The outside of a place: walls with windows on every floor, a door in the front (+z) wall, a roof, as its style and palette say. */
-export function exteriorInstances(place: Place, kit: Kit, baseY: number): Instance[] {
+export function exteriorInstances(place: Place, kit: Kit, baseY: number, heightAt?: (x: number, z: number) => number): Instance[] {
   // A style drawn by the building model (look.md) is its six slots and the sign by the door; the others keep the drawing below.
   const model = buildingModel(place, kit, baseY)
-  if (model) return [...model.instances, ...signPostInstances(place, kit, baseY)]
+  if (model) return [...model.instances, ...signPostInstances(place, kit, baseY, heightAt)]
   const { palette, wall, window, door, roof } = look(place, kit)
   const [px, pz] = placeCentre(toLandPlace(place))
   const [fw, fd] = place.exterior.footprint
@@ -125,19 +125,35 @@ export function exteriorInstances(place: Place, kit: Kit, baseY: number): Instan
 
   // The roof, a little wider than the walls.
   out.push(...partInstances(roof, [px, baseY + floors * height, pz], 0, palette, [(fw + 1.2) / roof.size[0], 1, (fd + 1.2) / roof.size[2]]))
-  out.push(...signPostInstances(place, kit, baseY))
+  out.push(...signPostInstances(place, kit, baseY, heightAt))
   return out
 }
 
 /**
  * The sign by the door, where the place's history is opened from (spec 4.6): its two posts on the ground, the board they carry and
  * its trim. A place being built keeps it solid too, so the site's sign stands on its posts and does not float over the wire (issue 427).
+ * Where the ground falls away under the sign (`heightAt`), each post reaches down to the ground under it.
  */
-export function signPostInstances(place: Place, kit: Kit, baseY: number): Instance[] {
+export function signPostInstances(place: Place, kit: Kit, baseY: number, heightAt?: (x: number, z: number) => number): Instance[] {
   const post = kit.parts.find((p) => p.id === 'sign-post')
   if (!post) return []
   const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
-  return partInstances(post, signSpot(place, baseY).position, 0, palette)
+  const pieces = partInstances(post, signSpot(place, baseY).position, 0, palette)
+  if (!heightAt) return pieces
+  return pieces.map((i) => {
+    const m = i.matrix
+    const h = Math.hypot(m[4]!, m[5]!, m[6]!)
+    const bottom = m[13]! - h / 2
+    // A post: upright, standing on the place's base. The board and its trim hang on the posts.
+    if (h < 1 || Math.abs(m[5]!) < 0.99 * h || Math.abs(bottom - baseY) > 0.01) return i
+    const ground = heightAt(m[12]!, m[14]!)
+    if (ground >= bottom) return i
+    const top = bottom + h
+    const matrix = [...m]
+    matrix[5] = top - ground
+    matrix[13] = (top + ground) / 2
+    return { ...i, matrix }
+  })
 }
 
 /** A part drawn from its model file instead of its primitives. */
@@ -331,10 +347,10 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     if (wired) {
       for (const i of wire) lists[i.shape].push(i)
       // The sign stays solid and stands on its posts, as the finished place's does (issue 427).
-      for (const i of signPostInstances(place, kit, baseY)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
+      for (const i of signPostInstances(place, kit, baseY, opts.heightAt)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
     } else {
       // The tinted see-through glass of a glass house goes to its own draw call.
-      for (const i of exteriorInstances(place, kit, baseY)) (i.glass ? glassList : lists[i.shape]).push(lampsOn || !i.glow ? i : { ...i, glow: false })
+      for (const i of exteriorInstances(place, kit, baseY, opts.heightAt)) (i.glass ? glassList : lists[i.shape]).push(lampsOn || !i.glow ? i : { ...i, glow: false })
       for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
       for (const i of constructionInstances(place, baseY, opts.nowMs)) lists[i.shape].push(i)
     }
