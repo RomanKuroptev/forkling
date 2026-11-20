@@ -1,4 +1,4 @@
-import { createNavGrid, isWalkable, type NavGrid, type Point2 } from '@forkling/sim'
+import { STAIRS_PART, createNavGrid, isWalkable, type NavGrid, type Point2 } from '@forkling/sim'
 import type { SceneObject } from './open.ts'
 
 /**
@@ -17,11 +17,11 @@ export const OVERHEAD = 1.6
 /** The visitor's middle must stay at least this far from Merge's drawn box: its capsule stops outside it (issues 357, 349). */
 export const MERGE_GAP = CAPSULE
 
-/** The drawn parts that stand on a room's floor in the visitor's way: the ones a walk into them must stop at. */
+/** The drawn parts that stand on a room's floor in the visitor's way: the ones a walk into them must stop at. Stairs are walked up, not into (issue 333). */
 export function solidParts(scene: readonly SceneObject[]): (SceneObject & { box: NonNullable<SceneObject['box']> })[] {
   const rooms = new Map(scene.filter((o) => o.kind === 'room' && o.box).map((r) => [r.id, r.box!]))
   return scene.filter((o): o is SceneObject & { box: NonNullable<SceneObject['box']> } => {
-    if (o.kind !== 'part' || !o.box || o.inDoorway || o.material === 'none') return false
+    if (o.kind !== 'part' || !o.box || o.inDoorway || o.material === 'none' || o.name === STAIRS_PART) return false
     const room = rooms.get(o.id.split('/').slice(0, 2).join('/'))
     const floor = room ? room.min[1] : o.box.min[1]
     return o.box.max[1] - Math.max(o.box.min[1], floor) >= LOW && o.box.min[1] - floor <= OVERHEAD

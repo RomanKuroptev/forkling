@@ -110,7 +110,7 @@ export function QaProbe() {
         const obstacles: PoseBox[] = (snap?.places ?? []).flatMap((p) => {
           const [px, pz] = placeCentre(toLandPlace(p))
           const base = snap!.heightAt(px, pz)
-          return [...furnitureBoxes(p, snap!.kit, base), ...wallBoxes(p).map((w) => ({ min: [w.x0, base, w.z0], max: [w.x1, base + w.height, w.z1] }))]
+          return [...furnitureBoxes(p, snap!.kit, base), ...wallBoxes(p).map((w) => ({ min: [w.x0, base + (w.y0 ?? 0), w.z0], max: [w.x1, base + w.height, w.z1] }))]
         })
         out['merge-close'] = mergeClosePose(pos, heading, (x, z) => simWorld.heightAt(x, z), obstacles)
       }

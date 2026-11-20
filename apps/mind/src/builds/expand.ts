@@ -80,6 +80,12 @@ export interface ExpandPromptInput {
   collision?: TinkerCollision | undefined
 }
 
+/**
+ * The rule that a room upstairs needs stairs below it (issue 333, a schema limit Roman approved): the expand and the found prompts
+ * say it in the same words, and `upperRoomWithoutStairs` in `packages/sim` checks it.
+ */
+export const STAIRS_RULE = '- A room on floor 1 or above needs stairs below it: a stairs part in a room on the floor under it, whose top end is under the upper room (stairs climb the way they face, toward the front at rot 0).'
+
 /** A length in meters as the prompt says it: at most two decimals. */
 const meters = (n: number) => String(Math.round(n * 100) / 100)
 
@@ -115,6 +121,7 @@ export function buildExpandUser(i: ExpandPromptInput): string {
     '- Make one of three changes: add a new room, or enlarge one room, or add one path from this place to another.',
     `- A new room has at most ${EXPAND_LIMITS.parts} parts, and an enlarged room gets at most ${EXPAND_LIMITS.parts} added parts. A place has at most ${EXPAND_LIMITS.rooms} rooms and a room at most ${EXPAND_LIMITS.partsPerRoom} parts.`,
     `- Every room stands inside the walls: the outer ${WALL} m of the footprint is wall, so a room reaches at most ${meters(footprint[0] / 2 - WALL)} m from the middle across and ${meters(footprint[1] / 2 - WALL)} m front to back. It fits the height of its floor, does not overlap another room on the same floor, and sits on a floor from 0 to ${floors - 1}. The building itself does not change.`,
+    STAIRS_RULE,
     '- An enlarged room is never smaller than it was. If it grows, move the parts that no longer fit, by their index.',
     '- Use only kit parts from the list above. You never write 3D code. A part sits inside its room, and its position is in meters from the middle of the room, y up.',
     '- A path leads to one other place that exists, and not to one it already has a path to.',
