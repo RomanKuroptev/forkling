@@ -3,11 +3,13 @@ import { WebError, type Fetcher } from '../fetch.ts'
 import type { Item } from '../item.ts'
 import { commonsFile } from './commons.ts'
 import { dweetIdOf, dwitterDweet } from './dwitter.ts'
+import { lemmyPost, lemmyPostId } from './lemmy.ts'
 import { articWork, githubRepo, imgflipFormat } from './records.ts'
 import { esolangPage, wikipediaArticle } from './wikipedia.ts'
 
 export * from './commons.ts'
 export * from './dwitter.ts'
+export * from './lemmy.ts'
 export * from './mediawiki.ts'
 export * from './records.ts'
 export * from './wikipedia.ts'
@@ -45,6 +47,11 @@ export async function readUrl(f: Fetcher, url: string): Promise<Item> {
     case 'imgflip.com':
       if (parts.length === 2 && parts[0] === 'meme' && parts[1] && /^\d+$/.test(parts[1])) return imgflipFormat(f, parts[1])
       throw nothing()
+    case 'lemmy.world': {
+      const id = lemmyPostId(url)
+      if (id !== null && u.search === '') return lemmyPost(f, id)
+      throw nothing()
+    }
     case 'commons.wikimedia.org':
       if (parts[0] === 'wiki' && parts[1]?.startsWith('File:')) return commonsFile(f, decode(parts.slice(1).join('/')))
       throw nothing()

@@ -11,7 +11,6 @@ import type { HostRule } from './allowlist.ts'
 import type { Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
 import type { HostPlan } from './starts.ts'
-import { LEMMY_TRIALS } from './trials/lemmy.ts'
 
 export interface TrialPlan extends HostPlan {
   /** What the trial is called on the command line, and its report's file name with `/` as `-` (`lemmy.world/c/memes` is `lemmy.world-c-memes.md`). */
@@ -29,8 +28,11 @@ export interface TrialPlan extends HostPlan {
   reset?(): void
 }
 
-/** Every trial-only plan. Lanes add theirs here, one line each. */
-export const TRIAL_PLANS: readonly TrialPlan[] = [...LEMMY_TRIALS]
+/**
+ * Every trial-only plan. Lanes add theirs here, one line each. Lemmy's (c/memes, c/showerthoughts) left when lemmy.world joined
+ * the allowlist (20 November); their reports are `docs/spec/w2-trials/lemmy.world-c-*.md`.
+ */
+export const TRIAL_PLANS: readonly TrialPlan[] = []
 
 /** The rules of every host a trial-only plan reads, each host once (the first plan to name it sets its rule). */
 export const TRIAL_HOSTS: readonly HostRule[] = TRIAL_PLANS.flatMap((p) => p.rules).filter((r, i, all) => all.findIndex((x) => x.host === r.host) === i)

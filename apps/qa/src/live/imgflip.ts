@@ -102,7 +102,7 @@ export function checkImgflipFreshness(history: ImgflipHistory | null, today: str
       fingerprint: 'sources.imgflip-stale',
       severity: 'major',
       title: "Imgflip's meme list has not changed in two weeks",
-      what: `No format in today's top ${topOf(ref, ids)} is new since ${describe(ref)}. get_memes is close to an all-time top list. Recommended: Roman picks a pulse source that moves (see the promised-missing findings: Lemmy memes needs a new trial, Mastodon and Show HN are best dropped).`,
+      what: `No format in today's top ${topOf(ref, ids)} is new since ${describe(ref)}. get_memes is close to an all-time top list. Recommended: Roman picks a pulse source that moves (Lemmy c/memes and c/showerthoughts are on the list since 20 November; see the promised-missing findings for the rest).`,
       causes: "Merge's memes cannot follow what is going round now: the same formats every morning.",
       fixKind: 'roman',
     })

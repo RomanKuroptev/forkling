@@ -30,7 +30,7 @@ describe('source health (QS.2) on a recorded web', () => {
       const first = seen.findIndex((u) => new URL(u).hostname === host)
       expect(seen[first]).toBe(`https://${host}/robots.txt`)
     }
-    expect(seen.every((u) => !/reddit|knowyourmeme|lemmy|mastodon/.test(u))).toBe(true)
+    expect(seen.every((u) => !/reddit|knowyourmeme|mastodon/.test(u))).toBe(true)
   })
 
   it('a host that does not answer is a major for that source, and the others still run', async () => {
