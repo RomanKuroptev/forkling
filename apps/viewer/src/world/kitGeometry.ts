@@ -1,6 +1,6 @@
 import type { Kit, KitColor, KitPalette, KitPart, Place, PlaceRequest } from '@forkling/schema'
-import { DARK_GLOW, dayInteriorFloor, repaint } from './theme.ts'
-import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace } from '@forkling/sim'
+import { DARK_GLOW, dayInteriorFloor, furnitureColour, furniturePalette, repaint } from './theme.ts'
+import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace, type NeglectLevel } from '@forkling/sim'
 import { buildingModel, partKey, windowLayout } from './building.ts'
 import { constructionInstances } from './constructionGeometry.ts'
 import { wireframeInstances } from './wireframe.ts'
@@ -149,8 +149,11 @@ export interface ModelInstance {
 export function interiorParts(place: Place, kit: Kit, baseY: number, models: ReadonlySet<string> = new Set(), opts: { lampsOn?: boolean } = {}): { instances: Instance[]; models: ModelInstance[] } {
   place = settledPlace(place, kit)
   const { palette } = look(place, kit)
-  // Lamps that are off are dark: the glow of their palette is replaced by a dull grey.
-  const dark: KitPalette = { ...palette, colors: { ...palette.colors, glow: DARK_GLOW } }
+  // Furniture, plinths, stands and lamps wear the palette's colours made pastel and kept off grey, beige and brown: under the roof a
+  // pale wall colour or the metal reads as a grey box, and an orange or yellow accent as brown or khaki (issues 409, 430).
+  const furnished = furniturePalette(palette)
+  // Lamps that are off are dark: the glow of their palette is replaced by a dark glass.
+  const dark: KitPalette = { ...furnished, colors: { ...furnished.colors, glow: DARK_GLOW } }
   const [px, pz] = placeCentre(toLandPlace(place))
   const [fw, fd] = place.exterior.footprint
   const height = floorHeight(place)
@@ -186,12 +189,33 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
         const group = `${room.id}/${index}`
         // A part hung on a wall is drawn without its foot (`hungParts`).
         const drawn = hung.has(group) ? { ...part, primitives: part.primitives.filter((p) => !isFootPrimitive(part, p)) } : part
-        out.push(...partInstances(drawn, at, placed.rot, off ? dark : palette).map((i) => (off ? { ...i, glow: false, group } : { ...i, group })))
+        const furniture = part.category !== 'structure' && part.category !== 'nature'
+        const colours = off ? dark : furniture ? furnished : palette
+        // By day a piece of furniture gives off some of its own colour, as the room's walls do (`dayColor`), so its pastel holds in the
+        // shade of the roof instead of going grey or dusty (issue 430); at night it is lit by the lamps and the sky as before.
+        for (const i of partInstances(drawn, at, placed.rot, colours)) {
+          const day = furniture && !i.glow && i.color !== DARK_GLOW ? { dayColor: i.color } : {}
+          out.push(off ? { ...i, glow: false, group, ...day } : { ...i, group, ...day })
+        }
       }
     }
   }
   return { instances: out, models: modelOut }
 }
+
+/** How neglected a place looks at `nowMs` (spec 4.4) and whether its lamps are on. Without a clock, nothing is neglected. */
+export function placeLight(place: Place, opts: { nowMs?: number; litAlways?: boolean }): { level: NeglectLevel; lampsOn: boolean } {
+  const level = opts.nowMs === undefined || opts.litAlways ? 0 : neglectFor({ id: place.id, lastCareAt: place.state.lastCareAt, founded: place.founded, closed: place.state.closed !== null }, opts.nowMs)
+  // A closed place (spec 9.9) has its lamps off, whatever its own switch says.
+  const lampsOn = place.state.closed ? false : opts.litAlways ? true : neglectLook(level, place.state.lamps).lampsOn
+  return { level, lampsOn }
+}
+
+/**
+ * A glowing thing whose lamps are off: it does not glow, and its colour is the glow colour as furniture wears it, so a lemon or peach
+ * screen or window does not read as a tan panel in shade (the front of Grown Place 6, issue 409); a cyan one stays cyan.
+ */
+export const unlit = (i: Instance, colors: KitPalette['colors']): Instance => (i.glow ? { ...i, glow: false, color: furnitureColour(i.color, colors) } : i)
 
 /** The inside as primitives only. */
 export const interiorInstances = (place: Place, kit: Kit, baseY: number): Instance[] => interiorParts(place, kit, baseY).instances
@@ -305,10 +329,7 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
   for (const place of places) {
     const [px, pz] = placeCentre(toLandPlace(place))
     const baseY = opts.heightAt(px, pz)
-    // How long since it was cared for sets how it looks (spec 4.4). Without a clock, nothing is neglected.
-    const level = opts.nowMs === undefined || opts.litAlways ? 0 : neglectFor({ id: place.id, lastCareAt: place.state.lastCareAt, founded: place.founded, closed: place.state.closed !== null }, opts.nowMs)
-    // A closed place (spec 9.9) has its lamps off, whatever its own switch says.
-    const lampsOn = place.state.closed ? false : opts.litAlways ? true : neglectLook(level, place.state.lamps).lampsOn
+    const { level, lampsOn } = placeLight(place, opts)
     // A place whose lamps are on (or that is cared for, spec 4.4) has lit windows; one with its lamps off, or neglected, is dark.
     // A place that is being built is its finished model as cyan wireframe until its finish time (spec 4.5); a style the building model
     // does not draw keeps the scaffolding.
@@ -320,7 +341,8 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
       for (const i of wire) lists[i.shape].push(i)
     } else {
       // The tinted see-through glass of a glass house goes to its own draw call.
-      for (const i of exteriorInstances(place, kit, baseY)) (i.glass ? glassList : lists[i.shape]).push(lampsOn || !i.glow ? i : { ...i, glow: false })
+      const { colors } = look(place, kit).palette
+      for (const i of exteriorInstances(place, kit, baseY)) (i.glass ? glassList : lists[i.shape]).push(lampsOn ? i : unlit(i, colors))
       for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
       for (const i of constructionInstances(place, baseY, opts.nowMs)) lists[i.shape].push(i)
     }
@@ -335,9 +357,9 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
         lamps.push(...lampSpots(place, kit, baseY, lampsOn))
       }
       const { palette } = look(place, kit)
-      for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) push(lampsOn || !i.glow ? i : { ...i, glow: false })
+      for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) push(lampsOn ? i : unlit(i, palette.colors))
       // The gallery wall's board (every finished work, a page at a time): one box; its painted face is drawn apart (`GalleryWalls`).
-      if (opts.shelf?.length) for (const wall of galleryWalls(place, kit, baseY, opts.shelf, exteriorInstances(place, kit, baseY))) for (const i of wallInstances(wall, palette.colors)) push(lampsOn ? i : { ...i, glow: false })
+      if (opts.shelf?.length) for (const wall of galleryWalls(place, kit, baseY, opts.shelf, exteriorInstances(place, kit, baseY))) for (const i of wallInstances(wall, palette.colors)) push(lampsOn ? i : unlit(i, palette.colors))
       if (!wired) for (const i of neglectInstances(place, kit, baseY, level, 'interior')) push(i)
     }
   }
