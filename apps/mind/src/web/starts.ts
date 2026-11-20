@@ -63,7 +63,7 @@ export const HOST_PLANS: readonly HostPlan[] = [
     // Today's trending topics, those the news rule skips left out (news-skip.ts).
     host: 'public.api.bsky.app',
     itemHost: 'bsky.app',
-    paths: ['/xrpc/app.bsky.unspecced.getTrendingTopics', '/xrpc/app.bsky.feed.getFeed'],
+    paths: ['/xrpc/app.bsky.unspecced.getTrendingTopics'],
     feed: true,
     start: async (f, seed, offset) => {
       const topics = await blueskyTrending(f)

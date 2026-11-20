@@ -191,7 +191,8 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
   })()
 
   const read: Item[] = []
-  // 2. Bluesky's trending topics (the news rule leaves some out), each topic's feed.
+  // 2. Bluesky's trending topics (the news rule leaves some out). A topic is read from the list alone (its name and
+  // summary, Roman 20 November), so this asks for no posts; it records the list and checks each topic reads.
   const topics = (await soft('Bluesky trending', () => blueskyTrending(wander))) ?? []
   for (const t of topics.slice(0, BLUESKY_TOPICS)) {
     if (over()) break

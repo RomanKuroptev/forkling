@@ -4,6 +4,7 @@ import { hostRule, isAllowed, isReadable } from '../src/web/allowlist.ts'
 import { blueskyFeedOf, blueskyMorningLinks, blueskyTopic, blueskyTrending } from '../src/web/sources/bluesky.ts'
 import { readUrl } from '../src/web/sources/index.ts'
 import { planFor } from '../src/web/starts.ts'
+import { judgeSouvenir, type ReadAnswer } from '../src/web/read.ts'
 
 const XRPC = 'https://public.api.bsky.app/xrpc'
 const TRENDING = `${XRPC}/app.bsky.unspecced.getTrendingTopics?limit=25`
@@ -68,26 +69,36 @@ describe('Bluesky trending topics', () => {
 })
 
 describe('a Bluesky topic as a record', () => {
-  it('has the topic, what it is about, the posts people wrote (no labelled ones, English only), and the other topics as links', async () => {
+  // Roman, 20 November: only Bluesky's own topic text (its name and summary) is read and kept, never a person's post.
+  it("holds only Bluesky's own topic text, its name and summary, with the other topics as links, and never asks for posts", async () => {
     const f = fake({
       [TRENDING]: topics,
-      [getFeed('a1')]: {
-        feed: [
-          post('ann.bsky.social', 'Happy birthday Fiona! She is the   best hippo.'),
-          post('bob.bsky.social', 'labelled', { labels: [{ val: 'porn' }] }),
-          { post: { author: { handle: 'cat.bsky.social', labels: [{ val: 'spam' }] }, record: { text: 'author labelled', langs: ['en'] }, labels: [] } },
-          post('dee.bsky.social', 'Hallo zusammen', { record: { text: 'Hallo zusammen', langs: ['de'] } }),
-          post('eve.bsky.social', 'Ten years of Fiona already.'),
-        ],
-      },
+      [getFeed('a1')]: { feed: [post('ann.bsky.social', 'Happy birthday Fiona! She is the best hippo.')] },
     })
     const item = await blueskyTopic(f, feedUrl('a1'))
     expect(item).toMatchObject({ source: 'public.api.bsky.app', kind: 'record', tier: 'voices', url: feedUrl('a1'), title: 'Fiona the hippo turns ten', images: [] })
-    expect(item.text).toContain('Trending on Bluesky today: Fiona the hippo turns ten')
-    expect(item.text).toContain('- @ann.bsky.social: Happy birthday Fiona! She is the best hippo.')
-    expect(item.text).toContain('- @eve.bsky.social: Ten years of Fiona already.')
-    expect(item.text).not.toMatch(/labelled|Hallo/)
+    expect(item.text).toBe('Trending on Bluesky today: Fiona the hippo turns ten\nPeople talk about it.')
+    expect(item.text).not.toMatch(/@|ann\.bsky|Happy birthday|best hippo/)
+    expect(f.asked.some((u) => u.includes('getFeed'))).toBe(false)
     expect(item.links.map((l) => l.url)).toEqual([feedUrl('c3'), feedUrl('f6')])
+  })
+
+  it("says only the topic's name when Bluesky's summary is empty, and never adds post text", async () => {
+    const f = fake({ [TRENDING]: { topics: [topic('a1', 'Fiona the hippo turns ten', '')] } })
+    expect((await blueskyTopic(f, feedUrl('a1'))).text).toBe('Trending on Bluesky today: Fiona the hippo turns ten')
+  })
+
+  it("a post's text cannot become a souvenir; Bluesky's own summary can", async () => {
+    const f = fake({
+      [TRENDING]: { topics: [topic('a1', 'Fiona the hippo turns ten', 'The Cincinnati Zoo hippo celebrates a birthday.')] },
+      [getFeed('a1')]: { feed: [post('ann.bsky.social', 'Happy birthday Fiona! She is the best hippo.')] },
+    })
+    const item = await blueskyTopic(f, feedUrl('a1'))
+    const offer = (content: string) => judgeSouvenir({ souvenir: { kind: 'quote', content, evidence: '', picture: null, why: 'I like it.' }, reaction: '', topics: [], interest: 5, next: null, look: null } satisfies ReadAnswer, item)
+    expect(offer('Happy birthday Fiona! She is the best hippo.')).toEqual({ dropped: 'quote not found word for word' })
+    expect(offer('She is the best hippo.')).toEqual({ dropped: 'quote not found word for word' })
+    expect(offer('@ann.bsky.social')).toEqual({ dropped: 'quote not found word for word' })
+    expect(offer('The Cincinnati Zoo hippo celebrates a birthday.').kept).toMatchObject({ kind: 'quote', content: 'The Cincinnati Zoo hippo celebrates a birthday.' })
   })
 
   it('refuses a topic the skip rule catches, and any address that is not a feed page', async () => {
@@ -105,7 +116,7 @@ describe('Bluesky on the allowlist', () => {
     expect(hostRule('public.api.bsky.app')).toMatchObject({ kind: 'record', tier: 'voices', verbs: ['wander', 'meme'] })
     expect(isAllowed(`${XRPC}/app.bsky.unspecced.getTrendingTopics`, 'tinker')).toBe(false)
     expect(isReadable(feedUrl('a1'))).toBe(true)
-    expect(planFor('public.api.bsky.app')).toMatchObject({ itemHost: 'bsky.app', feed: true })
+    expect(planFor('public.api.bsky.app')).toMatchObject({ itemHost: 'bsky.app', feed: true, paths: ['/xrpc/app.bsky.unspecced.getTrendingTopics'] })
     const f = fake({ [TRENDING]: topics, [getFeed('a1')]: { feed: [post('ann.bsky.social', 'Happy birthday Fiona!')] } })
     expect((await readUrl(f, feedUrl('a1'))).title).toBe('Fiona the hippo turns ten')
     await expect(readUrl(f, 'https://bsky.app/profile/ann.bsky.social')).rejects.toMatchObject({ code: 'not-allowed' })
