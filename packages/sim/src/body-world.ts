@@ -1,6 +1,6 @@
 import type { Place } from '@forkling/schema'
 import { CHUNK_SIZE, chunkAt, createLand, placeCentre, toLandPlace, type Chunk } from './land.ts'
-import { createNavGrid, nearestWalkable, type NavGrid, type Point2 } from './nav.ts'
+import { createNavGrid, isWalkable, nearestWalkable, type NavGrid, type Point2 } from './nav.ts'
 import type { Vec3Tuple } from './sky.ts'
 import { starterPlaces } from './starter-places.ts'
 
@@ -34,6 +34,13 @@ export interface BodyWorld {
 export const WALL = 0.8
 /** Half the width of the door in a building's front wall (the +z side), in meters. */
 export const DOOR_HALF = 1.25
+/**
+ * How far in front of Home's front wall a visitor first stands (meters). From 4 m the arrival view was the underside of Home's porch
+ * and its columns, with no sky, sun, grid or land (issue 452); from 10 m Home stands whole under the sky, Merge in its door.
+ */
+export const ARRIVAL_BACK = 10
+/** The nearest the visitor starts to Home's front wall when the ground further back is not open (another place, the land's end). */
+const ARRIVAL_NEAREST = 4
 
 /**
  * The land with its buildings. The body may walk on owned chunks and the edge chunks around them, not in the fog. A building
@@ -91,11 +98,18 @@ export function buildBodyWorld(seed: number, places: readonly Place[]): BodyWorl
   const home = places.find((p) => p.id === 'home') ?? places[0]
   const [sx, sz] = home ? [spots[home.id]![0]!.x, spots[home.id]![0]!.z] : [CHUNK_SIZE / 2, CHUNK_SIZE / 2]
   const heightAt = (x: number, z: number) => land.heightAt(x, z)
-  // The visitor starts outside the front door of Home (or of the first place), looking at it.
+  // The visitor starts in front of Home's door (or the first place's), looking at it, `ARRIVAL_BACK` back from its front wall, or
+  // nearer where that is not open ground (off the land, or at another place).
   const front = home ? placeCentre(toLandPlace(home)) : [sx, sz]
   const fd = home ? home.exterior.footprint[1] : 0
   const vx = front[0]!
-  const vz = front[1]! + fd / 2 + 4
+  const open = (x: number, z: number) => isWalkable(grid, x, z) && landPlaces.every((p) => {
+    const [cx, cz] = placeCentre(p)
+    return Math.abs(x - cx) > p.footprint[0] / 2 + 1 || Math.abs(z - cz) > p.footprint[1] / 2 + 1
+  })
+  let back = ARRIVAL_BACK
+  while (back > ARRIVAL_NEAREST && !open(vx, front[1]! + fd / 2 + back)) back -= 0.5
+  const vz = front[1]! + fd / 2 + back
   const visitorSpawn: Spawn = { x: vx, y: heightAt(vx, vz), z: vz, yaw: Math.PI }
   return { grid, spawn: { x: sx, y: heightAt(sx, sz), z: sz, yaw: 0 }, visitorSpawn, heightAt, spots: () => spots }
 }

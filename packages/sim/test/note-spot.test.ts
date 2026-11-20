@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { makeFixtureWorld } from '../src/fixture-world.ts'
 import { doorOf } from '../src/paths.ts'
 import { toLandPlace, placeCentre } from '../src/land.ts'
-import { NOTE_DISCLOSURE, noteFate, noteSpot, placeAt } from '../src/note-spot.ts'
+import { NOTE_DISCLOSURE, noteFate, noteSpot, placeAt, placeHolding } from '../src/note-spot.ts'
 
 const places = makeFixtureWorld(1, 5).places
 const lands = places.map(toLandPlace)
@@ -72,6 +72,20 @@ describe('placeAt: which place a visitor stands in', () => {
 
   it('is null when there are no places', () => {
     expect(placeAt([0, 0], [])).toBeNull()
+  })
+})
+
+describe('placeHolding: the place a visitor stands in, and none out on the land (issue #422)', () => {
+  it('is the place whose footprint holds the point', () => {
+    for (const place of places) {
+      const [cx, cz] = placeCentre(toLandPlace(place))
+      expect(placeHolding([cx, cz], places)?.id).toBe(place.id)
+    }
+  })
+  it('is null out on the land, and with no places', () => {
+    const [cx, cz] = placeCentre(toLandPlace(home))
+    expect(placeHolding([cx + 500, cz + 500], places)).toBeNull()
+    expect(placeHolding([0, 0], [])).toBeNull()
   })
 })
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SpeciesPack } from '@forkling/schema'
 import { makeFixtureWorld } from '../src/fixture-world.ts'
-import { buildBodyWorld } from '../src/body-world.ts'
+import { ARRIVAL_BACK, buildBodyWorld } from '../src/body-world.ts'
 import { chunkCentre, createLand, placeCentre, toLandPlace } from '../src/land.ts'
 import { findPath, isWalkable } from '../src/nav.ts'
 import { advancePlayback, startPlayback } from '../src/playback.ts'
@@ -101,6 +101,23 @@ describe('the body\'s world on the new land (spec 2.7, 4)', () => {
     expect(Math.sin(v.yaw)).toBeCloseTo(0, 6)
     expect(Math.cos(v.yaw)).toBeCloseTo(-1, 6)
     expect(v.y).toBeCloseTo(world.heightAt(v.x, v.z), 9)
+  })
+
+  it("starts the visitor far enough back to see Home whole under the sky, its porch and sign included (issue 452)", () => {
+    const [hx, hz] = centre('home')
+    const [, fd] = place('home').exterior.footprint
+    // From 4 m off the front wall the view was the underside of the porch: no sky, no land. From 10 m the place stands whole.
+    expect(world.visitorSpawn.z - (hz + fd / 2)).toBeCloseTo(ARRIVAL_BACK, 6)
+    // A place standing right in front of Home's door: the visitor starts nearer, on open ground, not inside it.
+    const home = place('home')
+    const front = { ...place('workshop'), id: 'front', chunk: home.chunk, offset: [home.offset[0], home.offset[1] + fd / 2 + 6 + 3] as [number, number], exterior: { ...place('workshop').exterior, footprint: [8, 6] as [number, number] } }
+    const crowded = buildBodyWorld(1, [...fixture.places.filter((p) => p.id !== 'workshop'), front])
+    const v = crowded.visitorSpawn
+    const [fx, fz] = placeCentre(toLandPlace(front))
+    expect(isWalkable(crowded.grid, v.x, v.z)).toBe(true)
+    expect(Math.abs(v.x - fx) > 4 + 1 || Math.abs(v.z - fz) > 3 + 1).toBe(true)
+    expect(v.z - (hz + fd / 2)).toBeGreaterThanOrEqual(4)
+    expect(v.z - (hz + fd / 2)).toBeLessThan(ARRIVAL_BACK)
   })
 
   it('gives the ground height of the land, flat under a building', () => {

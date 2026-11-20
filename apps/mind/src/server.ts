@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { NowJson, Place } from '@forkling/schema'
 import type { HealthResponse } from './health-response.ts'
+import { visitFromQuery, type VisitHit } from './visits.ts'
 
 export interface MindServerOptions {
   /** `now.json` as the last reflex tick left it, or null before the first. */
@@ -14,6 +15,8 @@ export interface MindServerOptions {
   notes?: { submit(body: unknown, ip: string): Promise<{ status: number; body: unknown }> }
   /** The only origin that may call the server from a browser: Merge's Pages address (spec 11.2). */
   pagesOrigin: string
+  /** Counts the visits the viewer's poll of now.json says (issue #422): only from Merge's own page, never from a call with no origin. */
+  visits?: { record(hit: VisitHit): void }
 }
 
 /** A note is up to 500 characters of text; this leaves room for the name, the token and the JSON around them. */
@@ -43,7 +46,8 @@ export function createMindServer(opts: MindServerOptions): Server {
       if (origin !== undefined && origin !== opts.pagesOrigin) return send(res, 403, { error: 'origin not allowed' })
       const cors: Record<string, string> = origin ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : { Vary: 'Origin' }
 
-      const path = new URL(req.url ?? '/', 'http://localhost').pathname
+      const url = new URL(req.url ?? '/', 'http://localhost')
+      const path = url.pathname
       const method = ROUTES[path]
       if (!method) return send(res, 404, { error: 'not found' }, cors)
 
@@ -54,6 +58,9 @@ export function createMindServer(opts: MindServerOptions): Server {
       if (req.method !== method) return send(res, 405, { error: 'method not allowed' }, { ...cors, Allow: `${method}, OPTIONS` })
 
       if (path === '/now.json') {
+        // A visit is counted only from the viewer on Merge's own page: counts, no address, no id (issue #422).
+        const hit = origin === opts.pagesOrigin ? visitFromQuery(url.searchParams) : null
+        if (hit) opts.visits?.record(hit)
         const now = opts.now()
         return now ? send(res, 200, now, cors) : send(res, 503, { error: 'not ready yet' }, cors)
       }

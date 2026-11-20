@@ -18,6 +18,7 @@ import type { LlmClient } from './llm.ts'
 import { buildRunReport, formatRunReport, type RunReport } from './run-report.ts'
 import type { SpeciesPack, MicroBehavior } from '@forkling/schema'
 import { createLoop } from './tick/loop.ts'
+import type { VisitHits, VisitSource } from './visits.ts'
 import { hostRule } from './web/allowlist.ts'
 import type { FetchImpl } from './web/fetch.ts'
 
@@ -141,6 +142,46 @@ export function localMidnight(timezone: string, date: string): number {
   return guess
 }
 
+/** The local times of the simulated visits each day (issue #422), as `HH:MM`. */
+export const SIMULATED_VISITS_A_DAY: readonly string[] = ['10:40', '15:20', '20:10']
+
+const nextDate = (date: string) => new Date(Date.parse(`${date}T12:00:00Z`) + DAY).toISOString().slice(0, 10)
+
+/**
+ * A few visits a day for a run that has no real visitors (issue #422), so the harness can see what Merge does with visits. The
+ * same every run: at each time of `SIMULATED_VISITS_A_DAY` one visitor comes and stands at Home and in one more place, taken in
+ * turn from the other places (Home again when there is none). Each visit is drained once, after its time has come.
+ */
+export function simulatedVisits(o: { clock: () => number; timezone: string; placeIds: () => readonly string[] }): VisitSource {
+  let last = o.clock()
+  return {
+    drain() {
+      const now = o.clock()
+      const out: VisitHits = { visitors: 0, places: {} }
+      const add = (id: string) => {
+        out.places[id] = (out.places[id] ?? 0) + 1
+      }
+      const ids = o.placeIds()
+      const others = [...ids].filter((id) => id !== 'home').sort()
+      const end = localDate(o.timezone, now)
+      for (let date = localDate(o.timezone, last); date <= end; date = nextDate(date)) {
+        const midnight = localMidnight(o.timezone, date)
+        const day = Math.round(Date.parse(`${date}T00:00:00Z`) / DAY)
+        SIMULATED_VISITS_A_DAY.forEach((clock, n) => {
+          const at = midnight + (Number(clock.slice(0, 2)) * 60 + Number(clock.slice(3))) * MINUTE
+          if (at <= last || at > now) return
+          out.visitors++
+          add('home')
+          const other = others.length > 0 ? others[(day * SIMULATED_VISITS_A_DAY.length + n) % others.length]! : null
+          if (other) add(other)
+        })
+      }
+      last = now
+      return out
+    },
+  }
+}
+
 /** The model client with a hard cap for the run: once the run has spent the cap, every call is refused before it is made. */
 export function cappedModel(llm: LlmClient, capUsd: number) {
   let spent = 0
@@ -244,6 +285,15 @@ const readJson = (path: string): unknown => {
   }
 }
 
+/** The ids of the places in the world, from the names of `places/*.json`. */
+function placeIdsIn(dir: string): string[] {
+  try {
+    return readdirSync(join(dir, 'places')).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5))
+  } catch {
+    return ['home', 'workshop']
+  }
+}
+
 export async function runFastForward(o: FastForwardOptions): Promise<FastForwardResult> {
   const log = o.log ?? (() => undefined)
   const remotes = remotesOf(o.dir)
@@ -270,7 +320,7 @@ export async function runFastForward(o: FastForwardOptions): Promise<FastForward
     dir: o.dir,
     clock,
     git: null,
-    deps: { llm: capped.client, ...(o.sessions ? { sessions: o.sessions.model !== null } : {}), pack: o.pack, behaviors: o.behaviors, speciesPersona: o.speciesPersona, workCheck: o.workCheck, web, outsideCalls: () => [], engine: o.engine },
+    deps: { llm: capped.client, ...(o.sessions ? { sessions: o.sessions.model !== null } : {}), pack: o.pack, behaviors: o.behaviors, speciesPersona: o.speciesPersona, workCheck: o.workCheck, web, outsideCalls: () => [], visits: simulatedVisits({ clock, timezone, placeIds: () => placeIdsIn(o.dir) }), engine: o.engine },
   })
   const stats: SessionStats = { runs: [], failures: [], waited: 0 }
   const projectsBefore = new Set(readProjects(o.dir).projects.map((p) => p.id))

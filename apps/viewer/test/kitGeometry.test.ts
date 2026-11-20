@@ -254,7 +254,7 @@ describe('the whole scene as instanced shapes (a draw call per shape, however ma
 describe("parts that are models (spec 5.3: a model stands in for the primitives, which stay as the fallback)", () => {
   const grove = (): Place => {
     const home = place('home')
-    return { ...home, rooms: [{ ...home.rooms[0]!, parts: [{ part: 'tree-round', at: [1, 0, 2], rot: 0 }] }] }
+    return { ...home, rooms: [{ ...home.rooms[0]!, parts: [{ part: 'tree-round', at: [3, 0, 2], rot: 0 }] }] }
   }
   const land = createLand(1, fixture.places.map(toLandPlace))
   const heightAt = (x: number, z: number) => land.heightAt(x, z)
@@ -272,7 +272,7 @@ describe("parts that are models (spec 5.3: a model stands in for the primitives,
     const matrices = after.models['tree_default.glb']!
     expect(matrices).toHaveLength(16)
     const [px, pz] = placeCentre(toLandPlace(place('home')))
-    expect(matrices[12]).toBeCloseTo(px + 1, 4)
+    expect(matrices[12]).toBeCloseTo(px + 3, 4)
     expect(matrices[14]).toBeCloseTo(pz + 2, 4)
     expect(matrices[13]).toBeCloseTo(heightAt(px, pz), 4)
     const scale = kit.parts.find((p) => p.id === 'tree-round')!.model!.scale

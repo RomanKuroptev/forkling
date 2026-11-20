@@ -11,6 +11,8 @@ import { constructionEnd } from './expand.ts'
 export const FOUND_CONSTRUCTION_MS = 6 * 3_600_000
 /** Spec 10.3: a wish with no status after 30 days closes as unanswered. */
 export const WISH_CLOSE_DAYS = 30
+/** A place the mind has not seen, founded more days ago than this, was there before (a file that could not be read): it does not land. */
+export const RETURNING_FOUNDED_DAYS = 2
 const MAX_PENDING = 10
 const MAX_FROM_ROMAN = 8
 const DAY_MS = 86_400_000
@@ -28,7 +30,8 @@ const sameChunk = (a: readonly [number, number], b: readonly [number, number]) =
  * - A status Roman sets on a request or a wish is told to the next decide call once, with his words as data and never as an
  *   instruction (the trigger line names only the place and the status).
  * - A wish with no status 30 days after it was written closes as `unanswered`, and Merge may wish again.
- * The first time it looks, the places that are there are noted and nothing is done to them.
+ * The first time it looks, the places that are there are noted and nothing is done to them. So is a place that only reads again
+ * (`cameBack`): one founded days ago, or with works Merge installed.
  */
 export function lifecycleStep(t: Tick): void {
   const { mind } = t
@@ -58,6 +61,8 @@ export function lifecycleStep(t: Tick): void {
     const seen = new Set(mind.placesSeen)
     const landed = new Set<string>()
     for (const place of t.places.filter((p) => !seen.has(p.id))) {
+      // A place that was there all along and only reads again (a file the readers dropped) is noted, nothing more.
+      if (cameBack(place)) continue
       landed.add(place.id)
       landPlace(place)
     }
@@ -67,6 +72,15 @@ export function lifecycleStep(t: Tick): void {
       if (place && !place.history.some((h) => h.verb === 'found' && (h.summary === KIT_BUILT_LINE || h.summary === LEGACY_KIT_BUILT_LINE))) landPlace(place, r)
     }
     mind.placesSeen = placeIds
+  }
+
+  /**
+   * A place the mind has not seen that is not new: founded days before today, or with works or install lines Merge put there.
+   * Found live on Merge (20 Nov, #447): v0.18.0 could not read the Workshop, and when v0.19.0 could, it was taken for a gift.
+   */
+  function cameBack(place: Place): boolean {
+    if (Date.parse(t.today) - Date.parse(place.founded) > RETURNING_FOUNDED_DAYS * DAY_MS) return true
+    return place.exhibits.some((e) => e.kind === 'work') || place.history.some((h) => h.verb === 'install')
   }
 
   /** The history of a place that lands: what it brought, minus any founding line of its own, plus the engine's, in time order. */

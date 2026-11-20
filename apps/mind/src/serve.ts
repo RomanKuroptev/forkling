@@ -23,6 +23,7 @@ import { createMindServer, DEFAULT_PORT } from './server.ts'
 import { loadSpecies } from './species.ts'
 import { commitAndPush, gitRunner } from './tick/git.ts'
 import { createLoop } from './tick/loop.ts'
+import { createVisitCounter } from './visits.ts'
 import { cloneRunner, ensureWorld } from './world-dir.ts'
 import { readTools } from './world.ts'
 
@@ -82,6 +83,8 @@ async function main(): Promise<void> {
   // Visitor notes (spec 10.1): the mailbox opens only with a Turnstile secret and a model to screen with. The screening calls are booked by the loop's next tick.
   let intake: NotesIntake | null = null
   const web = env.GITHUB_TOKEN ? { authorization: { 'api.github.com': `Bearer ${env.GITHUB_TOKEN}` } } : {}
+  // Real visits (issue #422): the viewer's poll of now.json says when a visit starts and which place it walks into; counts only.
+  const visits = createVisitCounter()
   const loop = createLoop({
     dir,
     clock: Date.now,
@@ -96,6 +99,7 @@ async function main(): Promise<void> {
       sessions: selfTest.status === 'ok' && llm !== null,
       web,
       outsideCalls: () => intake?.drainCalls() ?? [],
+      visits,
       engine: env.FORKLING_REF ?? 'dev',
     },
   })
@@ -133,7 +137,7 @@ async function main(): Promise<void> {
     console.log('the mailbox is open: notes are screened before Merge reads them')
   } else console.log(`the mailbox is closed: ${env.TURNSTILE_SECRET ? 'no model to screen with' : 'no TURNSTILE_SECRET'}`)
 
-  const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now(), selfTest.status), ...(intake ? { notes: { submit: (body, ip) => intake!.submit(body, ip) } } : {}), publicNotes: createPublicNotes(dir, Date.now), pagesOrigin })
+  const server = createMindServer({ now: () => loop.now(), places: () => loop.places(), health: () => buildHealthResponse(dir, Date.now(), selfTest.status), ...(intake ? { notes: { submit: (body, ip) => intake!.submit(body, ip) } } : {}), publicNotes: createPublicNotes(dir, Date.now), pagesOrigin, visits })
   await new Promise<void>((ready, fail) => {
     server.once('error', fail)
     server.listen(port, '127.0.0.1', ready)

@@ -1,9 +1,28 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Souvenir, WorkMeta, type Interests, type WorkLibrary } from '@forkling/schema'
+import { localDate } from '@forkling/sim'
+import type { CheckedWork } from '../prompts/user.ts'
 import type { TinkerSouvenir } from './tinker.ts'
 
 const LIBRARIES: readonly WorkLibrary[] = ['p5', 'tone', 'three']
+
+/** How far back, and how many, works are shown with their work check result. */
+const CHECKED_DAYS = 7
+const MAX_CHECKED = 6
+
+/**
+ * What the work check found for each work made in the last 7 days, newest first, at most 6 (issue #400). A work reaches the shelf
+ * only after it ran in the check and drew something (spec 7.3), and keeps that when it is put away; a scrap did not, and says why.
+ */
+export function checkedWorks(works: readonly WorkMeta[], o: { nowMs: number; timezone: string }): CheckedWork[] {
+  const since = o.nowMs - CHECKED_DAYS * 86_400_000
+  return [...works]
+    .filter((w) => Date.parse(w.made) >= since)
+    .sort((a, b) => b.made.localeCompare(a.made))
+    .slice(0, MAX_CHECKED)
+    .map((w) => ({ title: w.title, size: w.size, made: localDate(o.timezone, Date.parse(w.made)), ran: w.status !== 'scrap', ...(w.status === 'scrap' ? { why: w.scrapReason ?? 'no reason was given' } : {}) }))
+}
 
 /** Every work in `works/` whose meta fits its schema, newest first. A folder that is not a work, or a meta that does not parse, is left out. */
 export function readWorks(dir: string): WorkMeta[] {
