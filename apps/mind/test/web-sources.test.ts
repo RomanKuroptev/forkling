@@ -217,7 +217,7 @@ describe('the Wikipedia front page as morning starting points (audit 17 Nov)', (
   const main = `<html><body><div id="mw-content-text">
 <div id="mp-banner"><h1>Welcome to ${a('Wikipedia')},</h1> the ${a('Free content')} encyclopedia in ${a('English language')}. ${a('Special:Statistics')}</div>
 <div id="mp-tfa"><p>${a('Turrell')} ${a('Roden Crater')} ${a('Skyspace')} <a href="https://en.wikipedia.org/wiki/Turrell">Full article</a> ${a('Land art')}</p></div>
-<div id="mp-itn"><ul><li>${a('Storm Alpha')} and ${a('Election X')}</li><li>${a('Comet Y')}</li></ul></div>
+<div id="mp-itn"><ul><li>${a('Storm Alpha')} and ${a('Festival X')}</li><li>${a('Comet Y')}</li></ul></div>
 <div id="mp-dyk"><ul><li>${a('Moss')}</li><li>${a('Lichen')}</li></ul></div>
 <div id="mp-otd"><ul><li>${a('Telegraph')}</li><li>${a('Typewriter')}</li></ul></div>
 <div id="mp-other">${a('Wikipedia')} ${a('Portal index')}</div>
@@ -231,13 +231,36 @@ describe('the Wikipedia front page as morning starting points (audit 17 Nov)', (
 
   it('takes more than one from a section when the number asked for is larger, and never the same link twice', async () => {
     const links = await wikipediaMorningLinks(fake({ [`${wiki}/wiki/Main_Page`]: main }), 6)
-    expect(links.map((l) => l.title)).toEqual(['Turrell', 'Storm Alpha', 'Moss', 'Telegraph', 'Roden Crater', 'Election X'])
+    expect(links.map((l) => l.title)).toEqual(['Turrell', 'Storm Alpha', 'Moss', 'Telegraph', 'Roden Crater', 'Festival X'])
   })
 
   it('skips the furniture links when a front page has no sections, and still gives at most 4', async () => {
     const flat = `<div id="mw-content-text">${['Wikipedia', 'Free content', 'English language', 'Moon', 'Octopus', 'Abacus', 'Tide', 'Loom'].map(a).join(' ')}</div>`
     const links = await wikipediaMorningLinks(fake({ [`${wiki}/wiki/Main_Page`]: flat }))
     expect(links.map((l) => l.title)).toEqual(['Moon', 'Octopus', 'Abacus', 'Tide'])
+  })
+
+  it('skips "In the news" items about deaths, violence, war or politics, whole items and whole words (Roman, 20 Nov)', async () => {
+    const news = `<div id="mw-content-text">
+<div id="mp-tfa"><p>${a('War and Peace')}</p></div>
+<div id="mp-itn"><ul>
+<li>A ${a('Comet A')} is seen as the ${a('Snap election')} is called.</li>
+<li>Three people are killed when ${a('Storm B')} hits.</li>
+<li>The ${a('Star Wars')} film wins an award at ${a('Festival C')}.</li>
+<li>${a('Fiona (hippopotamus)')} dies at the zoo.</li>
+</ul>
+<div class="itn-footer"><ul><li><b>Ongoing</b>: <ul><li>${a('Moth migration')}</li><li>${a('Gaza war')}</li></ul></li><li><b>Recent deaths</b>: <ul><li>${a('Ann Painter')}</li></ul></li></ul></div>
+</div>
+<div id="mp-dyk"><ul><li>${a('Moss')}, who killed nothing</li></ul></div>
+<div id="mp-otd"><ul><li>${a('Telegraph')} in the war of 1812</li></ul></div>
+</div>`
+    const links = await wikipediaMorningLinks(fake({ [`${wiki}/wiki/Main_Page`]: news }), 20)
+    const titles = links.map((l) => l.title)
+    expect(titles).toContain('Star Wars')
+    expect(titles).toContain('Festival C')
+    for (const gone of ['Comet A', 'Snap election', 'Storm B', 'Fiona (hippopotamus)', 'Moth migration', 'Gaza war', 'Ann Painter']) expect(titles).not.toContain(gone)
+    // Only the news box: the featured article, "Did you know" and "On this day" are kept as they are, and so is any page Merge reads.
+    expect(titles).toEqual(expect.arrayContaining(['War and Peace', 'Moss', 'Telegraph']))
   })
 })
 

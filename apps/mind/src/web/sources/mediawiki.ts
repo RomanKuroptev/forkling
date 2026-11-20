@@ -2,6 +2,7 @@ import { isAllowed } from '../allowlist.ts'
 import { cutToTokens, htmlToText } from '../clean.ts'
 import type { Fetcher } from '../fetch.ts'
 import { capLinks, MAX_IMAGES, type Item, type ItemImage, type ItemLink } from '../item.ts'
+import { isSkippedNews } from '../news-skip.ts'
 
 /**
  * Reading a MediaWiki site (Wikipedia, the Esolang wiki, Commons) through the pages a visitor reads, `/wiki/<Title>`. Their
@@ -139,6 +140,33 @@ function sectionHtml(html: string, id: string): string {
 }
 
 /**
+ * The "In the news" box without the news the skip rule catches (`news-skip.ts`: deaths, violence, war, politics): a list item
+ * whose words have a skip word is taken out whole with its links, and so is everything inside it ("Recent deaths: A, B" goes
+ * with A and B; an "Ongoing" line goes when one of its events is a war). Only this box: a page Merge reads is read as it is.
+ */
+export function withoutSkippedNews(html: string): string {
+  const spans: [number, number][] = []
+  const open: number[] = []
+  for (const m of html.matchAll(/<li\b[^>]*>|<\/li\s*>/gi)) {
+    if (m[0][1] !== '/') open.push(m.index)
+    else if (open.length > 0) {
+      const start = open.pop()!
+      const end = m.index + m[0].length
+      if (isSkippedNews(htmlToText(html.slice(start, end)))) spans.push([start, end])
+    }
+  }
+  spans.sort((a, b) => a[0] - b[0])
+  let out = ''
+  let at = 0
+  for (const [start, end] of spans) {
+    if (start < at) continue
+    out += html.slice(at, start)
+    at = end
+  }
+  return out + html.slice(at)
+}
+
+/**
  * The links of a Wikipedia-style front page for the morning: at most `max`, spread over its sections (the featured article, the news,
  * did you know, on this day) one at a time, so no one section fills the list, and without the welcome banner's furniture links
  * ("Wikipedia", "Free content", "English language"). A page with none of the sections gives its other links, furniture left out.
@@ -146,7 +174,7 @@ function sectionHtml(html: string, id: string): string {
 export async function frontPageSectionLinks(f: Fetcher, host: string, max: number): Promise<ItemLink[]> {
   const html = await f.text(`https://${host}/wiki/Main_Page`, { accept: 'text/html' })
   const body = articleHtml(html)
-  const lists = MAIN_PAGE_SECTIONS.map((id) => wikiLinks(sectionHtml(body, id), host, 'Main Page').filter((l) => !FRONT_FURNITURE.has(l.title.toLowerCase())))
+  const lists = MAIN_PAGE_SECTIONS.map((id) => wikiLinks(id === 'mp-itn' ? withoutSkippedNews(sectionHtml(body, id)) : sectionHtml(body, id), host, 'Main Page').filter((l) => !FRONT_FURNITURE.has(l.title.toLowerCase())))
   const out: ItemLink[] = []
   const seen = new Set<string>()
   const take = (l: ItemLink): boolean => {
