@@ -23,6 +23,7 @@ import { galleryWalls, type GalleryWall, type GalleryWork } from './galleryWall.
 import { screenFaces } from './screenFaces.ts'
 import { localFilesBase, worldFileUrl } from './worldData.ts'
 import { ExhibitCards } from './ExhibitCards.tsx'
+import { drawnAsWire } from './wireframe.ts'
 import { cardFaces } from './exhibitCards.ts'
 import { useSouvenirs } from './useSouvenirs.ts'
 import { signBoards } from './signGeometry.ts'
@@ -263,8 +264,10 @@ export function Places() {
       const [x, z] = placeCentre(toLandPlace(p))
       return land.heightAt(x, z)
     }
-    return cardFaces(insidePlaces.flatMap((p) => exhibitSpots(p, kit, baseOf(p))), souvenirs, world.workIds.length)
-  }, [world, land, insidePlaces, souvenirs])
+    // In a place being built the cards are wire, like everything else there (issue 426).
+    const building = new Set(insidePlaces.filter((p) => drawnAsWire(p, kit, nowMs, WIRE_ALWAYS)).map((p) => p.id))
+    return cardFaces(insidePlaces.flatMap((p) => exhibitSpots(p, kit, baseOf(p))), souvenirs, world.workIds.length, building)
+  }, [world, land, insidePlaces, souvenirs, nowMs])
 
   // The audit harness (`?qa=1`) lists the places as they are drawn now (`window.__qa.scene()`).
   useEffect(() => {

@@ -5,7 +5,7 @@ import { makeFixtureWorld } from '@forkling/sim/fixture'
 import { describe, expect, it } from 'vitest'
 import { buildingModel } from '../src/world/building.ts'
 import { floorHeight } from '../src/world/kitBase.ts'
-import { interiorParts, renderBudget, sceneInstances } from '../src/world/kitGeometry.ts'
+import { interiorParts, renderBudget, sceneInstances, signPostInstances } from '../src/world/kitGeometry.ts'
 import { WIRE_THICKNESS, wireframeInstances } from '../src/world/wireframe.ts'
 import { WIREFRAME } from '../src/world/theme.ts'
 
@@ -147,12 +147,20 @@ describe('the wireframe is thin single lines, and the inside is wireframe too (i
     const scene = sceneInstances([p], kit, { heightAt: () => 0, interiors: new Set([p.id]), nowMs: NOW })
     const cyan = WIREFRAME.pole
     const [r, g, b] = [1, 3, 5].map((k) => Number.parseInt(cyan.slice(k, k + 2), 16) / 255).map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+    // The site's sign post is the one solid thing there, so its sign stands on the ground (issue 427): exactly its pieces, by place.
+    const post = new Set(signPostInstances(p, kit, 0).map((i) => `${i.shape} ${i.matrix.map((n) => n.toFixed(4)).join(',')}`))
+    let posts = 0
     for (const shape of ['box', 'sphere', 'cylinder', 'cone'] as const) {
       const s = scene[shape]
       for (let k = 0; k < s.count; k++) {
+        if (post.has(`${shape} ${[...s.matrices.slice(k * 16, k * 16 + 16)].map((n) => n.toFixed(4)).join(',')}`)) {
+          posts++
+          continue
+        }
         expect([s.colors[k * 3]!, s.colors[k * 3 + 1]!, s.colors[k * 3 + 2]!].map((c) => Math.round(c * 1000)), `${shape} ${k} is not a cyan line`).toEqual([r!, g!, b!].map((c) => Math.round(c * 1000)))
       }
     }
+    expect(posts).toBe(post.size)
     expect(scene.glassBox.count).toBe(0)
     expect(Object.keys(scene.models)).toEqual([])
     // More lines than the outside alone: the furniture is there, as lines.
