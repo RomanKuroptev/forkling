@@ -10,7 +10,7 @@ import { galleryWalls, wallInstances, type GalleryWork } from './galleryWall.ts'
 import { FLOOR_BELOW, FLOOR_INSET, FLOOR_TOP, SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
 import { partInDoorway } from './doorway.ts'
-import { hungParts, isFootPrimitive, settledPlace } from './insideWalls.ts'
+import { hungParts, isFootPrimitive, onTallStand, screenStands, settledPlace } from './insideWalls.ts'
 
 export { SHAPES, floorHeight, type Instance, type Shape }
 
@@ -147,6 +147,8 @@ export interface ModelInstance {
  * is a model instance once its file is in `models` (it has loaded), and its primitives until then, or for good if it never loads.
  */
 export function interiorParts(place: Place, kit: Kit, baseY: number, models: ReadonlySet<string> = new Set(), opts: { lampsOn?: boolean } = {}): { instances: Instance[]; models: ModelInstance[] } {
+  const stands = screenStands(place, kit)
+  const hung = hungParts(place, kit)
   place = settledPlace(place, kit)
   const { palette } = look(place, kit)
   // Lamps that are off are dark: the glow of their palette is replaced by a dull grey.
@@ -168,7 +170,6 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
   const model = buildingModel(place, kit, baseY)
   const consumed = model ? windowLayout(place).consumed : new Set<string>()
   if (model) out.push(...model.inside)
-  const hung = hungParts(place, kit)
   for (const [r, room] of place.rooms.entries()) {
     for (const [index, placed] of room.parts.entries()) {
       if (consumed.has(partKey(r, index))) continue
@@ -184,8 +185,9 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
         const off = part.category === 'light' && opts.lampsOn === false
         // A lamp that is off is dark: it does not glow either.
         const group = `${room.id}/${index}`
-        // A part hung on a wall is drawn without its foot (`hungParts`).
-        const drawn = hung.has(group) ? { ...part, primitives: part.primitives.filter((p) => !isFootPrimitive(part, p)) } : part
+        // A part hung on a wall is drawn without its foot (`hungParts`); a screen raised on a tall stand, with it (`screenStands`).
+        const lift = stands.get(group)
+        const drawn = hung.has(group) ? { ...part, primitives: part.primitives.filter((p) => !isFootPrimitive(part, p)) } : lift !== undefined ? onTallStand(part, lift) : part
         out.push(...partInstances(drawn, at, placed.rot, off ? dark : palette).map((i) => (off ? { ...i, glow: false, group } : { ...i, group })))
       }
     }

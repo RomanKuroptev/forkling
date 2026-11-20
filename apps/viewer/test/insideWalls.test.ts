@@ -61,7 +61,13 @@ describe('nothing of the inside stands in or through the walls (issues 339, 373)
   })
 
   it('leaves a place that already fits as it is, and is the same when done twice', () => {
-    for (const p of starterPlaces()) expect(settledPlace(p, kit)).toEqual(p)
+    // Home fits as it is. The Workshop does too, but for its four floor-standing screens, which are hung at eye height (issue 431).
+    for (const p of starterPlaces()) {
+      const settled = settledPlace(p, kit)
+      if (p.id !== 'workshop') expect(settled).toEqual(p)
+      else p.rooms.forEach((room, r) => room.parts.forEach((part, i) => (part.part === 'screen-small' ? expect(settled.rooms[r]!.parts[i]).not.toEqual(part) : expect(settled.rooms[r]!.parts[i]).toEqual(part))))
+      expect(settledPlace(settled, kit)).toEqual(settled)
+    }
     const once = settledPlace(day7('home'), kit)
     expect(settledPlace(once, kit)).toEqual(once)
   })
@@ -111,11 +117,14 @@ describe('a stack moves as one, and a screen on nothing against a wall is hung (
     expect(settled.at[1] + settled.parts[1]!.at[2] - 0.1).toBeCloseTo(-(home.exterior.footprint[1] / 2 - INNER_FACE - OFF_WALL))
   })
 
-  it('does not hang a screen standing on a desk, nor one on the floor', () => {
+  it('does not hang a screen standing on a desk; a screen on the floor by a wall is hung at eye height (issue 431)', () => {
     const place = withDesk()
     const n = place.rooms[0]!.parts.length
     expect(hungParts(place, kit).has(`main/${n - 1}`)).toBe(false)
-    for (const p of starterPlaces()) expect(hungParts(p, kit).size).toBe(0)
+    for (const p of starterPlaces()) {
+      const screens = p.rooms.flatMap((room) => room.parts.flatMap((part, i) => (part.part === 'screen-small' ? [`${room.id}/${i}`] : [])))
+      expect([...hungParts(p, kit)].sort(), p.id).toEqual(screens.sort())
+    }
   })
 })
 
