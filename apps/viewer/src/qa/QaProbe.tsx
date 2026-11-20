@@ -16,6 +16,7 @@ import { wallBoxes } from '../world/kitGeometry.ts'
 import { objectEntry, placeObjects, type QaObject } from './sceneList.ts'
 import { coveredDoors, placeFights } from './fights.ts'
 import { thinMarks } from './marks.ts'
+import { drawnHeightAt, footprintOf, groundOf } from '../world/pathGeometry.ts'
 
 /** One stepped frame: the world moves this many milliseconds each time the harness draws. */
 export const QA_FRAME_MS = 1000 / 30
@@ -254,6 +255,16 @@ export function QaProbe() {
         })
       },
       ground: (points: [number, number][]) => points.map(([x, z]) => ({ y: land.heightAt(x, z), chunk: land.classify(chunkAt(x, z)) })),
+      /** The height of the ground as drawn (the land mesh's flat triangles) at each point: what shows through a path that lies below it. */
+      drawnGround: (points: [number, number][]) => {
+        const ground = groundOf(land)
+        return points.map(([x, z]) => drawnHeightAt(ground, x, z))
+      },
+      /** Every place's chunk and footprint, and every path as drawn (`Paths`): its two places, its line and its mesh. */
+      paths: () => ({
+        places: world.places.map((p) => ({ id: p.id, chunk: p.chunk, ...footprintOf(p) })),
+        paths: (qaRegistry.paths ?? []).map((p) => ({ from: p.from, to: p.to, kind: p.kind, line: p.line, positions: Array.from(p.mesh.positions), indices: Array.from(p.mesh.indices) })),
+      }),
       look: async (yaw: number, pitch: number) => {
         qaRegistry.player?.setLook(yaw, pitch)
         await step(0)
@@ -263,6 +274,6 @@ export function QaProbe() {
     return () => {
       delete (window as { __qa?: unknown }).__qa
     }
-  }, [gl, advance, camera, root, simWorld, loading, land])
+  }, [gl, advance, camera, root, simWorld, loading, land, world])
   return null
 }

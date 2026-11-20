@@ -62,13 +62,42 @@ export interface WorldPath {
   to: string
   chunks: Chunk[]
   /** Where it came from: a founding (always one) or an expand (spec 4.3). `derivePaths` leaves it out, `allPaths` fills it in. */
-  kind?: 'founding' | 'expand'
+  kind?: 'founding' | 'expand' | 'yard'
 }
 
 /** A place as the paths need it: the land's view of it, its founding date, and the paths its expands added (spec 5.4). */
 export type PathPlace = LandPlace & { founded: string; paths?: readonly { to: string; at: string }[] }
 
 const FIRST = ['home', 'workshop']
+
+/** Places in the order they were founded: Home and the Workshop first, then by date, then by id. */
+function foundingOrder<P extends LandPlace & { founded: string }>(places: readonly P[]): P[] {
+  const rank = (p: LandPlace) => (FIRST.includes(p.id) ? FIRST.indexOf(p.id) : FIRST.length)
+  return [...places].sort((a, b) => rank(a) - rank(b) || a.founded.localeCompare(b.founded) || a.id.localeCompare(b.id))
+}
+
+/**
+ * The short walks the viewer draws between places that share a chunk (issue 434). Founding makes no path to a place in the same
+ * chunk (the chunk route would be one point), so Home and the Workshop, and any place that shares a chunk and never got a path,
+ * would stand on bare ground with no track to their doors. Each such place, taken in founding order, gets one yard path to the
+ * first place founded before it in its chunk. Only places with no path of their own (`paths`) get one. It is drawn like a path
+ * but is not one of spec 4.3's paths: it never goes on the map or in a place's history.
+ */
+export function yardPaths(places: readonly (LandPlace & { founded: string })[], paths: readonly WorldPath[]): WorldPath[] {
+  const ordered = foundingOrder(places)
+  const joined = new Set(paths.flatMap((p) => [p.from, p.to]))
+  const out: WorldPath[] = []
+  for (let i = 0; i < ordered.length; i++) {
+    const place = ordered[i]!
+    if (joined.has(place.id)) continue
+    const target = ordered.slice(0, i).find((b) => chunkKey(b.chunk) === chunkKey(place.chunk))
+    if (!target) continue
+    out.push({ from: place.id, to: target.id, chunks: [[place.chunk[0], place.chunk[1]]], kind: 'yard' })
+    joined.add(place.id)
+    joined.add(target.id)
+  }
+  return out
+}
 
 /**
  * The paths a world has, worked out from its places alone (spec 4: the world can always be rebuilt from the repo). Founding
@@ -77,8 +106,7 @@ const FIRST = ['home', 'workshop']
  * id); a tie goes to the place founded first. Paths are never deleted. (`allPaths` adds the ones an expand made.)
  */
 export function derivePaths(places: readonly (LandPlace & { founded: string })[]): WorldPath[] {
-  const rank = (p: LandPlace) => (FIRST.includes(p.id) ? FIRST.indexOf(p.id) : FIRST.length)
-  const ordered = [...places].sort((a, b) => rank(a) - rank(b) || a.founded.localeCompare(b.founded) || a.id.localeCompare(b.id))
+  const ordered = foundingOrder(places)
   const paths: WorldPath[] = []
   for (let i = 0; i < ordered.length; i++) {
     const place = ordered[i]!
