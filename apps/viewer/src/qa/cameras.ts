@@ -93,6 +93,16 @@ const HALF_TALL = (35 * Math.PI) / 180
 const HALF_WIDE = Math.atan(Math.tan(HALF_TALL) * 1.6)
 
 /**
+ * Who the merge-close camera stands in front of: Merge as it is drawn (`mergeSpot`: where, and the way its face points), the same
+ * Merge the picture shows. The sim's state runs ahead of the drawing, which turns to follow it over a few frames; at night Merge
+ * turned round in the sim a moment before the picture, so a camera set from the sim stood in front of where it was about to face,
+ * behind the face that was drawn (129 deg round). Before Merge is first drawn, the sim's own state.
+ */
+export function closeSubject(drawn: { position: { x: number; z: number } | null; heading: number }, sim: { pos: { x: number; z: number }; heading: number }): { pos: { x: number; z: number }; heading: number } {
+  return drawn.position ? { pos: drawn.position, heading: drawn.heading } : sim
+}
+
+/**
  * The named camera `merge-close`: low in front of Merge's face, looking at it, 1.5 m away. When a piece of furniture or a wall
  * stands between the lens and Merge (its feet to its face), or anything in the picture is right in front of the lens (issue 348:
  * the camera stood over the bench by Home's door, which filled the bottom third), it comes a little nearer or goes a little round

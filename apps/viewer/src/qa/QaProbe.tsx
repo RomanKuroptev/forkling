@@ -10,7 +10,7 @@ import { mergeSpot } from '../forkling/spot.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { qaMode, qaTime } from './params.ts'
 import { qaRegistry, type QaPose, type Vec3 } from './registry.ts'
-import { frontPose, mergeClosePose, type PoseBox } from './cameras.ts'
+import { closeSubject, frontPose, mergeClosePose, type PoseBox } from './cameras.ts'
 import { furnitureBoxes } from '../world/solidFurniture.ts'
 import { wallBoxes } from '../world/kitGeometry.ts'
 import { objectEntry, placeObjects, type QaObject } from './sceneList.ts'
@@ -102,7 +102,8 @@ export function QaProbe() {
       }
       const pb = live.playback
       if (pb) {
-        const { pos, heading } = pb.state
+        // Merge as the picture draws it, not the sim's state the drawing is still turning to follow.
+        const { pos, heading } = closeSubject(mergeSpot, pb.state)
         // In front of its face, low, like `?look=forkling`, round Merge when furniture or a wall is in the way (issue 348).
         const obstacles: PoseBox[] = (snap?.places ?? []).flatMap((p) => {
           const [px, pz] = placeCentre(toLandPlace(p))
