@@ -44,6 +44,13 @@ const call = <T>(page: Page, fn: (qa: Qa, arg: unknown) => T | Promise<T>, arg?:
     return (0, eval)(`(${src})`)(qa, arg)
   }, { src: fn.toString(), arg })
 
+/**
+ * The explorer's pictures leave out the visitor's centre arrow (`.cursor`). It always sits in the middle of the picture, so on
+ * `merge-close` and every look-at it covers Merge's face or the thing looked at, and look reviewers took it for a stray mouse
+ * pointer. The arrow itself is judged in the world check's own pictures, not here. Only the picture changes; the page does not.
+ */
+export const EXPLORE_SHOT_STYLE = '.cursor { visibility: hidden !important; }'
+
 const EYE = 1.6
 const KEYS: Record<string, string> = { forward: 'KeyW', back: 'KeyS', left: 'KeyA', right: 'KeyD', run: 'ShiftLeft', jump: 'Space' }
 
@@ -80,7 +87,7 @@ export class ExploreSession {
   async shot(name = 'view'): Promise<string> {
     mkdirSync(sessionDir(), { recursive: true })
     const file = join(sessionDir(), `${String(++this.n).padStart(3, '0')}-${this.label}-${name.replace(/[^a-z0-9-]+/gi, '-').slice(0, 40)}.png`)
-    await this.page.screenshot({ path: file, timeout: 120_000 })
+    await this.page.screenshot({ path: file, timeout: 120_000, style: EXPLORE_SHOT_STYLE })
     return file
   }
 
