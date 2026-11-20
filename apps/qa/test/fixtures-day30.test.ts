@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import { allPaths, layoutProblems, neglectFor, toLandPlace } from '@forkling/sim'
+import { allPaths, layoutProblems, neglectFor, stairFlights, toLandPlace, upperRoomWithoutStairs } from '@forkling/sim'
 import { materialize, readQaJson, worldFileList } from '../src/fixtures/fixtures.ts'
 
 /**
@@ -47,6 +47,38 @@ describe('the day-30 fixture grows the way the engine does', { timeout: 60_000 }
       expect(p.exterior.floors, p.id).toBeLessThanOrEqual(2)
       for (const r of p.rooms) if (r.floor > 0) expect(r.parts.some((x) => x.part.startsWith('door-')), `${p.id}/${r.id}`).toBe(false)
       expect(p.rooms.some((r) => r.floor === 0 && r.parts.some((x) => x.part.startsWith('door-'))), p.id).toBe(true)
+    }
+  })
+
+  it('puts stairs in the ground room of every 2-floor place, so each room upstairs has a way up, with nothing in the stairwell (issue 333)', () => {
+    const tall = grown.filter((p) => p.exterior.floors === 2)
+    expect(tall.length).toBeGreaterThanOrEqual(1)
+    expect(tall.some((p) => p.rooms.some((r) => r.floor === 1))).toBe(true)
+    for (const p of tall) {
+      const flights = stairFlights(p, kit)
+      expect(flights.length, p.id).toBeGreaterThanOrEqual(1)
+      for (const r of p.rooms) expect(upperRoomWithoutStairs(p, r, kit), `${p.id}/${r.id}`).toBeNull()
+      // The foot of each flight is inside the walls with room to stand in front of it, and no other part stands in a stairwell.
+      const [fw, fd] = p.exterior.footprint
+      for (const f of flights) {
+        const stand = [f.foot[0] - f.dir[0] * 0.6, f.foot[1] - f.dir[1] * 0.6]
+        expect(Math.abs(stand[0]!) <= fw / 2 - 0.8 - 0.3 && Math.abs(stand[1]!) <= fd / 2 - 0.8 - 0.3, `${p.id} foot`).toBe(true)
+        for (const room of p.rooms) {
+          room.parts.forEach((placed, k) => {
+            if (placed.part === 'stairs') return
+            const part = kit.parts.find((x) => x.id === placed.part)!
+            const c = Math.abs(Math.cos(placed.rot))
+            const s = Math.abs(Math.sin(placed.rot))
+            const hx = (part.size[0] * c + part.size[2] * s) / 2
+            const hz = (part.size[0] * s + part.size[2] * c) / 2
+            const x = room.at[0] + placed.at[0]
+            const z = room.at[1] + placed.at[2]
+            const well = { x0: Math.min(f.well.x0, stand[0]! - 0.4), x1: Math.max(f.well.x1, stand[0]! + 0.4), z0: Math.min(f.well.z0, stand[1]! - 0.4), z1: Math.max(f.well.z1, stand[1]! + 0.4) }
+            const overlaps = x - hx < well.x1 && x + hx > well.x0 && z - hz < well.z1 && z + hz > well.z0
+            expect(overlaps, `${p.id}/${room.id}/${k} ${placed.part} in the stairwell`).toBe(false)
+          })
+        }
+      }
     }
   })
 

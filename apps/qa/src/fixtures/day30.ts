@@ -12,7 +12,8 @@ import { choosePlacement, createPrng, toLandPlace, validatePlace, type Prng } fr
  * - a new place stands where founding puts it (`choosePlacement`: a chunk that touches the world on a side), so every place gets
  *   its founding path;
  * - it is built the way the fallback found build makes one (`found-build.ts`): a style and a palette from the kit, a footprint of
- *   its own, 1 or 2 floors, 1 or 2 rooms of kit parts, and a door only on the ground floor;
+ *   its own, 1 or 2 floors, 1 or 2 rooms of kit parts, and a door only on the ground floor; a 2-floor place has stairs in its
+ *   ground room, since found and expand require them under any room upstairs (issue 333);
  * - an expand never changes the building (`expand.ts`): it adds a room on a floor the building already has, or a path;
  * - a tend sets the place's care time and puts a souvenir on a free shelf, case or plaque.
  * Same seed, same files.
@@ -37,6 +38,13 @@ const shuffle = <T>(prng: Prng, list: readonly T[]): T[] => {
 // Not memes: a meme must name the format it looked at, which a placeholder cannot honestly do.
 const WORK_KINDS = ['art', 'game', 'tool', 'sound', 'zine'] as const
 const ROOM_HEIGHT = 3
+/**
+ * Where the stairs of a 2-floor place stand in its ground room (room meters): their middle this far in from the left side (the walls
+ * take the room's outer 0.3 m), their foot this far in from the back, and the corner kept clear of everything else, across and back.
+ */
+const STAIR_FROM_SIDE = 0.95
+const STAIR_FOOT = 1.3
+const STAIR_CLEAR = [1.65, 4.45] as const
 const FOOTPRINT_WIDTHS = [8, 10, 12, 14] as const
 const FOOTPRINT_DEPTHS = [8, 10, 12] as const
 /** The kinds of kit part a room is furnished from, by what they do: something to keep souvenirs on, a screen for works, a light, and the rest. */
@@ -69,12 +77,31 @@ function freeSlots(place: Place, kit: Kit, kinds: readonly SlotKind[]): { id: st
  * style's window on the back wall and maybe one on a side, then something to keep souvenirs on, a screen, a light and a few more
  * things, each against a wall facing in or standing free, never in the line from the door to the middle.
  */
-function furnish(prng: Prng, kit: Kit, style: string, w: number, d: number, door: boolean): Placed[] {
+function furnish(prng: Prng, kit: Kit, style: string, w: number, d: number, door: boolean, stairwell: 'stairs' | 'well' | null = null): Placed[] {
   const s = kit.styles.find((x) => x.id === style) ?? kit.styles[0]!
   const parts: Placed[] = []
   if (door) parts.push({ part: s.door, at: [0, 0, d / 2 - 0.1], rot: 0 })
+  // A 2-floor place has stairs in its ground room, as found and expand require (issue 333): along the left wall, the foot near the
+  // back with room to stand in front of it, climbing toward the front. Nothing else stands there, nor over the stairwell upstairs.
+  const clear = stairwell ? { x0: -w / 2, x1: -w / 2 + STAIR_CLEAR[0], z0: -d / 2, z1: -d / 2 + STAIR_CLEAR[1] } : null
+  if (stairwell === 'stairs') parts.push({ part: 'stairs', at: [-(w / 2 - STAIR_FROM_SIDE), 0, -d / 2 + STAIR_FOOT + 1.5], rot: 0 })
   parts.push({ part: s.window, at: [0, 1.2, -(d / 2 - 0.1)], rot: 0 })
-  if (prng.next() < 0.6) parts.push({ part: s.window, at: [(prng.next() < 0.5 ? -1 : 1) * (w / 2 - 0.1), 1.2, 0], rot: Math.PI / 2 })
+  if (prng.next() < 0.6) {
+    const side = prng.next() < 0.5 && !clear ? -1 : 1
+    parts.push({ part: s.window, at: [side * (w / 2 - 0.1), 1.2, 0], rot: Math.PI / 2 })
+  }
+  /** Whether a part set at a spot stays out of the stairs' corner. */
+  const fits = (part: string, [x, z, rot]: [number, number, number]) => {
+    if (!clear) return true
+    const size = kit.parts.find((p) => p.id === part)?.size ?? [1, 1, 1]
+    const hx = (size[0]! * Math.abs(Math.cos(rot)) + size[2]! * Math.abs(Math.sin(rot))) / 2
+    const hz = (size[0]! * Math.abs(Math.sin(rot)) + size[2]! * Math.abs(Math.cos(rot))) / 2
+    return !(x - hx < clear.x1 && x + hx > clear.x0 && z - hz < clear.z1 && z + hz > clear.z0)
+  }
+  const take = (spots: [number, number, number][], part: string) => {
+    const i = spots.findIndex((spot) => fits(part, spot))
+    return i < 0 ? undefined : spots.splice(i, 1)[0]
+  }
   // Spots against the walls, facing into the room, and spots standing free, off the door's line. An upper floor's walls stand a
   // little further in than the room's edge, so a thing against a wall keeps a metre from the edge.
   const back = d / 2 - 1
@@ -94,11 +121,11 @@ function furnish(prng: Prng, kit: Kit, style: string, w: number, d: number, door
     [w / 4, d / 4 - 0.3, 0],
   ])
   const against = (part: string) => {
-    const spot = wallSpots.shift()
+    const spot = take(wallSpots, part)
     if (spot) parts.push({ part, at: [spot[0], 0, spot[1]], rot: spot[2] })
   }
   const free = (part: string) => {
-    const spot = freeSpots.shift()
+    const spot = take(freeSpots, part)
     if (spot) parts.push({ part, at: [spot[0], 0, spot[1]], rot: spot[2] })
   }
   against(pick(prng, KEEPERS))
@@ -168,9 +195,9 @@ export function growDay30(dir: string, opts: GrowOptions): { places: number; roo
         const footprint: [number, number] = [pick(prng, FOOTPRINT_WIDTHS), pick(prng, FOOTPRINT_DEPTHS)]
         const floors = prng.next() < 0.35 ? 2 : 1
         const [w, dd] = [footprint[0] - 1, footprint[1] - 1]
-        const rooms: Room[] = [{ id: 'main-room', name: `Grown Room ${n}a`, size: [w, dd, ROOM_HEIGHT], at: [0, 0], floor: 0, parts: furnish(prng, kit, style, w, dd, true) }]
+        const rooms: Room[] = [{ id: 'main-room', name: `Grown Room ${n}a`, size: [w, dd, ROOM_HEIGHT], at: [0, 0], floor: 0, parts: furnish(prng, kit, style, w, dd, true, floors === 2 ? 'stairs' : null) }]
         // A two-floor place may get its upper room when it is founded, or later from an expand.
-        if (floors === 2 && prng.next() < 0.5) rooms.push({ id: 'upper-room', name: `Grown Room ${n}b`, size: [w, dd, ROOM_HEIGHT], at: [0, 0], floor: 1, parts: furnish(prng, kit, style, w, dd, false) })
+        if (floors === 2 && prng.next() < 0.5) rooms.push({ id: 'upper-room', name: `Grown Room ${n}b`, size: [w, dd, ROOM_HEIGHT], at: [0, 0], floor: 1, parts: furnish(prng, kit, style, w, dd, false, 'well') })
         const place = Place.parse({
           id: `grown-place-${n}`,
           name,
@@ -202,7 +229,7 @@ export function growDay30(dir: string, opts: GrowOptions): { places: number; roo
       let candidate: Place | null = null
       if (upperFree) {
         const [w, dd] = [p.exterior.footprint[0] - 1, p.exterior.footprint[1] - 1]
-        const room: Room = { id: 'upper-room', name: `${p.rooms[0]!.name.replace(/a$/, '')}b`, size: [w, dd, ROOM_HEIGHT], at: [0, 0], floor: 1, parts: furnish(prng, kit, p.exterior.style, w, dd, false) }
+        const room: Room = { id: 'upper-room', name: `${p.rooms[0]!.name.replace(/a$/, '')}b`, size: [w, dd, ROOM_HEIGHT], at: [0, 0], floor: 1, parts: furnish(prng, kit, p.exterior.style, w, dd, false, 'well') }
         candidate = { ...p, rooms: [...p.rooms, room], history: [...p.history, { at: at(11), verb: 'expand', summary: 'A room upstairs for the day-30 fixture.' }] }
       } else {
         const others = places.filter((o) => o.id !== p.id && !p.paths.some((x) => x.to === o.id))
