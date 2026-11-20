@@ -25,8 +25,12 @@ export type WorkStatus = z.infer<typeof WorkStatus>
 export const WorkLibrary = z.enum(['p5', 'tone', 'three'])
 export type WorkLibrary = z.infer<typeof WorkLibrary>
 
-/** What a meme is drawn from (spec 7.7): a page whose picture it looked at, and a Wikipedia page it read about the format (often the same page). Both are pages on its trails. */
-export const WorkSource = z.object({ role: z.enum(['looked', 'read']), url: z.url().max(500) })
+/**
+ * What a meme is drawn from (spec 7.7): a page whose picture it looked at, and a Wikipedia page it read about the format (often
+ * the same page). Both are pages on its trails. `from` is a dweet a work started from (Roman, 20 November): credited by its link,
+ * never copied.
+ */
+export const WorkSource = z.object({ role: z.enum(['looked', 'read', 'from']), url: z.url().max(500) })
 export type WorkSource = z.infer<typeof WorkSource>
 
 /**
@@ -83,6 +87,6 @@ export const WorkMetaDraft = z.object({
   kind: WorkKind,
   about: z.string().describe('Up to 200 characters, in your own voice: what it is and why you made it.'),
   interest: z.string().nullable().describe('The interest it grew from, or null.'),
-  sources: z.array(WorkSource).describe('Empty unless the work is a meme: then a format you looked at and a page you read about it.'),
+  sources: z.array(WorkSource).describe('For a meme: a format you looked at and a page you read about it. For any work that started from a dweet you were offered: that dweet, role from. Otherwise empty.'),
 })
 export type WorkMetaDraft = z.infer<typeof WorkMetaDraft>

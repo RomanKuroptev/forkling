@@ -26,7 +26,7 @@
       "group": "maker",
       "hosts": ["api.github.com"],
       "state": "on the list",
-      "reason": "The morning takes 4 repositories from the creative-coding topic.",
+      "reason": "The morning takes 4 repositories from the creative-coding topic, and up to 4 rising this week (made in the last 7 days, most stars first) under two topics drawn each day: generative-art, demoscene, shader, pixel-art, procedural-generation, esoteric-language, js13k.",
       "trial": "docs/spec/w2-trials/api.github.com.md",
       "promisedBy": "Roman, 9 November (maker sources)"
     },
@@ -99,6 +99,16 @@
       "reason": "Tinker only.",
       "trial": "docs/spec/w2-trials/developer.mozilla.org.md",
       "promisedBy": "Roman, 9 November (library manuals)"
+    },
+    {
+      "id": "dwitter",
+      "name": "Dwitter",
+      "group": "maker",
+      "hosts": ["www.dwitter.net"],
+      "state": "on the list",
+      "reason": "Wander and tinker: the morning takes 4 hot dweets; a tinker is offered the code of dweets it read as a starting point, credited by link and never copied. A dweet runs only in the sandbox unit.",
+      "trial": "docs/spec/w2-trials/www.dwitter.net.md",
+      "promisedBy": "Roman, 20 November (new sources)"
     },
     {
       "id": "show-hn",
