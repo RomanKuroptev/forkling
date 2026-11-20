@@ -7,6 +7,7 @@ import { MindState, Place, PlaceRequest, Wish, formatRequest, parseRequest } fro
 import { addWakingMs, GIFT_LINE, KIT_BUILT_LINE, ROMAN_BUILT_LINE } from '@forkling/sim'
 import type { LlmClient, LlmRequest } from '../src/llm.ts'
 import { loadSpecies } from '../src/species.ts'
+import { parsePlaces } from '../src/places.ts'
 import { runTick } from '../src/tick.ts'
 import { noBatch } from './noBatch.ts'
 
@@ -319,5 +320,64 @@ describe('who built a place is written by the engine, not by the file (spec 10.3
       expect(requestOf('lantern-hall').status).toBe('self-built')
       expect(placeOf('lantern-hall').history.filter((h) => h.verb === 'found').map((h) => h.summary)).toEqual([KIT_BUILT_LINE])
     })
+  })
+})
+
+// Found live on Merge (20 Nov, #447): under v0.18.0 every reader dropped the Workshop (an exhibit id too long for the schema),
+// so `placesSeen` never held it. On v0.19.0's first tick it read again and was taken for a place Roman had just built:
+// construction, "A gift from Roman.", a gift request and news to Merge. A place that only comes back is noted, nothing more.
+describe('a place that becomes readable again is not a new place (#447)', () => {
+  const LATER = '2026-11-20T08:00:00Z' // 09:00 in Stockholm
+  const after = (min: number) => new Date(Date.parse(LATER) + min * 60_000).toISOString()
+  const workshop = readFileSync(fileURLToPath(new URL('./fixtures/places/workshop-merge-4f04196.json', import.meta.url)), 'utf8')
+  const stream = () => (existsSync(file('memory/stream/2026-11-20.jsonl')) ? readFileSync(file('memory/stream/2026-11-20.jsonl'), 'utf8') : '')
+
+  /** Tick once while the place file cannot be read, then once after it reads again. */
+  async function comesBack(text: string, id = 'workshop') {
+    put(`places/${id}.json`, '{ "id": "broken"')
+    const fake = fakeLlm()
+    await runTick(dir, deps(fake.llm, LATER))
+    expect(stateOf().placesSeen).not.toContain(id)
+    put(`places/${id}.json`, text)
+    await runTick(dir, deps(fake.llm, after(10)))
+    return fake
+  }
+  function quiet(fake: ReturnType<typeof fakeLlm>, id: string, before: Place) {
+    const place = placeOf(id)
+    expect(place.state.construction).toEqual(before.state.construction)
+    expect(place.history.filter((h) => h.verb === 'found')).toEqual(before.history.filter((h) => h.verb === 'found'))
+    expect(place.history.map((h) => h.summary).join(' ')).not.toMatch(/gift from Roman|built by Roman/i)
+    expect(requestFiles()).toEqual([])
+    expect(stateOf().jobs?.pending ?? []).toEqual([])
+    expect(stateOf().requestSeen ?? {}).toEqual({})
+    expect(stateOf().placesSeen).toContain(id)
+    expect(decidePrompts(fake).join('\n')).not.toMatch(/Roman built/)
+    expect(stream()).not.toMatch(/Roman built/)
+  }
+
+  it("notes Merge's real Workshop silently: no construction, no gift line, no gift request, no news", async () => {
+    const fake = await comesBack(workshop)
+    quiet(fake, 'workshop', parsePlaces([workshop])[0]!)
+  })
+
+  it('notes a place silently when its founding date is days older than today', async () => {
+    const old = newPlace({ id: 'bell-tower', name: 'Bell Tower', chunk: [2, 0], founded: '2026-11-12' })
+    const fake = await comesBack(JSON.stringify(old), 'bell-tower')
+    quiet(fake, 'bell-tower', Place.parse(old))
+  })
+
+  it('notes a place silently when Merge has installed things in it', async () => {
+    const lines = [{ at: '2026-11-19T10:00:00Z', verb: 'install', summary: 'Put a lamp sketch on a screen.' }]
+    const old = newPlace({ id: 'bell-tower', name: 'Bell Tower', chunk: [2, 0], founded: '2026-11-20', history: lines })
+    const fake = await comesBack(JSON.stringify(old), 'bell-tower')
+    quiet(fake, 'bell-tower', Place.parse(old))
+  })
+
+  it('still lands a place founded today with nothing of Merge in it, after a file that could not be read', async () => {
+    const fresh = newPlace({ id: 'bell-tower', name: 'Bell Tower', chunk: [2, 0], founded: '2026-11-20' })
+    await comesBack(JSON.stringify(fresh), 'bell-tower')
+    expect(placeOf('bell-tower').state.construction).toMatchObject({ kind: 'found' })
+    expect(placeOf('bell-tower').history.at(-1)).toMatchObject({ verb: 'found', summary: GIFT_LINE })
+    expect(requestFiles()).toEqual(['bell-tower.md'])
   })
 })

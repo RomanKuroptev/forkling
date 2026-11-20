@@ -36,6 +36,7 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 - **QR done (20 November):** 35 fix PRs merged after their gates; `pnpm qa world` clean on all five fixtures; digest on #269; summary in [`lanes/done.md`](docs/spec/audit/lanes/done.md). **Waiting for Roman: the release** (v0.19.0; live Merge still has no Workshop until then) and the items listed in done.md, each with a recommended answer. Harness spend $5.63 of $10.
 
 - **v0.19.0 (20 November, Roman said "release now"):** all of the audit harness QR fixes (#285, #380 to #443, #413). Steps as for v0.18.0: release PR, tag on its merge commit, `deploy.yml` with the tag, `/health`, then one commit to `RomanKuroptev/merge` changing only `FORKLING_REF` in its four workflows. Then `/qa` on the live world.
+- **Fix for #447 (PR open, code):** on v0.19.0's first tick the Workshop, which v0.18.0 could not read, was taken for a place Roman had just built (construction, "A gift from Roman.", a gift request `requests/workshop.md`, news to Merge; Merge commit 3dda4b5). A place the mind has not seen that was founded more than 2 days ago, or holds works or install lines Merge put there, is now noted silently (`cameBack` in `apps/mind/src/tick/lifecycle.ts`). Tests in `request-lifecycle.test.ts` with the real Workshop (`apps/mind/test/fixtures/places/workshop-merge-4f04196.json`). **For Roman:** Merge's Workshop still carries that construction, the gift line and `requests/workshop.md`; this PR does not touch Merge's repo.
 
 ### Lane W (Q1, QW)
 
