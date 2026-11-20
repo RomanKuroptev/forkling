@@ -55,8 +55,9 @@ function part(source: THREE.BufferGeometry, matrix: THREE.Matrix4, color: THREE.
   for (let i = 0; i < pos.count; i++) {
     p.fromBufferAttribute(pos, i)
     n.fromBufferAttribute(normal, i)
-    const c = typeof color === 'function' ? color(n, p) : color
-    c.toArray(colors, i * 3)
+    // A colour function is asked once per triangle, at its first corner, so a face never fades from one colour to another.
+    if (i % 3 === 0) (typeof color === 'function' ? color(n, p) : color).toArray(colors, i * 3)
+    else colors.copyWithin(i * 3, (i - (i % 3)) * 3, (i - (i % 3)) * 3 + 3)
     if (typeof bind === 'string') {
       skinIndex[i * 4] = BONES.indexOf(bind)
       skinWeight[i * 4] = 1
@@ -78,8 +79,6 @@ const sphere = (detail = 1) => new THREE.IcosahedronGeometry(1, detail)
 const box = (w: number, h: number, d: number) => new THREE.BoxGeometry(w, h, d)
 const cylinder = (rTop: number, rBottom: number, length: number, sides = 6) => new THREE.CylinderGeometry(rTop, rBottom, length, sides)
 
-/** Lighter belly and chest, fur everywhere else. */
-const bodyColor: ColorFn = (n, p) => (n.y < -0.35 || (n.z > 0.55 && p.y < 0.26) ? BELLY : FUR)
 
 const BODY_BLEND = { from: 'hips', to: 'chest', z0: -0.04, z1: 0.1 } as const
 
@@ -87,8 +86,10 @@ function buildParts(): THREE.BufferGeometry[] {
   const parts: THREE.BufferGeometry[] = []
 
   // Torso.
-  parts.push(part(sphere(), place(0, 0.225, 0, [0.095, 0.09, 0.2]), bodyColor, BODY_BLEND))
-  parts.push(part(sphere(), place(0, 0.225, 0.15, [0.085, 0.085, 0.085]), bodyColor, 'chest'))
+  // One solid blue, as in the look's picture (merge-options.png, D). A pale belly read like the room behind it, as if the body were
+  // see-through (issue 455).
+  parts.push(part(sphere(), place(0, 0.225, 0, [0.095, 0.09, 0.2]), FUR, BODY_BLEND))
+  parts.push(part(sphere(), place(0, 0.225, 0.15, [0.085, 0.085, 0.085]), FUR, 'chest'))
 
   // Neck and head: an old monitor, tilted up a little, with ears on top. The face is a separate quad (`Face`, see `buildCat`) the viewer paints.
   parts.push(part(cylinder(0.04, 0.046, 0.09), place(0, 0.285, 0.255), FUR, 'neck'))
