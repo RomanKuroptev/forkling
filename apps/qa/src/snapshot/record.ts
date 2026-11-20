@@ -5,7 +5,7 @@ import { createFetcher, type Fetcher, type FetchImpl, WebError } from '@forkling
 import type { Item } from '@forkling/mind/src/web/item.ts'
 import { robotsAllows } from '@forkling/mind/src/web/robots.ts'
 import { recordingFetch, type SnapshotManifest, writeManifest, itemsPerSource } from '@forkling/mind/src/web/snapshot.ts'
-import { frontPageLinks, githubTopicRepos, imgflipTopLinks, readUrl, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
+import { frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, risingTopicsFor, readUrl, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
 import { MANUAL_START, manualPage } from '@forkling/mind/src/web/sources/manuals.ts'
 import { HOST_PLANS } from '@forkling/mind/src/web/starts.ts'
 import type { SourceList } from '../sources/list.ts'
@@ -95,11 +95,18 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
   }
 
   // 1. What a morning offers, as the engine reads it.
+  const takenOn = (o.now ?? (() => new Date()))().toISOString().slice(0, 10)
   const starts = [
     ...((await soft('Wikipedia Main Page', () => wikipediaMorningLinks(wander, MORNING.wikipedia))) ?? []),
     ...((await soft('Esolang front page', () => frontPageLinks(wander, 'esolangs.org'))) ?? []),
     ...((await soft('Imgflip formats', () => imgflipTopLinks(wander, MORNING.memes))) ?? []),
     ...((await soft('GitHub topic', async () => (await githubTopicRepos(wander, MORNING.githubTopic, MORNING.github)).map((name) => ({ title: name, url: `https://github.com/${name}` })))) ?? []),
+    // The rising-this-week search names the date, so a later run asks another address; the repositories it found are kept.
+    ...(
+      await Promise.all(
+        risingTopicsFor(0, takenOn).map(async (topic) => (await soft(`GitHub rising ${topic}`, () => githubRisingRepos(wander, topic, takenOn, MORNING.github))) ?? []),
+      )
+    ).flat().map((name) => ({ title: name, url: `https://github.com/${name}` })),
   ]
   // 2. Each host's own starting item (the trials' plans), which is how Commons and the Art Institute are reached.
   const read: Item[] = []

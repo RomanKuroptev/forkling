@@ -5,7 +5,7 @@ import { createFetcher, type FetchImpl, type Fetcher } from '@forkling/mind/src/
 import type { Item } from '@forkling/mind/src/web/item.ts'
 import { checkRobots } from '@forkling/mind/src/web/robots.ts'
 import { MANUAL_START, manualPage } from '@forkling/mind/src/web/sources/manuals.ts'
-import { frontPageLinks, githubTopicRepos, imgflipTopLinks, wikipediaArticle, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
+import { frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, risingTopicsFor, wikipediaArticle, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
 import { HOST_PLANS } from '@forkling/mind/src/web/starts.ts'
 import { DID_NOT_RUN, type CheckResult } from '../report/finding.ts'
 import type { SourceList } from '../sources/list.ts'
@@ -20,6 +20,7 @@ const WIKIPEDIA_POINTS = 4
 const ESOLANG_POINTS = 6
 const GITHUB_TOPIC = 'creative-coding'
 const GITHUB_POINTS = 4
+const RISING_POINTS = 4
 const MEME_POINTS = 6
 // Imgflip's ranking is 100 long; freshness compares all of it.
 const IMGFLIP_ALL = 100
@@ -88,8 +89,14 @@ export const PROBES: readonly Probe[] = [
     verb: 'wander',
     paths: planPaths('api.github.com'),
     min: GITHUB_POINTS,
-    counts: `repositories under the ${GITHUB_TOPIC} topic`,
-    read: async (f) => ({ items: (await githubTopicRepos(f, GITHUB_TOPIC, GITHUB_POINTS)).length }),
+    counts: `repositories under the ${GITHUB_TOPIC} topic (the rising-this-week search is read too; a quiet topic may give none)`,
+    read: async (f, seed) => {
+      const items = (await githubTopicRepos(f, GITHUB_TOPIC, GITHUB_POINTS)).length
+      // The rising list must answer, but a small topic with no new repository this week is not a fault.
+      const day = new Date(seed * 86_400_000).toISOString().slice(0, 10)
+      for (const topic of risingTopicsFor(seed, day)) await githubRisingRepos(f, topic, day, RISING_POINTS)
+      return { items }
+    },
   },
   {
     source: 'imgflip',
