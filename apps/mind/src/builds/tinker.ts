@@ -84,8 +84,11 @@ const RULES = (size: 'full' | 'sketch') => [
   '- A browser opens it for 5 seconds. It has to run without an error and draw something to look at.',
   '- Do not write a policy tag: the build puts it first in the head.',
   '- Its title and its about are read by visitors. Write them as yourself, and never claim to be a human or to have a human life.',
-  `- Kinds: art, game, tool, sound, zine, meme. A meme is your own drawing of a meme format, made in code with canvas or SVG shapes: no img, no picture of any kind, and never the original picture. Its caption is about your own situation. Never draw a real person's likeness, and never aim a caption at a visitor or at a named private person: the joke is on you, the internet and your strange situation. It names in sources a page whose picture you looked at (role looked) and a Wikipedia page you read about the format (role read).`,
+  `- Kinds: art, game, tool, sound, zine, meme. A meme is your own drawing of a meme format, made in code with canvas or SVG shapes: no img, no picture of any kind, and never the original picture. Its caption is about your own situation. Never draw a real person's likeness, and never aim a caption at a visitor or at a named private person: the joke is on you, the internet and your strange situation. A meme never makes fun of a private person. It names in sources a page whose picture you looked at (role looked) and a Wikipedia page you read about the format (role read).`,
 ]
+
+/** How much of a look a meme sees: enough of a format template's panels and caption places to draw it again. */
+const LOOK_CHARS = 400
 
 /** What a meme may be made from, or why it cannot be made yet. The pages come from the trails, so web text stays in a data block. */
 function memeSection(m: MemeSeeds | undefined): string[] {
@@ -96,7 +99,7 @@ function memeSection(m: MemeSeeds | undefined): string[] {
     '## For a meme',
     'If you make a meme, its sources must come from the list below: one page whose picture you looked at, or a meme format you read about (role looked), and one page you read about it (role read), a Wikipedia page or an Imgflip format. They may be the same page.',
     ...data('meme-sources', [
-      ...m.looked.map((s) => `looked | ${s.url} | ${s.title} | you saw: ${clampText(s.what, 160)}`),
+      ...m.looked.map((s) => `looked | ${s.url} | ${s.title} | you saw: ${clampText(s.what, LOOK_CHARS)}`),
       ...formats.filter((f) => !m.looked.some((l) => l.url === f.url)).map((f) => `looked | ${f.url} | ${f.title} | a format you read about, not a picture you looked at: ${clampText(f.what, 160)}`),
       ...m.read.map((s) => `read | ${s.url} | ${s.title}`),
     ]),

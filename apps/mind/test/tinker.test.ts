@@ -373,6 +373,17 @@ describe('runTinker: a meme (spec 7.7)', () => {
     expect(t).toContain('looked | https://imgflip.com/meme/1 | Drake | a format you read about, not a picture you looked at: A man says no, then yes.')
   })
 
+  it('shows what it saw in a format template it looked at, whole enough to redraw it, as data', () => {
+    const what = 'Two panels side by side. On the left a man in an orange jacket turns away with a raised hand; on the right he points and smiles. The captions go in the empty white boxes to the right of each panel.'
+    const t = buildTinkerUser(input({ memeSeeds: { looked: [{ url: 'https://imgflip.com/meme/1', title: 'Drake', what }], read: [{ url: 'https://imgflip.com/meme/1', title: 'Drake' }], formats: [{ url: 'https://imgflip.com/meme/1', title: 'Drake', what: 'r' }] } }))
+    expect(t).toContain(`looked | https://imgflip.com/meme/1 | Drake | you saw: ${what}`)
+    expect(t).not.toContain('a format you read about, not a picture you looked at')
+  })
+
+  it('says a meme never makes fun of a private person', () => {
+    expect(buildTinkerUser(input({ memeSeeds: seeds }))).toContain('A meme never makes fun of a private person.')
+  })
+
   it('shelves a meme whose sources are pages it looked at and read, and the check is told it is a meme', async () => {
     const { checker, pages } = fakeChecker([{ ok: true }])
     const out = await runTinker(deps(fakeComplete([answer(output({ kind: 'meme', sources: good }))]).complete, checker), input({ memeSeeds: seeds }))

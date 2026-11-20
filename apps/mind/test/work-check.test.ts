@@ -199,6 +199,12 @@ describe('staticCheck: a meme is drawn in code and never carries the original pi
     }
   })
 
+  it('refuses the Imgflip template picture it looked at, however it is put in', () => {
+    for (const body of ['<img src="https://i.imgflip.com/30b1gx.jpg" alt="">', '<svg><image href="https://i.imgflip.com/30b1gx.jpg"/></svg>', '<div style="background:url(https://i.imgflip.com/30b1gx.jpg)"></div>']) {
+      expect(meme(body).ok, body).toBe(false)
+    }
+  })
+
   it('leaves the same things allowed in a work that is not a meme', () => {
     expect(staticCheck(page('<img src="data:image/png;base64,iVBORw0KGgo=" alt="">'), { size: 'full', kind: 'art' }).ok).toBe(true)
     expect(staticCheck(page('<img src="data:image/png;base64,iVBORw0KGgo=" alt="">'), { size: 'full' }).ok).toBe(true)
