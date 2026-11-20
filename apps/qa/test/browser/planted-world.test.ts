@@ -84,7 +84,7 @@ describe.skipIf(process.env.QA_BROWSER !== '1')('planted flaws in day-7, found b
 
   it('clean day-7: furniture stops the visitor, the visitor stops short of Merge, and the merge-close picture is clear (issues 357, 349, 348)', async () => {
     const found = await checkWorldOpens(browser, viewer, day7(), { fixture: 'day-7', now: readQaJson('day-7').now, out: mkdtempSync(join(tmpdir(), 'qa-shots-')), walk: true, pictures: true, qaOut: mkdtempSync(join(tmpdir(), 'qa-out-')) })
-    expect(found.filter((f) => ['world.walk-through-furniture', 'world.walk-into-merge', 'world.merge-close-blocked'].includes(f.id))).toEqual([])
+    expect(found.filter((f) => ['world.walk-through-furniture', 'world.walk-into-merge', 'world.merge-close-blocked', 'world.merge-close-side'].includes(f.id))).toEqual([])
   }, 400_000)
 
   it('a work the site says is on show in the Workshop, in a slot the Workshop does not have (files)', async () => {

@@ -102,8 +102,22 @@ export interface SightLine {
 }
 
 /**
- * The sight lines of a camera at `position` looking at `target` with Merge in `merge`: to Merge's feet, middle and top, and a grid
- * across the picture (`fovY` degrees tall, `aspect` wide over tall), each to 0.3 m short of Merge's middle.
+ * Across the picture, nothing may be nearer the lens than this: the bench top 20 cm under it filled the bottom third (issue 348).
+ * Further off, a bit of furniture in the picture is fine, so long as nothing stands between the lens and Merge.
+ */
+export const NEAR_LENS = 0.6
+/** The merge-close camera stands no more than this many degrees round from straight in front of Merge's face, so the face reads. */
+export const MAX_OFF_FACE = 45
+
+/** How many degrees round from straight in front of Merge's face (Merge at `merge`, facing `heading`, 0 along +z) a lens stands. */
+export function offFace(merge: Point2, heading: number, lens: readonly number[]): number {
+  const a = Math.atan2(lens[0]! - merge.x, lens[2]! - merge.z) - heading
+  return Math.abs((Math.atan2(Math.sin(a), Math.cos(a)) * 180) / Math.PI)
+}
+
+/**
+ * The sight lines of a camera at `position` looking at `target` with Merge in `merge`: to Merge's feet, middle and top, each to
+ * 0.3 m short of it, and a grid across the picture (`fovY` degrees tall, `aspect` wide over tall), each to `NEAR_LENS`.
  */
 export function sightLines(position: readonly number[], target: readonly number[], merge: Box, fovY: number, aspect: number): SightLine[] {
   const norm = (v: number[]) => {
@@ -120,7 +134,7 @@ export function sightLines(position: readonly number[], target: readonly number[
   const right = norm([-fw[2], 0, fw[0]])
   const up = [right[1] * fw[2] - right[2] * fw[1], right[2] * fw[0] - right[0] * fw[2], right[0] * fw[1] - right[1] * fw[0]]
   const tY = Math.tan((fovY / 2) * (Math.PI / 180))
-  const reach = Math.hypot(mid[0]! - position[0]!, mid[2]! - position[2]!) - 0.3
+  const reach = Math.min(NEAR_LENS, Math.hypot(mid[0]! - position[0]!, mid[2]! - position[2]!) - 0.3)
   for (let i = -3; i <= 3; i++) {
     for (let j = -2; j <= 2; j++) {
       const a = (tY * aspect * i) / 3

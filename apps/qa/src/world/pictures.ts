@@ -8,7 +8,7 @@ import type { CheckResult } from '../report/finding.ts'
 import { contactSheet, type Box, type Tile } from '../report/sheet.ts'
 import type { SceneObject } from './open.ts'
 import type { FrameCost } from './budget.ts'
-import { inTheWay, sightLines } from './bump.ts'
+import { MAX_OFF_FACE, inTheWay, offFace, sightLines } from './bump.ts'
 import { flicker, hexValueSaturation, middleLight, muddyShare, nearWhiteShare, paletteShare, pictureStats, wallBand } from './picture.ts'
 
 /**
@@ -107,6 +107,7 @@ type Qa = {
   renderer(): { drawCalls: number; triangles: number }
   ray(origin: Vec3, dir: Vec3, far: number): { distance: number; object: string; of?: string } | null
   scene(): SceneObject[]
+  merge?(): { x: number; z: number; scale: number; heading: number } | null
 }
 const qa = <T>(page: Page, fn: (q: Qa, arg: never) => T | Promise<T>, arg?: unknown) =>
   page.evaluate(({ src, arg }) => (0, eval)(`(${src})`)((globalThis as unknown as { __qa: Qa }).__qa, arg), { src: fn.toString(), arg }) as Promise<T>
@@ -201,8 +202,15 @@ export async function pictureChecks(page: Page, opts: { fixture: string; scene: 
       const blocked = inTheWay(pose.position, lines, hits, mergeBox)
       if (blocked.length) {
         const nearest = blocked.reduce((a, b) => (b.distance < a.distance ? b : a))
-        findings.push({ id: 'world.merge-close-blocked', fingerprint: `world.merge-close-blocked|${fixture}|merge-close`, severity: 'major', title: 'Something stands between the merge-close camera and Merge', what: `${blocked.length} of the camera's ${lines.length} sight lines meet "${nearest.object}" before Merge, the nearest ${nearest.distance.toFixed(2)} m from the lens, at x ${nearest.at[0]}, y ${nearest.at[1]}, z ${nearest.at[2]}; Merge is at x ${((mergeBox.min[0] + mergeBox.max[0]) / 2).toFixed(2)}, z ${((mergeBox.min[2] + mergeBox.max[2]) / 2).toFixed(2)}, the lens at x ${pose.position[0].toFixed(2)}, y ${pose.position[1].toFixed(2)}, z ${pose.position[2].toFixed(2)}.`, causes: 'Pictures of Merge with this camera look as if they were taken through furniture.', evidence: [file], fixKind: 'look', fixture, where: 'apps/viewer/src/qa/cameras.ts' })
+        findings.push({ id: 'world.merge-close-blocked', fingerprint: `world.merge-close-blocked|${fixture}|merge-close`, severity: 'major', title: 'Something stands between the merge-close camera and Merge', what: `${blocked.length} of the camera's ${lines.length} sight lines meet "${nearest.object}" before Merge, or right in front of the lens; the nearest is ${nearest.distance.toFixed(2)} m from the lens, at x ${nearest.at[0]}, y ${nearest.at[1]}, z ${nearest.at[2]}; Merge is at x ${((mergeBox.min[0] + mergeBox.max[0]) / 2).toFixed(2)}, z ${((mergeBox.min[2] + mergeBox.max[2]) / 2).toFixed(2)}, the lens at x ${pose.position[0].toFixed(2)}, y ${pose.position[1].toFixed(2)}, z ${pose.position[2].toFixed(2)}.`, causes: 'Pictures of Merge with this camera look as if they were taken through furniture.', evidence: [file], fixKind: 'look', fixture, where: 'apps/viewer/src/qa/cameras.ts' })
       }
+    }
+    // The face must read (look.md): the lens stands in front of it, not off to Merge's side (issue 348, second look).
+    const facing = await qa(page, (q) => (q.merge ? q.merge() : null))
+    if (pose && facing) {
+      const off = offFace(facing, facing.heading, pose.position)
+      if (off > MAX_OFF_FACE)
+        findings.push({ id: 'world.merge-close-side', fingerprint: `world.merge-close-side|${fixture}|merge-close`, severity: 'major', title: 'The merge-close camera sees Merge from the side', what: `The lens stands ${off.toFixed(0)} deg round from straight in front of Merge's face; at most ${MAX_OFF_FACE} deg keeps the face readable.`, causes: "Pictures of Merge with this camera show its face edge-on: its eyes are slivers and the face cannot be read.", evidence: [file], fixKind: 'look', fixture, where: 'apps/viewer/src/qa/cameras.ts' })
     }
   }
 

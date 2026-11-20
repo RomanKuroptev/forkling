@@ -190,8 +190,8 @@ export function QaProbe() {
         useJoystickStore.getState().resetJoystick()
         await step(QA_FRAME_MS)
       },
-      /** Where Merge stands as drawn (its middle on the ground) and its drawing scale: the point the visitor keeps its distance from. */
-      merge: () => (mergeSpot.position ? { ...mergeSpot.position, scale: mergeSpot.scale } : null),
+      /** Where Merge stands as drawn (its middle on the ground, the point the visitor keeps its distance from), its drawing scale, and the way it faces (radians, 0 along +z). */
+      merge: () => (mergeSpot.position ? { ...mergeSpot.position, scale: mergeSpot.scale, heading: mergeSpot.heading } : null),
       visitor: () => {
         const p = qaRegistry.player
         if (!p) return null

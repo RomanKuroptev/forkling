@@ -5,7 +5,7 @@ import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { furnitureBoxes } from '../src/world/solidFurniture.ts'
 import { KEEP_FROM_MERGE, keepAwayFrom, keepFor } from '../src/player/keepAway.ts'
-import { mergeClosePose } from '../src/qa/cameras.ts'
+import { CLOSE_MAX_TURN, mergeClosePose } from '../src/qa/cameras.ts'
 import { wallBoxes } from '../src/world/kitGeometry.ts'
 
 const day7 = (id: string): Place => Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL(`../../../test/fixtures/worlds/day-7/places/${id}.json`, import.meta.url)), 'utf8')))
@@ -97,10 +97,36 @@ describe('the merge-close camera stands clear of furniture (issue 348)', () => {
     expect(pose.target).toEqual([8, 0.4, 15])
   })
 
+  /** How far round from straight in front of Merge's face the lens stands, in degrees. */
+  const offFace = (pose: { position: readonly number[] }, merge: { x: number; z: number }, heading: number) => {
+    const a = Math.atan2(pose.position[0]! - merge.x, pose.position[2]! - merge.z) - heading
+    return Math.abs((Math.atan2(Math.sin(a), Math.cos(a)) * 180) / Math.PI)
+  }
+
+  it("stays in front of Merge's face, never more than 45 deg round, wherever Merge stands in Home and whichever way it faces", () => {
+    for (const x of [4, 6, 8, 10, 12]) {
+      for (const z of [13, 15, 17, 18.3]) {
+        for (let h = -Math.PI; h < Math.PI; h += Math.PI / 6) {
+          const pose = mergeClosePose({ x, z }, h, ground, obstacles)
+          expect(offFace(pose, { x, z }, h), `${x}, ${z}, ${h}`).toBeLessThanOrEqual(CLOSE_MAX_TURN + 0.01)
+        }
+      }
+    }
+  })
+
+  it('raises the lens over the bench rather than swinging round to the side, when no eye-level pose in front is clear', () => {
+    // Merge just in front of the bench, facing the door past it: every eye-level pose within 45 deg is over the bench.
+    const pose = mergeClosePose({ x: 8, z: 17.9 }, 0, ground, obstacles)
+    expect(offFace(pose, { x: 8, z: 17.9 }, 0)).toBeLessThanOrEqual(CLOSE_MAX_TURN)
+    expect(pose.position[1]).toBeGreaterThan(0.7)
+  })
+
   it('moves off the bench: Merge at (8, 17.5) facing the door had the camera over the bench (day-7 picture 006)', () => {
     const pose = mergeClosePose({ x: 8, z: 17.5 }, 0, ground, obstacles)
     const bench = furnitureBoxes(home, kit, 0).find((b) => b.part === 'bench')!
-    expect(contains(bench, pose.position[0], pose.position[2])).toBe(false)
+    // Not just over the bench top: it rises well over it, or stands clear of it.
+    expect(contains(bench, pose.position[0], pose.position[2]) && pose.position[1] < bench.max[1] + 0.25).toBe(false)
+    expect(offFace(pose, { x: 8, z: 17.5 }, 0)).toBeLessThanOrEqual(CLOSE_MAX_TURN)
     for (const b of obstacles) {
       // Nothing between the lens and Merge's face, its feet or its middle.
       for (const y of [0.05, 0.4, 0.8]) expect(crosses(pose.position, [8, y, 17.5], b), JSON.stringify(b)).toBe(false)
@@ -108,8 +134,8 @@ describe('the merge-close camera stands clear of furniture (issue 348)', () => {
     expect(Math.hypot(pose.position[0] - 8, pose.position[2] - 17.5)).toBeGreaterThan(0.9)
   })
   it('moves when a box fills a corner of the picture near the lens, even off the line to Merge', () => {
-    // Merge at the origin facing +z: the plain pose stands at (0, 0.7, 1.5). A crate 0.6 m to its front left, low.
-    const crate: Box = { min: [0.4, 0, 0.6], max: [1.0, 0.5, 1.1] }
+    // Merge at the origin facing +z: the plain pose stands at (0, 0.7, 1.5). A crate just in front of the lens, to one side.
+    const crate: Box = { min: [0.15, 0.2, 1.0], max: [0.6, 0.65, 1.3] }
     const pose = mergeClosePose({ x: 0, z: 0 }, 0, () => 0, [crate])
     expect(pose.position[2]).not.toBeCloseTo(1.5)
     expect(mergeClosePose({ x: 0, z: 0 }, 0, () => 0, []).position).toEqual([0, 0.7, 1.5])

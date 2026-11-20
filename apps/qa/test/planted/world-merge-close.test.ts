@@ -39,8 +39,8 @@ describe('the merge-close picture has nothing between the lens and Merge (issue 
     })
     expect(own.some((h) => h !== null)).toBe(true)
     expect(inTheWay(position, lines, own, merge)).toEqual([])
-    // The floor, hit where a line heading down meets it before Merge.
-    const floor = lines.map((l) => (l.dir[1] < 0 && 0.7 / -l.dir[1] < l.reach ? { distance: 0.7 / -l.dir[1], object: 'Land' } : null))
+    // The floor, or a rug on it (18 cm up), hit where a line heading down meets it before Merge.
+    const floor = lines.map((l) => (l.dir[1] < 0 && 0.52 / -l.dir[1] < l.reach ? { distance: 0.52 / -l.dir[1], object: 'Land' } : null))
     expect(floor.some((h) => h !== null)).toBe(true)
     expect(inTheWay(position, lines, floor, merge)).toEqual([])
   })
