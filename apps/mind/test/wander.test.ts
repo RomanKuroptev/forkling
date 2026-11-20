@@ -230,6 +230,20 @@ describe('the morning', () => {
     expect(user).toContain(`Moon | ${wiki}/wiki/Moon`)
   })
 
+  it("adds Bluesky's trending topics to the starting points, without the news about deaths, violence, war and politics", async () => {
+    const t = (name: string, i: number) => ({ topic: name, displayName: name, description: '', link: `/profile/did:plc:abc/feed/t${i}` })
+    const llm = fake(wanderPlan)
+    const { web } = webWith({
+      'https://public.api.bsky.app/xrpc/app.bsky.unspecced.getTrendingTopics?limit=25': JSON.stringify({ topics: [t('Snap election', 0), t('Star Wars trailer', 1), t('Moss art', 2), t('Troops cross the border', 3)] }),
+    })
+    await tick(MORNING, llm, { web })
+    const user = llm.calls[0]!.user
+    expect(user).toContain('Star Wars trailer | https://bsky.app/profile/did:plc:abc/feed/t1')
+    expect(user).toContain('Moss art | https://bsky.app/profile/did:plc:abc/feed/t2')
+    expect(user).not.toContain('Snap election')
+    expect(user).not.toContain('Troops cross the border')
+  })
+
   it('shows the morning plan that a sketch can be a meme, with the meme formats it read on its trips (issue #328)', async () => {
     writeJson('trails/2026-11-02-1.json', Trail.parse({ id: '2026-11-02-1', date: '2026-11-02', purpose: 'p', start: { kind: 'feed', value: 'https://imgflip.com/meme/181913649' }, pages: [{ url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling', fetchedAt: '2026-11-02T10:00:00Z', topics: [], interest: 6, reaction: 'No, then yes.' }] }))
     const llm = fake(wanderPlan)
@@ -309,7 +323,7 @@ describe('a wander step', () => {
     writeJson('mind/state.json', MindState.parse({ seen: [{ title: 'Boolean algebra', url: `${wiki}/wiki/Logic_gates` }] }))
     const { web, asked } = webWith()
     await wander({ web }, undefined, plan([step('wander', 'boolean algebra'), step('rest', null), step('write', 'home')]))
-    const pages = asked.filter((u) => !u.endsWith('Main_Page') && !u.includes('imgflip') && !u.includes('api.github.com/search') && !u.includes('www.dwitter.net/apiv2beta') && !u.includes('lemmy.world/api/v3/post/list'))
+    const pages = asked.filter((u) => !u.endsWith('Main_Page') && !u.includes('imgflip') && !u.includes('api.github.com/search') && !u.includes('www.dwitter.net/apiv2beta') && !u.includes('lemmy.world/api/v3/post/list') && !u.includes('getTrendingTopics'))
     expect(pages[0]).toBe(`${wiki}/wiki/Logic_gates`)
     expect(Trail.parse(readJson(`trails/${DAY}-1.json`)).start).toEqual({ kind: 'topic', value: 'boolean algebra' })
   })
@@ -535,7 +549,7 @@ describe('a wander step', () => {
   it('never fetches an address that is not on the allowlist, even when a page links to one', async () => {
     const { web, asked } = webWith({ [`${wiki}/wiki/Logic_gates`]: article('Logic gate', ['Boolean_algebra']).replace('</p>', '<a href="https://example.com/evil">e</a></p>') })
     await wander({ web }, (url) => ({ ...defaultReader(url), next: 2 }))
-    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com|api\.github\.com|www\.dwitter\.net|lemmy\.world)\//.test(u))).toBe(true)
+    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com|api\.github\.com|www\.dwitter\.net|lemmy\.world|public\.api\.bsky\.app)\//.test(u))).toBe(true)
   })
 
   it('looks at a picture the read call asked for, within the 20 a day, and books the look as a vision call', async () => {

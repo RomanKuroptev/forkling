@@ -25,7 +25,7 @@ function healthy(): SourceReads {
   const trails = starts.map((s, i) => trail(`t${i}`, days[i % days.length]!, s, [{ url: s }]))
   return {
     trails,
-    offered: days.map((date) => ({ date, urls: [`${W}Lighthouse`, 'https://esolangs.org/wiki/Brainfuck', 'https://github.com/a/b', 'https://imgflip.com/meme/1', 'https://commons.wikimedia.org/wiki/File:A.jpg', 'https://www.artic.edu/artworks/1', 'https://www.dwitter.net/d/1', 'https://lemmy.world/post/1'] })),
+    offered: days.map((date) => ({ date, urls: [`${W}Lighthouse`, 'https://esolangs.org/wiki/Brainfuck', 'https://github.com/a/b', 'https://imgflip.com/meme/1', 'https://commons.wikimedia.org/wiki/File:A.jpg', 'https://www.artic.edu/artworks/1', 'https://www.dwitter.net/d/1', 'https://lemmy.world/post/1', 'https://bsky.app/profile/did:plc:abc/feed/t0'] })),
     works: [{ made: '2026-11-18T10:00:00Z', sources: ['https://imgflip.com/meme/1', `${W}Lighthouse`] }],
     souvenirs: [{ url: 'https://esolangs.org/wiki/Brainfuck', placedIn: 'home' }],
   }

@@ -50,6 +50,9 @@ export const ALLOWLIST: readonly HostRule[] = [
   // Lemmy c/memes and c/showerthoughts (Roman, 20 November 2026, after their trials): feeds of hot posts through the public API,
   // one request a minute because robots.txt asks for Crawl-delay: 60. Its pictures are on the same host.
   { host: 'lemmy.world', kind: 'record', tier: 'voices', gapMs: 60_000, verbs: ['wander', 'meme'] },
+  // Bluesky's trending topics (Roman, 20 November 2026, after the trial): a feed through the public AppView API, no login. Topics
+  // about deaths, violence, war or politics are skipped (`news-skip.ts`). A topic's page is on bsky.app (NAMED_BY_PAGE).
+  { host: 'public.api.bsky.app', kind: 'record', tier: 'voices', gapMs: FAST, verbs: ['wander', 'meme'] },
   // The library manuals, for tinker only (spec 6.1): what Merge reads about the tool it is making something with.
   { host: 'p5js.org', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },
   { host: 'tonejs.github.io', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },
@@ -78,10 +81,10 @@ export function isAllowed(url: string, verb: ReadVerb = 'wander'): boolean {
 
 /**
  * Public pages that name an item on a site the code does not read directly: a GitHub repository is read through its API
- * (`api.github.com`) and an Imgflip format through the ranking (`api.imgflip.com`).
- * Their page URLs are what a trail and a souvenir cite, and what a link can point at.
+ * (`api.github.com`), an Imgflip format through the ranking (`api.imgflip.com`) and a Bluesky trending topic through the
+ * AppView API (`public.api.bsky.app`). Their page URLs are what a trail and a souvenir cite, and what a link can point at.
  */
-export const NAMED_BY_PAGE: readonly string[] = ['github.com', 'imgflip.com']
+export const NAMED_BY_PAGE: readonly string[] = ['github.com', 'imgflip.com', 'bsky.app']
 
 /** A URL the mind may be offered and may read: an allowed URL, or the page URL of an item an allowed API gives. */
 export function isReadable(url: string): boolean {
