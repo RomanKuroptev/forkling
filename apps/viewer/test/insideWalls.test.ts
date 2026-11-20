@@ -1,11 +1,13 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { WALL, starterPlaces } from '@forkling/sim'
 import { INNER_FACE } from '../src/world/building.ts'
-import { OFF_WALL, settledPlace } from '../src/world/insideWalls.ts'
+import { OFF_WALL, hungParts, partsInAir, settledPlace } from '../src/world/insideWalls.ts'
+import { interiorParts } from '../src/world/kitGeometry.ts'
+import { instancesBox } from '../src/qa/sceneList.ts'
 import { placeObjects } from '../src/qa/sceneList.ts'
 
 const day7 = (id: string): Place => Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL(`../../../test/fixtures/worlds/day-7/places/${id}.json`, import.meta.url)), 'utf8')))
@@ -68,5 +70,75 @@ describe('nothing of the inside stands in or through the walls (issues 339, 373)
     const before = JSON.stringify(home)
     settledPlace(home, kit)
     expect(JSON.stringify(home)).toBe(before)
+  })
+})
+
+describe('a stack moves as one, and a screen on nothing against a wall is hung (issue 339, the look review of #412)', () => {
+  /** Home with a desk poking into its east wall, a desk lamp standing on the desk and a screen on the lamp's side of it. */
+  const withDesk = (): Place => {
+    const home = day7('home')
+    const main = home.rooms[0]!
+    const desk = { part: 'desk', at: [5.4, 0, -1], rot: 0 }
+    const lamp = { part: 'lamp-desk', at: [5.9, 0.8, -1.2], rot: 0 }
+    const screen = { part: 'screen-small', at: [5.2, 0.8, -0.8], rot: 0 }
+    return { ...home, rooms: [{ ...main, at: [0, 0], size: [11.6, 8, 3.2], parts: [...main.parts, desk, lamp, screen] } as never, ...home.rooms.slice(1)] }
+  }
+
+  it('moves what stands on a part by the same amount as the part, so a lamp and a screen stay on their desk', () => {
+    const place = withDesk()
+    const before = place.rooms[0]!.parts
+    const after = settledPlace(place, kit).rooms[0]!.parts
+    const n = before.length
+    const move = (i: number) => [after[i]!.at[0] - before[i]!.at[0], after[i]!.at[2] - before[i]!.at[2]]
+    // The lamp pokes furthest (it stands at the desk's east edge), so the whole stack moves by what the lamp needs.
+    expect(move(n - 3)[0]).toBeLessThan(0)
+    expect(move(n - 2)).toEqual(move(n - 3))
+    expect(move(n - 1)).toEqual(move(n - 3))
+    for (const i of [n - 2, n - 1]) expect(after[i]!.at[1]).toBe(before[i]!.at[1])
+  })
+
+  it("hangs Tiny Patch's screen on Home's back wall: Merge set it 1.2 m up on nothing, so it is drawn without its stand", () => {
+    const home = day7('home')
+    expect([...hungParts(home, kit)]).toEqual(['counter-room/1'])
+    const screen = interiorParts(home, kit, 0).instances.filter((i) => i.group === 'counter-room/1')
+    const box = instancesBox(screen)!
+    // Nothing of it is lower than its panel: no foot in mid-air.
+    expect(box.min[1]).toBeGreaterThan(1.2 + 0.19)
+    // The screen is where Merge set it, as high, and its back is at the wall's inside face.
+    const settled = settledPlace(home, kit).rooms[1]!
+    expect(settled.parts[1]!.at[1]).toBe(1.2)
+    expect(settled.at[1] + settled.parts[1]!.at[2] - 0.1).toBeCloseTo(-(home.exterior.footprint[1] / 2 - INNER_FACE - OFF_WALL))
+  })
+
+  it('does not hang a screen standing on a desk, nor one on the floor', () => {
+    const place = withDesk()
+    const n = place.rooms[0]!.parts.length
+    expect(hungParts(place, kit).has(`main/${n - 1}`)).toBe(false)
+    for (const p of starterPlaces()) expect(hungParts(p, kit).size).toBe(0)
+  })
+})
+
+describe('nothing drawn with a foot stands in mid-air (the look review of #412)', () => {
+  const fixture = (name: string): Place[] => {
+    const dir = fileURLToPath(new URL(`../../../test/fixtures/worlds/${name}/places/`, import.meta.url))
+    return readdirSync(dir).map((f) => Place.parse(JSON.parse(readFileSync(dir + f, 'utf8'))))
+  }
+
+  it('finds no part in mid-air in any fixture world, and lists none in the scene', () => {
+    for (const name of ['day-0', 'day-7', 'day-30', 'building']) {
+      const ps = fixture(name)
+      for (const p of ps) expect([...partsInAir(p, kit)], `${name} ${p.id}`).toEqual([])
+      expect(scene(ps).filter((o) => o.inAir)).toEqual([])
+    }
+  })
+
+  it("finds Tiny Patch's screen in mid-air when it stands 1.2 m up in the middle of the room, away from any wall, and lists it so", () => {
+    const home = day7('home')
+    const counter = home.rooms[1]!
+    const moved: Place = { ...home, rooms: [home.rooms[0]!, { ...counter, at: [0, 0], parts: counter.parts.map((p, i) => (i === 1 ? { ...p, at: [0, 1.2, 0] as [number, number, number] } : p)) }] }
+    expect([...partsInAir(moved, kit)]).toEqual(['counter-room/1'])
+    expect(scene([moved]).find((o) => o.id === 'home/counter-room/1')!.inAir).toBe(true)
+    // A lantern on its chain is made to hang, and is never in mid-air.
+    expect([...partsInAir(home, kit)]).toEqual([])
   })
 })

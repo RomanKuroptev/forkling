@@ -13,7 +13,7 @@ import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
 import { COLORS } from '../world/theme.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
 import { plantBoards, type QaPlant } from './plant.ts'
-import { settledPlace } from '../world/insideWalls.ts'
+import { partsInAir, settledPlace } from '../world/insideWalls.ts'
 
 /**
  * What `window.__qa.scene()` lists (docs/spec/audit/spec.md 7.1): every place, its doorway, room, drawn part, exhibit, sign, label and plot, Merge and
@@ -58,6 +58,8 @@ export interface QaObject {
    * either. Listed so that nothing is hidden silently (`world.in-doorway-holds`).
    */
   inDoorway?: { holds: string[] }
+  /** For a part drawn with a foot or stand that stands in mid-air: on no floor, no other part and no wall (`partsInAir`). */
+  inAir?: true
   /** A place's or room's name, an exhibit's label. */
   name?: string
   /** For a place: its footprint on the ground, in world meters (its walls stand on the edge: the outer 0.8 m is wall). */
@@ -140,6 +142,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     const height = floorHeight(place)
     const door = doorwayBox(place, baseY)
     out.push({ id: `${place.id}/door`, kind: 'door', place: place.id, box: { min: door.min.map(round) as QaBox['min'], max: door.max.map(round) as QaBox['max'] }, visible: true, material: 'none' })
+    const inAir = partsInAir(place, s.kit)
     for (const room of place.rooms) {
       const [w, d, h] = room.size
       const x = px + room.at[0]
@@ -154,7 +157,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
           out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, box: box ? { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] } : null, visible: false, material: 'none', inDoorway: { holds } })
           return
         }
-        if (box) out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, box: { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] }, visible: inside, material: wired ? 'wireframe' : 'solid' })
+        if (box) out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, ...(inAir.has(`${room.id}/${k}`) ? { inAir: true as const } : {}), box: { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] }, visible: inside, material: wired ? 'wireframe' : 'solid' })
       })
     }
     const palette = s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0]!

@@ -90,3 +90,60 @@ export function insideWallsFindings(fixture: string, scene: readonly SceneObject
   }
   return out
 }
+
+/** An exhibit counts as on its part when the two boxes are no further apart than this in every axis (meters). */
+const ON_PART = 0.05
+
+/**
+ * Two checks that things stand on something (audit QW.2), added after the look review of #412 saw Tiny Patch's screen 1.2 m up in
+ * Home's corner with its stand's foot in mid-air:
+ *
+ * - `world.exhibit-off-part`: an exhibit or a work on a screen is drawn away from the part whose slot holds it (`at` names it):
+ *   floating above it or beside it.
+ * - `world.part-in-air`: a part drawn with a foot or stand stands on no floor, no other part and no wall (`inAir` in the scene
+ *   list, `apps/viewer/src/world/insideWalls.ts`).
+ */
+export function standingFindings(fixture: string, scene: readonly SceneObject[]): CheckResult[] {
+  const out: CheckResult[] = []
+  const byId = new Map(scene.map((o) => [o.id, o]))
+  for (const e of scene) {
+    if ((e.kind !== 'exhibit' && e.kind !== 'work') || !e.at || !e.box || !e.visible) continue
+    const partId = e.at.split('/').slice(0, 3).join('/')
+    const part = byId.get(partId)
+    if (!part?.box) continue
+    const a = e.box
+    const b = part.box
+    const gap = [0, 1, 2].map((k) => Math.max(0, b.min[k]! - a.max[k]!, a.min[k]! - b.max[k]!))
+    if (Math.max(...gap) <= ON_PART) continue
+    const placeId = e.place ?? e.id.split('/')[0]!
+    out.push({
+      id: 'world.exhibit-off-part',
+      fingerprint: `world.exhibit-off-part|${fixture}|${e.id}`,
+      severity: 'major',
+      title: `${e.id} floats away from the ${part.name ?? 'part'} that holds it`,
+      what: `The ${e.kind} ${e.id} stands in a slot of ${partId}${part.name ? ` (${part.name})` : ''}, but is drawn ${gap.map((g) => g.toFixed(2)).join(', ')} m away from it in x, y and z.`,
+      causes: 'The thing Merge put on show hangs in the air, apart from what should hold it.',
+      evidence: [],
+      fixKind: 'look',
+      fixture,
+      where: `places/${placeId}.json`,
+    })
+  }
+  for (const o of scene) {
+    if (o.kind !== 'part' || !o.inAir || !o.visible) continue
+    const placeId = o.place ?? o.id.split('/')[0]!
+    out.push({
+      id: 'world.part-in-air',
+      fingerprint: `world.part-in-air|${fixture}|${o.id}`,
+      severity: 'major',
+      title: `${o.name ?? o.id} stands in mid-air in ${placeId}`,
+      what: `The part ${o.id}${o.name ? ` (${o.name})` : ''} is drawn with its foot ${o.box ? `${o.box.min[1].toFixed(2)} m up` : 'up'}, on no floor, no other part and no wall.`,
+      causes: 'Furniture with its stand in the air looks dropped and unfinished.',
+      evidence: [],
+      fixKind: 'look',
+      fixture,
+      where: `places/${placeId}.json`,
+    })
+  }
+  return out
+}
