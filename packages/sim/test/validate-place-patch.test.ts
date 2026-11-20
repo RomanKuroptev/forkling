@@ -196,6 +196,28 @@ describe('expand (spec 5.4: a room, an enlarged room, or a path; up to 15 parts)
     expect(r.ok ? '' : r.reasons.join(' ')).toMatch(/construction/)
   })
 
+  it('refuses a room upstairs with no stairs below it (issue 333), new or enlarged, and leaves rooms it does not change alone', () => {
+    const tall = base()
+    tall.exterior.floors = 2
+    const upstairs = annex({ id: 'loft', size: [4, 4, 4], at: [-3, 0], floor: 1 })
+    const refused = validatePlacePatch(tall, expand({ kind: 'room', room: upstairs }), pctx)
+    expect(refused.ok ? '' : refused.reasons.join(' | ')).toMatch(/loft is on floor 1 and nothing leads up to it/)
+    // Stairs in the hall below, climbing to the front, top out at (-4, 1.25): under the loft, which reaches from -5 to -1 across.
+    const stairs = base()
+    stairs.exterior.floors = 2
+    stairs.rooms[0]!.parts.push({ part: 'stairs', at: [-4, 0, -0.25], rot: 0 })
+    const ok = validatePlacePatch(stairs, expand({ kind: 'room', room: upstairs }), pctx)
+    expect(ok.ok ? '' : ok.reasons.join(' | ')).toBe('')
+    // Enlarging an upper room that has no stairs under it is refused too; a path in a place with such a room is not.
+    const old = base()
+    old.exterior.floors = 2
+    old.rooms.push({ id: 'attic', name: 'Attic', size: [3, 3, 4], at: [4, 0], floor: 1, parts: [] } as never)
+    const bigger = validatePlacePatch(old, expand({ kind: 'enlarge', roomId: 'attic', size: [4, 3, 4] }), pctx)
+    expect(bigger.ok ? '' : bigger.reasons.join(' | ')).toMatch(/attic is on floor 1 and nothing leads up to it/)
+    const path = validatePlacePatch(old, expand({ kind: 'path', to: 'workshop' }), pctx)
+    expect(path.ok ? '' : path.reasons.join(' | ')).toBe('')
+  })
+
   it('is exactly one change', () => {
     expect(reasons(expand({ kind: 'path', to: 'workshop', room: annex() }))).toMatch(/Unrecognized|change/)
     expect(reasons({ verb: 'expand', summary: 'x', change: [] })).toMatch(/change/)

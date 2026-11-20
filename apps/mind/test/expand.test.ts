@@ -116,6 +116,12 @@ describe('buildExpandUser (what an expand asks for)', () => {
     expect(prompt).toMatch(/footprint 20 by 14/)
   })
 
+  it('says a room upstairs needs stairs below it, in plain words (issue 333)', () => {
+    const prompt = buildExpandUser(input())
+    expect(prompt).toContain('- A room on floor 1 or above needs stairs below it: a stairs part in a room on the floor under it, whose top end is under the upper room (stairs climb the way they face, toward the front at rot 0).')
+    expect(prompt).not.toMatch(/issue|finding|score|audit/i)
+  })
+
   it('lists the kit parts with their sizes and slots, so it can only name parts that exist', () => {
     const prompt = buildExpandUser(input())
     expect(prompt).toContain('shelf-tall | furniture')
