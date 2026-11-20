@@ -40,6 +40,26 @@ const centre = (b: Box): Vec3 => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1
 /** Room ray directions (heading in radians, 0 along +z), the door side (+z) left out because the door is open. */
 export const ROOM_RAYS = [Math.PI / 2, (3 * Math.PI) / 4, Math.PI, (5 * Math.PI) / 4, (3 * Math.PI) / 2]
 
+/** The longest stretch walked toward one point: a walk toward a point gives up after 60 presses, about 50 m, and went on to the next. */
+export const MAX_LEG = 20
+
+/**
+ * A walking path with no stretch longer than `MAX_LEG`: a long straight one is cut into equal pieces along the same line, so the walk
+ * never runs out of presses half way along it and turns for the next point from wherever it stopped (it then slid along the side of
+ * Grown Place 11, 55 m from the arrival point, and the check took it for a wall in the way).
+ */
+export function shortLegs(start: Point2, path: readonly Point2[], max = MAX_LEG): Point2[] {
+  const out: Point2[] = []
+  let from = start
+  for (const to of path) {
+    const n = Math.ceil(Math.hypot(to.x - from.x, to.z - from.z) / max)
+    for (let k = 1; k < n; k++) out.push({ x: from.x + ((to.x - from.x) * k) / n, z: from.z + ((to.z - from.z) * k) / n })
+    out.push(to)
+    from = to
+  }
+  return out
+}
+
 /** Directions a room's rays leave without meeting anything: holes or see-through walls. */
 export function holesFrom(hits: { heading: number; hit: Hit }[]): number[] {
   return hits.filter((h) => h.hit === null).map((h) => h.heading)
@@ -110,7 +130,7 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     }
     await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [input.start.x, input.start.z, input.start.yaw])
     let stuck: { x: number; z: number; to: Point2 } | null = null
-    for (const wp of path) {
+    for (const wp of shortLegs(input.start, path)) {
       let last = Infinity
       let slow = 0
       for (let i = 0; i < 60; i++) {
@@ -183,7 +203,7 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     let stuckAt = ''
     if (!path) stuckAt = 'the walking grid finds no way from the door to the foot of its stairs'
     else {
-      for (const wp of path) if (!stuckAt && !(await walkStraight(wp, 0.6))) stuckAt = `on the way from the door to the foot of its stairs, heading for x ${wp.x.toFixed(1)}, z ${wp.z.toFixed(1)}`
+      for (const wp of shortLegs(door, path)) if (!stuckAt && !(await walkStraight(wp, 0.6))) stuckAt = `on the way from the door to the foot of its stairs, heading for x ${wp.x.toFixed(1)}, z ${wp.z.toFixed(1)}`
     }
     for (const [k, leg] of legs.entries()) {
       if (stuckAt) break
