@@ -88,6 +88,11 @@ export const INTERIOR = {
   lampReach: 7,
   /** How many lamps near the visitor light the room at once (a fixed number, so the shaders are made once). */
   lamps: 4,
+  /**
+   * A window seen from inside at night: it glows in the look's pink, more at night (look.md rule 8), not the flat lemon of the glass
+   * seen from outside, which read as the sun still out (issue 435). By day it is the palette's glow.
+   */
+  windowNight: COLORS.pink,
 } as const
 
 /**
@@ -155,6 +160,48 @@ function pastelWith(base: string, towards: string): string {
     if (s >= INTERIOR.dayWallColour && !(h >= 15 && h <= 75)) return c
   }
   return towards
+}
+
+/**
+ * Furniture, plinths and stands (issues 409, 430). Under a roof they get less light than the walls, so a palette colour that is pale
+ * and grey-ish (a pale wall or the metal) reads as a grey box, and an orange or yellow accent reads as brown or khaki (look.md rule 3).
+ * Each furniture colour keeps at least `colour` of colour (more than the day walls, as it stands in their shade) and stays out of the warm and olive hues `warm`
+ * gives (the hues the night-muddy check counts, and red, which reads maroon in shade), so it reads pastel by day and does not turn
+ * brown at night; a colour mixed to get there is light (`light`), never a dark blot.
+ */
+export const FURNITURE = {
+  colour: 0.34,
+  warm: [0, 130] as const,
+  light: 0.6,
+} as const
+
+const furnitureOk = (hex: string): boolean => {
+  const [h, s] = hsvOf(hex)
+  return s >= FURNITURE.colour && !(h >= FURNITURE.warm[0] && h <= FURNITURE.warm[1])
+}
+
+/**
+ * A palette colour as furniture wears it: itself when it is already a pastel off the warm hues, else mixed with the least of the
+ * palette's trim, then its wood, that makes it one (in steps of 5 percent). The wood of every palette is a lilac, so there is always one.
+ */
+export function furnitureColour(hex: string, colors: { trim: string; wood: string }): string {
+  if (furnitureOk(hex)) return hex
+  const light = (c: string) => hsvOf(c)[2] >= FURNITURE.light
+  // A dark trim (slate's deep indigo) would make a pale thing a dark blot: the lilac wood comes first then.
+  for (const towards of light(colors.trim) ? [colors.trim, colors.wood] : [colors.wood, colors.trim]) {
+    for (let k = 1; k <= 20; k++) {
+      const c = mixHex(hex, towards, k / 20)
+      if (furnitureOk(c) && light(c)) return c
+    }
+  }
+  return furnitureOk(colors.wood) ? colors.wood : COLORS.lilac
+}
+
+/** A palette with every colour but the glow as furniture wears it (`furnitureColour`): the room parts and exhibits are drawn in it. */
+export function furniturePalette<P extends { colors: { wall: string; trim: string; roof: string; floor: string; accent: string; wood: string; metal: string; glow: string } }>(palette: P): P {
+  const c = palette.colors
+  const f = (hex: string) => furnitureColour(hex, c)
+  return { ...palette, colors: { ...c, wall: f(c.wall), trim: f(c.trim), roof: f(c.roof), floor: f(c.floor), accent: f(c.accent), wood: f(c.wood), metal: f(c.metal) } }
 }
 
 /** The mist at the world's edge and the fog, in the look's colours rather than white. */

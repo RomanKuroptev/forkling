@@ -1,10 +1,11 @@
 import type { Kit, KitPalette, Place, SlotKind } from '@forkling/schema'
-import { EXHIBIT } from './theme.ts'
+import { EXHIBIT, furnitureColour } from './theme.ts'
 import { createPrng, placeCentre, toLandPlace, type NeglectLevel } from '@forkling/sim'
 import { floorHeight, type Instance } from './kitBase.ts'
 import { compose, multiply } from './matrix.ts'
 import { TERMINAL_TILT, cardPose } from './exhibitCards.ts'
 import { partInDoorway } from './doorway.ts'
+import { settledPlace } from './insideWalls.ts'
 import { innerWallFace } from './building.ts'
 
 /**
@@ -25,6 +26,7 @@ export interface ExhibitSpot {
 
 /** Each exhibit at its slot (`room / part index / slot index`) on its part, in the world. An exhibit whose slot is not there is left out. */
 export function exhibitSpots(place: Place, kit: Kit, baseY: number): ExhibitSpot[] {
+  place = settledPlace(place, kit)
   const [px, pz] = placeCentre(toLandPlace(place))
   const height = floorHeight(place)
   const spots: ExhibitSpot[] = []
@@ -61,10 +63,12 @@ const BACKING = EXHIBIT.backing
  * in a case with its card on top, the terminal's lit screen. The words and the pictures are the cards in front (`exhibitCards.ts`).
  */
 export function exhibitInstances(spot: ExhibitSpot, colors: KitPalette['colors']): Instance[] {
+  // A frame or keepsake in the accent colour, as furniture wears it: an orange or yellow accent reads brown in a room (issue 409).
+  const accent = furnitureColour(colors.accent, colors)
   const at = (size: [number, number, number], color: string, dy = 0): Instance => ({ shape: 'box', matrix: compose([spot.position[0], spot.position[1] + dy, spot.position[2]], [0, spot.rotY, 0], size), color })
   switch (spot.slotKind) {
     case 'frame':
-      return [at([0.46, 0.36, 0.03], colors.accent)]
+      return [at([0.46, 0.36, 0.03], accent)]
     case 'screen':
       return [{ ...at([0.8, 0.5, 0.03], colors.glow), glow: true }]
     case 'terminal': {
@@ -74,13 +78,14 @@ export function exhibitInstances(spot: ExhibitSpot, colors: KitPalette['colors']
       return [{ shape: 'box', matrix: multiply(turn, compose([0, -Math.sin(TERMINAL_TILT) * out, -0.02 + Math.cos(TERMINAL_TILT) * out], [TERMINAL_TILT, 0, 0], [0.48, 0.33, 0.02])), color: colors.glow, glow: true }]
     }
     case 'plaque':
-      return [at([0.38, 0.2, 0.02], BRASS)]
+      // The board behind the brass card: brass on a stand in a room's shade reads khaki, so the board is in a furniture colour.
+      return [at([0.38, 0.2, 0.02], furnitureColour(BRASS, colors))]
     case 'shelf':
       return [backing(spot)]
     case 'case':
       return [
         at([0.22, 0.18, 0.22], PAPER, 0.09),
-        { shape: 'sphere', matrix: compose([spot.position[0], spot.position[1] + 0.26, spot.position[2]], [0, 0, 0], [0.12, 0.12, 0.12]), color: colors.accent },
+        { shape: 'sphere', matrix: compose([spot.position[0], spot.position[1] + 0.26, spot.position[2]], [0, 0, 0], [0.12, 0.12, 0.12]), color: accent },
         backing(spot),
       ]
   }

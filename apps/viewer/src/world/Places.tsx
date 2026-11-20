@@ -23,6 +23,7 @@ import { galleryWalls, type GalleryWall, type GalleryWork } from './galleryWall.
 import { screenFaces } from './screenFaces.ts'
 import { localFilesBase, worldFileUrl } from './worldData.ts'
 import { ExhibitCards } from './ExhibitCards.tsx'
+import { drawnAsWire } from './wireframe.ts'
 import { cardFaces } from './exhibitCards.ts'
 import { useSouvenirs } from './useSouvenirs.ts'
 import { signBoards } from './signGeometry.ts'
@@ -77,7 +78,9 @@ function glowMaterial(): THREE.MeshStandardMaterial {
       // Under a roof, less of the sky's light; a glowing thing takes only part of the light that falls on it, so it keeps its colour.
       .replace(
         '#include <lights_fragment_end>',
-        `irradiance *= mix(1.0, ${f(INTERIOR.skyInside)}, vInside);\n#include <lights_fragment_end>\nreflectedLight.directDiffuse *= 1.0 - vGlow * ${keep};\nreflectedLight.indirectDiffuse *= 1.0 - vGlow * ${keep};`,
+        // The inside's lining and floors (those with a day colour) show no shine of the sun or the cyan rim light: under a roof it
+        // read as a pure white patch on the floor (issue 429).
+        `irradiance *= mix(1.0, ${f(INTERIOR.skyInside)}, vInside);\n#include <lights_fragment_end>\nreflectedLight.directDiffuse *= 1.0 - vGlow * ${keep};\nreflectedLight.indirectDiffuse *= 1.0 - vGlow * ${keep};\nreflectedLight.directSpecular *= 1.0 - max(vInside, vDay.w);`,
       )
   }
   return material
@@ -263,8 +266,10 @@ export function Places() {
       const [x, z] = placeCentre(toLandPlace(p))
       return land.heightAt(x, z)
     }
-    return cardFaces(insidePlaces.flatMap((p) => exhibitSpots(p, kit, baseOf(p))), souvenirs, world.workIds.length)
-  }, [world, land, insidePlaces, souvenirs])
+    // In a place being built the cards are wire, like everything else there (issue 426).
+    const building = new Set(insidePlaces.filter((p) => drawnAsWire(p, kit, nowMs, WIRE_ALWAYS)).map((p) => p.id))
+    return cardFaces(insidePlaces.flatMap((p) => exhibitSpots(p, kit, baseOf(p))), souvenirs, world.workIds.length, building)
+  }, [world, land, insidePlaces, souvenirs, nowMs])
 
   // The audit harness (`?qa=1`) lists the places as they are drawn now (`window.__qa.scene()`).
   useEffect(() => {

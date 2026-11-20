@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { Place } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { furnitureBoxes } from '../src/world/solidFurniture.ts'
-import { KEEP_FROM_MERGE, keepAwayFrom, keepFor } from '../src/player/keepAway.ts'
-import { CLOSE_MAX_TURN, mergeClosePose } from '../src/qa/cameras.ts'
+import { KEEP_FROM_MERGE, keepAwayFrom, keepAwayStep, keepFor } from '../src/player/keepAway.ts'
+import { CLOSE_MAX_TURN, closeSubject, mergeClosePose } from '../src/qa/cameras.ts'
 import { wallBoxes } from '../src/world/kitGeometry.ts'
 
 const day7 = (id: string): Place => Place.parse(JSON.parse(readFileSync(fileURLToPath(new URL(`../../../test/fixtures/worlds/day-7/places/${id}.json`, import.meta.url)), 'utf8')))
@@ -60,6 +60,74 @@ describe('the visitor keeps a small distance from Merge (issues 357, 349)', () =
     expect(Math.hypot(near.x, near.z)).toBeCloseTo(0.7)
   })
 
+  it('keeps the way round Merge when a step is put back on the distance: only the part of the speed toward Merge is lost', () => {
+    // Heading straight at Merge: all the speed is toward it.
+    const head = keepAwayStep(merge, { x: 2, z: 0 }, { x: 1.5, z: 0 }, { x: -2.5, z: 0 })!
+    expect(head.v.x).toBeCloseTo(0)
+    expect(head.v.z).toBeCloseTo(0)
+    // Heading past it: the speed along the circle stays, so the visitor goes on round Merge.
+    const past = keepAwayStep(merge, { x: KEEP_FROM_MERGE, z: 0 }, { x: KEEP_FROM_MERGE - 0.05, z: 0.08 }, { x: -1.5, z: 2 })!
+    expect(past.v.x).toBeLessThanOrEqual(0)
+    expect(past.v.x).toBeGreaterThan(-0.2)
+    expect(past.v.z).toBeGreaterThan(1.9)
+    expect(keepAwayStep(merge, { x: 3, z: 0 }, { x: 2.9, z: 0 }, { x: -2.5, z: 0 })).toBeNull()
+  })
+
+  it("lets a visitor Merge walked up to go on past it (day-0: stuck at x 9.5, z 18.4 inside Home's door, an invisible wall)", () => {
+    // Merge walks out of Home's door (+z, 1.15 m/s) past a visitor heading in to the middle of Home; the visitor's controller keeps
+    // its speed from frame to frame and turns it toward where the keys point.
+    const dt = 1 / 30
+    const goal = { x: 8, z: 16.89 }
+    let m = { x: 8.15, z: 17.62 }
+    let at = { x: 9.5, z: 18.39 }
+    let v = { x: 0, z: 0 }
+    const start = Math.hypot(goal.x - at.x, goal.z - at.z)
+    for (let i = 0; i < 36; i++) {
+      const d = Math.hypot(goal.x - at.x, goal.z - at.z)
+      const want = { x: ((goal.x - at.x) / d) * 2.5, z: ((goal.z - at.z) / d) * 2.5 }
+      v = { x: v.x + (want.x - v.x) * 0.2, z: v.z + (want.z - v.z) * 0.2 }
+      m = { x: m.x + 0.004, z: m.z + 1.15 * dt }
+      const next = { x: at.x + v.x * dt, z: at.z + v.z * dt }
+      const kept = keepAwayStep(m, at, next, v)
+      at = kept ? kept.at : next
+      if (kept) v = kept.v
+      expect(Math.hypot(at.x - m.x, at.z - m.z)).toBeGreaterThan(0.9)
+    }
+    // 1.2 s of walking: well over the 0.1 m in 0.4 s the walk check calls stuck.
+    expect(start - Math.hypot(goal.x - at.x, goal.z - at.z)).toBeGreaterThan(1)
+  })
+
+  /** Walks a visitor toward `goal` for `frames` frames past Merge standing still at `m` facing `heading`; where it ends. */
+  const walkPast = (m: { x: number; z: number }, heading: number, from: { x: number; z: number }, goal: { x: number; z: number }, frames = 60) => {
+    let at = from
+    let v = { x: 0, z: 0 }
+    let nearest = Infinity
+    for (let i = 0; i < frames; i++) {
+      const d = Math.hypot(goal.x - at.x, goal.z - at.z)
+      if (d < 0.05) break
+      const want = { x: ((goal.x - at.x) / d) * 2.5, z: ((goal.z - at.z) / d) * 2.5 }
+      v = { x: v.x + (want.x - v.x) * 0.2, z: v.z + (want.z - v.z) * 0.2 }
+      const next = { x: at.x + v.x / 30, z: at.z + v.z / 30 }
+      const kept = keepAwayStep(m, at, next, v, KEEP_FROM_MERGE, heading)
+      at = kept ? kept.at : next
+      if (kept) v = kept.v
+      nearest = Math.min(nearest, Math.hypot(at.x - m.x, at.z - m.z))
+    }
+    return { at, nearest }
+  }
+
+  it("keeps the full distance in front of Merge's face, where its face must fit the picture, and less behind it (day-30: stuck 1.6 m behind Merge, short of Home's middle)", () => {
+    // Day-30: Merge sits at (8, 16) facing Home's back wall; a visitor walking in to Home's middle (8, 16.89) came up behind it and
+    // was stopped 1.6 m off, at z 17.6, with nothing drawn within 1.2 m: an invisible wall.
+    const behind = walkPast({ x: 8, z: 16 }, -3.05, { x: 9.35, z: 18.35 }, { x: 8, z: 16.89 })
+    expect(Math.hypot(behind.at.x - 8, behind.at.z - 16.89)).toBeLessThan(0.6)
+    // Still clear of its drawn back (0.34 m behind its middle at this size), so the camera is not on top of it.
+    expect(behind.nearest).toBeGreaterThan(0.34 + 0.3)
+    // In front of its face nothing changes: the visitor stops 1.6 m from its middle.
+    const front = walkPast({ x: 0, z: 0 }, 0, { x: 0, z: 3 }, { x: 0, z: 0 })
+    expect(front.nearest).toBeCloseTo(KEEP_FROM_MERGE, 1)
+  })
+
   it('grows with the size Merge is drawn at: 1.6 m indoors (1.35 times), 2.4 m on open land (twice), where its face is bigger', () => {
     expect(keepFor(1.35)).toBeCloseTo(KEEP_FROM_MERGE)
     expect(keepFor(2)).toBeCloseTo(2.4, 1)
@@ -108,7 +176,7 @@ describe('the merge-close camera stands clear of furniture (issue 348)', () => {
       for (const z of [13, 15, 17, 18.3]) {
         for (let h = -Math.PI; h < Math.PI; h += Math.PI / 6) {
           const pose = mergeClosePose({ x, z }, h, ground, obstacles)
-          expect(offFace(pose, { x, z }, h), `${x}, ${z}, ${h}`).toBeLessThanOrEqual(CLOSE_MAX_TURN + 0.01)
+          expect(offFace(pose, { x, z }, h), `${x}, ${z}, ${h}`).toBeLessThan(CLOSE_MAX_TURN - 1)
         }
       }
     }
@@ -133,6 +201,18 @@ describe('the merge-close camera stands clear of furniture (issue 348)', () => {
     }
     expect(Math.hypot(pose.position[0] - 8, pose.position[2] - 17.5)).toBeGreaterThan(0.9)
   })
+  it('stands in front of Merge as it is drawn, not where the sim has already turned it (night: 129 deg round, its back to the lens)', () => {
+    // At night Merge turned round in the sim (heading 180 deg) a moment before the drawing caught up: it is still drawn facing +z.
+    const drawn = { position: { x: 8.1, z: 17.1 }, heading: 0.09 }
+    const sim = { pos: { x: 8, z: 16 }, heading: Math.PI - 0.05 }
+    const subject = closeSubject(drawn, sim)
+    expect(subject).toEqual({ pos: drawn.position, heading: drawn.heading })
+    const pose = mergeClosePose(subject.pos, subject.heading, ground, obstacles)
+    expect(offFace(pose, drawn.position, drawn.heading)).toBeLessThanOrEqual(CLOSE_MAX_TURN)
+    // Before Merge is first drawn, the sim's own state.
+    expect(closeSubject({ position: null, heading: 0 }, sim)).toEqual(sim)
+  })
+
   it('moves when a box fills a corner of the picture near the lens, even off the line to Merge', () => {
     // Merge at the origin facing +z: the plain pose stands at (0, 0.7, 1.5). A crate just in front of the lens, to one side.
     const crate: Box = { min: [0.15, 0.2, 1.0], max: [0.6, 0.65, 1.3] }

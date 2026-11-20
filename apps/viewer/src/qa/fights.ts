@@ -1,6 +1,7 @@
 import { placeCentre, surfaceFights, toLandPlace, type DrawnBox } from '@forkling/sim'
 import { buildingModel } from '../world/building.ts'
 import { exhibitInstances, exhibitSpots, signSpot } from '../world/exhibitGeometry.ts'
+import { signFaceInstance } from '../world/signGeometry.ts'
 import { galleryWalls, wallInstances } from '../world/galleryWall.ts'
 import { exteriorInstances, interiorParts, partInstances, type Instance } from '../world/kitGeometry.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
@@ -23,7 +24,21 @@ export interface QaFight {
 type Snapshot = Pick<PlacesSnapshot, 'places' | 'kit' | 'heightAt' | 'nowMs' | 'wireAlways' | 'shelf'>
 
 /** A drawn box of a place, with what it is: the building's slot, a floor, a room's part (and its kit id), an exhibit. */
-type PlaceBox = DrawnBox & { what: string; part?: string; building?: boolean }
+type PlaceBox = DrawnBox & { what: string; part?: string; building?: boolean; round?: boolean }
+
+/**
+ * The sign of a place: its post's boxes (one group, left to the kit's maker) and the painted face in front of them, which `Signs.tsx`
+ * draws as a flat quad lit by its own picture (issue 406: the face lay in the plane of the posts' fronts and shimmered).
+ */
+export function signFightBoxes(place: Snapshot['places'][number], kit: Snapshot['kit'], baseY: number): PlaceBox[] {
+  const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
+  const post = kit.parts.find((p) => p.id === 'sign-post')
+  const out: PlaceBox[] = []
+  for (const i of post ? partInstances(post, signSpot(place, baseY).position, 0, palette) : []) if (i.shape === 'box') out.push({ matrix: i.matrix, color: i.color, group: 'sign-post', what: 'the sign post' })
+  const face = signFaceInstance(place, baseY)
+  out.push({ matrix: face.matrix, color: face.color, glow: true, what: 'the sign board' })
+  return out
+}
 
 /** Every drawn box of a place, outside and in, and the ground under it; null for a place drawn as cyan lines (being built). */
 function placeBoxes(place: Snapshot['places'][number], s: Snapshot): { boxes: PlaceBox[]; baseY: number } | null {
@@ -34,20 +49,21 @@ function placeBoxes(place: Snapshot['places'][number], s: Snapshot): { boxes: Pl
   const boxes: PlaceBox[] = []
   const push = (list: readonly Instance[], what: (i: Instance) => string, extra: (i: Instance) => { group?: string; part?: string; building?: boolean } = () => ({})) => {
     for (const i of list) {
-      if (i.shape !== 'box') continue
+      // An upright cylinder (a rug, a round table top) has flat discs top and bottom, in the planes of its box's top and bottom (issue 432).
+      if (i.shape !== 'box' && i.shape !== 'cylinder') continue
       const e = extra(i)
       const g = e.group ?? i.group
-      boxes.push({ matrix: i.matrix, color: i.color, ...(i.glow ? { glow: true } : {}), ...(g ? { group: g } : {}), ...(e.part ? { part: e.part } : {}), ...(e.building ? { building: true } : {}), what: what(i) })
+      boxes.push({ matrix: i.matrix, color: i.color, ...(i.glow ? { glow: true } : {}), ...(g ? { group: g } : {}), ...(e.part ? { part: e.part } : {}), ...(e.building ? { building: true } : {}), ...(i.shape === 'cylinder' ? { round: true } : {}), what: what(i) })
     }
   }
   const palette = s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0]!
   const model = buildingModel(place, s.kit, baseY)
   if (model) {
     for (const [slot, list] of Object.entries(model.slots)) push(list, () => `the ${slot} of the building`, () => ({ building: true }))
-    const post = s.kit.parts.find((p) => p.id === 'sign-post')
-    if (post) push(partInstances(post, signSpot(place, baseY).position, 0, palette), () => 'the sign post', () => ({ group: 'sign-post' }))
+    boxes.push(...signFightBoxes(place, s.kit, baseY))
   } else {
     push(exteriorInstances(place, s.kit, baseY), () => 'the outside', () => ({ building: true }))
+    boxes.push(...signFightBoxes(place, s.kit, baseY).filter((b) => b.what === 'the sign board'))
   }
   const partOf = (group: string) => place.rooms.find((r) => r.id === group.split('/')[0])?.parts[Number(group.split('/')[1])]?.part
   push(interiorParts(place, s.kit, baseY).instances, (i) => (i.group ? `part ${i.group} (${partOf(i.group) ?? 'part'})` : 'a floor'), (i) => {
@@ -75,6 +91,8 @@ export function placeFights(s: Snapshot): QaFight[] {
     if (!drawn) continue
     const { boxes, baseY } = drawn
     for (const f of surfaceFights(boxes)) {
+      // A round part's sides are curved: only its top and bottom discs lie in a plane.
+      if ((boxes[f.a]!.round || boxes[f.b]!.round) && Math.abs(f.normal[1]) < 0.99) continue
       // An underside lying on the ground under the place is never seen.
       if (f.normal[1] < -0.5 && f.at[1] <= baseY + 0.001) continue
       out.push({ place: place.id, a: boxes[f.a]!.what, b: boxes[f.b]!.what, area: f.area, at: f.at, normal: f.normal })
@@ -110,7 +128,7 @@ export function coveredDoors(s: Snapshot): QaCoveredDoor[] {
   for (const place of s.places) {
     const drawn = placeBoxes(place, s)
     if (!drawn) continue
-    const boxes = drawn.boxes.filter((b) => b.building || /^door/.test(b.part ?? ''))
+    const boxes = drawn.boxes.filter((b) => !b.round && (b.building || /^door/.test(b.part ?? '')))
     for (const f of surfaceFights(boxes, { gap: COVER_GAP, area: COVER_AREA })) {
       if (Math.abs(f.normal[1]) > 0.5) continue
       const front = boxes[f.front]!

@@ -1,6 +1,7 @@
 import type { Kit, Place } from '@forkling/schema'
 import { floorHeight } from './kitBase.ts'
 import { partInDoorway, placedPartBox } from './doorway.ts'
+import { screenStands, settledPlace } from './insideWalls.ts'
 
 /**
  * The furniture a visitor bumps into (issue 357): one plain box for each piece of a room that stands on its floor, as the kit sizes
@@ -25,15 +26,20 @@ export interface SolidBox {
 }
 
 export function furnitureBoxes(place: Place, kit: Kit, baseY: number): SolidBox[] {
+  // Where the furniture is drawn: pulled out of the walls (`insideWalls.ts`), so the visitor bumps into what it sees.
+  const stands = screenStands(place, kit)
+  place = settledPlace(place, kit)
   const out: SolidBox[] = []
   const storey = floorHeight(place)
   for (const room of place.rooms) {
     const floorY = baseY + room.floor * storey
-    for (const placed of room.parts) {
+    for (const [index, placed] of room.parts.entries()) {
       const part = kit.parts.find((p) => p.id === placed.part)
       if (!part || part.category === 'structure') continue
-      const box = placedPartBox(place, kit, room, placed, baseY)
-      if (!box) continue
+      const raw = placedPartBox(place, kit, room, placed, baseY)
+      if (!raw) continue
+      // A screen on its tall stand stands on the floor (`screenStands`).
+      const box = stands.has(`${room.id}/${index}`) ? { ...raw, min: [raw.min[0], floorY, raw.min[2]] as [number, number, number] } : raw
       if (box.max[1] - Math.max(box.min[1], floorY) < STEP_OVER) continue
       if (box.min[1] - floorY > OVERHEAD) continue
       if (partInDoorway(place, kit, room, placed, baseY)) continue

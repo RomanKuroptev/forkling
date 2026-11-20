@@ -79,7 +79,8 @@ export function segmentHitsBox(a: readonly number[], b: readonly number[], box: 
  * face reads; issue 348's second look), how far away it may stand, and how high the lens may rise to look over furniture.
  */
 export const CLOSE_MAX_TURN = 45
-const CLOSE_TURNS = [0, 15, -15, 30, -30, 45, -45].map((d) => (d * Math.PI) / 180)
+// The last turn stays 5 deg inside the limit: a pose at exactly 45 deg came out a hair over it once measured from the drawn Merge.
+const CLOSE_TURNS = [0, 15, -15, 30, -30, 40, -40].map((d) => (d * Math.PI) / 180)
 const CLOSE_DISTANCES = [1.5, 1.2, 1.0]
 const CLOSE_HEIGHTS = [0.7, 1.1, 1.5]
 /** The lens keeps this far from any box, so nothing is right in front of it. */
@@ -91,6 +92,16 @@ const MERGE_POINTS = [0.05, 0.4, 0.8]
 /** Half the picture's field of view, tall and wide (a laptop window, 70 deg tall), in radians: the corners of what the lens sees. */
 const HALF_TALL = (35 * Math.PI) / 180
 const HALF_WIDE = Math.atan(Math.tan(HALF_TALL) * 1.6)
+
+/**
+ * Who the merge-close camera stands in front of: Merge as it is drawn (`mergeSpot`: where, and the way its face points), the same
+ * Merge the picture shows. The sim's state runs ahead of the drawing, which turns to follow it over a few frames; at night Merge
+ * turned round in the sim a moment before the picture, so a camera set from the sim stood in front of where it was about to face,
+ * behind the face that was drawn (129 deg round). Before Merge is first drawn, the sim's own state.
+ */
+export function closeSubject(drawn: { position: { x: number; z: number } | null; heading: number }, sim: { pos: { x: number; z: number }; heading: number }): { pos: { x: number; z: number }; heading: number } {
+  return drawn.position ? { pos: drawn.position, heading: drawn.heading } : sim
+}
 
 /**
  * The named camera `merge-close`: low in front of Merge's face, looking at it, 1.5 m away. When a piece of furniture or a wall

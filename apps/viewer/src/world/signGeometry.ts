@@ -1,6 +1,8 @@
 import type { Kit, Place } from '@forkling/schema'
 import { buildingWords, signLine } from '@forkling/sim'
 import { WINDOW } from './theme.ts'
+import type { Instance } from './kitBase.ts'
+import { compose } from './matrix.ts'
 import { SIGN_BOTTOM, SIGN_H, SIGN_W, signSpot } from './exhibitGeometry.ts'
 
 /**
@@ -181,17 +183,33 @@ export interface SignBoard {
   colors: { bg: string; fg: string }
 }
 
-/** How far in front of the board's slab its painted face stands, so the two never fight. */
-const FACE = 0.06
+/**
+ * How far in front of the sign post's middle its painted face stands: past the board's front (0.05) and the posts' fronts (0.06),
+ * which it lay flush with and fought (issue 406), and behind the trim bars' fronts (0.08), which frame it above and below.
+ */
+const FACE = 0.07
+
+/** The middle of a place's painted sign face, in the world (in front of the post's board, facing +z). */
+export function signFaceCentre(place: Place, baseY: number): [number, number, number] {
+  const spot = signSpot(place, baseY).position
+  return [spot[0], spot[1] + SIGN_BOTTOM + SIGN_H / 2, spot[2] + FACE]
+}
+
+/**
+ * The painted face as a box with no depth, for the audit's surface check (`apps/viewer/src/qa/fights.ts`): it is drawn as a flat
+ * quad (`Signs.tsx`), lit by its own picture, so a face of the post in its plane fights it (issue 406).
+ */
+export function signFaceInstance(place: Place, baseY: number): Instance {
+  return { shape: 'box', matrix: compose(signFaceCentre(place, baseY), [0, 0, 0], [SIGN_W, SIGN_H, 1e-4]), color: WINDOW.body, glow: true }
+}
 
 /** One board for each place: where it stands (by the door, facing the path), what it says at `nowMs` and the colours it is painted in. */
 export function signBoards(places: readonly Place[], baseOf: (place: Place) => number, kit: Kit, nowMs?: number): SignBoard[] {
   return places.map((place) => {
-    const spot = signSpot(place, baseOf(place)).position
     const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
     return {
       id: place.id,
-      position: [spot[0], spot[1] + SIGN_BOTTOM + SIGN_H / 2, spot[2] + FACE],
+      position: signFaceCentre(place, baseOf(place)),
       size: [SIGN_W, SIGN_H],
       layout: signLayout(place, places, nowMs),
       colors: signColors(palette.colors.wood),

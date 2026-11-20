@@ -9,6 +9,9 @@ export interface IndexedMesh {
   indices: Uint32Array
 }
 
+/** Squares of 2 meters a side (16 to a chunk side): gentle terrain, and few enough triangles for a world of 64 places. The paths are laid on the same squares (`pathGeometry.ts`). */
+export const LAND_SEGMENTS = 16
+
 export interface VisibleChunk {
   chunk: Chunk
   owned: boolean
@@ -112,63 +115,4 @@ export function fogWalls(land: Land, layers = FOG_LAYERS): FogWall[] {
     }
   }
   return walls
-}
-
-export interface RibbonOptions {
-  width?: number
-  /** Distance between the strips the path is cut into, so it follows the ground. */
-  step?: number
-  /** How far above the ground it lies, so it does not flicker against it. */
-  lift?: number
-  /** Leave out a strip whose middle is here, e.g. inside a building. */
-  skip?: (x: number, z: number) => boolean
-}
-
-/** A path drawn on the ground (spec 4.3: a 3 meter track along the line), as strips of 4 vertices, each on the ground. */
-export function pathRibbon(points: readonly (readonly [number, number])[], heightAt: (x: number, z: number) => number, opts: RibbonOptions = {}): IndexedMesh {
-  const { width = 3, step = 2, lift = 0.05, skip } = opts
-  const half = width / 2
-  const verts: number[] = []
-  const idx: number[] = []
-  for (let s = 1; s < points.length; s++) {
-    const [ax, az] = points[s - 1]!
-    const [bx, bz] = points[s]!
-    const length = Math.hypot(bx - ax, bz - az)
-    if (length === 0) continue
-    const dx = (bx - ax) / length
-    const dz = (bz - az) / length
-    // Rotated a quarter turn, so the strip faces up.
-    const nx = dz
-    const nz = -dx
-    const n = Math.max(1, Math.ceil(length / step - 1e-9))
-    for (let k = 0; k < n; k++) {
-      const t0 = (k / n) * length
-      const t1 = ((k + 1) / n) * length
-      const x0 = ax + dx * t0
-      const z0 = az + dz * t0
-      const x1 = ax + dx * t1
-      const z1 = az + dz * t1
-      if (skip?.((x0 + x1) / 2, (z0 + z1) / 2)) continue
-      const base = verts.length / 3
-      for (const [x, z] of [
-        [x0 + nx * half, z0 + nz * half],
-        [x0 - nx * half, z0 - nz * half],
-        [x1 + nx * half, z1 + nz * half],
-        [x1 - nx * half, z1 - nz * half],
-      ] as const) {
-        verts.push(x, heightAt(x, z) + lift, z)
-      }
-      idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2)
-    }
-  }
-  // A bend leaves a wedge open on its outside. A square of the track's width on the bend closes it (any wedge is within half a width of the corner).
-  for (let s = 1; s + 1 < points.length; s++) {
-    const [cx, cz] = points[s]!
-    if (skip?.(cx, cz)) continue
-    const base = verts.length / 3
-    for (const [x, z] of [[cx - half, cz - half], [cx + half, cz - half], [cx - half, cz + half], [cx + half, cz + half]] as const) verts.push(x, heightAt(x, z) + lift, z)
-    // Wound like the strips (face up) whichever way the path turns.
-    idx.push(base, base + 2, base + 1, base + 1, base + 2, base + 3)
-  }
-  return { positions: new Float32Array(verts), indices: new Uint32Array(idx) }
 }

@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { WorkChecker } from '@forkling/mind/src/builds/browser-check.ts'
@@ -33,6 +33,8 @@ export interface SeedRun {
   label: string
   world: string
   outDir: string
+  /** The run's first day. Scores never count the start world's days before it. Absent for a live world. */
+  from?: string
 }
 
 export interface BehaviourOptions {
@@ -47,7 +49,7 @@ export interface BehaviourOptions {
   snapshot: string
   scenario?: Scenario
   sessions?: boolean
-  /** The first seed's start date; seed k starts k days later. Default tomorrow. */
+  /** The first seed's start date; seed k starts k days later. Default: the start world's own clock (`qa.json` `now`), else tomorrow. Never a day the world has already logged (see `runStart`). */
   start?: string
   /** For real runs: an env file with the model key. */
   envFile?: string
@@ -74,13 +76,48 @@ export function seedWorld(from: string, to: string, k: number): void {
 }
 
 const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10)
+
+/** The folders where a world logs its days, one dated file a day. */
+const DATED = ['memory/stream', 'mind/ticks', 'notebook/plans', 'journal']
+
+/** The last day the world has logged anything (a stream, a tick log, a plan, a diary page), or null for a fresh world. */
+export function lastLoggedDay(world: string): string | null {
+  let last: string | null = null
+  for (const rel of DATED) {
+    const dir = join(world, rel)
+    if (!existsSync(dir)) continue
+    for (const f of readdirSync(dir)) {
+      const date = /^(\d{4}-\d{2}-\d{2})\.(jsonl|md)$/.exec(f)?.[1]
+      if (date && (!last || date > last)) last = date
+    }
+  }
+  return last
+}
+
+/**
+ * The first day of a run: the given start, else the fixture's own clock (`qa.json` `now`), else tomorrow; and never earlier than
+ * the day after the world's last logged day. A run that starts inside the world's past writes into its old files, its scores count
+ * the old days as the run's, and Merge reads pages dated in its own future.
+ */
+export function runStart(world: string, timezone: string, given: string | undefined, nowMs: number): string {
+  let start = given
+  if (!start) {
+    const qaPath = join(world, 'qa.json')
+    const clock = existsSync(qaPath) ? Date.parse(String((JSON.parse(readFileSync(qaPath, 'utf8')) as { now?: unknown }).now ?? '')) : Number.NaN
+    start = localDate(timezone, Number.isNaN(clock) ? nowMs + 86_400_000 : clock)
+  }
+  const last = lastLoggedDay(world)
+  const floor = last ? addDays(last, 1) : null
+  return floor && floor > start ? floor : start
+}
+
 const checker: WorkChecker = { check: async () => ({ ok: true, reasons: [], thumb: PNG }), available: async () => true, close: async () => undefined }
 
 export async function runSeeds(o: BehaviourOptions): Promise<SeedRun[]> {
   const log = o.log ?? (() => undefined)
   const forkling = JSON.parse(readFileSync(join(o.world, 'forkling.json'), 'utf8')) as { timezone?: string }
   const timezone = forkling.timezone ?? 'Europe/Stockholm'
-  const start = o.start ?? localDate(timezone, Date.now() + 86_400_000)
+  const start = runStart(o.world, timezone, o.start, Date.now())
   const runs: SeedRun[] = []
   for (let k = 0; k < o.seeds; k++) {
     const label = `seed-${k}`
@@ -129,7 +166,7 @@ export async function runSeeds(o: BehaviourOptions): Promise<SeedRun[]> {
       // A failed run is still scored: the fast-forward's own verdict is in its summary.
       spawnSync(process.execPath, args, { stdio: 'inherit', cwd: join(repoRoot(), 'apps/mind') })
     }
-    runs.push({ label, world, outDir })
+    runs.push({ label, world, outDir, from: startDate })
   }
   return runs
 }
@@ -191,7 +228,7 @@ export async function scoreRuns(runs: SeedRun[], levels: Levels, runLabel: strin
   for (const r of runs) {
     let run: ReturnType<typeof readRun>
     try {
-      run = readRun({ world: r.world, outDir: existsSync(join(r.outDir, 'summary.md')) || existsSync(join(r.outDir, 'prompts.jsonl')) ? r.outDir : null, label: r.label })
+      run = readRun({ world: r.world, outDir: existsSync(join(r.outDir, 'summary.md')) || existsSync(join(r.outDir, 'prompts.jsonl')) ? r.outDir : null, label: r.label, ...(r.from ? { notBefore: r.from } : {}) })
     } catch (e) {
       // A seed that never ran (no key, a crash before the first tick) is a check that did not run, never a crash of the whole score.
       notRun.push({ ...didNotRun({ id: `behaviour:${runLabel}:${r.label}`, area: 'behaviour', title: `behaviour run ${runLabel} ${r.label}` }, e, now) })
