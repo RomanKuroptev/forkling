@@ -66,6 +66,8 @@ export interface QaObject {
   footprint?: { x0: number; z0: number; x1: number; z1: number }
   /** For a place: its palette's wall colour, which the inside walls must read close to by day (`world.room-wall-colour`). */
   wall?: string
+  /** For a place: the colour its outside walls are drawn in, which must keep colour enough to stay coloured in shade (`world.outside-wall-grey`). */
+  outsideWall?: string
   /** The words painted on a sign or a title bar. */
   text?: string
   /**
@@ -156,9 +158,14 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     // What holds the sign up, as drawn: the solid pieces of the outside (or, while it is wire, the sign post drawn solid) under its board.
     const [sx, , sz] = signSpot(place, baseY).position
     supports.set(place.id, (wired ? signPostInstances(place, s.kit, baseY, s.heightAt) : exteriorInstances(place, s.kit, baseY, s.heightAt)).map((i) => instancesBox([i])!).filter((b) => b.max[1] - b.min[1] > 0.5 && b.min[0] >= sx - SIGN_W / 2 - 0.3 && b.max[0] <= sx + SIGN_W / 2 + 0.3 && Math.abs((b.min[2] + b.max[2]) / 2 - sz) < 0.5))
-    const wall = (s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0])?.colors.wall
+    const colors = (s.kit.palettes.find((p) => p.id === place.exterior.palette) ?? s.kit.palettes[0])?.colors
+    const wall = colors?.wall
+    // The outside walls as drawn: the commonest colour of the building's body that is not chrome, marble, accent or glow.
+    const counts = new Map<string, number>()
+    for (const i of buildingModel(place, s.kit, baseY)?.slots.body ?? []) if (colors && ![colors.metal, colors.accent, colors.glow, COLORS.white, COLORS.metal].includes(i.color)) counts.set(i.color, (counts.get(i.color) ?? 0) + 1)
+    const drawnWall = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0]
     const lines = wired ? { wire: wire.map((l) => lineEnds(l.matrix)) } : {}
-    out.push({ id: place.id, kind: 'place', name: place.name, ...(wall ? { wall } : {}), ...lines, footprint: { x0: round(px - place.exterior.footprint[0] / 2), z0: round(pz - place.exterior.footprint[1] / 2), x1: round(px + place.exterior.footprint[0] / 2), z1: round(pz + place.exterior.footprint[1] / 2) }, box: instancesBox(outside), visible: true, material: wired ? 'wireframe' : 'solid' })
+    out.push({ id: place.id, kind: 'place', name: place.name, ...(wall ? { wall } : {}), ...(drawnWall && !wired ? { outsideWall: drawnWall } : {}), ...lines, footprint: { x0: round(px - place.exterior.footprint[0] / 2), z0: round(pz - place.exterior.footprint[1] / 2), x1: round(px + place.exterior.footprint[0] / 2), z1: round(pz + place.exterior.footprint[1] / 2) }, box: instancesBox(outside), visible: true, material: wired ? 'wireframe' : 'solid' })
     const height = floorHeight(place)
     const door = doorwayBox(place, baseY)
     out.push({ id: `${place.id}/door`, kind: 'door', place: place.id, box: { min: door.min.map(round) as QaBox['min'], max: door.max.map(round) as QaBox['max'] }, visible: true, material: 'none' })
@@ -229,7 +236,10 @@ export function objectEntry(id: string, kind: QaKind, object: THREE.Object3D): Q
     const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined
     if (!m || material === 'wireframe') return
     const list = Array.isArray(m) ? m : [m]
-    material = list.some((x) => (x as THREE.MeshBasicMaterial).wireframe) ? 'wireframe' : 'solid'
+    if (list.some((x) => (x as THREE.MeshBasicMaterial).wireframe)) material = 'wireframe'
+    // Blended, faded or not writing depth: what is behind it shows through (issue 455).
+    else if (material === 'glass' || list.some((x) => x.transparent || x.opacity < 1 || !x.depthWrite)) material = 'glass'
+    else material = 'solid'
   })
   const box: QaBox | null = b.isEmpty() ? null : { min: [round(b.min.x), round(b.min.y), round(b.min.z)], max: [round(b.max.x), round(b.max.y), round(b.max.z)] }
   return { id, kind, box, visible, material }

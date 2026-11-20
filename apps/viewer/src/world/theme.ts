@@ -153,11 +153,20 @@ export const dayInteriorWall = (colors: { wall: string; trim: string }): string 
 /** The floor inside by day, the same way: the palette's floor with the least of its wood colour that gives it colour. */
 export const dayInteriorFloor = (colors: { floor: string; wood: string }): string => pastelWith(colors.floor, colors.wood)
 
-function pastelWith(base: string, towards: string): string {
+/**
+ * The least colour (saturation) the outside walls are drawn with. A near-white wall (meadow's pale mint, moss, paper) read as plain
+ * grey in shade, under Home's porch (look.md rule 2: shade stays coloured). The walls of the other palettes have this much already.
+ */
+export const OUTSIDE_WALL_COLOUR = 0.2
+
+/** The outside wall (the body of a building): the palette's wall, mixed with the least of its trim that gives it `OUTSIDE_WALL_COLOUR` of colour, the same way as inside. */
+export const outsideWall = (colors: { wall: string; trim: string }): string => pastelWith(colors.wall, colors.trim, OUTSIDE_WALL_COLOUR)
+
+function pastelWith(base: string, towards: string, least: number = INTERIOR.dayWallColour): string {
   for (let k = 0; k <= 20; k++) {
     const c = mixHex(base, towards, k / 20)
     const [h, s] = hsvOf(c)
-    if (s >= INTERIOR.dayWallColour && !(h >= 15 && h <= 75)) return c
+    if (s >= least && !(h >= 15 && h <= 75)) return c
   }
   return towards
 }
@@ -215,7 +224,11 @@ export const MIST = {
   targetDay: COLORS.face,
 } as const
 
-export const LAND = { grass: COLORS.teal, darkGrass: '#5fd0e8', meadow: '#a6f0df' } as const
+/**
+ * The land. `side` is its side face, a deeper teal than the top, as in the look's pictures (issue 454); `rim` the bright band at the
+ * top of that side and the strip along the end on top, so the end of the land shows where the walk stops.
+ */
+export const LAND = { grass: COLORS.teal, darkGrass: '#5fd0e8', meadow: '#a6f0df', side: '#3fa9bf', rim: '#c8fff6' } as const
 
 export const PATH = { color: COLORS.face, glow: '#ff9ad8' } as const
 

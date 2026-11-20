@@ -25,6 +25,8 @@ export interface SceneObject {
   footprint?: { x0: number; z0: number; x1: number; z1: number }
   /** For a place: its palette's wall colour. */
   wall?: string
+  /** For a place: the colour its outside walls are drawn in. */
+  outsideWall?: string
   text?: string
   /** For a sign: the boxes of the solid pieces under its board that could hold it up (its posts), as drawn. */
   support?: { min: [number, number, number]; max: [number, number, number] }[]

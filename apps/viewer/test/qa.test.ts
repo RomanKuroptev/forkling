@@ -7,6 +7,7 @@ import { createWorldClock } from '../src/clock.ts'
 import { QA_DEFAULT_NOW, qaParams } from '../src/qa/params.ts'
 import { instancesBox, objectEntry, placeObjects } from '../src/qa/sceneList.ts'
 import { compose } from '../src/world/matrix.ts'
+import { outsideWall } from '../src/world/theme.ts'
 
 const flat = () => 0
 const NOW = Date.parse('2026-11-26T13:00:00Z')
@@ -84,6 +85,15 @@ describe('the scene list', () => {
     expect(list.filter((o) => o.kind === 'room').every((o) => !o.visible)).toBe(true)
   })
 
+  it('lists the colour each place\'s outside walls are drawn in, for the shade check (look.md rule 2)', () => {
+    const places = starterPlaces()
+    const list = placeObjects({ places, kit, heightAt: flat, interiors: new Set(), nowMs: NOW, plots: [] })
+    // Home's timber walls are in its palette's wall; the Workshop's tin shack is chrome all round, a neutral, so it lists none.
+    const home = places.find((p) => p.id === 'home')!
+    expect(list.find((o) => o.id === 'home')!.outsideWall).toBe(outsideWall(kit.palettes.find((k) => k.id === home.exterior.palette)!.colors))
+    expect(list.find((o) => o.id === 'workshop')!.outsideWall).toBeUndefined()
+  })
+
   it('says what each exhibit card shows: the souvenir once read, the label before, the gallery with its count (issues 347, 355)', () => {
     const places = starterPlaces()
     const home = places.find((p) => p.id === 'home')!
@@ -144,5 +154,13 @@ describe('the scene list', () => {
     expect(entry.visible).toBe(true)
     group.visible = false
     expect(objectEntry('merge', 'merge', group).visible).toBe(false)
+  })
+
+  it('lists a body with a see-through part as glass, and an opaque one as solid (issue 455)', () => {
+    const group = new THREE.Group()
+    group.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial()))
+    expect(objectEntry('merge', 'merge', group).material).toBe('solid')
+    group.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.6 })))
+    expect(objectEntry('merge', 'merge', group).material).toBe('glass')
   })
 })

@@ -2,7 +2,7 @@ import type { Kit, KitPalette, Place } from '@forkling/schema'
 import { DOOR_HALF, placeCentre, toLandPlace } from '@forkling/sim'
 import { FLOOR_INSET, FLOOR_TOP, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose } from './matrix.ts'
-import { COLORS, INTERIOR, dayInteriorWall, interiorWall } from './theme.ts'
+import { COLORS, INTERIOR, dayInteriorWall, interiorWall, outsideWall } from './theme.ts'
 
 /**
  * The building model of docs/spec/v4/look.md: every building is drawn from six slots (base, body, front, crown, hero, glow) and is a
@@ -83,7 +83,8 @@ export interface BuildingModel {
 type Colors = { body: string; accent: string; glow: string; chrome: string; marble: string }
 
 const colorsOf = (palette: KitPalette): Colors => ({
-  body: palette.colors.wall,
+  // Given colour enough to stay coloured in shade (look.md rule 2).
+  body: outsideWall(palette.colors),
   accent: palette.colors.accent,
   glow: palette.colors.glow,
   chrome: palette.colors.metal,
