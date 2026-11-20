@@ -79,11 +79,18 @@ async function buildOnce(out: string, { build = viteBuild, pollMs = 250, staleMs
   }
 }
 
+/**
+ * What the viewer build is given on top of the caller's environment. `NODE_ENV` is `production` whoever builds: under Vitest it
+ * is `test`, and Vite then built React's development code, the viewer the browser tests walked was 350 KB bigger and about twice
+ * as slow as the one visitors get, and the planted world tests took 13 of the fast job's 20 minutes.
+ */
+export const viewerBuildEnv = { NODE_ENV: 'production', VITE_BASE: '/', VITE_WORLD: '', VITE_MIND_URL: '', VITE_TURNSTILE_SITE_KEY: '', VITE_GOATCOUNTER_CODE: '' } as const
+
 async function viteBuild(out: string): Promise<void> {
   const viewerDir = join(repoRoot(), 'apps', 'viewer')
   const vite = join(dirname(createRequire(join(viewerDir, 'package.json')).resolve('vite/package.json')), 'bin', 'vite.js')
   // A plain build at `/`, with no forkling's world or server baked in.
-  const env = { ...process.env, VITE_BASE: '/', VITE_WORLD: '', VITE_MIND_URL: '', VITE_TURNSTILE_SITE_KEY: '', VITE_GOATCOUNTER_CODE: '' }
+  const env = { ...process.env, ...viewerBuildEnv }
   await new Promise<void>((resolve, reject) => {
     const child = spawn(process.execPath, [vite, 'build', '--outDir', out, '--emptyOutDir'], { cwd: viewerDir, env, stdio: ['ignore', 'ignore', 'inherit'] })
     child.on('error', reject)
