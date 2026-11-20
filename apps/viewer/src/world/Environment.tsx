@@ -3,6 +3,8 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { touchUi } from '../touch.ts'
+import { visitor } from '../visitor.ts'
+import { SUN_SHADOW, sunPose } from './sunShadow.ts'
 import { GRID, LIGHT, MIST, NIGHT_LIGHT, SKY } from './theme.ts'
 import { useWorld } from './WorldContext.tsx'
 
@@ -161,7 +163,11 @@ export function Environment() {
     fog.color.copy(fogDay).lerp(fogNight, night)
     grid.uniforms.uFogColor!.value.copy(fog.color)
     if (sun.current) {
-      sun.current.position.set(dir[0] * 80, Math.max(dir[1], 0.25) * 80, dir[2] * 80)
+      // The sun's shadow box follows the visitor, so the roof of a place far from the middle still shades its floor (issue 429).
+      const pose = sunPose(dir, visitor.position)
+      sun.current.position.set(...pose.position)
+      sun.current.target.position.set(...pose.target)
+      sun.current.target.updateMatrixWorld()
       sun.current.intensity = 2.2 * (1 - night) + 0.4 * night
       sun.current.color.copy(colors.sunDay).lerp(colors.sunNight, night)
     }
@@ -186,10 +192,10 @@ export function Environment() {
         intensity={2}
         castShadow
         shadow-mapSize={touchUi ? [1024, 1024] : [2048, 2048]}
-        shadow-camera-left={-55}
-        shadow-camera-right={55}
-        shadow-camera-top={55}
-        shadow-camera-bottom={-55}
+        shadow-camera-left={-SUN_SHADOW.half}
+        shadow-camera-right={SUN_SHADOW.half}
+        shadow-camera-top={SUN_SHADOW.half}
+        shadow-camera-bottom={-SUN_SHADOW.half}
         shadow-camera-near={1}
         shadow-camera-far={220}
         shadow-bias={-0.0005}
