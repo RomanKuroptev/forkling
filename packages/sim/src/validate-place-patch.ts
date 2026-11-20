@@ -1,7 +1,7 @@
 import { Place, PlacePatch } from '@forkling/schema'
 import { capHistory } from './place-history.ts'
 import { upperRoomWithoutStairs } from './stairs.ts'
-import { PLACE_LIMITS, validatePlace, type PlaceContext } from './validate-place.ts'
+import { PLACE_LIMITS, roomOutsideWalls, validatePlace, type PlaceContext } from './validate-place.ts'
 
 /** The limits of spec 5.4 that are about one change rather than the whole file. */
 export const PATCH_LIMITS = {
@@ -43,7 +43,7 @@ export function validatePlacePatch(before: unknown, patch: unknown, ctx: PatchCo
   if (!parsed.success) return { ok: false, reasons: parsed.error.issues.map((i) => `${i.path.join('.') || 'patch'}: ${i.message}`).slice(0, 8) }
 
   const change = parsed.data
-  /** The rooms this patch adds or enlarges: one upstairs must have stairs below it (issue 333). */
+  /** The rooms this patch adds or enlarges: each must stand inside the walls (issue 373), and one upstairs needs stairs below it (issue 333). */
   const changedRooms: string[] = []
   const place: Place = JSON.parse(JSON.stringify(parsedBefore.data)) as Place
   const reasons: string[] = []
@@ -139,8 +139,8 @@ export function validatePlacePatch(before: unknown, patch: unknown, ctx: PatchCo
         else {
           if (c.size.some((n, i) => n < room.size[i]! - 1e-9)) no(`room ${room.id} can only be enlarged: a room is never shrunk`)
           room.size = c.size
-          changedRooms.push(room.id)
           if (c.at) room.at = c.at
+          changedRooms.push(room.id)
           for (const m of c.moves) {
             const part = room.parts[m.index]
             if (!part) no(`room ${room.id} has no part #${m.index} to move`)
@@ -171,11 +171,16 @@ export function validatePlacePatch(before: unknown, patch: unknown, ctx: PatchCo
   place.history = capHistory(place.history, PLACE_LIMITS.historyMax)
 
   if (reasons.length > 0) return { ok: false, reasons }
+  const walls = changedRooms.flatMap((id) => {
+    const room = place.rooms.find((r) => r.id === id)
+    const why = room ? roomOutsideWalls(place, room) : null
+    return why ? [why] : []
+  })
   const stairs = changedRooms.flatMap((id) => {
     const room = place.rooms.find((r) => r.id === id)
     const why = room ? upperRoomWithoutStairs(place, room, ctx.kit) : null
     return why ? [why] : []
   })
-  const rest = [...validatePlace(place, ctx), ...stairs]
+  const rest = [...validatePlace(place, ctx), ...walls, ...stairs]
   return rest.length > 0 ? { ok: false, reasons: rest } : { ok: true, place }
 }

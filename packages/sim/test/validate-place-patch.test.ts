@@ -139,7 +139,7 @@ describe('revisit (spec 5.4: no change except lastCareAt and a history line)', (
 })
 
 describe('expand (spec 5.4: a room, an enlarged room, or a path; up to 15 parts)', () => {
-  const annex = (over: Record<string, unknown> = {}) => ({ id: 'annex', name: 'Annex', size: [3, 4, 4], at: [6.5, 0], floor: 0, parts: [{ part: 'desk', at: [0, 0, 0], rot: 0 }], ...over })
+  const annex = (over: Record<string, unknown> = {}) => ({ id: 'annex', name: 'Annex', size: [2, 4, 4], at: [6, 0], floor: 0, parts: [{ part: 'desk', at: [0, 0, 0], rot: 0 }], ...over })
   const expand = (change: unknown, over: Record<string, unknown> = {}) => ({ verb: 'expand', summary: 'Added an annex for the notes.', change, ...over })
 
   it('adds a room with its parts, and counts as care', () => {
@@ -216,6 +216,18 @@ describe('expand (spec 5.4: a room, an enlarged room, or a path; up to 15 parts)
     expect(bigger.ok ? '' : bigger.reasons.join(' | ')).toMatch(/attic is on floor 1 and nothing leads up to it/)
     const path = validatePlacePatch(old, expand({ kind: 'path', to: 'workshop' }), pctx)
     expect(path.ok ? '' : path.reasons.join(' | ')).toBe('')
+  })
+
+  it('refuses a room that stands in the walls, where no one can walk in (issue 373), new or enlarged, and leaves rooms it does not change alone', () => {
+    // The footprint is 16 by 12; its outer 0.8 m is wall, so a room stays within 7.2 m of the middle across and 5.2 m front to back.
+    expect(reasons(expand({ kind: 'room', room: annex({ size: [2.2, 4, 4], at: [6.1, 0] }) }))).toBe('')
+    // Home's Counter Room: 1 m wide, standing in the wall ring of the east side, with nowhere to stand in it.
+    expect(reasons(expand({ kind: 'room', room: annex({ size: [1, 4, 4], at: [7.5, 0], parts: [{ part: 'crate', at: [0, 0, 0], rot: 0 }] }) }))).toMatch(/annex must stand inside the walls/)
+    expect(reasons(expand({ kind: 'enlarge', roomId: 'hall', size: [10, 11, 4] }))).toMatch(/hall must stand inside the walls/)
+    const old = base()
+    old.rooms.push({ id: 'counter', name: 'Counter', size: [0.8, 4, 4], at: [7.6, 0], floor: 0, parts: [] } as never)
+    const r = validatePlacePatch(old, expand({ kind: 'path', to: 'workshop' }), pctx)
+    expect(r.ok ? '' : r.reasons.join(' | ')).toBe('')
   })
 
   it('is exactly one change', () => {
