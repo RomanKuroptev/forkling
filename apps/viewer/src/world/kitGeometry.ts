@@ -71,14 +71,10 @@ function look(place: Place, kit: Kit) {
 }
 
 /** The outside of a place: walls with windows on every floor, a door in the front (+z) wall, a roof, as its style and palette say. */
-export function exteriorInstances(place: Place, kit: Kit, baseY: number): Instance[] {
+export function exteriorInstances(place: Place, kit: Kit, baseY: number, heightAt?: (x: number, z: number) => number): Instance[] {
   // A style drawn by the building model (look.md) is its six slots and the sign by the door; the others keep the drawing below.
   const model = buildingModel(place, kit, baseY)
-  if (model) {
-    const post = kit.parts.find((p) => p.id === 'sign-post')
-    const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
-    return post ? [...model.instances, ...partInstances(post, signSpot(place, baseY).position, 0, palette)] : model.instances
-  }
+  if (model) return [...model.instances, ...signPostInstances(place, kit, baseY, heightAt)]
   const { palette, wall, window, door, roof } = look(place, kit)
   const [px, pz] = placeCentre(toLandPlace(place))
   const [fw, fd] = place.exterior.footprint
@@ -129,10 +125,35 @@ export function exteriorInstances(place: Place, kit: Kit, baseY: number): Instan
 
   // The roof, a little wider than the walls.
   out.push(...partInstances(roof, [px, baseY + floors * height, pz], 0, palette, [(fw + 1.2) / roof.size[0], 1, (fd + 1.2) / roof.size[2]]))
-  // The sign by the door, where the place's history is opened from (spec 4.6).
-  const sign = kit.parts.find((p) => p.id === 'sign-post')
-  if (sign) out.push(...partInstances(sign, signSpot(place, baseY).position, 0, palette))
+  out.push(...signPostInstances(place, kit, baseY, heightAt))
   return out
+}
+
+/**
+ * The sign by the door, where the place's history is opened from (spec 4.6): its two posts on the ground, the board they carry and
+ * its trim. A place being built keeps it solid too, so the site's sign stands on its posts and does not float over the wire (issue 427).
+ * Where the ground falls away under the sign (`heightAt`), each post reaches down to the ground under it.
+ */
+export function signPostInstances(place: Place, kit: Kit, baseY: number, heightAt?: (x: number, z: number) => number): Instance[] {
+  const post = kit.parts.find((p) => p.id === 'sign-post')
+  if (!post) return []
+  const palette = kit.palettes.find((p) => p.id === place.exterior.palette) ?? kit.palettes[0]!
+  const pieces = partInstances(post, signSpot(place, baseY).position, 0, palette)
+  if (!heightAt) return pieces
+  return pieces.map((i) => {
+    const m = i.matrix
+    const h = Math.hypot(m[4]!, m[5]!, m[6]!)
+    const bottom = m[13]! - h / 2
+    // A post: upright, standing on the place's base. The board and its trim hang on the posts.
+    if (h < 1 || Math.abs(m[5]!) < 0.99 * h || Math.abs(bottom - baseY) > 0.01) return i
+    const ground = heightAt(m[12]!, m[14]!)
+    if (ground >= bottom) return i
+    const top = bottom + h
+    const matrix = [...m]
+    matrix[5] = top - ground
+    matrix[13] = (top + ground) / 2
+    return { ...i, matrix }
+  })
 }
 
 /** A part drawn from its model file instead of its primitives. */
@@ -295,6 +316,12 @@ export type SceneInstances = Record<Shape, ShapeInstances> & {
   lamps: LampSpot[]
 }
 
+/** The inside of a place being built, to be drawn as lines: its floor, furniture and lamps, and the pieces of its exhibits (issues 329, 426). */
+export function siteInside(place: Place, kit: Kit, baseY: number): Instance[] {
+  const { palette } = look(place, kit)
+  return [...interiorParts(place, kit, baseY).instances, ...exhibitSpots(place, kit, baseY).flatMap((spot) => exhibitInstances(spot, palette.colors))]
+}
+
 /**
  * Every place's shapes, grouped by shape: its outside always (with scaffolding while it is being built), its inside only when `interiors` has it. Each stands on the ground
  * under it. `models` are the model files that have loaded: a part that has one is drawn from it, the others from their primitives.
@@ -315,21 +342,24 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
     // A place that is being built is its finished model as cyan wireframe until its finish time (spec 4.5); a style the building model
     // does not draw keeps the scaffolding.
     // Its inside, when it is drawn, is lines too: the floor, the furniture and the lamps (issue 329), from their plain shapes.
-    const wireInside = opts.interiors.has(place.id) ? interiorParts(place, kit, baseY).instances : []
+    // So are the exhibits Merge keeps there (issue 426): their pieces are lines, and their cards are drawn as wire (`ExhibitCards`).
+    const wireInside = opts.interiors.has(place.id) ? siteInside(place, kit, baseY) : []
     const wire = wireframeInstances(place, kit, baseY, opts.nowMs, opts.wireAlways, wireInside)
     const wired = wire !== null && wire.length > 0
     if (wired) {
       for (const i of wire) lists[i.shape].push(i)
+      // The sign stays solid and stands on its posts, as the finished place's does (issue 427).
+      for (const i of signPostInstances(place, kit, baseY, opts.heightAt)) lists[i.shape].push(lampsOn || !i.glow ? i : { ...i, glow: false })
     } else {
       // The tinted see-through glass of a glass house goes to its own draw call.
-      for (const i of exteriorInstances(place, kit, baseY)) (i.glass ? glassList : lists[i.shape]).push(lampsOn || !i.glow ? i : { ...i, glow: false })
+      for (const i of exteriorInstances(place, kit, baseY, opts.heightAt)) (i.glass ? glassList : lists[i.shape]).push(lampsOn || !i.glow ? i : { ...i, glow: false })
       for (const i of neglectInstances(place, kit, baseY, level, 'exterior')) lists[i.shape].push(i)
       for (const i of constructionInstances(place, baseY, opts.nowMs)) lists[i.shape].push(i)
     }
     if (opts.interiors.has(place.id)) {
       // Everything inside is marked so: under the roof it gets less of the sky's light.
       const push = (i: Instance) => lists[i.shape].push({ ...i, inside: true })
-      // Being built, the rooms are in the wireframe above; the things Merge keeps in them (souvenirs, works) are finished and stay.
+      // Being built, the rooms and the exhibits in them are in the wireframe above (issues 329, 426).
       if (!wired) {
         const inside = interiorParts(place, kit, baseY, opts.models, { lampsOn })
         for (const i of inside.instances) push(i)
@@ -337,7 +367,7 @@ export function sceneInstances(places: readonly Place[], kit: Kit, opts: { heigh
         lamps.push(...lampSpots(place, kit, baseY, lampsOn))
       }
       const { palette } = look(place, kit)
-      for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) push(lampsOn || !i.glow ? i : { ...i, glow: false })
+      if (!wired) for (const spot of exhibitSpots(place, kit, baseY)) for (const i of exhibitInstances(spot, palette.colors)) push(lampsOn || !i.glow ? i : { ...i, glow: false })
       // The gallery wall's board (every finished work, a page at a time): one box; its painted face is drawn apart (`GalleryWalls`).
       if (opts.shelf?.length) for (const wall of galleryWalls(place, kit, baseY, opts.shelf, exteriorInstances(place, kit, baseY))) for (const i of wallInstances(wall, palette.colors)) push(lampsOn ? i : { ...i, glow: false })
       if (!wired) for (const i of neglectInstances(place, kit, baseY, level, 'interior')) push(i)

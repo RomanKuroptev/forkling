@@ -26,6 +26,10 @@ export interface SceneObject {
   /** For a place: its palette's wall colour. */
   wall?: string
   text?: string
+  /** For a sign: the boxes of the solid pieces under its board that could hold it up (its posts), as drawn. */
+  support?: { min: [number, number, number]; max: [number, number, number] }[]
+  /** For a place drawn as wire: each glowing line's two ends, as drawn (its inside too when that is drawn). */
+  wire?: [[number, number, number], [number, number, number]][]
   letter?: number
   box: { min: [number, number, number]; max: [number, number, number] } | null
   visible: boolean
