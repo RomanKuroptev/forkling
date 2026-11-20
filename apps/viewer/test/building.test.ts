@@ -16,7 +16,7 @@ import {
   frontHeight,
   frontWidth,
 } from '../src/world/building.ts'
-import { COLORS, INTERIOR, hsvOf } from '../src/world/theme.ts'
+import { COLORS, INTERIOR, OUTSIDE_WALL_COLOUR, hsvOf, outsideWall } from '../src/world/theme.ts'
 import { exteriorInstances, floorHeight, renderBudget, sceneInstances } from '../src/world/kitGeometry.ts'
 import type { Instance } from '../src/world/kitBase.ts'
 
@@ -44,6 +44,46 @@ describe('the building model, every style', () => {
     const heroes = STYLES.map((style) => model({ ...home, exterior: { ...home.exterior, style } }).slots.hero.map((i) => i.shape).join(','))
     expect(new Set(heroes).size).toBeGreaterThanOrEqual(4)
     for (const style of STYLES) for (const floors of [1, 2, 3]) expect(model({ ...home, exterior: { ...home.exterior, style, floors } }).outlineHeight).toBeLessThanOrEqual(12.0001)
+  })
+})
+
+describe("the outside walls keep their colour in shade (look.md rule 2; the grey wall under Home's porch)", () => {
+  it("draws every palette's body with at least OUTSIDE_WALL_COLOUR of colour, never in the beige or khaki hues", () => {
+    for (const palette of kit.palettes) {
+      const c = palette.colors
+      // The walls: the body's pieces not in chrome, marble, accent or glow.
+      const body = model({ ...home, exterior: { ...home.exterior, palette: palette.id } }).slots.body.filter((i) => ![c.metal, c.accent, c.glow, COLORS.white, COLORS.metal].includes(i.color))
+      expect(body.length).toBeGreaterThan(0)
+      for (const color of new Set(body.map((i) => i.color))) {
+        const [h, s] = hsvOf(color)
+        expect(s, `${palette.id} ${color}`).toBeGreaterThanOrEqual(OUTSIDE_WALL_COLOUR)
+        expect(h >= 15 && h <= 75, `${palette.id} ${color}`).toBe(false)
+      }
+    }
+  })
+
+  it("keeps a palette wall that has colour enough as it is, and gives meadow's near-white mint some", () => {
+    const slate = kit.palettes.find((p) => p.id === 'slate')!.colors
+    expect(hsvOf(outsideWall(slate))[1]).toBeGreaterThanOrEqual(OUTSIDE_WALL_COLOUR)
+    const meadow = kit.palettes.find((p) => p.id === 'meadow')!.colors
+    expect(hsvOf(meadow.wall)[1]).toBeLessThan(OUTSIDE_WALL_COLOUR)
+    expect(outsideWall(meadow)).not.toBe(meadow.wall)
+    expect(outsideWall(slate)).toBe(slate.wall)
+  })
+
+  it('draws a wall it had to mix at full brightness, so it reads as a light pastel and not a muted mauve (the #460 look gate)', () => {
+    for (const palette of kit.palettes) {
+      const c = palette.colors
+      if (outsideWall(c) === c.wall) continue
+      const [, s, v] = hsvOf(outsideWall(c))
+      expect(v, palette.id).toBeCloseTo(1, 2)
+      expect(s, palette.id).toBeGreaterThanOrEqual(OUTSIDE_WALL_COLOUR)
+    }
+    // Meadow's (Home's) is near the look's light pink #ffc8e8.
+    const meadow = hsvOf(outsideWall(kit.palettes.find((p) => p.id === 'meadow')!.colors))
+    const pink = hsvOf('#ffc8e8')
+    expect(Math.abs(meadow[0] - pink[0])).toBeLessThan(15)
+    expect(Math.abs(meadow[1] - pink[1])).toBeLessThan(0.06)
   })
 })
 
@@ -78,7 +118,8 @@ describe.each(STYLES)('the building model, %s style', (style) => {
   it('uses only the body, accent and glow of its palette, chrome and white marble', () => {
     for (const palette of kit.palettes) {
       const c = palette.colors
-      const allowed = new Set([c.wall, c.accent, c.glow, c.metal, COLORS.white, COLORS.metal])
+      // The body is the palette's wall, given colour enough to stay coloured in shade (`outsideWall`).
+      const allowed = new Set([outsideWall(c), c.accent, c.glow, c.metal, COLORS.white, COLORS.metal])
       for (const floors of [1, 2, 3]) for (const i of model(tower(home, floors, [12, 10], palette.id)).instances) expect(allowed.has(i.color), `${palette.id} ${i.color}`).toBe(true)
     }
   })

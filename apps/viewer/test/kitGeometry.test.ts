@@ -8,6 +8,7 @@ import { buildingModel, partKey, windowLayout } from '../src/world/building.ts'
 import { SIGN_OUT, signSpot } from '../src/world/exhibitGeometry.ts'
 import { partInDoorway } from '../src/world/doorway.ts'
 import { MODEL_LIMITS, SHAPES, SHAPE_TRIANGLES, exteriorInstances, floorHeight, interiorInstances, interiorsToLoad, modelFiles, partInstances, renderBudget, resolveColor, sceneInstances, wallBoxes } from '../src/world/kitGeometry.ts'
+import { outsideWall } from '../src/world/theme.ts'
 
 const fixture = makeFixtureWorld(1, 10)
 const place = (id: string) => fixture.places.find((p) => p.id === id)!
@@ -81,7 +82,8 @@ describe('the outside of a building (spec 5.3: a style is a set of wall, window 
 
   it('is built from the style\'s own parts and the palette\'s colours', () => {
     const colors = new Set(exteriorInstances(home, kit, 0).map((i) => i.color))
-    expect(colors.has(resolveColor('wall', kit.palettes.find((p) => p.id === home.exterior.palette)!))).toBe(true)
+    // The walls are the palette's wall, given colour enough to stay coloured in shade (`outsideWall`, look.md rule 2).
+    expect(colors.has(outsideWall(kit.palettes.find((p) => p.id === home.exterior.palette)!.colors))).toBe(true)
   })
 
   it('has a roof above the walls, and walls all round, inside the footprint plus a little overhang', () => {

@@ -136,6 +136,58 @@ describe('cat body language', () => {
   })
 })
 
+describe('cat model body (issue 455: the body read as see-through next to its solid head and legs)', () => {
+  const triangles = async () => {
+    const gltf = await loadModel()
+    let skinned: THREE.SkinnedMesh | null = null
+    gltf.scene.traverse((o) => {
+      if (o instanceof THREE.SkinnedMesh) skinned = o
+    })
+    const mesh = skinned! as THREE.SkinnedMesh
+    const g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry
+    const pos = g.attributes.position!
+    const col = g.attributes.color!
+    const out: { centre: THREE.Vector3; colors: THREE.Color[] }[] = []
+    for (let i = 0; i < pos.count; i += 3) {
+      const centre = new THREE.Vector3()
+      const colors: THREE.Color[] = []
+      for (let k = 0; k < 3; k++) {
+        centre.add(new THREE.Vector3().fromBufferAttribute(pos, i + k).divideScalar(3))
+        colors.push(new THREE.Color().setRGB(col.getX(i + k), col.getY(i + k), col.getZ(i + k), THREE.LinearSRGBColorSpace))
+      }
+      out.push({ centre, colors })
+    }
+    return { mesh, out }
+  }
+
+  it('draws with opaque materials only', async () => {
+    const { mesh } = await triangles()
+    for (const m of [mesh.material].flat()) {
+      expect(m.transparent, m.name).toBe(false)
+      expect(m.opacity, m.name).toBe(1)
+    }
+  })
+
+  it('gives every triangle one colour, so no face fades from one colour to another like glass', async () => {
+    const { out } = await triangles()
+    const blended = out.filter((t) => !t.colors.every((c) => c.equals(t.colors[0]!)))
+    expect(blended).toHaveLength(0)
+  })
+
+  it('has a solid blue torso, as in the look (merge-options.png, D): no pale belly that reads like the room behind it', async () => {
+    const { out } = await triangles()
+    // The torso: the body and chest spheres between the hips and the neck.
+    const torso = out.filter((t) => Math.abs(t.centre.x) < 0.1 && t.centre.y > 0.13 && t.centre.y < 0.32 && t.centre.z > -0.2 && t.centre.z < 0.24)
+    expect(torso.length).toBeGreaterThan(50)
+    for (const t of torso) {
+      const hsl = { h: 0, s: 0, l: 0 }
+      t.colors[0]!.getHSL(hsl, THREE.SRGBColorSpace)
+      expect(hsl.l, `${t.centre.toArray().map((n) => n.toFixed(2))}`).toBeLessThan(0.75)
+      expect(hsl.s).toBeGreaterThan(0.5)
+    }
+  })
+})
+
 describe('cat model', () => {
   it('is a small skinned mesh with every bone the pack knows, including where it holds things', async () => {
     const gltf = await loadModel()

@@ -87,6 +87,20 @@ export function offLand(visitor: { y: number }, ground: Ground): boolean {
   return ground.chunk === 'fog' || visitor.y < ground.y - 1
 }
 
+/** The name of the mesh that draws the side of the land (apps/viewer/src/world/Land.tsx). */
+export const LAND_SIDE = 'land-side'
+/** How far out past where the walk stopped the edge-side ray starts, and how far it looks back (meters). */
+export const EDGE_RAY = { out: 3, under: 0.6, far: 4 } as const
+
+/**
+ * Whether the end of the land is drawn where the walk stopped (issue 454): a ray from just past the stop, a little under the
+ * ground, looking back at the land, must meet the land's side before it reaches the visitor. Without one the stop is an
+ * invisible wall on open ground.
+ */
+export function edgeShown(hit: { distance: number; object: string } | null): boolean {
+  return hit !== null && hit.object === LAND_SIDE && hit.distance < EDGE_RAY.out
+}
+
 export interface WalkInput {
   fixture: string
   seed: number
@@ -244,6 +258,13 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     const deg = Math.round((heading * 180) / Math.PI)
     if (g && offLand(v, g))
       add('world.walk-off-edge', `heading-${deg}`, 'major', 'A visitor can walk off the edge of the land', `Running at the end of the land heading ${deg} deg, the visitor ends at x ${v.x.toFixed(1)}, z ${v.z.toFixed(1)}, ${g.chunk === 'fog' ? 'over the fog, where there is no ground' : `${(g.y - v.y).toFixed(1)} m below the ground`}.`, 'A visitor who walks away from the places falls under the world, loses it and can only get back by reloading.')
+    else if (g) {
+      // Where the walk stopped, the end of the land must show (issue 454).
+      const origin: Vec3 = [v.x + dir.x * EDGE_RAY.out, g.y - EDGE_RAY.under, v.z + dir.z * EDGE_RAY.out]
+      const hit = await qa(page, (q, a: [Vec3, Vec3, number]) => q.ray(a[0], a[1], a[2]), [origin, [-dir.x, 0, -dir.z], EDGE_RAY.far])
+      if (!edgeShown(hit))
+        add('world.land-edge-unseen', `heading-${deg}`, 'major', 'Nothing shows where the land ends', `Running at the end of the land heading ${deg} deg, the visitor stops at x ${v.x.toFixed(1)}, z ${v.z.toFixed(1)}, but no side of the land is drawn there (a ray from ${EDGE_RAY.out} m further out, under the ground, looking back ${hit ? `meets "${hit.object}" ${hit.distance.toFixed(1)} m away` : 'meets nothing'}).`, 'The stop feels like an invisible wall on open ground.', 'apps/viewer/src/world/Land.tsx')
+    }
   }
   // Furniture stops the visitor (issue 357): in each place, a walk straight at one piece from 1.5 m off must end before it.
   const rooms = new Map(boxed.filter((o) => o.kind === 'room').map((r) => [r.id, r.box]))

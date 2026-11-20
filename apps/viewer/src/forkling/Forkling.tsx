@@ -5,6 +5,7 @@ import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/r
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { solidBody } from './solidBody.ts'
 import { visitor } from '../visitor.ts'
 import { disposeParts, partsGroup } from '../world/primitives.ts'
 import { useWorld } from '../world/WorldContext.tsx'
@@ -69,7 +70,8 @@ export function Forkling() {
         o.frustumCulled = false
       }
     })
-    return root
+    // The body is solid, whatever the pack's model ships with (issue 455).
+    return solidBody(root)
   }, [gltf])
 
   // A body may have a screen: a mesh named `Face` is painted with the face (awake, in a step, asleep, no signal) from what the viewer has.

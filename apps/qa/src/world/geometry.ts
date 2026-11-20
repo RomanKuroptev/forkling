@@ -2,6 +2,7 @@ import type { Place, WorkMeta } from '@forkling/schema'
 import { boardHiddenShare, boxGap, buildingWords, footprintOverlap, inView, signLine, signLineProblem, volumeOverlap, type Box, type Vec3 } from '@forkling/sim'
 import type { CheckResult } from '../report/finding.ts'
 import type { SceneObject } from './open.ts'
+import { hsv } from './picture.ts'
 
 /**
  * The geometric checks on one opened world (audit spec 7.2), from `__qa.scene()`, the ground under it and the world's files.
@@ -30,6 +31,14 @@ const SIGN_BOTTOM = [0.5, 1.5] as const
 const MERGE_HEIGHT = [0.15, 2.5] as const
 /** Merge's box comes from its skinned mesh, whose bounds are not exact to the paw: on day-0 it reads 0.11 m under the ground while the picture shows it standing on the floor. */
 const MERGE_SUNK = -0.25
+
+/**
+ * The least colour (saturation) an outside wall is drawn with. Home's near-white mint wall (saturation 0.16) read as plain grey
+ * under its porch (look.md rule 2: shade stays coloured); the cool pastel walls of the other palettes have 0.2 and more.
+ */
+export const OUTSIDE_WALL_COLOUR = 0.2
+/** The cream, beige and khaki hues look.md rule 3 keeps off walls (degrees). */
+const WARM_WALL = [15, 75] as const
 
 const squash = (s: string) => s.trim().replace(/\s+/g, ' ')
 const centre = (b: Box): Vec3 => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2]
@@ -63,6 +72,15 @@ export function geometryFindings(input: GeometryInput): CheckResult[] {
       const vol = volumeOverlap(a.box, b.box)
       if (vol > 0.05) add('world.rooms-overlap', `${a.id}+${b.id}`, 'major', `Two rooms of ${a.place} are inside each other`, `${a.id} and ${b.id} share ${vol.toFixed(1)} cubic meters.`, 'Furniture and walls of two rooms are drawn through each other.', 'code', `places/${a.place}.json`)
     }
+  }
+
+  // Outside walls in a colour that stays coloured in shade (look.md rules 2 and 3).
+  for (const p of places) {
+    if (!p.outsideWall) continue
+    const n = Number.parseInt(p.outsideWall.slice(1), 16)
+    const [h, s] = hsv((n >> 16) & 255, (n >> 8) & 255, n & 255)
+    const warm = h >= WARM_WALL[0] && h <= WARM_WALL[1] && s > 0.03
+    if (s < OUTSIDE_WALL_COLOUR || warm) add('world.outside-wall-grey', p.id, 'major', `The outside walls of ${p.id} turn grey or brown in shade`, `They are drawn in ${p.outsideWall}: ${warm ? `a warm hue (${Math.round(h)} deg), cream or beige` : `saturation ${s.toFixed(2)}, under ${OUTSIDE_WALL_COLOUR}`}.`, 'In shade (under a porch, facing away from the sun) the wall reads as plain grey or brown, not as a pastel (look.md rules 2 and 3).', 'look', 'apps/viewer/src/world/theme.ts')
   }
 
   // On the ground, inside the land.
@@ -131,6 +149,8 @@ export function geometryFindings(input: GeometryInput): CheckResult[] {
   // Merge: there, the right size, on something, and in sight when the world opens.
   for (const merge of of('merge')) {
     const h = merge.box.max[1] - merge.box.min[1]
+    // The scene lists a body with any blended or faded material as glass (issue 455: the body read as see-through up close).
+    if (merge.material === 'glass') add('world.merge-see-through', 'merge', 'major', "Merge's body is drawn see-through", 'Some of the materials Merge is drawn with are blended or faded (not opaque), so what is behind the body shows through it.', 'Merge looks ghostly or half-drawn up close.', 'code', 'apps/viewer/src/forkling/solidBody.ts')
     if (h < MERGE_HEIGHT[0] || h > MERGE_HEIGHT[1]) add('world.merge-size', 'merge', 'major', 'Merge is drawn the wrong size', `Merge is ${m(h)} tall; it should be ${MERGE_HEIGHT[0]} to ${MERGE_HEIGHT[1]} m.`, 'Merge looks like a toy or a giant.', 'look')
     const [x, , z] = centre(merge.box)
     const up = merge.box.min[1] - input.ground(x, z).y
