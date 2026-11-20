@@ -29,6 +29,7 @@ import { pricesStep } from './tick/prices.ts'
 import { goalReviewStep, weeklyStep } from './tick/weekly.ts'
 import { sleepRewriteStep } from './tick/sleep.ts'
 import { think } from './tick/think.ts'
+import { visitStep } from './tick/visits.ts'
 import { morningStep, tripStep } from './tick/wander.ts'
 import { writeWorld } from './tick/write.ts'
 
@@ -46,6 +47,8 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   settleJobs(t)
   // Notes the world has gained are found as Merge comes upon them (spec 2.2, step 3; 10.1). Code only.
   findNotes(t)
+  // Visits the viewer counted since the last tick are added to the day (issue #422). Code only.
+  visitStep(t)
   // A status Roman set on one of Merge's requests is a stream event (spec v4 8). Code only.
   requestStatusStep(t)
   // A tool Roman added to mind/tools.json is announced once (spec v4 8). Code only.

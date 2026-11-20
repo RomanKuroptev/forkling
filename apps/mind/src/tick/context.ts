@@ -40,6 +40,7 @@ import type { WanderState } from '../web/wander-state.ts'
 import type { CallKind, LlmClient, LlmResult } from '../llm.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { NewEntry } from '../stream.ts'
+import type { VisitSource } from '../visits.ts'
 import type { readWorld } from '../world.ts'
 
 export interface TickDeps {
@@ -72,6 +73,11 @@ export interface TickDeps {
    * like a tool, not a rule of plans.
    */
   sessions?: boolean
+  /**
+   * The real visits counted since the last tick (issue #422): the server's counter of the viewer's polls, or the fast-forward's
+   * simulated ones. Absent (the Actions tick) means nothing can be known, and the plan is shown nothing about visits.
+   */
+  visits?: VisitSource
 }
 
 /** What a tick gives back to the loop: the result, and `now.json` as the tick left the world. */

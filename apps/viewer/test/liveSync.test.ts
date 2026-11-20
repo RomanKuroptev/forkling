@@ -19,7 +19,7 @@ function setup(initial: { rev: string; sign: string }) {
     fetch: (async (url: string) => {
       fetched.push(url)
       if (!server.up) throw new Error('down')
-      if (url.endsWith('/now.json')) return new Response(JSON.stringify({ updatedAt: '2026-11-13T10:00:00.000Z', asleep: false, step: null, thought: null, mood: 'steady', placesRev: server.rev }))
+      if (url.includes('/now.json')) return new Response(JSON.stringify({ updatedAt: '2026-11-13T10:00:00.000Z', asleep: false, step: null, thought: null, mood: 'steady', placesRev: server.rev }))
       return new Response(JSON.stringify({ rev: server.rev, places: [home(server.sign)] }))
     }) as unknown as typeof fetch,
     setTimer: (run, ms) => {
@@ -100,6 +100,46 @@ describe('the viewer stays current (spec 4.6: poll now.json every 30 s; a tend s
     stop()
     await s.advance(120_000)
     expect(s.fetched).toEqual([])
+  })
+})
+
+describe('the poll says a visit started and which places it walked into (issue #422), and nothing else', () => {
+  const nowPolls = (fetched: string[]) => fetched.filter((u) => u.includes('/now.json'))
+
+  it('the first poll of a page load says visit=1, the later ones do not', async () => {
+    const s = setup({ rev: 'r1', sign: 'HOME' })
+    startLiveSync(s.deps)
+    await s.advance(90_000)
+    expect(nowPolls(s.fetched)).toEqual(['https://merge-mind.example/now.json?visit=1', 'https://merge-mind.example/now.json', 'https://merge-mind.example/now.json'])
+  })
+
+  it('names a place once per page load, at the first poll after the visitor walks into it; out on the land names none', async () => {
+    const s = setup({ rev: 'r1', sign: 'HOME' })
+    let here: string | null = 'home'
+    startLiveSync({ ...s.deps, here: () => here })
+    await s.advance(30_000)
+    here = null
+    await s.advance(30_000)
+    here = 'workshop'
+    await s.advance(30_000)
+    here = 'home'
+    await s.advance(30_000)
+    expect(nowPolls(s.fetched)).toEqual([
+      'https://merge-mind.example/now.json?visit=1&in=home',
+      'https://merge-mind.example/now.json',
+      'https://merge-mind.example/now.json?in=workshop',
+      'https://merge-mind.example/now.json',
+    ])
+  })
+
+  it('says the visit again after a poll that failed, so a visit is not lost to a server that was down', async () => {
+    const s = setup({ rev: 'r1', sign: 'HOME' })
+    s.server.up = false
+    startLiveSync({ ...s.deps, here: () => 'home' })
+    await s.advance(30_000)
+    s.server.up = true
+    await s.advance(30_000)
+    expect(nowPolls(s.fetched)).toEqual(['https://merge-mind.example/now.json?visit=1&in=home', 'https://merge-mind.example/now.json?visit=1&in=home'])
   })
 })
 

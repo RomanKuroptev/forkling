@@ -53,6 +53,17 @@ export function noteSpot(note: { id: string; placeId: string; position?: readonl
   return [dx + (unit(note.id, 1) - 0.5) * 3, dz + 1 + unit(note.id, 2) * 1.2]
 }
 
+/** The place whose footprint holds the point, or null when the visitor is out on the land (issue #422: the places a visit stood in). */
+export function placeHolding(point: readonly [number, number], places: readonly Place[]): Place | null {
+  for (const place of places) {
+    const land = toLandPlace(place)
+    const [cx, cz] = placeCentre(land)
+    const [w, d] = land.footprint
+    if (Math.abs(point[0] - cx) <= w / 2 && Math.abs(point[1] - cz) <= d / 2) return place
+  }
+  return null
+}
+
 /** The place a visitor is standing in: the one whose footprint holds the point, or else the nearest by its middle. Null if there are no places. */
 export function placeAt(point: readonly [number, number], places: readonly Place[]): Place | null {
   let nearest: Place | null = null

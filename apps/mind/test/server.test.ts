@@ -42,6 +42,39 @@ describe('GET /now.json', () => {
   })
 })
 
+describe('GET /now.json counts real visits (issue #422)', () => {
+  const counter = () => {
+    const hits: { visit: boolean; place: string | null }[] = []
+    return { hits, visits: { record: (h: { visit: boolean; place: string | null }) => void hits.push(h) } }
+  }
+
+  it("counts a visit and a place from Merge's own page, and still answers now.json", async () => {
+    const c = counter()
+    const { call } = await start({ visits: c.visits })
+    const res = await call('/now.json?visit=1&in=home', { origin: PAGES })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual(now)
+    await call('/now.json?in=workshop', { origin: PAGES })
+    await call('/now.json', { origin: PAGES })
+    expect(c.hits).toEqual([{ visit: true, place: 'home' }, { visit: false, place: 'workshop' }])
+  })
+
+  it('counts nothing from a call with no origin (the watchdog, curl) or a refused origin', async () => {
+    const c = counter()
+    const { call } = await start({ visits: c.visits })
+    await call('/now.json?visit=1&in=home')
+    expect((await call('/now.json?visit=1', { origin: 'https://evil.example' })).status).toBe(403)
+    expect(c.hits).toEqual([])
+  })
+
+  it('counts nothing on another route', async () => {
+    const c = counter()
+    const { call } = await start({ visits: c.visits })
+    await call('/places.json?visit=1&in=home', { origin: PAGES })
+    expect(c.hits).toEqual([])
+  })
+})
+
 describe('GET /health', () => {
   it('gives what the watchdog reads', async () => {
     const { call } = await start()

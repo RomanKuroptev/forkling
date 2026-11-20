@@ -1,4 +1,4 @@
-import { placesRev } from '@forkling/sim'
+import { placeHolding, placesRev } from '@forkling/sim'
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
 import { App } from './App.tsx'
 import { Boot } from './ui/Boot.tsx'
@@ -15,6 +15,7 @@ import { LOCAL_REF, localFetch } from './world/localWorld.ts'
 import { fixedRoute, parseRoute, siteWorldExists, worldSiteRedirect, type WorldRef } from './world/route.ts'
 import { WorldErrorPanel } from './world/WorldErrorPanel.tsx'
 import { WorldProvider } from './world/WorldContext.tsx'
+import { visitor } from './visitor.ts'
 import { qaMode } from './qa/params.ts'
 import { plantFrom } from './qa/plant.ts'
 import { qaRegistry } from './qa/registry.ts'
@@ -130,6 +131,12 @@ export function Root() {
       clearTimer: (id) => clearTimeout(id as ReturnType<typeof setTimeout>),
       knownRev: placesRev(first.places),
       onPlaces: (places) => setState((s) => (s.status === 'ready' ? { status: 'ready', world: { ...s.world, places: placesOrStarter(places) } } : s)),
+      // The place the visitor stands in, for the visit count Merge is shown (issue #422). Its id only, never a position.
+      here: () => {
+        const p = visitor.position
+        const w = shown.current
+        return p && w ? (placeHolding([p.x, p.z], w.places)?.id ?? null) : null
+      },
     })
   }, [live])
 
