@@ -163,6 +163,8 @@ export interface ReadRunOptions {
   from?: string
   to?: string
   lastDays?: number
+  /** The run's first day: nothing before it is scored, whatever the summary says. A start world's own older days are never the run's. */
+  notBefore?: string
 }
 
 export function readRun(o: ReadRunOptions): RunData {
@@ -182,6 +184,8 @@ export function readRun(o: ReadRunOptions): RunData {
     to = logged.at(-1)!
     from = logged.at(-Math.min(o.lastDays ?? 7, logged.length))!
   }
+  if (o.notBefore && o.notBefore > from) from = o.notBefore
+  if (from > to) throw new Error(`${world} has nothing logged from the run's first day ${from} (its window ends ${to})`)
   const days = datesBetween(from, to)
   const dayOf = (iso: string) => localDate(timezone, Date.parse(iso))
   const inRange = (iso: string) => !Number.isNaN(Date.parse(iso)) && dayOf(iso) >= from && dayOf(iso) <= to
