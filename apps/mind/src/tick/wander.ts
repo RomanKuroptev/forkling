@@ -7,7 +7,7 @@ import { MAX_LOOKS_PER_DAY, performLook } from '../web/look.ts'
 import { performRead } from '../web/readcall.ts'
 import { rememberSeen, type SeenPage } from '../web/lookup.ts'
 import { startKey } from '../web/rails.ts'
-import { frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, readUrl, risingTopicsFor, wikipediaMorningLinks } from '../web/sources/index.ts'
+import { frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, lemmyMorningLinks, readUrl, risingTopicsFor, wikipediaMorningLinks } from '../web/sources/index.ts'
 import { resolveStart } from '../web/start.ts'
 import { MAX_READS_PER_DAY, runTrip } from '../web/trip.ts'
 import type { Tick } from './context.ts'
@@ -26,6 +26,8 @@ const GITHUB_TOPIC = 'creative-coding'
 const RISING_POINTS = 4
 /** And the most-captioned meme formats of the last 30 days, the pulse of memes (spec 6.1). */
 const MEME_POINTS = 6
+/** And the hot posts of two Lemmy humour communities, c/memes and c/showerthoughts (feeds, Roman 20 Nov). */
+const LEMMY_POINTS = 3
 
 /** The lists dealt out one at a time, in turn, until all are empty. */
 export function interleave<T>(lists: readonly (readonly T[])[]): T[] {
@@ -65,11 +67,14 @@ export async function morningStep(t: Tick): Promise<void> {
     return
   }
   if (!fetcher) return
-  const [wiki, esolangs, memes, repos] = await Promise.all([
+  // Lemmy asks for one request a minute, so its two lists take about two minutes; the other hosts are read meanwhile.
+  const [wiki, esolangs, memes, repos, lemmyMemes, showerthoughts] = await Promise.all([
     soft(() => wikipediaMorningLinks(fetcher, WIKIPEDIA_POINTS), (why) => notes.push(`the Wikipedia front page could not be read: ${why}`)),
     soft(() => frontPageLinks(fetcher, 'esolangs.org'), (why) => notes.push(`the Esolang front page could not be read: ${why}`)),
     soft(() => imgflipTopLinks(fetcher, MEME_POINTS), (why) => notes.push(`the Imgflip meme formats could not be read: ${why}`)),
     soft(async () => (await githubTopicRepos(fetcher, GITHUB_TOPIC, GITHUB_POINTS)).map((name) => ({ title: name, url: `https://github.com/${name}` })), (why) => notes.push(`the GitHub creative-coding repositories could not be read: ${why}`)),
+    soft(() => lemmyMorningLinks(fetcher, 'memes', LEMMY_POINTS), (why) => notes.push(`Lemmy c/memes could not be read: ${why}`)),
+    soft(() => lemmyMorningLinks(fetcher, 'showerthoughts', LEMMY_POINTS), (why) => notes.push(`Lemmy c/showerthoughts could not be read: ${why}`)),
   ])
   const rising = await Promise.all(
     risingTopicsFor(t.forkling.seed, today).map((topic) => soft(() => githubRisingRepos(fetcher, topic, today, RISING_POINTS), (why) => notes.push(`the GitHub repositories rising this week under ${topic} could not be read: ${why}`))),
@@ -77,7 +82,7 @@ export async function morningStep(t: Tick): Promise<void> {
   const shown = new Set((repos ?? []).slice(0, GITHUB_POINTS).map((r) => r.title))
   const risingLinks = [...new Set(interleave(rising.map((r) => r ?? [])))].filter((name) => !shown.has(name)).slice(0, RISING_POINTS).map((name) => ({ title: name, url: `https://github.com/${name}` }))
   // The hosts take turns, so the list does not start with a screenful of Wikipedia.
-  const links = interleave([(wiki ?? []).slice(0, WIKIPEDIA_POINTS), (esolangs ?? []).slice(0, ESOLANG_POINTS), (repos ?? []).slice(0, GITHUB_POINTS), risingLinks, memes ?? []])
+  const links = interleave([(wiki ?? []).slice(0, WIKIPEDIA_POINTS), (esolangs ?? []).slice(0, ESOLANG_POINTS), (repos ?? []).slice(0, GITHUB_POINTS), risingLinks, memes ?? [], lemmyMemes ?? [], showerthoughts ?? []])
   t.startingPoints = pickDoors(links, t.interests, createPrng((t.forkling.seed ^ Number(today.replaceAll('-', ''))) >>> 0))
   // Kept for the day, so a replan after the morning can still name them, and the links are pages it has now seen.
   mind.points = { date: today, list: t.startingPoints.map((p) => ({ title: p.title.slice(0, 200), url: p.url.slice(0, 500), door: p.door })).slice(0, 30) }

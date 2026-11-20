@@ -35,6 +35,10 @@ export function healthyRoutes(): Routes {
     [/^https:\/\/api\.artic\.edu\/api\/v1\/artworks\/search\?query/, { body: JSON.stringify({ data: [{ id: 27992 }] }), type: 'application/json' }],
     [/^https:\/\/api\.artic\.edu\/api\/v1\/artworks\/search\?q=/, { body: JSON.stringify({ data: [] }), type: 'application/json' }],
     [/^https:\/\/api\.artic\.edu\/api\/v1\/artworks\/27992/, { body: JSON.stringify({ data: { id: 27992, title: 'A Sunday on La Grande Jatte', artist_display: 'Georges Seurat', image_id: 'abc', is_public_domain: true } }), type: 'application/json' }],
+    [
+      /^https:\/\/lemmy\.world\/api\/v3\/post\/list\?community_name=(memes|showerthoughts)&/,
+      { body: JSON.stringify({ posts: [1, 2, 3, 4].map((id) => ({ post: { id, name: `Post ${id}`, nsfw: false, removed: false, deleted: false, featured_community: id === 1, featured_local: false }, counts: { score: 10, comments: 1 } })) }), type: 'application/json' },
+    ],
     [/^https:\/\/(p5js\.org|tonejs\.github\.io|threejs\.org|developer\.mozilla\.org)\//, { body: `<html><head><title>Reference</title></head><body><p>${words(80, 'draw')}</p><a href="/reference/circle/">circle</a></body></html>` }],
   ]
 }

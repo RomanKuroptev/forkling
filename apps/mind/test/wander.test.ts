@@ -201,6 +201,25 @@ describe('the morning', () => {
     expect(user).toContain(`Moon | ${wiki}/wiki/Moon`)
   })
 
+  it('adds the hot posts of Lemmy c/memes and c/showerthoughts to the starting points, pinned posts left out', async () => {
+    const post = (id: number, name: string, extra = {}) => ({ post: { id, name, nsfw: false, removed: false, deleted: false, featured_community: false, featured_local: false, ...extra }, counts: { score: 1, comments: 0 } })
+    const hot = (c: string) => `https://lemmy.world/api/v3/post/list?community_name=${c}&sort=Hot&limit=20&page=1`
+    const llm = fake(wanderPlan)
+    const { web, asked } = webWith({
+      [hot('memes')]: JSON.stringify({ posts: [post(1, 'Rules', { featured_community: true }), post(2, 'A cat meme'), post(3, 'Two'), post(4, 'Three'), post(5, 'Four')] }),
+      [hot('showerthoughts')]: JSON.stringify({ posts: [post(9, 'Socks are foot gloves')] }),
+    })
+    await tick(MORNING, llm, { web })
+    expect(asked).toContain(hot('memes'))
+    expect(asked).toContain(hot('showerthoughts'))
+    const user = llm.calls[0]!.user
+    expect(user).toContain('A cat meme | https://lemmy.world/post/2')
+    expect(user).toContain('Socks are foot gloves | https://lemmy.world/post/9')
+    expect(user).not.toContain('https://lemmy.world/post/1')
+    expect(user).not.toContain('https://lemmy.world/post/5')
+    expect(user).toContain(`Moon | ${wiki}/wiki/Moon`)
+  })
+
   it('shows the morning plan that a sketch can be a meme, with the meme formats it read on its trips (issue #328)', async () => {
     writeJson('trails/2026-11-02-1.json', Trail.parse({ id: '2026-11-02-1', date: '2026-11-02', purpose: 'p', start: { kind: 'feed', value: 'https://imgflip.com/meme/181913649' }, pages: [{ url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling', fetchedAt: '2026-11-02T10:00:00Z', topics: [], interest: 6, reaction: 'No, then yes.' }] }))
     const llm = fake(wanderPlan)
@@ -280,7 +299,7 @@ describe('a wander step', () => {
     writeJson('mind/state.json', MindState.parse({ seen: [{ title: 'Boolean algebra', url: `${wiki}/wiki/Logic_gates` }] }))
     const { web, asked } = webWith()
     await wander({ web }, undefined, plan([step('wander', 'boolean algebra'), step('rest', null), step('write', 'home')]))
-    const pages = asked.filter((u) => !u.endsWith('Main_Page') && !u.includes('imgflip') && !u.includes('api.github.com/search'))
+    const pages = asked.filter((u) => !u.endsWith('Main_Page') && !u.includes('imgflip') && !u.includes('api.github.com/search') && !u.includes('lemmy.world/api/v3/post/list'))
     expect(pages[0]).toBe(`${wiki}/wiki/Logic_gates`)
     expect(Trail.parse(readJson(`trails/${DAY}-1.json`)).start).toEqual({ kind: 'topic', value: 'boolean algebra' })
   })
@@ -506,7 +525,7 @@ describe('a wander step', () => {
   it('never fetches an address that is not on the allowlist, even when a page links to one', async () => {
     const { web, asked } = webWith({ [`${wiki}/wiki/Logic_gates`]: article('Logic gate', ['Boolean_algebra']).replace('</p>', '<a href="https://example.com/evil">e</a></p>') })
     await wander({ web }, (url) => ({ ...defaultReader(url), next: 2 }))
-    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com|api\.github\.com)\//.test(u))).toBe(true)
+    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com|api\.github\.com|lemmy\.world)\//.test(u))).toBe(true)
   })
 
   it('looks at a picture the read call asked for, within the 20 a day, and books the look as a vision call', async () => {

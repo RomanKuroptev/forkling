@@ -98,6 +98,7 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 ### New sources, lane C (20 November)
 
 - **Trial-only plans (PR 1):** `apps/mind/src/web/trial-plans.ts` (`TRIAL_PLANS`, `TRIAL_HOSTS`, `trialPlanFor`) lets `source-trial <id>` read a host that is not on the allowlist; each plan names its host rules (gap per host) and its own `open` adapter, one file per site in `web/trials/` (Lemmy c/memes and c/showerthoughts, as feeds). Only `trial-cli.ts` imports it (a test checks), and only it passes `trialHosts` to `createFetcher`, so the mind's allowlist is unchanged. Lanes A and B add their plans to `TRIAL_PLANS`.
+- **Lemmy feeds (PR 2):** lemmy.world is on the allowlist (voices record, wander and meme, one request a minute for Crawl-delay: 60) after real trials of c/memes and c/showerthoughts (both pass: 20 of 20 reliable and readable, 8 links; reports `docs/spec/w2-trials/lemmy.world-c-*.md`, $0.0036 and $0.0052). `web/sources/lemmy.ts`: hot lists (pinned, NSFW, removed, deleted left out, one list per fetcher), a post read from its comments in one request, lemmy.world pictures only; the morning interleaves 3 hot posts of each (about two minutes for the two lists). One `qa/sources.json` entry (`lemmy-memes`) and one live probe cover both. The web snapshot has no Lemmy answers yet (a behaviour run notes "could not be read"); re-record it when convenient.
 
 ## Spec v4, parallel build (started 17 November)
 

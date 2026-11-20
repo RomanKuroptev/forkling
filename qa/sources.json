@@ -124,14 +124,13 @@
     },
     {
       "id": "lemmy-memes",
-      "name": "Lemmy memes",
+      "name": "Lemmy memes and shower thoughts",
       "group": "pulse",
       "hosts": ["lemmy.world"],
-      "state": "dropped by Roman",
-      "reason": "robots.txt allows the API with Crawl-delay: 60 and it was reliable (8 of 8, 8 links), but only 63% of posts were readable (the mark is 80%): most memes are a picture with a few words.",
-      "trial": "docs/spec/w2-trials/lemmy.world.md",
-      "promisedBy": "Roman, 9 November (pulse sources)",
-      "recommended": "rerun the trial against a text-heavier community, or drop."
+      "state": "on the list",
+      "reason": "A feed: the morning takes 3 hot posts each of c/memes and c/showerthoughts (pinned posts left out), one request a minute for robots.txt's Crawl-delay: 60. Trials of 20 November, with lemmy.world pictures counted and the top comments read: c/memes 20 of 20 reliable, 20 of 20 readable, 8 links; c/showerthoughts the same (its report is lemmy.world-c-showerthoughts.md). The first trial (63% readable) is lemmy.world.md.",
+      "trial": "docs/spec/w2-trials/lemmy.world-c-memes.md",
+      "promisedBy": "Roman, 9 November (pulse sources); Roman, 20 November (new sources)"
     },
     {
       "id": "mastodon-trends",

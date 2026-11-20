@@ -23,12 +23,12 @@ describe('qa/sources.json', () => {
     expect(checkListMatchesEngine(readSourceList(), engineHosts)).toEqual([])
   })
 
-  it('reports no missing pulse source as major once Roman dropped Show HN, Lobsters, Mastodon trends and Lemmy memes (20 November), all for Roman with an answer', () => {
+  it('reports no missing pulse source as major once Roman dropped Show HN, Lobsters and Mastodon trends (20 November; Lemmy memes came back after its second trial), all for Roman with an answer', () => {
     const findings = checkPromisedMissing(readSourceList())
     const major = findings.filter((f) => f.severity === 'major').map((f) => f.fingerprint)
     expect(major).toEqual([])
     const dropped = findings.filter((f) => f.severity === 'info').map((f) => f.fingerprint)
-    expect(dropped.sort()).toEqual(['sources.promised-missing|lemmy-memes', 'sources.promised-missing|lobsters', 'sources.promised-missing|mastodon-trends', 'sources.promised-missing|show-hn'])
+    expect(dropped.sort()).toEqual(['sources.promised-missing|lobsters', 'sources.promised-missing|mastodon-trends', 'sources.promised-missing|show-hn'])
     for (const f of findings) {
       expect(f.fixKind).toBe('roman')
       expect(f.what).toMatch(/Recommended:/)

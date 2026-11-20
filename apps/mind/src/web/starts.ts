@@ -1,6 +1,6 @@
 import type { Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
-import { articRandomId, articWork, commonsFeatured, esolangFeatured, githubRepo, githubTopicRepos, imgflipFormat, imgflipTopLinks, wikipediaFeatured } from './sources/index.ts'
+import { articRandomId, articWork, commonsFeatured, esolangFeatured, githubRepo, githubTopicRepos, imgflipFormat, imgflipTopLinks, LEMMY_COMMUNITIES, lemmyHot, lemmyPost, wikipediaFeatured } from './sources/index.ts'
 
 /** How a trial starts on a host: from what the host itself puts forward, never a topic picked here (spec 6.5). */
 export interface HostPlan {
@@ -36,6 +36,18 @@ export const HOST_PLANS: readonly HostPlan[] = [
     paths: ['/get_memes'],
     feed: true,
     start: async (f, seed, offset) => imgflipFormat(f, at(await imgflipTopLinks(f, 100), offset + seed).url.split('/').pop()!),
+  },
+  {
+    // Both communities are fed in turn: an even seed reads c/memes, an odd one c/showerthoughts.
+    host: 'lemmy.world',
+    itemHost: 'lemmy.world',
+    paths: ['/api/v3/post/list', '/api/v3/post', '/api/v3/comment/list'],
+    feed: true,
+    start: async (f, seed, offset) => {
+      const posts = await lemmyHot(f, at(LEMMY_COMMUNITIES, seed))
+      if (posts.length === 0) throw new Error(`c/${at(LEMMY_COMMUNITIES, seed)} has no hot posts`)
+      return lemmyPost(f, at(posts, offset + Math.floor(seed / LEMMY_COMMUNITIES.length) * 4).post.id)
+    },
   },
   { host: 'api.artic.edu', itemHost: 'www.artic.edu', paths: ['/api/v1/artworks/'], start: async (f, seed, offset) => articWork(f, await articRandomId(f, 1 + ((offset * 97 + seed * 331) % 900))) },
 ]
