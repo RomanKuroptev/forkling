@@ -1,7 +1,7 @@
 import { MAX_TRIP_READS, Souvenir, type Trail, type TrailPage } from '@forkling/schema'
 import { similarity } from '@forkling/sim'
 import { WebError } from './fetch.ts'
-import type { Item, ItemLink } from './item.ts'
+import { isMemeTemplate, type Item, type ItemLink } from './item.ts'
 import type { SeenPage } from './lookup.ts'
 import { chosenLink, clampInterest, clampReaction, cleanTopics } from './read.ts'
 import type { LookOutcome } from './look.ts'
@@ -205,8 +205,9 @@ export async function runTrip(deps: TripDeps, input: TripInput): Promise<TripRes
 
     for (const topic of topics) feeds.push({ topic, event: 'page', url: item.url, title: item.title })
 
-    // A look at a picture it asked for, within the day's 20 (spec 7.8).
-    const want = answer.look
+    // A look at a picture it asked for, within the day's 20 (spec 7.8). A meme format's template is looked at even when it did not
+    // ask: the picture is the format, and a meme is drawn from what Merge saw in it.
+    const want = answer.look ?? (isMemeTemplate(item) ? 1 : null)
     if (want !== null && deps.look && Number.isInteger(want) && want >= 1 && want <= item.images.length && looks < (deps.looksLeft ?? 0)) {
       looks++
       const picture = await deps.look(item, want, page.reaction ?? '')
