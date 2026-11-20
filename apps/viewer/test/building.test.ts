@@ -16,7 +16,7 @@ import {
   frontHeight,
   frontWidth,
 } from '../src/world/building.ts'
-import { COLORS } from '../src/world/theme.ts'
+import { COLORS, INTERIOR, hsvOf } from '../src/world/theme.ts'
 import { exteriorInstances, floorHeight, renderBudget, sceneInstances } from '../src/world/kitGeometry.ts'
 import type { Instance } from '../src/world/kitBase.ts'
 
@@ -213,5 +213,55 @@ describe('a building stands on its slab (day-30 found grown places 4 and 8, towe
         for (const i of model.instances.filter((x) => x.shape === 'box')) expect(lowest(i.matrix), `${style} ${floors}`).toBeGreaterThanOrEqual(-0.02)
       }
     }
+  })
+})
+
+describe('the windows from inside at night (issue 435)', () => {
+  const styled = (style: string) => ({ ...home, exterior: { ...home.exterior, style } })
+  /** The windows' frames: the glow slot's boxes that do not glow. */
+  const frames = (p: Place) => model(p).slots.glow.filter((i) => !i.glow)
+  const glassPanes = (p: Place) => model(p).slots.glow.filter((i) => i.glow)
+  const insidePanes = (p: Place) => model(p).insidePanes
+
+  it('each window has a pane on its inside that glows warm at night, not the flat lemon of its outside, and is the glow by day', () => {
+    const [hue, sat] = hsvOf(INTERIOR.windowNight)
+    // Warm (red to orange), with colour: not the yellow of the sun, and not brown (look.md rule 3).
+    expect(hue < 30 || hue > 340).toBe(true)
+    expect(sat).toBeGreaterThan(0.3)
+    for (const style of STYLES.filter((s) => s !== 'glass')) {
+      const p = styled(style)
+      expect(frames(p).length, style).toBeGreaterThan(0)
+      expect(insidePanes(p).length, style).toBe(frames(p).length)
+      for (const i of insidePanes(p)) {
+        expect(i.inside, style).toBe(true)
+        // Lit trim: it gives off a little of its own colour, more at night; it is not a lamp.
+        expect(i.trim, style).toBe(true)
+        expect(i.glow, style).toBeUndefined()
+        expect(i.dayColor, style).toBe(kit.palettes.find((q) => q.id === p.exterior.palette)!.colors.glow)
+      }
+    }
+  })
+
+  it('covers the glass from inside and stands clear of it, so the two never fight', () => {
+    const p = styled('timber')
+    const [px, pz] = placeCentre(toLandPlace(p))
+    expect(insidePanes(p).length).toBeGreaterThan(0)
+    for (const pane of insidePanes(p)) {
+      const glass = glassPanes(p).find((g) => Math.abs(at(g)[1] - at(pane)[1]) < 1e-6 && Math.hypot(at(g)[0] - at(pane)[0], at(g)[2] - at(pane)[2]) < 0.5)
+      expect(glass).toBeDefined()
+      const g = half(glass!)
+      const q = half(pane)
+      // The wall's thin axis: the inside pane stands nearer the middle of the place than the glass's inner face, by at least 5 mm.
+      const thin = g[0] < g[2] ? 0 : 2
+      const wide = thin === 0 ? 2 : 0
+      const toMiddle = (v: Instance) => Math.abs(at(v)[thin] - (thin === 0 ? px : pz))
+      expect(toMiddle(glass!) - g[thin] - (toMiddle(pane) + q[thin])).toBeGreaterThan(0.005)
+      expect(q[wide]).toBeCloseTo(g[wide], 5)
+      expect(q[1]).toBeCloseTo(g[1], 5)
+    }
+  })
+
+  it('a glass house, whose walls are see-through, has none', () => {
+    expect(insidePanes(styled('glass'))).toEqual([])
   })
 })

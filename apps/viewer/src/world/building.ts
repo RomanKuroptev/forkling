@@ -2,7 +2,7 @@ import type { Kit, KitPalette, Place } from '@forkling/schema'
 import { DOOR_HALF, placeCentre, toLandPlace } from '@forkling/sim'
 import { FLOOR_INSET, FLOOR_TOP, floorHeight, type Instance, type Shape } from './kitBase.ts'
 import { compose } from './matrix.ts'
-import { COLORS, dayInteriorWall, interiorWall } from './theme.ts'
+import { COLORS, INTERIOR, dayInteriorWall, interiorWall } from './theme.ts'
 
 /**
  * The building model of docs/spec/v4/look.md: every building is drawn from six slots (base, body, front, crown, hero, glow) and is a
@@ -39,6 +39,8 @@ export const FRAME_OUT = 0.1
 export const PANE_OUT = 0.03
 /** The inside of the walls is lined with a thin panel in the room's own colour (`interiorWall`), this thick. */
 export const LINING = 0.025
+/** The pane that covers a window from inside (`INTERIOR.windowNight`) is this thick. */
+export const INSIDE_PANE = 0.02
 
 const WALL_THICKNESS = 0.4
 /**
@@ -72,6 +74,8 @@ export interface BuildingModel {
   outlineHeight: number
   /** The lining of the walls inside, in the room's own colour, round the windows and the door: drawn only with the inside. */
   inside: Instance[]
+  /** The panes over the windows from inside (`INTERIOR.windowNight`, issue 435): drawn only with the inside. */
+  insidePanes: Instance[]
   /** Where the place's name is written on the title bar (the viewer paints the text): its middle, and its size. Null when the front has no bar. */
   titleBar: { text: string; position: [number, number, number]; width: number; height: number } | null
 }
@@ -206,6 +210,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
   }
   // The lining of the walls inside (not for a glass house, whose walls are see-through), in the room's own colour.
   const inside: Instance[] = []
+  const insidePanes: Instance[] = []
   const lining = style === 'glass' ? null : interiorWall(palette.colors.trim)
   const dayLining = dayInteriorWall(palette.colors)
   const windows = windowLayout(place)
@@ -268,6 +273,10 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
         add('glow', 'box', at(along, h / 2), size(ww, wh, WALL_THICKNESS + 2 * FRAME_OUT + 2 * PANE_OUT), c.glow, true, rot)
       }
       if (!lining) return
+      // From inside, each pane is covered by a thin pane `SKIN` clear of the glass: by day the palette's glow, as from outside; at night
+      // a warm glow of its own, not the flat lemon that read as the sun still out (issue 435).
+      const paneIn = -(WALL_THICKNESS / 2 + FRAME_OUT + PANE_OUT + SKIN + INSIDE_PANE / 2)
+      for (const along of alongs) insidePanes.push({ shape: 'box', matrix: compose(at(along, h / 2, paneIn), rot, size(ww, wh, INSIDE_PANE)), color: INTERIOR.windowNight, dayColor: c.glow, trim: true, inside: true })
       // The lining: from the foot band to the top band, from inner corner to inner corner (or to the door), round each window.
       // At the door the lining stops `SKIN` short of the wall's end, so its end is not in the plane of the wall's (the door's reveal).
       const from = gap === 'before' ? a + SKIN : a + WALL_THICKNESS / 2
@@ -431,6 +440,7 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
     front: { width: fwid, height: fh, area: fwid * fh },
     frontGlowArea,
     inside,
+    insidePanes,
     outlineHeight: Math.max(fh + ch, bodyH + 1),
     titleBar,
   }

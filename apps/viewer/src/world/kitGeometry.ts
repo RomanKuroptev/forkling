@@ -7,7 +7,7 @@ import { wireframeInstances } from './wireframe.ts'
 import { plotInstances } from './plotGeometry.ts'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
 import { galleryWalls, wallInstances, type GalleryWork } from './galleryWall.ts'
-import { FLOOR_BELOW, FLOOR_INSET, FLOOR_TOP, SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
+import { FLOOR_BELOW, FLOOR_INSET, FLOOR_TOP, SHAPES, floorCovering, floorHeight, floorLift, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
 import { partInDoorway } from './doorway.ts'
 import { hungParts, isFootPrimitive, settledPlace } from './insideWalls.ts'
@@ -167,7 +167,7 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
   // window parts are, which are then not drawn again (issues 358, 346).
   const model = buildingModel(place, kit, baseY)
   const consumed = model ? windowLayout(place).consumed : new Set<string>()
-  if (model) out.push(...model.inside)
+  if (model) out.push(...model.inside, ...model.insidePanes)
   const hung = hungParts(place, kit)
   for (const [r, room] of place.rooms.entries()) {
     for (const [index, placed] of room.parts.entries()) {
@@ -176,7 +176,8 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
       if (!part) continue
       // Nothing stands in the doorway: the building draws the opening, and a frame or a door leaf there blocks it (issues 342, 345, 354).
       if (partInDoorway(place, kit, room, placed, baseY)) continue
-      const at: [number, number, number] = [px + room.at[0] + placed.at[0], baseY + room.floor * height + placed.at[1], pz + room.at[1] + placed.at[2]]
+      // A rug lies on the floor, not under its top (issue 432).
+      const at: [number, number, number] = [px + room.at[0] + placed.at[0], baseY + room.floor * height + placed.at[1] + floorLift(part, placed.at[1]), pz + room.at[1] + placed.at[2]]
       if (part.model && models.has(part.model.file)) {
         const s = part.model.scale
         modelOut.push({ file: part.model.file, matrix: compose(at, [0, placed.rot, 0], [s, s, s]) })
@@ -186,7 +187,9 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
         const group = `${room.id}/${index}`
         // A part hung on a wall is drawn without its foot (`hungParts`).
         const drawn = hung.has(group) ? { ...part, primitives: part.primitives.filter((p) => !isFootPrimitive(part, p)) } : part
-        out.push(...partInstances(drawn, at, placed.rot, off ? dark : palette).map((i) => (off ? { ...i, glow: false, group } : { ...i, group })))
+        // A rug is lit trim, so its colours hold at night (`floorCovering`).
+        const trim = floorCovering(part) ? { trim: true } : {}
+        out.push(...partInstances(drawn, at, placed.rot, off ? dark : palette).map((i) => (off ? { ...i, glow: false, group, ...trim } : { ...i, group, ...trim })))
       }
     }
   }

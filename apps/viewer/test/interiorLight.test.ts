@@ -163,6 +163,7 @@ describe('by day a room reads as its palette pale wall (#405 look review)', () =
     expect(buildingModel(workshop, kit, 0)!.instances.every((i) => !i.dayColor)).toBe(true)
     const scene = sceneInstances([workshop], kit, { heightAt: () => 0, interiors: new Set([workshop.id]) })
     const flagged = Array.from({ length: scene.box.count }, (_, k) => scene.box.day[k * 4 + 3]).filter((w) => w === 1).length
-    expect(flagged).toBe(lining.length + workshop.exterior.floors) // and the floor of each storey
+    // And the floor of each storey, and the panes over the windows from inside (issue 435: the glow by day, warm at night).
+    expect(flagged).toBe(lining.length + buildingModel(workshop, kit, 0)!.insidePanes.length + workshop.exterior.floors)
   })
 })
