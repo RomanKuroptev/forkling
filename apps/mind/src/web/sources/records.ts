@@ -1,3 +1,4 @@
+import { createPrng } from '@forkling/sim'
 import { WebError, type Fetcher } from '../fetch.ts'
 import { cutToTokens, htmlToText } from '../clean.ts'
 import { capLinks, MAX_RECORD_LINKS, wikipediaTopicLink, type Item, type ItemLink } from '../item.ts'
@@ -120,6 +121,35 @@ export async function articWork(f: Fetcher, id: number | string): Promise<Item> 
 export async function githubTopicRepos(f: Fetcher, topic: string, per = 10): Promise<string[]> {
   const r = (await f.json(`https://api.github.com/search/repositories?q=topic:${encodeURIComponent(topic)}+stars:%3E20&sort=updated&per_page=${per}`)) as any
   return (r.items ?? []).map((x: { full_name: string }) => x.full_name)
+}
+
+/** The topics of the "rising this week" list (Roman, 20 Nov): small creative corners, two of them drawn each day. */
+export const RISING_TOPICS = ['generative-art', 'demoscene', 'shader', 'pixel-art', 'procedural-generation', 'esoteric-language', 'js13k'] as const
+const RISING_DAYS = 7
+const REPO_NAME = /^[\w.-]{1,100}\/[\w.-]{1,100}$/
+
+/** The date `RISING_DAYS` days before a YYYY-MM-DD date. */
+export function weekBefore(day: string): string {
+  const [y, m, d] = day.split('-').map(Number) as [number, number, number]
+  return new Date(Date.UTC(y, m - 1, d - RISING_DAYS)).toISOString().slice(0, 10)
+}
+
+/** The day's two rising topics, drawn with the seeded PRNG from the forkling's seed and the date: the same two all day. */
+export function risingTopicsFor(seed: number, day: string): string[] {
+  const prng = createPrng((seed ^ Math.imul(Number(day.replaceAll('-', '')), 0x9e3779b1)) >>> 0)
+  const first = prng.int(RISING_TOPICS.length)
+  const second = (first + 1 + prng.int(RISING_TOPICS.length - 1)) % RISING_TOPICS.length
+  return [RISING_TOPICS[first]!, RISING_TOPICS[second]!]
+}
+
+/**
+ * Repositories made in the 7 days before `day` under a topic, the most starred first: what is new and catching on this week.
+ * The reply is a stranger's data: an entry without an owner/name is dropped.
+ */
+export async function githubRisingRepos(f: Fetcher, topic: string, day: string, per = 4): Promise<string[]> {
+  const r = (await f.json(`https://api.github.com/search/repositories?q=topic:${encodeURIComponent(topic)}+created:%3E${weekBefore(day)}&sort=stars&order=desc&per_page=${per}`)) as { items?: unknown } | null
+  if (!Array.isArray(r?.items)) throw new WebError('http', 'GitHub gave no list of repositories', 502)
+  return (r.items as { full_name?: unknown }[]).flatMap((x) => (typeof x?.full_name === 'string' && REPO_NAME.test(x.full_name) ? [x.full_name] : []))
 }
 
 /** A repository: its description, topics and README. Links: other repositories under its first topic, and Wikipedia searches for its topics. */

@@ -3,7 +3,7 @@ import { isAllowed, isReadable } from '../src/web/allowlist.ts'
 import { WebError, type Fetcher } from '../src/web/fetch.ts'
 import { capLinks, normalizeLicence, wikipediaTopicLink, MAX_IMAGES, MAX_LINKS, MAX_RECORD_LINKS } from '../src/web/item.ts'
 import { skipReason } from '../src/web/skip.ts'
-import { articWork, commonsFeatured, commonsFile, esolangMainLinks, esolangPage, githubRepo, imgflipFormat, imgflipTopLinks, readUrl, wikipediaArticle, wikipediaFeatured, wikipediaMorningLinks, wikipediaSearch } from '../src/web/sources/index.ts'
+import { articWork, commonsFeatured, commonsFile, esolangMainLinks, esolangPage, githubRepo, githubRisingRepos, RISING_TOPICS, risingTopicsFor, weekBefore, imgflipFormat, imgflipTopLinks, readUrl, wikipediaArticle, wikipediaFeatured, wikipediaMorningLinks, wikipediaSearch } from '../src/web/sources/index.ts'
 
 /** A Fetcher that answers from a table of URL to JSON, text or bytes, and says 404 to anything else. */
 function fake(answers: Record<string, unknown>): Fetcher & { asked: string[] } {
@@ -310,6 +310,25 @@ describe('records', () => {
     expect(item.links.some((l) => l.url === 'https://github.com/b/loops')).toBe(true)
     expect(item.links.some((l) => l.url === 'https://github.com/a/sketch')).toBe(false)
     expect((await readUrl(f, 'https://github.com/a/sketch')).title).toBe('a/sketch')
+  })
+
+  it('lists the repositories made in the last 7 days under a topic, most stars first (rising this week)', async () => {
+    expect(weekBefore('2026-11-20')).toBe('2026-11-13')
+    expect(weekBefore('2026-03-03')).toBe('2026-02-24')
+    const f = fake({
+      'https://api.github.com/search/repositories?q=topic:shader+created:%3E2026-11-13&sort=stars&order=desc&per_page=4': { items: [{ full_name: 'a/glow' }, { full_name: 'b/ripple' }, { nope: 1 }, { full_name: 'not a repo name' }] },
+    })
+    expect(await githubRisingRepos(f, 'shader', '2026-11-20', 4)).toEqual(['a/glow', 'b/ripple'])
+  })
+
+  it('gives each day two of the rising topics by the seeded draw, the same two for the same day, and all of them over a fortnight', () => {
+    expect(RISING_TOPICS).toEqual(['generative-art', 'demoscene', 'shader', 'pixel-art', 'procedural-generation', 'esoteric-language', 'js13k'])
+    const day = risingTopicsFor(20260101, '2026-11-20')
+    expect(day).toHaveLength(2)
+    expect(new Set(day).size).toBe(2)
+    expect(risingTopicsFor(20260101, '2026-11-20')).toEqual(day)
+    const seen = new Set(Array.from({ length: 14 }, (_, i) => risingTopicsFor(20260101, `2026-11-${String(i + 1).padStart(2, '0')}`)).flat())
+    expect(seen.size).toBe(RISING_TOPICS.length)
   })
 
   it('does not offer a repository topic as a guessed Wikipedia page (Acpx, Creative-coding, Algorithmic-art all 404ed on 18 and 19 Nov 2026)', async () => {
