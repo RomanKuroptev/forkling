@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { chunkAt, chunkCentre, createLand, toLandPlace } from '@forkling/sim'
 import { makeFixtureWorld } from '@forkling/sim/fixture'
-import { fogWalls, landMesh, pathRibbon, visibleChunks } from '../src/world/landGeometry.ts'
+import { fogWalls, landMesh, visibleChunks } from '../src/world/landGeometry.ts'
 
 const fixture = makeFixtureWorld(1, 10)
 const land = createLand(1, fixture.places.map(toLandPlace))
@@ -103,58 +103,7 @@ describe('the fog at the world\'s edge', () => {
   })
 })
 
-describe('a path drawn on the ground (spec 4.3: a 3 meter track)', () => {
-  const flat = () => 2
-  it('is a strip 3 meters wide along the line, a little above the ground', () => {
-    const ribbon = pathRibbon([[0, 0], [32, 0]], flat, { width: 3, step: 2, lift: 0.05 })
-    expect(ribbon.indices.length).toBe(16 * 6)
-    for (let i = 0; i < ribbon.positions.length; i += 3) {
-      expect(ribbon.positions[i + 1]!).toBeCloseTo(2.05, 6)
-      expect(Math.abs(ribbon.positions[i + 2]!)).toBeCloseTo(1.5, 6)
-    }
-    const xs = [...new Set(Array.from({ length: ribbon.positions.length / 3 }, (_, k) => ribbon.positions[k * 3]!))].sort((a, b) => a - b)
-    expect(xs[0]).toBe(0)
-    expect(xs.at(-1)).toBe(32)
-  })
-  it('follows the ground height', () => {
-    const slope = (x: number) => x * 0.1
-    const ribbon = pathRibbon([[0, 0], [20, 0]], (x) => slope(x), { step: 2 })
-    for (let i = 0; i < ribbon.positions.length; i += 3) expect(ribbon.positions[i + 1]!).toBeCloseTo(slope(ribbon.positions[i]!) + 0.05, 6)
-  })
-  it('turns corners, with one square at the bend', () => {
-    const ribbon = pathRibbon([[0, 0], [10, 0], [10, 10]], flat, { step: 2 })
-    expect(ribbon.indices.length).toBe(11 * 6)
-  })
-  it('leaves no gap at the outside of a bend: every point of the track near the corner is covered', () => {
-    const ribbon = pathRibbon([[0, 0], [10, 0], [10, 10]], flat, { step: 2, width: 3 })
-    const vertex = (i: number): readonly [number, number] => [ribbon.positions[i * 3]!, ribbon.positions[i * 3 + 2]!]
-    const covered = (px: number, pz: number) => {
-      for (let t = 0; t < ribbon.indices.length; t += 3) {
-        const [a, b, c] = [vertex(ribbon.indices[t]!), vertex(ribbon.indices[t + 1]!), vertex(ribbon.indices[t + 2]!)]
-        const side = (p: readonly [number, number], q: readonly [number, number]) => (q[0] - p[0]) * (pz - p[1]) - (q[1] - p[1]) * (px - p[0])
-        const signs = [side(a, b), side(b, c), side(c, a)]
-        if (signs.every((s) => s >= -1e-9) || signs.every((s) => s <= 1e-9)) return true
-      }
-      return false
-    }
-    // The outer corner of the L is at (11.5, -1.5): the points between it and the bend (10, 0) need the joint.
-    const points: [number, number][] = [[10.4, -0.4], [11, -1], [11.4, -1.4], [10.2, -1.3], [11.3, -0.2]]
-    for (const [x, z] of points) expect(covered(x, z), `${x},${z}`).toBe(true)
-  })
-  it('puts no square where the bend is inside a building', () => {
-    const ribbon = pathRibbon([[0, 0], [10, 0], [10, 10]], flat, { step: 2, skip: (x, z) => Math.abs(x - 10) < 1 && Math.abs(z) < 1 })
-    expect(ribbon.indices.length).toBeLessThanOrEqual(10 * 6)
-  })
-  it('leaves out the stretches inside a building', () => {
-    const ribbon = pathRibbon([[0, 0], [32, 0]], flat, { step: 2, skip: (x) => x > 10 && x < 20 })
-    expect(ribbon.indices.length).toBe(11 * 6)
-    expect(pathRibbon([[0, 0], [32, 0]], flat, { step: 2, skip: () => true }).indices.length).toBe(0)
-  })
-  it('is empty for a path of one point', () => {
-    expect(pathRibbon([[0, 0]], flat).indices.length).toBe(0)
-    expect(pathRibbon([], flat).indices.length).toBe(0)
-  })
-})
+// The paths on the ground are tested in pathGeometry.test.ts.
 
 describe('a staked plot is drawn as land (W6 slice 8)', () => {
   it('is among the visible chunks, as edge land, when a request has staked it', () => {

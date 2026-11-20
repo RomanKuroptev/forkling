@@ -2,7 +2,7 @@ import { worldLand } from './worldLand.ts'
 import { RigidBody, TrimeshCollider } from '@react-three/rapier'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { landMesh, visibleChunks } from './landGeometry.ts'
+import { LAND_SEGMENTS, landMesh, visibleChunks } from './landGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
 import { GRID, LAND } from './theme.ts'
 
@@ -30,15 +30,12 @@ function gridOnLand(shader: { uniforms: Record<string, { value: unknown }>; vert
     )
 }
 
-/** Squares of 2 meters: gentle terrain, and few enough triangles for a world of 64 places. */
-const SEGMENTS = 16
-
 /** The ground of every owned and edge chunk, flat-shaded low-poly like the island was, with one collider built from the same vertices. */
 export function Land() {
   const { world } = useWorld()
   const { geometry, vertices, indices } = useMemo(() => {
     const land = worldLand(world)
-    const mesh = landMesh(land, SEGMENTS)
+    const mesh = landMesh(land, LAND_SEGMENTS)
     const indexed = new THREE.BufferGeometry()
     indexed.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3))
     indexed.setIndex(new THREE.BufferAttribute(mesh.indices, 1))
