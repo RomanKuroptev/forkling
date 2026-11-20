@@ -8,7 +8,7 @@ import { snapshotDir } from '../sources/snapshot.ts'
 import { recordWebSnapshot } from './record.ts'
 
 export const WEB_SNAPSHOT_USAGE = `  web-snapshot [--dir <dir>]   record the allowed web into qa/web-snapshot (real GETs, allowlist only, robots.txt obeyed,
-                               the normal request gaps, lemmy.world one a minute, so it takes about 15 minutes; no model calls; GITHUB_TOKEN
+                               the normal request gaps, lemmy.world one a minute, so it takes about 30 minutes; no model calls; GITHUB_TOKEN
                                is used for GitHub). A real run reads it with fast-forward --web-snapshot`
 
 export async function webSnapshotCommand(args: string[]): Promise<number> {

@@ -81,7 +81,14 @@ const IMGFLIP_PICTURES = 24
 const RISING_DAYS_AFTER = 60
 const RISING_DAYS_BEFORE = 7
 
-const addDays = (day: string, n: number): string => {
+/**
+ * Addresses asked for every time, whatever the morning offers: the planted snapshot-misses test
+ * (test/planted/behaviour-snapshot-misses.test.ts) needs a page the snapshot recorded as a real 404, and this Wikipedia
+ * address (a guess from a meme format's name, before #401) is one.
+ */
+const PINNED = ['https://en.wikipedia.org/wiki/Drake_Hotline_Bling']
+
+const addDays =(day: string, n: number): string => {
   const [y, m, d] = day.split('-').map(Number) as [number, number, number]
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
 }
@@ -159,6 +166,8 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
     starts.push(...repoLinks(await soft(`GitHub rising ${topic}`, () => githubRisingRepos(wander, topic, takenOn, MORNING.github))))
     risingUrls.push(...rec.entries.filter((e) => !before.has(e.url) && e.file && e.url.includes('created:')).map((e) => e.url))
   }
+
+  for (const url of PINNED) await soft(url, () => wander.text(url))
 
   // Lemmy is one request a minute: its morning lists and hot posts are read while the rest goes on.
   const lemmy = (async () => {

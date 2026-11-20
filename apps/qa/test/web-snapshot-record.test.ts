@@ -36,6 +36,7 @@ function fakeWeb(): FetchImpl & { asked: string[] } {
     if (u.hostname === 'api.github.com') return json({ full_name: 'a/b', description: 'a creative coding toy', html_url: 'https://github.com/a/b', topics: [] })
     if (u.hostname === 'esolangs.org' && u.pathname === '/wiki/Main_Page') return html('<div id="mw-content-text"><a href="/wiki/Forbidden">Forbidden</a> <a href="/wiki/Brainfuck">Brainfuck</a></div>')
     if (u.hostname === 'en.wikipedia.org' && u.pathname === '/wiki/Main_Page') return html('<div id="mp-tfa"><a href="/wiki/Lighthouse">Lighthouse</a></div><div id="mp-dyk"><a href="/wiki/Moth">Moth</a></div>')
+    if (u.pathname === '/wiki/Drake_Hotline_Bling') return new Response('<html>no such page</html>', { status: 404, headers: { 'content-type': 'text/html; charset=UTF-8' } })
     if (u.hostname.endsWith('wikipedia.org') || u.hostname === 'esolangs.org' || u.hostname === 'commons.wikimedia.org') return html(`<div id="mw-content-text"><p>${'A page about this thing with enough words. '.repeat(20)}</p><a href="/wiki/Other">Other</a></div>`)
     if (u.hostname === 'api.artic.edu') return json({ data: [{ id: 7, title: 'A painting' }], pagination: { total: 1 } })
     if (['p5js.org', 'tonejs.github.io', 'threejs.org', 'developer.mozilla.org'].includes(u.hostname)) return html('<p>Reference</p><a href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API">Canvas</a>')
@@ -117,6 +118,11 @@ describe('recording the web snapshot', () => {
     // The copies for other days are not counted as more items.
     expect(manifest.sources['github-creative-coding']!.items).toBeLessThan(manifest.entries.filter((e) => e.source === 'github-creative-coding' && e.file).length)
     expect(checkSnapshotFormat(dir, readSourceList())).toEqual([])
+  })
+
+  it('asks the addresses the planted tests need, and keeps a real 404 as a 404', async () => {
+    const { manifest } = await record()
+    expect(manifest.entries.find((e) => e.url === 'https://en.wikipedia.org/wiki/Drake_Hotline_Bling')).toMatchObject({ status: 404 })
   })
 
   it('reads every morning starting point, and goes two steps from the pages read', async () => {
