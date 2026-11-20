@@ -30,6 +30,7 @@ import { signBoards } from './signGeometry.ts'
 import { ROUND_SEGMENTS, SPHERE_SEGMENTS, exteriorInstances, interiorsToLoad, modelFiles, type LampSpot, sceneInstances, wallBoxes, type Shape, type ShapeInstances } from './kitGeometry.ts'
 import { useWorld } from './WorldContext.tsx'
 import { furnitureBoxes } from './solidFurniture.ts'
+import { stairColliders } from './stairs.ts'
 import { worldLand } from './worldLand.ts'
 import { qaMode } from '../qa/params.ts'
 import { qaRegistry } from '../qa/registry.ts'
@@ -299,10 +300,13 @@ export function Places() {
       world.places.filter((place) => !qaRegistry.plant?.walkThrough.includes(place.id)).flatMap((place) => {
         const [px, pz] = placeCentre(toLandPlace(place))
         const base = land.heightAt(px, pz)
-        return wallBoxes(place).map((b) => ({
-          position: [(b.x0 + b.x1) / 2, base + b.height / 2, (b.z0 + b.z1) / 2] as [number, number, number],
-          half: [(b.x1 - b.x0) / 2, b.height / 2, (b.z1 - b.z0) / 2] as [number, number, number],
-        }))
+        return wallBoxes(place).map((b) => {
+          const y0 = b.y0 ?? 0
+          return {
+            position: [(b.x0 + b.x1) / 2, base + (y0 + b.height) / 2, (b.z0 + b.z1) / 2] as [number, number, number],
+            half: [(b.x1 - b.x0) / 2, (b.height - y0) / 2, (b.z1 - b.z0) / 2] as [number, number, number],
+          }
+        })
       }),
     [world, land],
   )
@@ -316,6 +320,17 @@ export function Places() {
           position: [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2] as [number, number, number],
           half: [(b.max[0] - b.min[0]) / 2, (b.max[1] - b.min[1]) / 2, (b.max[2] - b.min[2]) / 2] as [number, number, number],
         }))
+      }),
+    [world, land],
+  )
+
+  // The stairs are ramps the visitor climbs, and the floors above the ground are slabs it stands on, open over the stairs (issue 333).
+  const stairs = useMemo(
+    () =>
+      world.places.flatMap((place) => {
+        const [px, pz] = placeCentre(toLandPlace(place))
+        const { ramps, slabs } = stairColliders(place, kit, land.heightAt(px, pz))
+        return [...ramps, ...slabs.map((s) => ({ ...s, quaternion: [0, 0, 0, 1] as [number, number, number, number] }))]
       }),
     [world, land],
   )
@@ -393,6 +408,9 @@ export function Places() {
         ))}
         {furniture.map((f, i) => (
           <CuboidCollider key={`f-${i}`} args={f.half} position={f.position} />
+        ))}
+        {stairs.map((s, i) => (
+          <CuboidCollider key={`s-${i}`} args={s.half} position={s.position} quaternion={s.quaternion} />
         ))}
       </RigidBody>
     </>

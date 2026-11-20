@@ -1,6 +1,6 @@
 import type { Kit, KitColor, KitPalette, KitPart, Place, PlaceRequest } from '@forkling/schema'
 import { DARK_GLOW, dayInteriorFloor, furnitureColour, furniturePalette, repaint } from './theme.ts'
-import { DOOR_HALF, WALL, chunkAt, neglectFor, placeCentre, toLandPlace, type NeglectLevel } from '@forkling/sim'
+import { DOOR_HALF, STAIRS_PART, WALL, chunkAt, neglectFor, placeCentre, toLandPlace, type NeglectLevel } from '@forkling/sim'
 import { buildingModel, partKey, windowLayout } from './building.ts'
 import { constructionInstances } from './constructionGeometry.ts'
 import { wireframeInstances } from './wireframe.ts'
@@ -10,6 +10,7 @@ import { galleryWalls, wallInstances, type GalleryWork } from './galleryWall.ts'
 import { FLOOR_BELOW, FLOOR_INSET, FLOOR_TOP, SHAPES, floorCovering, floorHeight, floorLift, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
 import { partInDoorway } from './doorway.ts'
+import { floorPieces } from './stairs.ts'
 import { hungParts, isFootPrimitive, onTallStand, screenStands, settledPlace } from './insideWalls.ts'
 
 export { SHAPES, floorHeight, type Instance, type Shape }
@@ -186,8 +187,11 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
     // A floor reaches 3 cm under its storey's line, so the feet of the furniture and the walls standing on that line are inside it, not
     // in the plane of its underside (issue 335), and its top is 2 cm over the building's 0.12 m slab, not in its plane (issues 350, 353).
     // It stops 1 cm short of the line where the walls' corner pieces end, for the same reason. By day it is a pastel of its own
-    // (`dayInteriorFloor`), not the grey a pale floor turns under the roof.
-    out.push({ shape: 'box', matrix: compose([px, baseY + f * height + (FLOOR_TOP - FLOOR_BELOW) / 2, pz], [0, 0, 0], [fw - 2 * FLOOR_INSET, FLOOR_TOP + FLOOR_BELOW, fd - 2 * FLOOR_INSET]), color: palette.colors.floor, dayColor: dayInteriorFloor(palette.colors) })
+    // (`dayInteriorFloor`), not the grey a pale floor turns under the roof. A floor above the ground is open over the stairs that
+    // come up to it (issue 333): it is drawn in pieces round the stairwell.
+    for (const r of floorPieces(place, kit, f)) {
+      out.push({ shape: 'box', matrix: compose([px + (r.x0 + r.x1) / 2, baseY + f * height + (FLOOR_TOP - FLOOR_BELOW) / 2, pz + (r.z0 + r.z1) / 2], [0, 0, 0], [r.x1 - r.x0, FLOOR_TOP + FLOOR_BELOW, r.z1 - r.z0]), color: palette.colors.floor, dayColor: dayInteriorFloor(palette.colors) })
+    }
   }
   // A building drawn by the building model lines its walls inside in the room's own colour, and its windows stand where the rooms'
   // window parts are, which are then not drawn again (issues 358, 346).
@@ -220,7 +224,9 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
         // shade of the roof instead of going grey or dusty (issue 430); at night it is lit by the lamps and the sky as before.
         // A rug is lit trim, so its colours hold at night (`floorCovering`).
         const trim = floorCovering(part) ? { trim: true } : {}
-        for (const i of partInstances(drawn, at, placed.rot, colours)) {
+        // Stairs that lead up are drawn as tall as the storey, so their top step meets the floor above (issue 333).
+        const scale: [number, number, number] = placed.part === STAIRS_PART && room.floor < place.exterior.floors - 1 ? [1, height / part.size[1], 1] : [1, 1, 1]
+        for (const i of partInstances(drawn, at, placed.rot, colours, scale)) {
           const day = furniture && !i.glow && i.color !== DARK_GLOW ? { dayColor: i.color } : {}
           out.push(off ? { ...i, glow: false, group, ...day, ...trim } : { ...i, group, ...day, ...trim })
         }
@@ -277,13 +283,14 @@ export function lampSpots(place: Place, kit: Kit, baseY: number, lampsOn: boolea
   return out
 }
 
-/** A wall the visitor cannot walk through, as an axis-aligned box from the ground up. */
+/** A wall the visitor cannot walk through, as an axis-aligned box from `y0` (0 when left out: the ground) up to `height`, over the place's base. */
 export interface WallBox {
   x0: number
   x1: number
   z0: number
   z1: number
   height: number
+  y0?: number
 }
 
 /** The walls of a place for the visitor's physics: the same 0.8 m ring, and the same door gap, as the body's world (`buildBodyWorld`). */
@@ -303,6 +310,8 @@ export function wallBoxes(place: Place): WallBox[] {
     { x0: px + DOOR_HALF, x1, z0: z1 - WALL, z1, height },
     // A boarded door (spec 9.9) cannot be walked through.
     ...(place.state.closed ? [{ x0: px - DOOR_HALF, x1: px + DOOR_HALF, z0: z1 - WALL, z1, height }] : []),
+    // The door is on the ground floor only: over it, the front wall of the floors above is whole (issue 333).
+    ...(!place.state.closed && place.exterior.floors > 1 ? [{ x0: px - DOOR_HALF, x1: px + DOOR_HALF, z0: z1 - WALL, z1, height, y0: floorHeight(place) }] : []),
   ]
 }
 

@@ -1,5 +1,5 @@
 import type { Kit, Place, Room } from '@forkling/schema'
-import { DOOR_HALF, WALL, placeCentre, toLandPlace } from '@forkling/sim'
+import { DOOR_HALF, STAIRS_PART, WALL, placeCentre, toLandPlace } from '@forkling/sim'
 import { floorHeight } from './kitBase.ts'
 
 /**
@@ -31,7 +31,9 @@ export function placedPartBox(place: Place, kit: Kit, room: Room, placed: Room['
   const part = kit.parts.find((p) => p.id === placed.part)
   if (!part) return null
   const [px, pz] = placeCentre(toLandPlace(place))
-  const [w, h, d] = part.size
+  const [w, size, d] = part.size
+  // Stairs that lead up are drawn as tall as the storey (`interiorParts`, issue 333).
+  const h = placed.part === STAIRS_PART && room.floor < place.exterior.floors - 1 ? floorHeight(place) : size
   const c = Math.abs(Math.cos(placed.rot))
   const s = Math.abs(Math.sin(placed.rot))
   const hx = (w * c + d * s) / 2
