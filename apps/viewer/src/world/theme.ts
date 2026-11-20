@@ -88,6 +88,11 @@ export const INTERIOR = {
   lampReach: 7,
   /** How many lamps near the visitor light the room at once (a fixed number, so the shaders are made once). */
   lamps: 4,
+  /**
+   * A window seen from inside at night: it glows in the look's pink, more at night (look.md rule 8), not the flat lemon of the glass
+   * seen from outside, which read as the sun still out (issue 435). By day it is the palette's glow.
+   */
+  windowNight: COLORS.pink,
 } as const
 
 /**

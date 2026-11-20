@@ -170,6 +170,7 @@ describe('by day a room reads as its palette pale wall (#405 look review)', () =
     for (const i of furniture) expect(i.dayColor).toBe(lit(i) ? i.color : undefined)
     const furnitureBoxes = furniture.filter((i) => i.shape === 'box' && lit(i)).length
     expect(furnitureBoxes).toBeGreaterThan(0)
-    expect(flagged).toBe(lining.length + workshop.exterior.floors + furnitureBoxes) // and the floor of each storey
+    // And the floor of each storey, and the panes over the windows from inside (issue 435: the glow by day, warm at night).
+    expect(flagged).toBe(lining.length + workshop.exterior.floors + furnitureBoxes + buildingModel(workshop, kit, 0)!.insidePanes.length)
   })
 })

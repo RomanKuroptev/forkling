@@ -177,7 +177,10 @@ describe('the inside of a building (spec 4.6: only the place the visitor is in, 
     const count = notInDoor.filter(({ key }) => !consumed.has(key)).reduce((n, { p }) => n + kit.parts.find((k) => k.id === p.part)!.primitives.length, 0)
     const lining = buildingModel(home, kit, 0)!.inside.length
     expect(lining).toBeGreaterThan(0)
-    expect(interiorInstances(home, kit, 0)).toHaveLength(count + 1 + lining) // and the floor
+    // And the floor, and the panes over the windows from inside (issue 435).
+    const panes = buildingModel(home, kit, 0)!.insidePanes.length
+    expect(panes).toBeGreaterThan(0)
+    expect(interiorInstances(home, kit, 0)).toHaveLength(count + 1 + lining + panes)
   })
   it('loads the places in the visitor\'s chunk and the chunks around it, and no others', () => {
     const land = createLand(1, fixture.places.map(toLandPlace))

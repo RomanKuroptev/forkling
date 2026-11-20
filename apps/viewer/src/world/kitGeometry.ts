@@ -7,7 +7,7 @@ import { wireframeInstances } from './wireframe.ts'
 import { plotInstances } from './plotGeometry.ts'
 import { exhibitInstances, exhibitSpots, neglectInstances, neglectLook, signSpot } from './exhibitGeometry.ts'
 import { galleryWalls, wallInstances, type GalleryWork } from './galleryWall.ts'
-import { FLOOR_BELOW, FLOOR_INSET, FLOOR_TOP, SHAPES, floorHeight, type Instance, type Shape } from './kitBase.ts'
+import { FLOOR_BELOW, FLOOR_INSET, FLOOR_TOP, SHAPES, floorCovering, floorHeight, floorLift, type Instance, type Shape } from './kitBase.ts'
 import { compose, multiply, type Mat4 } from './matrix.ts'
 import { partInDoorway } from './doorway.ts'
 import { hungParts, isFootPrimitive, onTallStand, screenStands, settledPlace } from './insideWalls.ts'
@@ -193,7 +193,8 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
   // window parts are, which are then not drawn again (issues 358, 346).
   const model = buildingModel(place, kit, baseY)
   const consumed = model ? windowLayout(place).consumed : new Set<string>()
-  if (model) out.push(...model.inside)
+  // The panes over the windows from inside glow while the lamps are on; with them off they are dark, as the glass is from outside.
+  if (model) out.push(...model.inside, ...model.insidePanes.map((i) => (opts.lampsOn === false ? unlit(i, palette.colors) : i)))
   for (const [r, room] of place.rooms.entries()) {
     for (const [index, placed] of room.parts.entries()) {
       if (consumed.has(partKey(r, index))) continue
@@ -201,7 +202,8 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
       if (!part) continue
       // Nothing stands in the doorway: the building draws the opening, and a frame or a door leaf there blocks it (issues 342, 345, 354).
       if (partInDoorway(place, kit, room, placed, baseY)) continue
-      const at: [number, number, number] = [px + room.at[0] + placed.at[0], baseY + room.floor * height + placed.at[1], pz + room.at[1] + placed.at[2]]
+      // A rug lies on the floor, not under its top (issue 432).
+      const at: [number, number, number] = [px + room.at[0] + placed.at[0], baseY + room.floor * height + placed.at[1] + floorLift(part, placed.at[1]), pz + room.at[1] + placed.at[2]]
       if (part.model && models.has(part.model.file)) {
         const s = part.model.scale
         modelOut.push({ file: part.model.file, matrix: compose(at, [0, placed.rot, 0], [s, s, s]) })
@@ -216,9 +218,11 @@ export function interiorParts(place: Place, kit: Kit, baseY: number, models: Rea
         const colours = off ? dark : furniture ? furnished : palette
         // By day a piece of furniture gives off some of its own colour, as the room's walls do (`dayColor`), so its pastel holds in the
         // shade of the roof instead of going grey or dusty (issue 430); at night it is lit by the lamps and the sky as before.
+        // A rug is lit trim, so its colours hold at night (`floorCovering`).
+        const trim = floorCovering(part) ? { trim: true } : {}
         for (const i of partInstances(drawn, at, placed.rot, colours)) {
           const day = furniture && !i.glow && i.color !== DARK_GLOW ? { dayColor: i.color } : {}
-          out.push(off ? { ...i, glow: false, group, ...day } : { ...i, group, ...day })
+          out.push(off ? { ...i, glow: false, group, ...day, ...trim } : { ...i, group, ...day, ...trim })
         }
       }
     }

@@ -100,6 +100,36 @@ export function nearWhiteShare(p: PNG): number {
 export const MUDDY = { hue: [15, 130], saturation: 0.08, value: 0.7 } as const
 
 /**
+ * The share of glare in the lower half of a picture, where a room's floor is: pure white pixels (every channel 245 and up) in
+ * patches that fade into white, as light does (issue 429: the floor by Grown Place 10's door, lit to a white blob). A white thing
+ * with crisp edges (the marble slab seen through a doorway) is not glare: when fewer than half of the white patches' edge pixels
+ * touch a near-white one (every channel 230 and up), the share is 0. A pale floor keeps some colour and is never pure white.
+ */
+export function floorWhiteShare(p: PNG): number {
+  const from = Math.floor(p.height / 2)
+  const min = (x: number, y: number) => {
+    const i = (y * p.width + x) * 4
+    return Math.min(p.data[i]!, p.data[i + 1]!, p.data[i + 2]!)
+  }
+  let white = 0
+  let edge = 0
+  let soft = 0
+  for (let y = from; y < p.height; y++) {
+    for (let x = 0; x < p.width; x++) {
+      if (min(x, y) < 245) continue
+      white++
+      // Only the neighbours along the row: the scanline filter darkens every other row, which would make every edge look crisp.
+      const outside = [x - 1, x + 1].filter((u) => u >= 0 && u < p.width).map((u) => min(u, y)).filter((m) => m < 245)
+      if (outside.length === 0) continue
+      edge++
+      if (outside.some((m) => m >= 230)) soft++
+    }
+  }
+  if (white === 0 || soft < edge / 2) return 0
+  return white / (p.width * (p.height - from))
+}
+
+/**
  * The share of muddy pixels: brown, olive or khaki, the colours look.md rule 3 keeps out. That is a warm or yellow-green hue (15 to
  * 130 degrees) that is dull (value under 0.7) and has some colour (saturation 0.08 and up). Bright orange and lemon are not muddy; the
  * same colours dimmed by the night are (issue 361).
