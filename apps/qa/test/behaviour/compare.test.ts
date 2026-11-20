@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { cause, compare } from '../../src/behaviour/compare.ts'
+import { cause, compare, compareCommand, webOfRun } from '../../src/behaviour/compare.ts'
 
 const run = (scores: { id: string; alarm: boolean }[][]) => {
   const dir = mkdtempSync(join(tmpdir(), 'qa-cmp-'))
@@ -27,5 +27,44 @@ describe('where an alarm comes from', () => {
     ])
     expect(text).toContain('| rest | **alarm 1 of 2**: bad / fine | **alarm**: bad | Merge\'s choices (or the engine\'s prompts) |')
     expect(text).toContain('| memes | **alarm 2 of 2**: bad / bad | fine | the fake web (only on the snapshot) |')
+  })
+})
+
+describe('which web a run read', () => {
+  const withWeb = (webs: (string | null)[]) => {
+    const dir = run(webs.map(() => [{ id: 'rest', alarm: false }]))
+    webs.forEach((snapshot, k) => {
+      const out = join(dir, `seed-${k}`, 'out')
+      mkdirSync(out, { recursive: true })
+      if (snapshot !== null) writeFileSync(join(out, 'web.json'), JSON.stringify({ snapshot }))
+    })
+    return dir
+  }
+
+  it("comes from each seed folder's web.json", () => {
+    expect(webOfRun(withWeb(['/qa/web-snapshot', '/qa/web-snapshot']))).toBe('snapshot')
+    expect(webOfRun(withWeb([null]))).toBe('real')
+    // A folder with no seed folders (a live score) read the real web.
+    expect(webOfRun(run([[{ id: 'rest', alarm: false }]]))).toBe('real')
+    expect(() => webOfRun(withWeb(['/qa/web-snapshot', null]))).toThrow(/mixed/)
+  })
+
+  it('labels a --real run that read the snapshot as the web snapshot; a flag only overrides when given', () => {
+    const r3 = withWeb(['/qa/web-snapshot'])
+    const day0 = withWeb(['/qa/web-snapshot'])
+    const out = mkdtempSync(join(tmpdir(), 'qa-cmp-out-'))
+    const logged: string[] = []
+    const orig = console.log
+    console.log = (s: string) => void logged.push(s)
+    try {
+      expect(compareCommand([`r3=${r3}`, `day0=${day0}`], { cwd: '/', out })).toBe(0)
+      expect(logged.join('\n')).toContain('**r3** (web snapshot, 1 seed)')
+      logged.length = 0
+      expect(compareCommand(['--real', `r3=${r3}`, `day0=${day0}`], { cwd: '/', out })).toBe(0)
+      expect(logged.join('\n')).toContain('**r3** (real web, 1 seed)')
+      expect(logged.join('\n')).toContain('**day0** (web snapshot, 1 seed)')
+    } finally {
+      console.log = orig
+    }
   })
 })

@@ -1,0 +1,24 @@
+﻿Smoke 'n' Roll
+==============
+
+"Smoke 'n' Roll" is a
+[demoscene](https://en.wikipedia.org/wiki/Demoscene) production for 
+[Atari 8-bit computers](https://en.wikipedia.org/wiki/Atari_8-bit_family).
+
+It uses a 320x192 mode with random dithering (256 shades)
+as introduced in my 2021 32-byte intro
+[Dither City](https://github.com/pfusik/korporazka).
+
+Credits
+-------
+
+Design and programming by Piotr '0xF' Fusik
+
+Used Tools
+----------
+
+- [xasm](https://github.com/pfusik/xasm)
+- [SciTE](https://scintilla.org/SciTE.html)
+- [Altirra](https://www.virtualdub.org/altirra.html)
+- GNU Make
+- [Cursor](https://cursor.com) for a small bug fix

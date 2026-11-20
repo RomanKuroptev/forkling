@@ -8,7 +8,8 @@ import { snapshotDir } from '../sources/snapshot.ts'
 import { recordWebSnapshot } from './record.ts'
 
 export const WEB_SNAPSHOT_USAGE = `  web-snapshot [--dir <dir>]   record the allowed web into qa/web-snapshot (real GETs, allowlist only, robots.txt obeyed,
-                               the normal request gaps; no model calls). A real run reads it with fast-forward --web-snapshot`
+                               the normal request gaps, lemmy.world one a minute, so it takes about 30 minutes; no model calls; GITHUB_TOKEN
+                               is used for GitHub). A real run reads it with fast-forward --web-snapshot`
 
 export async function webSnapshotCommand(args: string[]): Promise<number> {
   const { values } = parseArgs({ args, options: { dir: { type: 'string' } } })
@@ -20,7 +21,9 @@ export async function webSnapshotCommand(args: string[]): Promise<number> {
   } catch {
     // Not a checkout: the manifest says unknown.
   }
-  const manifest = await recordWebSnapshot({ dir, list: readSourceList(), engine, log: (l) => console.log(l) })
+  // A GitHub token (GITHUB_TOKEN, as the mind takes it) lifts GitHub's search limit of 10 a minute.
+  const token = process.env.GITHUB_TOKEN
+  const manifest = await recordWebSnapshot({ dir, list: readSourceList(), engine, ...(token ? { authorization: { 'api.github.com': `Bearer ${token}` } } : {}), log: (l) => console.log(l) })
   console.log(`web snapshot in ${dir}: ${manifest.entries.length} entries`)
   return 0
 }

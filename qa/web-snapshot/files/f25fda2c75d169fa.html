@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>Brianfuck - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Brianfuck rootpage-Brianfuck skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">Brianfuck</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><dl><dd><span class="dablink"><i>Not to be confused with <a href="/wiki/Brainfuck" title="Brainfuck">Brainfuck</a>.</i></span></dd></dl>
+<div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" /><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Brainfuck_Info"><span class="tocnumber">1</span> <span class="toctext">Brainfuck Info</span></a></li>
+<li class="toclevel-1 tocsection-2"><a href="#Brianfuck_Adds"><span class="tocnumber">2</span> <span class="toctext">Brianfuck Adds</span></a></li>
+<li class="toclevel-1 tocsection-3"><a href="#Example_Code"><span class="tocnumber">3</span> <span class="toctext">Example Code</span></a>
+<ul>
+<li class="toclevel-2 tocsection-4"><a href="#In_all_of_the_questions,_Brianfuck_has_only_1_byte,_but_FlogScript_has_a_lot."><span class="tocnumber">3.1</span> <span class="toctext">In all of the questions, Brianfuck has only 1 byte, but FlogScript has a lot.</span></a>
+<ul>
+<li class="toclevel-3 tocsection-5"><a href="#Brianfuck_WINS!!!"><span class="tocnumber">3.1.1</span> <span class="toctext">Brianfuck WINS!!!</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<h2><span class="mw-headline" id="Brainfuck_Info">Brainfuck Info</span></h2>
+<p>Brainfuck operates on an array of memory cells, also referred to as the <a href="/wiki/Tape" title="Tape">tape</a>, each initially set to zero. There is a <a href="/wiki/Pointer" title="Pointer">pointer</a>, initially pointing to the first memory cell. The commands are:
+</p>
+<table class="wikitable">
+<tbody><tr>
+<th>Command
+</th>
+<th>Description
+</th></tr>
+<tr>
+<td><code>&gt;</code>
+</td>
+<td>Move the pointer to the right
+</td></tr>
+<tr>
+<td><code>&lt;</code>
+</td>
+<td>Move the pointer to the left
+</td></tr>
+<tr>
+<td><code>+</code>
+</td>
+<td>Increment the memory cell under the pointer
+</td></tr>
+<tr>
+<td><code>-</code>
+</td>
+<td>Decrement the memory cell under the pointer
+</td></tr>
+<tr>
+<td><code>.</code>
+</td>
+<td>Output the character signified by the cell at the pointer
+</td></tr>
+<tr>
+<td><code>,</code>
+</td>
+<td>Input a character and store it in the cell at the pointer
+</td></tr>
+<tr>
+<td><code>[</code>
+</td>
+<td>Jump past the matching <code>]</code> if the cell under the pointer is 0
+</td></tr>
+<tr>
+<td><code>]</code>
+</td>
+<td>Jump back to the matching <code>[</code> if the cell under the pointer is nonzero
+</td></tr></tbody></table>
+<h2><span class="mw-headline" id="Brianfuck_Adds">Brianfuck Adds</span></h2>
+<dl><dd><i>This section is not detailed enough and needs to be explained. Please help us by adding some more information.</i></dd></dl>
+<pre>F
+</pre>
+<p>factorial
+</p>
+<pre>P
+</pre>
+<p>check if a sentence is palindrome.
+</p>
+<pre>c
+</pre>
+<p>convert from roman to decimal
+</p>
+<pre>U
+</pre>
+<p>Underload
+</p>
+<pre>B
+</pre>
+<p>Beer program
+</p>
+<pre>R
+</pre>
+<p>ROT13
+</p>
+<pre>D
+</pre>
+<p>Display printable characters ASCII table
+</p>
+<pre>r
+</pre>
+<p>Reverse order of lines in input
+</p>
+<pre>O
+</pre>
+<p>Reverse order of characters on each line in input
+</p>
+<pre>b
+</pre>
+<p>BrainFuck interpreter (use @ at end of program)
+</p>
+<pre>C
+</pre>
+<p>Count how many of each letters
+</p>
+<pre>S
+</pre>
+<p>Set-theoretic definition of natural numbers
+</p>
+<h2><span class="mw-headline" id="Example_Code">Example Code</span></h2>
+<p>Factorial
+</p>
+<pre>F
+</pre>
+<p>Check if sentence is palindrome
+</p>
+<pre>P
+</pre>
+<p>Convert from Ruman numerals to Decimal
+</p>
+<pre>c
+</pre>
+<p>Underload
+</p>
+<pre>U
+</pre>
+<p>Beer program
+</p>
+<pre>B
+</pre>
+<p>ROT13
+</p>
+<pre>R
+</pre>
+<p>Display printable characters ASCII table
+</p>
+<pre>D
+</pre>
+<p>Reverse order of lines in input
+</p>
+<pre>r
+</pre>
+<p>Reverse order of characters on each line in input:
+</p>
+<pre>O
+</pre>
+<p>BrainFuck interpreter (use @ at end of program): 
+</p>
+<pre>b
+</pre>
+<p>Count how many of each letters: 
+</p>
+<pre>C
+</pre>
+<p>Set-theoretic definition of natural numbers
+</p>
+<pre>S
+</pre>
+<h3><span id="In_all_of_the_questions.2C_Brianfuck_has_only_1_byte.2C_but_FlogScript_has_a_lot."></span><span class="mw-headline" id="In_all_of_the_questions,_Brianfuck_has_only_1_byte,_but_FlogScript_has_a_lot.">In all of the questions, Brianfuck has only 1 byte, but <a href="/wiki/FlogScript" title="FlogScript">FlogScript</a> has a lot.</span></h3>
+<h4><span id="Brianfuck_WINS.21.21.21"></span><span class="mw-headline" id="Brianfuck_WINS!!!">Brianfuck WINS!!!</span></h4>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=Brianfuck&amp;oldid=191790">https://esolangs.org/w/index.php?title=Brianfuck&amp;oldid=191790</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Categories</a>: <ul><li><a href="/wiki/Category:Languages" title="Category:Languages">Languages</a></li><li><a href="/wiki/Category:Brainfuck_derivatives" title="Category:Brainfuck derivatives">Brainfuck derivatives</a></li><li><a href="/wiki/Category:Golfing_languages" title="Category:Golfing languages">Golfing languages</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=Brianfuck" title="You are encouraged to create an account and log in; however, it is not mandatory"><span>Create account</span></a></li><li id="pt-login" class="mw-list-item"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=Brianfuck" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o"><span>Log in</span></a></li>
+		</ul>
+	</div>
+</nav>
+		<div id="left-navigation">
+<nav id="p-namespaces" class="mw-portlet mw-portlet-namespaces vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-namespaces-label"  >
+	<h3
+		id="p-namespaces-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Namespaces</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-nstab-main" class="selected mw-list-item"><a href="/wiki/Brianfuck" title="View the content page [c]" accesskey="c"><span>Page</span></a></li><li id="ca-talk" class="mw-list-item"><a href="/wiki/Talk:Brianfuck" rel="discussion" title="Discussion about the content page [t]" accesskey="t"><span>Discussion</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-variants" class="mw-portlet mw-portlet-variants emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-variants-label"  >
+	<input type="checkbox"
+		id="p-variants-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-variants-label"
+	>
+	<label
+		id="p-variants-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">English</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+		</div>
+		<div id="right-navigation">
+<nav id="p-views" class="mw-portlet mw-portlet-views vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-views-label"  >
+	<h3
+		id="p-views-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Views</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-view" class="selected mw-list-item"><a href="/wiki/Brianfuck"><span>Read</span></a></li><li id="ca-viewsource" class="mw-list-item"><a href="/w/index.php?title=Brianfuck&amp;action=edit" title="This page is protected.&#10;You can view its source [e]" accesskey="e"><span>View source</span></a></li><li id="ca-history" class="mw-list-item"><a href="/w/index.php?title=Brianfuck&amp;action=history" title="Past revisions of this page [h]" accesskey="h"><span>View history</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-cactions" class="mw-portlet mw-portlet-cactions emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-cactions-label"  title="More options" >
+	<input type="checkbox"
+		id="p-cactions-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-cactions-label"
+	>
+	<label
+		id="p-cactions-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">More</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+<div id="p-search" role="search" class="vector-search-box-vue  vector-search-box-show-thumbnail vector-search-box-auto-expand-width vector-search-box">
+	<h3 >Search</h3>
+	<form action="/w/index.php" id="searchform" class="vector-search-box-form">
+		<div id="simpleSearch"
+			class="vector-search-box-inner"
+			>
+			<input class="vector-search-box-input"
+				 type="search" name="search" placeholder="Search Esolang" aria-label="Search Esolang" autocapitalize="sentences" title="Search Esolang [f]" accesskey="f" id="searchInput"
+			>
+			<input type="hidden" name="title" value="Special:Search">
+			<input id="mw-searchButton"
+				 class="searchButton mw-fallbackSearchButton" type="submit" name="fulltext" title="Search the pages for this text" value="Search">
+			<input id="searchButton"
+				 class="searchButton" type="submit" name="go" title="Go to a page with this exact name if it exists" value="Go">
+		</div>
+	</form>
+</div>
+		</div>
+	</div>
+<div id="mw-panel" class="vector-legacy-sidebar">
+	<div id="p-logo" role="banner">
+		<a class="mw-wiki-logo" href="/wiki/Main_Page"
+			title="Visit the main page"></a>
+	</div>
+<nav id="p-navigation" class="mw-portlet mw-portlet-navigation vector-menu-portal portal vector-menu" aria-labelledby="p-navigation-label"  >
+	<h3
+		id="p-navigation-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Navigation</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="n-mainpage-description" class="mw-list-item"><a href="/wiki/Main_Page" title="Visit the main page [z]" accesskey="z"><span>Main page</span></a></li><li id="n-portal" class="mw-list-item"><a href="/wiki/Esolang:Community_portal" title="About the project, what you can do, where to find things"><span>Community portal</span></a></li><li id="n-Language-list" class="mw-list-item"><a href="/wiki/Language_list"><span>Language list</span></a></li><li id="n-Browse-by-category" class="mw-list-item"><a href="/wiki/Esolang:Categorization"><span>Browse by category</span></a></li><li id="n-recentchanges" class="mw-list-item"><a href="/wiki/Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r"><span>Recent changes</span></a></li><li id="n-randompage" class="mw-list-item"><a href="/wiki/Special:Random" title="Load a random page [x]" accesskey="x"><span>Random page</span></a></li><li id="n-help" class="mw-list-item"><a href="/wiki/Esolang:Help" title="The place to find out"><span>Help</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-tb" class="mw-portlet mw-portlet-tb vector-menu-portal portal vector-menu" aria-labelledby="p-tb-label"  >
+	<h3
+		id="p-tb-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="t-whatlinkshere" class="mw-list-item"><a href="/wiki/Special:WhatLinksHere/Brianfuck" title="A list of all wiki pages that link here [j]" accesskey="j"><span>What links here</span></a></li><li id="t-recentchangeslinked" class="mw-list-item"><a href="/wiki/Special:RecentChangesLinked/Brianfuck" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k"><span>Related changes</span></a></li><li id="t-specialpages" class="mw-list-item"><a href="/wiki/Special:SpecialPages" title="A list of all special pages [q]" accesskey="q"><span>Special pages</span></a></li><li id="t-print" class="mw-list-item"><a href="javascript:print();" rel="alternate" title="Printable version of this page [p]" accesskey="p"><span>Printable version</span></a></li><li id="t-permalink" class="mw-list-item"><a href="/w/index.php?title=Brianfuck&amp;oldid=191790" title="Permanent link to this revision of this page"><span>Permanent link</span></a></li><li id="t-info" class="mw-list-item"><a href="/w/index.php?title=Brianfuck&amp;action=info" title="More information about this page"><span>Page information</span></a></li>
+		</ul>
+	</div>
+</nav>
+</div>
+</div>
+<footer id="footer" class="mw-footer" >
+	<ul id="footer-info">
+	<li id="footer-info-lastmod"> This page was last edited on 31 August 2026, at 09:40.</li>
+	<li id="footer-info-copyright">Content is available under <a href="/wiki/Esolang:Copyrights" title="Esolang:Copyrights">CC0 public domain dedication</a>.</li>
+</ul>
+	<ul id="footer-places">
+	<li id="footer-places-about"><a href="/wiki/Esolang:About">About Esolang</a></li>
+	<li id="footer-places-disclaimers"><a href="/wiki/Esolang:General_disclaimer">Disclaimers</a></li>
+</ul>
+	<ul id="footer-icons" class="noprint">
+	<li id="footer-copyrightico"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/licenses/cc-0.png" alt="CC0 public domain dedication" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-poweredbyico"><a href="https://www.mediawiki.org/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-hostedbyico"><a href="https://www.bytemark.co.uk/r/esolangs" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/images/hosting_bytemark_88x31.png" srcset="/w/images/hosting_bytemark_132x47.png 1.5x, /w/images/hosting_bytemark_176x62.png 2x" alt="Hosting donated by Bytemark" width="88" height="31" loading="lazy"></a></li>
+</ul>
+</footer>
+</body>
+</html>
