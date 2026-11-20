@@ -13,7 +13,7 @@ import { SIGN_CELL, signBoards } from '../world/signGeometry.ts'
 import { COLORS } from '../world/theme.ts'
 import { wireframeInstances } from '../world/wireframe.ts'
 import { plantBoards, type QaPlant } from './plant.ts'
-import { partsInAir, settledPlace } from '../world/insideWalls.ts'
+import { partsInAir, screenStands, settledPlace } from '../world/insideWalls.ts'
 
 /**
  * What `window.__qa.scene()` lists (docs/spec/audit/spec.md 7.1): every place, its doorway, room, drawn part, exhibit, sign, label and plot, Merge and
@@ -131,6 +131,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
   for (const raw of s.places) {
     // As drawn: rooms and furniture inside the walls (`insideWalls.ts`).
     const place = settledPlace(raw, s.kit)
+    const stands = screenStands(raw, s.kit)
     const baseY = baseOf(place)
     const [px, pz] = placeCentre(toLandPlace(place))
     const wire = wireframeInstances(place, s.kit, baseY, s.nowMs, s.wireAlways)
@@ -142,7 +143,7 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
     const height = floorHeight(place)
     const door = doorwayBox(place, baseY)
     out.push({ id: `${place.id}/door`, kind: 'door', place: place.id, box: { min: door.min.map(round) as QaBox['min'], max: door.max.map(round) as QaBox['max'] }, visible: true, material: 'none' })
-    const inAir = partsInAir(place, s.kit)
+    const inAir = partsInAir(raw, s.kit)
     for (const room of place.rooms) {
       const [w, d, h] = room.size
       const x = px + room.at[0]
@@ -157,6 +158,8 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
           out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, box: box ? { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] } : null, visible: false, material: 'none', inDoorway: { holds } })
           return
         }
+        // A screen on its tall stand reaches down to its floor (`screenStands`).
+        if (box && stands.has(`${room.id}/${k}`)) box.min[1] = y
         if (box) out.push({ id: `${place.id}/${room.id}/${k}`, kind: 'part', place: place.id, name: placed.part, ...(inAir.has(`${room.id}/${k}`) ? { inAir: true as const } : {}), box: { min: box.min.map(round) as QaBox['min'], max: box.max.map(round) as QaBox['max'] }, visible: inside, material: wired ? 'wireframe' : 'solid' })
       })
     }

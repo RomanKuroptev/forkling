@@ -1,4 +1,5 @@
 import type { Object3D } from 'three'
+import type { DrawnPath } from '../world/pathGeometry.ts'
 import type { QaPlant } from './plant.ts'
 import type { PlacesSnapshot, QaKind, ScreenShows } from './sceneList.ts'
 
@@ -30,6 +31,8 @@ export const qaRegistry = {
     teleport(x: number, z: number, yaw?: number): void
   },
   camera: null as QaPose | null,
+  /** The paths as last drawn (`Paths`): their places, lines and meshes. */
+  paths: null as DrawnPath[] | null,
   /** A planted flaw from the fixture's qa.json (audit QW.7); null in normal mode. */
   plant: null as QaPlant | null,
 }
