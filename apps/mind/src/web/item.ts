@@ -46,6 +46,15 @@ export function capLinks(links: readonly ItemLink[], max = MAX_LINKS, ok: (url: 
   return kept
 }
 
+/**
+ * An Imgflip meme format record (`https://imgflip.com/meme/<id>`) with its template picture. The picture is only ever looked at:
+ * it has no licence, so it is never kept, and the work check refuses any picture in a meme. From the 30-day ranking
+ * (api.imgflip.com) or, once it is on the list, the Top New page (imgflip.com).
+ */
+export function isMemeTemplate(item: Item): boolean {
+  return (item.source === 'api.imgflip.com' || item.source === 'imgflip.com') && /^https:\/\/imgflip\.com\/meme\/\d+$/.test(item.url) && item.images.length > 0
+}
+
 /** A link to the Wikipedia page for a topic. A page, not a search: robots.txt disallows the search path. */
 export function wikipediaTopicLink(topic: string): ItemLink {
   const t = topic.trim().replace(/\s+/g, ' ').slice(0, 100)

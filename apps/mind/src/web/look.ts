@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { costUsd, estimateCallUsd, estimateTokens, type Usage } from '../budget.ts'
 import { IMAGE_TOKENS, thinkingFor, type LlmClient } from '../llm.ts'
 import type { Fetcher } from './fetch.ts'
-import type { Item } from './item.ts'
+import { isMemeTemplate, type Item } from './item.ts'
 import { clampReaction, dataBlock, readSystem } from './read.ts'
 import { pictureAt } from './readcall.ts'
 
@@ -48,6 +48,7 @@ export async function performLook(deps: LookDeps, item: Item, picture: number, r
   const user = [
     `You are looking at a picture from a page you read. What you made of the page: ${reaction.slice(0, 400)}`,
     dataBlock('page', `The picture is on this page.`, { title: item.title, url: item.url }),
+    ...(isMemeTemplate(item) ? ['This picture is the blank template of a meme format: say what is in each panel and where its captions go, so you could draw it again in your own shapes.'] : []),
     'Say what you see in up to 60 words, then what you think of it in one sentence. Be honest about what is there.',
   ].join('\n\n')
   const estimate = estimateCallUsd(HAIKU, estimateTokens(system + user) + IMAGE_TOKENS * 6, MAX_LOOK_TOKENS)

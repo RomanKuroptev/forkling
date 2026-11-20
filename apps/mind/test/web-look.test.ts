@@ -180,3 +180,69 @@ describe('looks on a trip', () => {
     expect(r.dropped[0]!.reason).toMatch(/same picture/)
   })
 })
+
+describe('the template picture of an Imgflip meme format (a look only)', () => {
+  const format = (over: Partial<Item> = {}): Item =>
+    item({
+      source: 'api.imgflip.com',
+      kind: 'record',
+      tier: 'voices',
+      url: 'https://imgflip.com/meme/181913649',
+      title: 'Drake Hotline Bling',
+      text: 'Meme format: Drake Hotline Bling',
+      images: [{ url: 'https://i.imgflip.com/30b1gx.jpg', licence: null, credit: null }],
+      ...over,
+    })
+  const base = (llm: LlmClient) => ({ llm, fetcher: png, seed: 'You are Merge.' })
+  const noLook = (reaction = 'A format.') => async () => ({ answer: answer({ look: null, reaction }), souvenir: {}, usd: 0.002 })
+
+  it('is looked at on the trip even when the read call asked for no look, so what the format shows is on the trail', async () => {
+    const seen: [string, number, string][] = []
+    const s = tripDeps({
+      open: async () => format(),
+      read: noLook(),
+      look: async (it, n, reaction) => {
+        seen.push([it.title, n, reaction])
+        return look('Two panels: a man turning away from the top thing, then pointing happily at the bottom thing.')
+      },
+    })
+    const r = await runTrip(s.deps, { ...s.start, startUrl: 'https://imgflip.com/meme/181913649' })
+    expect(seen).toEqual([['Drake Hotline Bling', 1, 'A format.']])
+    expect(r.looks).toBe(1)
+    expect(r.trail.pages[0]!.look).toMatch(/^Two panels/)
+  })
+
+  it('is looked at for a new template from the Top New page too (source imgflip.com)', async () => {
+    const s = tripDeps({ open: async () => format({ source: 'imgflip.com', url: 'https://imgflip.com/meme/666269451', images: [{ url: 'https://i.imgflip.com/4/b0kur9.jpg', licence: null, credit: null }] }), read: noLook() })
+    expect((await runTrip(s.deps, s.start)).looks).toBe(1)
+  })
+
+  it("counts against the day's looks, and is not looked at when none are left", async () => {
+    const s = tripDeps({ open: async () => format(), read: noLook(), looksLeft: 0 })
+    const r = await runTrip(s.deps, s.start)
+    expect(r.looks).toBe(0)
+    expect(s.looked).toEqual([])
+    expect(r.trail.pages[0]!.look).toBeUndefined()
+  })
+
+  it('is not looked at by itself on any other page', async () => {
+    const s = tripDeps({ read: noLook() })
+    expect((await runTrip(s.deps, s.start)).looks).toBe(0)
+    const notFormat = tripDeps({ open: async () => format({ url: 'https://imgflip.com/memetemplates' }), read: noLook() })
+    expect((await runTrip(notFormat.deps, notFormat.start)).looks).toBe(0)
+  })
+
+  it('asks the look to say what is in each panel and where the captions go, only for a format', async () => {
+    const { llm, seen } = llmWith({ description: 'Two panels.', thought: 'Simple.' })
+    await performLook(base(llm), format(), 1, 'r')
+    expect(seen[0]!.user).toMatch(/blank template of a meme format/)
+    expect(seen[0]!.user).toMatch(/captions/)
+    await performLook(base(llm), item(), 1, 'r')
+    expect(seen[1]!.user).not.toMatch(/template/)
+  })
+
+  it('is never kept: it has no licence, so an image souvenir of it is dropped', () => {
+    expect(judgeSouvenir(answer({ souvenir: image(1) }), format()).dropped).toMatch(/no licence/)
+    expect(buildReadPrompt({ item: format(), purpose: 'p', interests: Interests.parse({}) })).toContain('1. picture (no licence the code can read)')
+  })
+})

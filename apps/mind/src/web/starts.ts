@@ -1,6 +1,6 @@
-import type { Fetcher } from './fetch.ts'
+import { WebError, type Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
-import { articRandomId, articWork, commonsFeatured, esolangFeatured, githubRepo, githubTopicRepos, imgflipFormat, imgflipTopLinks, LEMMY_COMMUNITIES, lemmyHot, lemmyPost, wikipediaFeatured } from './sources/index.ts'
+import { articRandomId, articWork, commonsFeatured, dwitterDweet, dwitterHot, esolangFeatured, githubRepo, githubTopicRepos, imgflipFormat, imgflipTopLinks, LEMMY_COMMUNITIES, lemmyHot, lemmyPost, wikipediaFeatured } from './sources/index.ts'
 
 /** How a trial starts on a host: from what the host itself puts forward, never a topic picked here (spec 6.5). */
 export interface HostPlan {
@@ -36,6 +36,16 @@ export const HOST_PLANS: readonly HostPlan[] = [
     paths: ['/get_memes'],
     feed: true,
     start: async (f, seed, offset) => imgflipFormat(f, at(await imgflipTopLinks(f, 100), offset + seed).url.split('/').pop()!),
+  },
+  {
+    host: 'www.dwitter.net',
+    itemHost: 'www.dwitter.net',
+    paths: ['/apiv2beta/dweets/'],
+    start: async (f, seed, offset) => {
+      const hot = await dwitterHot(f, 20)
+      if (hot.length === 0) throw new WebError('http', 'Dwitter has no hot dweets', 404)
+      return dwitterDweet(f, at(hot, seed * 4 + offset).id, hot)
+    },
   },
   {
     // Both communities are fed in turn: an even seed reads c/memes, an odd one c/showerthoughts.

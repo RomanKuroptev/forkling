@@ -97,6 +97,8 @@ async function main(): Promise<void> {
       workCheck,
       // The `build` verb exists only where its sessions can run: the sandbox self-test passed, and there is a model to run them.
       sessions: selfTest.status === 'ok' && llm !== null,
+      // A dweet runs only inside the unit; with the unit missing or failing its self-test, dweets are read as text.
+      ...(selfTest.status === 'ok' ? { dweetSandbox: unit } : {}),
       web,
       outsideCalls: () => intake?.drainCalls() ?? [],
       visits,
