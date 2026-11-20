@@ -101,6 +101,16 @@
       "promisedBy": "Roman, 9 November (library manuals)"
     },
     {
+      "id": "dwitter",
+      "name": "Dwitter",
+      "group": "maker",
+      "hosts": ["www.dwitter.net"],
+      "state": "on the list",
+      "reason": "Wander and tinker: the morning takes 4 hot dweets; a tinker is offered the code of dweets it read as a starting point, credited by link and never copied. A dweet runs only in the sandbox unit.",
+      "trial": "docs/spec/w2-trials/www.dwitter.net.md",
+      "promisedBy": "Roman, 20 November (new sources)"
+    },
+    {
       "id": "show-hn",
       "name": "Show HN",
       "group": "pulse",

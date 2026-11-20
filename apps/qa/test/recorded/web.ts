@@ -26,6 +26,7 @@ export function healthyRoutes(): Routes {
     [/^https:\/\/en\.wikipedia\.org\/wiki\/Lighthouse$/, { body: wikiPage('Lighthouse', `<p>${words(200)} ${links(['Fresnel_lens', 'Harbour'])}</p>`) }],
     [/^https:\/\/esolangs\.org\/wiki\/Main_Page$/, { body: wikiPage('Main Page', `<p>${links(['Brainfuck', 'Befunge', 'Malbolge', 'Piet', 'INTERCAL', 'Whitespace', 'Chef', 'Shakespeare'])}</p>`) }],
     [/^https:\/\/api\.github\.com\/search\/repositories/, { body: JSON.stringify({ items: ['a/one', 'b/two', 'c/three', 'd/four'].map((full_name) => ({ full_name })) }), type: 'application/json' }],
+    [/^https:\/\/www\.dwitter\.net\/apiv2beta\/dweets\/\?order_by=-hotness/, { body: JSON.stringify({ results: [1, 2, 3, 4].map((id) => ({ id, code: 'x.fillRect(0,0,9,9)', author: { username: `maker${id}` }, awesome_count: 5 })) }), type: 'application/json' }],
     [/^https:\/\/api\.imgflip\.com\/get_memes$/, { body: memes(Array.from({ length: 100 }, (_, i) => String(1000 + i))), type: 'application/json' }],
     [/^https:\/\/commons\.wikimedia\.org\/wiki\/Main_Page$/, { body: '<html><body><a href="/wiki/File:Moon.jpg">Moon</a></body></html>' }],
     [
