@@ -9,6 +9,13 @@
 /** How near the visitor's middle comes to Merge's indoors, in meters: its face, 0.5 m wide there, then fits on a phone held upright, and
  * shows whole in the lower part of the picture when the visitor looks a little down (nearer, the camera looks down onto its head). */
 export const KEEP_FROM_MERGE = 1.6
+/**
+ * How near the visitor's middle comes to Merge's from behind, indoors, in meters. The distance in front is for its face; behind it
+ * there is no face to fit, only its back (0.34 m behind its middle) for the camera to stay off. The full distance all round left
+ * Merge, sitting in the middle of Home facing the back wall, keeping a visitor 1.3 m from its back with nothing in front of the
+ * visitor but air: an invisible wall short of the room's middle (day-30).
+ */
+export const BEHIND_MERGE = 1.0
 /** Merge's drawn scale indoors (`INDOOR_SCALE` in `Forkling.tsx`), the size `KEEP_FROM_MERGE` is for. */
 const INDOOR_SCALE = 1.35
 
@@ -30,4 +37,31 @@ export function keepAwayFrom(merge: Point, prev: Point, next: Point, keep = KEEP
   // Straight onto Merge's middle: back the way it came.
   const [ux, uz] = dNext > 1e-6 ? [(next.x - merge.x) / dNext, (next.z - merge.z) / dNext] : [(prev.x - merge.x) / (dPrev || 1), (prev.z - merge.z) / (dPrev || 1)]
   return { x: merge.x + ux * r, z: merge.z + uz * r }
+}
+
+/**
+ * One step of the visitor near Merge, with its speed `v` on the ground: where it stands (`keepAwayFrom`) and the speed it keeps, or
+ * null when the step is fine as it is. Only the part of the speed toward Merge is lost; the part round it stays, so the visitor goes
+ * on sliding past. Stopping it dead each frame (the first try) left a visitor that Merge had walked up to stuck where it stood, unable
+ * to walk on past Merge with nothing in front of it: an invisible wall (day-0, inside Home's door).
+ */
+export function keepAwayStep(merge: Point, prev: Point, next: Point, v: Point, keep = KEEP_FROM_MERGE, heading?: number): { at: Point; v: Point } | null {
+  // The circle kept clear: round Merge's middle, or, when the way it faces is known, moved forward so it reaches `keep` in front of
+  // its face and only `keep * BEHIND_MERGE / KEEP_FROM_MERGE` behind it.
+  let centre = merge
+  let radius = keep
+  if (heading !== undefined) {
+    const back = (keep * BEHIND_MERGE) / KEEP_FROM_MERGE
+    const shift = (keep - back) / 2
+    centre = { x: merge.x + Math.sin(heading) * shift, z: merge.z + Math.cos(heading) * shift }
+    radius = (keep + back) / 2
+  }
+  const at = keepAwayFrom(centre, prev, next, radius)
+  if (!at) return null
+  const d = Math.hypot(at.x - centre.x, at.z - centre.z)
+  if (d < 1e-6) return { at, v: { x: 0, z: 0 } }
+  const ux = (at.x - centre.x) / d
+  const uz = (at.z - centre.z) / d
+  const out = v.x * ux + v.z * uz
+  return { at, v: out >= 0 ? v : { x: v.x - out * ux, z: v.z - out * uz } }
 }

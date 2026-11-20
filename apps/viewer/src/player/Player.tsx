@@ -11,7 +11,7 @@ import { visitor } from '../visitor.ts'
 import { applyLookDrag, lookEuler, type Look } from './look.ts'
 import { mergeMovement } from './touchInput.ts'
 import { keepOnLand } from './keepOnLand.ts'
-import { keepAwayFrom, keepFor } from './keepAway.ts'
+import { keepAwayStep, keepFor } from './keepAway.ts'
 import { mergeSpot } from '../forkling/spot.ts'
 import { worldLand } from '../world/worldLand.ts'
 import { qaMode } from '../qa/params.ts'
@@ -132,11 +132,17 @@ export function Player() {
     // And it keeps a small distance from Merge, so the camera is never on top of it (issues 357, 349).
     // Under ?qa=1 a fixture may plant a visitor that walks right up to Merge (`qa/plant.ts`); never in normal mode.
     const merge = qaMode && qaRegistry.plant?.mergeNear ? null : mergeSpot.position
-    const kept = (merge && keepAwayFrom(merge, lastOnLand.current, onLand ?? { x: p.x, z: p.z }, keepFor(mergeSpot.scale))) || onLand
+    const v = b.body.linvel()
+    // At the edge of the land, the way it was going off the land stops.
+    const speed = { x: onLand && onLand.x !== p.x ? 0 : v.x, z: onLand && onLand.z !== p.z ? 0 : v.z }
+    // Near Merge only the speed toward Merge stops: the visitor slides on round it rather than stopping dead where it stands. The
+    // full distance is in front of its face; behind it, less.
+    const round = merge ? keepAwayStep(merge, lastOnLand.current, onLand ?? { x: p.x, z: p.z }, speed, keepFor(mergeSpot.scale), mergeSpot.heading) : null
+    const kept = round?.at ?? onLand
     if (kept) {
-      const v = b.body.linvel()
+      const keptSpeed = round?.v ?? speed
       b.body.setTranslation({ x: kept.x, y: p.y, z: kept.z }, true)
-      b.body.setLinvel({ x: kept.x === p.x ? v.x : 0, y: v.y, z: kept.z === p.z ? v.z : 0 }, true)
+      b.body.setLinvel({ x: keptSpeed.x, y: v.y, z: keptSpeed.z }, true)
       p.set(kept.x, p.y, kept.z)
     }
     lastOnLand.current = { x: p.x, z: p.z }
