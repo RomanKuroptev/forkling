@@ -1,0 +1,149 @@
+import { kit } from '@forkling/schema/kit'
+import { WALL } from '@forkling/sim'
+import type { CheckResult } from '../report/finding.ts'
+import type { SceneObject } from './open.ts'
+
+/**
+ * How far in from the footprint's edge the outer face of a building's wall is (the viewer's wall stands 0.4 m in and is 0.4 m
+ * thick, `apps/viewer/src/world/building.ts`). Anything reaching past it is seen from outside.
+ */
+const OUTER_FACE = 0.2
+/** How far in from the footprint's edge the inside face of a building's wall is. Anything whose middle is further out is in the wall. */
+const INNER_FACE = 0.6
+/** A room needs at least this much floor, across and deep, inside the wall ring for a visitor to stand in it. */
+const STAND = 0.5
+
+/** The walls' own pieces (windows, doors, wall panels): they belong in the wall line. */
+const STRUCTURE = new Set(kit.parts.filter((p) => p.category === 'structure').map((p) => p.id))
+
+/**
+ * Two checks on how a building holds its inside (audit QW.2), added after the world explorer saw them on day-7 (issues 339, 373):
+ *
+ * - `world.through-wall`: a drawn piece of furniture, an exhibit or a work on a screen reaches past the outer face of its building's
+ *   walls, so it pokes out where the house is seen from outside (Tiny Patch's screen and the Counter Room's plinth through Home's
+ *   east corner). A part only inside the wall is hidden, not leaking, and the walls' own pieces belong in the wall.
+ * - `world.room-no-way-in`: a room has less than half a meter of floor, across or deep, inside the 0.8 m wall ring the visitor
+ *   cannot walk on (`WALL`), and something it holds stands in the wall (its middle past the wall's inside face), so no one can go
+ *   in to see it (Home's 1 m Counter Room). A room in the ring whose things the drawing brought out into the house is no finding:
+ *   they are seen and reached from the floor beside them.
+ *
+ * Only ground-level footprints are used: the upper floors of a tower stand further in, which this does not count.
+ */
+export function insideWallsFindings(fixture: string, scene: readonly SceneObject[]): CheckResult[] {
+  const out: CheckResult[] = []
+  const footprints = new Map(scene.flatMap((o) => (o.kind === 'place' && o.footprint ? [[o.id, o.footprint] as const] : [])))
+  const fmt = (b: NonNullable<SceneObject['box']>) => `${b.min.map((n) => n.toFixed(1)).join(', ')} to ${b.max.map((n) => n.toFixed(1)).join(', ')}`
+
+  for (const o of scene) {
+    if (!o.visible || !o.box || !o.place) continue
+    const f = footprints.get(o.place)
+    if (!f) continue
+    const piece = (o.kind === 'part' && !STRUCTURE.has(o.name ?? '') && !o.inDoorway) || o.kind === 'exhibit' || (o.kind === 'work' && o.slot !== 'gallery-wall')
+    if (!piece) continue
+    const b = o.box
+    const through = b.min[0] < f.x0 + OUTER_FACE - 1e-3 || b.max[0] > f.x1 - OUTER_FACE + 1e-3 || b.min[2] < f.z0 + OUTER_FACE - 1e-3 || b.max[2] > f.z1 - OUTER_FACE + 1e-3
+    if (!through) continue
+    const what = o.kind === 'part' ? `The part ${o.id}${o.name ? ` (${o.name})` : ''}` : `The ${o.kind} ${o.id}`
+    out.push({
+      id: 'world.through-wall',
+      fingerprint: `world.through-wall|${fixture}|${o.id}`,
+      severity: 'major',
+      title: `${o.kind === 'part' ? (o.name ?? o.id) : o.id} pokes out through the wall of ${o.place}`,
+      what: `${what} is drawn from ${fmt(b)}, past the outer face of ${o.place}'s walls (its footprint runs from ${f.x0}, ${f.z0} to ${f.x1}, ${f.z1}; the outer face is ${OUTER_FACE} m in).`,
+      causes: 'From outside the house looks broken, with furniture leaking through its walls, and from inside the thing is half hidden in the wall.',
+      evidence: [],
+      fixKind: 'look',
+      fixture,
+      where: `places/${o.place}.json`,
+    })
+  }
+
+  for (const room of scene) {
+    if (room.kind !== 'room' || !room.box || !room.place) continue
+    const f = footprints.get(room.place)
+    if (!f) continue
+    const prefix = `${room.id}/`
+    const inWall = (e: SceneObject) => {
+      if (!e.box) return false
+      const x = (e.box.min[0] + e.box.max[0]) / 2
+      const z = (e.box.min[2] + e.box.max[2]) / 2
+      return x < f.x0 + INNER_FACE || x > f.x1 - INNER_FACE || z < f.z0 + INNER_FACE || z > f.z1 - INNER_FACE
+    }
+    const held = scene.filter((e) => (e.kind === 'exhibit' || e.kind === 'work') && e.at?.startsWith(prefix) && inWall(e)).map((e) => e.id)
+    if (held.length === 0) continue
+    const b = room.box
+    const across = Math.min(b.max[0], f.x1 - WALL) - Math.max(b.min[0], f.x0 + WALL)
+    const deep = Math.min(b.max[2], f.z1 - WALL) - Math.max(b.min[2], f.z0 + WALL)
+    if (across >= STAND && deep >= STAND) continue
+    out.push({
+      id: 'world.room-no-way-in',
+      fingerprint: `world.room-no-way-in|${fixture}|${room.id}`,
+      severity: 'minor',
+      title: `${room.name ?? room.id} at ${room.place} has no way in, and ${held.length === 1 ? 'an exhibit is' : `${held.length} exhibits are`} shut inside it`,
+      what: `The room ${room.id} is drawn from ${fmt(b)}, but only ${Math.max(0, across).toFixed(2)} m across and ${Math.max(0, deep).toFixed(2)} m deep of it is inside the ${WALL} m wall ring a visitor cannot walk on. Shut in the wall: ${held.join(', ')}.`,
+      causes: 'A room Merge made, and what it put there, cannot be visited at all.',
+      evidence: [],
+      fixKind: 'data',
+      fixture,
+      where: `places/${room.place}.json`,
+    })
+  }
+  return out
+}
+
+/** An exhibit counts as on its part when the two boxes are no further apart than this in every axis (meters). */
+const ON_PART = 0.05
+
+/**
+ * Two checks that things stand on something (audit QW.2), added after the look review of #412 saw Tiny Patch's screen 1.2 m up in
+ * Home's corner with its stand's foot in mid-air:
+ *
+ * - `world.exhibit-off-part`: an exhibit or a work on a screen is drawn away from the part whose slot holds it (`at` names it):
+ *   floating above it or beside it.
+ * - `world.part-in-air`: a part drawn with a foot or stand stands on no floor, no other part and no wall (`inAir` in the scene
+ *   list, `apps/viewer/src/world/insideWalls.ts`).
+ */
+export function standingFindings(fixture: string, scene: readonly SceneObject[]): CheckResult[] {
+  const out: CheckResult[] = []
+  const byId = new Map(scene.map((o) => [o.id, o]))
+  for (const e of scene) {
+    if ((e.kind !== 'exhibit' && e.kind !== 'work') || !e.at || !e.box || !e.visible) continue
+    const partId = e.at.split('/').slice(0, 3).join('/')
+    const part = byId.get(partId)
+    if (!part?.box) continue
+    const a = e.box
+    const b = part.box
+    const gap = [0, 1, 2].map((k) => Math.max(0, b.min[k]! - a.max[k]!, a.min[k]! - b.max[k]!))
+    if (Math.max(...gap) <= ON_PART) continue
+    const placeId = e.place ?? e.id.split('/')[0]!
+    out.push({
+      id: 'world.exhibit-off-part',
+      fingerprint: `world.exhibit-off-part|${fixture}|${e.id}`,
+      severity: 'major',
+      title: `${e.id} floats away from the ${part.name ?? 'part'} that holds it`,
+      what: `The ${e.kind} ${e.id} stands in a slot of ${partId}${part.name ? ` (${part.name})` : ''}, but is drawn ${gap.map((g) => g.toFixed(2)).join(', ')} m away from it in x, y and z.`,
+      causes: 'The thing Merge put on show hangs in the air, apart from what should hold it.',
+      evidence: [],
+      fixKind: 'look',
+      fixture,
+      where: `places/${placeId}.json`,
+    })
+  }
+  for (const o of scene) {
+    if (o.kind !== 'part' || !o.inAir || !o.visible) continue
+    const placeId = o.place ?? o.id.split('/')[0]!
+    out.push({
+      id: 'world.part-in-air',
+      fingerprint: `world.part-in-air|${fixture}|${o.id}`,
+      severity: 'major',
+      title: `${o.name ?? o.id} stands in mid-air in ${placeId}`,
+      what: `The part ${o.id}${o.name ? ` (${o.name})` : ''} is drawn with its foot ${o.box ? `${o.box.min[1].toFixed(2)} m up` : 'up'}, on no floor, no other part and no wall.`,
+      causes: 'Furniture with its stand in the air looks dropped and unfinished.',
+      evidence: [],
+      fixKind: 'look',
+      fixture,
+      where: `places/${placeId}.json`,
+    })
+  }
+  return out
+}

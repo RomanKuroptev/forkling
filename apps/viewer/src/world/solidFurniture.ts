@@ -1,6 +1,7 @@
 import type { Kit, Place } from '@forkling/schema'
 import { floorHeight } from './kitBase.ts'
 import { partInDoorway, placedPartBox } from './doorway.ts'
+import { settledPlace } from './insideWalls.ts'
 
 /**
  * The furniture a visitor bumps into (issue 357): one plain box for each piece of a room that stands on its floor, as the kit sizes
@@ -25,6 +26,8 @@ export interface SolidBox {
 }
 
 export function furnitureBoxes(place: Place, kit: Kit, baseY: number): SolidBox[] {
+  // Where the furniture is drawn: pulled out of the walls (`insideWalls.ts`), so the visitor bumps into what it sees.
+  place = settledPlace(place, kit)
   const out: SolidBox[] = []
   const storey = floorHeight(place)
   for (const room of place.rooms) {

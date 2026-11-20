@@ -51,6 +51,13 @@ const INSET = 0.4
 const DOOR_HEIGHT = 2.2
 /** Each floor of a tower stands this far in from the one below, on every side. */
 const TAPER = 0.35
+/** How far in from the footprint's edge the inside face of the walls is, lining included: the furniture stands inside this (`insideWalls.ts`). */
+export const INNER_FACE = INSET + WALL_THICKNESS / 2 + SKIN + LINING
+/** How far each floor's walls stand in from the ground floor's, on every side. */
+export function floorTaper(place: Place, floor: number): number {
+  const [fw, fd] = place.exterior.footprint
+  return Math.min(TAPER * floor, Math.min(fw, fd) / 4)
+}
 /** How far the top of every wall leans in, on a floor, in meters: the outline reads as a trapezoid. */
 const LEAN = 0.7
 
