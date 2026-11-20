@@ -160,7 +160,20 @@ export const dayInteriorFloor = (colors: { floor: string; wood: string }): strin
 export const OUTSIDE_WALL_COLOUR = 0.2
 
 /** The outside wall (the body of a building): the palette's wall, mixed with the least of its trim that gives it `OUTSIDE_WALL_COLOUR` of colour, the same way as inside. */
-export const outsideWall = (colors: { wall: string; trim: string }): string => pastelWith(colors.wall, colors.trim, OUTSIDE_WALL_COLOUR)
+export const outsideWall = (colors: { wall: string; trim: string }): string => {
+  const mixed = pastelWith(colors.wall, colors.trim, OUTSIDE_WALL_COLOUR)
+  // A mixed wall is lifted to full brightness, keeping its hue and colour: mixing with the trim dulled it, and Home's porch wall read
+  // as a muted mauve rather than a light pink.
+  return mixed === colors.wall ? mixed : fullBright(mixed)
+}
+
+/** The same hue and saturation at full value (the largest channel at 255). */
+function fullBright(hex: string): string {
+  const n = Number.parseInt(hex.slice(1), 16)
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+  const k = 255 / Math.max(1, ...ch)
+  return `#${ch.map((c) => Math.min(255, Math.round(c * k)).toString(16).padStart(2, '0')).join('')}`
+}
 
 function pastelWith(base: string, towards: string, least: number = INTERIOR.dayWallColour): string {
   for (let k = 0; k <= 20; k++) {

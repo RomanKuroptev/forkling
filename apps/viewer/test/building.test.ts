@@ -68,6 +68,22 @@ describe("the outside walls keep their colour in shade (look.md rule 2; the grey
     const meadow = kit.palettes.find((p) => p.id === 'meadow')!.colors
     expect(hsvOf(meadow.wall)[1]).toBeLessThan(OUTSIDE_WALL_COLOUR)
     expect(outsideWall(meadow)).not.toBe(meadow.wall)
+    expect(outsideWall(slate)).toBe(slate.wall)
+  })
+
+  it('draws a wall it had to mix at full brightness, so it reads as a light pastel and not a muted mauve (the #460 look gate)', () => {
+    for (const palette of kit.palettes) {
+      const c = palette.colors
+      if (outsideWall(c) === c.wall) continue
+      const [, s, v] = hsvOf(outsideWall(c))
+      expect(v, palette.id).toBeCloseTo(1, 2)
+      expect(s, palette.id).toBeGreaterThanOrEqual(OUTSIDE_WALL_COLOUR)
+    }
+    // Meadow's (Home's) is near the look's light pink #ffc8e8.
+    const meadow = hsvOf(outsideWall(kit.palettes.find((p) => p.id === 'meadow')!.colors))
+    const pink = hsvOf('#ffc8e8')
+    expect(Math.abs(meadow[0] - pink[0])).toBeLessThan(15)
+    expect(Math.abs(meadow[1] - pink[1])).toBeLessThan(0.06)
   })
 })
 
