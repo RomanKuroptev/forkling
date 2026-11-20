@@ -2,9 +2,9 @@ import type { Kit, Place, PlaceRequest, SlotKind, Souvenir } from '@forkling/sch
 import { placeCentre, toLandPlace } from '@forkling/sim'
 import * as THREE from 'three'
 import { buildingModel } from '../world/building.ts'
-import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots, signSpot } from '../world/exhibitGeometry.ts'
+import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots, signSpot, type ExhibitSpot } from '../world/exhibitGeometry.ts'
 import { galleryWalls, slotOf, type GalleryWork } from '../world/galleryWall.ts'
-import { cardContent, cardPose, cardShows, wireCard, type CardShows } from '../world/exhibitCards.ts'
+import { cardContent, cardPose, cardShows, cardView, wireCard, type CardPose, type CardShows } from '../world/exhibitCards.ts'
 import { exteriorInstances, floorHeight, signPostInstances, siteInside, type Instance } from '../world/kitGeometry.ts'
 import { doorwayBox, partInDoorway, placedPartBox } from '../world/doorway.ts'
 import { compose } from '../world/matrix.ts'
@@ -53,6 +53,11 @@ export interface QaObject {
    * but a work screen has one. The souvenir files are read as the insides load, so before that a card shows the exhibit's label.
    */
   card?: { shows: CardShows; text: string }
+  /**
+   * For an exhibit with a card: what a visitor standing in front of it sees of the card (`cardView`), in the frame of the part it
+   * stands on: the visitor's eyes, points of the card's face and the boxes of the part's pieces (`world.card-covered`, issue 453).
+   */
+  view?: { eyes: [number, number, number][]; face: [number, number, number][]; boards: QaBox[] }
   /**
    * For a part that stands in a doorway and so is not drawn (`doorway.ts`): the ids of the exhibits it holds, which are not drawn
    * either. Listed so that nothing is hidden silently (`world.in-doorway-holds`).
@@ -189,8 +194,11 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
       const onScreen = spot.slotKind === 'screen' && (e.kind === 'work' || e.kind === 'project')
       // In a place being built its pieces are lines and its card is wire (issue 426), as `sceneInstances` and `ExhibitCards` draw them.
       const content = cardContent(e, spot.slotKind, e.ref ? s.souvenirs?.get(e.ref) : null, s.workCount ?? 0)
-      const card = cardPose(spot) ? cardShows(wired ? wireCard(content) : content) : null
-      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, at: `${place.id}/${e.slot}`, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: wired ? 'wireframe' : 'solid' })
+      const pose = cardPose(spot)
+      const card = pose ? cardShows(wired ? wireCard(content) : content) : null
+      // A card standing in or on its part (a shelf's board, a case's top) can have a board over it; one on a face (a frame, a plaque, a screen) cannot.
+      const view = pose && (spot.slotKind === 'shelf' || spot.slotKind === 'case') ? viewOf(place, s.kit, spot, pose, baseY) : null
+      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, at: `${place.id}/${e.slot}`, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), ...(view ? { view } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: wired ? 'wireframe' : 'solid' })
     }
     // Every finished work has a tile on the gallery wall, a page at a time: listed at its tile, as the drawing places it.
     if (s.shelf?.length) {
@@ -233,4 +241,18 @@ export function objectEntry(id: string, kind: QaKind, object: THREE.Object3D): Q
   })
   const box: QaBox | null = b.isEmpty() ? null : { min: [round(b.min.x), round(b.min.y), round(b.min.z)], max: [round(b.max.x), round(b.max.y), round(b.max.z)] }
   return { id, kind, box, visible, material }
+}
+
+/** What a visitor sees of an exhibit's card (`cardView`), in the frame of the part it stands on; null when its slot is not found. */
+function viewOf(place: Place, kit: Kit, spot: ExhibitSpot, pose: CardPose, baseY: number): QaObject['view'] | null {
+  const m = /^([a-z0-9][a-z0-9-]*)\/(\d+)\/(\d+)$/.exec(spot.exhibit.slot)
+  const room = m ? place.rooms.find((r) => r.id === m[1]) : undefined
+  const part = kit.parts.find((p) => p.id === spot.part)
+  const slot = part?.slots[Number(m?.[3])]
+  if (!room || !part || !slot) return null
+  // How high above its floor the part's foot is drawn.
+  const foot = spot.partTop - part.size[1] - (baseY + room.floor * floorHeight(place))
+  const v = cardView(pose, slot.at, part, foot)
+  const r = (p: [number, number, number]) => p.map(round) as [number, number, number]
+  return { eyes: v.eyes.map(r), face: v.face.map(r), boards: v.boards.map((b) => ({ min: r(b.min), max: r(b.max) })) }
 }
