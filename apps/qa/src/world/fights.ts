@@ -21,7 +21,8 @@ const facing = (n: readonly number[]) => (n[1]! > 0.5 ? 'facing up' : n[1]! < -0
  * No surfaces that fight (issues 350, 353, 335, 337, 364, 370, 371; steps QW.2): two faces of a place's boxes in one plane,
  * facing the same way, in different colours. The depth buffer cannot tell which is in front, so a visitor sees stripes, stair
  * steps or bits of pattern that shimmer as they move. The 1 mm flicker picture (`world.flicker`) sees this only at the fronts;
- * this reads it from the geometry, outside and in, so ceilings, floors and backs are caught too. One finding per place.
+ * this reads it from the geometry, outside and in, so ceilings, floors and backs are caught too, and each sign's painted face
+ * against its post (issue 406). One finding per place.
  */
 export function fightFindings(fights: readonly SurfaceFight[], fixture: string): CheckResult[] {
   const byPlace = new Map<string, SurfaceFight[]>()
@@ -38,7 +39,8 @@ export function fightFindings(fights: readonly SurfaceFight[], fixture: string):
       what: `${list.length} pair${list.length === 1 ? '' : 's'} of faces share a plane (${total.toFixed(2)} square meters in all). The biggest: ${worst.a} and ${worst.b}, ${facing(worst.normal)}, ${worst.area.toFixed(2)} square meters at ${m(worst.at)}.`,
       causes: 'Two surfaces fight: a visitor sees stripes or stair steps that shimmer as they move.',
       evidence: [],
-      where: 'apps/viewer/src/world/building.ts',
+      // A sign's face against its post is the sign's geometry (issue 406); everything else is the building's.
+      where: /^the sign /.test(worst.a) || /^the sign /.test(worst.b) ? 'apps/viewer/src/world/signGeometry.ts' : 'apps/viewer/src/world/building.ts',
       fixKind: 'look',
       fixture,
     })
