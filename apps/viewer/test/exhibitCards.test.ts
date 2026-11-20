@@ -71,7 +71,8 @@ describe('where a card is', () => {
     const flat = Math.hypot(face!.normal[0], face!.normal[2])
     expect(face!.normal[0] / flat).toBeCloseTo(Math.sin(shelf.rotY), 5)
     expect(face!.normal[2] / flat).toBeCloseTo(Math.cos(shelf.rotY), 5)
-    expect(face!.normal[1]).toBeGreaterThan(0.1)
+    // A little: leaning further back, the shelf's top board hid its first line from up close (issue 453).
+    expect(face!.normal[1]).toBeGreaterThan(0.05)
     // Every corner is in front of the shelf's back and behind its front (the part is 0.4 deep, the slot in its middle).
     for (const c of face!.corners) {
       const out = (c[0] - shelf.position[0]) * Math.sin(shelf.rotY) + (c[2] - shelf.position[2]) * Math.cos(shelf.rotY)
