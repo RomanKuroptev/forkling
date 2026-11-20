@@ -7,7 +7,7 @@ import { MAX_LOOKS_PER_DAY, performLook } from '../web/look.ts'
 import { performRead } from '../web/readcall.ts'
 import { rememberSeen, type SeenPage } from '../web/lookup.ts'
 import { startKey } from '../web/rails.ts'
-import { dweetIdOf, dwitterDweet, dwitterHotLinks, frontPageLinks, githubTopicRepos, imgflipTopLinks, readUrl, wikipediaMorningLinks, type Dweet } from '../web/sources/index.ts'
+import { dweetIdOf, dwitterDweet, dwitterHotLinks, frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, readUrl, risingTopicsFor, wikipediaMorningLinks, type Dweet } from '../web/sources/index.ts'
 import { renderDweet } from '../builds/dweet-run.ts'
 import type { Fetcher } from '../web/fetch.ts'
 import type { Item } from '../web/item.ts'
@@ -25,6 +25,8 @@ const ESOLANG_POINTS = 6
 /** Creative-coding repositories on GitHub, the most recently active first (audit 17 Nov). */
 const GITHUB_POINTS = 4
 const GITHUB_TOPIC = 'creative-coding'
+/** And repositories made this week under two topics drawn for the day, the most starred first (rising this week, Roman 20 Nov). */
+const RISING_POINTS = 4
 /** And the most-captioned meme formats of the last 30 days, the pulse of memes (spec 6.1). */
 const MEME_POINTS = 6
 /** And the hot dweets: tiny canvas programs (Roman, 20 November). */
@@ -74,9 +76,14 @@ export async function morningStep(t: Tick): Promise<void> {
     soft(() => imgflipTopLinks(fetcher, MEME_POINTS), (why) => notes.push(`the Imgflip meme formats could not be read: ${why}`)),
     soft(async () => (await githubTopicRepos(fetcher, GITHUB_TOPIC, GITHUB_POINTS)).map((name) => ({ title: name, url: `https://github.com/${name}` })), (why) => notes.push(`the GitHub creative-coding repositories could not be read: ${why}`)),
   ])
+  const rising = await Promise.all(
+    risingTopicsFor(t.forkling.seed, today).map((topic) => soft(() => githubRisingRepos(fetcher, topic, today, RISING_POINTS), (why) => notes.push(`the GitHub repositories rising this week under ${topic} could not be read: ${why}`))),
+  )
+  const shown = new Set((repos ?? []).slice(0, GITHUB_POINTS).map((r) => r.title))
+  const risingLinks = [...new Set(interleave(rising.map((r) => r ?? [])))].filter((name) => !shown.has(name)).slice(0, RISING_POINTS).map((name) => ({ title: name, url: `https://github.com/${name}` }))
   const dweets = await soft(() => dwitterHotLinks(fetcher, DWEET_POINTS), (why) => notes.push(`the hot dweets could not be read: ${why}`))
   // The hosts take turns, so the list does not start with a screenful of Wikipedia.
-  const links = interleave([(wiki ?? []).slice(0, WIKIPEDIA_POINTS), (esolangs ?? []).slice(0, ESOLANG_POINTS), (repos ?? []).slice(0, GITHUB_POINTS), memes ?? [], (dweets ?? []).slice(0, DWEET_POINTS)])
+  const links = interleave([(wiki ?? []).slice(0, WIKIPEDIA_POINTS), (esolangs ?? []).slice(0, ESOLANG_POINTS), (repos ?? []).slice(0, GITHUB_POINTS), risingLinks, memes ?? [], (dweets ?? []).slice(0, DWEET_POINTS)])
   t.startingPoints = pickDoors(links, t.interests, createPrng((t.forkling.seed ^ Number(today.replaceAll('-', ''))) >>> 0))
   // Kept for the day, so a replan after the morning can still name them, and the links are pages it has now seen.
   mind.points = { date: today, list: t.startingPoints.map((p) => ({ title: p.title.slice(0, 200), url: p.url.slice(0, 500), door: p.door })).slice(0, 30) }

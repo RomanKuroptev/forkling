@@ -10,6 +10,7 @@ import { loadSpecies } from '../src/species.ts'
 import { runTick, type TickDeps } from '../src/tick.ts'
 import type { ReadAnswer } from '../src/web/read.ts'
 import { noBatch } from './noBatch.ts'
+import { risingTopicsFor } from '../src/web/sources/index.ts'
 
 const merge = fileURLToPath(new URL('../../../templates/merge', import.meta.url))
 const world = fileURLToPath(new URL('../../../templates/forkling-world', import.meta.url))
@@ -156,6 +157,25 @@ describe('the morning', () => {
     expect(asked).toContain('https://www.dwitter.net/apiv2beta/dweets/?order_by=-hotness&limit=4')
     const user = llm.calls[0]!.user
     for (let i = 0; i < 4; i++) expect(user).toContain(`Dweet ${100 + i} by maker${i} | https://www.dwitter.net/d/${100 + i}`)
+  })
+
+  it('mixes in the repositories rising this week under the day\'s two drawn topics, beside the creative-coding ones', async () => {
+    const [first, second] = risingTopicsFor(20260101, DAY)
+    const rising = (topic: string) => `https://api.github.com/search/repositories?q=topic:${topic}+created:%3E2026-10-27&sort=stars&order=desc&per_page=4`
+    const llm = fake(wanderPlan)
+    const { web, asked } = webWith({
+      'https://api.github.com/search/repositories?q=topic:creative-coding+stars:%3E20&sort=updated&per_page=4': JSON.stringify({ items: [{ full_name: 'alice/sketchbook' }, { full_name: 'same/one' }] }),
+      [rising(first!)]: JSON.stringify({ items: [{ full_name: 'new/glow' }, { full_name: 'same/one' }, { full_name: 'new/third' }] }),
+      [rising(second!)]: JSON.stringify({ items: [{ full_name: 'new/ripple' }, { full_name: 'new/fourth' }, { full_name: 'new/fifth' }] }),
+    })
+    await tick(MORNING, llm, { web })
+    expect(asked).toEqual(expect.arrayContaining([rising(first!), rising(second!)]))
+    const user = llm.calls[0]!.user
+    for (const name of ['new/glow', 'new/ripple', 'new/third', 'new/fourth']) expect(user).toContain(`https://github.com/${name}`)
+    // Four rising repositories at most, the two topics taking turns, and a repository on both lists only once.
+    expect(user).not.toContain('new/fifth')
+    expect(user.split('https://github.com/same/one').length - 1).toBe(1)
+    expect(user.indexOf('alice/sketchbook |')).toBeLessThan(user.indexOf('new/glow |'))
   })
 
   it('shows the plan real page titles it could go to: pages it was shown links to and has not read lately, not the starting points', async () => {
