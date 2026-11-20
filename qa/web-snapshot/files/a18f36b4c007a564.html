@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>Turing-complete - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Turing-complete rootpage-Turing-complete skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">Turing-complete</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><p>A programming language is said to be <b>Turing-complete</b> if every <a href="/wiki/Turing_machine" title="Turing machine">Turing machine</a> has at least one corresponding program in the language which implements or simulates that machine. Turing-completeness has several significant consequences:
+</p>
+<ul><li>Turing-complete languages have the same <a href="/wiki/Computational_class" title="Computational class">computational class</a> as Turing machines when implemented in hardware.</li>
+<li>Under the <a href="/wiki/Church-Turing_thesis" title="Church-Turing thesis">Church-Turing thesis</a>, a Turing machine is the embodiment of the intuitive notion of a computable algorithm, so every computation should intuitively be expressible within a Turing-complete language.</li></ul>
+<div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" /><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Relationship_to_computation"><span class="tocnumber">1</span> <span class="toctext">Relationship to computation</span></a></li>
+<li class="toclevel-1 tocsection-2"><a href="#Relationship_to_the_physical_world"><span class="tocnumber">2</span> <span class="toctext">Relationship to the physical world</span></a>
+<ul>
+<li class="toclevel-2 tocsection-3"><a href="#Overspecification"><span class="tocnumber">2.1</span> <span class="toctext">Overspecification</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-4"><a href="#Relationship_to_communication"><span class="tocnumber">3</span> <span class="toctext">Relationship to communication</span></a></li>
+<li class="toclevel-1 tocsection-5"><a href="#Relationship_to_esoteric_programming"><span class="tocnumber">4</span> <span class="toctext">Relationship to esoteric programming</span></a></li>
+<li class="toclevel-1 tocsection-6"><a href="#See_also"><span class="tocnumber">5</span> <span class="toctext">See also</span></a></li>
+</ul>
+</div>
+<h2><span class="mw-headline" id="Relationship_to_computation">Relationship to computation</span></h2>
+<p>One of the more common misconceptions about Turing-completeness is that it is something that is <i>required</i> to perform any sort of computations (and that, conversely, any system that can perform some computations is Turing-complete.)
+</p><p>This is not the case when talking about a restricted set of computations.  A <a href="/wiki/Finite-state_automaton" title="Finite-state automaton">finite-state automaton</a>, for example, can be constructed which computes the <a href="/wiki/Ackermann_function" title="Ackermann function">Ackermann function</a> <i>f</i>(<i>m</i>, <i>n</i>) for 1 &lt; <i>m</i> &lt; 1000 and 1 &lt; <i>n</i> &lt; 1000.  In fact, such an evaluation could be stored in a million-cell lookup table.
+</p><p>This issue is further explored in the next section.
+</p>
+<h2><span class="mw-headline" id="Relationship_to_the_physical_world">Relationship to the physical world</span></h2>
+<p>Turing-completeness applies to abstract systems (such as languages and formal automata) but not to real ones (such as computers and interpreters.)  Physical machines have the following properties:
+</p>
+<ul><li>they do not have unbounded storage space; and</li>
+<li>they eventually break down.</li></ul>
+<p>For these reasons, it should be obvious that no actual computer can be Turing-complete.  However, it is also obvious that physical computers are perfectly capable of performing practical, finite computations in spite of that.
+</p><p>By extension, implementations of languages (compilers and interpreters) on physical computers are also not Turing-complete, but are nonetheless capable of specifying computations.
+</p><p>Therefore, it can be useful to make a distinction between being <i>"usable for computation"</i> and being <i>Turing-complete</i>.  A language can be "usable for computation" while not being Turing-complete; all Turing-complete systems are "usable for computation", however.
+</p><p><a href="/wiki/SMETANA" title="SMETANA">SMETANA</a> is "usable for computation", in that it is limited only by the code size of the program one chooses to write. Arguments have been made that <a href="/wiki/Malbolge" title="Malbolge">Malbolge</a> is also "usable for computation."
+</p><p>A formal definition of "usable for computation" is currently being sought.
+</p>
+<h3><span class="mw-headline" id="Overspecification">Overspecification</span></h3>
+<p>Often, a programming language is "after the fact" in that its specification comes from an attempt to describe the behavior of an implementation of that language.
+</p><p>As has just been noted, such implementations, being based as they are on physical machines, cannot be Turing-complete.  So when this is done, there is a danger that the language will be overspecified, and that limitations of the physical machine will be reflected in the description of the language.  This, often needlessly, causes the language to <i>fail</i> to be Turing-complete.
+</p><p>An interesting example of this is the C programming language.  The C specification requires an integer result from sizeof() operator.  The sizeof() operator's result is an unsigned integer, of type size_t, for ANSI C, or an int or long for traditional C.  The range of these integers is bounded.  Since the sizeof() any object in a C implementation must be a finite size, then C cannot be Turing-complete, because it cannot address an unbounded storage space.
+</p><p>There are sometimes ways out of this.  If a language specification requires that the size of some address (for example) be "implementation-dependent but no less than 16 bits" then one can argue that there exists an "implementation" where the size of addresses is unbounded, and that this "implementation" is Turing-complete.  (That is, provided that the concept of an "implementation" which can never be implemented on a real computer is unproblematic.)
+</p>
+<h2><span class="mw-headline" id="Relationship_to_communication">Relationship to communication</span></h2>
+<p>Turing-completeness does not imply input or output capabilities.  A Turing machine might be used by explicitly encoding some input string along with the program into the tape beforehand, running the program, then examining the contents of the tape after it is finished. Thus <a href="/wiki/Brainfuck" title="Brainfuck">Brainfuck</a>, a language largely cited for its Turing-completeness, has at least two instructions extraneous to this end. A somewhat more minimal Turing-complete language is <a href="/wiki/Fm" title="Fm">F2</a>.
+</p>
+<h2><span class="mw-headline" id="Relationship_to_esoteric_programming">Relationship to esoteric programming</span></h2>
+<p>Although it is often a self-imposed constraint, there is no burden on an <a href="/wiki/Esoteric_programming_language" title="Esoteric programming language">esoteric programming language</a> designer to make their language Turing-complete.  For instance, it seems reasonable that most esolangers would rather see a language which is interesting but not Turing-complete, over a language which is Turing-complete but uninteresting.
+</p><p>One good reason to not impose this constraint is that it encourages the creation of languages for which it is not known whether they are Turing-complete or not, such as <a href="/wiki/Dupdog" title="Dupdog">Dupdog</a> and <a href="/wiki/Xigxag" title="Xigxag">Xigxag</a>.  In this way, open research questions are provided, which, when solved, may help shed better light on the nature of computation.
+</p><p>A Turing-complete version of a specific language often becomes desirable once it is demonstrated that that language is not Turing-complete.   Several languages have been altered, redesigned, or have had descendant languages created for this reason, such as <a href="/wiki/Befunge" title="Befunge">Befunge-93</a> and <a href="/wiki/Argh!" title="Argh!">Argh!</a>, which originally included limitations that were removed in Funge-98 and Aargh!, respectively.
+</p>
+<h2><span class="mw-headline" id="See_also">See also</span></h2>
+<ul><li><a href="/wiki/Turing_tarpit" title="Turing tarpit">Turing tarpit</a></li>
+<li><a href="/wiki/Category:Turing_complete" title="Category:Turing complete">Category:Turing complete</a></li></ul>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=Turing-complete&amp;oldid=135428">https://esolangs.org/w/index.php?title=Turing-complete&amp;oldid=135428</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Category</a>: <ul><li><a href="/wiki/Category:Concepts" title="Category:Concepts">Concepts</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=Turing-complete" title="You are encouraged to create an account and log in; however, it is not mandatory"><span>Create account</span></a></li><li id="pt-login" class="mw-list-item"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=Turing-complete" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o"><span>Log in</span></a></li>
+		</ul>
+	</div>
+</nav>
+		<div id="left-navigation">
+<nav id="p-namespaces" class="mw-portlet mw-portlet-namespaces vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-namespaces-label"  >
+	<h3
+		id="p-namespaces-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Namespaces</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-nstab-main" class="selected mw-list-item"><a href="/wiki/Turing-complete" title="View the content page [c]" accesskey="c"><span>Page</span></a></li><li id="ca-talk" class="mw-list-item"><a href="/wiki/Talk:Turing-complete" rel="discussion" title="Discussion about the content page [t]" accesskey="t"><span>Discussion</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-variants" class="mw-portlet mw-portlet-variants emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-variants-label"  >
+	<input type="checkbox"
+		id="p-variants-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-variants-label"
+	>
+	<label
+		id="p-variants-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">English</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+		</div>
+		<div id="right-navigation">
+<nav id="p-views" class="mw-portlet mw-portlet-views vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-views-label"  >
+	<h3
+		id="p-views-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Views</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-view" class="selected mw-list-item"><a href="/wiki/Turing-complete"><span>Read</span></a></li><li id="ca-viewsource" class="mw-list-item"><a href="/w/index.php?title=Turing-complete&amp;action=edit" title="This page is protected.&#10;You can view its source [e]" accesskey="e"><span>View source</span></a></li><li id="ca-history" class="mw-list-item"><a href="/w/index.php?title=Turing-complete&amp;action=history" title="Past revisions of this page [h]" accesskey="h"><span>View history</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-cactions" class="mw-portlet mw-portlet-cactions emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-cactions-label"  title="More options" >
+	<input type="checkbox"
+		id="p-cactions-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-cactions-label"
+	>
+	<label
+		id="p-cactions-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">More</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+<div id="p-search" role="search" class="vector-search-box-vue  vector-search-box-show-thumbnail vector-search-box-auto-expand-width vector-search-box">
+	<h3 >Search</h3>
+	<form action="/w/index.php" id="searchform" class="vector-search-box-form">
+		<div id="simpleSearch"
+			class="vector-search-box-inner"
+			>
+			<input class="vector-search-box-input"
+				 type="search" name="search" placeholder="Search Esolang" aria-label="Search Esolang" autocapitalize="sentences" title="Search Esolang [f]" accesskey="f" id="searchInput"
+			>
+			<input type="hidden" name="title" value="Special:Search">
+			<input id="mw-searchButton"
+				 class="searchButton mw-fallbackSearchButton" type="submit" name="fulltext" title="Search the pages for this text" value="Search">
+			<input id="searchButton"
+				 class="searchButton" type="submit" name="go" title="Go to a page with this exact name if it exists" value="Go">
+		</div>
+	</form>
+</div>
+		</div>
+	</div>
+<div id="mw-panel" class="vector-legacy-sidebar">
+	<div id="p-logo" role="banner">
+		<a class="mw-wiki-logo" href="/wiki/Main_Page"
+			title="Visit the main page"></a>
+	</div>
+<nav id="p-navigation" class="mw-portlet mw-portlet-navigation vector-menu-portal portal vector-menu" aria-labelledby="p-navigation-label"  >
+	<h3
+		id="p-navigation-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Navigation</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="n-mainpage-description" class="mw-list-item"><a href="/wiki/Main_Page" title="Visit the main page [z]" accesskey="z"><span>Main page</span></a></li><li id="n-portal" class="mw-list-item"><a href="/wiki/Esolang:Community_portal" title="About the project, what you can do, where to find things"><span>Community portal</span></a></li><li id="n-Language-list" class="mw-list-item"><a href="/wiki/Language_list"><span>Language list</span></a></li><li id="n-Browse-by-category" class="mw-list-item"><a href="/wiki/Esolang:Categorization"><span>Browse by category</span></a></li><li id="n-recentchanges" class="mw-list-item"><a href="/wiki/Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r"><span>Recent changes</span></a></li><li id="n-randompage" class="mw-list-item"><a href="/wiki/Special:Random" title="Load a random page [x]" accesskey="x"><span>Random page</span></a></li><li id="n-help" class="mw-list-item"><a href="/wiki/Esolang:Help" title="The place to find out"><span>Help</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-tb" class="mw-portlet mw-portlet-tb vector-menu-portal portal vector-menu" aria-labelledby="p-tb-label"  >
+	<h3
+		id="p-tb-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="t-whatlinkshere" class="mw-list-item"><a href="/wiki/Special:WhatLinksHere/Turing-complete" title="A list of all wiki pages that link here [j]" accesskey="j"><span>What links here</span></a></li><li id="t-recentchangeslinked" class="mw-list-item"><a href="/wiki/Special:RecentChangesLinked/Turing-complete" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k"><span>Related changes</span></a></li><li id="t-specialpages" class="mw-list-item"><a href="/wiki/Special:SpecialPages" title="A list of all special pages [q]" accesskey="q"><span>Special pages</span></a></li><li id="t-print" class="mw-list-item"><a href="javascript:print();" rel="alternate" title="Printable version of this page [p]" accesskey="p"><span>Printable version</span></a></li><li id="t-permalink" class="mw-list-item"><a href="/w/index.php?title=Turing-complete&amp;oldid=135428" title="Permanent link to this revision of this page"><span>Permanent link</span></a></li><li id="t-info" class="mw-list-item"><a href="/w/index.php?title=Turing-complete&amp;action=info" title="More information about this page"><span>Page information</span></a></li>
+		</ul>
+	</div>
+</nav>
+</div>
+</div>
+<footer id="footer" class="mw-footer" >
+	<ul id="footer-info">
+	<li id="footer-info-lastmod"> This page was last edited on 9 August 2024, at 16:37.</li>
+	<li id="footer-info-copyright">Content is available under <a href="/wiki/Esolang:Copyrights" title="Esolang:Copyrights">CC0 public domain dedication</a>.</li>
+</ul>
+	<ul id="footer-places">
+	<li id="footer-places-about"><a href="/wiki/Esolang:About">About Esolang</a></li>
+	<li id="footer-places-disclaimers"><a href="/wiki/Esolang:General_disclaimer">Disclaimers</a></li>
+</ul>
+	<ul id="footer-icons" class="noprint">
+	<li id="footer-copyrightico"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/licenses/cc-0.png" alt="CC0 public domain dedication" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-poweredbyico"><a href="https://www.mediawiki.org/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-hostedbyico"><a href="https://www.bytemark.co.uk/r/esolangs" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/images/hosting_bytemark_88x31.png" srcset="/w/images/hosting_bytemark_132x47.png 1.5x, /w/images/hosting_bytemark_176x62.png 2x" alt="Hosting donated by Bytemark" width="88" height="31" loading="lazy"></a></li>
+</ul>
+</footer>
+</body>
+</html>

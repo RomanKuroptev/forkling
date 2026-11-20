@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>Arbitrary memory emulation - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Arbitrary_memory_emulation rootpage-Arbitrary_memory_emulation skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">Arbitrary memory emulation</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><p><b>Arbitrary memory emulation</b> is a  method of encoding memory which, given a value that can be infinite in size without precision loss, allows for arbitrary memory in the event that such is not possible normally. AME can be used to emulate flat data structures like <a href="/wiki/Stack" title="Stack">stacks</a>, <a href="/wiki/Tape" title="Tape">tapes</a>, and <a href="/w/index.php?title=Array&amp;action=edit&amp;redlink=1" class="new" title="Array (page does not exist)">arrays</a>, and with <a href="#Variations">modifications</a> can encode more complex structures.
+</p>
+<div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" /><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Structure"><span class="tocnumber">1</span> <span class="toctext">Structure</span></a>
+<ul>
+<li class="toclevel-2 tocsection-2"><a href="#Additive_AME"><span class="tocnumber">1.1</span> <span class="toctext">Additive AME</span></a></li>
+<li class="toclevel-2 tocsection-3"><a href="#Multiplicative_AME"><span class="tocnumber">1.2</span> <span class="toctext">Multiplicative AME</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-4"><a href="#Operations"><span class="tocnumber">2</span> <span class="toctext">Operations</span></a></li>
+<li class="toclevel-1 tocsection-5"><a href="#Turing-completeness"><span class="tocnumber">3</span> <span class="toctext">Turing-completeness</span></a></li>
+<li class="toclevel-1 tocsection-6"><a href="#Variations"><span class="tocnumber">4</span> <span class="toctext">Variations</span></a>
+<ul>
+<li class="toclevel-2 tocsection-7"><a href="#Payload-flag_model_(aAME)"><span class="tocnumber">4.1</span> <span class="toctext">Payload-flag model (aAME)</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-8"><a href="#Usage"><span class="tocnumber">5</span> <span class="toctext">Usage</span></a></li>
+</ul>
+</div>
+<h2><span class="mw-headline" id="Structure">Structure</span></h2>
+<h3><span class="mw-headline" id="Additive_AME">Additive AME</span></h3>
+<p>Let 𝐴 be the value which will be used for aAME. We define a positive integer 𝑆 greater than 1 which will denote the maximum size of each "cell" in memory, where a cell can have an integer value of [0, 𝑆). The index of each cell is denoted as 𝑖. The relative position of each cell in memory, denoted by 𝑥, is 𝑆<sup>𝑖</sup>, where dividing 𝐴 by 𝑥 and applying that modulo 𝑆 results in the cell's value in memory, and multiplying any value 𝑣 by 𝑥 results in its relative value. Each cell is 𝑆 times higher than the previous one.
+</p><p>For any given memory structure 𝑀 with cells [0, 𝑆), 𝐴 is equivalent to <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \sum _{i=0}^{|M|-1}M_{i}S^{i}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <munderover>
+          <mo>&#x2211;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>=</mo>
+            <mn>0</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mrow class="MJX-TeXAtom-ORD">
+              <mo stretchy="false">|</mo>
+            </mrow>
+            <mi>M</mi>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mo stretchy="false">|</mo>
+            </mrow>
+            <mo>&#x2212;</mo>
+            <mn>1</mn>
+          </mrow>
+        </munderover>
+        <msub>
+          <mi>M</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+          </mrow>
+        </msub>
+        <msup>
+          <mi>S</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+          </mrow>
+        </msup>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \sum _{i=0}^{|M|-1}M_{i}S^{i}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/d8cf15fb6cd52eb1bf2b4b3f227c47c816527c15" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \sum _{i=0}^{|M|-1}M_{i}S^{i}}" /></span>.
+</p>
+<table class="wikitable">
+<caption>𝑆 = 100
+</caption>
+<tbody><tr>
+<th>Array
+</th>
+<td>1</td>
+<td>3</td>
+<td>15</td>
+<td>32
+</td></tr>
+<tr>
+<th>Relative position
+</th>
+<td>100<sup>0</sup> = 1</td>
+<td>100<sup>1</sup> = 100</td>
+<td>100<sup>2</sup> = 10000</td>
+<td>100<sup>3</sup> = 1000000
+</td></tr>
+<tr>
+<th>Relative value
+</th>
+<td>1 &#8901; 1 = 1</td>
+<td>100 &#8901; 3 = 300</td>
+<td>10000 &#8901; 15 = 150000</td>
+<td>1000000 &#8901; 32 = 32000000
+</td></tr>
+<tr>
+<td colspan="5">𝐴 = 1 + 300 + 150000 + 32000000 = 32150301
+</td></tr></tbody></table>
+<h3><span class="mw-headline" id="Multiplicative_AME">Multiplicative AME</span></h3>
+<p>Let 𝐴 be the value which will be used for mAME. For each integer (-∞, ∞) in memory with index 𝑖, its relative value corresponds to the 𝑖-th prime raised to its own value.
+</p><p>For any given memory structure 𝑀 with integers (-∞, ∞), 𝐴 is equivalent to <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \prod _{i=0}^{|M|-1}\mathbb {P} _{i+1}^{M_{i}}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <munderover>
+          <mo>&#x220f;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>=</mo>
+            <mn>0</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mrow class="MJX-TeXAtom-ORD">
+              <mo stretchy="false">|</mo>
+            </mrow>
+            <mi>M</mi>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mo stretchy="false">|</mo>
+            </mrow>
+            <mo>&#x2212;</mo>
+            <mn>1</mn>
+          </mrow>
+        </munderover>
+        <msubsup>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi mathvariant="double-struck">P</mi>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>+</mo>
+            <mn>1</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <msub>
+              <mi>M</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mi>i</mi>
+              </mrow>
+            </msub>
+          </mrow>
+        </msubsup>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \prod _{i=0}^{|M|-1}\mathbb {P} _{i+1}^{M_{i}}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/7a35181b08135936c3eadb0c8e8508237a3ea834" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \prod _{i=0}^{|M|-1}\mathbb {P} _{i+1}^{M_{i}}}" /></span>.
+</p>
+<table class="wikitable">
+<tbody><tr>
+<th>Array
+</th>
+<td>1</td>
+<td>3</td>
+<td>15</td>
+<td>32
+</td></tr>
+<tr>
+<th>Prime
+</th>
+<td>ℙ<sub>1</sub> = 2
+</td>
+<td>ℙ<sub>2</sub> = 3
+</td>
+<td>ℙ<sub>3</sub> = 5
+</td>
+<td>ℙ<sub>4</sub> = 7
+</td></tr>
+<tr>
+<th>Relative value
+</th>
+<td>2<sup>1</sup> = 2</td>
+<td>3<sup>3</sup> = 27</td>
+<td>5<sup>15</sup> = 30517578125</td>
+<td>7<sup>32</sup> = 1104427674243920646305299201
+</td></tr>
+<tr>
+<td colspan="5">𝐴 = 2<sup>1</sup> &#8901; 3<sup>3</sup> &#8901; 5<sup>15</sup> &#8901; 7<sup>32</sup> = 1820040722936148526015812892272949218750
+</td></tr></tbody></table>
+<h2><span class="mw-headline" id="Operations">Operations</span></h2>
+<table class="wikitable">
+<tbody><tr>
+<th>Operation
+</th>
+<th>Equation (aAME)
+</th>
+<th>Equation (mAME)
+</th></tr>
+<tr>
+<td>𝐴<sub>length</sub>
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lceil \log _{S}(A+1)\right\rceil }">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x2308;</mo>
+          <mrow>
+            <msub>
+              <mi>log</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mi>S</mi>
+              </mrow>
+            </msub>
+            <mo>&#x2061;</mo>
+            <mo stretchy="false">(</mo>
+            <mi>A</mi>
+            <mo>+</mo>
+            <mn>1</mn>
+            <mo stretchy="false">)</mo>
+          </mrow>
+          <mo>&#x2309;</mo>
+        </mrow>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lceil \log _{S}(A+1)\right\rceil }</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/30241a8bed77124f33f7253c6300831abc8c9ca4" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lceil \log _{S}(A+1)\right\rceil }" /></span>
+<p><br />Note that this algorithm is unreliable if 𝐴 stores any trailing zeroes. It is more reliable to manually track this value by incrementing or decrementing 𝐴<sub>length</sub> as values are added or removed.
+</p>
+</td>
+<td>Such a function is not possible to construct in mAME. Manual tracking is required instead.
+</td></tr>
+<tr>
+<td>𝐴<sub>read</sub>(𝑖)
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lfloor {\frac {A}{S^{i}}}\ \mathrm {mod} \ S\right\rfloor }">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x230a;</mo>
+          <mrow>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mfrac>
+                <mi>A</mi>
+                <msup>
+                  <mi>S</mi>
+                  <mrow class="MJX-TeXAtom-ORD">
+                    <mi>i</mi>
+                  </mrow>
+                </msup>
+              </mfrac>
+            </mrow>
+            <mtext>&#xa0;</mtext>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mi mathvariant="normal">m</mi>
+              <mi mathvariant="normal">o</mi>
+              <mi mathvariant="normal">d</mi>
+            </mrow>
+            <mtext>&#xa0;</mtext>
+            <mi>S</mi>
+          </mrow>
+          <mo>&#x230b;</mo>
+        </mrow>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lfloor {\frac {A}{S^{i}}}\ \mathrm {mod} \ S\right\rfloor }</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/8995970591052cb59121a09c8646094bf508bbc5" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lfloor {\frac {A}{S^{i}}}\ \mathrm {mod} \ S\right\rfloor }" /></span>
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \nu _{\mathbb {P} _{i+1}}(A)}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <msub>
+          <mi>&#x3bd;</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <msub>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mi mathvariant="double-struck">P</mi>
+              </mrow>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mi>i</mi>
+                <mo>+</mo>
+                <mn>1</mn>
+              </mrow>
+            </msub>
+          </mrow>
+        </msub>
+        <mo stretchy="false">(</mo>
+        <mi>A</mi>
+        <mo stretchy="false">)</mo>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \nu _{\mathbb {P} _{i+1}}(A)}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/1d5ab6df0b2b48a8e40cc7bf2b82b3785149d598" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \nu _{\mathbb {P} _{i+1}}(A)}" /></span>, where <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \nu _{p}(n)}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <msub>
+          <mi>&#x3bd;</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>p</mi>
+          </mrow>
+        </msub>
+        <mo stretchy="false">(</mo>
+        <mi>n</mi>
+        <mo stretchy="false">)</mo>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \nu _{p}(n)}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/a740c63898dac75666e43736eb3ae87eb8c62b16" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \nu _{p}(n)}" /></span> is the <a href="https://en.wikipedia.org/wiki/p-adic_valuation" class="extiw" title="wikipedia:p-adic valuation">p-adic valuation</a> of 𝑛.
+</td></tr>
+<tr>
+<td>𝐴<sub>write</sub>(𝑖, 𝑣)
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A=A-A_{\text{read}}(i)\cdot S^{i}+vS^{i}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <mi>A</mi>
+        <mo>&#x2212;</mo>
+        <msub>
+          <mi>A</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mtext>read</mtext>
+          </mrow>
+        </msub>
+        <mo stretchy="false">(</mo>
+        <mi>i</mi>
+        <mo stretchy="false">)</mo>
+        <mo>&#x22c5;</mo>
+        <msup>
+          <mi>S</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+          </mrow>
+        </msup>
+        <mo>+</mo>
+        <mi>v</mi>
+        <msup>
+          <mi>S</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+          </mrow>
+        </msup>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A=A-A_{\text{read}}(i)\cdot S^{i}+vS^{i}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/2fda2e67f613fda1aaf09c27cf0e9a4e63a87da8" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A=A-A_{\text{read}}(i)\cdot S^{i}+vS^{i}}" /></span>
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A={\frac {A}{\mathbb {P} _{i+1}^{A_{\text{read}}(i)}}}\cdot \mathbb {P} _{i+1}^{v}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <mrow class="MJX-TeXAtom-ORD">
+          <mfrac>
+            <mi>A</mi>
+            <msubsup>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mi mathvariant="double-struck">P</mi>
+              </mrow>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mi>i</mi>
+                <mo>+</mo>
+                <mn>1</mn>
+              </mrow>
+              <mrow class="MJX-TeXAtom-ORD">
+                <msub>
+                  <mi>A</mi>
+                  <mrow class="MJX-TeXAtom-ORD">
+                    <mtext>read</mtext>
+                  </mrow>
+                </msub>
+                <mo stretchy="false">(</mo>
+                <mi>i</mi>
+                <mo stretchy="false">)</mo>
+              </mrow>
+            </msubsup>
+          </mfrac>
+        </mrow>
+        <mo>&#x22c5;</mo>
+        <msubsup>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi mathvariant="double-struck">P</mi>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>+</mo>
+            <mn>1</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>v</mi>
+          </mrow>
+        </msubsup>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A={\frac {A}{\mathbb {P} _{i+1}^{A_{\text{read}}(i)}}}\cdot \mathbb {P} _{i+1}^{v}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/820b39328a7fc26ce4cd64fef0a93242d775a500" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A={\frac {A}{\mathbb {P} _{i+1}^{A_{\text{read}}(i)}}}\cdot \mathbb {P} _{i+1}^{v}}" /></span>
+</td></tr>
+<tr>
+<td>𝐴<sub>pushBottom</sub>(𝑣)
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A=AS+v}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <mi>A</mi>
+        <mi>S</mi>
+        <mo>+</mo>
+        <mi>v</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A=AS+v}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/5283923c2256c4a0b8fea31a18f7c22e5bd0cffb" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A=AS+v}" /></span>
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A=2^{v}+\prod _{i=0}^{A_{\text{length}}-1}\mathbb {P} _{i+2}^{A_{\text{read}}(i)}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <msup>
+          <mn>2</mn>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>v</mi>
+          </mrow>
+        </msup>
+        <mo>+</mo>
+        <munderover>
+          <mo>&#x220f;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>=</mo>
+            <mn>0</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <msub>
+              <mi>A</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mtext>length</mtext>
+              </mrow>
+            </msub>
+            <mo>&#x2212;</mo>
+            <mn>1</mn>
+          </mrow>
+        </munderover>
+        <msubsup>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi mathvariant="double-struck">P</mi>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>+</mo>
+            <mn>2</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <msub>
+              <mi>A</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mtext>read</mtext>
+              </mrow>
+            </msub>
+            <mo stretchy="false">(</mo>
+            <mi>i</mi>
+            <mo stretchy="false">)</mo>
+          </mrow>
+        </msubsup>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A=2^{v}+\prod _{i=0}^{A_{\text{length}}-1}\mathbb {P} _{i+2}^{A_{\text{read}}(i)}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/d40357e6b3fa753e6f1f6e4271fb51bbfd295755" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A=2^{v}+\prod _{i=0}^{A_{\text{length}}-1}\mathbb {P} _{i+2}^{A_{\text{read}}(i)}}" /></span>
+</td></tr>
+<tr>
+<td>𝐴<sub>pushTop</sub>(𝑣)
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A=A+vS^{A_{\text{length}}}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <mi>A</mi>
+        <mo>+</mo>
+        <mi>v</mi>
+        <msup>
+          <mi>S</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <msub>
+              <mi>A</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mtext>length</mtext>
+              </mrow>
+            </msub>
+          </mrow>
+        </msup>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A=A+vS^{A_{\text{length}}}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/0f129f4913018418b45f48813b9cd27550af920e" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A=A+vS^{A_{\text{length}}}}" /></span>
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A=A\cdot \mathbb {P} _{A_{\text{length}}+1}^{v}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <mi>A</mi>
+        <mo>&#x22c5;</mo>
+        <msubsup>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi mathvariant="double-struck">P</mi>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <msub>
+              <mi>A</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mtext>length</mtext>
+              </mrow>
+            </msub>
+            <mo>+</mo>
+            <mn>1</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>v</mi>
+          </mrow>
+        </msubsup>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A=A\cdot \mathbb {P} _{A_{\text{length}}+1}^{v}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/c1cd4ad6e916994d0e9897f634496e886d1c64bf" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A=A\cdot \mathbb {P} _{A_{\text{length}}+1}^{v}}" /></span>
+</td></tr>
+<tr>
+<td>𝐴<sub>popBottom</sub>()
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A=\left\lfloor {\frac {A}{S}}\right\rfloor }">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <mrow>
+          <mo>&#x230a;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mfrac>
+              <mi>A</mi>
+              <mi>S</mi>
+            </mfrac>
+          </mrow>
+          <mo>&#x230b;</mo>
+        </mrow>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A=\left\lfloor {\frac {A}{S}}\right\rfloor }</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/75521ae56d133f05fe654ea2384f109a2535112e" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A=\left\lfloor {\frac {A}{S}}\right\rfloor }" /></span>
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A=\prod _{i=1}^{A_{\text{length}}-1}\mathbb {P} _{i}^{A_{\text{read}}(i)}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <munderover>
+          <mo>&#x220f;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+            <mo>=</mo>
+            <mn>1</mn>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <msub>
+              <mi>A</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mtext>length</mtext>
+              </mrow>
+            </msub>
+            <mo>&#x2212;</mo>
+            <mn>1</mn>
+          </mrow>
+        </munderover>
+        <msubsup>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi mathvariant="double-struck">P</mi>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mi>i</mi>
+          </mrow>
+          <mrow class="MJX-TeXAtom-ORD">
+            <msub>
+              <mi>A</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mtext>read</mtext>
+              </mrow>
+            </msub>
+            <mo stretchy="false">(</mo>
+            <mi>i</mi>
+            <mo stretchy="false">)</mo>
+          </mrow>
+        </msubsup>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A=\prod _{i=1}^{A_{\text{length}}-1}\mathbb {P} _{i}^{A_{\text{read}}(i)}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/adfca1685a846420869bff890bf66595dcfdbf01" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A=\prod _{i=1}^{A_{\text{length}}-1}\mathbb {P} _{i}^{A_{\text{read}}(i)}}" /></span>
+</td></tr>
+<tr>
+<td>𝐴<sub>popTop</sub>()
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A=A-A_{\text{read}}(A_{\text{length}}-1)S^{A_{\text{length}}-1}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <mi>A</mi>
+        <mo>&#x2212;</mo>
+        <msub>
+          <mi>A</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mtext>read</mtext>
+          </mrow>
+        </msub>
+        <mo stretchy="false">(</mo>
+        <msub>
+          <mi>A</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mtext>length</mtext>
+          </mrow>
+        </msub>
+        <mo>&#x2212;</mo>
+        <mn>1</mn>
+        <mo stretchy="false">)</mo>
+        <msup>
+          <mi>S</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <msub>
+              <mi>A</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mtext>length</mtext>
+              </mrow>
+            </msub>
+            <mo>&#x2212;</mo>
+            <mn>1</mn>
+          </mrow>
+        </msup>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A=A-A_{\text{read}}(A_{\text{length}}-1)S^{A_{\text{length}}-1}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/c4fcf8641d93361db730682c0c4601bb94af7322" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A=A-A_{\text{read}}(A_{\text{length}}-1)S^{A_{\text{length}}-1}}" /></span>
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A={\frac {A}{\mathbb {P} _{A_{\text{length}}}^{A_{\text{read}}(A_{\text{length}}-1)}}}}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo>=</mo>
+        <mrow class="MJX-TeXAtom-ORD">
+          <mfrac>
+            <mi>A</mi>
+            <msubsup>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mi mathvariant="double-struck">P</mi>
+              </mrow>
+              <mrow class="MJX-TeXAtom-ORD">
+                <msub>
+                  <mi>A</mi>
+                  <mrow class="MJX-TeXAtom-ORD">
+                    <mtext>length</mtext>
+                  </mrow>
+                </msub>
+              </mrow>
+              <mrow class="MJX-TeXAtom-ORD">
+                <msub>
+                  <mi>A</mi>
+                  <mrow class="MJX-TeXAtom-ORD">
+                    <mtext>read</mtext>
+                  </mrow>
+                </msub>
+                <mo stretchy="false">(</mo>
+                <msub>
+                  <mi>A</mi>
+                  <mrow class="MJX-TeXAtom-ORD">
+                    <mtext>length</mtext>
+                  </mrow>
+                </msub>
+                <mo>&#x2212;</mo>
+                <mn>1</mn>
+                <mo stretchy="false">)</mo>
+              </mrow>
+            </msubsup>
+          </mfrac>
+        </mrow>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A={\frac {A}{\mathbb {P} _{A_{\text{length}}}^{A_{\text{read}}(A_{\text{length}}-1)}}}}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/416288ce346da0c3cb8ecdd1857cbf14d09498f2" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A={\frac {A}{\mathbb {P} _{A_{\text{length}}}^{A_{\text{read}}(A_{\text{length}}-1)}}}}" /></span>
+</td></tr></tbody></table>
+<h2><span class="mw-headline" id="Turing-completeness">Turing-completeness</span></h2>
+<p>A typical requirement for <a href="/wiki/Turing-completeness" class="mw-redirect" title="Turing-completeness">Turing-completeness</a> is that the language has access to unbounded memory, regardless of the size of each cell. AME "flips" this case, where values of infinite size can be used for computational power, regardless of how many memory addresses there actually are. However, this requires that the language is able to handle values of infinite size without precision loss, and the language has the necessary space in order to compute and thereafter process and transform the memory.
+</p><p>In order for a target language to implement AME of either form, it must be able to calculate multiplication, division, and perform some sort of equality check against zero.
+</p>
+<h2><span class="mw-headline" id="Variations">Variations</span></h2>
+<h3><span id="Payload-flag_model_.28aAME.29"></span><span class="mw-headline" id="Payload-flag_model_(aAME)">Payload-flag model (aAME)</span></h3>
+<p>A variation assigns a fixed length to each cell, reserving the last bit to continue the value into the next cell, allowing an unbounded size for each cell.
+</p><p>Each cell is split into a payload of size 𝑃 and a flag of size 𝐹, both greater than one. The size of the flag determines how many unique states it has (e.g. 𝐹 = 2 for two distinct states). The true size of each cell, holding both the payload and flag, is 𝑃𝐹. To extract the payload and flag from a cell, the formulae <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle P_{\text{value}}=v\ \mathrm {mod} \ P}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <msub>
+          <mi>P</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mtext>value</mtext>
+          </mrow>
+        </msub>
+        <mo>=</mo>
+        <mi>v</mi>
+        <mtext>&#xa0;</mtext>
+        <mrow class="MJX-TeXAtom-ORD">
+          <mi mathvariant="normal">m</mi>
+          <mi mathvariant="normal">o</mi>
+          <mi mathvariant="normal">d</mi>
+        </mrow>
+        <mtext>&#xa0;</mtext>
+        <mi>P</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle P_{\text{value}}=v\ \mathrm {mod} \ P}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/915cf6a3a7c7ed168b76e06271795c9f1da91334" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle P_{\text{value}}=v\ \mathrm {mod} \ P}" /></span> and <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle F_{\text{value}}=\left\lfloor {\frac {v}{P}}\right\rfloor }">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <msub>
+          <mi>F</mi>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mtext>value</mtext>
+          </mrow>
+        </msub>
+        <mo>=</mo>
+        <mrow>
+          <mo>&#x230a;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mfrac>
+              <mi>v</mi>
+              <mi>P</mi>
+            </mfrac>
+          </mrow>
+          <mo>&#x230b;</mo>
+        </mrow>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle F_{\text{value}}=\left\lfloor {\frac {v}{P}}\right\rfloor }</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/25712164aed6e276d42627dbc7403c3f898c9f0f" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle F_{\text{value}}=\left\lfloor {\frac {v}{P}}\right\rfloor }" /></span> are used respectively.
+</p><p>For a simple example, take cells where 𝑃 = 10 and 𝐹 = 2. When 𝐹<sub>value</sub> = 1, the cell is denoted as having a value greater than 𝑃, and the next few cells contain the entire amount. Given this, it can be calculated that any value 𝑛 will have to span <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lceil \log _{P}{n}\right\rceil }">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x2308;</mo>
+          <mrow>
+            <msub>
+              <mi>log</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mi>P</mi>
+              </mrow>
+            </msub>
+            <mo>&#x2061;</mo>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mi>n</mi>
+            </mrow>
+          </mrow>
+          <mo>&#x2309;</mo>
+        </mrow>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lceil \log _{P}{n}\right\rceil }</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/94622ec0db26b995f8f7a039fd2fb570c4d0a28d" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lceil \log _{P}{n}\right\rceil }" /></span> cells, and the value of each cell 𝑣<sub>𝑖</sub> is <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lfloor {\frac {n\ \mathrm {mod} \ P^{i+1}}{P^{i}}}\right\rfloor }">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x230a;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mfrac>
+              <mrow>
+                <mi>n</mi>
+                <mtext>&#xa0;</mtext>
+                <mrow class="MJX-TeXAtom-ORD">
+                  <mi mathvariant="normal">m</mi>
+                  <mi mathvariant="normal">o</mi>
+                  <mi mathvariant="normal">d</mi>
+                </mrow>
+                <mtext>&#xa0;</mtext>
+                <msup>
+                  <mi>P</mi>
+                  <mrow class="MJX-TeXAtom-ORD">
+                    <mi>i</mi>
+                    <mo>+</mo>
+                    <mn>1</mn>
+                  </mrow>
+                </msup>
+              </mrow>
+              <msup>
+                <mi>P</mi>
+                <mrow class="MJX-TeXAtom-ORD">
+                  <mi>i</mi>
+                </mrow>
+              </msup>
+            </mfrac>
+          </mrow>
+          <mo>&#x230b;</mo>
+        </mrow>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lfloor {\frac {n\ \mathrm {mod} \ P^{i+1}}{P^{i}}}\right\rfloor }</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/003c97f7408147010410c31e19523fb2739dc84c" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lfloor {\frac {n\ \mathrm {mod} \ P^{i+1}}{P^{i}}}\right\rfloor }" /></span>, adding an additional 𝑃 if 𝑣<sub>𝑖</sub> is not the last cell.
+</p>
+<div>
+<table class="wikitable">
+<caption>𝑃 = 10; 𝐹 = 2; 𝑆 = 20
+</caption>
+<tbody><tr>
+<th>Array
+</th>
+<td>5</td>
+<td colspan="2">13</td>
+<td colspan="2">24</td>
+<td colspan="3">119
+</td></tr>
+<tr>
+<th>Size
+</th>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lceil \log _{10}{5}\right\rceil =1}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x2308;</mo>
+          <mrow>
+            <msub>
+              <mi>log</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mn>10</mn>
+              </mrow>
+            </msub>
+            <mo>&#x2061;</mo>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mn>5</mn>
+            </mrow>
+          </mrow>
+          <mo>&#x2309;</mo>
+        </mrow>
+        <mo>=</mo>
+        <mn>1</mn>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lceil \log _{10}{5}\right\rceil =1}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/23fe87e87546c433d635b8014104e679da1b56e4" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lceil \log _{10}{5}\right\rceil =1}" /></span>
+</td>
+<td colspan="2"><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lceil \log _{10}{13}\right\rceil =2}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x2308;</mo>
+          <mrow>
+            <msub>
+              <mi>log</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mn>10</mn>
+              </mrow>
+            </msub>
+            <mo>&#x2061;</mo>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mn>13</mn>
+            </mrow>
+          </mrow>
+          <mo>&#x2309;</mo>
+        </mrow>
+        <mo>=</mo>
+        <mn>2</mn>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lceil \log _{10}{13}\right\rceil =2}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/09b23d99aea2f87f6b8ae9b1ada6c1141869eb0a" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lceil \log _{10}{13}\right\rceil =2}" /></span>
+</td>
+<td colspan="2"><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lceil \log _{10}{24}\right\rceil =2}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x2308;</mo>
+          <mrow>
+            <msub>
+              <mi>log</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mn>10</mn>
+              </mrow>
+            </msub>
+            <mo>&#x2061;</mo>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mn>24</mn>
+            </mrow>
+          </mrow>
+          <mo>&#x2309;</mo>
+        </mrow>
+        <mo>=</mo>
+        <mn>2</mn>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lceil \log _{10}{24}\right\rceil =2}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/8d73a7c0d3a3dbf4f099bb07af83bc1aad62d728" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lceil \log _{10}{24}\right\rceil =2}" /></span>
+</td>
+<td colspan="3"><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lceil \log _{10}{119}\right\rceil =3}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x2308;</mo>
+          <mrow>
+            <msub>
+              <mi>log</mi>
+              <mrow class="MJX-TeXAtom-ORD">
+                <mn>10</mn>
+              </mrow>
+            </msub>
+            <mo>&#x2061;</mo>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mn>119</mn>
+            </mrow>
+          </mrow>
+          <mo>&#x2309;</mo>
+        </mrow>
+        <mo>=</mo>
+        <mn>3</mn>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lceil \log _{10}{119}\right\rceil =3}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/7edd3bdcac9593be3c921cf9ad4e0680e9e54b56" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lceil \log _{10}{119}\right\rceil =3}" /></span>
+</td></tr>
+<tr>
+<th>Split form
+</th>
+<td>5
+</td>
+<td>13 mod 10 + 10 = 13
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lfloor {\frac {13\ \mathrm {mod} \ 100}{10}}\right\rfloor =1}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x230a;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mfrac>
+              <mrow>
+                <mn>13</mn>
+                <mtext>&#xa0;</mtext>
+                <mrow class="MJX-TeXAtom-ORD">
+                  <mi mathvariant="normal">m</mi>
+                  <mi mathvariant="normal">o</mi>
+                  <mi mathvariant="normal">d</mi>
+                </mrow>
+                <mtext>&#xa0;</mtext>
+                <mn>100</mn>
+              </mrow>
+              <mn>10</mn>
+            </mfrac>
+          </mrow>
+          <mo>&#x230b;</mo>
+        </mrow>
+        <mo>=</mo>
+        <mn>1</mn>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lfloor {\frac {13\ \mathrm {mod} \ 100}{10}}\right\rfloor =1}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/51b326d581823d23c46d6364220f518a58c4886c" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lfloor {\frac {13\ \mathrm {mod} \ 100}{10}}\right\rfloor =1}" /></span>
+</td>
+<td>20 mod 10 + 10 = 14
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lfloor {\frac {24\ \mathrm {mod} \ 100}{10}}\right\rfloor =2}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x230a;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mfrac>
+              <mrow>
+                <mn>24</mn>
+                <mtext>&#xa0;</mtext>
+                <mrow class="MJX-TeXAtom-ORD">
+                  <mi mathvariant="normal">m</mi>
+                  <mi mathvariant="normal">o</mi>
+                  <mi mathvariant="normal">d</mi>
+                </mrow>
+                <mtext>&#xa0;</mtext>
+                <mn>100</mn>
+              </mrow>
+              <mn>10</mn>
+            </mfrac>
+          </mrow>
+          <mo>&#x230b;</mo>
+        </mrow>
+        <mo>=</mo>
+        <mn>2</mn>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lfloor {\frac {24\ \mathrm {mod} \ 100}{10}}\right\rfloor =2}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/678c6051697048a2ed7c32d26d3c3fe5561bfb28" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lfloor {\frac {24\ \mathrm {mod} \ 100}{10}}\right\rfloor =2}" /></span>
+</td>
+<td>119 mod 10 + 10 = 19
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lfloor {\frac {119\ \mathrm {mod} \ 100}{10}}\right\rfloor +10=11}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x230a;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mfrac>
+              <mrow>
+                <mn>119</mn>
+                <mtext>&#xa0;</mtext>
+                <mrow class="MJX-TeXAtom-ORD">
+                  <mi mathvariant="normal">m</mi>
+                  <mi mathvariant="normal">o</mi>
+                  <mi mathvariant="normal">d</mi>
+                </mrow>
+                <mtext>&#xa0;</mtext>
+                <mn>100</mn>
+              </mrow>
+              <mn>10</mn>
+            </mfrac>
+          </mrow>
+          <mo>&#x230b;</mo>
+        </mrow>
+        <mo>+</mo>
+        <mn>10</mn>
+        <mo>=</mo>
+        <mn>11</mn>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lfloor {\frac {119\ \mathrm {mod} \ 100}{10}}\right\rfloor +10=11}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/e5f0171b3946cb8443d5354238512199a7980181" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lfloor {\frac {119\ \mathrm {mod} \ 100}{10}}\right\rfloor +10=11}" /></span>
+</td>
+<td><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \left\lfloor {\frac {119\ \mathrm {mod} \ 1000}{100}}\right\rfloor =1}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mrow>
+          <mo>&#x230a;</mo>
+          <mrow class="MJX-TeXAtom-ORD">
+            <mfrac>
+              <mrow>
+                <mn>119</mn>
+                <mtext>&#xa0;</mtext>
+                <mrow class="MJX-TeXAtom-ORD">
+                  <mi mathvariant="normal">m</mi>
+                  <mi mathvariant="normal">o</mi>
+                  <mi mathvariant="normal">d</mi>
+                </mrow>
+                <mtext>&#xa0;</mtext>
+                <mn>1000</mn>
+              </mrow>
+              <mn>100</mn>
+            </mfrac>
+          </mrow>
+          <mo>&#x230b;</mo>
+        </mrow>
+        <mo>=</mo>
+        <mn>1</mn>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \left\lfloor {\frac {119\ \mathrm {mod} \ 1000}{100}}\right\rfloor =1}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/5d90ce88c1b389a3ba58dc607f6984990c089327" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \left\lfloor {\frac {119\ \mathrm {mod} \ 1000}{100}}\right\rfloor =1}" /></span>
+</td></tr>
+<tr>
+<th>Relative value
+</th>
+<td>20<sup>0</sup> &#8901; 5 = 5
+</td>
+<td>20<sup>1</sup> &#8901; 13 = 260
+</td>
+<td>20<sup>2</sup> &#8901; 1 = 400
+</td>
+<td>20<sup>3</sup> &#8901; 14 = 112000
+</td>
+<td>20<sup>4</sup> &#8901; 2 = 320000
+</td>
+<td>20<sup>5</sup> &#8901; 19 = 60800000
+</td>
+<td>20<sup>6</sup> &#8901; 11 = 704000000
+</td>
+<td>20<sup>7</sup> &#8901; 1 = 1280000000
+</td></tr>
+<tr>
+<td colspan="9">𝐴 = 2045232665
+</td></tr></tbody></table>
+</div>
+<h2><span class="mw-headline" id="Usage">Usage</span></h2>
+<ul><li><a href="/wiki/Countable" title="Countable">Countable</a> uses aAME to process I/O.</li>
+<li><a href="/wiki/FRACTRAN" class="mw-redirect" title="FRACTRAN">FRACTRAN</a> uses mAME to simulate counter machines</li>
+<li><a href="/wiki/Funciton" title="Funciton">Funciton</a> uses aAME to process strings and arrays.</li>
+<li><a href="/wiki/Iterate" title="Iterate">Iterate</a> programs use aAME to emulate stacks and deques.</li>
+<li><a href="/wiki/JOMP" title="JOMP">JOMP</a> uses mAME to emulate a Minsky machine.</li>
+<li><a href="/wiki/Laconic" title="Laconic">Laconic</a> and <a href="/wiki/NQL" class="mw-redirect" title="NQL">NQL</a> programs use aAME to emulate stacks using natural numbers.</li>
+<li>The <a href="/wiki/Minsky_machine#The_section_14.2_Minsky_machine" title="Minsky machine">section 14.2 Minsky machine</a> uses mAME.</li></ul>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=Arbitrary_memory_emulation&amp;oldid=202334">https://esolangs.org/w/index.php?title=Arbitrary_memory_emulation&amp;oldid=202334</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Category</a>: <ul><li><a href="/wiki/Category:Programming_techniques" title="Category:Programming techniques">Programming techniques</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=Arbitrary+memory+emulation" title="You are encouraged to create an account and log in; however, it is not mandatory"><span>Create account</span></a></li><li id="pt-login" class="mw-list-item"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=Arbitrary+memory+emulation" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o"><span>Log in</span></a></li>
+		</ul>
+	</div>
+</nav>
+		<div id="left-navigation">
+<nav id="p-namespaces" class="mw-portlet mw-portlet-namespaces vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-namespaces-label"  >
+	<h3
+		id="p-namespaces-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Namespaces</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-nstab-main" class="selected mw-list-item"><a href="/wiki/Arbitrary_memory_emulation" title="View the content page [c]" accesskey="c"><span>Page</span></a></li><li id="ca-talk" class="mw-list-item"><a href="/wiki/Talk:Arbitrary_memory_emulation" rel="discussion" title="Discussion about the content page [t]" accesskey="t"><span>Discussion</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-variants" class="mw-portlet mw-portlet-variants emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-variants-label"  >
+	<input type="checkbox"
+		id="p-variants-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-variants-label"
+	>
+	<label
+		id="p-variants-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">English</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+		</div>
+		<div id="right-navigation">
+<nav id="p-views" class="mw-portlet mw-portlet-views vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-views-label"  >
+	<h3
+		id="p-views-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Views</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-view" class="selected mw-list-item"><a href="/wiki/Arbitrary_memory_emulation"><span>Read</span></a></li><li id="ca-viewsource" class="mw-list-item"><a href="/w/index.php?title=Arbitrary_memory_emulation&amp;action=edit" title="This page is protected.&#10;You can view its source [e]" accesskey="e"><span>View source</span></a></li><li id="ca-history" class="mw-list-item"><a href="/w/index.php?title=Arbitrary_memory_emulation&amp;action=history" title="Past revisions of this page [h]" accesskey="h"><span>View history</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-cactions" class="mw-portlet mw-portlet-cactions emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-cactions-label"  title="More options" >
+	<input type="checkbox"
+		id="p-cactions-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-cactions-label"
+	>
+	<label
+		id="p-cactions-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">More</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+<div id="p-search" role="search" class="vector-search-box-vue  vector-search-box-show-thumbnail vector-search-box-auto-expand-width vector-search-box">
+	<h3 >Search</h3>
+	<form action="/w/index.php" id="searchform" class="vector-search-box-form">
+		<div id="simpleSearch"
+			class="vector-search-box-inner"
+			>
+			<input class="vector-search-box-input"
+				 type="search" name="search" placeholder="Search Esolang" aria-label="Search Esolang" autocapitalize="sentences" title="Search Esolang [f]" accesskey="f" id="searchInput"
+			>
+			<input type="hidden" name="title" value="Special:Search">
+			<input id="mw-searchButton"
+				 class="searchButton mw-fallbackSearchButton" type="submit" name="fulltext" title="Search the pages for this text" value="Search">
+			<input id="searchButton"
+				 class="searchButton" type="submit" name="go" title="Go to a page with this exact name if it exists" value="Go">
+		</div>
+	</form>
+</div>
+		</div>
+	</div>
+<div id="mw-panel" class="vector-legacy-sidebar">
+	<div id="p-logo" role="banner">
+		<a class="mw-wiki-logo" href="/wiki/Main_Page"
+			title="Visit the main page"></a>
+	</div>
+<nav id="p-navigation" class="mw-portlet mw-portlet-navigation vector-menu-portal portal vector-menu" aria-labelledby="p-navigation-label"  >
+	<h3
+		id="p-navigation-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Navigation</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="n-mainpage-description" class="mw-list-item"><a href="/wiki/Main_Page" title="Visit the main page [z]" accesskey="z"><span>Main page</span></a></li><li id="n-portal" class="mw-list-item"><a href="/wiki/Esolang:Community_portal" title="About the project, what you can do, where to find things"><span>Community portal</span></a></li><li id="n-Language-list" class="mw-list-item"><a href="/wiki/Language_list"><span>Language list</span></a></li><li id="n-Browse-by-category" class="mw-list-item"><a href="/wiki/Esolang:Categorization"><span>Browse by category</span></a></li><li id="n-recentchanges" class="mw-list-item"><a href="/wiki/Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r"><span>Recent changes</span></a></li><li id="n-randompage" class="mw-list-item"><a href="/wiki/Special:Random" title="Load a random page [x]" accesskey="x"><span>Random page</span></a></li><li id="n-help" class="mw-list-item"><a href="/wiki/Esolang:Help" title="The place to find out"><span>Help</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-tb" class="mw-portlet mw-portlet-tb vector-menu-portal portal vector-menu" aria-labelledby="p-tb-label"  >
+	<h3
+		id="p-tb-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="t-whatlinkshere" class="mw-list-item"><a href="/wiki/Special:WhatLinksHere/Arbitrary_memory_emulation" title="A list of all wiki pages that link here [j]" accesskey="j"><span>What links here</span></a></li><li id="t-recentchangeslinked" class="mw-list-item"><a href="/wiki/Special:RecentChangesLinked/Arbitrary_memory_emulation" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k"><span>Related changes</span></a></li><li id="t-specialpages" class="mw-list-item"><a href="/wiki/Special:SpecialPages" title="A list of all special pages [q]" accesskey="q"><span>Special pages</span></a></li><li id="t-print" class="mw-list-item"><a href="javascript:print();" rel="alternate" title="Printable version of this page [p]" accesskey="p"><span>Printable version</span></a></li><li id="t-permalink" class="mw-list-item"><a href="/w/index.php?title=Arbitrary_memory_emulation&amp;oldid=202334" title="Permanent link to this revision of this page"><span>Permanent link</span></a></li><li id="t-info" class="mw-list-item"><a href="/w/index.php?title=Arbitrary_memory_emulation&amp;action=info" title="More information about this page"><span>Page information</span></a></li>
+		</ul>
+	</div>
+</nav>
+</div>
+</div>
+<footer id="footer" class="mw-footer" >
+	<ul id="footer-info">
+	<li id="footer-info-lastmod"> This page was last edited on 7 November 2026, at 04:38.</li>
+	<li id="footer-info-copyright">Content is available under <a href="/wiki/Esolang:Copyrights" title="Esolang:Copyrights">CC0 public domain dedication</a>.</li>
+</ul>
+	<ul id="footer-places">
+	<li id="footer-places-about"><a href="/wiki/Esolang:About">About Esolang</a></li>
+	<li id="footer-places-disclaimers"><a href="/wiki/Esolang:General_disclaimer">Disclaimers</a></li>
+</ul>
+	<ul id="footer-icons" class="noprint">
+	<li id="footer-copyrightico"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/licenses/cc-0.png" alt="CC0 public domain dedication" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-poweredbyico"><a href="https://www.mediawiki.org/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-hostedbyico"><a href="https://www.bytemark.co.uk/r/esolangs" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/images/hosting_bytemark_88x31.png" srcset="/w/images/hosting_bytemark_132x47.png 1.5x, /w/images/hosting_bytemark_176x62.png 2x" alt="Hosting donated by Bytemark" width="88" height="31" loading="lazy"></a></li>
+</ul>
+</footer>
+</body>
+</html>

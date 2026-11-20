@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>Formal grammar - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Formal_grammar rootpage-Formal_grammar skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">Formal grammar</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><dl><dd><i>This is still a work in progress. It may be changed in the future.</i></dd></dl>
+<p><b>Formal grammars</b> are models of formal languages. Grammars are classified into two major categories; generative, and analytic. Most formal grammars are generative, but some are analytic.
+</p>
+<div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" /><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Definition"><span class="tocnumber">1</span> <span class="toctext">Definition</span></a></li>
+<li class="toclevel-1 tocsection-2"><a href="#Types"><span class="tocnumber">2</span> <span class="toctext">Types</span></a>
+<ul>
+<li class="toclevel-2 tocsection-3"><a href="#Type_0:_unrestricted"><span class="tocnumber">2.1</span> <span class="toctext">Type 0: unrestricted</span></a></li>
+<li class="toclevel-2 tocsection-4"><a href="#Type_1:_context_sensitive"><span class="tocnumber">2.2</span> <span class="toctext">Type 1: context sensitive</span></a></li>
+<li class="toclevel-2 tocsection-5"><a href="#Type_2:_context_free"><span class="tocnumber">2.3</span> <span class="toctext">Type 2: context free</span></a></li>
+<li class="toclevel-2 tocsection-6"><a href="#Type_3:_regular"><span class="tocnumber">2.4</span> <span class="toctext">Type 3: regular</span></a>
+<ul>
+<li class="toclevel-3 tocsection-7"><a href="#Derivative"><span class="tocnumber">2.4.1</span> <span class="toctext">Derivative</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-8"><a href="#Semi-Thue"><span class="tocnumber">2.5</span> <span class="toctext">Semi-Thue</span></a>
+<ul>
+<li class="toclevel-3 tocsection-9"><a href="#Thue"><span class="tocnumber">2.5.1</span> <span class="toctext">Thue</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-10"><a href="#Evaluation_order"><span class="tocnumber">3</span> <span class="toctext">Evaluation order</span></a></li>
+<li class="toclevel-1 tocsection-11"><a href="#Normal_forms"><span class="tocnumber">4</span> <span class="toctext">Normal forms</span></a>
+<ul>
+<li class="toclevel-2 tocsection-12"><a href="#Chomsky"><span class="tocnumber">4.1</span> <span class="toctext">Chomsky</span></a></li>
+<li class="toclevel-2 tocsection-13"><a href="#Greibach"><span class="tocnumber">4.2</span> <span class="toctext">Greibach</span></a></li>
+<li class="toclevel-2 tocsection-14"><a href="#Kuroda"><span class="tocnumber">4.3</span> <span class="toctext">Kuroda</span></a></li>
+<li class="toclevel-2 tocsection-15"><a href="#Pentonnen"><span class="tocnumber">4.4</span> <span class="toctext">Pentonnen</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-16"><a href="#Specific_formal_grammars"><span class="tocnumber">5</span> <span class="toctext">Specific formal grammars</span></a>
+<ul>
+<li class="toclevel-2 tocsection-17"><a href="#Generative"><span class="tocnumber">5.1</span> <span class="toctext">Generative</span></a></li>
+<li class="toclevel-2 tocsection-18"><a href="#Analytic"><span class="tocnumber">5.2</span> <span class="toctext">Analytic</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-19"><a href="#Grammar-based_languages"><span class="tocnumber">6</span> <span class="toctext">Grammar-based languages</span></a>
+<ul>
+<li class="toclevel-2 tocsection-20"><a href="#Analytic_2"><span class="tocnumber">6.1</span> <span class="toctext">Analytic</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-21"><a href="#References"><span class="tocnumber">7</span> <span class="toctext">References</span></a></li>
+</ul>
+</div>
+<h2><span class="mw-headline" id="Definition">Definition</span></h2>
+<p>Generative grammars can be formalized as consisting of two disjoint sets of symbols, called <i>terminals</i> and <i>nonterminals</i>, as well as <i>production rules</i>. Production rules map strings of symbols (including at least one nonterminal) into new strings of symbols, replacing the string. Formal grammars are often nondeterministic, in two ways. The first is that they allow for a single string to map to multiple different strings. The second is in derivation order. Rules do not have precedence and can be applied in any order, so long as they match.
+</p><p>Productions are applied one at a time, as opposed to parallel grammars (like <a href="/wiki/L-system" title="L-system">L-systems</a>). A string is said to be derived from a prior string under a grammar if a single production rule can be applied to the prior to get the derived string. Repeated derivations may produce a string consisting of only terminals. If this occurs the string is called a sentence, and the derivation process halts. If a string has no valid derivations but still has nonterminals, the process also halts, but the string is not considered a sentence. The set of all sentences that a grammar produces from a start symbol is referred to as the grammar's language.
+</p><p>To illustrate the two types of nondeterminism, observe these examples:
+</p><p><span class="mwe-math-element"><span class="mwe-math-mathml-display mwe-math-mathml-a11y"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle N=\lbrace S\rbrace ,T=\lbrace a,b,c\rbrace \ S\rightarrow a\ S\rightarrow b\ S\rightarrow c}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>N</mi>
+        <mo>=</mo>
+        <mo fence="false" stretchy="false">{</mo>
+        <mi>S</mi>
+        <mo fence="false" stretchy="false">}</mo>
+        <mo>,</mo>
+        <mi>T</mi>
+        <mo>=</mo>
+        <mo fence="false" stretchy="false">{</mo>
+        <mi>a</mi>
+        <mo>,</mo>
+        <mi>b</mi>
+        <mo>,</mo>
+        <mi>c</mi>
+        <mo fence="false" stretchy="false">}</mo>
+        <mtext>&#xa0;</mtext>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>a</mi>
+        <mtext>&#xa0;</mtext>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>b</mi>
+        <mtext>&#xa0;</mtext>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>c</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle N=\lbrace S\rbrace ,T=\lbrace a,b,c\rbrace \ S\rightarrow a\ S\rightarrow b\ S\rightarrow c}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/ada87ebd21755a360dc88a244d9d6272501a4a9a" class="mwe-math-fallback-image-display mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle N=\lbrace S\rbrace ,T=\lbrace a,b,c\rbrace \ S\rightarrow a\ S\rightarrow b\ S\rightarrow c}" /></span>
+</p><p>When applied to the starting symbol <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle S}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>S</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle S}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/4611d85173cd3b508e67077d4a1252c9c05abca2" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle S}" /></span> then we can freely choose to use any of the production rules. If we choose any of them we will result in a string of only terminals. The language generated by this grammar is <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle \lbrace a,b,c\rbrace }">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mo fence="false" stretchy="false">{</mo>
+        <mi>a</mi>
+        <mo>,</mo>
+        <mi>b</mi>
+        <mo>,</mo>
+        <mi>c</mi>
+        <mo fence="false" stretchy="false">}</mo>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle \lbrace a,b,c\rbrace }</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/1349294dcddcb402f01995d993f9fbe930390438" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle \lbrace a,b,c\rbrace }" /></span>. This demonstrates how one symbol (and therefore string) can nondeterministically map into multiple different symbols.
+</p><p><br />
+<span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle N=\lbrace S,A,B,C\rbrace ,T=\lbrace a,b,c\rbrace S\rightarrow aBCS\rightarrow aSBCCB\rightarrow BCaB\rightarrow abbB\rightarrow bbbC\rightarrow bccC\rightarrow cc}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>N</mi>
+        <mo>=</mo>
+        <mo fence="false" stretchy="false">{</mo>
+        <mi>S</mi>
+        <mo>,</mo>
+        <mi>A</mi>
+        <mo>,</mo>
+        <mi>B</mi>
+        <mo>,</mo>
+        <mi>C</mi>
+        <mo fence="false" stretchy="false">}</mo>
+        <mo>,</mo>
+        <mi>T</mi>
+        <mo>=</mo>
+        <mo fence="false" stretchy="false">{</mo>
+        <mi>a</mi>
+        <mo>,</mo>
+        <mi>b</mi>
+        <mo>,</mo>
+        <mi>c</mi>
+        <mo fence="false" stretchy="false">}</mo>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>a</mi>
+        <mi>B</mi>
+        <mi>C</mi>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>a</mi>
+        <mi>S</mi>
+        <mi>B</mi>
+        <mi>C</mi>
+        <mi>C</mi>
+        <mi>B</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>B</mi>
+        <mi>C</mi>
+        <mi>a</mi>
+        <mi>B</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>a</mi>
+        <mi>b</mi>
+        <mi>b</mi>
+        <mi>B</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>b</mi>
+        <mi>b</mi>
+        <mi>b</mi>
+        <mi>C</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>b</mi>
+        <mi>c</mi>
+        <mi>c</mi>
+        <mi>C</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>c</mi>
+        <mi>c</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle N=\lbrace S,A,B,C\rbrace ,T=\lbrace a,b,c\rbrace S\rightarrow aBCS\rightarrow aSBCCB\rightarrow BCaB\rightarrow abbB\rightarrow bbbC\rightarrow bccC\rightarrow cc}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/6530b5ad2fbe5b4b88107eaf7763b2a67437ed25" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle N=\lbrace S,A,B,C\rbrace ,T=\lbrace a,b,c\rbrace S\rightarrow aBCS\rightarrow aSBCCB\rightarrow BCaB\rightarrow abbB\rightarrow bbbC\rightarrow bccC\rightarrow cc}" /></span>
+</p><p>This grammar generates the language consisting of strings where there are <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle a}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>a</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle a}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/ffd2487510aa438433a2579450ab2b3d557e5edc" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle a}" /></span>s followed by <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle b}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>b</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle b}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/f11423fbb2e967f986e36804a8ae4271734917c3" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle b}" /></span>s followed by <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle c}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>c</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle c}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/86a67b81c2de995bd608d5b2df50cd8cd7d92455" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle c}" /></span>s where the sequences have the same length. Here is an example production chain:
+</p>
+<pre>S
+aSBC
+aaBCBC
+aaBBCC
+aabBCC
+aabbCC
+aabbcC
+aabbcc
+</pre>
+<p>Note how the string <code>aaBCBC</code> can map to either <code>aaBBCC</code> or <code>aabCBC</code>. This nondeterministic behavior is due to the lack of order between rules, rather than having multiple options for a single rule. Note a derivation path starting from <code>aabCBC</code>:
+</p>
+<pre>aabCBC
+aabcBC
+</pre>
+<p>This string cannot map to any other string, as there is no rule for the nonterminals in this configuration. The derivation must therefore halt, but since the string is not made up of solely terminals, it is not a sentence and not part of the grammar's language.
+</p><p>When evaluating a grammar to determine what strings can be generated from a starting string, we can build up a tree, where the branches are different paths which are taken when multiple possible derivations exist for a given starting string. The leaves of the tree which have only terminals in the string are the sentences of the language. We can consider the terminal leaves of any node of the tree, not just the start. If we pick a node and consider its language, we take the Brzozowski derivative of the full language with respect to the derivation path. The Brzozowski derivative of a language with respect to a string is the set of all sentences (the language) which can be derived from the string.
+</p>
+<h2><span class="mw-headline" id="Types">Types</span></h2>
+<h3><span class="mw-headline" id="Type_0:_unrestricted">Type 0: unrestricted</span></h3>
+<p>The most general form of grammar is the unrestricted grammar. The above definition for general formal grammars is that of unrestricted grammars. Unrestricted grammars are able to model all recursively enumerable languages, the same languages that <a href="/wiki/Turing_machines" class="mw-redirect" title="Turing machines">Turing machines</a> recognize. This means that unrestricted grammars are <a href="/wiki/Turing_complete" class="mw-redirect" title="Turing complete">Turing complete</a>.
+</p><p>A proof of this can be given by reproducing a nondeterministic Turing machine's tape construction and transition rules in the replacement rules of a grammar. Halting machines result in a terminal string/sentence.
+</p>
+<h3><span class="mw-headline" id="Type_1:_context_sensitive">Type 1: context sensitive</span></h3>
+<p>If we restrict the values that a substring can be mapped to by disallowing symbol deletion, we lose the ability to directly model all recursively enumerable languages. The class of grammars which cannot delete symbols but are otherwise unrestricted are called context-sensitive, monotonic, linear bounded, or noncontracting grammars.
+</p><p>The reason that these languages are not able to model recursively enumerable languages is due to their inability to clean up. Consider a grammar which converts minimal binary strings into minimal hexadecimal strings, that is, digit strings without leading zeroes. Since hexadecimal strings are up to four times shorter, the string must contract/decrease in size in order to produce minimal hexadecimal strings. Of course for this example, the leading zeroes could be ignored by something which is using the output of this grammar. In fact, all recursively enumerable languages can be modeled by a noncontracting grammar whose final outputs include terminal symbols which are to be ignored, even if the ignore symbols can only be in certain parts of the string.
+</p><p>If all symbols must be considered then context sensitive grammars are in the same computational class as <a href="/wiki/Linear_bounded_automata" class="mw-redirect" title="Linear bounded automata">linear bounded automata</a>, since any string can be decided to be a member of a particular context sensitive grammar by a nondeterministic linear bounded automaton. The procedure is to give the nondeterministic automaton two tapes, each with the same length as the input string. This is permitted since the automaton's tape length can be an affine function of the input string's size. The first tape starts out with the input and the second the start symbol. The machine iteratively, nondeterministically transforms the second tape according to the grammar, never choosing rules which cause the working string to be longer than the tape. If the machine cannot choose a rule which ensures the string fits in the tape, then the input word mustn't be part of the noncontracting grammar's language, since if the production string exceeds the length, it can never become smaller again. If at some point the machine produces the input string in any of its execution paths, then the input is part of the language.
+</p><p>This procedure can be reformulated for linear bounded automata with one tape, and might be reformulated for deterministic LBAs. The latter is an open problem.
+</p>
+<h3><span class="mw-headline" id="Type_2:_context_free">Type 2: context free</span></h3>
+<p>If instead of disallowing erasure rules, we disallow rules which replace strings of multiple symbols, only allowing rules which replace symbols with strings, then the power is reduced further than context-sensitive grammars. These grammars are called context-free, since they cannot consider a symbol's context. Context-sensitive grammars model simply nested languages, which are recognizable by <a href="/wiki/Pushdown_automata" class="mw-redirect" title="Pushdown automata">pushdown automata</a>.
+</p><p>The vast majority of programming languages are parsed as if they are context-free languages. Most will perform context-sensitive analysis, but the initial parse phase will generally make use of context-free analysis.
+</p><p><a href="/wiki/Brainfuck" title="Brainfuck">Brainfuck</a> (and most of its derivatives) is entirely context-free, meaning this nondeterministic context-free grammar can generate every valid brainfuck program (without I/O), that is, its language is precisely brainfuck:
+</p><p><span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle N=\lbrace S\rbrace ,T=\lbrace &lt;,&gt;,+,-,[,]\rbrace S\rightarrow &lt;SS\rightarrow &gt;SS\rightarrow +SS\rightarrow -SS\rightarrow \lambda S\rightarrow [S]S}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>N</mi>
+        <mo>=</mo>
+        <mo fence="false" stretchy="false">{</mo>
+        <mi>S</mi>
+        <mo fence="false" stretchy="false">}</mo>
+        <mo>,</mo>
+        <mi>T</mi>
+        <mo>=</mo>
+        <mo fence="false" stretchy="false">{</mo>
+        <mo>&lt;</mo>
+        <mo>,</mo>
+        <mo>&gt;</mo>
+        <mo>,</mo>
+        <mo>+</mo>
+        <mo>,</mo>
+        <mo>&#x2212;</mo>
+        <mo>,</mo>
+        <mo stretchy="false">[</mo>
+        <mo>,</mo>
+        <mo stretchy="false">]</mo>
+        <mo fence="false" stretchy="false">}</mo>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;&lt;</mo>
+        <mi>S</mi>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;&gt;</mo>
+        <mi>S</mi>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mo>+</mo>
+        <mi>S</mi>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mo>&#x2212;</mo>
+        <mi>S</mi>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>&#x3bb;</mi>
+        <mi>S</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mo stretchy="false">[</mo>
+        <mi>S</mi>
+        <mo stretchy="false">]</mo>
+        <mi>S</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle N=\lbrace S\rbrace ,T=\lbrace &lt;,&gt;,+,-,[,]\rbrace S\rightarrow &lt;SS\rightarrow &gt;SS\rightarrow +SS\rightarrow -SS\rightarrow \lambda S\rightarrow [S]S}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/cdbef6b103544ae555f5ca46dac1f8cf2ff3c845" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle N=\lbrace S\rbrace ,T=\lbrace &lt;,&gt;,+,-,[,]\rbrace S\rightarrow &lt;SS\rightarrow &gt;SS\rightarrow +SS\rightarrow -SS\rightarrow \lambda S\rightarrow [S]S}" /></span>
+</p><p>I/O support could be added with little difficulty, but would make the notation more confusing.
+</p>
+<h3><span class="mw-headline" id="Type_3:_regular">Type 3: regular</span></h3>
+<p>Regular grammars are the most restricted in common use. Regular grammars have three valid forms for their production rules:
+</p>
+<dl><dd><i>A</i> → <i>b</i></dd>
+<dd><i>A</i> → <i>bC</i></dd>
+<dd><i>A</i> → <i>λ</i></dd></dl>
+<p>That is, a nonterminal may either map to a terminal, a terminal followed by a nonterminal, or the empty string.
+</p><p>Regular languages are recognizable by <a href="/wiki/Finite_state_automata" class="mw-redirect" title="Finite state automata">finite state automata</a>, meaning that regular grammars are equivalent in power to FSMs.
+</p><p>Regular grammars are perhaps the most common of all, despite being the most restrictive. Proper <a href="/wiki/Regular_expression" title="Regular expression">regular expressions</a> are an alternate notation for regular grammars with equivalent power. Extensions to regular expressions increases the recognition power beyond regular languages.
+</p>
+<h4><span class="mw-headline" id="Derivative">Derivative</span></h4>
+<p>Regular languages are unique in that the derivative of the language can be computed from the grammar, the operation taking in a regular grammar and producing a new regular grammar with no derivative operators. Brzozowski showed this by describing a recursive algorithm which computes the derivative of a regular expression. Context-free and greater languages can recurse, their derivatives may also recurse, so Brzozowski's algorithm cannot generalize to produce e.g. context-free grammars from context-free grammars.<sup id="cite&#95;ref-1" class="reference"><a href="#cite_note-1"><span class="cite-bracket">&#91;</span>1<span class="cite-bracket">&#93;</span></a></sup> In fact, since determining if two context-free grammars are equivalent is undecidable (unlike for regular grammars), no algorithm which produces the grammar of the derivative of a context-free language can exist.<sup>[<i>citation needed</i>]</sup>
+</p>
+<h3><span class="mw-headline" id="Semi-Thue">Semi-Thue</span></h3>
+<p>A semi-Thue system or grammar is similar to a formal grammar, except that there is only one unified set of symbols, and not a single fixed axiom. Semi-Thue systems are equivalent in power to unrestricted grammars, any semi-Thue system can be translated into an unrestricted grammar where each symbol from the semi-Thue system corresponds to a nonterminal.
+</p>
+<h4><span class="mw-headline" id="Thue">Thue</span></h4>
+<p>Thue grammars are a subset of semi-Thue grammars where the production rules are symmetric. That is, if <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A\rightarrow B}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>B</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A\rightarrow B}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/23efef033def56a67de7ded823f14626de26d174" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A\rightarrow B}" /></span> then <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle B\rightarrow A}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>B</mi>
+        <mo stretchy="false">&#x2192;</mo>
+        <mi>A</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle B\rightarrow A}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/754f0800367a2df9dee0649333362feb8fc8fa66" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle B\rightarrow A}" /></span> and vice versa for all <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle A}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>A</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle A}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/7daff47fa58cdfd29dc333def748ff5fa4c923e3" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle A}" /></span> and <span class="mwe-math-element"><span class="mwe-math-mathml-inline mwe-math-mathml-a11y"><math xmlns="http://www.w3.org/1998/Math/MathML" alttext="{\displaystyle B}">
+  <semantics>
+    <mrow class="MJX-TeXAtom-ORD">
+      <mstyle displaystyle="true" scriptlevel="0">
+        <mi>B</mi>
+      </mstyle>
+    </mrow>
+    <annotation encoding="application/x-tex">{\displaystyle B}</annotation>
+  </semantics>
+</math></span><img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/47136aad860d145f75f3eed3022df827cee94d7a" class="mwe-math-fallback-image-inline mw-invert skin-invert" aria-hidden="true" alt="{\displaystyle B}" /></span>.
+</p>
+<h2><span class="mw-headline" id="Evaluation_order">Evaluation order</span></h2>
+<p>The evaluation order of formal grammars is not specified. This allows for grammars to nondeterministically generate every possible word of a language from a starting symbol. Evaluation orders can be specified, however, which gives rise to other systems.
+</p><p><a href="/wiki/Markov_algorithm" title="Markov algorithm">Markov algorithms</a> are unrestricted grammars where every rule is indexed by a unique number. Evaluation proceeds by determining which rules match the current partial derivation, then selecting the production from the rule with the lowest index. Markov algorithms are necessarily deterministic, since for any set of unique numbers there will always be one smallest number, meaning there will only ever be at most one possible matching rule.
+</p><p><a href="/wiki/L-system" title="L-system">L-systems</a> are unrestricted grammars where all matching rules are applied at the same time, with the word being the concatenation of all of the valid productions at once.
+</p>
+<h2><span class="mw-headline" id="Normal_forms">Normal forms</span></h2>
+<p>While formal grammars can have almost any form for their matches and productions, certain <i>normal forms</i> are commonly used to quantify what sorts of syntaxes give rise to certain language sets. A normal form specifies where terminals and nonterminals can occur, as well as if the empty string <i>λ</i> can be produced.
+</p>
+<h3><span class="mw-headline" id="Chomsky">Chomsky</span></h3>
+<p>Chomsky normal form is a form for context-free grammars where each rule can be one of:
+</p>
+<dl><dd><i>A</i> → <i>BC</i></dd>
+<dd><i>A</i> → <i>a</i></dd>
+<dd><i>A</i> → <i>λ</i></dd></dl>
+<h3><span class="mw-headline" id="Greibach">Greibach</span></h3>
+<p>Greibach normal form is an alternate form for context-free grammars where each rule is in one of the forms:
+</p>
+<dl><dd><i>A</i> → <i>a</i></dd>
+<dd><i>A</i> → <i>aB</i></dd>
+<dd><i>A</i> → <i>aBC</i></dd>
+<dd><i>A</i> → <i>aBCD</i></dd>
+<dd>...</dd></dl>
+<p>That is, every rule maps a nonterminal to a terminal followed by any number of nonterminals.
+</p><p>Greibach normal form cannot generate the empty string, but can if <i>S</i> → <i>λ</i> is incorporated. Despite being unable to contract, Greibach normal form can represent any context-free grammar that doesn't include the empty string, even if the Chomsky normal form includes rules which map to the empty string.
+</p>
+<h3><span class="mw-headline" id="Kuroda">Kuroda</span></h3>
+<p>Kuroda normal form is a form for context-sensitive grammars where each rule can be one of:
+</p>
+<dl><dd><i>AB</i> → <i>CD</i></dd>
+<dd><i>A</i> → <i>BC</i></dd>
+<dd><i>A</i> → <i>B</i></dd>
+<dd><i>A</i> → <i>a</i></dd></dl>
+<p>Kuroda normal form is similar to Chomsky normal form, with the added ability to consider the context of a nonterminal. Kuroda normal form corresponds to type 1 languages, context sensitive/noncontracting. If the following form (deletion) is added, then this form can represent all type-0 languages, and is equivalent to unrestricted grammars:
+</p>
+<dl><dd><i>A</i> → <i>λ</i></dd></dl>
+<h3><span class="mw-headline" id="Pentonnen">Pentonnen</span></h3>
+<p>Pentonnen normal form is a restricted variant of Kuroda normal form where each rule must be one of:
+</p>
+<dl><dd><i>AB</i> → <i>AC</i></dd>
+<dd><i>A</i> → <i>BC</i></dd>
+<dd><i>A</i> → <i>a</i></dd></dl>
+<p>That is, only the nonterminal to the left of a nonterminal can be used as context, and therefore information cannot flow from right to left, only left to right. This form can represent all type-1 grammars, or all type-0 if the deletion form is added:
+</p>
+<dl><dd><i>A</i> → <i>λ</i></dd></dl>
+<h2><span class="mw-headline" id="Specific_formal_grammars">Specific formal grammars</span></h2>
+<h3><span class="mw-headline" id="Generative">Generative</span></h3>
+<ul><li><a href="/wiki/L-system" title="L-system">L-systems</a></li></ul>
+<h3><span class="mw-headline" id="Analytic">Analytic</span></h3>
+<ul><li><a href="/w/index.php?title=Parsing_expression_grammar&amp;action=edit&amp;redlink=1" class="new" title="Parsing expression grammar (page does not exist)">Parsing expression grammars</a></li></ul>
+<h2><span class="mw-headline" id="Grammar-based_languages">Grammar-based languages</span></h2>
+<h3><span class="mw-headline" id="Analytic_2">Analytic</span></h3>
+<ul><li><a href="/wiki/META_II" title="META II">META II</a></li></ul>
+<h2><span class="mw-headline" id="References">References</span></h2>
+<div class="mw-references-wrap"><ol class="references">
+<li id="cite&#95;note-1"><span class="mw-cite-backlink"><a href="#cite_ref-1">↑</a></span> <span class="reference-text">Might, Matthew., Darais, David. (2010, Oct 24). Yacc is dead. arXiv. arXiv:1010.5023. <a rel="nofollow" class="external free" href="https://doi.org/10.48550/arXiv.1010.5023">https://doi.org/10.48550/arXiv.1010.5023</a></span>
+</li>
+</ol></div>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=Formal_grammar&amp;oldid=156360">https://esolangs.org/w/index.php?title=Formal_grammar&amp;oldid=156360</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Categories</a>: <ul><li><a href="/wiki/Category:Works-in-Progress" title="Category:Works-in-Progress">Works-in-Progress</a></li><li><a href="/wiki/Category:Computational_models" title="Category:Computational models">Computational models</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=Formal+grammar" title="You are encouraged to create an account and log in; however, it is not mandatory"><span>Create account</span></a></li><li id="pt-login" class="mw-list-item"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=Formal+grammar" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o"><span>Log in</span></a></li>
+		</ul>
+	</div>
+</nav>
+		<div id="left-navigation">
+<nav id="p-namespaces" class="mw-portlet mw-portlet-namespaces vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-namespaces-label"  >
+	<h3
+		id="p-namespaces-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Namespaces</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-nstab-main" class="selected mw-list-item"><a href="/wiki/Formal_grammar" title="View the content page [c]" accesskey="c"><span>Page</span></a></li><li id="ca-talk" class="new mw-list-item"><a href="/w/index.php?title=Talk:Formal_grammar&amp;action=edit&amp;redlink=1" rel="discussion" class="new" title="Discussion about the content page (page does not exist) [t]" accesskey="t"><span>Discussion</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-variants" class="mw-portlet mw-portlet-variants emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-variants-label"  >
+	<input type="checkbox"
+		id="p-variants-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-variants-label"
+	>
+	<label
+		id="p-variants-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">English</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+		</div>
+		<div id="right-navigation">
+<nav id="p-views" class="mw-portlet mw-portlet-views vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-views-label"  >
+	<h3
+		id="p-views-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Views</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-view" class="selected mw-list-item"><a href="/wiki/Formal_grammar"><span>Read</span></a></li><li id="ca-viewsource" class="mw-list-item"><a href="/w/index.php?title=Formal_grammar&amp;action=edit" title="This page is protected.&#10;You can view its source [e]" accesskey="e"><span>View source</span></a></li><li id="ca-history" class="mw-list-item"><a href="/w/index.php?title=Formal_grammar&amp;action=history" title="Past revisions of this page [h]" accesskey="h"><span>View history</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-cactions" class="mw-portlet mw-portlet-cactions emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-cactions-label"  title="More options" >
+	<input type="checkbox"
+		id="p-cactions-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-cactions-label"
+	>
+	<label
+		id="p-cactions-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">More</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+<div id="p-search" role="search" class="vector-search-box-vue  vector-search-box-show-thumbnail vector-search-box-auto-expand-width vector-search-box">
+	<h3 >Search</h3>
+	<form action="/w/index.php" id="searchform" class="vector-search-box-form">
+		<div id="simpleSearch"
+			class="vector-search-box-inner"
+			>
+			<input class="vector-search-box-input"
+				 type="search" name="search" placeholder="Search Esolang" aria-label="Search Esolang" autocapitalize="sentences" title="Search Esolang [f]" accesskey="f" id="searchInput"
+			>
+			<input type="hidden" name="title" value="Special:Search">
+			<input id="mw-searchButton"
+				 class="searchButton mw-fallbackSearchButton" type="submit" name="fulltext" title="Search the pages for this text" value="Search">
+			<input id="searchButton"
+				 class="searchButton" type="submit" name="go" title="Go to a page with this exact name if it exists" value="Go">
+		</div>
+	</form>
+</div>
+		</div>
+	</div>
+<div id="mw-panel" class="vector-legacy-sidebar">
+	<div id="p-logo" role="banner">
+		<a class="mw-wiki-logo" href="/wiki/Main_Page"
+			title="Visit the main page"></a>
+	</div>
+<nav id="p-navigation" class="mw-portlet mw-portlet-navigation vector-menu-portal portal vector-menu" aria-labelledby="p-navigation-label"  >
+	<h3
+		id="p-navigation-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Navigation</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="n-mainpage-description" class="mw-list-item"><a href="/wiki/Main_Page" title="Visit the main page [z]" accesskey="z"><span>Main page</span></a></li><li id="n-portal" class="mw-list-item"><a href="/wiki/Esolang:Community_portal" title="About the project, what you can do, where to find things"><span>Community portal</span></a></li><li id="n-Language-list" class="mw-list-item"><a href="/wiki/Language_list"><span>Language list</span></a></li><li id="n-Browse-by-category" class="mw-list-item"><a href="/wiki/Esolang:Categorization"><span>Browse by category</span></a></li><li id="n-recentchanges" class="mw-list-item"><a href="/wiki/Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r"><span>Recent changes</span></a></li><li id="n-randompage" class="mw-list-item"><a href="/wiki/Special:Random" title="Load a random page [x]" accesskey="x"><span>Random page</span></a></li><li id="n-help" class="mw-list-item"><a href="/wiki/Esolang:Help" title="The place to find out"><span>Help</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-tb" class="mw-portlet mw-portlet-tb vector-menu-portal portal vector-menu" aria-labelledby="p-tb-label"  >
+	<h3
+		id="p-tb-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="t-whatlinkshere" class="mw-list-item"><a href="/wiki/Special:WhatLinksHere/Formal_grammar" title="A list of all wiki pages that link here [j]" accesskey="j"><span>What links here</span></a></li><li id="t-recentchangeslinked" class="mw-list-item"><a href="/wiki/Special:RecentChangesLinked/Formal_grammar" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k"><span>Related changes</span></a></li><li id="t-specialpages" class="mw-list-item"><a href="/wiki/Special:SpecialPages" title="A list of all special pages [q]" accesskey="q"><span>Special pages</span></a></li><li id="t-print" class="mw-list-item"><a href="javascript:print();" rel="alternate" title="Printable version of this page [p]" accesskey="p"><span>Printable version</span></a></li><li id="t-permalink" class="mw-list-item"><a href="/w/index.php?title=Formal_grammar&amp;oldid=156360" title="Permanent link to this revision of this page"><span>Permanent link</span></a></li><li id="t-info" class="mw-list-item"><a href="/w/index.php?title=Formal_grammar&amp;action=info" title="More information about this page"><span>Page information</span></a></li>
+		</ul>
+	</div>
+</nav>
+</div>
+</div>
+<footer id="footer" class="mw-footer" >
+	<ul id="footer-info">
+	<li id="footer-info-lastmod"> This page was last edited on 21 April 2025, at 19:15.</li>
+	<li id="footer-info-copyright">Content is available under <a href="/wiki/Esolang:Copyrights" title="Esolang:Copyrights">CC0 public domain dedication</a>.</li>
+</ul>
+	<ul id="footer-places">
+	<li id="footer-places-about"><a href="/wiki/Esolang:About">About Esolang</a></li>
+	<li id="footer-places-disclaimers"><a href="/wiki/Esolang:General_disclaimer">Disclaimers</a></li>
+</ul>
+	<ul id="footer-icons" class="noprint">
+	<li id="footer-copyrightico"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/licenses/cc-0.png" alt="CC0 public domain dedication" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-poweredbyico"><a href="https://www.mediawiki.org/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-hostedbyico"><a href="https://www.bytemark.co.uk/r/esolangs" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/images/hosting_bytemark_88x31.png" srcset="/w/images/hosting_bytemark_132x47.png 1.5x, /w/images/hosting_bytemark_176x62.png 2x" alt="Hosting donated by Bytemark" width="88" height="31" loading="lazy"></a></li>
+</ul>
+</footer>
+</body>
+</html>

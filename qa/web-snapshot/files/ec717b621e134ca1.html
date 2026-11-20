@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>INTERCAL - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-INTERCAL rootpage-INTERCAL skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">INTERCAL</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><p><b>INTERCAL</b>, an abbreviation for <i>Compiler Language With No Pronounceable Acronym</i>, was created in 1972, thus probably making it the first ever <a href="/wiki/Esoteric_programming_language" title="Esoteric programming language">esoteric programming language</a>. (See <a href="/wiki/Prehistory_of_Esoteric_Languages" class="mw-redirect" title="Prehistory of Esoteric Languages">Prehistory of Esoteric Languages</a> for an alternate view.)  <a href="/wiki/Donald_R._Woods" title="Donald R. Woods">Donald R. Woods</a> and <a href="/wiki/James_M._Lyon" title="James M. Lyon">James M. Lyon</a> invented it with the goal of creating a language with no similarities whatsoever to any existing programming languages. The language largely succeeds in this goal, apart from its use of an assignment statement. It also suffers from being one-dimensional, and the original version uses binary (but <a href="/wiki/TriINTERCAL" title="TriINTERCAL">TriINTERCAL</a> was created as a modern ternary version).
+</p><p>INTERCAL was also the first language to have a <a href="/wiki/Wimpmode" title="Wimpmode">wimpmode</a> devised for it, due to its unusual I/O requirements.
+</p><p>It has new operators, Mingle and Select operators, and unary XOR operators. Also, the symbols are called by different names: . is a spot,&#160;: a two-spot, , is a tail and&#160;; is a hybrid. Newer INTERCAL compilers/interpreters have some new commands, such as COME FROM, and <a href="/wiki/Quantum_INTERCAL" title="Quantum INTERCAL">Quantum INTERCAL</a>, etc.
+</p>
+<div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" /><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Command_syntax"><span class="tocnumber">1</span> <span class="toctext">Command syntax</span></a></li>
+<li class="toclevel-1 tocsection-2"><a href="#Variables_and_Constants"><span class="tocnumber">2</span> <span class="toctext">Variables and Constants</span></a></li>
+<li class="toclevel-1 tocsection-3"><a href="#Expression_syntax"><span class="tocnumber">3</span> <span class="toctext">Expression syntax</span></a></li>
+<li class="toclevel-1 tocsection-4"><a href="#Computational_class"><span class="tocnumber">4</span> <span class="toctext">Computational class</span></a></li>
+<li class="toclevel-1 tocsection-5"><a href="#Modern_INTERCAL"><span class="tocnumber">5</span> <span class="toctext">Modern INTERCAL</span></a></li>
+<li class="toclevel-1 tocsection-6"><a href="#See_also"><span class="tocnumber">6</span> <span class="toctext">See also</span></a></li>
+<li class="toclevel-1 tocsection-7"><a href="#External_resources"><span class="tocnumber">7</span> <span class="toctext">External resources</span></a></li>
+</ul>
+</div>
+<h2><span class="mw-headline" id="Command_syntax">Command syntax</span></h2>
+<p>INTERCAL consists of a list of statements. Each statement is preceded by an optional line label (a number in brackets), followed by DO, PLEASE, or PLEASE DO. (Proposed extensions allow other statement identifiers such as MAYBE.) The politesse of a program's statement identifiers is checked to make sure it stays within certain limits (1/3 to 1/5 of the statements must be polite). DON'T, DO NOT, PLEASE DON'T, and PLEASE DO NOT (as well as some less elegant versions like PLEASEN'T) can be used to write a statement that has no effect unless REINSTATED. (If the statement is unlabeled and does not resemble an INTERCAL statement, it never has any effect at all; thus, PLEASE NOTE is a common way to start an INTERCAL comment (the extra E is a deliberate syntax error that makes the line impossible to REINSTATE)). An execution chance for a command can be given using the double-oh-seven operator, like this: <code>DO %50</code>. Syntax errors happen at run time, and only if the line containing them is executed.
+</p><p>INTERCAL-72 is the name given to the traditional version (i.e. the version with no extensions). A summary of INTERCAL-72 statements follows (DO could be PLEASE or PLEASE DO in any of these):
+</p>
+<pre>assignment statement (called CALCULATE, but that keyword is never used)
+   DO variable &lt;- expression
+STASH (push variables on their own stacks)
+   DO STASH variable + variable + ... + variable
+RETRIEVE (pop variables from their own stacks)
+   DO RETRIEVE variable + variable + ... + variable
+NEXT (jump to command, save return address on an 80-address stack)
+   DO (label) NEXT
+RESUME (pop &lt;expression&gt; return addresses, jump to the last one popped)
+   DO RESUME expression
+FORGET (pop &lt;expression&gt; return addresses and discard them)
+   DO FORGET expression
+ABSTAIN (don't execute the referenced line / lines)
+   DO ABSTAIN FROM (label)
+or DO ABSTAIN FROM something + something + ... + something
+(as in DO ABSTAIN FROM CALCULATING)
+REINSTATE (cancel out an ABSTAIN or DON'T)
+   DO REINSTATE (label)
+or DO REINSTATE something + something + ... + something
+IGNORE (make a variable read-only, silently ignoring writes)
+   DO IGNORE variable + variable + ... + variable
+REMEMBER (cancel out an IGNORE)
+   DO REMEMBER variable + variable + ... + variable
+WRITE IN (input, using digits spelled out as words)
+   DO WRITE IN variable
+READ OUT (output, in butchered Roman numerals)
+   DO READ OUT variable
+</pre>
+<p>C-INTERCAL also accepts keywords in Latin.
+</p>
+<h2><span class="mw-headline" id="Variables_and_Constants">Variables and Constants</span></h2>
+<p>INTERCAL has four types of variables:
+</p>
+<ul><li>The 16-bit unsigned integer, written with a spot (<tt>.</tt>) followed by a number</li>
+<li>The 32-bit unsigned integer, written with a two-spot (<tt>:</tt>) followed by a number</li>
+<li>The array of 16-bit unsigned integers, written with a tail (<tt>,</tt>) followed by a number</li>
+<li>The array of 32-bit unsigned integers, written with a hybrid (<tt>;</tt>) followed by a number</li></ul>
+<p>Variables do not have to be declared. An array can be dimensioned by assigning a number to it, and dereferenced using the SUB keyword (as in <code>,1 SUB .1</code>). Arrays are based at 1. Dimensioning an array clobbers its contents, and arrays must be STASHed or RETRIEVEd as a block.
+</p><p>Constants are written with a mesh (<tt>#</tt>) followed by a number. Only 16-bit unsigned constants are permitted; larger constants must be constructed using operators.
+</p>
+<h2><span class="mw-headline" id="Expression_syntax">Expression syntax</span></h2>
+<p>INTERCAL has five operators (not counting SUB). Symbols for the operators vary; the following symbols are the ASCII versions (INTERCAL was originally written for EBCDIC).
+</p>
+<ul><li><tt>~</tt> (binary, called select)<br />Only bits in the left operand corresponding to set bits in the right operand are used to affect the result, and these bits are justified towards the least significant and padded with zeros. For instance, <code>#12 ~ #5</code> (1100 and 101 in binary) is 10 (the 2<sup>2</sup> and 2<sup>0</sup> bits of #12). The return type of select is supposed to be 16 bits wide if there were fewer than 16 bits selected, and 32 bits wide otherwise. However, some compilers simply copy the type of the right-hand operand, so portable INTERCAL code should ensure it works in both cases.</li></ul>
+<ul><li><tt>$</tt> (binary, called mingle)<br />Bits are alternated from the left and right operands, with the least significant bit of the right operand becoming the least significant bit of the output. The return type is always 32 bits wide; an error results on overflow. (The sign for cent (¢: c, backspace, /) was used in EBCDIC; at least one modern compiler accepts a much wider range of currency symbols).</li>
+<li><tt>V</tt> (unary OR)</li>
+<li><tt>?</tt> (unary XOR; EBCDIC ∀: V, backspace, -)</li>
+<li><tt>&amp;</tt> (unary AND)<br />There are three unary logic operators. Each operates on consecutive bits of the input; the 2<sup>0</sup> and 2<sup>1</sup> bits give the 2<sup>0</sup> bit of the output, and so on. The most significant bit of the output, which is as wide as the input, is obtained by combining the most and least significant bits of the input with the appropriate logical operation.</li></ul>
+<p>The unary operators must be placed one character later than in normal programming languages (just after the punctuation mark identifying a variable, or just inside a grouped expression they apply to).
+</p><p>There is no operator precedence in INTERCAL; operators must be grouped by using sparks (<tt>'</tt>) and rabbit-ears (<tt>"</tt>). An appropriate grouping character must be chosen to avoid ambiguity.
+</p>
+<h2><span class="mw-headline" id="Computational_class">Computational class</span></h2>
+<p>INTERCAL-72 is <a href="/wiki/Turing-complete" title="Turing-complete">Turing-complete</a>, by <a href="/wiki/INTERCAL_Turing-completeness_proof" title="INTERCAL Turing-completeness proof">simulation of P&#8242;&#8242;</a>.
+</p>
+<h2><span class="mw-headline" id="Modern_INTERCAL">Modern INTERCAL</span></h2>
+<p>INTERCAL has been expanded over the years to add new features. The most notable of these is the COME FROM statement.
+</p>
+<pre>COME FROM (time-reversed GOTO)
+   DO COME FROM (label)
+</pre>
+<p>Whenever the line that the COME FROM refers to is executed, if control would transfer to the next line it instead transfers to the COME FROM statement, unless the COME FROM statement has been ABSTAINed FROM. An attempt to COME FROM a nonabstained NEXT will cause control of the program to go to the NEXT's target, as usual, but an attempt to RESUME the return address will transfer control to the COME FROM. Implementations differ as to what happens when two COME FROMs aim at the same line; the most interesting interpretation is to multithread <a href="/wiki/Brainfork" title="Brainfork">Brainfork</a>-style and transfer control to both.
+</p><p>Other modern extensions include support for different bases (<a href="/wiki/TriINTERCAL" title="TriINTERCAL">TriINTERCAL</a>), auto-abstaining lines (to synchronize multithread applications), binary I/O, a <a href="/wiki/Wimpmode" title="Wimpmode">wimpmode</a> (to input/output numbers as digits), and 64-bit numbers.
+</p>
+<h2><span class="mw-headline" id="See_also">See also</span></h2>
+<ul><li><a href="/wiki/C-INTERCAL" title="C-INTERCAL">C-INTERCAL</a></li>
+<li><a href="/wiki/CLC-INTERCAL" title="CLC-INTERCAL">CLC-INTERCAL</a></li>
+<li><a href="/wiki/CLCLC-INTERCAL" title="CLCLC-INTERCAL">CLCLC-INTERCAL</a></li>
+<li><a href="/wiki/POGA-INTERCAL" title="POGA-INTERCAL">POGA-INTERCAL</a></li>
+<li><a href="/wiki/Threaded_INTERCAL" title="Threaded INTERCAL">Threaded INTERCAL</a></li>
+<li><a href="/wiki/Backtracking_INTERCAL" title="Backtracking INTERCAL">Backtracking INTERCAL</a></li>
+<li><a href="/wiki/Quantum_INTERCAL" title="Quantum INTERCAL">Quantum INTERCAL</a></li>
+<li><a href="/wiki/TriINTERCAL" title="TriINTERCAL">TriINTERCAL</a></li>
+<li><a href="/wiki/OrthINTERCAL" title="OrthINTERCAL">OrthINTERCAL</a></li>
+<li><a href="/wiki/INTERCAL_Turing-completeness_proof" title="INTERCAL Turing-completeness proof">INTERCAL Turing-completeness proof</a></li>
+<li><a href="/wiki/%27interbasic" title="&#39;interbasic">'interbasic</a></li>
+<li><a href="/wiki/INTERCAL64" title="INTERCAL64">INTERCAL64</a></li></ul>
+<h2><span class="mw-headline" id="External_resources">External resources</span></h2>
+<ul><li><a rel="nofollow" class="external text" href="http://www.catb.org/~esr/intercal/">The INTERCAL Resources Page</a></li>
+<li><a rel="nofollow" class="external text" href="https://github.com/rottytooth/INTERCAL72">The source code for the original INTERCAL-72 implementation</a></li>
+<li><a rel="nofollow" class="external text" href="http://www.muppetlabs.com/~breadbox/intercal-man/">INTERCAL Revised Reference Manual</a></li>
+<li><a rel="nofollow" class="external text" href="http://www.muppetlabs.com/~breadbox/intercal/">INTERCAL Resources on the Web</a>, a comprehensive collection by <a href="/w/index.php?title=Brian_Raiter&amp;action=edit&amp;redlink=1" class="new" title="Brian Raiter (page does not exist)">Brian Raiter</a></li>
+<li><a rel="nofollow" class="external text" href="http://overload.intercal.org.uk/">intercal.org.uk download page</a>, including downloads for both the <a href="/wiki/CLC-INTERCAL" title="CLC-INTERCAL">CLC-INTERCAL</a> and <a href="/wiki/C-INTERCAL" title="C-INTERCAL">C-INTERCAL</a> compilers</li>
+<li><a rel="nofollow" class="external text" href="news:alt.lang.intercal">alt.lang.intercal newsgroup</a></li>
+<li><a rel="nofollow" class="external text" href="http://oerjan.nvg.org/esoteric/">INTERCAL implementation of Unlambda</a></li>
+<li><a rel="nofollow" class="external text" href="http://www.intercaloninterstates.org/">INTERCAL on Interstates</a>, a web framework</li>
+<li><a rel="nofollow" class="external text" href="https://github.com/qpliu/esolang/tree/master/intercal">INTERCAL-72 interpreter and compiler targeting LLVM</a></li></ul>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=INTERCAL&amp;oldid=199566">https://esolangs.org/w/index.php?title=INTERCAL&amp;oldid=199566</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Categories</a>: <ul><li><a href="/wiki/Category:Languages" title="Category:Languages">Languages</a></li><li><a href="/wiki/Category:Implemented" title="Category:Implemented">Implemented</a></li><li><a href="/wiki/Category:Low-level" title="Category:Low-level">Low-level</a></li><li><a href="/wiki/Category:Turing_complete" title="Category:Turing complete">Turing complete</a></li><li><a href="/wiki/Category:Before_1993" title="Category:Before 1993">Before 1993</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=INTERCAL" title="You are encouraged to create an account and log in; however, it is not mandatory"><span>Create account</span></a></li><li id="pt-login" class="mw-list-item"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=INTERCAL" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o"><span>Log in</span></a></li>
+		</ul>
+	</div>
+</nav>
+		<div id="left-navigation">
+<nav id="p-namespaces" class="mw-portlet mw-portlet-namespaces vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-namespaces-label"  >
+	<h3
+		id="p-namespaces-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Namespaces</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-nstab-main" class="selected mw-list-item"><a href="/wiki/INTERCAL" title="View the content page [c]" accesskey="c"><span>Page</span></a></li><li id="ca-talk" class="mw-list-item"><a href="/wiki/Talk:INTERCAL" rel="discussion" title="Discussion about the content page [t]" accesskey="t"><span>Discussion</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-variants" class="mw-portlet mw-portlet-variants emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-variants-label"  >
+	<input type="checkbox"
+		id="p-variants-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-variants-label"
+	>
+	<label
+		id="p-variants-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">English</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+		</div>
+		<div id="right-navigation">
+<nav id="p-views" class="mw-portlet mw-portlet-views vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-views-label"  >
+	<h3
+		id="p-views-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Views</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-view" class="selected mw-list-item"><a href="/wiki/INTERCAL"><span>Read</span></a></li><li id="ca-viewsource" class="mw-list-item"><a href="/w/index.php?title=INTERCAL&amp;action=edit" title="This page is protected.&#10;You can view its source [e]" accesskey="e"><span>View source</span></a></li><li id="ca-history" class="mw-list-item"><a href="/w/index.php?title=INTERCAL&amp;action=history" title="Past revisions of this page [h]" accesskey="h"><span>View history</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-cactions" class="mw-portlet mw-portlet-cactions emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-cactions-label"  title="More options" >
+	<input type="checkbox"
+		id="p-cactions-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-cactions-label"
+	>
+	<label
+		id="p-cactions-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">More</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+<div id="p-search" role="search" class="vector-search-box-vue  vector-search-box-show-thumbnail vector-search-box-auto-expand-width vector-search-box">
+	<h3 >Search</h3>
+	<form action="/w/index.php" id="searchform" class="vector-search-box-form">
+		<div id="simpleSearch"
+			class="vector-search-box-inner"
+			>
+			<input class="vector-search-box-input"
+				 type="search" name="search" placeholder="Search Esolang" aria-label="Search Esolang" autocapitalize="sentences" title="Search Esolang [f]" accesskey="f" id="searchInput"
+			>
+			<input type="hidden" name="title" value="Special:Search">
+			<input id="mw-searchButton"
+				 class="searchButton mw-fallbackSearchButton" type="submit" name="fulltext" title="Search the pages for this text" value="Search">
+			<input id="searchButton"
+				 class="searchButton" type="submit" name="go" title="Go to a page with this exact name if it exists" value="Go">
+		</div>
+	</form>
+</div>
+		</div>
+	</div>
+<div id="mw-panel" class="vector-legacy-sidebar">
+	<div id="p-logo" role="banner">
+		<a class="mw-wiki-logo" href="/wiki/Main_Page"
+			title="Visit the main page"></a>
+	</div>
+<nav id="p-navigation" class="mw-portlet mw-portlet-navigation vector-menu-portal portal vector-menu" aria-labelledby="p-navigation-label"  >
+	<h3
+		id="p-navigation-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Navigation</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="n-mainpage-description" class="mw-list-item"><a href="/wiki/Main_Page" title="Visit the main page [z]" accesskey="z"><span>Main page</span></a></li><li id="n-portal" class="mw-list-item"><a href="/wiki/Esolang:Community_portal" title="About the project, what you can do, where to find things"><span>Community portal</span></a></li><li id="n-Language-list" class="mw-list-item"><a href="/wiki/Language_list"><span>Language list</span></a></li><li id="n-Browse-by-category" class="mw-list-item"><a href="/wiki/Esolang:Categorization"><span>Browse by category</span></a></li><li id="n-recentchanges" class="mw-list-item"><a href="/wiki/Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r"><span>Recent changes</span></a></li><li id="n-randompage" class="mw-list-item"><a href="/wiki/Special:Random" title="Load a random page [x]" accesskey="x"><span>Random page</span></a></li><li id="n-help" class="mw-list-item"><a href="/wiki/Esolang:Help" title="The place to find out"><span>Help</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-tb" class="mw-portlet mw-portlet-tb vector-menu-portal portal vector-menu" aria-labelledby="p-tb-label"  >
+	<h3
+		id="p-tb-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="t-whatlinkshere" class="mw-list-item"><a href="/wiki/Special:WhatLinksHere/INTERCAL" title="A list of all wiki pages that link here [j]" accesskey="j"><span>What links here</span></a></li><li id="t-recentchangeslinked" class="mw-list-item"><a href="/wiki/Special:RecentChangesLinked/INTERCAL" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k"><span>Related changes</span></a></li><li id="t-specialpages" class="mw-list-item"><a href="/wiki/Special:SpecialPages" title="A list of all special pages [q]" accesskey="q"><span>Special pages</span></a></li><li id="t-print" class="mw-list-item"><a href="javascript:print();" rel="alternate" title="Printable version of this page [p]" accesskey="p"><span>Printable version</span></a></li><li id="t-permalink" class="mw-list-item"><a href="/w/index.php?title=INTERCAL&amp;oldid=199566" title="Permanent link to this revision of this page"><span>Permanent link</span></a></li><li id="t-info" class="mw-list-item"><a href="/w/index.php?title=INTERCAL&amp;action=info" title="More information about this page"><span>Page information</span></a></li>
+		</ul>
+	</div>
+</nav>
+</div>
+</div>
+<footer id="footer" class="mw-footer" >
+	<ul id="footer-info">
+	<li id="footer-info-lastmod"> This page was last edited on 20 October 2026, at 21:13.</li>
+	<li id="footer-info-copyright">Content is available under <a href="/wiki/Esolang:Copyrights" title="Esolang:Copyrights">CC0 public domain dedication</a>.</li>
+</ul>
+	<ul id="footer-places">
+	<li id="footer-places-about"><a href="/wiki/Esolang:About">About Esolang</a></li>
+	<li id="footer-places-disclaimers"><a href="/wiki/Esolang:General_disclaimer">Disclaimers</a></li>
+</ul>
+	<ul id="footer-icons" class="noprint">
+	<li id="footer-copyrightico"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/licenses/cc-0.png" alt="CC0 public domain dedication" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-poweredbyico"><a href="https://www.mediawiki.org/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-hostedbyico"><a href="https://www.bytemark.co.uk/r/esolangs" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/images/hosting_bytemark_88x31.png" srcset="/w/images/hosting_bytemark_132x47.png 1.5x, /w/images/hosting_bytemark_176x62.png 2x" alt="Hosting donated by Bytemark" width="88" height="31" loading="lazy"></a></li>
+</ul>
+</footer>
+</body>
+</html>

@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>HQ9+ - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-HQ9 rootpage-HQ9 skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">HQ9+</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"><span class="mw-redirectedfrom">(Redirected from <a href="/w/index.php?title=HQ9_Plus&amp;redirect=no" class="mw-redirect" title="HQ9 Plus">HQ9 Plus</a>)</span></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><p><b>HQ9+</b> is a joke language with four instructions:
+</p>
+<ul><li><b>H</b>: Print <a href="/wiki/Hello,_world!" title="Hello, world!">"hello, world"</a></li>
+<li><b>Q</b>: <a href="/wiki/Quine" title="Quine">Print the program's source code</a></li>
+<li><b>9</b>: Print the lyrics to <a href="/wiki/99_bottles_of_beer" title="99 bottles of beer">"99 Bottles of Beer"</a></li>
+<li><b>+</b>: Increment the accumulator</li></ul>
+<p>Although the language is not of serious interest by itself, it can be useful to implement HQ9+ in a new <a href="/wiki/Esoteric_programming_language" title="Esoteric programming language">esoteric programming language</a>, since doing so proves that all the tasks above, except the quine, are possible.  HQ9+ was created in 2001 by <a href="/wiki/Cliff_L._Biffle" title="Cliff L. Biffle">Cliff L. Biffle</a>.
+</p><p>Given that the original description of the language includes an example program containing a lowercase "q", it seems reasonable to assume that instructions in HQ9+ are case-insensitive.
+</p>
+<h2><span class="mw-headline" id="Implementations">Implementations</span></h2>
+<p>Hello from <a href="/wiki/User:Acidbytes.h" title="User:Acidbytes.h">User:acidbytes.h</a>! I made a D implementation of HQ9+.
+</p>
+<pre>import std.stdio;
+import std.file;
+void main(string[] args) {
+    string source = readText(args.length &gt; 1&#160;? args[1]&#160;: "hq9.d");
+    int accumulator = 0;
+    foreach (char c; source) {
+        if (c == 'H') writeln("Hello, world!");
+        else if (c == 'Q') writeln(source);
+        else if (c == '9') {
+            for (int i = 99; i &gt; 0; i--) {
+                writefln("%d bottles of beer on the wall, %d bottles of beer.", i, i);
+                writefln("Take one down and pass it around, %d bottles of beer on the wall.", i - 1);
+            }
+        }
+        else if (c == '+') accumulator ++;
+    }
+}
+</pre>
+<p><a href="/wiki/User:Earthrulerr" title="User:Earthrulerr">User:Earthrulerr</a> was here. I made a implementation in C++ with <a href="/wiki/User:Imcute" title="User:Imcute">User:imcute</a>!
+</p>
+<pre>
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;cstdlib&gt;
+#include &lt;ctime&gt;
+#ifdef _WIN32
+#include &lt;Windows.h&gt;
+#else
+#include &lt;unistd.h&gt;
+#endif
+using namespace std;
+int main() { 
+	system("clear");
+	cout &lt;&lt; "HQ9+ recreated in C++ by @earthrulerr and @imcute-aaaa" &lt;&lt; endl;
+	sleep(4);
+	system("clear");
+	string input;
+	int acc=0;
+  int loop = 1;
+  while (loop == 1) {
+	cin&gt;&gt;input;
+	if (input == "h"){
+	cout &lt;&lt; "Hello World" &lt;&lt; endl; 
+	}
+	else if(input == "q"){
+		cout&lt;&lt;"Q";
+	}
+	else if (input == "9"){
+		int bottle = 99;
+    	while (bottle &gt; 0){
+	    	cout &lt;&lt; bottle &lt;&lt; " bottles of beer on the wall,"
+	        &lt;&lt; bottle &lt;&lt; " bottles of beer." &lt;&lt; endl;
+	    	bottle--;
+	    	cout &lt;&lt; "Take one down and pass it around" &lt;&lt; bottle &lt;&lt; " " &lt;&lt; "bottles of beer on the wall./n" &lt;&lt; endl;
+	    	if (bottle == 1){
+	        break;
+	    	}
+	    }
+	    cout &lt;&lt; "1 bottle of beer on the wall, 1 bottle of bear." &lt;&lt; endl;
+	    cout &lt;&lt; "Take one down and pass it around, no more bottles of beer on the wall./n" &lt;&lt; endl;
+	    cout &lt;&lt; "No more bottles of beer on the wall, no more bottls of beer." &lt;&lt; endl;
+	    cout &lt;&lt; "Go to the store and buy some more, 99 bottles of beer on the wall.";
+    return 0;
+	}
+  else if(input == "+"){
+      cout &lt;&lt; ++acc &lt;&lt; endl; 
+    }
+   }
+}
+</pre>
+<p><a href="/wiki/User:Earthrulerr" title="User:Earthrulerr">User:Earthrulerr</a> created a Bash implementation too:
+</p>
+<pre>acc=0
+loop=1
+while [ $loop -eq 1 ]
+do
+    read -p "&gt; " input
+    if [ $input == "H" ]
+    then
+        echo "Hello World"
+    elif [ $input == "Q" ]
+    then
+        echo "q"
+    elif [ $input == "9" ]
+    then
+        bottle=99
+        while [ $bottle -gt 0 ]
+        do
+            echo "$bottle bottles of beer on the wall, $bottle bottles of beer."
+            bottle=$((bottle-1))
+            echo "Take one down and pass it around, $bottle bottles of beer on the wall."
+            if [ $bottle -eq 1 ]
+            then
+                break
+            fi
+        done
+        echo "1 bottle of beer on the wall, 1 bottle of bear."
+        echo "Take one down and pass it around, no more bottles of beer on the wall."
+        echo "No more bottles of beer on the wall, no more bottls of beer."
+        echo "Go to the store and buy some more, 99 bottles of beer on the wall."
+    elif [ $input == "+" ]
+    then
+        acc=$((acc+1))
+        echo "$acc"
+    fi
+done
+</pre>
+<p><a href="/w/index.php?title=User:A&amp;action=edit&amp;redlink=1" class="new" title="User:A (page does not exist)">User:A</a> was here and here is an implementation (in C):
+</p>
+<pre>#include &lt;stdio.h&gt;
+int main()
+{
+    unsigned long accumulator = 0;
+    char c[1000];
+    for(int i=0;;i++)
+    {
+        scanf("%c",&amp;c[i]);
+        if(c[i]=='\n') break;
+    }
+    for(int i=0;c[i]!='\0';i++)
+    {
+        if(c[i]=='H') printf("Hello, World!\n");
+        else if(c[i]=='Q') printf("%.*s", (int)sizeof c, c);
+        else if(c[i]=='9')
+        {
+                for(int j=99;j&gt;0;j--)
+                {
+                    printf("%d bottles of beer on the wall,\n%d bottles of beer.\n", j, j);
+                    printf("Take one down, pass it around,\n%d bottles of beer on the wall.\n", j-1);
+                }
+                printf("1 bottle of beer on the wall,\n1 bottle of beer.\nTake one down, pass it around,\nno more bottles of beer on the wall.\n");
+        }
+        else if(c[i]=='+') accumulator++;
+    }
+    return 0;
+}
+</pre>
+<p>Lanmonster fixed the Q instruction and added the + instruction. Qh4os fixed the 9 instruction. Chris Pressey also fixed the 9 instruction.
+</p><p>A python intepreter by <a href="/w/index.php?title=User:Esolanger12345&amp;action=edit&amp;redlink=1" class="new" title="User:Esolanger12345 (page does not exist)">User:Esolanger12345</a>:
+</p>
+<pre>accumulator=0
+cmds=input("&gt;&gt;&gt; ")
+for cmd in cmds:
+    if cmd.lower() == "h":
+        print("Hello, world!")
+    elif cmd.lower() == "q":
+        print(cmds)
+    elif cmd == "9":
+        for i in range(99, 2, -1):
+            print(str(i)+" bottles of beer on the wall, "+str(i)+" bottles of beer.\nTake one down, pass it around, "+str(i-1)+" bottles of beer on the wall.")
+        print("2 bottles of beer on the wall, 2 bottles of beer.\nTake one down, pass it around, 1 bottle of beer on the wall.")
+        print("1 bottle of beer on the wall, 1 bottle of beer.\nTake one down, pass it around, No bottles of beer on the wall.")
+        print("No bottles of beer on the wall, No bottles of beer.\nGo to the store, buy some more, 99 bottles of beer on the wall.")
+    elif cmd == "+":
+        accumulator+=1
+input()
+</pre>
+<p>An interpreter made by <a href="/wiki/User:Yes" title="User:Yes">User:Yes</a> in BASIC
+</p>
+<pre>10 PRINT "HQ9+ INTERPETER"
+20 LET A=0
+30 INPUT "&gt;&gt;&gt;";A$
+40 FOR X=1 TO LEN(A$)
+50 IF MID$(A$,X,1)="H" THEN PRINT "HELLO, WORLD!"
+60 IF MID$(A$,X,1)="Q" THEN PRINT A$
+70 IF MID$(A$,X,1)="9" THEN GOTO 110
+80 IF MID$(A$,X,1)="+" THEN LET A=A+1
+90 NEXT X
+100 END
+110 FOR B=99 TO 1 STEP -1
+120 PRINT B;" BOTTLES OF BEER ON THE WALL,":PRINT B;" BOTTLES OF BEER":PRINT "TAKE ONE DOWN,":PRINT "PASS IT AROUND":PRINT B-1;" BOTTLES OF BEER ON THE WALL"
+130 NEXT B
+140 PRINT "0 BOTTLES OF BEER ON THE WALL":PRINT "0 BOTTLES OF BEER": PRINT "GO TO THE STORE AND BUY SOME MORE,":PRINT "99 BOTTLES OF BEER ON THE WALL"
+150 GOTO 90
+</pre>
+<p>Note: This was made in an Applesoft BASIC interpeter here: <a rel="nofollow" class="external autonumber" href="https://www.calormen.com/jsbasic/">[1]</a>
+</p><p>An interpreter made by <a href="/w/index.php?title=User:Ohead&amp;action=edit&amp;redlink=1" class="new" title="User:Ohead (page does not exist)">User:Ohead</a> for Node.js. Programs are entered using the argument after the JS file.
+</p>
+<pre>function hq9(sourceCode) {
+	let sourceArray = sourceCode.split('');
+	let output = ``;
+	let accumulator = 0;
+	sourceArray.forEach(char=&gt;{
+		switch (char) {
+			case 'H':
+				output += 'hello, world\n';
+			break;
+			case 'Q':
+				output += sourceCode + '\n';
+			break;
+			case '9':
+				let plural = (val) =&gt; {
+					if (val == 1)
+						return ''
+					else
+						return 's';
+				};
+				for (let i = 99; i &gt; 0; i--) {
+					output += `${i} bottle${plural(i)} of beer on the wall, ${i} bottle${plural(i)} of beer
+	Take one down, pass it around ${i-1} bottle${plural(i-1)} of beer on the wall
+	`
+				};
+			break;
+			case '+':
+				accumulator++;
+			break;
+		};
+	});
+	return output;
+};
+console.log(hq9(process.argv[2]));
+</pre>
+<p>An interpreter in Java maded by PSTF and his 文心一言:
+</p>
+<pre>import java.util.HashMap;  
+import java.util.Map;  
+import java.util.Scanner;  
+public class HQ9PlusInterpreter {  
+    private static int counter = 0;  
+    private static Map&lt;String, Runnable&gt; commands = new HashMap&lt;&gt;();  
+    static {  
+        commands.put("H", () -&gt; System.out.println("Hello, world!"));  
+        commands.put("Q", () -&gt; System.out.println("Q"));  
+        commands.put("9", () -&gt; {   
+            String s = "s";
+            for (int beers=99; beers&gt;-1;){
+                System.out.print(beers + " bottle" + s + " of beer on the wall, ");
+                System.out.println(beers + " bottle" + s + " of beer, ");
+                if (beers==0){
+                    System.out.print("Go to the store, buy some more, ");
+                    System.out.println("99 bottles of beer on the wall.\n");
+                }
+                else{
+                    System.out.print("Take one down, pass it around, ");
+                    s = (--beers == 1)?"":"s";
+                    System.out.println(beers + " bottle" + s + " of beer on the wall.\n");
+                }
+            }
+        });  
+        commands.put("+", () -&gt; counter++);  
+    }  
+    public static void main(String[] args) {  
+        Scanner scanner = new Scanner(System.in);  
+        System.out.println("The HQ9+ interpreter by PrySigneToFry"); 
+        System.out.println("Enter HQ9+ commands (type 'exit' to quit):\n");  
+        while (true) {  
+            System.out.print("&gt; ");  
+            String command = scanner.nextLine();  
+            if (command.equalsIgnoreCase("exit")) {  
+                break;  
+            }  
+            Runnable action = commands.get(command);  
+            if (action&#160;!= null) {  
+                action.run();  
+            } else {  
+                System.out.println("Unknown command: " + command);  
+            }  
+            // Print the current counter value after each command (except for '9' which is too verbose)  
+            if (!command.equals("9")) {  
+                System.out.println("Counter: " + counter);  
+            }  
+        }  
+        scanner.close();  
+    }  
+}
+</pre>
+<p><a href="/wiki/User:MihaiEso" title="User:MihaiEso">User:MihaiEso</a> has a interpreter in Batch, based on the <a href="/wiki/FHC" title="FHC">FHC</a>'s interpreter:
+</p>
+<pre>@echo off
+title HQ9+ Interpreter
+:exe
+cls
+echo Type one of these characters (H, Q, 9, +) and we execute it...
+set /p fhc=
+if /i %fhc% EQU H goto hello
+if /i %fhc% EQU Q goto quine
+if /i %fhc% EQU 9 goto 99bottle
+if /i %fhc% EQU + goto plus
+cls
+echo Error! You chose a wrong character. Only these are accepted: H, Q, 9 and +
+pause &gt;nul
+goto exe
+:quine
+cls
+echo Q
+pause &gt;nul
+goto exe
+:hello
+cls
+echo Hello, world!
+pause &gt;nul
+goto exe
+:99bottle
+set x=99
+set /a y=%x%-1
+:loop
+echo %x% bottles of beer on the wall,
+echo %x% bottles of beer.
+echo Take one down, pass it around,
+echo %y% bottles of beer on the wall.
+echo.
+set /a x=%x%-1
+set /a y=%x%-1
+if %x% EQU 1 (
+echo 1 bottle of beer on the wall,
+echo 1 bottle of beer.
+echo Take one down, pass it around,
+echo No bottles of beer on the wall.
+pause &gt;nul
+goto exe
+)
+goto loop
+:plus
+set acc=%acc%+1
+goto exe
+</pre>
+<p>An interpreter by Python made by PSTF: 
+</p>
+<pre>class HQ9PlusInterpreter:  
+    def __init__(self):  
+        self.counter = 0  
+    def interpret(self, code):  
+        lines = code.split('\n') 
+        for line in lines:  
+            line = line.strip()  
+            if line == 'H':  
+                print("Hello, world!")  
+            elif line == 'Q':  
+                print(code)  
+            elif line == '9':  
+                for i in range(99, -1, -1):  
+                    print(i) # This command is simply print a number sequence count from 99 to 0.
+            elif line == '+':  
+                self.counter += 1  
+                print(f"Counter is now: {self.counter}")  
+            else:  
+                print(f"Unknown command: {line}")  
+# Example usage:  
+print("HQ9+ interpreter by PSTF")
+interpreter = HQ9PlusInterpreter() 
+while True: 
+    code = input("Enter the command: ")
+    if code == "exit":
+        print("Thank you for using!")
+        break
+    else:
+        interpreter.interpret(code)
+</pre>
+<p>Hey! <a href="/wiki/User:Cordership" title="User:Cordership">User:Cordership</a> here. Here's my Python intepreter:
+</p>
+<pre>n = input()
+acc = 0
+for x in n:
+    if x == "H":
+        print("Hello, World!")
+    elif x == "Q":
+        print(n)
+    elif x == "9":
+        t = []
+        for i in range(3, 100):
+            t.append(i)
+        for i in t[::-1]:
+            print(f"{i} bottles of beer on the wall\n{i} bottles of beer\nTake one down, pass it around\n{i - 1} bottles of beer on the wall\n")
+        print("2 bottles of beer on the wall\n2 bottles of beer\nTake one down, pass it around\n1 bottle of beer on the wall\n\n1 bottles of beer on the wall\n1 bottles of beer\nTake one down, pass it around\nNo bottles of beer on the wall\n\nNo bottles of beer on the wall\nNo bottles of beer\nGo to the store, buy some more\n99 bottles of beer on the wall")
+    elif x == "+":
+        acc += 1
+    else:
+        pass
+</pre>
+<p>im <a href="/wiki/User:Tommyaweosme" title="User:Tommyaweosme">user:tommyaweosme</a> heres my interpreter
+</p>
+<pre>&lt;script&gt;
+function run(){
+var code = document.getElementById("code").value.split("");
+var acc = 0;
+var output = "";
+var helloworld = "Hello, world!";
+var source = document.getElementById("code").value;
+var bottles = "99 bottles of beer on the wall, 99 bottles of beer.&lt;br&gt;Take one down and pass it around, 98 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;98 bottles of beer on the wall, 98 bottles of beer.&lt;br&gt;Take one down and pass it around, 97 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;97 bottles of beer on the wall, 97 bottles of beer.&lt;br&gt;Take one down and pass it around, 96 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;96 bottles of beer on the wall, 96 bottles of beer.&lt;br&gt;Take one down and pass it around, 95 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;95 bottles of beer on the wall, 95 bottles of beer.&lt;br&gt;Take one down and pass it around, 94 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;94 bottles of beer on the wall, 94 bottles of beer.&lt;br&gt;Take one down and pass it around, 93 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;93 bottles of beer on the wall, 93 bottles of beer.&lt;br&gt;Take one down and pass it around, 92 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;92 bottles of beer on the wall, 92 bottles of beer.&lt;br&gt;Take one down and pass it around, 91 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;91 bottles of beer on the wall, 91 bottles of beer.&lt;br&gt;Take one down and pass it around, 90 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;90 bottles of beer on the wall, 90 bottles of beer.&lt;br&gt;Take one down and pass it around, 89 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;89 bottles of beer on the wall, 89 bottles of beer.&lt;br&gt;Take one down and pass it around, 88 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;88 bottles of beer on the wall, 88 bottles of beer.&lt;br&gt;Take one down and pass it around, 87 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;87 bottles of beer on the wall, 87 bottles of beer.&lt;br&gt;Take one down and pass it around, 86 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;86 bottles of beer on the wall, 86 bottles of beer.&lt;br&gt;Take one down and pass it around, 85 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;85 bottles of beer on the wall, 85 bottles of beer.&lt;br&gt;Take one down and pass it around, 84 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;84 bottles of beer on the wall, 84 bottles of beer.&lt;br&gt;Take one down and pass it around, 83 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;83 bottles of beer on the wall, 83 bottles of beer.&lt;br&gt;Take one down and pass it around, 82 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;82 bottles of beer on the wall, 82 bottles of beer.&lt;br&gt;Take one down and pass it around, 81 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;81 bottles of beer on the wall, 81 bottles of beer.&lt;br&gt;Take one down and pass it around, 80 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;80 bottles of beer on the wall, 80 bottles of beer.&lt;br&gt;Take one down and pass it around, 79 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;79 bottles of beer on the wall, 79 bottles of beer.&lt;br&gt;Take one down and pass it around, 78 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;78 bottles of beer on the wall, 78 bottles of beer.&lt;br&gt;Take one down and pass it around, 77 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;77 bottles of beer on the wall, 77 bottles of beer.&lt;br&gt;Take one down and pass it around, 76 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;76 bottles of beer on the wall, 76 bottles of beer.&lt;br&gt;Take one down and pass it around, 75 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;75 bottles of beer on the wall, 75 bottles of beer.&lt;br&gt;Take one down and pass it around, 74 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;74 bottles of beer on the wall, 74 bottles of beer.&lt;br&gt;Take one down and pass it around, 73 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;73 bottles of beer on the wall, 73 bottles of beer.&lt;br&gt;Take one down and pass it around, 72 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;72 bottles of beer on the wall, 72 bottles of beer.&lt;br&gt;Take one down and pass it around, 71 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;71 bottles of beer on the wall, 71 bottles of beer.&lt;br&gt;Take one down and pass it around, 70 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;70 bottles of beer on the wall, 70 bottles of beer.&lt;br&gt;Take one down and pass it around, 69 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;69 bottles of beer on the wall, 69 bottles of beer.&lt;br&gt;Take one down and pass it around, 68 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;68 bottles of beer on the wall, 68 bottles of beer.&lt;br&gt;Take one down and pass it around, 67 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;67 bottles of beer on the wall, 67 bottles of beer.&lt;br&gt;Take one down and pass it around, 66 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;66 bottles of beer on the wall, 66 bottles of beer.&lt;br&gt;Take one down and pass it around, 65 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;65 bottles of beer on the wall, 65 bottles of beer.&lt;br&gt;Take one down and pass it around, 64 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;64 bottles of beer on the wall, 64 bottles of beer.&lt;br&gt;Take one down and pass it around, 63 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;63 bottles of beer on the wall, 63 bottles of beer.&lt;br&gt;Take one down and pass it around, 62 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;62 bottles of beer on the wall, 62 bottles of beer.&lt;br&gt;Take one down and pass it around, 61 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;61 bottles of beer on the wall, 61 bottles of beer.&lt;br&gt;Take one down and pass it around, 60 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;60 bottles of beer on the wall, 60 bottles of beer.&lt;br&gt;Take one down and pass it around, 59 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;59 bottles of beer on the wall, 59 bottles of beer.&lt;br&gt;Take one down and pass it around, 58 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;58 bottles of beer on the wall, 58 bottles of beer.&lt;br&gt;Take one down and pass it around, 57 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;57 bottles of beer on the wall, 57 bottles of beer.&lt;br&gt;Take one down and pass it around, 56 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;56 bottles of beer on the wall, 56 bottles of beer.&lt;br&gt;Take one down and pass it around, 55 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;55 bottles of beer on the wall, 55 bottles of beer.&lt;br&gt;Take one down and pass it around, 54 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;54 bottles of beer on the wall, 54 bottles of beer.&lt;br&gt;Take one down and pass it around, 53 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;53 bottles of beer on the wall, 53 bottles of beer.&lt;br&gt;Take one down and pass it around, 52 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;52 bottles of beer on the wall, 52 bottles of beer.&lt;br&gt;Take one down and pass it around, 51 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;51 bottles of beer on the wall, 51 bottles of beer.&lt;br&gt;Take one down and pass it around, 50 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;50 bottles of beer on the wall, 50 bottles of beer.&lt;br&gt;Take one down and pass it around, 49 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;49 bottles of beer on the wall, 49 bottles of beer.&lt;br&gt;Take one down and pass it around, 48 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;48 bottles of beer on the wall, 48 bottles of beer.&lt;br&gt;Take one down and pass it around, 47 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;47 bottles of beer on the wall, 47 bottles of beer.&lt;br&gt;Take one down and pass it around, 46 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;46 bottles of beer on the wall, 46 bottles of beer.&lt;br&gt;Take one down and pass it around, 45 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;45 bottles of beer on the wall, 45 bottles of beer.&lt;br&gt;Take one down and pass it around, 44 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;44 bottles of beer on the wall, 44 bottles of beer.&lt;br&gt;Take one down and pass it around, 43 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;43 bottles of beer on the wall, 43 bottles of beer.&lt;br&gt;Take one down and pass it around, 42 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;42 bottles of beer on the wall, 42 bottles of beer.&lt;br&gt;Take one down and pass it around, 41 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;41 bottles of beer on the wall, 41 bottles of beer.&lt;br&gt;Take one down and pass it around, 40 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;40 bottles of beer on the wall, 40 bottles of beer.&lt;br&gt;Take one down and pass it around, 39 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;39 bottles of beer on the wall, 39 bottles of beer.&lt;br&gt;Take one down and pass it around, 38 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;38 bottles of beer on the wall, 38 bottles of beer.&lt;br&gt;Take one down and pass it around, 37 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;37 bottles of beer on the wall, 37 bottles of beer.&lt;br&gt;Take one down and pass it around, 36 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;36 bottles of beer on the wall, 36 bottles of beer.&lt;br&gt;Take one down and pass it around, 35 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;35 bottles of beer on the wall, 35 bottles of beer.&lt;br&gt;Take one down and pass it around, 34 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;34 bottles of beer on the wall, 34 bottles of beer.&lt;br&gt;Take one down and pass it around, 33 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;33 bottles of beer on the wall, 33 bottles of beer.&lt;br&gt;Take one down and pass it around, 32 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;32 bottles of beer on the wall, 32 bottles of beer.&lt;br&gt;Take one down and pass it around, 31 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;31 bottles of beer on the wall, 31 bottles of beer.&lt;br&gt;Take one down and pass it around, 30 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;30 bottles of beer on the wall, 30 bottles of beer.&lt;br&gt;Take one down and pass it around, 29 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;29 bottles of beer on the wall, 29 bottles of beer.&lt;br&gt;Take one down and pass it around, 28 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;28 bottles of beer on the wall, 28 bottles of beer.&lt;br&gt;Take one down and pass it around, 27 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;27 bottles of beer on the wall, 27 bottles of beer.&lt;br&gt;Take one down and pass it around, 26 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;26 bottles of beer on the wall, 26 bottles of beer.&lt;br&gt;Take one down and pass it around, 25 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;25 bottles of beer on the wall, 25 bottles of beer.&lt;br&gt;Take one down and pass it around, 24 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;24 bottles of beer on the wall, 24 bottles of beer.&lt;br&gt;Take one down and pass it around, 23 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;23 bottles of beer on the wall, 23 bottles of beer.&lt;br&gt;Take one down and pass it around, 22 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;22 bottles of beer on the wall, 22 bottles of beer.&lt;br&gt;Take one down and pass it around, 21 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;21 bottles of beer on the wall, 21 bottles of beer.&lt;br&gt;Take one down and pass it around, 20 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;20 bottles of beer on the wall, 20 bottles of beer.&lt;br&gt;Take one down and pass it around, 19 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;19 bottles of beer on the wall, 19 bottles of beer.&lt;br&gt;Take one down and pass it around, 18 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;18 bottles of beer on the wall, 18 bottles of beer.&lt;br&gt;Take one down and pass it around, 17 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;17 bottles of beer on the wall, 17 bottles of beer.&lt;br&gt;Take one down and pass it around, 16 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;16 bottles of beer on the wall, 16 bottles of beer.&lt;br&gt;Take one down and pass it around, 15 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;15 bottles of beer on the wall, 15 bottles of beer.&lt;br&gt;Take one down and pass it around, 14 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;14 bottles of beer on the wall, 14 bottles of beer.&lt;br&gt;Take one down and pass it around, 13 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;13 bottles of beer on the wall, 13 bottles of beer.&lt;br&gt;Take one down and pass it around, 12 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;12 bottles of beer on the wall, 12 bottles of beer.&lt;br&gt;Take one down and pass it around, 11 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;11 bottles of beer on the wall, 11 bottles of beer.&lt;br&gt;Take one down and pass it around, 10 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;10 bottles of beer on the wall, 10 bottles of beer.&lt;br&gt;Take one down and pass it around, 9 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;9 bottles of beer on the wall, 9 bottles of beer.&lt;br&gt;Take one down and pass it around, 8 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;8 bottles of beer on the wall, 8 bottles of beer.&lt;br&gt;Take one down and pass it around, 7 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;7 bottles of beer on the wall, 7 bottles of beer.&lt;br&gt;Take one down and pass it around, 6 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;6 bottles of beer on the wall, 6 bottles of beer.&lt;br&gt;Take one down and pass it around, 5 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;5 bottles of beer on the wall, 5 bottles of beer.&lt;br&gt;Take one down and pass it around, 4 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;4 bottles of beer on the wall, 4 bottles of beer.&lt;br&gt;Take one down and pass it around, 3 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;3 bottles of beer on the wall, 3 bottles of beer.&lt;br&gt;Take one down and pass it around, 2 bottles of beer on the wall.&lt;br&gt;&lt;br&gt;2 bottles of beer on the wall, 2 bottles of beer.&lt;br&gt;Take one down and pass it around, 1 bottle of beer on the wall.&lt;br&gt;&lt;br&gt;1 bottle of beer on the wall, 1 bottle of beer.&lt;br&gt;Take one down and pass it around, no more bottles of beer on the wall.";
+for (let i of code){
+if (i == "h" || i == "H"){
+var output = output + helloworld;
+};
+if (i == "q" || i == "Q"){
+var output = output + source;
+};
+if (i == "9"){
+var output = output + bottles;
+};
+if (i == "+"){
+var acc = acc + 1;
+};
+};
+document.getElementById("output").innerHTML = output
+};
+&lt;/script&gt;
+&lt;h1&gt;HQ9+ Interpreter&lt;/h1&gt;
+&lt;p id="output"&gt;&lt;/p&gt;&lt;br&gt;
+&lt;input id="code"&gt;&lt;/input&gt;&lt;button onclick="run()"&gt;run&lt;/button&gt;</pre>
+<p>me <a href="/wiki/User:InLuaIKnow" title="User:InLuaIKnow">User:InLuaIKnow</a> my interpreter(Lua)
+</p>
+<pre>local accumulator = 0
+function loop()
+    local inp = io.read()
+    for i=1,#inp do
+        local l=inp:sub(i,i):lower()
+        if l=="h" then
+            print("Hello, world!")
+        elseif l=="q" then
+            print(inp)
+        elseif l=="9" then
+            for b=99,1,-1 do
+                local s= b&gt;1 and "s" or ""
+                print(b.." bottle"..s.." of beer on the wall,")
+                print(b.." bottle"..s.." of beer.")
+                print("Take one down and pass it around,")
+            end
+	    print("No more bottles of beer on the wall, no more bottles of beer.")
+	    print("Go to the store and buy some more, 99 bottles of beer on the wall.")
+        elseif l=="+" then
+            accumulator=accumulator+1
+        end
+    end
+    loop()
+end
+loop()
+</pre>
+<p><a href="/wiki/User:PrySigneToFry" title="User:PrySigneToFry">User:PrySigneToFry</a> is here again. I made a Rust interpreter for HQ9+ by my hands.
+</p>
+<pre>use std::env;
+use std::io::{self, Read};
+/// 生成 99 Bottles of Beer 歌词
+fn bottles_lyrics() -&gt; String {
+    let mut out = String::new();
+    for i in (1..=99).rev() {
+        let bottles = if i == 1 { "bottle" } else { "bottles" };
+        let next = i - 1;
+        let next_bottles = if next == 1 { "bottle" } else { "bottles" };
+        let next_word = if next &gt; 0 { next.to_string() } else { "no more".to_string() };
+        out.push_str(&amp;format!(
+            "{} {} of beer on the wall, {} {} of beer.\n\
+             Take one down and pass it around, {} {} of beer on the wall.\n",
+            i, bottles, i, bottles, next_word, next_bottles
+        ));
+        if i &gt; 1 {
+            out.push('\n');
+        }
+    }
+    out.push_str(
+        "No more bottles of beer on the wall, no more bottles of beer.\n\
+         Go to the store and buy some more, 99 bottles of beer on the wall.\n"
+    );
+    out
+}
+fn interpret(source: &amp;str) -&gt; String {
+    let mut counter = 0;
+    let mut output = String::new();
+    for ch in source.chars() {
+        match ch {
+            'H' =&gt; output.push_str("Hello, world!\n"),
+            'Q' =&gt; output.push_str(source),
+            '9' =&gt; output.push_str(&amp;bottles_lyrics()),
+            '+' =&gt; counter += 1,
+            _ =&gt; {} // 忽略其他字符
+        }
+    }
+    output
+}
+fn main() {
+    let source = if let Some(arg) = env::args().nth(1) {
+        arg
+    } else {
+        let mut buffer = String::new();
+        io::stdin().read_to_string(&amp;mut buffer).expect("Failed to read stdin");
+        buffer
+    };
+    let result = interpret(&amp;source);
+    if !result.is_empty() {
+        print!("{}", result);
+    }
+}
+</pre>
+<p>I also provide one in Ruby:
+</p>
+<pre>#!/usr/bin/env ruby
+def bottles_lyrics
+  lines = []
+  99.downto(1) do |i|
+    bottle = i == 1&#160;? 'bottle'&#160;: 'bottles'
+    next_num = i - 1
+    next_word = next_num &gt; 0&#160;? next_num.to_s&#160;: 'no more'
+    next_bottle = next_num == 1&#160;? 'bottle'&#160;: 'bottles'
+    lines &lt;&lt; "#{i} #{bottle} of beer on the wall, #{i} #{bottle} of beer."
+    lines &lt;&lt; "Take one down and pass it around, #{next_word} #{next_bottle} of beer on the wall."
+    lines &lt;&lt; '' if i &gt; 1
+  end
+  lines &lt;&lt; "No more bottles of beer on the wall, no more bottles of beer."
+  lines &lt;&lt; "Go to the store and buy some more, 99 bottles of beer on the wall."
+  lines.join("\n")
+end
+def interpret(source)
+  counter = 0
+  output = []
+  source.each_char do |ch|
+    case ch
+    when 'H' then output &lt;&lt; "Hello, world!"
+    when 'Q' then output &lt;&lt; source
+    when '9' then output &lt;&lt; bottles_lyrics
+    when '+' then counter += 1
+    end
+  end
+  output.join("\n")
+end
+source = ARGV[0] || $stdin.read
+result = interpret(source)
+puts result unless result.empty?
+</pre>
+<p>And also an APL interpreter:
+</p>
+<pre>∇ r ← HQ9P src
+    ⍝ 99 Bottles of Beer 歌词生成（辅助函数）
+    bottles ← {
+        ⍝ 构建每节歌词
+        verse ← {
+            i ← ⍵
+            bottle ← (i=1)⍴'bottle' ⋄ (i≠1)⍴'bottles'
+            next ← i-1
+            nextWord ← (next&gt;0)⍴⍕next ⋄ (next=0)⍴'no more'
+            nextBottle ← (next=1)⍴'bottle' ⋄ (next≠1)⍴'bottles'
+            (⍕i),' ',bottle,' of beer on the wall, ',(⍕i),' ',bottle,' of beer.',⎕UCS 10,
+            'Take one down and pass it around, ',nextWord,' ',nextBottle,' of beer on the wall.',⎕UCS 10,
+            (i&gt;1)/⎕UCS 10
+        }
+        ⍝ 连接所有小节 + 结尾
+        (∊verse¨⌽⍳99), 
+        'No more bottles of beer on the wall, no more bottles of beer.',⎕UCS 10,
+        'Go to the store and buy some more, 99 bottles of beer on the wall.',⎕UCS 10
+    }
+    ⍝ 主解释器
+    counter ← 0
+    out ← ''
+    :For ch :In src
+        :Select ch
+        :Case 'H' 
+            out ← out,'Hello, world!',⎕UCS 10
+        :Case 'Q' 
+            out ← out,src,⎕UCS 10
+        :Case '9' 
+            out ← out,bottles,⎕UCS 10
+        :Case '+' 
+            counter ← counter + 1
+        :EndSelect
+    :EndFor
+    r ← out
+∇
+HQ9P ⍞
+</pre>
+<p>And an R interpreter:
+</p>
+<pre>#!/usr/bin/env Rscript
+bottlesLyrics &lt;- function() {
+  lines &lt;- c()
+  for (i in 99:1) {
+    bottle &lt;- if (i == 1) "bottle" else "bottles"
+    next_num &lt;- i - 1
+    next_word &lt;- if (next_num &gt; 0) as.character(next_num) else "no more"
+    next_bottle &lt;- if (next_num == 1) "bottle" else "bottles"
+    lines &lt;- c(lines,
+               sprintf("%d %s of beer on the wall, %d %s of beer.", i, bottle, i, bottle),
+               sprintf("Take one down and pass it around, %s %s of beer on the wall.", next_word, next_bottle))
+    if (i &gt; 1) lines &lt;- c(lines, "")
+  }
+  lines &lt;- c(lines,
+             "No more bottles of beer on the wall, no more bottles of beer.",
+             "Go to the store and buy some more, 99 bottles of beer on the wall.")
+  paste(lines, collapse = "\n")
+}
+interpret &lt;- function(source) {
+  counter &lt;- 0
+  output &lt;- c()
+  chars &lt;- strsplit(source, "")[[1]]
+  for (ch in chars) {
+    if (ch == 'H') {
+      output &lt;- c(output, "Hello, world!")
+    } else if (ch == 'Q') {
+      output &lt;- c(output, source)
+    } else if (ch == '9') {
+      output &lt;- c(output, bottlesLyrics())
+    } else if (ch == '+') {
+      counter &lt;- counter + 1
+    }
+  }
+  paste(output, collapse = "\n")
+}
+# 主程序
+args &lt;- commandArgs(trailingOnly = TRUE)
+if (length(args) &gt; 0) {
+  source &lt;- paste(args, collapse = " ")
+} else {
+  source &lt;- readLines(file("stdin"), warn = FALSE)
+  source &lt;- paste(source, collapse = "\n")
+}
+result &lt;- interpret(source)
+if (nchar(result) &gt; 0) cat(result)
+</pre>
+<h2><span class="mw-headline" id="See_also">See also</span></h2>
+<ul><li><a href="/wiki/HQ9%2B%2B" title="HQ9++">HQ9++</a>, an <a href="/wiki/Object-oriented" class="mw-redirect" title="Object-oriented">object-oriented</a> extension of HQ9+.</li>
+<li><a href="/wiki/HQ9%2B-" title="HQ9+-">HQ9+-</a>, an extension of HQ9++ with the - operator for debugging purposes.</li>
+<li><a href="/wiki/HQ9%2B~" title="HQ9+~">HQ9+~</a>, an extension of HQ9+ which is <a href="/wiki/Turing-complete" title="Turing-complete">Turing-complete</a>.</li>
+<li><a href="/wiki/HQ9F%2B" title="HQ9F+">HQ9F+</a>, an extension of HQ9+ with the F operator for <a href="/wiki/FizzBuzz" title="FizzBuzz">FizzBuzz</a>.</li>
+<li><a href="/wiki/FHQ9%2B-" title="FHQ9+-">FHQ9+-</a>, an extension of HQ9+- with the F operator for <a href="/wiki/FizzBuzz" title="FizzBuzz">FizzBuzz</a>.</li>
+<li><a href="/wiki/CHIQRSX9%2B" title="CHIQRSX9+">CHIQRSX9+</a>, another HQ9+ extension supposedly Turing complete.</li>
+<li><a href="/wiki/HQ9%2BB" title="HQ9+B">HQ9+B</a>, an <a href="/wiki/%E2%84%92" title="ℒ">ℒ-complete</a> extension of HQ9+.</li>
+<li><a href="/wiki/HQ9%2B2D" title="HQ9+2D">HQ9+2D</a>, a 2-D extension of HQ9+.</li>
+<li><a href="/wiki/H9%2B" title="H9+">H9+</a>, with one fewer instruction but still capable of all of the tasks.</li>
+<li><a href="/wiki/FISHQ9%2B" title="FISHQ9+">FISHQ9+</a>, HQ9+ and deadfish combined.</li>
+<li><a href="/wiki/HI9%2B" title="HI9+">HI9+</a>, which replaces Q with an instruction that prints the interpreter's source code.</li>
+<li><a href="/wiki/%2B" title="+">+</a>, where there is only +, and other characters are ignored.</li>
+<li><a href="/wiki/Hq9eFuck" title="Hq9eFuck">Hq9eFuck</a>, HQ9+, brainfuck and Deep Thought combined.</li>
+<li><a href="/wiki/BrainfisHQ9%2B" title="BrainfisHQ9+">BrainfisHQ9+</a>, HQ9+, brainfuck and deadfish combined.</li>
+<li><a href="/wiki/ACHEQUEUENINETHOUSANDPLUS" title="ACHEQUEUENINETHOUSANDPLUS">ACHEQUEUENINETHOUSANDPLUS</a>, a more <b>powerful</b> derivative.</li>
+<li><a href="/wiki/AHQ9%2B-" title="AHQ9+-">AHQ9+-</a>, a derivative where the accumulator actually has a use. but</li>
+<li><a href="/wiki/HQ9~" title="HQ9~">HQ9~</a> or HQ9Tilde, an extension of HQ9+ with a lot of new functions.</li>
+<li><a href="/wiki/Smasnug" title="Smasnug">Smasnug</a> HQ9+ but good.</li>
+<li><a href="/wiki/%F0%9F%95%B3%EF%B8%8FQ9%2B" title="🕳️Q9+">🕳️Q9+</a>, HQ9+ and <a href="/wiki/%F0%9F%95%B3%EF%B8%8F" title="🕳️">🕳️</a> combined.</li>
+<li><a href="/wiki/Smasnug_%F0%9F%95%B3%EF%B8%8FABrainFIsHCHIHqFRSI9efuck%2B-~B2D" title="Smasnug 🕳️ABrainFIsHCHIHqFRSI9efuck+-~B2D">Smasnug 🕳️ABrainFIsHCHIHqFRSI9efuck+-~B2D</a> is a combined version of all the above esolang</li>
+<li><a href="/wiki/A%3Dab%3Dbc%3Dcd%3Dd!" title="A=ab=bc=cd=d!">a=ab=bc=cd=d!</a>, an HQ9+-style esolang for creating HQ9+-style esolangs</li>
+<li><a href="/wiki/Manuever" title="Manuever">Manuever</a>, a more powerful (and weirder) derivative of HQ9+</li></ul>
+<h2><span class="mw-headline" id="External_resources">External resources</span></h2>
+<ul><li><a rel="nofollow" class="external text" href="https://web.archive.org/web/20090602074545/http://www.cliff.biffle.org/esoterica/hq9plus.html">HQ9+ home page</a> <i>(from the <a href="https://en.wikipedia.org/wiki/Wayback_Machine" class="extiw" title="wikipedia:Wayback Machine">Wayback Machine</a>; retrieved on 2 June 2009)</i></li>
+<li><a rel="nofollow" class="external text" href="http://hackage.haskell.org/package/acme-hq9plus-0.1">HQ9+ as an embedded language in Haskell</a></li>
+<li><a rel="nofollow" class="external text" href="https://web.archive.org/web/20060423042223/https://safalra.com/programming/interpreters/hq9plus/">Online HQ9+ interpreter in JavaScript</a> <i>(from the <a href="https://en.wikipedia.org/wiki/Wayback_Machine" class="extiw" title="wikipedia:Wayback Machine">Wayback Machine</a>; retrieved on 23 April 2006)</i></li>
+<li><a rel="nofollow" class="external text" href="https://almnet.de/esolang/hq9plus.php">Online HQ9+ interpreter realized with PHP</a></li>
+<li><a rel="nofollow" class="external text" href="http://github.com/mmphosis/hq9/blob/53ebcabe31894c5667d7c696ddf01acd5cf3e740/hq9.c">HQ9+ interpreter in C</a> by <a href="/wiki/User:Mmphosis" title="User:Mmphosis">User:mmphosis</a></li>
+<li><a rel="nofollow" class="external text" href="http://www.fileupyours.com/files/309784/HQ9%2B.pas">HQ9+ interpreter in Pascal</a> by <a href="/w/index.php?title=User:GrandKeyboard&amp;action=edit&amp;redlink=1" class="new" title="User:GrandKeyboard (page does not exist)">User:GrandKeyboard</a> <i>(<a href="/wiki/Template:Deadlink" title="Template:Deadlink">dead link</a>)</i></li>
+<li><a rel="nofollow" class="external text" href="http://bschmalhofer.github.com/hq9plus/">hq9plus</a> - HQ9P implementation for <a rel="nofollow" class="external text" href="https://www.parrot.org/">Parrot</a></li>
+<li><a rel="nofollow" class="external text" href="https://github.com/timleg002/HQ9interpreter">HQ9+ Interpreter</a> - HQ9+ interpreter written in Kotlin by <a href="/wiki/User:Timleg002" title="User:Timleg002">User:Timleg002</a></li></ul>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=HQ9%2B&amp;oldid=197022">https://esolangs.org/w/index.php?title=HQ9%2B&amp;oldid=197022</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Categories</a>: <ul><li><a href="/wiki/Category:Joke_languages" title="Category:Joke languages">Joke languages</a></li><li><a href="/wiki/Category:Unusable_for_programming" title="Category:Unusable for programming">Unusable for programming</a></li><li><a href="/wiki/Category:Languages" title="Category:Languages">Languages</a></li><li><a href="/wiki/Category:Output_only" title="Category:Output only">Output only</a></li><li><a href="/wiki/Category:Implemented" title="Category:Implemented">Implemented</a></li><li><a href="/wiki/Category:High-level" title="Category:High-level">High-level</a></li><li><a href="/wiki/Category:2001" title="Category:2001">2001</a></li><li><a href="/wiki/Category:Total" title="Category:Total">Total</a></li><li><a href="/wiki/Category:Accumulator-based" title="Category:Accumulator-based">Accumulator-based</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=HQ9%2B" title="You are encouraged to create an account and log in; however, it is not mandatory"><span>Create account</span></a></li><li id="pt-login" class="mw-list-item"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=HQ9%2B" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o"><span>Log in</span></a></li>
+		</ul>
+	</div>
+</nav>
+		<div id="left-navigation">
+<nav id="p-namespaces" class="mw-portlet mw-portlet-namespaces vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-namespaces-label"  >
+	<h3
+		id="p-namespaces-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Namespaces</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-nstab-main" class="selected mw-list-item"><a href="/wiki/HQ9%2B" title="View the content page [c]" accesskey="c"><span>Page</span></a></li><li id="ca-talk" class="mw-list-item"><a href="/wiki/Talk:HQ9%2B" rel="discussion" title="Discussion about the content page [t]" accesskey="t"><span>Discussion</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-variants" class="mw-portlet mw-portlet-variants emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-variants-label"  >
+	<input type="checkbox"
+		id="p-variants-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-variants-label"
+	>
+	<label
+		id="p-variants-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">English</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+		</div>
+		<div id="right-navigation">
+<nav id="p-views" class="mw-portlet mw-portlet-views vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-views-label"  >
+	<h3
+		id="p-views-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Views</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-view" class="selected mw-list-item"><a href="/wiki/HQ9%2B"><span>Read</span></a></li><li id="ca-viewsource" class="mw-list-item"><a href="/w/index.php?title=HQ9%2B&amp;action=edit" title="This page is protected.&#10;You can view its source [e]" accesskey="e"><span>View source</span></a></li><li id="ca-history" class="mw-list-item"><a href="/w/index.php?title=HQ9%2B&amp;action=history" title="Past revisions of this page [h]" accesskey="h"><span>View history</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-cactions" class="mw-portlet mw-portlet-cactions emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-cactions-label"  title="More options" >
+	<input type="checkbox"
+		id="p-cactions-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-cactions-label"
+	>
+	<label
+		id="p-cactions-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">More</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+<div id="p-search" role="search" class="vector-search-box-vue  vector-search-box-show-thumbnail vector-search-box-auto-expand-width vector-search-box">
+	<h3 >Search</h3>
+	<form action="/w/index.php" id="searchform" class="vector-search-box-form">
+		<div id="simpleSearch"
+			class="vector-search-box-inner"
+			>
+			<input class="vector-search-box-input"
+				 type="search" name="search" placeholder="Search Esolang" aria-label="Search Esolang" autocapitalize="sentences" title="Search Esolang [f]" accesskey="f" id="searchInput"
+			>
+			<input type="hidden" name="title" value="Special:Search">
+			<input id="mw-searchButton"
+				 class="searchButton mw-fallbackSearchButton" type="submit" name="fulltext" title="Search the pages for this text" value="Search">
+			<input id="searchButton"
+				 class="searchButton" type="submit" name="go" title="Go to a page with this exact name if it exists" value="Go">
+		</div>
+	</form>
+</div>
+		</div>
+	</div>
+<div id="mw-panel" class="vector-legacy-sidebar">
+	<div id="p-logo" role="banner">
+		<a class="mw-wiki-logo" href="/wiki/Main_Page"
+			title="Visit the main page"></a>
+	</div>
+<nav id="p-navigation" class="mw-portlet mw-portlet-navigation vector-menu-portal portal vector-menu" aria-labelledby="p-navigation-label"  >
+	<h3
+		id="p-navigation-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Navigation</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="n-mainpage-description" class="mw-list-item"><a href="/wiki/Main_Page" title="Visit the main page [z]" accesskey="z"><span>Main page</span></a></li><li id="n-portal" class="mw-list-item"><a href="/wiki/Esolang:Community_portal" title="About the project, what you can do, where to find things"><span>Community portal</span></a></li><li id="n-Language-list" class="mw-list-item"><a href="/wiki/Language_list"><span>Language list</span></a></li><li id="n-Browse-by-category" class="mw-list-item"><a href="/wiki/Esolang:Categorization"><span>Browse by category</span></a></li><li id="n-recentchanges" class="mw-list-item"><a href="/wiki/Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r"><span>Recent changes</span></a></li><li id="n-randompage" class="mw-list-item"><a href="/wiki/Special:Random" title="Load a random page [x]" accesskey="x"><span>Random page</span></a></li><li id="n-help" class="mw-list-item"><a href="/wiki/Esolang:Help" title="The place to find out"><span>Help</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-tb" class="mw-portlet mw-portlet-tb vector-menu-portal portal vector-menu" aria-labelledby="p-tb-label"  >
+	<h3
+		id="p-tb-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="t-whatlinkshere" class="mw-list-item"><a href="/wiki/Special:WhatLinksHere/HQ9%2B" title="A list of all wiki pages that link here [j]" accesskey="j"><span>What links here</span></a></li><li id="t-recentchangeslinked" class="mw-list-item"><a href="/wiki/Special:RecentChangesLinked/HQ9%2B" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k"><span>Related changes</span></a></li><li id="t-specialpages" class="mw-list-item"><a href="/wiki/Special:SpecialPages" title="A list of all special pages [q]" accesskey="q"><span>Special pages</span></a></li><li id="t-print" class="mw-list-item"><a href="javascript:print();" rel="alternate" title="Printable version of this page [p]" accesskey="p"><span>Printable version</span></a></li><li id="t-permalink" class="mw-list-item"><a href="/w/index.php?title=HQ9%2B&amp;oldid=197022" title="Permanent link to this revision of this page"><span>Permanent link</span></a></li><li id="t-info" class="mw-list-item"><a href="/w/index.php?title=HQ9%2B&amp;action=info" title="More information about this page"><span>Page information</span></a></li>
+		</ul>
+	</div>
+</nav>
+</div>
+</div>
+<footer id="footer" class="mw-footer" >
+	<ul id="footer-info">
+	<li id="footer-info-lastmod"> This page was last edited on 3 October 2026, at 05:52.</li>
+	<li id="footer-info-copyright">Content is available under <a href="/wiki/Esolang:Copyrights" title="Esolang:Copyrights">CC0 public domain dedication</a>.</li>
+</ul>
+	<ul id="footer-places">
+	<li id="footer-places-about"><a href="/wiki/Esolang:About">About Esolang</a></li>
+	<li id="footer-places-disclaimers"><a href="/wiki/Esolang:General_disclaimer">Disclaimers</a></li>
+</ul>
+	<ul id="footer-icons" class="noprint">
+	<li id="footer-copyrightico"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/licenses/cc-0.png" alt="CC0 public domain dedication" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-poweredbyico"><a href="https://www.mediawiki.org/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-hostedbyico"><a href="https://www.bytemark.co.uk/r/esolangs" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/images/hosting_bytemark_88x31.png" srcset="/w/images/hosting_bytemark_132x47.png 1.5x, /w/images/hosting_bytemark_176x62.png 2x" alt="Hosting donated by Bytemark" width="88" height="31" loading="lazy"></a></li>
+</ul>
+</footer>
+</body>
+</html>

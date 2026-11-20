@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { FetchImpl } from '@forkling/mind/src/web/fetch.ts'
 import { describe, expect, it } from 'vitest'
-import { recordWebSnapshot } from '../src/snapshot/record.ts'
+import { NEVER_READ, recordWebSnapshot } from '../src/snapshot/record.ts'
 import { readSourceList } from '../src/sources/list.ts'
 import { checkSnapshotFormat, SnapshotManifest } from '../src/sources/snapshot.ts'
 import { RISING_TOPICS, weekBefore } from '@forkling/mind/src/web/sources/records.ts'
@@ -123,6 +123,21 @@ describe('recording the web snapshot', () => {
   it('asks the addresses the planted tests need, and keeps a real 404 as a 404', async () => {
     const { manifest } = await record()
     expect(manifest.entries.find((e) => e.url === 'https://en.wikipedia.org/wiki/Drake_Hotline_Bling')).toMatchObject({ status: 404 })
+  })
+
+  it('never reads the pages the planted test counts as snapshot misses, even when a page links to them', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'qa-snap-'))
+    const base = fakeWeb()
+    const web = (async (url: string, init?: RequestInit) => {
+      const u = new URL(url)
+      if (u.hostname === 'en.wikipedia.org' && u.pathname === '/wiki/Lighthouse')
+        return new Response(`<html><head><title>T</title></head><body><div id="mw-content-text"><p>${'Words. '.repeat(60)}</p><a href="/wiki/Procopius">Procopius</a></div></body></html>`, { status: 200, headers: { 'content-type': 'text/html' } })
+      return base(url, init as never)
+    }) as FetchImpl
+    const asked: string[] = []
+    await recordWebSnapshot({ dir, list: readSourceList(), fetchImpl: (async (url: string, init: never) => (asked.push(url), web(url, init))) as FetchImpl, sleep: async () => undefined, engine: 'abc', now: () => new Date('2026-11-19T12:00:00Z') })
+    expect(asked).toContain('https://en.wikipedia.org/wiki/Lighthouse')
+    for (const url of NEVER_READ) expect(asked.filter((a) => a.includes(new URL(url).pathname.split('/').pop()!))).toEqual([])
   })
 
   it('reads every morning starting point, and goes two steps from the pages read', async () => {

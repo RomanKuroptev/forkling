@@ -1,0 +1,103 @@
+<p align="center">
+  <img src="docs/images/foldglass-banner.png" alt="FoldGlass: open your foldable through frosted glass" width="100%">
+</p>
+
+<h1 align="center">FoldGlass</h1>
+
+<p align="center">
+  <b>Every time you open your foldable, the half that swings turns to frosted glass, then clears as it lands flat.</b><br>
+  For Android flip and fold phones. Over any app. No root. Completely offline.
+</p>
+
+<p align="center">
+  <a href="../../releases/latest"><img alt="Download" src="https://img.shields.io/badge/Download-APK-5CC8FF?style=for-the-badge&logo=android&logoColor=white"></a>
+  <img alt="Android 13+" src="https://img.shields.io/badge/Android-13%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white">
+  <img alt="No internet permission" src="https://img.shields.io/badge/Internet-none-B58CFF?style=for-the-badge">
+  <img alt="MIT" src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge">
+</p>
+
+---
+
+## ✨ What it does
+
+Your phone's fold animation is a plain cut from one screen to the other. FoldGlass turns it into a moment:
+
+| | |
+|---|---|
+| 🧊 **The cover frosts over** | The instant the lid starts to lift, the cover screen frosts like a window in winter, while it's still facing you. |
+| 🪟 **The swing turns to glass** | When the big screen lights mid-swing, the half that's moving is a sheet of frosted glass, softest at the far edge. |
+| 💧 **It clears as it lands** | As the phone flattens, the frost melts away into your live screen. The half in your hand stays sharp the whole time. |
+| 🔁 **Closing does it in reverse** | The top half frosts up as it comes down, and the cover lights up frosted and settles into focus. |
+
+<p align="center">
+  <img src="docs/images/foldglass-demo.gif" alt="FoldGlass frost clearing" width="300">
+  &nbsp;&nbsp;
+  <img src="docs/images/fg_frost.png" alt="Frosted" width="250">
+  &nbsp;&nbsp;
+  <img src="docs/images/fg_sharp.png" alt="Clear" width="250">
+</p>
+
+### Why it feels real
+- **It isn't a blur filter, it's optics.** A custom GPU shader (`fold_glass.agsl`) traces every pixel through a tilted sheet of frosted glass hinged on your fold line. The higher the glass lifts, the softer and darker the picture behind it gets.
+- **It follows your actual hinge.** It reads the hinge sensor, learns how fast *you* fold, and uses the gyroscope in the lid to react before the hinge sensor even reports.
+- **It plays over any app.** It runs as an Android accessibility service, so it works wherever you are: home screen, YouTube, WhatsApp, anywhere.
+
+---
+
+## 📱 Works on
+
+| Phone | Status |
+|---|---|
+| **Samsung Galaxy Z Flip 5** | ✅ Built and tested on it |
+| Galaxy Z Flip 3 / 4 / 6 / 7, Motorola Razr | 🟡 Same layout (separate cover screen, horizontal hinge). Should work, not tested yet. |
+| Galaxy Z Fold, Pixel Fold and other book-style folds | 🟡 Supported in the code (vertical hinge, both halves frost, single-screen switching), not tested yet |
+
+Tried it on another foldable? [Open an issue](../../issues/new) to say how it went. A screen recording helps a lot!
+
+---
+
+## 🚀 Get started (one minute)
+
+1. **Download** `FoldGlass-<version>.apk` from [**Releases**](../../releases/latest) and install it. Allow *Install unknown apps* for your browser if asked.
+2. Open **FoldGlass** and tap **Allow** next to *Turn on "FoldGlass" in Accessibility*.
+3. In **Settings → Accessibility → Installed apps → FoldGlass**, switch it **on**.
+4. Close your phone and open it again. ✨
+
+There's also **Preview here**, to try the effect without folding, and a simpler "fog" version if you'd rather not use accessibility.
+
+---
+
+## 🔒 Privacy
+
+- **No internet permission at all.** FoldGlass physically can't send anything anywhere.
+- **Screenshots stay in memory.** It keeps one screenshot of each screen in memory to draw the glass. They are never saved, never shared, and dropped after 15 minutes.
+- **Nothing shows on your lock screen.** It never paints a picture of your main screen over the lock screen.
+- **It can't read anything.** The accessibility service reads **no** text, no notifications and nothing you type (see [`unfold_accessibility.xml`](app/src/main/res/xml/unfold_accessibility.xml)).
+
+---
+
+## 🛠️ Build it yourself
+
+You need JDK 17 and the Android SDK (platform 35).
+
+```bash
+./gradlew assembleDebug
+# → app/build/outputs/apk/debug/app-debug.apk
+```
+
+## 💜 Credits
+
+The frosted-glass fold idea comes from the "iPhone Duo" foldable concept videos. FoldGlass brings it to real Android phones. It also owes a lot to **[Duo Open](https://github.com/marcoazeem/duo-open)** by marcoazeem, which showed that a system-wide version was possible. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+FoldGlass is an independent project. It is not affiliated with Apple, Samsung, Google or Motorola.
+
+## 🌟 More from me
+
+- **[FlexWriter](https://github.com/jaspreet9kaur/flexwriter):** a lamp-lit typewriter for Flex Mode.
+- **[FlipDrop](https://github.com/jaspreet9kaur/flipdrop):** flick a photo up and watch it land on your PC.
+
+<p align="center"><b>If FoldGlass made you smile when you opened your phone, give it a ⭐. It really helps!</b></p>
+
+---
+
+MIT © jaspreet9kaur

@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>XKCD Random Number - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-XKCD_Random_Number rootpage-XKCD_Random_Number skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">XKCD Random Number</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><dl><dd><span class="dablink"><i>Not to be confused with <a href="/wiki/Random_number_generator" title="Random number generator">Random number generator</a>.</i></span></dd></dl>
+<p><b>XKCD Random Number</b> is a challenge that requires you to rewrite the program in <a rel="nofollow" class="external text" href="https://xkcd.com/221">XKCD's 221st page</a> in another language, as either a function or a full program that prints the return value. You may comment your program just like XKCD did, if possible.
+</p><p>In other words, this program simply outputs 4, and corresponds to the <a href="/wiki/Constant_language" title="Constant language">constant language</a> <code>ConstantLanguage("4")</code>, one of the variants of <a href="/wiki/6" title="6">6</a>.
+</p>
+<div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" /><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Implementations"><span class="tocnumber">1</span> <span class="toctext">Implementations</span></a>
+<ul>
+<li class="toclevel-2 tocsection-2"><a href="#!!Awe!!"><span class="tocnumber">1.1</span> <span class="toctext">!!Awe!!</span></a></li>
+<li class="toclevel-2 tocsection-3"><a href="#!!brainfeed"><span class="tocnumber">1.2</span> <span class="toctext">!!brainfeed</span></a></li>
+<li class="toclevel-2 tocsection-4"><a href="#!!Fuck"><span class="tocnumber">1.3</span> <span class="toctext">!!Fuck</span></a></li>
+<li class="toclevel-2 tocsection-5"><a href="#!@#$%^&amp;*()_+"><span class="tocnumber">1.4</span> <span class="toctext">!@#$%^&amp;*()_+</span></a>
+<ul>
+<li class="toclevel-3 tocsection-6"><a href="#Alternative"><span class="tocnumber">1.4.1</span> <span class="toctext">Alternative</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-7"><a href="#!4warning"><span class="tocnumber">1.5</span> <span class="toctext">!4warning</span></a></li>
+<li class="toclevel-2 tocsection-8"><a href="#$!"><span class="tocnumber">1.6</span> <span class="toctext">$!</span></a></li>
+<li class="toclevel-2 tocsection-9"><a href="#$+-?"><span class="tocnumber">1.7</span> <span class="toctext">$+-?</span></a></li>
+<li class="toclevel-2 tocsection-10"><a href="#+"><span class="tocnumber">1.8</span> <span class="toctext">+</span></a></li>
+<li class="toclevel-2 tocsection-11"><a href="#+++"><span class="tocnumber">1.9</span> <span class="toctext">+++</span></a></li>
+<li class="toclevel-2 tocsection-12"><a href="#1"><span class="tocnumber">1.10</span> <span class="toctext">1</span></a></li>
+<li class="toclevel-2 tocsection-13"><a href="#1_+_i"><span class="tocnumber">1.11</span> <span class="toctext">1 + i</span></a></li>
+<li class="toclevel-2 tocsection-14"><a href="#100BF"><span class="tocnumber">1.12</span> <span class="toctext">100BF</span></a>
+<ul>
+<li class="toclevel-3 tocsection-15"><a href="#Shorter"><span class="tocnumber">1.12.1</span> <span class="toctext">Shorter</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-16"><a href="#14/41"><span class="tocnumber">1.13</span> <span class="toctext">14/41</span></a></li>
+<li class="toclevel-2 tocsection-17"><a href="#17"><span class="tocnumber">1.14</span> <span class="toctext">17</span></a></li>
+<li class="toclevel-2 tocsection-18"><a href="#22"><span class="tocnumber">1.15</span> <span class="toctext">22</span></a></li>
+<li class="toclevel-2 tocsection-19"><a href="#2DWays"><span class="tocnumber">1.16</span> <span class="toctext">2DWays</span></a></li>
+<li class="toclevel-2 tocsection-20"><a href="#3_Bits,_3_Bytes"><span class="tocnumber">1.17</span> <span class="toctext">3 Bits, 3 Bytes</span></a></li>
+<li class="toclevel-2 tocsection-21"><a href="#4"><span class="tocnumber">1.18</span> <span class="toctext">4</span></a></li>
+<li class="toclevel-2 tocsection-22"><a href="#8xn"><span class="tocnumber">1.19</span> <span class="toctext">8xn</span></a></li>
+<li class="toclevel-2 tocsection-23"><a href="#99"><span class="tocnumber">1.20</span> <span class="toctext"><i>99</i></span></a></li>
+<li class="toclevel-2 tocsection-24"><a href="#="><span class="tocnumber">1.21</span> <span class="toctext">=</span></a></li>
+<li class="toclevel-2 tocsection-25"><a href="#&gt;&lt;x&gt;/&gt;&lt;x±∔&gt;"><span class="tocnumber">1.22</span> <span class="toctext">&gt;&lt;x&gt;/&gt;&lt;x±∔&gt;</span></a>
+<ul>
+<li class="toclevel-3 tocsection-26"><a href="#&gt;&lt;x±∔&gt;_only"><span class="tocnumber">1.22.1</span> <span class="toctext">&gt;&lt;x±∔&gt; only</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-27"><a href="#&gt;|&lt;&gt;|&lt;"><span class="tocnumber">1.23</span> <span class="toctext">&gt;|&lt;&gt;|&lt;</span></a></li>
+<li class="toclevel-2 tocsection-28"><a href="#&#39;&#39;&#39;구&#39;&#39;&#39;"><span class="tocnumber">1.24</span> <span class="toctext">'''구'''</span></a></li>
+<li class="toclevel-2 tocsection-29"><a href="#！中文"><span class="tocnumber">1.25</span> <span class="toctext">！中文</span></a></li>
+<li class="toclevel-2 tocsection-30"><a href="#大香蕉"><span class="tocnumber">1.26</span> <span class="toctext">大香蕉</span></a></li>
+<li class="toclevel-2 tocsection-31"><a href="#脑操"><span class="tocnumber">1.27</span> <span class="toctext">脑操</span></a></li>
+<li class="toclevel-2 tocsection-32"><a href="#硕鼠"><span class="tocnumber">1.28</span> <span class="toctext">硕鼠</span></a></li>
+<li class="toclevel-2 tocsection-33"><a href="#?Q?"><span class="tocnumber">1.29</span> <span class="toctext">?Q?</span></a></li>
+<li class="toclevel-2 tocsection-34"><a href="#AEAV"><span class="tocnumber">1.30</span> <span class="toctext">AEAV</span></a></li>
+<li class="toclevel-2 tocsection-35"><a href="#Aheui"><span class="tocnumber">1.31</span> <span class="toctext">Aheui</span></a></li>
+<li class="toclevel-2 tocsection-36"><a href="#Amtu"><span class="tocnumber">1.32</span> <span class="toctext">Amtu</span></a></li>
+<li class="toclevel-2 tocsection-37"><a href="#Arithmetic"><span class="tocnumber">1.33</span> <span class="toctext">Arithmetic</span></a></li>
+<li class="toclevel-2 tocsection-38"><a href="#AuFI"><span class="tocnumber">1.34</span> <span class="toctext">AuFI</span></a></li>
+<li class="toclevel-2 tocsection-39"><a href="#Batch"><span class="tocnumber">1.35</span> <span class="toctext">Batch</span></a>
+<ul>
+<li class="toclevel-3 tocsection-40"><a href="#Alternative_2"><span class="tocnumber">1.35.1</span> <span class="toctext">Alternative</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-41"><a href="#BASE"><span class="tocnumber">1.36</span> <span class="toctext">BASE</span></a></li>
+<li class="toclevel-2 tocsection-42"><a href="#Beatnik"><span class="tocnumber">1.37</span> <span class="toctext">Beatnik</span></a></li>
+<li class="toclevel-2 tocsection-43"><a href="#Befunge"><span class="tocnumber">1.38</span> <span class="toctext">Befunge</span></a></li>
+<li class="toclevel-2 tocsection-44"><a href="#Bespoke"><span class="tocnumber">1.39</span> <span class="toctext">Bespoke</span></a></li>
+<li class="toclevel-2 tocsection-45"><a href="#BinaryLanguage"><span class="tocnumber">1.40</span> <span class="toctext">BinaryLanguage</span></a></li>
+<li class="toclevel-2 tocsection-46"><a href="#BracketOnly"><span class="tocnumber">1.41</span> <span class="toctext">BracketOnly</span></a></li>
+<li class="toclevel-2 tocsection-47"><a href="#Braincopter"><span class="tocnumber">1.42</span> <span class="toctext">Braincopter</span></a></li>
+<li class="toclevel-2 tocsection-48"><a href="#Brain-Flak"><span class="tocnumber">1.43</span> <span class="toctext">Brain-Flak</span></a></li>
+<li class="toclevel-2 tocsection-49"><a href="#Brainfuck"><span class="tocnumber">1.44</span> <span class="toctext">Brainfuck</span></a></li>
+<li class="toclevel-2 tocsection-50"><a href="#brainfuck_2"><span class="tocnumber">1.45</span> <span class="toctext"><strike>brain</strike>fuck</span></a></li>
+<li class="toclevel-2 tocsection-51"><a href="#Brainfuck_extended"><span class="tocnumber">1.46</span> <span class="toctext">Brainfuck extended</span></a>
+<ul>
+<li class="toclevel-3 tocsection-52"><a href="#Alternative_3"><span class="tocnumber">1.46.1</span> <span class="toctext">Alternative</span></a></li>
+<li class="toclevel-3 tocsection-53"><a href="#Alternative_that_doesn&#39;t_use_any_numbers_at_all"><span class="tocnumber">1.46.2</span> <span class="toctext">Alternative that doesn't use any numbers at all</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-54"><a href="#Brainloller"><span class="tocnumber">1.47</span> <span class="toctext">Brainloller</span></a></li>
+<li class="toclevel-2 tocsection-55"><a href="#C"><span class="tocnumber">1.48</span> <span class="toctext">C</span></a></li>
+<li class="toclevel-2 tocsection-56"><a href="#C#"><span class="tocnumber">1.49</span> <span class="toctext">C#</span></a></li>
+<li class="toclevel-2 tocsection-57"><a href="#Caca"><span class="tocnumber">1.50</span> <span class="toctext">Caca</span></a></li>
+<li class="toclevel-2 tocsection-58"><a href="#Cardinal"><span class="tocnumber">1.51</span> <span class="toctext">Cardinal</span></a></li>
+<li class="toclevel-2 tocsection-59"><a href="#¢%"><span class="tocnumber">1.52</span> <span class="toctext">¢%</span></a></li>
+<li class="toclevel-2 tocsection-60"><a href="#Color_Dialog"><span class="tocnumber">1.53</span> <span class="toctext">Color Dialog</span></a></li>
+<li class="toclevel-2 tocsection-61"><a href="#Consequential"><span class="tocnumber">1.54</span> <span class="toctext">Consequential</span></a></li>
+<li class="toclevel-2 tocsection-62"><a href="#Cood"><span class="tocnumber">1.55</span> <span class="toctext">Cood</span></a></li>
+<li class="toclevel-2 tocsection-63"><a href="#Deadchicken"><span class="tocnumber">1.56</span> <span class="toctext">Deadchicken</span></a></li>
+<li class="toclevel-2 tocsection-64"><a href="#Deadfish"><span class="tocnumber">1.57</span> <span class="toctext">Deadfish</span></a>
+<ul>
+<li class="toclevel-3 tocsection-65"><a href="#Smaller_one"><span class="tocnumber">1.57.1</span> <span class="toctext">Smaller one</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-66"><a href="#Deadfish_but_in_english"><span class="tocnumber">1.58</span> <span class="toctext">Deadfish but in english</span></a></li>
+<li class="toclevel-2 tocsection-67"><a href="#dirac"><span class="tocnumber">1.59</span> <span class="toctext">dirac</span></a></li>
+<li class="toclevel-2 tocsection-68"><a href="#Divmeq"><span class="tocnumber">1.60</span> <span class="toctext">Divmeq</span></a></li>
+<li class="toclevel-2 tocsection-69"><a href="#Drive-In_Window"><span class="tocnumber">1.61</span> <span class="toctext">Drive-In Window</span></a></li>
+<li class="toclevel-2 tocsection-70"><a href="#Emo"><span class="tocnumber">1.62</span> <span class="toctext">Emo</span></a></li>
+<li class="toclevel-2 tocsection-71"><a href="#EmojiLang"><span class="tocnumber">1.63</span> <span class="toctext">EmojiLang</span></a></li>
+<li class="toclevel-2 tocsection-72"><a href="#Empty"><span class="tocnumber">1.64</span> <span class="toctext">Empty</span></a></li>
+<li class="toclevel-2 tocsection-73"><a href="#enGLish"><span class="tocnumber">1.65</span> <span class="toctext">enGLish</span></a>
+<ul>
+<li class="toclevel-3 tocsection-74"><a href="#Alternative_4"><span class="tocnumber">1.65.1</span> <span class="toctext">Alternative</span></a>
+<ul>
+<li class="toclevel-4 tocsection-75"><a href="#Alternative_5"><span class="tocnumber">1.65.1.1</span> <span class="toctext">Alternative</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-76"><a href="#Enjamb"><span class="tocnumber">1.66</span> <span class="toctext">Enjamb</span></a></li>
+<li class="toclevel-2 tocsection-77"><a href="#ESC!"><span class="tocnumber">1.67</span> <span class="toctext"><i>ESC!</i></span></a></li>
+<li class="toclevel-2 tocsection-78"><a href="#Eso2D"><span class="tocnumber">1.68</span> <span class="toctext">Eso2D</span></a></li>
+<li class="toclevel-2 tocsection-79"><a href="#Esolangs.org"><span class="tocnumber">1.69</span> <span class="toctext">Esolangs.org</span></a></li>
+<li class="toclevel-2 tocsection-80"><a href="#ETC"><span class="tocnumber">1.70</span> <span class="toctext">ETC</span></a></li>
+<li class="toclevel-2 tocsection-81"><a href="#ExampleFuck"><span class="tocnumber">1.71</span> <span class="toctext">ExampleFuck</span></a></li>
+<li class="toclevel-2 tocsection-82"><a href="#F!--"><span class="tocnumber">1.72</span> <span class="toctext">F!--</span></a></li>
+<li class="toclevel-2 tocsection-83"><a href="#Factor"><span class="tocnumber">1.73</span> <span class="toctext">Factor</span></a></li>
+<li class="toclevel-2 tocsection-84"><a href="#FALSE"><span class="tocnumber">1.74</span> <span class="toctext">FALSE</span></a></li>
+<li class="toclevel-2 tocsection-85"><a href="#Feedfish"><span class="tocnumber">1.75</span> <span class="toctext">Feedfish</span></a></li>
+<li class="toclevel-2 tocsection-86"><a href="#Fish"><span class="tocnumber">1.76</span> <span class="toctext">Fish</span></a></li>
+<li class="toclevel-2 tocsection-87"><a href="#Fish_Code"><span class="tocnumber">1.77</span> <span class="toctext">Fish Code</span></a></li>
+<li class="toclevel-2 tocsection-88"><a href="#flag"><span class="tocnumber">1.78</span> <span class="toctext">flag</span></a></li>
+<li class="toclevel-2 tocsection-89"><a href="#Free2Edit"><span class="tocnumber">1.79</span> <span class="toctext">Free2Edit</span></a></li>
+<li class="toclevel-2 tocsection-90"><a href="#G#"><span class="tocnumber">1.80</span> <span class="toctext">G#</span></a></li>
+<li class="toclevel-2 tocsection-91"><a href="#Gift"><span class="tocnumber">1.81</span> <span class="toctext">Gift</span></a></li>
+<li class="toclevel-2 tocsection-92"><a href="#Goldfuck"><span class="tocnumber">1.82</span> <span class="toctext">Goldfuck</span></a></li>
+<li class="toclevel-2 tocsection-93"><a href="#☭"><span class="tocnumber">1.83</span> <span class="toctext">☭</span></a></li>
+<li class="toclevel-2 tocsection-94"><a href="#Hardfish"><span class="tocnumber">1.84</span> <span class="toctext">Hardfish</span></a></li>
+<li class="toclevel-2 tocsection-95"><a href="#H+Q9"><span class="tocnumber">1.85</span> <span class="toctext">H+Q9</span></a></li>
+<li class="toclevel-2 tocsection-96"><a href="#Hats"><span class="tocnumber">1.86</span> <span class="toctext">Hats</span></a></li>
+<li class="toclevel-2 tocsection-97"><a href="#Hexagony"><span class="tocnumber">1.87</span> <span class="toctext">Hexagony</span></a></li>
+<li class="toclevel-2 tocsection-98"><a href="#Hexdump"><span class="tocnumber">1.88</span> <span class="toctext">Hexdump</span></a></li>
+<li class="toclevel-2 tocsection-99"><a href="#How_dare_you_fuck_the_brain"><span class="tocnumber">1.89</span> <span class="toctext">How dare you fuck the brain</span></a></li>
+<li class="toclevel-2 tocsection-100"><a href="#Ichi"><span class="tocnumber">1.90</span> <span class="toctext">Ichi</span></a></li>
+<li class="toclevel-2 tocsection-101"><a href="#INT"><span class="tocnumber">1.91</span> <span class="toctext">INT</span></a></li>
+<li class="toclevel-2 tocsection-102"><a href="#ISEW2C"><span class="tocnumber">1.92</span> <span class="toctext">ISEW2C</span></a></li>
+<li class="toclevel-2 tocsection-103"><a href="#JavaScript"><span class="tocnumber">1.93</span> <span class="toctext">JavaScript</span></a></li>
+<li class="toclevel-2 tocsection-104"><a href="#Jormungandr"><span class="tocnumber">1.94</span> <span class="toctext">Jormungandr</span></a></li>
+<li class="toclevel-2 tocsection-105"><a href="#JSFuck"><span class="tocnumber">1.95</span> <span class="toctext">JSFuck</span></a></li>
+<li class="toclevel-2 tocsection-106"><a href="#Labyrinth"><span class="tocnumber">1.96</span> <span class="toctext">Labyrinth</span></a></li>
+<li class="toclevel-2 tocsection-107"><a href="#Length"><span class="tocnumber">1.97</span> <span class="toctext">Length</span></a></li>
+<li class="toclevel-2 tocsection-108"><a href="#Letterfuck"><span class="tocnumber">1.98</span> <span class="toctext">Letterfuck</span></a></li>
+<li class="toclevel-2 tocsection-109"><a href="#LogicGates"><span class="tocnumber">1.99</span> <span class="toctext">LogicGates</span></a>
+<ul>
+<li class="toclevel-3 tocsection-110"><a href="#Unary"><span class="tocnumber">1.99.1</span> <span class="toctext">Unary</span></a></li>
+<li class="toclevel-3 tocsection-111"><a href="#Binary"><span class="tocnumber">1.99.2</span> <span class="toctext">Binary</span></a></li>
+<li class="toclevel-3 tocsection-112"><a href="#Decimal"><span class="tocnumber">1.99.3</span> <span class="toctext">Decimal</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-113"><a href="#LongJump"><span class="tocnumber">1.100</span> <span class="toctext">LongJump</span></a></li>
+<li class="toclevel-2 tocsection-114"><a href="#Look!"><span class="tocnumber">1.101</span> <span class="toctext">Look!</span></a></li>
+<li class="toclevel-2 tocsection-115"><a href="#MarioLANG"><span class="tocnumber">1.102</span> <span class="toctext">MarioLANG</span></a></li>
+<li class="toclevel-2 tocsection-116"><a href="#MEMORYLEEK"><span class="tocnumber">1.103</span> <span class="toctext">MEMORYLEEK</span></a></li>
+<li class="toclevel-2 tocsection-117"><a href="#MoreMathRPN"><span class="tocnumber">1.104</span> <span class="toctext">MoreMathRPN</span></a></li>
+<li class="toclevel-2 tocsection-118"><a href="#morse_code"><span class="tocnumber">1.105</span> <span class="toctext">morse code</span></a></li>
+<li class="toclevel-2 tocsection-119"><a href="#Multiplicity"><span class="tocnumber">1.106</span> <span class="toctext">Multiplicity</span></a></li>
+<li class="toclevel-2 tocsection-120"><a href="#NeverGonna"><span class="tocnumber">1.107</span> <span class="toctext">NeverGonna</span></a></li>
+<li class="toclevel-2 tocsection-121"><a href="#NS!"><span class="tocnumber">1.108</span> <span class="toctext">NS!</span></a></li>
+<li class="toclevel-2 tocsection-122"><a href="#Nulla"><span class="tocnumber">1.109</span> <span class="toctext">Nulla</span></a></li>
+<li class="toclevel-2 tocsection-123"><a href="#Odasjoi"><span class="tocnumber">1.110</span> <span class="toctext">Odasjoi</span></a></li>
+<li class="toclevel-2 tocsection-124"><a href="#OMD"><span class="tocnumber">1.111</span> <span class="toctext">OMD</span></a></li>
+<li class="toclevel-2 tocsection-125"><a href="#oOo_CODE"><span class="tocnumber">1.112</span> <span class="toctext">oOo CODE</span></a></li>
+<li class="toclevel-2 tocsection-126"><a href="#Output"><span class="tocnumber">1.113</span> <span class="toctext">Output</span></a></li>
+<li class="toclevel-2 tocsection-127"><a href="#pgmpiet"><span class="tocnumber">1.114</span> <span class="toctext">pgmpiet</span></a></li>
+<li class="toclevel-2 tocsection-128"><a href="#Piet"><span class="tocnumber">1.115</span> <span class="toctext">Piet</span></a></li>
+<li class="toclevel-2 tocsection-129"><a href="#Piet++"><span class="tocnumber">1.116</span> <span class="toctext">Piet++</span></a></li>
+<li class="toclevel-2 tocsection-130"><a href="#PlusIntMinus"><span class="tocnumber">1.117</span> <span class="toctext">PlusIntMinus</span></a></li>
+<li class="toclevel-2 tocsection-131"><a href="#PlusOrMinus"><span class="tocnumber">1.118</span> <span class="toctext">PlusOrMinus</span></a></li>
+<li class="toclevel-2 tocsection-132"><a href="#PocketFuck"><span class="tocnumber">1.119</span> <span class="toctext">PocketFuck</span></a></li>
+<li class="toclevel-2 tocsection-133"><a href="#Poetic"><span class="tocnumber">1.120</span> <span class="toctext">Poetic</span></a></li>
+<li class="toclevel-2 tocsection-134"><a href="#Polynomix"><span class="tocnumber">1.121</span> <span class="toctext">Polynomix</span></a></li>
+<li class="toclevel-2 tocsection-135"><a href="#PopFuck"><span class="tocnumber">1.122</span> <span class="toctext">PopFuck</span></a></li>
+<li class="toclevel-2 tocsection-136"><a href="#Prompt"><span class="tocnumber">1.123</span> <span class="toctext">Prompt</span></a></li>
+<li class="toclevel-2 tocsection-137"><a href="#PTotE"><span class="tocnumber">1.124</span> <span class="toctext">PTotE</span></a></li>
+<li class="toclevel-2 tocsection-138"><a href="#Python_3"><span class="tocnumber">1.125</span> <span class="toctext">Python 3</span></a>
+<ul>
+<li class="toclevel-3 tocsection-139"><a href="#Alternatives"><span class="tocnumber">1.125.1</span> <span class="toctext">Alternatives</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-140"><a href="#Rec"><span class="tocnumber">1.126</span> <span class="toctext">Rec</span></a></li>
+<li class="toclevel-2 tocsection-141"><a href="#Record"><span class="tocnumber">1.127</span> <span class="toctext">Record</span></a></li>
+<li class="toclevel-2 tocsection-142"><a href="#Reflecto"><span class="tocnumber">1.128</span> <span class="toctext">Reflecto</span></a></li>
+<li class="toclevel-2 tocsection-143"><a href="#Remove_Line_Numbers"><span class="tocnumber">1.129</span> <span class="toctext">Remove Line Numbers</span></a></li>
+<li class="toclevel-2 tocsection-144"><a href="#Rockstar"><span class="tocnumber">1.130</span> <span class="toctext">Rockstar</span></a></li>
+<li class="toclevel-2 tocsection-145"><a href="#Ropy"><span class="tocnumber">1.131</span> <span class="toctext">Ropy</span></a></li>
+<li class="toclevel-2 tocsection-146"><a href="#Ruckfish"><span class="tocnumber">1.132</span> <span class="toctext">Ruckfish</span></a></li>
+<li class="toclevel-2 tocsection-147"><a href="#SDOTOS"><span class="tocnumber">1.133</span> <span class="toctext">SDOTOS</span></a></li>
+<li class="toclevel-2 tocsection-148"><a href="#Sakana"><span class="tocnumber">1.134</span> <span class="toctext">Sakana</span></a></li>
+<li class="toclevel-2 tocsection-149"><a href="#Setlang"><span class="tocnumber">1.135</span> <span class="toctext">Setlang</span></a></li>
+<li class="toclevel-2 tocsection-150"><a href="#Self-modifying_Brainfuck"><span class="tocnumber">1.136</span> <span class="toctext">Self-modifying Brainfuck</span></a></li>
+<li class="toclevel-2 tocsection-151"><a href="#Shinda_Sakana"><span class="tocnumber">1.137</span> <span class="toctext">Shinda Sakana</span></a></li>
+<li class="toclevel-2 tocsection-152"><a href="#Simon_says_brainfuck"><span class="tocnumber">1.138</span> <span class="toctext">Simon says brainfuck</span></a></li>
+<li class="toclevel-2 tocsection-153"><a href="#Slam"><span class="tocnumber">1.139</span> <span class="toctext">Slam</span></a></li>
+<li class="toclevel-2 tocsection-154"><a href="#SletScript"><span class="tocnumber">1.140</span> <span class="toctext">SletScript</span></a></li>
+<li class="toclevel-2 tocsection-155"><a href="#Sokolang"><span class="tocnumber">1.141</span> <span class="toctext">Sokolang</span></a></li>
+<li class="toclevel-2 tocsection-156"><a href="#Standard_modern_vernacular"><span class="tocnumber">1.142</span> <span class="toctext">Standard modern vernacular</span></a></li>
+<li class="toclevel-2 tocsection-157"><a href="#Staples"><span class="tocnumber">1.143</span> <span class="toctext">Staples</span></a></li>
+<li class="toclevel-2 tocsection-158"><a href="#Stars"><span class="tocnumber">1.144</span> <span class="toctext">Stars</span></a></li>
+<li class="toclevel-2 tocsection-159"><a href="#StegFuck"><span class="tocnumber">1.145</span> <span class="toctext">StegFuck</span></a></li>
+<li class="toclevel-2 tocsection-160"><a href="#TernLSB"><span class="tocnumber">1.146</span> <span class="toctext">TernLSB</span></a></li>
+<li class="toclevel-2 tocsection-161"><a href="#TESTLANG"><span class="tocnumber">1.147</span> <span class="toctext">TESTLANG</span></a>
+<ul>
+<li class="toclevel-3 tocsection-162"><a href="#Same_thing_but_without_numbers"><span class="tocnumber">1.147.1</span> <span class="toctext">Same thing but without numbers</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-163"><a href="#Text"><span class="tocnumber">1.148</span> <span class="toctext">Text</span></a></li>
+<li class="toclevel-2 tocsection-164"><a href="#This_esolang_is_a_brainfuck_derivative"><span class="tocnumber">1.149</span> <span class="toctext">This esolang is a brainfuck derivative</span></a></li>
+<li class="toclevel-2 tocsection-165"><a href="#This_esolang_is_not_a_push-down_automata"><span class="tocnumber">1.150</span> <span class="toctext">This esolang is not a push-down automata</span></a></li>
+<li class="toclevel-2 tocsection-166"><a href="#Three_Star_Programmer"><span class="tocnumber">1.151</span> <span class="toctext">Three Star Programmer</span></a></li>
+<li class="toclevel-2 tocsection-167"><a href="#Tile"><span class="tocnumber">1.152</span> <span class="toctext">Tile</span></a></li>
+<li class="toclevel-2 tocsection-168"><a href="#tommyaweosme&#39;s_harmonica"><span class="tocnumber">1.153</span> <span class="toctext">tommyaweosme's harmonica</span></a></li>
+<li class="toclevel-2 tocsection-169"><a href="#Trampolines"><span class="tocnumber">1.154</span> <span class="toctext">Trampolines</span></a></li>
+<li class="toclevel-2 tocsection-170"><a href="#Trɪ̯maxion"><span class="tocnumber">1.155</span> <span class="toctext">Trɪ̯maxion</span></a></li>
+<li class="toclevel-2 tocsection-171"><a href="#‍true"><span class="tocnumber">1.156</span> <span class="toctext">‍true</span></a></li>
+<li class="toclevel-2 tocsection-172"><a href="#Txet"><span class="tocnumber">1.157</span> <span class="toctext">Txet</span></a></li>
+<li class="toclevel-2 tocsection-173"><a href="#Typeid"><span class="tocnumber">1.158</span> <span class="toctext">Typeid</span></a></li>
+<li class="toclevel-2 tocsection-174"><a href="#UnnumericJS"><span class="tocnumber">1.159</span> <span class="toctext">UnnumericJS</span></a></li>
+<li class="toclevel-2 tocsection-175"><a href="#Vines"><span class="tocnumber">1.160</span> <span class="toctext">Vines</span></a></li>
+<li class="toclevel-2 tocsection-176"><a href="#Weeeeeeeeeeeeeeeeeeeeeeeeeeeeee"><span class="tocnumber">1.161</span> <span class="toctext">Weeeeeeeeeeeeeeeeeeeeeeeeeeeeee</span></a></li>
+<li class="toclevel-2 tocsection-177"><a href="#WeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeBasic"><span class="tocnumber">1.162</span> <span class="toctext">WeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeBasic</span></a></li>
+<li class="toclevel-2 tocsection-178"><a href="#wenyan"><span class="tocnumber">1.163</span> <span class="toctext">wenyan</span></a></li>
+<li class="toclevel-2 tocsection-179"><a href="#Whendo"><span class="tocnumber">1.164</span> <span class="toctext">Whendo</span></a></li>
+<li class="toclevel-2 tocsection-180"><a href="#wsad"><span class="tocnumber">1.165</span> <span class="toctext">wsad</span></a></li>
+<li class="toclevel-2 tocsection-181"><a href="#X_strike"><span class="tocnumber">1.166</span> <span class="toctext">X strike</span></a></li>
+<li class="toclevel-2 tocsection-182"><a href="#XKCD"><span class="tocnumber">1.167</span> <span class="toctext">XKCD</span></a></li>
+<li class="toclevel-2 tocsection-183"><a href="#F,u,c,k."><span class="tocnumber">1.168</span> <span class="toctext">F,u,c,k.</span></a></li>
+<li class="toclevel-2 tocsection-184"><a href="#Basic_Stack"><span class="tocnumber">1.169</span> <span class="toctext">Basic Stack</span></a></li>
+<li class="toclevel-2 tocsection-185"><a href="#O?"><span class="tocnumber">1.170</span> <span class="toctext">O?</span></a></li>
+<li class="toclevel-2 tocsection-186"><a href="#Escratcholang"><span class="tocnumber">1.171</span> <span class="toctext">Escratcholang</span></a></li>
+<li class="toclevel-2 tocsection-187"><a href="#Brain_x"><span class="tocnumber">1.172</span> <span class="toctext">Brain_x</span></a></li>
+<li class="toclevel-2 tocsection-188"><a href="#Power_of_Power"><span class="tocnumber">1.173</span> <span class="toctext">P<sup>o<sup>w<sup>e<sup>r<sup> <sup>o<sup>f<sup> <sup>P<sup>o<sup>w<sup>e<sup>r</sup></sup></sup></sup></sup></sup></sup></sup></sup></sup></sup></sup></sup></span></a></li>
+<li class="toclevel-2 tocsection-189"><a href="#Relation"><span class="tocnumber">1.174</span> <span class="toctext">Relation</span></a></li>
+<li class="toclevel-2 tocsection-190"><a href="#*Average_list_based_esolang*"><span class="tocnumber">1.175</span> <span class="toctext">*Average list based esolang*</span></a></li>
+<li class="toclevel-2 tocsection-191"><a href="#SAY_HELLO!!!"><span class="tocnumber">1.176</span> <span class="toctext">SAY HELLO!!!</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-192"><a href="#External_resources"><span class="tocnumber">2</span> <span class="toctext">External resources</span></a></li>
+</ul>
+</div>
+<h2><span class="mw-headline" id="Implementations">Implementations</span></h2>
+<h3><span id=".21.21Awe.21.21"></span><span class="mw-headline" id="!!Awe!!"><a href="/wiki/!!Awe!!" title="!!Awe!!">!!Awe!!</a></span></h3>
+<pre>Awwwwe
+</pre>
+<h3><span id=".21.21brainfeed"></span><span class="mw-headline" id="!!brainfeed"><a href="/wiki/!!brainfeed" title="!!brainfeed">!!brainfeed</a></span></h3>
+<pre>++++.
+</pre>
+<h3><span id=".21.21Fuck"></span><span class="mw-headline" id="!!Fuck"><a href="/wiki/!!Fuck" title="!!Fuck">!!Fuck</a></span></h3>
+<pre class="rectwrap">!!!!!#!!!!!!!#!!!!!#!!!!!!!#!!!!!#!!!!!!!#!!!!!!!!!!!#!!!!!#!!!!!!!#!!!!!!!!!!!#!!!!!!!!#!!!!!!#!!!!!!!#!!!!!!!#!!!!!!!#!!!!!#!!!!!!!!!!!!#!!!!!!#!!!!!!#!!!!!!!!!!!!#!!!!!#!!!!!!!!!!#
+</pre>
+<h3><span id=".21.40.23.24.25.5E.26.2A.28.29_.2B"></span><span class="mw-headline" id="!@#$%^&amp;*()_+"><a href="/wiki/!@$%25%5E%26*()%2B" title="!@$%^&amp;*()+">!@#$%^&amp;*()_+</a></span></h3>
+<pre>4@</pre>
+<h4><span class="mw-headline" id="Alternative">Alternative</span></h4>
+<pre>^^^^#
+</pre>
+<h3><span id=".214warning"></span><span class="mw-headline" id="!4warning"><a href="/wiki/!4warning" title="!4warning">!4warning</a></span></h3>
+<pre>P1
+106 17
+0000000000011111111110000000000011111111110000000000011111111111000000000011111111111000000000011111111111
+0000000000011111111110000000000011111111110000000000011111111111000000000011111111111000000000011111111111
+0000000000011111111110000000000011111111110000000000011111111111000000000011111111111000000000011111111111
+0000000000011111111110000000000011111111110000000000011111111111000000000011111111111000000000011111111111
+0000000000011111111110000000000011111111110000000000011111111111000000000011111111111000000000011111111111
+0000000000011111111110000000000011111111110000000000011111111111000000000011111111111000000000011111111111
+0000000000011111111110000000000011111111110000000000011111111111000000000011111111111000000000011111111111
+0000000000011111111110000000000011111111110000000000011111111111000000000011111111111000000000011111111111
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1111111110000000001111111110000000011111111100000000011111111100000000011111111100000000111111111000000000
+1111111110000000001111111110000000011111111100000000011111111100000000011111111100000000111111111000000000
+1111111110000000001111111110000000011111111100000000011111111100000000011111111100000000111111111000000000
+1111111110000000001111111110000000011111111100000000011111111100000000011111111100000000111111111000000000
+1111111110000000001111111110000000011111111100000000011111111100000000011111111100000000111111111000000000
+1111111110000000001111111110000000011111111100000000011111111100000000011111111100000000111111111000000000
+1111111110000000001111111110000000011111111100000000011111111100000000011111111100000000111111111000000000
+1111111110000000001111111110000000011111111100000000011111111100000000011111111100000000111111111000000000
+</pre>
+<h3><span id=".24.21"></span><span class="mw-headline" id="$!"><a href="/wiki/$!" title="$!">$!</a></span></h3>
+<pre>!$$</pre>
+<h3><span id=".24.2B-.3F"></span><span class="mw-headline" id="$+-?"><a href="/wiki/$%2B-%3F" title="$+-?">$+-?</a></span></h3>
+<pre>$++++++++++A?b$+++++$-aB$++</pre>
+<h3><span id=".2B"></span><span class="mw-headline" id="+"><a href="/wiki/%2B" title="+">+</a></span></h3>
+<pre>++++
+</pre>
+<h3><span id=".2B.2B.2B"></span><span class="mw-headline" id="+++"><a href="/wiki/%2B%2B%2B" title="+++">+++</a></span></h3>
+<pre>4&#160;!
+</pre>
+<h3><span class="mw-headline" id="1"><a href="/wiki/1" title="1">1</a></span></h3>
+<pre>4111*,
+</pre>
+<p>It only works on the Common1 dialect of 1.
+</p>
+<h3><span id="1_.2B_i"></span><span class="mw-headline" id="1_+_i"><a href="/wiki/1_%2B_i" title="1 + i">1 + i</a></span></h3>
+<pre class="rectwrap">ii+:c*p
+</pre>
+<h3><span class="mw-headline" id="100BF"><a href="/wiki/100BF" title="100BF">100BF</a></span></h3>
+<pre>1OO 100 1OO 100 1OO 100 lO0 1OO 100 lO0 10O 1O0 100 100 100 1OO lOO 1O0 1O0 lOO 1OO l0O
+</pre>
+<h4><span class="mw-headline" id="Shorter">Shorter</span></h4>
+<pre>100 100 100 100 l0O
+</pre>
+<h3><span id="14.2F41"></span><span class="mw-headline" id="14/41"><a href="/wiki/14" title="14">14</a>/<a href="/wiki/41" class="mw-redirect" title="41">41</a></span></h3>
+<pre>4O
+</pre>
+<h3><span class="mw-headline" id="17"><a href="/wiki/17" class="mw-redirect" title="17">17</a></span></h3>
+<pre>&#925;91+Dµ30&#924;91++++%%&gt;
+</pre>
+<p><i>alternatively</i>:
+</p>
+<pre>Nope. Evaluate divmod(34,5)
+Reference
+</pre>
+<p>Evaluates to <b>4</b>.
+</p>
+<h3><span class="mw-headline" id="22"><a href="/wiki/22_(None1)" title="22 (None1)">22</a></span></h3>
+<p><i>Untested</i>
+</p>
+<pre>2 2 2 2 2 2 2 2 2 2 22 2 2 2 22 2 2 2 2 22 2 2 2 2 22 22 2 22 2 22
+</pre>
+<h3><span class="mw-headline" id="2DWays"><a href="/wiki/2DWays" title="2DWays">2DWays</a></span></h3>
+<pre>4!
+</pre>
+<h3><span id="3_Bits.2C_3_Bytes"></span><span class="mw-headline" id="3_Bits,_3_Bytes"><a href="/wiki/3_Bits,_3_Bytes" title="3 Bits, 3 Bytes">3 Bits, 3 Bytes</a></span></h3>
+<pre>Hÿ4
+</pre>
+<h3><span class="mw-headline" id="4"><a href="/wiki/4" title="4">4</a></span></h3>
+<pre>3.600525004</pre>
+<h3><span class="mw-headline" id="8xn"><a href="/wiki/8xn" title="8xn">8xn</a></span></h3>
+<pre>8x11116</pre>
+<h3><span class="mw-headline" id="99"><i><a href="/wiki/99" class="mw-redirect" title="99">99</a></i></span></h3>
+<pre>99 99999 9999 99999 9999 99 9 99 9
+99</pre>
+<h3><span id=".3D"></span><span class="mw-headline" id="="><a href="/wiki/%3D" title="=">=</a></span></h3>
+<pre>0=+52
+</pre>
+<h3><span id=".3E.3Cx.3E.2F.3E.3Cx.C2.B1.E2.88.94.3E"></span><span class="mw-headline" id="&gt;&lt;x&gt;/&gt;&lt;x±∔&gt;"><a href="/wiki/Dead_fish" title="Dead fish">&gt;&lt;x&gt;</a>/<a href="/wiki/Dead_fish_%2B-_%2B." class="mw-redirect" title="Dead fish +- +.">&gt;&lt;x±∔&gt;</a></span></h3>
+<pre>iiiin
+</pre>
+<h4><span id=".3E.3Cx.C2.B1.E2.88.94.3E_only"></span><span class="mw-headline" id="&gt;&lt;x±∔&gt;_only"><a href="/wiki/Dead_fish_%2B-_%2B." class="mw-redirect" title="Dead fish +- +.">&gt;&lt;x±∔&gt;</a> only</span></h4>
+<pre>4O
+</pre>
+<h3><span id=".3E.7C.3C.3E.7C.3C"></span><span class="mw-headline" id="&gt;|&lt;&gt;|&lt;"><a href="/wiki/ZecZec" title="ZecZec">&gt;|&lt;&gt;|&lt;</a></span></h3>
+<p>Just how it looks on the meme
+</p>
+<pre>int getRandomNumber
+{
+  (4) chosen by fair dice roll
+      guaranteed to be random
+}
+</pre>
+<p>shortest
+</p>
+<pre>(4)
+</pre>
+<h3><span id=".27.27.27.EA.B5.AC.27.27.27"></span><span class="mw-headline" id="'''구'''"><a href="/wiki/%27%27%27%EA%B5%AC%27%27%27" class="mw-redirect" title="&#39;&#39;&#39;구&#39;&#39;&#39;">'''구'''</a></span></h3>
+<pre>열
+</pre>
+<h3><span id=".EF.BC.81.E4.B8.AD.E6.96.87"></span><span class="mw-headline" id="！中文"><a href="/wiki/%EF%BC%81%E4%B8%AD%E6%96%87" title="！中文">！中文</a></span></h3>
+<pre>输出“4”。
+</pre>
+<h3><span id=".E5.A4.A7.E9.A6.99.E8.95.89"></span><span class="mw-headline" id="大香蕉"><a href="/wiki/%E5%A4%A7%E9%A6%99%E8%95%89" title="大香蕉">大香蕉</a></span></h3>
+<pre>大香蕉 你的感觉 大香蕉 你的感觉 大香蕉 你的感觉 你的 大香蕉 你的感觉 你的 真的很奇妙 一条大香蕉 你的感觉 你的感觉 你的感觉 大香蕉 感觉 一条大香蕉 一条大香蕉 感觉 大香蕉 飘呀飘
+</pre>
+<h3><span id=".E8.84.91.E6.93.8D"></span><span class="mw-headline" id="脑操"><a href="/wiki/%E8%84%91%E6%93%8D" title="脑操">脑操</a></span></h3>
+<pre>》十》十》十（》十（一《十十十》）《《）》。
+</pre>
+<h3><span id=".E7.A1.95.E9.BC.A0"></span><span class="mw-headline" id="硕鼠"><a href="/wiki/%E7%A1%95%E9%BC%A0" title="硕鼠">硕鼠</a></span></h3>
+<pre class="rectwrap">吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱吱
+吱
+吱吱吱吱
+</pre>
+<h3><span id=".3FQ.3F"></span><span class="mw-headline" id="?Q?"><a href="/wiki/%3FQ%3F" title="?Q?">?Q?</a></span></h3>
+<pre>[[4]$]:
+</pre>
+<h3><span class="mw-headline" id="AEAV"><a href="/wiki/AEAV" title="AEAV">AEAV</a></span></h3>
+<pre>xkcd = 4         (Non-random version)
+out xkcd
+xkcd = 1-4            (Random version)
+out xkcd</pre>
+<h3><span class="mw-headline" id="Aheui"><a href="/wiki/Aheui" title="Aheui">Aheui</a></span></h3>
+<pre>밤망희</pre>
+<h3><span class="mw-headline" id="Amtu"><a href="/wiki/Amtu" title="Amtu">Amtu</a></span></h3>
+<pre>F 0&gt;0&gt;1&gt;1&gt;0&gt;1&gt;0&gt;0h F 0&gt;0&gt;1&gt;1&gt;0&gt;1&gt;0&gt;0h F 0&gt;0&gt;1&gt;1&gt;0&gt;1&gt;0&gt;0h F</pre>
+<h3><span class="mw-headline" id="Arithmetic"><a href="/wiki/Arithmetic" title="Arithmetic">Arithmetic</a></span></h3>
+<pre>==Begin Exam 1==
+1. 1+1=? (52 points)
+A. 2
+Answer: A
+==End Exam 1==
+</pre>
+<h3><span class="mw-headline" id="AuFI"><a href="/wiki/AuFI" title="AuFI">AuFI</a></span></h3>
+<pre>Ru
+</pre>
+<h3><span class="mw-headline" id="Batch"><a href="/wiki/Batch" title="Batch">Batch</a></span></h3>
+<pre>@echo off
+echo 4
+pause&gt;nul
+</pre>
+<h4><span class="mw-headline" id="Alternative_2">Alternative</span></h4>
+<pre>@echo off
+echo 4
+</pre>
+<h3><span class="mw-headline" id="BASE"><a href="/wiki/BASE" title="BASE">BASE</a></span></h3>
+<pre>PRINT 4
+</pre>
+<h3><span class="mw-headline" id="Beatnik"><a href="/wiki/Beatnik" title="Beatnik">Beatnik</a></span></h3>
+<pre>Hi, XKCDsRandomNumberOKHello world.</pre>
+<h3><span class="mw-headline" id="Befunge"><a href="/wiki/Befunge" title="Befunge">Befunge</a></span></h3>
+<pre>4.@</pre>
+<p>The program above prints an extra space. If you don't want an extra space, use the one below.
+</p>
+<pre>"4",@</pre>
+<h3><span class="mw-headline" id="Bespoke"><a href="/wiki/Bespoke" title="Bespoke">Bespoke</a></span></h3>
+<pre>Roll dice, random totally.</pre>
+<p>Alternative, using Unicode output instead of numeric output:
+</p>
+<pre>Get it, rolls it.
+Always random.</pre>
+<p>While functions in this programming language don't "return" values, functions can have effects on the stack/heap. The first line of the following program defines a function that pushes 4 onto the stack, and the second line calls that function and prints the resulting stack value.
+</p>
+<pre>Returns randomly-put-out number, chosen with dice-rolling way.
+Readied with the new random number, output value.</pre>
+<h3><span class="mw-headline" id="BinaryLanguage"><a href="/wiki/BinaryLanguage" title="BinaryLanguage">BinaryLanguage</a></span></h3>
+<pre>4
+</pre>
+<h3><span class="mw-headline" id="BracketOnly"><a href="/wiki/BracketOnly" title="BracketOnly">BracketOnly</a></span></h3>
+<pre>(()()()()()()()()()()()()()()()()()())((()())(()()()()()()(()()()())((()())(()()()()()()()()()()()()()())(()())(()()()()()()()()()()()()()()))))
+</pre>
+<p>Alternative:
+</p>
+<pre>(()()()()()()()()()()()()()()()())((()())(()()()()()()()()))
+</pre>
+<h3><span class="mw-headline" id="Braincopter"><a href="/wiki/Braincopter" title="Braincopter">Braincopter</a></span></h3>
+<table>
+<tbody><tr><td>
+</td><td></td></tr></tbody></table>
+<p>Here is the actual program:<span class="mw-default-size" typeof="mw:File"><a href="/wiki/File:Braincopter_xkcdrn.png" class="mw-file-description"><img src="/w/images/a/ab/Braincopter_xkcdrn.png" decoding="async" width="53" height="1" class="mw-file-element" /></a></span>
+</p>
+<h3><span class="mw-headline" id="Brain-Flak"><a href="/wiki/Brain-Flak" title="Brain-Flak">Brain-Flak</a></span></h3>
+<p>In non-ASCII mode:
+</p>
+<pre>(()()()())
+</pre>
+<p>In ASCII mode:
+</p>
+<pre>(()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()())
+</pre>
+<h3><span class="mw-headline" id="Brainfuck"><a href="/wiki/Brainfuck" title="Brainfuck">Brainfuck</a></span></h3>
+<pre>&gt;+&gt;+&gt;+[&gt;+[-&lt;+++&gt;]&lt;&lt;]&gt;.</pre>
+<p>Shorter:
+</p>
+<pre>-[&gt;+&lt;-----]&gt;+.
+</pre>
+<h3><span class="mw-headline" id="brainfuck_2"><a href="/wiki/You_can_fuck_without_a_brain" class="mw-redirect" title="You can fuck without a brain"><strike>brain</strike>fuck</a></span></h3>
+<pre>++++++++++++++++++++++++++++++++++++++++++++++++++++
+</pre>
+<p>Note that adding a <code>.</code> in the end of program makes it a <a href="/wiki/Polyglot" title="Polyglot">polyglot</a>, because that will make it also work as a <a href="/wiki/Brainfuck" title="Brainfuck">brainfuck</a> program.
+</p>
+<h3><span class="mw-headline" id="Brainfuck_extended"><a href="/wiki/Brainfuck_extended" title="Brainfuck extended">Brainfuck extended</a></span></h3>
+<pre>$4$.
+</pre>
+<h4><span class="mw-headline" id="Alternative_3">Alternative</span></h4>
+<pre>_34.
+</pre>
+<h4><span id="Alternative_that_doesn.27t_use_any_numbers_at_all"></span><span class="mw-headline" id="Alternative_that_doesn't_use_any_numbers_at_all">Alternative that doesn't use any numbers at all</span></h4>
+<pre>////)
+</pre>
+<h3><span class="mw-headline" id="Brainloller"><a href="/wiki/Brainloller" title="Brainloller">Brainloller</a></span></h3>
+<table>
+<tbody><tr><td>
+</td><td></td></tr></tbody></table>
+<p>Here is the actual program:<span class="mw-default-size" typeof="mw:File"><a href="/wiki/File:Brainloller_xkcdrn.png" class="mw-file-description"><img src="/w/images/a/a3/Brainloller_xkcdrn.png" decoding="async" width="53" height="1" class="mw-file-element" /></a></span>
+</p>
+<h3><span class="mw-headline" id="C"><a href="/wiki/C" title="C">C</a></span></h3>
+<p>The original program mentioned on XKCD is written in C. It was a function, while the full program is shown below:
+</p>
+<pre>#include &lt;stdio.h&gt;
+int main(){putchar(52);return 0;}</pre>
+<h3><span id="C.23"></span><span class="mw-headline" id="C#">C&#35;</span></h3>
+<pre>using System;
+class XKCD {
+	static void Main(string[] args) {
+		Console.WriteLine("4");
+	}
+}
+</pre>
+<h3><span class="mw-headline" id="Caca"><a href="/wiki/Caca" title="Caca">Caca</a></span></h3>
+<pre>cacaca52
+icacac
+icaca
+</pre>
+<p>Alternately,
+</p>
+<small><pre>icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icacac
+icaca
+</pre></small>
+<h3><span class="mw-headline" id="Cardinal"><a href="/wiki/Cardinal" title="Cardinal">Cardinal</a></span></h3>
+<pre>%"4</pre>
+<h3><span id=".C2.A2.25"></span><span class="mw-headline" id="¢%"><a href="/wiki/%C2%A2%25" title="¢%">¢%</a></span></h3>
+<pre>%%¢¢&#160;%%¢¢ ¢%%¢ ¢¢%¢ ¢%%¢&#160;%%¢%
+</pre>
+<h3><span class="mw-headline" id="Color_Dialog"><a href="/wiki/Color_Dialog" title="Color Dialog">Color Dialog</a></span></h3>
+<pre><span class="">㢀int getRandomNumber()</span>
+<span class="markg">㶀</span><span class="">꽱{</span>
+<span class="markg">㶀</span><span class="">꽱    return 4;  </span><span class="">쩢// chosen by fair dice roll.</span>
+<span class="markg">㶀</span><span class="">꽱                // guaranteed to be random.</span>
+<span class="markg">㸀</span><span class="">㞀}</span>
+</pre>
+<h3><span class="mw-headline" id="Consequential"><a href="/wiki/Consequential" title="Consequential">Consequential</a></span></h3>
+<pre>+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;+&gt;&gt;.
+</pre>
+<h3><span class="mw-headline" id="Cood"><a href="/wiki/Cood" title="Cood">Cood</a></span></h3>
+<pre>Hey, waiter!
+I want 4 of this.
+How much is it?
+The bill, please.
+</pre>
+<h3><span class="mw-headline" id="Deadchicken"><a href="/wiki/Deadchicken" title="Deadchicken">Deadchicken</a></span></h3>
+<pre>chicken
+chicken
+chicken
+chicken
+chicken chicken chicken chicken
+</pre>
+<h3><span class="mw-headline" id="Deadfish"><a href="/wiki/Deadfish" title="Deadfish">Deadfish</a></span></h3>
+<pre>iiiio
+</pre>
+<h4><span class="mw-headline" id="Smaller_one">Smaller one</span></h4>
+<pre>iiso
+</pre>
+<h3><span class="mw-headline" id="Deadfish_but_in_english"><a href="/wiki/Deadfish_but_in_english" title="Deadfish but in english">Deadfish but in english</a></span></h3>
+<pre>Increment the accumulator, and then increment the accumulator, 
+and then square the accumulator, and then output the accumulator, 
+and then halt.
+</pre>
+<h3><span class="mw-headline" id="dirac"><a href="/wiki/Dirac" title="Dirac">dirac</a></span></h3>
+<pre>4I;
+</pre>
+<h3><span class="mw-headline" id="Divmeq"><a href="/wiki/Divmeq" title="Divmeq">Divmeq</a></span></h3>
+<pre>0: 0.25 1</pre>
+<h3><span class="mw-headline" id="Drive-In_Window"><a href="/wiki/Drive-In_Window" title="Drive-In Window">Drive-In Window</a></span></h3>
+<pre>Hi, welcome to Random_Number_Generator. Here is a menu.
+Hot Dog: $50
+Here are your sides.
+Relish: $2
+May I take your order?
+Person 1 would like the Hot Dog with Relish.
+Person 1 will pay for his order!
+OK, that will be $2. Thanks for coming!
+</pre>
+<h3><span class="mw-headline" id="Emo"><a href="/wiki/Emo" title="Emo">Emo</a></span></h3>
+<pre>^o^ o~O
+o^o ): :o) @~@
+</pre>
+<h3><span class="mw-headline" id="EmojiLang"><a href="/wiki/EmojiLang_(Mihai_Popa)" title="EmojiLang (Mihai Popa)">EmojiLang</a></span></h3>
+<pre>🖨️🔡4🔡
+</pre>
+<h3><span class="mw-headline" id="Empty"><a href="/wiki/Empty" title="Empty">Empty</a></span></h3>
+<pre>"4:
+</pre>
+<h3><span class="mw-headline" id="enGLish"><a href="/wiki/EnGLish" title="EnGLish">enGLish</a></span></h3>
+<pre>Output four
+</pre>
+<h4><span class="mw-headline" id="Alternative_4">Alternative</span></h4>
+<pre>Output 4
+</pre>
+<h5><span class="mw-headline" id="Alternative_5">Alternative</span></h5>
+<pre>Output "4"
+</pre>
+<p><small><b>Alternative</b></small>
+</p>
+<pre>Output character 52
+</pre>
+<h3><span class="mw-headline" id="Enjamb"><a href="/wiki/Enjamb" title="Enjamb">Enjamb</a></span></h3>
+<pre>It's Random Number!
+XKCD
+ok</pre>
+<p>The program above may print extra whitespace characters.
+</p>
+<h3><span id="ESC.21"></span><span class="mw-headline" id="ESC!"><i><a href="/wiki/ESC!" title="ESC!">ESC!</a></i></span></h3>
+<pre>\.&#160;; \^4\&#160;; \*\&#160;; \:
+</pre>
+<h3><span class="mw-headline" id="Eso2D"><a href="/wiki/Eso2D" title="Eso2D">Eso2D</a></span></h3>
+<pre>0_*</pre>
+<p>The program above prints an extra space. If you don't want an extra space, use the one below.
+</p>
+<pre>1,,#</pre>
+<h3><span class="mw-headline" id="Esolangs.org"><a href="/wiki/Esolangs.org" title="Esolangs.org">Esolangs.org</a></span></h3>
+<pre>{{infobox proglang
+|name=getRandomNumber()
+|XKCD=221
+}}
+'''getRandomNumber()''' guarantees a random number.
+== Stats ==
+Chosen by fair dice roll; guaranteed to be random as per RFC 1149.5
+== Program ==
+&lt;pre&gt;&lt;nowiki&gt;
+[[brainfuck]]
+{{Load|brainfuck}}
+++++++[&gt;++++++++&lt;-]&gt;++++.
+{{Clear}}
+&lt;/nowiki&gt;&lt;/pre&gt;
+[[Category:Examples]]
+</pre>
+<h3><span class="mw-headline" id="ETC"><a href="/wiki/ETC" title="ETC">ETC</a></span></h3>
+<pre>ettttteeeeeeeeeeeeeeeeeeee                          Chosen by fair di e roll. Guarenteed to be random.
+</pre>
+<h3><span class="mw-headline" id="ExampleFuck"><a href="/wiki/ExampleFuck" title="ExampleFuck">ExampleFuck</a></span></h3>
+<pre>Truth Machine
+Hello World
+Truth Machine
+Hello World
+Truth Machine
+Hello World
+FizzBuzz
+Truth Machine
+Hello World
+FizzBuzz
+Cat Program
+Quine
+Hello World
+Hello World
+Hello World
+Truth Machine
+99 Bottles of Beer
+Quine
+Quine
+99 Bottles of Beer
+Truth Machine
+Self Interpreter
+</pre>
+<h3><span id="F.21--"></span><span class="mw-headline" id="F!--"><a href="/wiki/F!--" title="F!--">F!--</a></span></h3>
+<pre>F! F! F! F! K!
+</pre>
+<h3><span class="mw-headline" id="Factor"><a href="/wiki/Factor" title="Factor">Factor</a></span></h3>
+<pre>54948677498655068263351660303957600730731029471078168023
+</pre>
+<h3><span class="mw-headline" id="FALSE"><a href="/wiki/FALSE" title="FALSE">FALSE</a></span></h3>
+<pre>[
+  4 {chosen by fair dice roll.}
+    {guaranteed to be random.}
+]
+</pre>
+<h3><span class="mw-headline" id="Feedfish"><a href="/wiki/Feedfish" title="Feedfish">Feedfish</a></span></h3>
+<pre>iififfio
+</pre>
+<h3><span class="mw-headline" id="Fish"><a href="/wiki/Fish" title="Fish">Fish</a></span></h3>
+<pre>4n;
+</pre>
+<h3><span class="mw-headline" id="Fish_Code"><a href="/wiki/Fish_Code" title="Fish Code">Fish Code</a></span></h3>
+<pre>&lt;((52)).&gt;&lt;
+</pre>
+<h3><span class="mw-headline" id="flag"><a href="/wiki/Flag" title="Flag">flag</a></span></h3>
+<pre>4
+</pre>
+<h3><span class="mw-headline" id="Free2Edit"><a href="/wiki/Free2Edit" title="Free2Edit">Free2Edit</a></span></h3>
+<pre>p4
+</pre>
+<p>or
+</p>
+<pre>+4on
+</pre>
+<p>or
+</p>
+<pre>+6*8+4oc
+</pre>
+<h3><span id="G.23"></span><span class="mw-headline" id="G#"><a href="/wiki/User:Ractangle/G_Sharp" class="mw-redirect" title="User:Ractangle/G Sharp">G#</a></span></h3>
+<pre>make main[print[4]]
+</pre>
+<h3><span class="mw-headline" id="Gift"><a href="/wiki/Gift" title="Gift">Gift</a></span></h3>
+<pre>4___))(_(_(</pre>
+<h3><span class="mw-headline" id="Goldfuck"><a href="/wiki/Goldfuck" title="Goldfuck">Goldfuck</a></span></h3>
+<pre class="rectwrap">1.618031988749844848264586834565638817720308179805762860135440622705270462818902419707207244189392137484724088075886891758126636862223536931393180080766728354433389086095939982905638327</pre>
+<h3><span id=".E2.98.AD"></span><span class="mw-headline" id="☭"><a href="/wiki/%E2%98%AD" title="☭">☭</a></span></h3>
+<pre>i[G`G0000 T2dySddP&gt;.M!
+</pre>
+<h3><span class="mw-headline" id="Hardfish"><a href="/wiki/Hardfish" title="Hardfish">Hardfish</a></span></h3>
+<p>In implementations that output values as numbers:
+</p>
+<pre>ico
+</pre>
+<p>In implementations that output values as ASCII:
+</p>
+<pre>icrico
+</pre>
+<h3><span id="H.2BQ9"></span><span class="mw-headline" id="H+Q9"><a href="/wiki/H%2BQ9" title="H+Q9">H+Q9</a></span></h3>
+<pre>+4
+</pre>
+<h3><span class="mw-headline" id="Hats"><a href="/wiki/Hats" title="Hats">Hats</a></span></h3>
+<table cellpadding="0" cellspacing="0" border="0"><tbody><tr class="mw-empty-elt"></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr class="mw-empty-elt"></tr></tbody></table>
+<h3><span class="mw-headline" id="Hexagony"><a href="/wiki/Hexagony" title="Hexagony">Hexagony</a></span></h3>
+<pre>4!@</pre>
+<h3><span class="mw-headline" id="Hexdump"><a href="/wiki/Hexdump" title="Hexdump">Hexdump</a></span></h3>
+<pre>34
+</pre>
+<h3><span class="mw-headline" id="How_dare_you_fuck_the_brain"><a href="/wiki/How_dare_you_fuck_the_brain" title="How dare you fuck the brain">How dare you fuck the brain</a></span></h3>
+<pre>IIIIN
+</pre>
+<h3><span class="mw-headline" id="Ichi"><a href="/wiki/Ichi" title="Ichi">Ichi</a></span></h3>
+<pre>4 6 8 10 0</pre>
+<h3><span class="mw-headline" id="INT"><a href="/wiki/INT" title="INT">INT</a></span></h3>
+<pre>^4-
+</pre>
+<h3><span class="mw-headline" id="ISEW2C"><a href="/wiki/ISEW2C" title="ISEW2C">ISEW2C</a></span></h3>
+<pre>3 4 0 0
+</pre>
+<h3><span class="mw-headline" id="JavaScript">JavaScript</span></h3>
+<pre>console.log(4);
+</pre>
+<h3><span class="mw-headline" id="Jormungandr"><a href="/wiki/Jormungandr" title="Jormungandr">Jormungandr</a></span></h3>
+<pre>+52.</pre>
+<h3><span class="mw-headline" id="JSFuck"><a href="/wiki/JSFuck" title="JSFuck">JSFuck</a></span></h3>
+<p>The following is just a JSFuck.com conversion from <code>console.log(4)</code> (3326 characters long), it works on browser JS and Node.js
+</p>
+<pre class="rectwrap">[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]][([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]((!![]+[])[+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+([][[]]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+!+[]]+(+[![]]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+!+[]]]+(!![]+[])[!+[]+!+[]+!+[]]+(+(!+[]+!+[]+!+[]+[+!+[]]))[(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([]+[])[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]][([][[]]+[])[+!+[]]+(![]+[])[+!+[]]+((+[])[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]+[])[+!+[]+[+!+[]]]+(!![]+[])[!+[]+!+[]+!+[]]]](!+[]+!+[]+!+[]+[!+[]+!+[]])+(![]+[])[+!+[]]+(![]+[])[!+[]+!+[]])()(([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(![]+[])[!+[]+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+(+(+!+[]+[+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+[!+[]+!+[]]+[+[]])+[])[+!+[]]+(![]+[])[!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(![]+[+[]]+([]+[])[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]])[!+[]+!+[]+[+[]]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[+!+[]+[!+[]+!+[]+!+[]]]+[!+[]+!+[]+!+[]+!+[]]+([+[]]+![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[!+[]+!+[]+[+[]]])</pre>
+<p>There is also a shorter one but only works on browser JS (2359 characters, a JSFuck.com conversion from <code>alert(4)</code>).
+</p>
+<pre class="rectwrap">[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]][([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]((!![]+[])[+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+([][[]]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+!+[]]+(+[![]]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+!+[]]]+(!![]+[])[!+[]+!+[]+!+[]]+(+(!+[]+!+[]+!+[]+[+!+[]]))[(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([]+[])[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]][([][[]]+[])[+!+[]]+(![]+[])[+!+[]]+((+[])[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]+[])[+!+[]+[+!+[]]]+(!![]+[])[!+[]+!+[]+!+[]]]](!+[]+!+[]+!+[]+[!+[]+!+[]])+(![]+[])[+!+[]]+(![]+[])[!+[]+!+[]])()((![]+[])[+!+[]]+(![]+[])[!+[]+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+!+[]]+(!![]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[+!+[]+[!+[]+!+[]+!+[]]]+[!+[]+!+[]+!+[]+!+[]]+([+[]]+![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[!+[]+!+[]+[+[]]])</pre>
+<p>This is a longer one (8498 characters) that doesn't output any trailing line feeds  which is a JSFuck.com conversion from <code>process.stdout.write('4')</code>, it works on Node.js.
+</p>
+<pre class="rectwrap">[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]][([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]((!![]+[])[+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+([][[]]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+!+[]]+(+[![]]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+!+[]]]+(!![]+[])[!+[]+!+[]+!+[]]+(+(!+[]+!+[]+!+[]+[+!+[]]))[(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([]+[])[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]][([][[]]+[])[+!+[]]+(![]+[])[+!+[]]+((+[])[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]+[])[+!+[]+[+!+[]]]+(!![]+[])[!+[]+!+[]+!+[]]]](!+[]+!+[]+!+[]+[!+[]+!+[]])+(![]+[])[+!+[]]+(![]+[])[!+[]+!+[]])()([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]][([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]((!![]+[])[+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+([][[]]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+!+[]]+([]+[])[(![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(!![]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(![]+[])[!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]()[+!+[]+[!+[]+!+[]]]+((!![]+[])[+[]]+[+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+[+[]]+(!![]+[])[+!+[]]+(!![]+[])[+[]]+[+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+(!![]+[])[+[]]+[+!+[]]+[!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(+(+!+[]+[+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+[!+[]+!+[]]+[+[]])+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+[+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]]+([][[]]+[])[!+[]+!+[]]+(!![]+[])[+[]]+[+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+([][[]]+[])[+[]]+(!![]+[])[+[]]+[+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]]+(+(+!+[]+[+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+[!+[]+!+[]]+[+[]])+[])[+!+[]]+(!![]+[])[+[]]+[+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+(!![]+[])[+!+[]]+([![]]+[][[]])[+!+[]+[+[]]]+(!![]+[])[+[]]+[+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]]+[+[]]+(!![]+[])[+[]]+[!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]]+(!![]+[])[+[]]+[!+[]+!+[]+!+[]+!+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]+!+[]+!+[]]+(!![]+[])[+[]]+[!+[]+!+[]+!+[]+!+[]+!+[]]+[+!+[]])[(![]+[])[!+[]+!+[]+!+[]]+(+(!+[]+!+[]+[+!+[]]+[+!+[]]))[(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([]+[])[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]][([][[]]+[])[+!+[]]+(![]+[])[+!+[]]+((+[])[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]+[])[+!+[]+[+!+[]]]+(!![]+[])[!+[]+!+[]+!+[]]]](!+[]+!+[]+!+[]+[+!+[]])[+!+[]]+(![]+[])[!+[]+!+[]]+([![]]+[][[]])[+!+[]+[+[]]]+(!![]+[])[+[]]]((!![]+[])[+[]])[([][(!![]+[])[!+[]+!+[]+!+[]]+([][[]]+[])[+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([![]]+[][[]])[+!+[]+[+[]]]+(!![]+[])[!+[]+!+[]+!+[]]+(![]+[])[!+[]+!+[]+!+[]]]()+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([![]]+[][[]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]](([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]][([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]((!![]+[])[+!+[]]+(!![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+([][[]]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+!+[]]+(![]+[+[]])[([![]]+[][[]])[+!+[]+[+[]]]+(!![]+[])[+[]]+(![]+[])[+!+[]]+(![]+[])[!+[]+!+[]]+([![]]+[][[]])[+!+[]+[+[]]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(![]+[])[!+[]+!+[]+!+[]]]()[+!+[]+[+[]]]+![]+(![]+[+[]])[([![]]+[][[]])[+!+[]+[+[]]]+(!![]+[])[+[]]+(![]+[])[+!+[]]+(![]+[])[!+[]+!+[]]+([![]]+[][[]])[+!+[]+[+[]]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(![]+[])[!+[]+!+[]+!+[]]]()[+!+[]+[+[]]])()[([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(![]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[])[+!+[]]+([][[]]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]((![]+[+[]])[([![]]+[][[]])[+!+[]+[+[]]]+(!![]+[])[+[]]+(![]+[])[+!+[]]+(![]+[])[!+[]+!+[]]+([![]]+[][[]])[+!+[]+[+[]]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(![]+[])[!+[]+!+[]+!+[]]]()[+!+[]+[+[]]])+[])[+!+[]])+([]+[])[(![]+[])[+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+([][[]]+[])[+!+[]]+(!![]+[])[+[]]+([][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]]+[])[!+[]+!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(![]+[])[!+[]+!+[]]+(!![]+[][(![]+[])[+[]]+(![]+[])[!+[]+!+[]]+(![]+[])[+!+[]]+(!![]+[])[+[]]])[+!+[]+[+[]]]+(!![]+[])[+!+[]]]()[+!+[]+[!+[]+!+[]]])())</pre>
+<p>Please replace these implementations if you know a shorter one.
+</p>
+<h3><span class="mw-headline" id="Labyrinth"><a href="/wiki/Labyrinth" title="Labyrinth">Labyrinth</a></span></h3>
+<pre>4!@</pre>
+<h3><span class="mw-headline" id="Length"><a href="/wiki/Length" title="Length">Length</a></span></h3>
+<pre>It's XKCD random number!!
+XKCD
+Try it out now!</pre>
+<h3><span class="mw-headline" id="Letterfuck"><a href="/wiki/Letterfuck" title="Letterfuck">Letterfuck</a></span></h3>
+<pre>inc, 4
+out(num)
+</pre>
+<p>Bytecode: <code>4ADM</code><br />
+Alternative:
+</p>
+<pre>out(char), "4"
+</pre>
+<p>Bytecode: <code>A"4"I</code>
+</p>
+<h3><span class="mw-headline" id="LogicGates"><a href="/wiki/LogicGates" title="LogicGates">LogicGates</a></span></h3>
+<h4><span class="mw-headline" id="Unary">Unary</span></h4>
+<pre>R....
+</pre>
+<h4><span class="mw-headline" id="Binary">Binary</span></h4>
+<pre>R.A..
+</pre>
+<h4><span class="mw-headline" id="Decimal">Decimal</span></h4>
+<p>Not a chance.
+</p>
+<h3><span class="mw-headline" id="LongJump"><a href="/wiki/LongJump" title="LongJump">LongJump</a></span></h3>
+<p>When command <code>A</code> prints as character:
+</p>
+<pre>++++++++++++++++++++++++++++++++++++++++++++++++++++A.
+</pre>
+<p>When command <code>A</code> prints as number:
+</p>
+<pre>++++A.
+</pre>
+<h3><span id="Look.21"></span><span class="mw-headline" id="Look!"><a href="/wiki/Look!" title="Look!">Look!</a></span></h3>
+<p><i>Note: <a href="/wiki/Look!" title="Look!">Look!</a> is a sound-based language and the following line of text is only the <b>notes</b> of the real program, for the real program please see the link below</i>
+</p>
+<pre>G# D# G D# G# C B G C F# D A C C C G# C# A A C# G F
+</pre>
+<p><a rel="nofollow" class="external text" href="https://github.com/none-None1/Look/raw/main/examples/xkcd_random_number.mid">The program</a> as a MIDI file.
+</p>
+<h3><span class="mw-headline" id="MarioLANG"><a href="/wiki/MarioLANG" title="MarioLANG">MarioLANG</a></span></h3>
+<pre>++++:
+=====</pre>
+<h3><span class="mw-headline" id="MEMORYLEEK"><a href="/wiki/MEMORYLEEK" title="MEMORYLEEK">MEMORYLEEK</a></span></h3>
+<pre>[chosen by fair dice roll]
+[guaranteed to be random]
+!4;
+point remove;
+#remove; :remove;</pre>
+<h3><span class="mw-headline" id="MoreMathRPN"><a href="/wiki/MoreMathRPN" title="MoreMathRPN">MoreMathRPN</a></span></h3>
+<pre>4
+outputV
+"choosen by fair dice roll.
+"guaranteed to be random.
+</pre>
+<h3><span class="mw-headline" id="morse_code"><a href="/wiki/Morse_code" title="Morse code">morse code</a></span></h3>
+<pre> ....-</pre>
+<p>Note: Space in front of returning text.
+</p>
+<h3><span class="mw-headline" id="Multiplicity"><a href="/wiki/Multiplicity" title="Multiplicity">Multiplicity</a></span></h3>
+<pre>417744685118879731600506117375719540878173341042907821182687827362162871106962918226728766784177853000
+</pre>
+<h3><span class="mw-headline" id="NeverGonna"><a href="/wiki/NeverGonna" title="NeverGonna">NeverGonna</a></span></h3>
+<pre>i just wanna tell you "4"
+</pre>
+<h3><span id="NS.21"></span><span class="mw-headline" id="NS!"><a href="/wiki/NS!" title="NS!">NS!</a></span></h3>
+<pre>5A*2+#
+</pre>
+<p>Small version.
+</p>
+<pre>D4*#
+</pre>
+<p>And an even smaller one.
+</p>
+<pre>4i
+</pre>
+<h3><span class="mw-headline" id="Nulla"><a href="/wiki/Nulla" title="Nulla">Nulla</a></span></h3>
+<pre>AkkY.huh</pre>
+<p>When converted, becomes:
+</p>
+<pre>000  000 100 100 100 100 011 000</pre>
+<p>Decoded:
+</p>
+<pre>0 PSZ INC INC INC INC OUT PSZ</pre>
+<p>The final <code>PSZ</code> is superfluous.
+</p>
+<h3><span class="mw-headline" id="Odasjoi"><a href="/wiki/Odasjoi" title="Odasjoi">Odasjoi</a></span></h3>
+<pre>fowdif
+fowdif
+fowdif
+fowdif
+doqije
+</pre>
+<h3><span class="mw-headline" id="OMD"><a href="/wiki/Ordinary-M-Dictionary" title="Ordinary-M-Dictionary">OMD</a></span></h3>
+<p><code>cd&#160;! run del&#160;! run</code><br />
+outputs
+</p>
+<pre>C:\!&gt;
+4
+</pre>
+<h3><span class="mw-headline" id="oOo_CODE"><a href="/wiki/OOo_CODE" title="OOo CODE">oOo CODE</a></span></h3>
+<pre>xkcD rAndoM nUmbeR iS a ChallEnGe ThAt reqUIrES yOU tO rewrITe tHe pRoGRam iN Xkcd's 221st page in another language
+</pre>
+<p>It's self-documenting.
+</p>
+<h3><span class="mw-headline" id="Output"><a href="/wiki/Output" title="Output">Output</a></span></h3>
+<pre>Output "4"
+</pre>
+<h3><span class="mw-headline" id="pgmpiet"><a href="/wiki/Pgmpiet" title="Pgmpiet">pgmpiet</a></span></h3>
+<pre>P2
+# pgmpiet P2 XKCD Random number
+8 3
+255
+112 112 112 112 131 247 255 112 
+33 33 33 33 33 33 112 112 
+33 33 33 33 33 33 33 33 
+</pre>
+<h3><span class="mw-headline" id="Piet"><a href="/wiki/Piet" title="Piet">Piet</a></span></h3>
+<table><tbody><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr></tbody></table>
+<h3><span id="Piet.2B.2B"></span><span class="mw-headline" id="Piet++"><a href="/wiki/Piet%2B%2B" title="Piet++">Piet++</a></span></h3>
+<dl><dd><sup><small><b>Note:</b>This lang is still in dev.</small></sup></dd></dl>
+<figure class="mw-default-size mw-halign-none" typeof="mw:File/Frameless"><a href="/wiki/File:Piet%2B%2BXKCD2112.png" class="mw-file-description"><img src="/w/images/thumb/7/72/Piet%2B%2BXKCD2112.png/300px-Piet%2B%2BXKCD2112.png" decoding="async" width="300" height="129" class="mw-file-element" srcset="/w/images/7/72/Piet%2B%2BXKCD2112.png 1.5x" /></a><figcaption></figcaption></figure>
+<p>Portable Pixmap version:
+</p>
+<pre>P3
+# // chosen by fair dice roll.// guaranteed to be random.
+7 3
+255
+  0  85  85  170 255  85  170 255  85  255  85  85  255  85 255    0   0   0    0 170  85
+  0   0   0  170 255  85  170 255  85    0   0   0  255  85 255  255  85 255    0 170  85
+  0   0   0    0   0   0    0   0   0    0   0   0    0   0   0    0   0   0    0 170  85
+</pre>
+<h3><span class="mw-headline" id="PlusIntMinus"><a href="/wiki/PlusIntMinus" class="mw-redirect" title="PlusIntMinus">PlusIntMinus</a></span></h3>
+<p>Although the <a href="/wiki/PlusOrMinus" title="PlusOrMinus">PlusOrMinus</a> program will still work for this language, this is a shorter one that only works on <a href="/wiki/PlusIntMinus" class="mw-redirect" title="PlusIntMinus">PlusIntMinus</a>.
+</p>
+<pre>+52-
+</pre>
+<h3><span class="mw-headline" id="PlusOrMinus"><a href="/wiki/PlusOrMinus" title="PlusOrMinus">PlusOrMinus</a></span></h3>
+<pre>++++++++++++++++++++++++++++++++++++++++++++++++++++-
+</pre>
+<h3><span class="mw-headline" id="PocketFuck"><a href="/wiki/PocketFuck" title="PocketFuck">PocketFuck</a></span></h3>
+<p><b>Enlarged view</b>
+</p><p><span><span typeof="mw:File"><a href="/wiki/File:Pocketfuck_xkcdrn.png" class="mw-file-description" title="{{{2}}}"><img alt="{{{2}}}" src="/w/images/7/7c/Pocketfuck_xkcdrn.png" decoding="async" width="200" height="100" class="mw-file-element" /></a></span></span>
+</p><p><b>Actual size</b>
+</p><p><span class="mw-default-size" typeof="mw:File"><a href="/wiki/File:Pocketfuck_xkcdrn.png" class="mw-file-description" title="{{{2}}}"><img alt="{{{2}}}" src="/w/images/7/7c/Pocketfuck_xkcdrn.png" decoding="async" width="2" height="1" class="mw-file-element" /></a></span>
+</p>
+<h3><span class="mw-headline" id="Poetic"><a href="/wiki/Poetic" title="Poetic">Poetic</a></span></h3>
+<p>By <a href="/wiki/User:XKCD_Random_Number" class="mw-redirect" title="User:XKCD Random Number">User:XKCD Random Number</a>:
+</p>
+<pre>Pre crecas condominolovium seclosoponiat exelglios egumbo
+ e arbi-brimidozoque fiene a parp-en inbidee nonquaeson!</pre>
+<p>By <a href="/wiki/User:None1" title="User:None1">User:None1</a>:
+</p>
+<pre>XKCD Challenge
+I was a mouse.
+A bad rodent indeed.
+I am cats' supper.
+Never seeing bright light.
+Don't be a Befunge programmer.
+Or you'll be like me.</pre>
+<h3><span class="mw-headline" id="Polynomix"><a href="/wiki/Polynomix" title="Polynomix">Polynomix</a></span></h3>
+<p>This one is actually fun!
+</p>
+<pre>0 random() 4
+output()
+</pre>
+<p><span class="spoiler"><code>random()</code> also uses the <code>+</code> operator, so 0+4 is calculated, which prints 4.</span>
+</p>
+<h3><span class="mw-headline" id="PopFuck"><a href="/wiki/PopFuck" title="PopFuck">PopFuck</a></span></h3>
+<pre>00000++&gt;</pre>
+<h3><span class="mw-headline" id="Prompt"><a href="/wiki/Prompt" title="Prompt">Prompt</a></span></h3>
+<p>Define randomised as 4. Print randomised to the screen and halt.
+</p>
+<h3><span class="mw-headline" id="PTotE"><a href="/wiki/PTotE" title="PTotE">PTotE</a></span></h3>
+<pre>Tc
+</pre>
+<h3><span class="mw-headline" id="Python_3"><a href="/wiki/Python" title="Python">Python</a> 3</span></h3>
+<pre>print(4)
+</pre>
+<p>This is a Polyglot, which also works in LUA, Ruby, Perl, PHP, Julia, AWK, Python 2 (outputs 4 with parentheses instead of just a digit), R (outputs <code>[1] 4</code>), JavaScript (for browsers, not Node.js), along with <a href="/wiki/Wasaya" title="Wasaya">Wasaya</a>, <a href="/wiki/X-script" title="X-script">X-script</a>, <a href="/wiki/Amethyst" title="Amethyst">Amethyst</a>, <a href="/wiki/M%C3%98SS" title="MØSS">MØSS</a>, <a href="/wiki/Python_But_Bad" title="Python But Bad">Python But Bad</a>, <a href="/wiki/Don_Giovanni" title="Don Giovanni">Don Giovanni</a> and <a href="/wiki/The_Second_Coming" title="The Second Coming">The Second Coming</a>.
+</p>
+<h4><span class="mw-headline" id="Alternatives">Alternatives</span></h4>
+<pre>__import__("sys").stdout.write("4")
+</pre>
+<pre>print(4,end='')
+</pre>
+<pre>from random import randint
+x = 0
+while x&#160;!= 4:
+    x = randint(1, 6)
+print(x)
+</pre>
+<pre>from random import randint
+print(randint(4, 4))
+</pre>
+<p>All of these are Polyglots of <a href="/wiki/Python_But_Bad" title="Python But Bad">Python But Bad</a>.
+</p>
+<h3><span class="mw-headline" id="Rec"><a href="/wiki/Rec" title="Rec">Rec</a></span></h3>
+<pre>4P [0^ Chosen by fair dice roll.
+       Guaranteed to be random. ]
+</pre>
+<h3><span class="mw-headline" id="Record"><a href="/wiki/Record" title="Record">Record</a></span></h3>
+<pre>D "4"
+</pre>
+<h3><span class="mw-headline" id="Reflecto"><a href="/wiki/Reflecto" title="Reflecto">Reflecto</a></span></h3>
+<pre>4#E
+chosen by fair dice roll.
+guaranteed to be random.
+</pre>
+<h3><span class="mw-headline" id="Remove_Line_Numbers"><a href="/wiki/Remove_Line_Numbers" title="Remove Line Numbers">Remove Line Numbers</a></span></h3>
+<pre>1 4
+</pre>
+<h3><span class="mw-headline" id="Rockstar"><a href="/wiki/Rockstar" title="Rockstar">Rockstar</a></span></h3>
+<pre>The truth is random (chosen by fair dice roll)
+Looking is not useful
+Xkcd is a blessing (guaranteed to be random)
+Say the truth without looking over it.</pre>
+<h3><span class="mw-headline" id="Ropy"><a href="/wiki/Ropy" title="Ropy">Ropy</a></span></h3>
+<p>This program uses implicit output. There is a trailing  newline.
+</p>
+<pre>4</pre>
+<h3><span class="mw-headline" id="Ruckfish"><a href="/wiki/Ruckfish" title="Ruckfish">Ruckfish</a></span></h3>
+<pre>iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii</pre>
+<h3><span class="mw-headline" id="SDOTOS"><a href="/wiki/SDOTOS" title="SDOTOS">SDOTOS</a></span></h3>
+<pre>ssss!</pre>
+<h3><span class="mw-headline" id="Sakana"><a href="/wiki/Sakana" title="Sakana">Sakana</a></span></h3>
+<pre>ラ空増増乗＃Chosen by fair dice roll.＃＃guarenteed to be random.＃作ラ出</pre>
+<h3><span class="mw-headline" id="Setlang"><a href="/wiki/Setlang" title="Setlang">Setlang</a></span></h3>
+<pre>(4)
+</pre>
+<p>Which also works as a <a href="/wiki/Setlang%2B%2B" title="Setlang++">Setlang++</a> program.
+</p>
+<h3><span class="mw-headline" id="Self-modifying_Brainfuck"><a href="/wiki/Self-modifying_Brainfuck" title="Self-modifying Brainfuck">Self-modifying Brainfuck</a></span></h3>
+<pre>&lt;.4
+</pre>
+<h3><span class="mw-headline" id="Shinda_Sakana"><a href="/wiki/Shinda_Sakana" title="Shinda Sakana">Shinda Sakana</a></span></h3>
+<pre>増増乗出</pre>
+<h3><span class="mw-headline" id="Simon_says_brainfuck"><a href="/wiki/Simon_says_brainfuck" title="Simon says brainfuck">Simon says brainfuck</a></span></h3>
+<pre>Simon says: &gt;+&gt;+&gt;+[&gt;+[-&lt;+++&gt;]&lt;&lt;]&gt;.
+Chosen by fair dice roll.
+Guaranteed to be random.
+</pre>
+<h3><span class="mw-headline" id="Slam"><a href="/wiki/Slam" title="Slam">Slam</a></span></h3>
+<pre>Hi hi hi hi hi
+XKCD
+RandomNumber! OK</pre>
+<p>The program above <i>may</i> print extra whitespace characters. If you do not want extra whitespace characters, use this one below.
+</p>
+<pre>Hi hi hi hi hi
+XKCD RandomNumber!
+Yay yay yay</pre>
+<h3><span class="mw-headline" id="SletScript"><a href="/wiki/SletScript" title="SletScript">SletScript</a></span></h3>
+<pre>[} 我扔骰子扔的。 {]
+[} 包随机的。 {]
+.(4)
+</pre>
+<h3><span class="mw-headline" id="Sokolang"><a href="/wiki/Sokolang" title="Sokolang">Sokolang</a></span></h3>
+<pre>// Chosen by fair dice roll.
+// Guaranteed to be random.
+ ###
+##*##
+#@R*#
+#####
+---
+r:11,4
+---
+rwu
+</pre>
+<h3><span class="mw-headline" id="Standard_modern_vernacular"><a href="/wiki/%E4%B8%AD%E6%96%87" title="中文">Standard modern vernacular</a></span></h3>
+<pre>输出 4 。
+</pre>
+<h3><span class="mw-headline" id="Staples"><a href="/wiki/Staples" title="Staples">Staples</a></span></h3>
+<p>100% random!!!
+</p>
+<pre>[{{{[[[[[{{{[[{[[{{[{[[{[{{[{{{[[{{{[{[[[[{[{[[[[[{[[[{[[[{{[{[[[[{[[[{[[[{[{[[{}]]}]}]]]}]]]}]]]]}]}}]]]}]]]}]]]]]}]}]]]]}]}}}]]}}}]}}]}]]}]}}]]}]]}}}]]]]]}}}]</pre>
+<h3><span class="mw-headline" id="Stars"><a href="/wiki/Stars" title="Stars">Stars</a></span></h3>
+<pre>* ***** * ****** ***** ** *** ***** ** *** ***** ** *** ***** ** ****** **** **** ****</pre>
+<h3><span class="mw-headline" id="StegFuck"><a href="/wiki/StegFuck" title="StegFuck">StegFuck</a></span></h3>
+<p><span class="mw-default-size" typeof="mw:File"><a href="/wiki/File:Stegfuck_xkcdrn.png" class="mw-file-description"><img src="/w/images/6/64/Stegfuck_xkcdrn.png" decoding="async" width="200" height="200" class="mw-file-element" /></a></span>
+</p>
+<h3><span class="mw-headline" id="TernLSB"><a href="/wiki/TernLSB" title="TernLSB">TernLSB</a></span></h3>
+<p><span class="mw-default-size" typeof="mw:File"><a href="/wiki/File:Ternlsb_xkcdrn.png" class="mw-file-description"><img src="/w/images/c/cd/Ternlsb_xkcdrn.png" decoding="async" width="200" height="200" class="mw-file-element" /></a></span>
+</p>
+<h3><span class="mw-headline" id="TESTLANG"><a href="/wiki/TESTLANG" title="TESTLANG">TESTLANG</a></span></h3>
+<pre>push 4 push out
+</pre>
+<h4><span class="mw-headline" id="Same_thing_but_without_numbers">Same thing but without numbers</span></h4>
+<pre>push char 52 push out
+</pre>
+<h3><span class="mw-headline" id="Text"><a href="/wiki/Text" title="Text">Text</a></span></h3>
+<pre>4</pre>
+<h3><span class="mw-headline" id="This_esolang_is_a_brainfuck_derivative"><a href="/wiki/This_esolang_is_a_brainfuck_derivative" title="This esolang is a brainfuck derivative">This esolang is a brainfuck derivative</a></span></h3>
+<pre>This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainfuck derivative
+This esolang is a brainf*** derivative
+chosen by fair dice roll
+guarranteed to be random
+</pre>
+<p><i>Note: the three stars in the program are <b>MANDATORY</b>, while the last two lines are <b>not</b>.</i>
+(brainfuck: ++++++++++++++++++++++++++++++++++++++++++++++++++++.)
+</p>
+<h3><span class="mw-headline" id="This_esolang_is_not_a_push-down_automata"><a href="/wiki/This_esolang_is_not_a_push-down_automata" title="This esolang is not a push-down automata">This esolang is not a push-down automata</a></span></h3>
+<pre>4.
+</pre>
+<h3><span class="mw-headline" id="Three_Star_Programmer"><a href="/wiki/Three_Star_Programmer" title="Three Star Programmer">Three Star Programmer</a></span></h3>
+<pre>0 4 4 4 1 1 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 3 4
+</pre>
+<h3><span class="mw-headline" id="Tile"><a href="/wiki/Tile" title="Tile">Tile</a></span></h3>
+<p><span class="mw-default-size" typeof="mw:File/Frameless"><a href="/wiki/File:Tile_xkcd_randomnumber.png" class="mw-file-description"><img src="/w/images/thumb/4/4c/Tile_xkcd_randomnumber.png/300px-Tile_xkcd_randomnumber.png" decoding="async" width="300" height="88" class="mw-file-element" srcset="/w/images/thumb/4/4c/Tile_xkcd_randomnumber.png/450px-Tile_xkcd_randomnumber.png 1.5x, /w/images/thumb/4/4c/Tile_xkcd_randomnumber.png/600px-Tile_xkcd_randomnumber.png 2x" /></a></span>
+</p>
+<h3><span id="tommyaweosme.27s_harmonica"></span><span class="mw-headline" id="tommyaweosme's_harmonica"><a href="/wiki/Tommyaweosme%27s_harmonica" title="Tommyaweosme&#39;s harmonica">tommyaweosme's harmonica</a></span></h3>
+<pre>1B 1B 2B 1B 2B 1B 2B 1B 2B 1B 1D 1B
+</pre>
+<h3><span class="mw-headline" id="Trampolines"><a href="/wiki/Trampolines" title="Trampolines">Trampolines</a></span></h3>
+<pre>|o#
+|4#
+|;#
+|##</pre>
+<h3><span id="Tr.C9.AA.CC.AFmaxion"></span><span class="mw-headline" id="Trɪ̯maxion"><a href="/wiki/Tr%C9%AA%CC%AFmaxion" title="Trɪ̯maxion">Trɪ̯maxion</a></span></h3>
+<figure class="mw-default-size mw-halign-none" typeof="mw:File"><a href="/wiki/File:4.tmax.png" class="mw-file-description"><img src="/w/images/b/b0/4.tmax.png" decoding="async" width="29" height="19" class="mw-file-element" /></a><figcaption></figcaption></figure>
+<h3><span id=".E2.80.8Dtrue"></span><span class="mw-headline" id="‍true"><a href="/wiki/%E2%80%8Dtrue" class="mw-redirect" title="‍true">‍true</a></span></h3>
+<pre>4.
+</pre>
+<h3><span class="mw-headline" id="Txet"><a href="/wiki/Txet" title="Txet">Txet</a></span></h3>
+<pre>d4`4
+</pre>
+<h3><span class="mw-headline" id="Typeid"><a href="/wiki/Typeid" title="Typeid">Typeid</a></span></h3>
+<pre>49choosen_by_fair_dice_roll_guaranteed_to_be_randomIR1aIhhhhEE
+</pre>
+<p>Demangled:
+</p>
+<pre>choosen_by_fair_dice_roll_guaranteed_to_be_random&lt;a&lt;unsigned char, unsigned char, unsigned char, unsigned char&gt;&amp;&gt;
+</pre>
+<h3><span class="mw-headline" id="UnnumericJS"><a href="/wiki/UnnumericJS" title="UnnumericJS">UnnumericJS</a></span></h3>
+<pre>console.log(!''+!''+!''+!'');
+</pre>
+<h3><span class="mw-headline" id="Vines"><a href="/wiki/Vines" title="Vines">Vines</a></span></h3>
+<p>Standalone program (puts ASCII <code>4</code> in memory)
+</p>
+<pre>  @@
+  |b chosen by the hivemind
+\ || guaranteed to be random
+ 134
+</pre>
+<p>Function (puts hex <code>0x4</code> in memory)
+</p>
+<pre>  @ chosen by the hivemind
+\ | guaranteed to be random
+ 14
+</pre>
+<h3><span class="mw-headline" id="Weeeeeeeeeeeeeeeeeeeeeeeeeeeeee"><a href="/wiki/Weeeeeeeeeeeeeeeeeeeeeeeeeeeeee" title="Weeeeeeeeeeeeeeeeeeeeeeeeeeeeee">Weeeeeeeeeeeeeeeeeeeeeeeeeeeeee</a></span></h3>
+<pre>Start epidemic
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Infect person
+Check number of infections
+Delevop vaccine
+</pre>
+<h3><span class="mw-headline" id="WeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeBasic"><a href="/wiki/WeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeBasic" title="WeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeBasic">WeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeBasic</a></span></h3>
+<pre>print "4"
+</pre>
+<p>Which also works when running on <a href="/wiki/WeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeBasic%2B%2B" title="WeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeBasic++">WeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeBasic++</a> or <a href="/wiki/Python" title="Python">Python</a> 2.
+</p><p>A commented version, that only works in this language, is as follows:
+</p>
+<pre>print "4"
+Start epidemic chosen by fair dice roll
+Delevop vaccine guarranteed to be random
+</pre>
+<h3><span class="mw-headline" id="wenyan"><a href="/wiki/Wenyan" title="Wenyan">wenyan</a></span></h3>
+<pre>吾有一數。曰四。書之。
+</pre>
+<h3><span class="mw-headline" id="Whendo"><a href="/wiki/Whendo" title="Whendo">Whendo</a></span></h3>
+<pre>a==0=&gt;a+=4-&gt;a
+</pre>
+<h3><span class="mw-headline" id="wsad"><a href="/wiki/Wsad" title="Wsad">wsad</a></span></h3>
+<pre>wwwwwwwwas
+</pre>
+<h3><span class="mw-headline" id="X_strike"><a href="/wiki/X_strike" title="X strike">X strike</a></span></h3>
+<pre>X!×4
+x^-1×0×0
+</pre>
+<h3><span class="mw-headline" id="XKCD"><a href="/wiki/XKCD" title="XKCD">XKCD</a></span></h3>
+<pre>X
+</pre>
+<h3><span id="F.2Cu.2Cc.2Ck."></span><span class="mw-headline" id="F,u,c,k."><a href="/wiki/F,u,c,k." title="F,u,c,k.">F,u,c,k.</a></span></h3>
+<pre>uuuuk
+</pre>
+<h3><span class="mw-headline" id="Basic_Stack"><a href="/wiki/Basic_Stack" title="Basic Stack">Basic Stack</a></span></h3>
+<pre>push 52
+out
+stop
+RUN</pre>
+<h3><span id="O.3F"></span><span class="mw-headline" id="O?"><a href="/wiki/O%3F" title="O?">O?</a></span></h3>
+<pre>function getRandomNumber():{
+    return 4; /#  chosen by fair dice roll.
+              /#  guaranteed to be random.
+}
+</pre>
+<h3><span class="mw-headline" id="Escratcholang"><a href="/wiki/Escratcholang" title="Escratcholang">Escratcholang</a></span></h3>
+<pre>++*</pre>
+<h3><span class="mw-headline" id="Brain_x"><a href="/wiki/Brain_x" title="Brain x">Brain_x</a></span></h3>
+<pre>RAXXXX</pre>
+<h3><span class="mw-headline" id="Power_of_Power"><a href="/wiki/Power_of_Power" title="Power of Power">P<sup>o<sup>w<sup>e<sup>r<sup> <sup>o<sup>f<sup> <sup>P<sup>o<sup>w<sup>e<sup>r</sup></sup></sup></sup></sup></sup></sup></sup></sup></sup></sup></sup></sup></a></span></h3>
+<pre>1^^^</pre>
+<h3><span class="mw-headline" id="Relation"><a href="/wiki/Relation" title="Relation">Relation</a></span></h3>
+<pre>&gt; &gt; &gt; &gt; &gt; &lt;&lt;</pre>
+<h3><span id=".2AAverage_list_based_esolang.2A"></span><span class="mw-headline" id="*Average_list_based_esolang*"><a href="/wiki/*Average_list_based_esolang*" title="*Average list based esolang*">*Average list based esolang*</a></span></h3>
+<pre>++++</pre>
+<h3><span id="SAY_HELLO.21.21.21"></span><span class="mw-headline" id="SAY_HELLO!!!"><a href="/wiki/SAY_HELLO!!!" title="SAY HELLO!!!">SAY HELLO!!!</a></span></h3>
+<pre>!HHHHI
+The output of this string is actually:
+ Hello, world! Hello, world! Hello, world! Hello, world! 4 !dlrow ,elloH</pre>
+<h2><span class="mw-headline" id="External_resources">External resources</span></h2>
+<ul><li><a rel="nofollow" class="external text" href="http://xkcd.com/221">The original program</a> on XKCD</li></ul>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=XKCD_Random_Number&amp;oldid=203290">https://esolangs.org/w/index.php?title=XKCD_Random_Number&amp;oldid=203290</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Category</a>: <ul><li><a href="/wiki/Category:Program_forms" title="Category:Program forms">Program forms</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item">

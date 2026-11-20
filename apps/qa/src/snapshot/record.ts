@@ -87,8 +87,10 @@ const RISING_DAYS_BEFORE = 7
  * address (a guess from a meme format's name, before #401) is one.
  */
 const PINNED = ['https://en.wikipedia.org/wiki/Drake_Hotline_Bling']
+/** And pages never read: the same planted test uses them as real pages the snapshot never recorded (snapshot misses). */
+export const NEVER_READ: ReadonlySet<string> = new Set(['https://en.wikipedia.org/wiki/Procopius', 'https://en.wikipedia.org/wiki/Fish_ladders', 'https://en.wikipedia.org/wiki/Two_Buttons', 'https://github.com/dy/jz'])
 
-const addDays =(day: string, n: number): string => {
+const addDays = (day: string, n: number): string => {
   const [y, m, d] = day.split('-').map(Number) as [number, number, number]
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
 }
@@ -148,6 +150,10 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
       return null
     }
   }
+  const readPage = async (url: string): Promise<Item> => {
+    if (NEVER_READ.has(url)) throw new WebError('not-allowed', `${url} is kept out of the snapshot (a planted snapshot miss)`)
+    return readUrl(wander, url)
+  }
   const repoLinks = (names: string[] | null): ItemLink[] => (names ?? []).map((name) => ({ title: name, url: `https://github.com/${name}` }))
 
   // 1. What a morning offers, as the engine reads it.
@@ -176,7 +182,7 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
       const links = (await soft(`Lemmy c/${community}`, () => lemmyMorningLinks(wander, community, LEMMY_POSTS))) ?? []
       for (const link of links) {
         if (!room(link.url)) continue
-        const item = await soft(link.url, () => readUrl(wander, link.url))
+        const item = await soft(link.url, () => readPage(link.url))
         if (item) posts.push(item)
       }
     }
@@ -213,7 +219,7 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
   for (const link of starts) {
     if (over() || asked.has(link.url)) continue
     asked.add(link.url)
-    const item = await soft(link.url, () => readUrl(wander, link.url))
+    const item = await soft(link.url, () => readPage(link.url))
     if (item) read.push(item)
   }
   // 6. The library manuals (tinker reads them), and a page of MDN they link to: small, so before the budget goes on step 7.
@@ -235,7 +241,7 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
       for (const link of item.links.slice(0, LINKS_PER_PAGE)) {
         if (asked.has(link.url) || !room(link.url)) continue
         asked.add(link.url)
-        const got = await soft(link.url, () => readUrl(wander, link.url))
+        const got = await soft(link.url, () => readPage(link.url))
         if (got) next.push(got)
       }
     }

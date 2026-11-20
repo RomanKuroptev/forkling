@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<title>Ero - Esolang</title>
+</head>
+<body class="skin-vector-legacy mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Ero rootpage-Ero skin-vector action-view"><div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+	<a id="top"></a>
+	<div id="siteNotice"><div id="localNotice"><div class="sitenotice" lang="en" dir="ltr"><p><b>We are currently working on new rules for what content should and shouldn't be allowed on this website, and are looking for feedback! See <a href="/wiki/Esolang:2026_topicality_proposal" title="Esolang:2026 topicality proposal">Esolang:2026 topicality proposal</a> to view and give feedback on the current draft.</b>
+</p></div></div></div>
+	<div class="mw-indicators">
+	</div>
+	<h1 id="firstHeading" class="firstHeading mw-first-heading"><span class="mw-page-title-main">Ero</span></h1>
+	<div id="bodyContent" class="vector-body">
+		<div id="siteSub" class="noprint">From Esolang</div>
+		<div id="contentSub"><div id="mw-content-subtitle"></div></div>
+		<div id="contentSub2"></div>
+		<div id="jump-to-nav"></div>
+		<a class="mw-jump-link" href="#mw-head">Jump to navigation</a>
+		<a class="mw-jump-link" href="#searchInput">Jump to search</a>
+		<div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><dl><dd><i>This article is not detailed enough and needs to be expanded. Please help us by <span class="plainlinks"><a rel="nofollow" class="external text" href="//esolangs.org/w/index.php?title=Ero&amp;action=edit">adding some more information</a></span>.</i></dd>
+<dd><i>This is still a work in progress. It may be changed in the future.</i></dd></dl>
+<table>
+<caption><b>|::</b></caption>
+<tbody><tr>
+<td colspan="2"><figure class="mw-halign-center" typeof="mw:File"><a href="/wiki/File:Ero_helloworld.jpg" class="mw-file-description"><img src="/w/images/7/7a/Ero_helloworld.jpg" decoding="async" width="200" height="39" class="mw-file-element" /></a><figcaption></figcaption></figure></td>
+</tr>
+<tr>
+<th>Designed by</th>
+<td><a href="/wiki/User:InLuaIKnow" title="User:InLuaIKnow">User:InLuaIKnow</a></td>
+</tr>
+<tr>
+<th><a href="/wiki/Category:Years" title="Category:Years">Appeared in</a></th>
+<td>2026</td>
+</tr>
+<tr>
+<th><a href="/wiki/Computational_class" title="Computational class">Computational class</a></th>
+<td><a href="/wiki/Category:Unknown_computational_class" title="Category:Unknown computational class">Unknown</a></td>
+</tr>
+<tr>
+<th>Major implementations</th>
+<td><a rel="nofollow" class="external text" href="http://lua.org">Lua</a></td>
+</tr>
+</tbody></table>
+<p>is a esolang written in <a rel="nofollow" class="external text" href="http://lua.org">Lua</a>.
+</p>
+<pre>:|: statement terminator
+</pre>
+<pre>:.(opcode)  makes a statement
+</pre>
+<pre>|:: signals that arguments are after this
+</pre>
+<pre>&gt;&gt; argument seperator.
+</pre>
+<h2><span id="Example.28s.29:"></span><span class="mw-headline" id="Example(s):">Example(s):</span></h2>
+<pre>:.1|::1&gt;&gt;"Hello,world!":|:
+:.8|::1&gt;&gt;1:|:
+</pre>
+<pre>:.1|::1&gt;&gt;1:|::.1|::2&gt;&gt;1:|::.2|::1&gt;&gt;2&gt;&gt;3:|::.8|::1&gt;&gt;3:|:
+</pre>
+<h2><span class="mw-headline" id="Current_intrepeter">Current intrepeter</span></h2>
+<pre>--|:: intrepeter
+local reg={}
+local pc = 1
+local functions = {[1]=print,[2]=error,[3]=io.read}
+local opc = {
+   [1]=function(a,b)--sets a reg
+       reg[a]=b
+   end;
+   [2]=function(a,b,c)--add
+       reg[c]=(reg[a]+reg[b])
+   end;
+   [3]=function(a,b,c)--sub
+       reg[c]=(reg[a]-reg[b])
+   end;
+   [4]=function(a,b,c)--mul
+       reg[c]=(reg[a]*reg[b])
+   end;
+   [5]=function(a,b,c)--div
+       reg[c]=(reg[a]/reg[b])
+   end;
+   [6]=function(a,b,c)--pow
+       reg[c]=(reg[a]^reg[b])
+   end;
+   [7]=function(a,b,c)--mod
+       reg[c]=(reg[a]%reg[b])
+   end;
+   [8]=function(r,a,...)--call
+       local args = {}
+       for i,v in ipairs({...}) do
+          args[i]=reg[v]
+       end
+       reg[r]=functions[a](table.unpack(args))
+   end;
+   [9]=function(n)--jump
+       pc=pc+n-1
+   end;
+   [10]=function(r,n)--jump if true
+       if reg[r] == true then
+           pc=pc+n-1
+       end
+   end;
+   [11]=function(o,a,b,r)--compare
+       if o=="&gt;" then 
+           reg[r]=reg[a]&gt;reg[b] 
+       elseif o=="&lt;" then
+           reg[r]=reg[a]&lt;reg[b]
+       elseif o=="==" then
+           reg[r]=reg[a]==reg[b]
+       elseif o=="!=" then
+           reg[r]=reg[a]~=reg[b]
+       else
+           error("invalid op")
+       end
+   end;
+   [12]=function(a,r)--not
+       reg[r]=(not reg[a])
+   end;
+   [13]=function(a,b,r)--or
+       reg[r]=reg[a] or reg[b]
+   end;
+   [14]=function(a,b,r)--and
+       reg[r]=reg[a] and reg[b]
+   end;
+}
+function compile(source)
+   local inst = {}
+   for stmt in source:gmatch("(.-):|:") do
+       local opco = stmt:match("^%:.([0-9]+)|::")
+       if opco then
+           opco = tonumber(opco)
+          -- print(opco)
+           local argst = stmt:match("|::(.*)")
+           local args = {}
+          -- print(argst)
+           if argst then
+               local argcount = 0
+               for argf in argst:gmatch("([^&gt;&gt;]+)") do
+                  -- print(argf)
+                   argcount=argcount+1
+                   local fl = argf:sub(1,1)..argf:sub(-1)
+                   local num = tonumber(argf)
+                   if num then
+                       args[#args+1] = math.floor(num)
+                   elseif fl=="<i>" or fl=='""' then</i>
+                       args[#args+1] = argf:sub(2,-2)
+                   elseif argf=="true" then args[#args+1] = true elseif argf=="false" then args[#args+1] = false 
+                   else error("invalid argument #"..argcount) end
+               end
+           end
+           inst[#inst+1]={opcode=opco, args=args}
+       end
+   end
+   return inst
+end
+function intrepet(p)
+   pc = 1
+   while pc &lt;= #p do
+       local instr = p[pc]
+       local op = opc[instr.opcode]
+       if op then
+           op(table.unpack(instr.args))
+       end
+       pc = pc + 1
+   end
+end
+if arg[1] == nil then
+   print("|:: (Ero), the esoteric language")
+   print("!:quit to exit.")
+   while true do
+       io.write("&gt;")
+       local inp=io.read()
+       if inp=="!:quit" then return end 
+       local ok,res =pcall(compile,inp)
+       --print(ok,table.concat(res," "))
+       if not ok then io.stderr:write("compilation error: "..res.."\n") else
+           local o2, re2 = pcall(intrepet,res)
+           if not o2 then io.stderr:write("runtime error: "..re2.."\n") end
+       end
+   end
+elseif arg[2]=="-c" then -- compile to fully binary file
+   local infile = arg[1]
+   local outfile = arg[3] or (infile .. ".bin")
+   local f = io.open(infile, "r")
+   if not f then
+       io.stderr:write("Cannot open input file: "..infile.."\n")
+       return
+   end
+   local src = f:read("a")
+   f:close()
+   local ok, inst = pcall(compile, src)
+   if not ok then
+       io.stderr:write("compilation error: "..inst.."\n")
+       return
+   end
+   local f2 = io.open(outfile, "wb")
+   if not f2 then
+       io.stderr:write("can not open output file: "..outfile.."\n")
+       return
+   end
+   local function write_number(n)
+       f2:write(string.pack("&gt;d", n)) -- big-endian double
+   end
+   local function write_boolean(b)
+       f2:write(string.char(b and 1 or 0))
+   end
+   local function write_string(s)
+       local len = #s
+       f2:write(string.pack("&gt;H", len)) -- 2 bytes length
+       f2:write(s)
+   end
+   for _, instr in ipairs(inst) do
+       f2:write(string.char(instr.opcode or 0))
+       local args = instr.args or {}
+       f2:write(string.char(#args))
+       for _, a in ipairs(args) do
+           if type(a) == "number" then
+               f2:write(string.char(0))  -- type marker: 0=number
+               write_number(math.floor(a))
+           elseif type(a) == "boolean" then
+               f2:write(string.char(1))  -- type marker: 1=boolean
+               write_boolean(a)
+           elseif type(a) == "string" then
+               f2:write(string.char(2))  -- type marker: 2=string
+               write_string(a)
+           else
+               error("unsupported arg type: "..type(a))
+           end
+       end
+   end
+   f2:close()
+   print("compiled: "..outfile)
+elseif arg[2]=="-oc" then -- open fully binary compiled file
+   local infile = arg[1]
+   local f = io.open(infile, "rb")
+   if not f then
+       io.stderr:write("can not open compiled file: "..infile.."\n")
+       return
+   end
+   local data = f:read("a")
+   f:close()
+   local pos = 1
+   local insts = {}
+   local function read_number()
+       local n
+       n, pos = string.unpack("&gt;d", data, pos)
+       return n
+   end
+   local function read_boolean()
+       local b = data:byte(pos)
+       pos = pos + 1
+       return b ~= 0
+   end
+   local function read_string()
+       local len
+       len, pos = string.unpack("&gt;H", data, pos)
+       local s = data:sub(pos, pos+len-1)
+       pos = pos + len
+       return s
+   end
+   while pos &lt;= #data do
+       local opcode = data:byte(pos)
+       pos = pos + 1
+       local argcount = data:byte(pos)
+       pos = pos + 1
+       local args = {}
+       for i=1,argcount do
+           local typ = data:byte(pos)
+           pos = pos + 1
+           if typ == 0 then
+               args[i] = read_number()
+           elseif typ == 1 then
+               args[i] = read_boolean()
+           elseif typ == 2 then
+               args[i] = read_string()
+           else
+               error("unknown arg type in")
+           end
+       end
+       insts[#insts+1] = {opcode=opcode, args=args}
+   end
+   intrepet(insts)
+else
+   local h=io.open(arg[1],"r")
+   local c=h:read("a")h:close()
+   local ok,res =pcall(compile,c)
+   if not ok then io.stderr:write("compilation error:",res) else intrepet(res) end
+end
+</pre>
+</div>
+<div class="printfooter">Retrieved from "<a dir="ltr" href="https://esolangs.org/w/index.php?title=Ero&amp;oldid=176804">https://esolangs.org/w/index.php?title=Ero&amp;oldid=176804</a>"</div></div>
+		<div id="catlinks" class="catlinks"><div id="mw-normal-catlinks" class="mw-normal-catlinks"><a href="/wiki/Special:Categories" title="Special:Categories">Categories</a>: <ul><li><a href="/wiki/Category:Stubs" title="Category:Stubs">Stubs</a></li><li><a href="/wiki/Category:Works-in-Progress" title="Category:Works-in-Progress">Works-in-Progress</a></li><li><a href="/wiki/Category:Languages" title="Category:Languages">Languages</a></li></ul></div></div>
+	</div>
+</div>
+<div id="mw-navigation">
+	<h2>Navigation menu</h2>
+	<div id="mw-head">
+<nav id="p-personal" class="mw-portlet mw-portlet-personal vector-user-menu-legacy vector-menu" aria-labelledby="p-personal-label"  >
+	<h3
+		id="p-personal-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Personal tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="pt-createaccount" class="mw-list-item"><a href="/w/index.php?title=Special:CreateAccount&amp;returnto=Ero" title="You are encouraged to create an account and log in; however, it is not mandatory"><span>Create account</span></a></li><li id="pt-login" class="mw-list-item"><a href="/w/index.php?title=Special:UserLogin&amp;returnto=Ero" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o"><span>Log in</span></a></li>
+		</ul>
+	</div>
+</nav>
+		<div id="left-navigation">
+<nav id="p-namespaces" class="mw-portlet mw-portlet-namespaces vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-namespaces-label"  >
+	<h3
+		id="p-namespaces-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Namespaces</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-nstab-main" class="selected mw-list-item"><a href="/wiki/Ero" title="View the content page [c]" accesskey="c"><span>Page</span></a></li><li id="ca-talk" class="new mw-list-item"><a href="/w/index.php?title=Talk:Ero&amp;action=edit&amp;redlink=1" rel="discussion" class="new" title="Discussion about the content page (page does not exist) [t]" accesskey="t"><span>Discussion</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-variants" class="mw-portlet mw-portlet-variants emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-variants-label"  >
+	<input type="checkbox"
+		id="p-variants-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-variants-label"
+	>
+	<label
+		id="p-variants-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">English</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+		</div>
+		<div id="right-navigation">
+<nav id="p-views" class="mw-portlet mw-portlet-views vector-menu-tabs vector-menu-tabs-legacy vector-menu" aria-labelledby="p-views-label"  >
+	<h3
+		id="p-views-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Views</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="ca-view" class="selected mw-list-item"><a href="/wiki/Ero"><span>Read</span></a></li><li id="ca-viewsource" class="mw-list-item"><a href="/w/index.php?title=Ero&amp;action=edit" title="This page is protected.&#10;You can view its source [e]" accesskey="e"><span>View source</span></a></li><li id="ca-history" class="mw-list-item"><a href="/w/index.php?title=Ero&amp;action=history" title="Past revisions of this page [h]" accesskey="h"><span>View history</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-cactions" class="mw-portlet mw-portlet-cactions emptyPortlet vector-menu-dropdown vector-menu" aria-labelledby="p-cactions-label"  title="More options" >
+	<input type="checkbox"
+		id="p-cactions-checkbox"
+		role="button"
+		aria-haspopup="true"
+		class="vector-menu-checkbox"
+		aria-labelledby="p-cactions-label"
+	>
+	<label
+		id="p-cactions-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">More</span>
+	</label>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+		</ul>
+	</div>
+</nav>
+<div id="p-search" role="search" class="vector-search-box-vue  vector-search-box-show-thumbnail vector-search-box-auto-expand-width vector-search-box">
+	<h3 >Search</h3>
+	<form action="/w/index.php" id="searchform" class="vector-search-box-form">
+		<div id="simpleSearch"
+			class="vector-search-box-inner"
+			>
+			<input class="vector-search-box-input"
+				 type="search" name="search" placeholder="Search Esolang" aria-label="Search Esolang" autocapitalize="sentences" title="Search Esolang [f]" accesskey="f" id="searchInput"
+			>
+			<input type="hidden" name="title" value="Special:Search">
+			<input id="mw-searchButton"
+				 class="searchButton mw-fallbackSearchButton" type="submit" name="fulltext" title="Search the pages for this text" value="Search">
+			<input id="searchButton"
+				 class="searchButton" type="submit" name="go" title="Go to a page with this exact name if it exists" value="Go">
+		</div>
+	</form>
+</div>
+		</div>
+	</div>
+<div id="mw-panel" class="vector-legacy-sidebar">
+	<div id="p-logo" role="banner">
+		<a class="mw-wiki-logo" href="/wiki/Main_Page"
+			title="Visit the main page"></a>
+	</div>
+<nav id="p-navigation" class="mw-portlet mw-portlet-navigation vector-menu-portal portal vector-menu" aria-labelledby="p-navigation-label"  >
+	<h3
+		id="p-navigation-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Navigation</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="n-mainpage-description" class="mw-list-item"><a href="/wiki/Main_Page" title="Visit the main page [z]" accesskey="z"><span>Main page</span></a></li><li id="n-portal" class="mw-list-item"><a href="/wiki/Esolang:Community_portal" title="About the project, what you can do, where to find things"><span>Community portal</span></a></li><li id="n-Language-list" class="mw-list-item"><a href="/wiki/Language_list"><span>Language list</span></a></li><li id="n-Browse-by-category" class="mw-list-item"><a href="/wiki/Esolang:Categorization"><span>Browse by category</span></a></li><li id="n-recentchanges" class="mw-list-item"><a href="/wiki/Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r"><span>Recent changes</span></a></li><li id="n-randompage" class="mw-list-item"><a href="/wiki/Special:Random" title="Load a random page [x]" accesskey="x"><span>Random page</span></a></li><li id="n-help" class="mw-list-item"><a href="/wiki/Esolang:Help" title="The place to find out"><span>Help</span></a></li>
+		</ul>
+	</div>
+</nav>
+<nav id="p-tb" class="mw-portlet mw-portlet-tb vector-menu-portal portal vector-menu" aria-labelledby="p-tb-label"  >
+	<h3
+		id="p-tb-label"
+		class="vector-menu-heading "
+	>
+		<span class="vector-menu-heading-label">Tools</span>
+	</h3>
+	<div class="vector-menu-content">
+		<ul class="vector-menu-content-list">
+			<li id="t-whatlinkshere" class="mw-list-item"><a href="/wiki/Special:WhatLinksHere/Ero" title="A list of all wiki pages that link here [j]" accesskey="j"><span>What links here</span></a></li><li id="t-recentchangeslinked" class="mw-list-item"><a href="/wiki/Special:RecentChangesLinked/Ero" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k"><span>Related changes</span></a></li><li id="t-specialpages" class="mw-list-item"><a href="/wiki/Special:SpecialPages" title="A list of all special pages [q]" accesskey="q"><span>Special pages</span></a></li><li id="t-print" class="mw-list-item"><a href="javascript:print();" rel="alternate" title="Printable version of this page [p]" accesskey="p"><span>Printable version</span></a></li><li id="t-permalink" class="mw-list-item"><a href="/w/index.php?title=Ero&amp;oldid=176804" title="Permanent link to this revision of this page"><span>Permanent link</span></a></li><li id="t-info" class="mw-list-item"><a href="/w/index.php?title=Ero&amp;action=info" title="More information about this page"><span>Page information</span></a></li>
+		</ul>
+	</div>
+</nav>
+</div>
+</div>
+<footer id="footer" class="mw-footer" >
+	<ul id="footer-info">
+	<li id="footer-info-lastmod"> This page was last edited on 23 February 2026, at 00:53.</li>
+	<li id="footer-info-copyright">Content is available under <a href="/wiki/Esolang:Copyrights" title="Esolang:Copyrights">CC0 public domain dedication</a>.</li>
+</ul>
+	<ul id="footer-places">
+	<li id="footer-places-about"><a href="/wiki/Esolang:About">About Esolang</a></li>
+	<li id="footer-places-disclaimers"><a href="/wiki/Esolang:General_disclaimer">Disclaimers</a></li>
+</ul>
+	<ul id="footer-icons" class="noprint">
+	<li id="footer-copyrightico"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/licenses/cc-0.png" alt="CC0 public domain dedication" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-poweredbyico"><a href="https://www.mediawiki.org/" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/resources/assets/poweredby_mediawiki.svg" alt="Powered by MediaWiki" width="88" height="31" loading="lazy"></a></li>
+	<li id="footer-hostedbyico"><a href="https://www.bytemark.co.uk/r/esolangs" class="cdx-button cdx-button--fake-button cdx-button--size-large cdx-button--fake-button--enabled"><img src="/w/images/hosting_bytemark_88x31.png" srcset="/w/images/hosting_bytemark_132x47.png 1.5x, /w/images/hosting_bytemark_176x62.png 2x" alt="Hosting donated by Bytemark" width="88" height="31" loading="lazy"></a></li>
+</ul>
+</footer>
+</body>
+</html>
