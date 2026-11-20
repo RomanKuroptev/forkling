@@ -9,7 +9,7 @@ import { contactSheet, type Box, type Tile } from '../report/sheet.ts'
 import type { SceneObject } from './open.ts'
 import type { FrameCost } from './budget.ts'
 import { MAX_OFF_FACE, inTheWay, offFace, sightLines } from './bump.ts'
-import { flicker, hexValueSaturation, middleLight, muddyShare, nearWhiteShare, paletteShare, pictureStats, wallBand } from './picture.ts'
+import { flicker, floorWhiteShare, hexValueSaturation, middleLight, muddyShare, nearWhiteShare, paletteShare, pictureStats, wallBand } from './picture.ts'
 
 /**
  * The picture checks of one opened world (audit spec 7.3, 7.4): the fixed cameras (aerial, each place's front, Merge close) and
@@ -38,6 +38,8 @@ export const PICTURE_LEVELS = {
   palette: 0.75,
   /** More than this share of near-white pixels in a picture taken inside a room is blown out (issue 358; the before pictures were 0.46 to 0.57). */
   roomNearWhite: 0.4,
+  /** More than this share of pure white in the lower half of a picture inside a room is a floor patch lit to white (issue 429: `floorWhiteShare`; the before pictures were 0.05 and 0.16, the after ones and every day-7 room picture 0). */
+  roomFloorWhite: 0.02,
   /** By day, a picture inside a room whose middle band (mostly the walls) is darker than this reads as dusk (the dull violet Workshop at noon was 105; Home, 150). */
   roomDayMiddle: 115,
   /**
@@ -75,6 +77,10 @@ export function judgeShot(shot: Shot, ctx: { fixture: string; night: boolean; fi
   if (shot.name.startsWith('room:')) {
     const white = nearWhiteShare(img)
     if (white > PICTURE_LEVELS.roomNearWhite) add('world.room-blown-out', 'major', `The room in "${shot.name}" is washed out`, `${(white * 100).toFixed(0)}% of the picture is near white (at most ${PICTURE_LEVELS.roomNearWhite * 100}%).`, 'The room looks like an empty, overlit showroom: its walls and floor lose their colours.')
+    else {
+      const patch = floorWhiteShare(img)
+      if (patch > PICTURE_LEVELS.roomFloorWhite) add('world.room-blown-out', 'major', `Part of the floor in "${shot.name}" is blown out to white`, `${(patch * 100).toFixed(1)}% of the lower half of the picture is pure white (at most ${PICTURE_LEVELS.roomFloorWhite * 100}%).`, 'Part of the room looks like it is missing its floor, or lit by a floodlight.')
+    }
     if (!ctx.night && ctx.wall) {
       const band = wallBand(img)
       const want = hexValueSaturation(ctx.wall)
