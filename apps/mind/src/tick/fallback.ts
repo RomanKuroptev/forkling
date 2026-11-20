@@ -1,6 +1,6 @@
 import { FoundJob, PlaceRequest, type JobResult } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
-import { fallbackDue, layoutProblems, toLandPlace, validatePlace, FALLBACK_DAYS } from '@forkling/sim'
+import { fallbackDue, layoutProblems, toLandPlace, upperRoomWithoutStairs, validatePlace, FALLBACK_DAYS } from '@forkling/sim'
 import { pendingJobs } from '../build-worker.ts'
 import { paceAhead } from '../budget.ts'
 import { FOUND_BUILD_LIMITS } from '../builds/found-build.ts'
@@ -72,7 +72,7 @@ export function applyFoundResult(t: Tick, r: JobResult): { ok: boolean; text: st
   if (place.rooms.length > FOUND_BUILD_LIMITS.rooms) reasons.push(`a plain kit place has at most ${FOUND_BUILD_LIMITS.rooms} rooms`)
   if (place.rooms.reduce((n, room) => n + room.parts.length, 0) > FOUND_BUILD_LIMITS.parts) reasons.push(`a plain kit place has at most ${FOUND_BUILD_LIMITS.parts} parts in all`)
   if (place.exhibits.length > 0) reasons.push('a plain kit place has no exhibits')
-  reasons.push(...validatePlace(place, { kit }), ...layoutProblems([...t.places.map(toLandPlace), toLandPlace(place)]))
+  reasons.push(...validatePlace(place, { kit }), ...place.rooms.flatMap((r) => upperRoomWithoutStairs(place, r, kit) ?? []), ...layoutProblems([...t.places.map(toLandPlace), toLandPlace(place)]))
   if (reasons.length > 0) return drop(reasons.join('; '))
 
   const built = { ...place, state: { ...place.state, construction: { kind: 'found' as const, finishesAt: constructionEnd(t, FOUND_CONSTRUCTION_MS) } } }

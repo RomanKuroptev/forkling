@@ -151,11 +151,19 @@
       "slot": "main-room/3/1",
       "label": "A souvenir kept here for the day-30 fixture on 2026-12-12.",
       "added": "2026-12-12"
+    },
+    {
+      "id": "kept-2026-11-18-arla6ka-design-how",
+      "kind": "souvenir",
+      "ref": "souvenirs/2026-11-18-arla6ka-design-how",
+      "slot": "main-room/3/2",
+      "label": "A souvenir kept here for the day-30 fixture on 2026-12-16.",
+      "added": "2026-12-16"
     }
   ],
   "state": {
     "construction": null,
-    "lastCareAt": "2026-12-12T10:00:00.000Z",
+    "lastCareAt": "2026-12-16T10:00:00.000Z",
     "neglect": 0,
     "lamps": true,
     "closed": null
@@ -174,6 +182,11 @@
     },
     {
       "at": "2026-12-12T10:00:00.000Z",
+      "verb": "tend",
+      "summary": "Tended for the day-30 fixture."
+    },
+    {
+      "at": "2026-12-16T10:00:00.000Z",
       "verb": "tend",
       "summary": "Tended for the day-30 fixture."
     }

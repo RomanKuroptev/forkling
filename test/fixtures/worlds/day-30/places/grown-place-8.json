@@ -22,6 +22,10 @@
     {
       "to": "grown-place-4",
       "at": "2026-12-14"
+    },
+    {
+      "to": "grown-place-9",
+      "at": "2026-12-18"
     }
   ],
   "exterior": {
@@ -161,6 +165,11 @@
       "at": "2026-12-14T11:00:00.000Z",
       "verb": "expand",
       "summary": "A path to grown-place-4 for the day-30 fixture."
+    },
+    {
+      "at": "2026-12-18T11:00:00.000Z",
+      "verb": "expand",
+      "summary": "A path to grown-place-9 for the day-30 fixture."
     }
   ]
 }

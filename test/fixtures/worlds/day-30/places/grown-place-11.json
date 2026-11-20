@@ -3,29 +3,30 @@
   "name": "Grown Place 11",
   "purpose": "A place grown for the day-30 fixture on 2026-12-18, the shape of one Merge founded.",
   "tags": [
+    "installation art",
     "generative art"
   ],
   "founded": "2026-12-18",
   "chunk": [
-    0,
-    -3
+    -2,
+    0
   ],
   "offset": [
     0,
     0
   ],
   "related": [
-    "home"
+    "grown-place-4"
   ],
   "paths": [],
   "exterior": {
-    "style": "stone",
+    "style": "glass",
     "footprint": [
       8,
-      8
+      10
     ],
-    "floors": 1,
-    "palette": "dusk",
+    "floors": 2,
+    "palette": "harbour",
     "sign": "GROWN PLACE 11"
   },
   "rooms": [
@@ -34,7 +35,7 @@
       "name": "Grown Room 11a",
       "size": [
         7,
-        7,
+        9,
         3
       ],
       "at": [
@@ -44,56 +45,56 @@
       "floor": 0,
       "parts": [
         {
-          "part": "door-wood",
+          "part": "door-glass",
           "at": [
             0,
             0,
-            3.4
+            4.4
           ],
           "rot": 0
         },
         {
-          "part": "window-small",
+          "part": "window-large",
           "at": [
             0,
             1.2,
-            -3.4
+            -4.4
           ],
           "rot": 0
         },
         {
-          "part": "shelf-tall",
+          "part": "window-large",
           "at": [
-            -2.5,
-            0,
-            1.75
+            3.4,
+            1.2,
+            0
           ],
           "rot": 1.5707963267948966
         },
         {
           "part": "screen-small",
           "at": [
-            2,
+            -2.5,
             0,
-            -2.5
+            2.25
           ],
-          "rot": 0
+          "rot": 1.5707963267948966
         },
         {
           "part": "lamp-floor",
           "at": [
-            -1.75,
+            1.75,
             0,
             0
           ],
           "rot": 0
         },
         {
-          "part": "chair",
+          "part": "plaque-stand",
           "at": [
-            -1.75,
+            2,
             0,
-            1.45
+            -3.5
           ],
           "rot": 0
         },
@@ -102,16 +103,25 @@
           "at": [
             1.75,
             0,
-            0
+            1.95
           ],
           "rot": 0
         },
         {
           "part": "fern",
           "at": [
-            1.75,
+            -1.75,
             0,
-            1.45
+            1.95
+          ],
+          "rot": 0
+        },
+        {
+          "part": "stairs",
+          "at": [
+            -2.55,
+            0,
+            -1.7000000000000002
           ],
           "rot": 0
         }
@@ -120,11 +130,11 @@
   ],
   "exhibits": [
     {
-      "id": "screen-grown-work-2026-12-18-2",
+      "id": "screen-grown-work-2026-12-18-1",
       "kind": "work",
-      "ref": "works/grown-work-2026-12-18-2",
+      "ref": "works/grown-work-2026-12-18-1",
       "slot": "main-room/3/0",
-      "label": "Grown Work 2026-12-18 2",
+      "label": "Grown Work 2026-12-18 1",
       "added": "2026-12-18"
     }
   ],

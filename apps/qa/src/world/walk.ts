@@ -1,9 +1,11 @@
 import type { Place } from '@forkling/schema'
-import { bodyWorldFor, findPath, type Box, type Point2, type Vec3 } from '@forkling/sim'
+import { bodyWorldFor, findPath, placeCentre, toLandPlace, type Box, type Point2, type Vec3 } from '@forkling/sim'
 import type { Page } from 'playwright'
 import type { CheckResult } from '../report/finding.ts'
 import type { SceneObject } from './open.ts'
 import { CAPSULE, MERGE_GAP, gapToBox, gridWithFurniture, solidParts, walkedInto } from './bump.ts'
+import { kit } from '@forkling/schema/kit'
+import { reachedRoom, routePoints, stairRoute } from './stairs.ts'
 
 /**
  * The walking checks (audit spec 7.4): with the real W key, the visitor walks from the arrival point into every place along
@@ -37,6 +39,26 @@ const centre = (b: Box): Vec3 => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1
 
 /** Room ray directions (heading in radians, 0 along +z), the door side (+z) left out because the door is open. */
 export const ROOM_RAYS = [Math.PI / 2, (3 * Math.PI) / 4, Math.PI, (5 * Math.PI) / 4, (3 * Math.PI) / 2]
+
+/** The longest stretch walked toward one point: a walk toward a point gives up after 60 presses, about 50 m, and went on to the next. */
+export const MAX_LEG = 20
+
+/**
+ * A walking path with no stretch longer than `MAX_LEG`: a long straight one is cut into equal pieces along the same line, so the walk
+ * never runs out of presses half way along it and turns for the next point from wherever it stopped (it then slid along the side of
+ * Grown Place 11, 55 m from the arrival point, and the check took it for a wall in the way).
+ */
+export function shortLegs(start: Point2, path: readonly Point2[], max = MAX_LEG): Point2[] {
+  const out: Point2[] = []
+  let from = start
+  for (const to of path) {
+    const n = Math.ceil(Math.hypot(to.x - from.x, to.z - from.z) / max)
+    for (let k = 1; k < n; k++) out.push({ x: from.x + ((to.x - from.x) * k) / n, z: from.z + ((to.z - from.z) * k) / n })
+    out.push(to)
+    from = to
+  }
+  return out
+}
 
 /** Directions a room's rays leave without meeting anything: holes or see-through walls. */
 export function holesFrom(hits: { heading: number; hit: Hit }[]): number[] {
@@ -96,6 +118,7 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
   const furniture = solidParts(input.scene)
   const grid = gridWithFurniture(bodyWorldFor({ seed: input.seed, places: input.places as Place[] }).grid, furniture.map((p) => p.box))
   const places = boxed.filter((o) => o.kind === 'place')
+  const wiredPlaces = new Set(places.filter((p) => p.material === 'wireframe').map((p) => p.id))
   const where = async () => {
     const v = await qa(page, (q) => q.visitor())
     if (!v) throw new Error('the visitor is not in the world')
@@ -121,7 +144,7 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     }
     await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [input.start.x, input.start.z, input.start.yaw])
     let stuck: { x: number; z: number; to: Point2 } | null = null
-    for (const wp of path) {
+    for (const wp of shortLegs(input.start, path)) {
       let last = Infinity
       let slow = 0
       for (let i = 0; i < 60; i++) {
@@ -159,9 +182,57 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     if (after.z > p.box.min[2] + 1.2 && after.x > p.box.min[0] && after.x < p.box.max[0]) add('world.walk-through-wall', p.id, 'major', `A visitor walks through the back wall of ${p.id}`, `Walking straight at the back wall from x ${back.x.toFixed(1)}, z ${back.z.toFixed(1)}, the visitor ends inside, at z ${after.z.toFixed(1)}.`, 'A visitor walks through walls: the building feels like a picture, not a place.', `places/${p.id}.json`)
   }
 
+  // Every room upstairs is reached on foot (issue 333): from in front of its place's door (the walk from the arrival point to the
+  // place is checked above), along the grid to the foot of its stairs, up them, and on to its middle. A room with no stairs at all
+  // is `world.upper-room-no-stairs`, from the files.
+  /** Walks straight toward a point with the W key, facing it, until within `near` meters or stuck; true when it got there. */
+  const walkStraight = async (to: Point2, near = 0.5): Promise<boolean> => {
+    let last = Infinity
+    let slow = 0
+    for (let i = 0; i < 60; i++) {
+      const v = await where()
+      const d = Math.hypot(to.x - v.x, to.z - v.z)
+      if (d < near) return true
+      slow = last - d < 0.1 ? slow + 1 : 0
+      if (slow >= 3) return false
+      last = d
+      await qa(page, (q, a: number) => q.look(a, 0), headingTo(v, to))
+      await qa(page, (q, a: number) => q.press('KeyW', a), Math.min(400, (d / 2.5) * 1000 + 50))
+    }
+    return false
+  }
+  for (const r of boxed.filter((o) => o.kind === 'room' && !wiredPlaces.has(o.place ?? ''))) {
+    const place = input.places.find((p) => p.id === r.place)
+    const roomId = r.id.slice((r.place ?? '').length + 1)
+    const room = place?.rooms.find((x) => x.id === roomId)
+    if (!place || !room || room.floor < 1) continue
+    const route = stairRoute(place as Place, room.id, kit)
+    if (!route) continue
+    const legs = routePoints(place as Place, route)
+    const [cx, , cz] = centre(r.box)
+    const [px, pz] = placeCentre(toLandPlace(place as Place))
+    const door = { x: px, z: pz + place.exterior.footprint[1] / 2 + 2 }
+    await qa(page, (q, a: [number, number, number]) => q.teleport(a[0], a[1], a[2]), [door.x, door.z, Math.PI])
+    const path = findPath(grid, door, legs[0]!.stand)
+    let stuckAt = ''
+    if (!path) stuckAt = 'the walking grid finds no way from the door to the foot of its stairs'
+    else {
+      for (const wp of shortLegs(door, path)) if (!stuckAt && !(await walkStraight(wp, 0.6))) stuckAt = `on the way from the door to the foot of its stairs, heading for x ${wp.x.toFixed(1)}, z ${wp.z.toFixed(1)}`
+    }
+    for (const [k, leg] of legs.entries()) {
+      if (stuckAt) break
+      if (k > 0 && !(await walkStraight(leg.stand))) stuckAt = `on the way to flight ${k + 1}`
+      else if (!(await walkStraight(leg.top, 0.4))) stuckAt = `on flight ${k + 1} of the stairs`
+    }
+    if (!stuckAt && !(await walkStraight({ x: cx, z: cz }, 0.8))) stuckAt = 'on the way from the top of the stairs to the middle of the room'
+    const v = await where()
+    if (!reachedRoom(v, r.box))
+      add('world.upper-room-unreachable', r.id, 'major', `A visitor cannot walk up to ${r.id}`, `Walking from its place's door to the foot of its stairs, up them and on to its middle, the visitor ends at x ${v.x.toFixed(1)}, y ${v.y.toFixed(1)}, z ${v.z.toFixed(1)}${stuckAt ? `, stuck ${stuckAt}` : ''}; the room's floor is at y ${r.box.min[1].toFixed(1)}.`, 'A visitor sees the room from outside but cannot get in.', `places/${r.place}.json`)
+  }
+
   // Rays from the middle of each room, on every side but the door.
   // A place being built is drawn as a cyan wireframe: its walls are lines by design, so its rooms are left out.
-  const wire = new Set(places.filter((p) => p.material === 'wireframe').map((p) => p.id))
+  const wire = wiredPlaces
   for (const r of boxed.filter((o) => o.kind === 'room' && !wire.has(o.place ?? ''))) {
     const [cx, , cz] = centre(r.box)
     // The visitor stands in the room, so its inside is drawn.
