@@ -95,14 +95,13 @@ export async function dwitterGet(f: Fetcher, id: number): Promise<Dweet> {
   return d
 }
 
-/** What a dweet is, in one line, so the code makes sense to a reader who has not seen Dwitter. */
-const WHAT = 'A dweet is a JavaScript program of at most 140 characters, run 60 times a second as u(t): c is a 1920 by 1080 canvas, x its 2D context, t the time in seconds, S, C and T are Math.sin, cos and tan, and R(r,g,b,a) makes a colour.'
-
-/** The dweet as text: who made it, its likes, its code, and its first comments. */
+/**
+ * The dweet as text: who made it, its likes, its code, and its first comments. No fixed line explains what a dweet is (Roman,
+ * 20 November): the item is code, judged by its code (`Item.code`), not by words added to every item.
+ */
 export function dweetText(d: Dweet): string {
   return [
     `Dweet ${d.id} by ${d.author}, posted ${d.posted}, ${d.likes} likes${d.remixOf ? `, a remix of dweet ${d.remixOf.id} by ${d.remixOf.author}` : ''}.`,
-    WHAT,
     d.plain !== d.code ? 'Its code was packed; unpacked, it is:' : 'Its code:',
     d.plain,
     ...(d.comments.length > 0 ? ['Comments:', ...d.comments.map((c) => `${c.author}: ${c.text}`)] : []),
@@ -132,5 +131,6 @@ export async function dwitterDweet(f: Fetcher, id: number, hot: readonly Dweet[]
     text: dweetText(d),
     links: capLinks(links, MAX_RECORD_LINKS),
     images: [],
+    code: d.plain,
   }
 }

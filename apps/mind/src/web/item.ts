@@ -31,6 +31,11 @@ export interface Item {
   text: string
   links: ItemLink[]
   images: ItemImage[]
+  /**
+   * The program the item is, when it is code (a dweet, Roman 20 November): such an item is readable when its code is present
+   * and non-empty, not by its word count (`readable` in `skip.ts`). Code is text here and never run outside the sandbox unit.
+   */
+  code?: string
 }
 
 /** Only links the code may read (or that `ok` accepts), each once, at most `max`. Anything else is dropped, so the model is never offered it. */

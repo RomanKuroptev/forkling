@@ -176,6 +176,27 @@ describe('the pass marks of spec 6.5', () => {
     expect(feed([]).verdict).toBe('fail')
   })
 
+  it('judges a code feed (Dwitter, Roman 20 November) readable by its code, present and non-empty, and nothing else', () => {
+    const code = (rs: TrialRead[]) => evaluateTrial({ host: 'www.dwitter.net', kind: 'record', tier: 'voices', seeds: 5, reads: rs, robots, feed: true, code: true })
+    const dweets = (over: Partial<Item> = {}) => reads(20, { item: page({ kind: 'record', tier: 'voices', text: 'Dweet 1 by ann. Its code: x.fillRect(0,0,9,9)', images: [], links: Array.from({ length: 5 }, (_, n) => link(n)), code: 'x.fillRect(0,0,9,9)', ...over }), souvenir: 'none', answer: answer({ interest: 3 }) })
+    const report = code(dweets())
+    expect(report.verdict).toBe('pass')
+    expect(report.checks.find((c) => c.name === 'Readable')).toMatchObject({ pass: true, value: '100% (20 of 20)' })
+    expect(report.checks.find((c) => c.name === 'Readable')!.mark).toMatch(/code/)
+    expect(report.checks.find((c) => c.name === 'Gives something')).toMatchObject({ pass: null })
+    expect(report.checks.find((c) => c.name === 'Not boring')).toMatchObject({ pass: null })
+    expect(report.checks.find((c) => c.name === 'Gives something')!.mark).toMatch(/code/)
+    // Empty code, or an item with no code at all, is not readable under the code rule, however many words it has.
+    expect(code(dweets({ code: '   ' })).checks.find((c) => c.name === 'Readable')!.pass).toBe(false)
+    const { code: _drop, ...noCode } = dweets()[0]!.item!
+    expect(code(reads(20, { item: { ...noCode, text: words(200) } })).checks.find((c) => c.name === 'Readable')!.pass).toBe(false)
+  })
+
+  it('does not loosen readable for a host that is not a code feed: a short record with code but no plan flag still needs 40 words', () => {
+    const short = reads(20, { item: page({ kind: 'record', tier: 'voices', text: 'tiny', images: [], links: Array.from({ length: 5 }, (_, n) => link(n)) }) })
+    expect(evaluateTrial({ host: 'api.imgflip.com', kind: 'record', tier: 'voices', seeds: 5, reads: short, robots, feed: true }).checks.find((c) => c.name === 'Readable')!.pass).toBe(false)
+  })
+
   it('holds a record to its own marks: a picture or 40 words, and 4 links', () => {
     const record = (links: number, over: Partial<Item> = {}) => reads(20, { item: page({ kind: 'record', text: words(10), images: [{ url: 'https://x', licence: null, credit: null }], links: Array.from({ length: links }, (_, n) => link(n)), ...over }) })
     expect(trial(record(4), 'record').verdict).toBe('pass')

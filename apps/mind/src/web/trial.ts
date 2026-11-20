@@ -4,7 +4,7 @@ import { WebError } from './fetch.ts'
 import type { Item, ItemImage } from './item.ts'
 import { chosenLink, type ReadAnswer } from './read.ts'
 import type { RobotsResult } from './robots.ts'
-import { readable } from './skip.ts'
+import { hasCode, readable } from './skip.ts'
 
 /** The pass marks of spec 6.5. A record source has its own: a museum object has no 300 words and no links. */
 export const PASS_MARKS = {
@@ -52,6 +52,8 @@ export interface TrialInput {
   robots: RobotsResult
   /** A feed host gives starting points only and nothing is kept from it (spec 6.1), so "gives something" and "not boring" are shown, not marked. */
   feed?: boolean
+  /** A feed of code (Dwitter): an item is readable when its code is present and non-empty, and nothing else counts. */
+  code?: boolean
 }
 
 const pct = (n: number, of: number) => (of === 0 ? 0 : n / of)
@@ -66,9 +68,10 @@ export function evaluateTrial(input: TrialInput): TrialReport {
   const answered = reads.filter((r) => r.answer)
   const empty = reads.length === 0
   const feed = input.feed === true
+  const code = input.code === true
 
   const reliable = reads.filter((r) => r.fetchOk).length
-  const readableN = fetched.filter((r) => readable(r.item!)).length
+  const readableN = fetched.filter((r) => (code ? hasCode(r.item!) : readable(r.item!))).length
   const links = mean(fetched.map((r) => r.item!.links.length))
   const gave = answered.filter((r) => r.souvenir.startsWith('kept')).length
   const interest = mean(answered.map((r) => r.answer!.interest))
@@ -82,20 +85,20 @@ export function evaluateTrial(input: TrialInput): TrialReport {
     {
       name: 'Readable',
       value: show(readableN, fetched.length),
-      mark: input.kind === 'record' ? `${marks.readable * 100}% have an image or 40 words` : `${marks.readable * 100}% have ${input.tier === 'voices' ? 120 : 300} words or more`,
+      mark: code ? `${marks.readable * 100}% have their code, present and non-empty (a code feed, Roman 20 November)` : input.kind === 'record' ? `${marks.readable * 100}% have an image or 40 words` : `${marks.readable * 100}% have ${input.tier === 'voices' ? 120 : 300} words or more`,
       pass: fetched.length > 0 && pct(readableN, fetched.length) >= marks.readable,
     },
     { name: 'Leads somewhere', value: `${links.toFixed(1)} links on average`, mark: `${marks.links} or more`, pass: fetched.length > 0 && links >= marks.links },
     {
       name: 'Gives something',
       value: show(gave, answered.length),
-      mark: feed ? 'not marked for a feed: nothing is kept from a feed (6.1)' : `${marks.gives * 100}% or more keep a souvenir`,
+      mark: code ? 'not marked for a code feed: a dweet is a starting point for a work (Roman, 20 November)' : feed ? 'not marked for a feed: nothing is kept from a feed (6.1)' : `${marks.gives * 100}% or more keep a souvenir`,
       pass: feed ? null : answered.length > 0 && pct(gave, answered.length) >= marks.gives,
     },
     {
       name: 'Not boring',
       value: `${interest.toFixed(1)} out of 10 on average`,
-      mark: feed ? 'not marked for a feed: it is only where a trip starts (6.1)' : `${marks.interest} or more`,
+      mark: code ? 'not marked for a code feed: code is judged by running it, not by a read (Roman, 20 November)' : feed ? 'not marked for a feed: it is only where a trip starts (6.1)' : `${marks.interest} or more`,
       pass: feed ? null : answered.length > 0 && interest >= marks.interest,
     },
     {
