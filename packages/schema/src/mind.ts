@@ -156,6 +156,8 @@ export const MindState = z.object({
   fallbackTries: z.record(z.string(), z.object({ tries: z.number().int().nonnegative(), next: Timestamp })).optional(),
   /** When Merge last wrote a found request, for the 1 a week rail (spec 2.4). */
   founds: z.array(Timestamp).max(10).optional(),
+  /** The real visits on the local date `date` (issue #422): people the viewer counted, and the places they walked into, by id. Counts only, no address and no id of a visitor. */
+  visits: z.object({ date: z.iso.date(), visitors: z.number().int().nonnegative(), places: z.record(z.string().max(80), z.number().int().nonnegative()) }).optional(),
   /** Sketches made on `date` (spec 9.8: at most 3 a day), counted when one is shelved or scrapped. */
   sketches: z.object({ date: z.iso.date(), count: z.number().int().nonnegative() }).optional(),
   /** Local date interests last faded, so they fade once a day. */
