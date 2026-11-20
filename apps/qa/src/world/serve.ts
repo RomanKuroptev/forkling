@@ -81,8 +81,8 @@ async function buildOnce(out: string, { build = viteBuild, pollMs = 250, staleMs
 
 /**
  * What the viewer build is given on top of the caller's environment. `NODE_ENV` is `production` whoever builds: under Vitest it
- * is `test`, and Vite then built React's development code, the viewer the browser tests walked was 350 KB bigger and about twice
- * as slow as the one visitors get, and the planted world tests took 13 of the fast job's 20 minutes.
+ * is `test`, and Vite then built React's development code: the viewer the browser tests opened was 350 KB bigger than the one
+ * visitors get.
  */
 export const viewerBuildEnv = { NODE_ENV: 'production', VITE_BASE: '/', VITE_WORLD: '', VITE_MIND_URL: '', VITE_TURNSTILE_SITE_KEY: '', VITE_GOATCOUNTER_CODE: '' } as const
 

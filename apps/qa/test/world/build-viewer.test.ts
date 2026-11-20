@@ -73,7 +73,7 @@ describe('building the viewer for the world checks (#392)', () => {
 })
 
 describe('the viewer the world checks walk is the one visitors get', () => {
-  it('is built for production even under Vitest, where NODE_ENV is test (React development code made the walks twice as slow)', () => {
+  it('is built for production even under Vitest, where NODE_ENV is test (it was React development code)', () => {
     expect(process.env.NODE_ENV).toBe('test')
     expect(viewerBuildEnv.NODE_ENV).toBe('production')
   })
