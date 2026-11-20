@@ -25,10 +25,6 @@
     {
       "to": "grown-place-6",
       "at": "2026-12-10"
-    },
-    {
-      "to": "grown-place-8",
-      "at": "2026-12-18"
     }
   ],
   "exterior": {
@@ -184,7 +180,7 @@
   ],
   "state": {
     "construction": null,
-    "lastCareAt": "2026-12-14T10:00:00.000Z",
+    "lastCareAt": "2026-12-18T10:00:00.000Z",
     "neglect": 0,
     "lamps": true,
     "closed": null
@@ -227,9 +223,9 @@
       "summary": "Tended for the day-30 fixture."
     },
     {
-      "at": "2026-12-18T11:00:00.000Z",
-      "verb": "expand",
-      "summary": "A path to grown-place-8 for the day-30 fixture."
+      "at": "2026-12-18T10:00:00.000Z",
+      "verb": "tend",
+      "summary": "Tended for the day-30 fixture."
     }
   ]
 }

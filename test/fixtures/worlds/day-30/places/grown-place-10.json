@@ -107,24 +107,6 @@
           "rot": 0
         },
         {
-          "part": "cabinet",
-          "at": [
-            -4.5,
-            0,
-            2.25
-          ],
-          "rot": 1.5707963267948966
-        },
-        {
-          "part": "cabinet",
-          "at": [
-            4,
-            0,
-            -3.5
-          ],
-          "rot": 0
-        },
-        {
           "part": "stairs",
           "at": [
             -4.55,
@@ -177,15 +159,6 @@
           "rot": 1.5707963267948966
         },
         {
-          "part": "screen-small",
-          "at": [
-            4.5,
-            0,
-            -2.25
-          ],
-          "rot": -1.5707963267948966
-        },
-        {
           "part": "lantern-ground",
           "at": [
             2.75,
@@ -208,7 +181,7 @@
           "at": [
             4.5,
             0,
-            2.25
+            -2.25
           ],
           "rot": -1.5707963267948966
         }
@@ -222,14 +195,6 @@
       "ref": "works/grown-work-2026-12-15-1",
       "slot": "main-room/3/0",
       "label": "Grown Work 2026-12-15 1",
-      "added": "2026-12-15"
-    },
-    {
-      "id": "screen-grown-work-2026-12-15-2",
-      "kind": "work",
-      "ref": "works/grown-work-2026-12-15-2",
-      "slot": "upper-room/3/0",
-      "label": "Grown Work 2026-12-15 2",
       "added": "2026-12-15"
     }
   ],

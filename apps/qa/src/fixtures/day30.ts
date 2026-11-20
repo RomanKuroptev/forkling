@@ -97,9 +97,10 @@ function furnish(prng: Prng, kit: Kit, style: string, w: number, d: number, door
     const hz = (size[0]! * Math.abs(Math.sin(rot)) + size[2]! * Math.abs(Math.cos(rot))) / 2
     return !(x - hx < clear.x1 && x + hx > clear.x0 && z - hz < clear.z1 && z + hz > clear.z0)
   }
+  // A part whose spot is in the stairs' corner is left out, so everything else stands where it would in a room with no stairs.
   const take = (spots: [number, number, number][], part: string) => {
-    const i = spots.findIndex((spot) => fits(part, spot))
-    return i < 0 ? undefined : spots.splice(i, 1)[0]
+    const spot = spots.shift()
+    return spot && fits(part, spot) ? spot : undefined
   }
   // Spots against the walls, facing into the room, and spots standing free, off the door's line. An upper floor's walls stand a
   // little further in than the room's edge, so a thing against a wall keeps a metre from the edge.
