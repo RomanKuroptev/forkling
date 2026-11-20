@@ -212,6 +212,11 @@ describe('the template picture of an Imgflip meme format (a look only)', () => {
     expect(r.trail.pages[0]!.look).toMatch(/^Two panels/)
   })
 
+  it('is looked at for a new template from the Top New page too (source imgflip.com)', async () => {
+    const s = tripDeps({ open: async () => format({ source: 'imgflip.com', url: 'https://imgflip.com/meme/666269451', images: [{ url: 'https://i.imgflip.com/4/b0kur9.jpg', licence: null, credit: null }] }), read: noLook() })
+    expect((await runTrip(s.deps, s.start)).looks).toBe(1)
+  })
+
   it("counts against the day's looks, and is not looked at when none are left", async () => {
     const s = tripDeps({ open: async () => format(), read: noLook(), looksLeft: 0 })
     const r = await runTrip(s.deps, s.start)
