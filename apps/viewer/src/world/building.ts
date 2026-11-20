@@ -307,11 +307,12 @@ export function buildingModel(place: Place, kit: Kit, baseY: number): BuildingMo
       // A doorstep in the accent colour (the foot band going on across the door) runs from the room out over the slab and its glowing
       // edge, as high as the floor inside: the doorway shows a step, not white marble and a glowing line blown out to a white smear
       // (issue 350).
-      // It starts where the floor inside stops, so the two tops meet edge to edge and never overlap.
+      // It starts where the floor inside stops, so the two tops meet edge to edge and never overlap. It is lit trim like the foot band,
+      // so a yellow step is not khaki at night (issue 409).
       const stepFrom = pz + fd / 2 - FLOOR_INSET
       const stepTo = pz + fd / 2 + BASE_REACH + 0.1 + SKIN
       const stepFoot = 0.03
-      slots.base.push({ shape: 'box', matrix: compose([px, y + (FLOOR_TOP + stepFoot) / 2, (stepFrom + stepTo) / 2], [0, 0, 0], [DOOR_HALF * 2 - 2 * SKIN, FLOOR_TOP - stepFoot, stepTo - stepFrom]), color: c.accent })
+      slots.base.push({ shape: 'box', matrix: compose([px, y + (FLOOR_TOP + stepFoot) / 2, (stepFrom + stepTo) / 2], [0, 0, 0], [DOOR_HALF * 2 - 2 * SKIN, FLOOR_TOP - stepFoot, stepTo - stepFrom]), color: c.accent, trim: true })
       // A closed place has its door boarded: chrome planks nailed across the gap, a little crooked.
       if (place.state.closed) {
         const planks: [number, number][] = [[0.55, 0.05], [1.1, -0.06], [1.65, 0.04]]

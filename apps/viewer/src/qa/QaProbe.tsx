@@ -16,6 +16,7 @@ import { wallBoxes } from '../world/kitGeometry.ts'
 import { objectEntry, placeObjects, type QaObject } from './sceneList.ts'
 import { coveredDoors, placeFights } from './fights.ts'
 import { thinMarks } from './marks.ts'
+import { surfaceColours } from './colours.ts'
 import { drawnHeightAt, footprintOf, groundOf } from '../world/pathGeometry.ts'
 
 /** One stepped frame: the world moves this many milliseconds each time the harness draws. */
@@ -142,6 +143,8 @@ export function QaProbe() {
       coveredDoors: () => (qaRegistry.places ? coveredDoors(qaRegistry.places) : []),
       /** Thin marks of neglect that hang in a room and do not glow (a plank under the ceiling): `marks.ts`. */
       thinMarks: () => (qaRegistry.places ? thinMarks(qaRegistry.places) : []),
+      /** The colours of the furniture, the exhibits and the lit surfaces whose lamps are off, as drawn (issues 409, 430): `colours.ts`. */
+      surfaceColours: () => (qaRegistry.places ? surfaceColours(qaRegistry.places) : []),
       renderer: () => ({
         drawCalls: gl.info.render.calls,
         triangles: gl.info.render.triangles,
