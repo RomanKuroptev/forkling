@@ -101,11 +101,11 @@ describe("the Workshop's work screens hang on the wall at eye height (issue 431)
   it('raises a screen standing in the middle of a room, away from any wall, on a tall slim stand down to the floor', () => {
     const workshop = day7('workshop')
     const main = workshop.rooms[0]!
-    const moved: Place = { ...workshop, rooms: [{ ...main, parts: main.parts.map((p, i) => (i === 4 ? { ...p, at: [-1, 0, 1.5] as [number, number, number] } : p)) }] }
+    const moved: Place = { ...workshop, rooms: [{ ...main, parts: main.parts.map((p, i) => (i === 4 ? { ...p, at: [-2.5, 0, 1.5] as [number, number, number] } : p)) }] }
     const stands = screenStands(moved, kit)
     expect([...stands.keys()]).toEqual(['bench-room/4'])
     const placed = settledPlace(moved, kit).rooms[0]!.parts[4]!
-    expect([placed.at[0], placed.at[2]]).toEqual([-1, 1.5])
+    expect([placed.at[0], placed.at[2]]).toEqual([-2.5, 1.5])
     const box = instancesBox(interiorParts(moved, kit, 0).instances.filter((p) => p.group === 'bench-room/4'))!
     // The stand reaches the floor, and the panel is at eye height.
     expect(box.min[1]).toBeCloseTo(0, 2)
@@ -121,8 +121,8 @@ describe("the Workshop's work screens hang on the wall at eye height (issue 431)
   it('leaves a screen standing on a desk where Merge put it', () => {
     const home = day7('home')
     const main = home.rooms[0]!
-    const place: Place = { ...home, rooms: [{ ...main, parts: [...main.parts, { part: 'desk', at: [0, 0, 0], rot: 0 }, { part: 'screen-small', at: [0, 0.8, 0], rot: 0 }] } as never, ...home.rooms.slice(1)] }
+    const place: Place = { ...home, rooms: [{ ...main, parts: [...main.parts, { part: 'desk', at: [0, 0, -1], rot: 0 }, { part: 'screen-small', at: [0, 0.8, -1], rot: 0 }] } as never, ...home.rooms.slice(1)] }
     const n = place.rooms[0]!.parts.length
-    expect(settledPlace(place, kit).rooms[0]!.parts[n - 1]!.at).toEqual([0, 0.8, 0])
+    expect(settledPlace(place, kit).rooms[0]!.parts[n - 1]!.at).toEqual([0, 0.8, -1])
   })
 })
