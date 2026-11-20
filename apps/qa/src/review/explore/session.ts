@@ -9,6 +9,7 @@ import { liveClone } from '../../fixtures/command.ts'
 import { qaOut } from '../../paths.ts'
 import { openWorld, sceneOf, type SceneObject } from '../../world/open.ts'
 import { buildViewer, serveWorld, type Served } from '../../world/serve.ts'
+import { reachedRoom } from '../../world/stairs.ts'
 import { centre, degrees, frontOf, headingTo, lookAt, radians, type V3 } from './aim.ts'
 
 /**
@@ -73,6 +74,8 @@ export class ExploreSession {
     const v = await this.where()
     const scene = await sceneOf(this.page)
     const inside = scene.find((o) => o.kind === 'place' && o.box && v.x >= o.box.min[0] && v.x <= o.box.max[0] && v.z >= o.box.min[2] && v.z <= o.box.max[2])
+    // Which room, by height too: a room upstairs is over the one below, and a walk that reached only x and z is not in it (issue 333).
+    const room = scene.find((o) => o.kind === 'room' && o.box && reachedRoom(v, o.box))
     const near = scene
       .filter((o) => o.box && ['place', 'merge', 'work', 'sign'].includes(o.kind))
       .map((o) => ({ o, d: Math.hypot(centre(o.box!)[0] - v.x, centre(o.box!)[2] - v.z) }))
@@ -81,7 +84,7 @@ export class ExploreSession {
       .map(({ o, d }) => `${o.kind} ${o.id} ${d.toFixed(1)} m`)
     const m = await call(this.page, (qa) => (qa.merge ? qa.merge() : null))
     const merge = m ? `; Merge stands at x ${m.x.toFixed(1)}, z ${m.z.toFixed(1)}, ${Math.hypot(m.x - v.x, m.z - v.z).toFixed(1)} m from the visitor, drawn ${m.scale.toFixed(2)} times its size` : ''
-    return `at x ${v.x.toFixed(1)}, z ${v.z.toFixed(1)}, facing ${degrees(v.yaw)} deg, looking ${degrees(v.pitch)} deg up; ${inside ? `inside ${inside.id}` : 'outside'}; nearest: ${near.join(', ')}${merge}`
+    return `at x ${v.x.toFixed(1)}, z ${v.z.toFixed(1)}, facing ${degrees(v.yaw)} deg, looking ${degrees(v.pitch)} deg up; ${inside ? `inside ${inside.id}${room ? `, in room ${room.id}` : ''}` : 'outside'}, eyes at y ${(v.y + 0.7).toFixed(1)}; nearest: ${near.join(', ')}${merge}`
   }
 
   async shot(name = 'view'): Promise<string> {
