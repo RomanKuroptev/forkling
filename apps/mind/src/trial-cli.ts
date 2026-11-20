@@ -19,11 +19,13 @@ import { performRead } from './web/readcall.ts'
 import { checkRobots, mayReadHost } from './web/robots.ts'
 import { readUrl } from './web/sources/index.ts'
 import { HOST_PLANS, planFor } from './web/starts.ts'
+import { TRIAL_HOSTS, TRIAL_PLANS, trialPlanFor } from './web/trial-plans.ts'
 import { evaluateTrial, formatTrial, runTrial } from './web/trial.ts'
 
 const USAGE = `usage: pnpm --filter @forkling/mind source-trial <host> [--items 20] [--seeds 5] [--offset 0] [--cap 0.1] [--out <dir>] [--offline] [--ignore-robots]
 
 Hosts: ${HOST_PLANS.map((p) => p.host).join(', ')}
+Trials of hosts not on the allowlist: ${TRIAL_PLANS.map((p) => p.id).join(', ')}
 --offline fetches and measures without any model call. --cap is the most the read calls may cost, in dollars.
 A host whose robots.txt disallows the paths the engine uses (or cannot be read) is not read at all: the trial stops after
 robots.txt. Only Roman may override that with --ignore-robots, for an API a site documents for bots.`
@@ -56,13 +58,17 @@ async function main(): Promise<void> {
     },
   })
   const host = positionals[0]
-  const plan = host ? planFor(host) : undefined
+  const trial = host ? trialPlanFor(host) : undefined
+  const plan = host ? (planFor(host) ?? trial) : undefined
   if (values.help || !host || !plan) {
     console.log(host && !plan ? `no trial for "${host}"\n\n${USAGE}` : USAGE)
     process.exitCode = host && !plan ? 1 : 0
     return
   }
-  const rule = hostRule(plan.host)!
+  const rule = trial?.rule ?? hostRule(plan.host)!
+  /** The trial's name, and its report's file name: the host, or for a trial-only plan `lemmy.world-c-<community>.md`. */
+  const name = trial?.id ?? plan.host
+  const file = `${name.replace(/\//g, '-')}.md`
   const items = Number(values.items)
   const seeds = Number(values.seeds)
   const offset = Number(values.offset)
@@ -75,22 +81,22 @@ async function main(): Promise<void> {
   }
 
   const token = plan.host === 'api.github.com' ? githubToken() : undefined
-  const fetcher = createFetcher(token ? { authorization: { 'api.github.com': `Bearer ${token}` } } : {})
+  const fetcher = createFetcher({ ...(token ? { authorization: { 'api.github.com': `Bearer ${token}` } } : {}), ...(trial ? { trialHosts: TRIAL_HOSTS } : {}) })
   if (plan.host === 'api.github.com') console.log(token ? 'Using a GitHub token (60 requests an hour without one)' : 'No GitHub token found: expect the 60 an hour limit')
   const llm = values.offline ? null : anthropicClient()
   let spent = 0
   const interests = Interests.parse({})
-  console.log(`Trial of ${plan.host}: ${items} items from ${seeds} seeds${values.offline ? ' (offline)' : ''}`)
+  console.log(`Trial of ${name}: ${items} items from ${seeds} seeds${values.offline ? ' (offline)' : ''}`)
 
   const robots = await checkRobots(fetcher, plan.host, plan.paths)
   console.log(robots.detail)
   if (!mayReadHost(robots, values['ignore-robots'])) {
-    const note = `# Source trial: ${plan.host}\n\n**Stopped after robots.txt: ${robots.detail}.** Nothing else was fetched from this host. It is left out unless Roman decides the site's own rules allow it, and then the trial is rerun with --ignore-robots.\n`
+    const note = `# Source trial: ${name}\n\n**Stopped after robots.txt: ${robots.detail}.** Nothing else was fetched from this host. It is left out unless Roman decides the site's own rules allow it, and then the trial is rerun with --ignore-robots.\n`
     console.log(`\n${note}`)
     if (values.out) {
       const dir = resolve(process.env.INIT_CWD ?? process.cwd(), values.out)
       mkdirSync(dir, { recursive: true })
-      writeFileSync(join(dir, `${plan.host}.md`), note)
+      writeFileSync(join(dir, file), note)
     }
     process.exitCode = 2
     return
@@ -101,7 +107,7 @@ async function main(): Promise<void> {
     items,
     seeds,
     start: (seed) => plan.start(fetcher, seed, offset),
-    open: (url) => readUrl(fetcher, url),
+    open: (url) => (trial ? trial.open(fetcher, url) : readUrl(fetcher, url)),
     read: async (item) => {
       const out = await performRead(
         { llm, fetcher, seed: DEFAULT_SEED, purpose: 'see what is out there today; nothing in particular', interests, mayCall: (usd) => spent + usd <= cap },
@@ -122,16 +128,17 @@ async function main(): Promise<void> {
 
   // Commons is listed as an image host but its file pages are read as records, so the marks follow what was actually read.
   const kind = reads.find((r) => r.item)?.item?.kind ?? rule.kind
-  const report = evaluateTrial({ host: plan.host, kind, tier: rule.tier, seeds, reads, robots, feed: plan.feed === true })
+  const report = evaluateTrial({ host: name, kind, tier: rule.tier, seeds, reads, robots, feed: plan.feed === true })
   const offlineNote = values.offline ? '**Offline run: no model was called, so "Gives something" and "Not boring" are not measured.**\n\n' : ''
-  const text = offlineNote + formatTrial(report, reads, Date.now() % 1_000_000)
+  const trialNote = trial ? `${trial.note()} ${rule.host} asks for Crawl-delay: 60 in robots.txt, so the trial made one request every ${rule.gapMs / 1000} seconds.\n\n` : ''
+  const text = offlineNote + trialNote + formatTrial(report, reads, Date.now() % 1_000_000)
   console.log(`\n${text}\nSpent about $${spent.toFixed(4)} on read calls. ${fetcher.log.length} requests, ${fetcher.log.filter((l) => l.outcome === 'not-allowed').length} refused.`)
 
   if (values.out) {
     const dir = resolve(process.env.INIT_CWD ?? process.cwd(), values.out)
     mkdirSync(dir, { recursive: true })
-    writeFileSync(join(dir, `${plan.host}.md`), `${text}\nSpent about $${spent.toFixed(4)}.\n`)
-    console.log(`Saved ${join(dir, `${plan.host}.md`)}`)
+    writeFileSync(join(dir, file), `${text}\nSpent about $${spent.toFixed(4)}.\n`)
+    console.log(`Saved ${join(dir, file)}`)
   }
   process.exitCode = report.verdict === 'pass' ? 0 : 2
 }
