@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_LEG, shortLegs } from '../../src/world/walk.ts'
+import { MAX_LEG, WALK_VIEW, shortLegs } from '../../src/world/walk.ts'
+import { PICTURE_VIEW } from '../../src/world/pictures.ts'
+
+describe('the size the walks draw at', () => {
+  it('is the pictures size, so a walk alone walks as it does after the pictures and draws a quarter of the 1280x800 page', () => {
+    expect(WALK_VIEW).toEqual(PICTURE_VIEW)
+    expect(WALK_VIEW.width * WALK_VIEW.height).toBeLessThanOrEqual((1280 * 800) / 4)
+  })
+})
 
 describe('the walks follow their path in short stretches', () => {
   it('cuts a 55 m straight stretch into pieces of at most 20 m along the same line, and keeps every point of the path', () => {

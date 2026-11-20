@@ -6,6 +6,7 @@ import type { SceneObject } from './open.ts'
 import { CAPSULE, MERGE_GAP, gapToBox, gridWithFurniture, solidParts, walkedInto } from './bump.ts'
 import { kit } from '@forkling/schema/kit'
 import { reachedRoom, routePoints, stairRoute } from './stairs.ts'
+import { PICTURE_VIEW } from './pictures.ts'
 
 /**
  * The walking checks (audit spec 7.4): with the real W key, the visitor walks from the arrival point into every place along
@@ -101,6 +102,13 @@ export function edgeShown(hit: { distance: number; object: string } | null): boo
   return hit !== null && hit.object === LAND_SIDE && hit.distance < EDGE_RAY.out
 }
 
+/**
+ * The page size the walks draw at: the pictures size, so a walk alone (the planted walk tests) draws what a walk after the pictures
+ * did. Each press draws a frame, and at the 1280x800 the page opens at SwiftShader took 4 minutes on CI to walk day-7, against well
+ * under 1 after the pictures had set 640x400. Nothing in the walks reads pixels: they read positions and rays.
+ */
+export const WALK_VIEW = PICTURE_VIEW
+
 export interface WalkInput {
   fixture: string
   seed: number
@@ -132,6 +140,7 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     return enclosed(hits)
   }
 
+  await page.setViewportSize(WALK_VIEW)
   await qa(page, (q) => q.setCamera(null))
   let cameraFound = false
   for (const p of places) {

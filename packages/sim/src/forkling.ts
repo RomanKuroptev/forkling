@@ -1,5 +1,5 @@
 import type { AnimationSlot, Intention, MicroBehavior, SpeciesAction, SpeciesPack } from '@forkling/schema'
-import { findPath, isWalkable, nearestWalkable, type NavGrid, type Point2 } from './nav.ts'
+import { findPath, isWalkable, lineOfSight, nearestWalkable, type NavGrid, type Point2 } from './nav.ts'
 import type { Feelings } from './mood.ts'
 import { createPrng, type Prng } from './prng.ts'
 import { isDusk } from './time.ts'
@@ -222,6 +222,11 @@ function move(s: ForklingState, dt: number, ctx: StepContext): void {
   while (remaining > 0 && s.path.length > 0) {
     const wp = s.path[0]!
     const d = dist(s.pos, wp)
+    const next = d <= remaining ? wp : { x: s.pos.x + ((wp.x - s.pos.x) / d) * remaining, z: s.pos.z + ((wp.z - s.pos.z) / d) * remaining }
+    if (inTheWay(s.pos, next, ctx.visitor)) {
+      giveWay(s, ctx.visitor!, ctx)
+      return
+    }
     if (d <= remaining) {
       if (d > 1e-9) s.heading = Math.atan2(wp.x - s.pos.x, wp.z - s.pos.z)
       s.pos = { x: wp.x, z: wp.z }
@@ -256,6 +261,44 @@ function move(s: ForklingState, dt: number, ctx: StepContext): void {
       }
     }
   }
+}
+
+/**
+ * A step from `from` to `to` that would bring the body nearer the visitor than `ARRIVE_DISTANCE` (and nearer than it already
+ * is). The visitor's own keep-away (apps/viewer/src/player/keepAway.ts) only stops the visitor's steps; without this the body walked
+ * straight on through a visitor standing in its way, out of Home's door at night, and the camera ended up inside it.
+ */
+export function inTheWay(from: Point2, to: Point2, visitor: Point2 | null): boolean {
+  if (!visitor) return false
+  const after = dist(to, visitor)
+  return after < ARRIVE_DISTANCE && after < dist(from, visitor)
+}
+
+/** How far the body steps aside to let a visitor by, in meters. */
+const STEP_ASIDE = 2
+
+/**
+ * Someone is in the way: a body chasing the visitor has reached them and does what it came for; any other steps aside (across
+ * the line to the visitor, else back from them at a slant, else straight back), pauses, then chooses again. Standing still 1.3 m
+ * in front of them held a visitor walking in through Home's door, who keeps 1.6 m from its face (day-0). Every one of those steps
+ * takes it further from the visitor.
+ */
+function giveWay(s: ForklingState, visitor: Point2, ctx: StepContext): void {
+  if (s.chasing) {
+    if (dist(s.pos, visitor) > 1e-6) s.heading = Math.atan2(visitor.x - s.pos.x, visitor.z - s.pos.z)
+    startActing(s)
+    return
+  }
+  const away = Math.atan2(s.pos.x - visitor.x, s.pos.z - visitor.z)
+  for (const turn of [Math.PI / 2, -Math.PI / 2, Math.PI / 4, -Math.PI / 4, 0]) {
+    const to = { x: s.pos.x + Math.sin(away + turn) * STEP_ASIDE, z: s.pos.z + Math.cos(away + turn) * STEP_ASIDE }
+    if (isWalkable(ctx.grid, to.x, to.z) && lineOfSight(ctx.grid, s.pos, to)) {
+      begin(s, PAUSE_ACTION, { path: [to], goal: to, chasing: false })
+      return
+    }
+  }
+  s.heading = Math.atan2(visitor.x - s.pos.x, visitor.z - s.pos.z)
+  begin(s, PAUSE_ACTION, { path: [], goal: null, chasing: false })
 }
 
 function act(s: ForklingState, dt: number, ctx: StepContext): void {

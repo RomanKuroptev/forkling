@@ -132,13 +132,16 @@ const rectOf = (pts: { x: number; y: number; front: boolean }[]): Box | null => 
 }
 const corners = (b: Box3): Vec3[] => [[b.min[0], b.min[1], b.min[2]], [b.max[0], b.min[1], b.min[2]], [b.min[0], b.max[1], b.max[2]], [b.max[0], b.max[1], b.max[2]]]
 
+/** The page size every picture is taken at. */
+export const PICTURE_VIEW = { width: 640, height: 400 } as const
+
 /** Takes and judges every picture of an opened world, and writes its contact sheet. The page is set to 640x400. */
 export async function pictureChecks(page: Page, opts: { fixture: string; scene: SceneObject[]; night: boolean; out: string }): Promise<{ findings: CheckResult[]; sheet: string; shots: number; costs: FrameCost[] }> {
   const costs: FrameCost[] = []
   const { fixture, scene, out } = opts
   const dir = join(out, 'world', fixture)
   mkdirSync(dir, { recursive: true })
-  await page.setViewportSize({ width: 640, height: 400 })
+  await page.setViewportSize(PICTURE_VIEW)
   const findings: CheckResult[] = []
   const tiles: Tile[] = []
   const shoot = async (name: string): Promise<{ png: Buffer; file: string }> => {

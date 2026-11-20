@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { buildViewer } from '../../src/world/serve.ts'
+import { buildViewer, viewerBuildEnv } from '../../src/world/serve.ts'
 
 // A fake vite build: slow enough that the callers overlap, and counted.
 function fakeBuild(ms = 50) {
@@ -69,5 +69,12 @@ describe('building the viewer for the world checks (#392)', () => {
     const { calls, build } = fakeBuild(1)
     expect(await buildViewer(out, { build })).toBe(out)
     expect(calls).toEqual([out])
+  })
+})
+
+describe('the viewer the world checks walk is the one visitors get', () => {
+  it('is built for production even under Vitest, where NODE_ENV is test (it was React development code)', () => {
+    expect(process.env.NODE_ENV).toBe('test')
+    expect(viewerBuildEnv.NODE_ENV).toBe('production')
   })
 })
