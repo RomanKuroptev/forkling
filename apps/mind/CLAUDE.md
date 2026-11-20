@@ -28,11 +28,11 @@ The mind of one world repo. Today it runs as the Actions tick (`src/cli.ts`, `mi
 - `src/tick.ts` calls the steps; each step is a module in `src/tick/`: `wander`, `tend`, `revisit`, `expand`, `found`, `work` (tinker), `write`, `notes` (reply), `thought`, `reflection`, `sleep`, `weekly`, `page`, `wants`, `loop`, and the plumbing around them (`context.ts` holds the shared `Tick`). `src/ticklog.ts` writes the tick log and `src/health.ts` builds `mind/health.json`.
 - `src/builds/` is the build worker's side: places (`tend.ts`, `expand.ts`, `found.ts`) and works (`tinker.ts`, `work-check.ts`, `browser.ts`).
 - `src/prompts.ts` re-exports the builders in `src/prompts/`: `system.ts` (cached part), `user.ts` plus one task per call type (`morning.ts`, `decide.ts`, `thought.ts`, `reflection.ts`, `sleep.ts`, `weekly.ts`, `reply.ts`, `page.ts`). `test/golden/` pins the prompt text; a prompt change needs Roman's review.
-- `src/migrate.ts` (W1) and `src/migrate-w5.ts` move an older world repo to the current layout.
+- `src/migrate.ts` (W1) and `src/migrate-w5.ts` move an older world repo to the current layout. `src/migrate-fresh.ts` (`migrate-fresh`) is Merge's fresh start (`docs/spec/v4/merge-fresh-start.md`): its v1 life moves to `archive/v1/` with the same paths and the mind starts again from the template; money, running state, notes and visitors stay.
 
 ## Working here
 - `pnpm mind:local` runs one tick against a local copy of a world repo. `--dry-run` prints the prompt and token estimate without calling the API.
-- Other scripts: `pnpm --filter @forkling/mind <tick|serve|validate-pr|replay|source-trial|migrate-w1|migrate-w5|voice-test>`.
+- Other scripts: `pnpm --filter @forkling/mind <tick|serve|validate-pr|replay|source-trial|migrate-w1|migrate-w5|migrate-fresh|voice-test>`.
 - GitHub cron can be delayed by several minutes. Never assume exact tick times.
 - Every LLM decision goes through the validate step in code before it is used; on rejection fall back to the sim's utility AI and log why.
 - Uses `@anthropic-ai/sdk` for calls. Merge's engine is pinned by tag in each world's workflows (`FORKLING_REF`).

@@ -22,10 +22,13 @@ export const ICONS: Record<string, readonly string[]> = {
   page: ['########', '#hhhhhh#', '########', '#oooooo#', '#o####o#', '#oooooo#', '########', '........'],
   gallery: ['########', '#cccccc#', '#c#cc#c#', '#cchhcc#', '#cchhhc#', '#cccccc#', '########', '........'],
   archive: ['########', '#hhhhhh#', '########', '#oooooo#', '#oo##oo#', '#oooooo#', '########', '........'],
+  /** An old save file: a floppy disk, for the window of the forkling's first life (`<name> v1`). */
+  oldsave: ['#######.', '#c#ww#c#', '#c####c#', '#cccccc#', '#owwwwo#', '#ow##wo#', '#owwwwo#', '########'],
 }
 
-/** The icon for a page's name in the navigation (`Why?` is `why`); a window for a page with no picture of its own. */
+/** The icon for a page's name in the navigation (`Why?` is `why`, `Merge v1` the old save file); a window for a page with no picture of its own. */
 export function iconFor(label: string): string {
+  if (/ v1$/i.test(label)) return 'oldsave'
   const key = label.toLowerCase().replace(/[^a-z]/g, '')
   return key in ICONS ? key : 'page'
 }
