@@ -5,7 +5,7 @@ import { createFetcher, type FetchImpl, type Fetcher } from '@forkling/mind/src/
 import type { Item } from '@forkling/mind/src/web/item.ts'
 import { checkRobots } from '@forkling/mind/src/web/robots.ts'
 import { MANUAL_START, manualPage } from '@forkling/mind/src/web/sources/manuals.ts'
-import { frontPageLinks, githubTopicRepos, imgflipTopLinks, wikipediaArticle, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
+import { frontPageLinks, githubTopicRepos, imgflipNewLinks, imgflipTopLinks, wikipediaArticle, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
 import { HOST_PLANS } from '@forkling/mind/src/web/starts.ts'
 import { DID_NOT_RUN, type CheckResult } from '../report/finding.ts'
 import type { SourceList } from '../sources/list.ts'
@@ -21,6 +21,7 @@ const ESOLANG_POINTS = 6
 const GITHUB_TOPIC = 'creative-coding'
 const GITHUB_POINTS = 4
 const MEME_POINTS = 6
+const NEW_MEME_POINTS = 3
 // Imgflip's ranking is 100 long; freshness compares all of it.
 const IMGFLIP_ALL = 100
 const SAMPLE_WORDS = 120
@@ -102,6 +103,15 @@ export const PROBES: readonly Probe[] = [
       const links = await imgflipTopLinks(f, IMGFLIP_ALL)
       return { items: links.length, imgflipIds: links.map((l) => l.url.split('/').pop()!) }
     },
+  },
+  {
+    source: 'imgflip-new',
+    host: 'imgflip.com',
+    verb: 'wander',
+    paths: planPaths('imgflip.com'),
+    min: NEW_MEME_POINTS,
+    counts: 'new templates on the Top New page (names that are sexual or slurs left out)',
+    read: async (f) => ({ items: (await imgflipNewLinks(f, 100)).length }),
   },
   {
     source: 'commons',

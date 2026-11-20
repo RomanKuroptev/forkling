@@ -13,6 +13,10 @@ const links = (titles: string[], host = '') => titles.map((t) => `<a href="${hos
 export const memes = (ids: string[]) =>
   JSON.stringify({ success: true, data: { memes: ids.map((id) => ({ id, name: `Format ${id}`, url: `https://i.imgflip.com/${id}.jpg`, box_count: 2, captions: 1000 })) } })
 
+/** Imgflip's Top New templates page, in the shape of the real one (template boxes with a title link and a thumbnail). */
+export const topNew = (names: string[]) =>
+  `<html><body>${names.map((n, i) => `<div class="mt-box"><h3 class="mt-title"><a title="${n} Meme" href="/meme/${9000 + i}/x">${n}</a></h3><div class="mt-img-wrap"><a href="/meme/${9000 + i}/x"><img alt="${n} Meme Template" src="//i.imgflip.com/4/n${i}.jpg"/></a></div></div>`).join('')}</body></html>`
+
 export const ROBOTS_OK = 'User-agent: *\nDisallow: /w/\nDisallow: /api/rest_v1/\n'
 
 export function healthyRoutes(): Routes {
@@ -27,6 +31,7 @@ export function healthyRoutes(): Routes {
     [/^https:\/\/esolangs\.org\/wiki\/Main_Page$/, { body: wikiPage('Main Page', `<p>${links(['Brainfuck', 'Befunge', 'Malbolge', 'Piet', 'INTERCAL', 'Whitespace', 'Chef', 'Shakespeare'])}</p>`) }],
     [/^https:\/\/api\.github\.com\/search\/repositories/, { body: JSON.stringify({ items: ['a/one', 'b/two', 'c/three', 'd/four'].map((full_name) => ({ full_name })) }), type: 'application/json' }],
     [/^https:\/\/api\.imgflip\.com\/get_memes$/, { body: memes(Array.from({ length: 100 }, (_, i) => String(1000 + i))), type: 'application/json' }],
+    [/^https:\/\/imgflip\.com\/memetemplates\?sort=top-new$/, { body: topNew(['New One', 'New Two', 'New Three', 'New Four']) }],
     [/^https:\/\/commons\.wikimedia\.org\/wiki\/Main_Page$/, { body: '<html><body><a href="/wiki/File:Moon.jpg">Moon</a></body></html>' }],
     [
       /^https:\/\/commons\.wikimedia\.org\/wiki\/File:Moon\.jpg$/,

@@ -7,7 +7,7 @@ import { MAX_LOOKS_PER_DAY, performLook } from '../web/look.ts'
 import { performRead } from '../web/readcall.ts'
 import { rememberSeen, type SeenPage } from '../web/lookup.ts'
 import { startKey } from '../web/rails.ts'
-import { frontPageLinks, githubTopicRepos, imgflipTopLinks, readUrl, wikipediaMorningLinks } from '../web/sources/index.ts'
+import { frontPageLinks, githubTopicRepos, imgflipNewLinks, imgflipTopLinks, readUrl, wikipediaMorningLinks } from '../web/sources/index.ts'
 import { resolveStart } from '../web/start.ts'
 import { MAX_READS_PER_DAY, runTrip } from '../web/trip.ts'
 import type { Tick } from './context.ts'
@@ -24,6 +24,8 @@ const GITHUB_POINTS = 4
 const GITHUB_TOPIC = 'creative-coding'
 /** And the most-captioned meme formats of the last 30 days, the pulse of memes (spec 6.1). */
 const MEME_POINTS = 6
+/** And the newest templates people caption most (Imgflip Top New), so the pulse is not only the all-time favourites. */
+const NEW_MEME_POINTS = 3
 
 /** The lists dealt out one at a time, in turn, until all are empty. */
 export function interleave<T>(lists: readonly (readonly T[])[]): T[] {
@@ -63,14 +65,15 @@ export async function morningStep(t: Tick): Promise<void> {
     return
   }
   if (!fetcher) return
-  const [wiki, esolangs, memes, repos] = await Promise.all([
+  const [wiki, esolangs, memes, repos, newMemes] = await Promise.all([
     soft(() => wikipediaMorningLinks(fetcher, WIKIPEDIA_POINTS), (why) => notes.push(`the Wikipedia front page could not be read: ${why}`)),
     soft(() => frontPageLinks(fetcher, 'esolangs.org'), (why) => notes.push(`the Esolang front page could not be read: ${why}`)),
     soft(() => imgflipTopLinks(fetcher, MEME_POINTS), (why) => notes.push(`the Imgflip meme formats could not be read: ${why}`)),
     soft(async () => (await githubTopicRepos(fetcher, GITHUB_TOPIC, GITHUB_POINTS)).map((name) => ({ title: name, url: `https://github.com/${name}` })), (why) => notes.push(`the GitHub creative-coding repositories could not be read: ${why}`)),
+    soft(() => imgflipNewLinks(fetcher, NEW_MEME_POINTS), (why) => notes.push(`the new Imgflip meme templates could not be read: ${why}`)),
   ])
   // The hosts take turns, so the list does not start with a screenful of Wikipedia.
-  const links = interleave([(wiki ?? []).slice(0, WIKIPEDIA_POINTS), (esolangs ?? []).slice(0, ESOLANG_POINTS), (repos ?? []).slice(0, GITHUB_POINTS), memes ?? []])
+  const links = interleave([(wiki ?? []).slice(0, WIKIPEDIA_POINTS), (esolangs ?? []).slice(0, ESOLANG_POINTS), (repos ?? []).slice(0, GITHUB_POINTS), memes ?? [], (newMemes ?? []).slice(0, NEW_MEME_POINTS)])
   t.startingPoints = pickDoors(links, t.interests, createPrng((t.forkling.seed ^ Number(today.replaceAll('-', ''))) >>> 0))
   // Kept for the day, so a replan after the morning can still name them, and the links are pages it has now seen.
   mind.points = { date: today, list: t.startingPoints.map((p) => ({ title: p.title.slice(0, 200), url: p.url.slice(0, 500), door: p.door })).slice(0, 30) }

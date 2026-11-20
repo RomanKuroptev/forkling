@@ -181,6 +181,19 @@ describe('the morning', () => {
     expect(user).toContain(`Moon | ${wiki}/wiki/Moon`)
   })
 
+  it('adds the 3 newest Imgflip templates (Top New) next to the top formats, leaving out a name that is sexual or a slur', async () => {
+    const box = (id: number, name: string) => `<div class="mt-box"><h3 class="mt-title"><a title="${name} Meme" href="/meme/${id}/x">${name}</a></h3><div class="mt-img-wrap"><a href="/meme/${id}/x"><img alt="t" src="//i.imgflip.com/4/${id}.jpg"/></a></div></div>`
+    const topNew = [box(901, 'Fresh One'), box(902, 'Sexy Dance'), box(903, 'Fresh Two'), box(904, 'Fresh Three'), box(905, 'Fresh Four')].join('')
+    const llm = fake(wanderPlan)
+    const { web, asked } = webWith({ 'https://imgflip.com/memetemplates?sort=top-new': topNew })
+    await tick(MORNING, llm, { web })
+    expect(asked).toContain('https://imgflip.com/memetemplates?sort=top-new')
+    const user = llm.calls[0]!.user
+    for (const n of ['Fresh One | https://imgflip.com/meme/901', 'Fresh Two | https://imgflip.com/meme/903', 'Fresh Three | https://imgflip.com/meme/904']) expect(user).toContain(n)
+    expect(user).not.toContain('Sexy Dance')
+    expect(user).not.toContain('Fresh Four')
+  })
+
   it('shows the morning plan that a sketch can be a meme, with the meme formats it read on its trips (issue #328)', async () => {
     writeJson('trails/2026-11-02-1.json', Trail.parse({ id: '2026-11-02-1', date: '2026-11-02', purpose: 'p', start: { kind: 'feed', value: 'https://imgflip.com/meme/181913649' }, pages: [{ url: 'https://imgflip.com/meme/181913649', title: 'Drake Hotline Bling', fetchedAt: '2026-11-02T10:00:00Z', topics: [], interest: 6, reaction: 'No, then yes.' }] }))
     const llm = fake(wanderPlan)
@@ -486,7 +499,7 @@ describe('a wander step', () => {
   it('never fetches an address that is not on the allowlist, even when a page links to one', async () => {
     const { web, asked } = webWith({ [`${wiki}/wiki/Logic_gates`]: article('Logic gate', ['Boolean_algebra']).replace('</p>', '<a href="https://example.com/evil">e</a></p>') })
     await wander({ web }, (url) => ({ ...defaultReader(url), next: 2 }))
-    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com|api\.github\.com)\//.test(u))).toBe(true)
+    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com|imgflip\.com|api\.github\.com)\//.test(u))).toBe(true)
   })
 
   it('looks at a picture the read call asked for, within the 20 a day, and books the look as a vision call', async () => {

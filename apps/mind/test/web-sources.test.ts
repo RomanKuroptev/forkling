@@ -40,7 +40,8 @@ describe('Imgflip, the pulse of meme formats (spec 6.1)', () => {
     expect(isAllowed('https://api.imgflip.com/get_memes')).toBe(true)
     expect(isAllowed('https://api.imgflip.com/get_memes', 'meme')).toBe(true)
     expect(isAllowed('https://i.imgflip.com/5.jpg')).toBe(true)
-    expect(isAllowed('https://imgflip.com/meme/105')).toBe(false)
+    // imgflip.com itself is on the list since the Top New trial (20 November 2026); readUrl reads only format pages there.
+    expect(isAllowed('https://imgflip.com/meme/105')).toBe(true)
     expect(isReadable('https://imgflip.com/meme/105')).toBe(true)
     expect(isReadable('https://imgflip.com.evil.com/meme/105')).toBe(false)
   })
@@ -71,6 +72,16 @@ describe('Imgflip, the pulse of meme formats (spec 6.1)', () => {
     expect((await readUrl(f(), 'https://imgflip.com/meme/105')).title).toBe('Format 5')
     await expect(readUrl(f(), 'https://imgflip.com/meme/999')).rejects.toMatchObject({ code: 'http', status: 404 })
     await expect(readUrl(f(), 'https://imgflip.com/')).rejects.toMatchObject({ code: 'not-allowed' })
+    await expect(readUrl(f(), 'https://imgflip.com/memetemplates?sort=top-new')).rejects.toMatchObject({ code: 'not-allowed' })
+    await expect(readUrl(f(), 'https://imgflip.com/i/abcd')).rejects.toMatchObject({ code: 'not-allowed' })
+  })
+
+  it('reads a format that is not in the ranking from the Top New page, when it is there', async () => {
+    const topNew = `<div class="mt-box"><h3 class="mt-title"><a title="New One Meme" href="/meme/999/New-One">New One</a></h3><div class="mt-img-wrap"><a href="/meme/999/New-One"><img alt="New One Meme Template" src="//i.imgflip.com/4/n.jpg"/></a></div></div>`
+    const both = fake({ 'https://api.imgflip.com/get_memes': { data: { memes } }, 'https://imgflip.com/memetemplates?sort=top-new': topNew })
+    const item = await readUrl(both, 'https://imgflip.com/meme/999')
+    expect(item).toMatchObject({ source: 'imgflip.com', title: 'New One', images: [{ url: 'https://i.imgflip.com/4/n.jpg', licence: null, credit: null }] })
+    expect((await readUrl(both, 'https://imgflip.com/meme/105')).source).toBe('api.imgflip.com')
   })
 
   it('does not trust the shape of the answer: a reply without a list of formats is an error, and odd entries are dropped', async () => {

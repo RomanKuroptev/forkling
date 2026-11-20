@@ -1,6 +1,6 @@
 import type { Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
-import { articRandomId, articWork, commonsFeatured, esolangFeatured, githubRepo, githubTopicRepos, imgflipFormat, imgflipTopLinks, wikipediaFeatured } from './sources/index.ts'
+import { articRandomId, articWork, commonsFeatured, esolangFeatured, githubRepo, githubTopicRepos, imgflipFormat, imgflipNewFormat, imgflipNewLinks, imgflipTopLinks, wikipediaFeatured } from './sources/index.ts'
 
 /** How a trial starts on a host: from what the host itself puts forward, never a topic picked here (spec 6.5). */
 export interface HostPlan {
@@ -37,7 +37,16 @@ export const HOST_PLANS: readonly HostPlan[] = [
     feed: true,
     start: async (f, seed, offset) => imgflipFormat(f, at(await imgflipTopLinks(f, 100), offset + seed).url.split('/').pop()!),
   },
+  {
+    // Imgflip Top New, read from its HTML page (trial passed 20 November 2026, docs/spec/w2-trials/imgflip.com-top-new.md).
+    host: 'imgflip.com',
+    itemHost: 'imgflip.com',
+    paths: ['/memetemplates'],
+    feed: true,
+    start: async (f, seed, offset) => imgflipNewFormat(f, at(await imgflipNewLinks(f, 100), (offset + seed) * 5).url.split('/').pop()!),
+  },
   { host: 'api.artic.edu', itemHost: 'www.artic.edu', paths: ['/api/v1/artworks/'], start: async (f, seed, offset) => articWork(f, await articRandomId(f, 1 + ((offset * 97 + seed * 331) % 900))) },
 ]
 
-export const planFor = (host: string): HostPlan | undefined => HOST_PLANS.find((p) => p.host === host || p.itemHost === host)
+/** The plan for a host, by the host it reads first (imgflip.com is its own plan, not the item host of api.imgflip.com). */
+export const planFor = (host: string): HostPlan | undefined => HOST_PLANS.find((p) => p.host === host) ?? HOST_PLANS.find((p) => p.itemHost === host)

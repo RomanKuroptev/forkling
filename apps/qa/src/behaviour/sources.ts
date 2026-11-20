@@ -161,13 +161,17 @@ const hostOf = (url: string): string | null => {
   }
 }
 
-/** url -> source id from qa/sources.json, with the page hosts of the APIs (github.com is read through api.github.com). */
+/**
+ * url -> source id from qa/sources.json, with the page hosts of the APIs (github.com is read through api.github.com). An
+ * API's page host stays with the API's source even when another source reads that host too: an Imgflip format page
+ * (`imgflip.com/meme/<id>`) counts for the ranking (api.imgflip.com), though Top New (imgflip.com) offers the same pages.
+ */
 export function sourceOfUrl(list: SourceList): (url: string) => string | null {
   const byHost = new Map<string, string>()
   for (const s of list.sources) for (const h of s.hosts) byHost.set(h, s.id)
   for (const p of HOST_PLANS) {
     const id = byHost.get(p.host)
-    if (id && !byHost.has(p.itemHost)) byHost.set(p.itemHost, id)
+    if (id && p.itemHost !== p.host) byHost.set(p.itemHost, id)
   }
   return (url) => {
     const h = hostOf(url)
@@ -383,8 +387,10 @@ export function scoreSources(
 
   if (offered !== 'unknown') {
     const seen = new Set([...Object.keys(offered), ...Object.keys(tripsBySource), ...Object.keys(readsBySource)])
+    // A source whose pages are counted for another (Top New's format pages count for the Imgflip ranking) is met when that one is.
+    const countedFor = (s: SourceList['sources'][number]) => s.hosts.map((h) => source(`https://${h}/`)).filter((id): id is string => id !== null && id !== s.id)
     for (const s of list.sources)
-      if (s.state === 'on the list' && s.group !== 'manual' && !seen.has(s.id))
+      if (s.state === 'on the list' && s.group !== 'manual' && !seen.has(s.id) && !countedFor(s).some((id) => seen.has(id)))
         findings.push({
           ...base('sources.never-offered', s.id),
           severity: 'minor',
