@@ -6,6 +6,7 @@ import { creativeModel } from '../budget.ts'
 import { pendingJobs } from '../build-worker.ts'
 import { buildReworkUser, MAX_RETIRES_PER_WEEK, REWORK_MAX_TOKENS, ReworkAnswer, retirementsInWeek } from '../builds/rework.ts'
 import { drawForBuild } from '../builds/draw.ts'
+import { dweetSeeds } from '../builds/dweets.ts'
 import { memeSeeds } from '../builds/memes.ts'
 import { runTinker, type TinkerInput } from '../builds/tinker.ts'
 import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from '../builds/works.ts'
@@ -154,6 +155,8 @@ async function makeSketch(t: Tick, step: PlanStep, index: number, o: { idea: str
     recentTitles: recentWorkTitles(works),
     manuals,
     memeSeeds: memeSeeds(t.dir),
+    // Dweets it read are fetched again by code for their code (tinker may read Dwitter); none read, nothing fetched.
+    dweets: t.deps.web ? await dweetSeeds(createFetcher({ ...t.deps.web, verb: 'tinker' }), t.dir) : [],
     inspiredBy: inspiredByFrom(step.reason, t.visitorNotes) ?? undefined,
     ...drawn,
   }

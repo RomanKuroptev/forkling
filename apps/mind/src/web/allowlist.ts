@@ -44,6 +44,9 @@ export const ALLOWLIST: readonly HostRule[] = [
   // but a meme may never embed (the work check refuses a picture of any kind in a meme).
   { host: 'api.imgflip.com', kind: 'record', tier: 'voices', gapMs: FAST, verbs: ['wander', 'meme'] },
   { host: 'i.imgflip.com', kind: 'image', tier: 'voices', gapMs: FAST, verbs: ['wander', 'meme'] },
+  // Dweets (Roman, 20 November 2026, after its trial): 140-character canvas programs, read as text by a wander, and read again by a
+  // tinker as a starting point it credits and never copies. A dweet runs only in the sandbox unit (src/builds/dweet-run.ts).
+  { host: 'www.dwitter.net', kind: 'record', tier: 'voices', gapMs: FAST, verbs: ['wander', 'tinker'] },
   // The library manuals, for tinker only (spec 6.1): what Merge reads about the tool it is making something with.
   { host: 'p5js.org', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },
   { host: 'tonejs.github.io', kind: 'page', tier: 'reference', gapMs: FAST, verbs: ['tinker'] },

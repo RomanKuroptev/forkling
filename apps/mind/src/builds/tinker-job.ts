@@ -12,6 +12,7 @@ import type { GithubClient, GithubFile } from './github.ts'
 import { readNotes, readNotesHidden } from '../notes.ts'
 import { createWorkerComplete } from './complete.ts'
 import { drawForBuild } from './draw.ts'
+import { dweetSeeds } from './dweets.ts'
 import { memeSeeds } from './memes.ts'
 import { runTinker, type TinkerInput } from './tinker.ts'
 import { existingWorkIds, readWorks, readWorkSource, recentSouvenirs, recentWorkTitles, topInterestLines, untriedLibraries } from './works.ts'
@@ -71,6 +72,7 @@ export function createTinkerHandler(o: TinkerHandlerOptions): BuildHandler {
       recentTitles: recentWorkTitles(works),
       manuals,
       memeSeeds: memeSeeds(o.dir),
+      dweets: o.web ? await dweetSeeds(createFetcher({ ...o.web, verb: 'tinker' }), o.dir) : [],
       constraint: draw.constraint,
       collision: draw.collision ?? undefined,
       inspiredBy: inspiredByFrom(job.reason, visibleNotes(readNotes(o.dir), readNotesHidden(o.dir))) ?? undefined,

@@ -34,6 +34,7 @@ import type { BodyWorld, MoodEvent, Trigger, sleepWindow, startPlayback } from '
 import type { ModelId, rollLedger } from '../budget.ts'
 import type { Decision } from '../decision.ts'
 import type { WorkChecker } from '../builds/browser-check.ts'
+import type { Sandbox } from '../builds/sandbox-run.ts'
 import type { StartingPoint } from '../web/doors.ts'
 import type { Fetcher, FetcherOptions } from '../web/fetch.ts'
 import type { WanderState } from '../web/wander-state.ts'
@@ -73,6 +74,11 @@ export interface TickDeps {
    * like a tool, not a rule of plans.
    */
   sessions?: boolean
+  /**
+   * The sandbox unit, given only when its self-test passed: a dweet read on a trip is run there, and its screenshot is a picture a
+   * look may see (Roman, 20 November). Absent, a dweet is text only. A dweet never runs in this process.
+   */
+  dweetSandbox?: Sandbox
   /**
    * The real visits counted since the last tick (issue #422): the server's counter of the viewer's polls, or the fast-forward's
    * simulated ones. Absent (the Actions tick) means nothing can be known, and the plan is shown nothing about visits.

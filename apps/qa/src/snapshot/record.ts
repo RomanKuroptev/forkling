@@ -5,7 +5,7 @@ import { createFetcher, type Fetcher, type FetchImpl, WebError } from '@forkling
 import type { Item } from '@forkling/mind/src/web/item.ts'
 import { robotsAllows } from '@forkling/mind/src/web/robots.ts'
 import { recordingFetch, type SnapshotManifest, writeManifest, itemsPerSource } from '@forkling/mind/src/web/snapshot.ts'
-import { frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, risingTopicsFor, readUrl, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
+import { dwitterHotLinks, frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, risingTopicsFor, readUrl, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
 import { MANUAL_START, manualPage } from '@forkling/mind/src/web/sources/manuals.ts'
 import { HOST_PLANS } from '@forkling/mind/src/web/starts.ts'
 import type { SourceList } from '../sources/list.ts'
@@ -36,7 +36,7 @@ const PER_SOURCE: Record<string, number> = { wikipedia: 24, esolang: 14, 'github
 const DEFAULT_PER_SOURCE = 3
 /** Links followed from each page read, one step deep. */
 const LINKS_PER_PAGE = 3
-const MORNING = { wikipedia: 4, memes: 6, github: 4, githubTopic: 'creative-coding' }
+const MORNING = { wikipedia: 4, memes: 6, github: 4, githubTopic: 'creative-coding', dweets: 4 }
 
 export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManifest> {
   const log = o.log ?? (() => undefined)
@@ -100,6 +100,7 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
     ...((await soft('Wikipedia Main Page', () => wikipediaMorningLinks(wander, MORNING.wikipedia))) ?? []),
     ...((await soft('Esolang front page', () => frontPageLinks(wander, 'esolangs.org'))) ?? []),
     ...((await soft('Imgflip formats', () => imgflipTopLinks(wander, MORNING.memes))) ?? []),
+    ...((await soft('Dwitter hot list', () => dwitterHotLinks(wander, MORNING.dweets))) ?? []),
     ...((await soft('GitHub topic', async () => (await githubTopicRepos(wander, MORNING.githubTopic, MORNING.github)).map((name) => ({ title: name, url: `https://github.com/${name}` })))) ?? []),
     // The rising-this-week search names the date, so a later run asks another address; the repositories it found are kept.
     ...(

@@ -5,7 +5,7 @@ import { createFetcher, type FetchImpl, type Fetcher } from '@forkling/mind/src/
 import type { Item } from '@forkling/mind/src/web/item.ts'
 import { checkRobots } from '@forkling/mind/src/web/robots.ts'
 import { MANUAL_START, manualPage } from '@forkling/mind/src/web/sources/manuals.ts'
-import { frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, risingTopicsFor, wikipediaArticle, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
+import { dwitterHotLinks, frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, risingTopicsFor, wikipediaArticle, wikipediaMorningLinks } from '@forkling/mind/src/web/sources/index.ts'
 import { HOST_PLANS } from '@forkling/mind/src/web/starts.ts'
 import { DID_NOT_RUN, type CheckResult } from '../report/finding.ts'
 import type { SourceList } from '../sources/list.ts'
@@ -22,6 +22,7 @@ const GITHUB_TOPIC = 'creative-coding'
 const GITHUB_POINTS = 4
 const RISING_POINTS = 4
 const MEME_POINTS = 6
+const DWEET_POINTS = 4
 // Imgflip's ranking is 100 long; freshness compares all of it.
 const IMGFLIP_ALL = 100
 const SAMPLE_WORDS = 120
@@ -127,6 +128,15 @@ export const PROBES: readonly Probe[] = [
     min: 1,
     counts: 'artworks read',
     read: async (f, seed) => ({ items: oneIfSomething(await planStart('api.artic.edu')(f, seed, 0)) }),
+  },
+  {
+    source: 'dwitter',
+    host: 'www.dwitter.net',
+    verb: 'wander',
+    paths: planPaths('www.dwitter.net'),
+    min: DWEET_POINTS,
+    counts: 'hot dweets',
+    read: async (f) => ({ items: (await dwitterHotLinks(f, DWEET_POINTS)).length }),
   },
   manualProbe('p5js', MANUAL_START.p5),
   manualProbe('tonejs', MANUAL_START.tone),

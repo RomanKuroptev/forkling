@@ -149,6 +149,16 @@ describe('the morning', () => {
     expect(user).not.toContain('ed/extra-one')
   })
 
+  it('offers 4 hot dweets among the starting points (Roman, 20 November)', async () => {
+    const hot = Array.from({ length: 5 }, (_, i) => ({ id: 100 + i, code: 'x.fillRect(0,0,9,9)', author: { username: `maker${i}` }, awesome_count: 9, posted: '2026-11-02T10:00:00Z' }))
+    const llm = fake(wanderPlan)
+    const { web, asked } = webWith({ 'https://www.dwitter.net/apiv2beta/dweets/?order_by=-hotness&limit=4': JSON.stringify({ results: hot.slice(0, 4) }) })
+    await tick(MORNING, llm, { web })
+    expect(asked).toContain('https://www.dwitter.net/apiv2beta/dweets/?order_by=-hotness&limit=4')
+    const user = llm.calls[0]!.user
+    for (let i = 0; i < 4; i++) expect(user).toContain(`Dweet ${100 + i} by maker${i} | https://www.dwitter.net/d/${100 + i}`)
+  })
+
   it('mixes in the repositories rising this week under the day\'s two drawn topics, beside the creative-coding ones', async () => {
     const [first, second] = risingTopicsFor(20260101, DAY)
     const rising = (topic: string) => `https://api.github.com/search/repositories?q=topic:${topic}+created:%3E2026-10-27&sort=stars&order=desc&per_page=4`
@@ -280,7 +290,7 @@ describe('a wander step', () => {
     writeJson('mind/state.json', MindState.parse({ seen: [{ title: 'Boolean algebra', url: `${wiki}/wiki/Logic_gates` }] }))
     const { web, asked } = webWith()
     await wander({ web }, undefined, plan([step('wander', 'boolean algebra'), step('rest', null), step('write', 'home')]))
-    const pages = asked.filter((u) => !u.endsWith('Main_Page') && !u.includes('imgflip') && !u.includes('api.github.com/search'))
+    const pages = asked.filter((u) => !u.endsWith('Main_Page') && !u.includes('imgflip') && !u.includes('api.github.com/search') && !u.includes('www.dwitter.net/apiv2beta'))
     expect(pages[0]).toBe(`${wiki}/wiki/Logic_gates`)
     expect(Trail.parse(readJson(`trails/${DAY}-1.json`)).start).toEqual({ kind: 'topic', value: 'boolean algebra' })
   })
@@ -506,7 +516,7 @@ describe('a wander step', () => {
   it('never fetches an address that is not on the allowlist, even when a page links to one', async () => {
     const { web, asked } = webWith({ [`${wiki}/wiki/Logic_gates`]: article('Logic gate', ['Boolean_algebra']).replace('</p>', '<a href="https://example.com/evil">e</a></p>') })
     await wander({ web }, (url) => ({ ...defaultReader(url), next: 2 }))
-    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com|api\.github\.com)\//.test(u))).toBe(true)
+    expect(asked.every((u) => /^https:\/\/(en\.wikipedia\.org|esolangs\.org|api\.imgflip\.com|api\.github\.com|www\.dwitter\.net)\//.test(u))).toBe(true)
   })
 
   it('looks at a picture the read call asked for, within the 20 a day, and books the look as a vision call', async () => {
