@@ -34,6 +34,8 @@ Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session 
 
 - **QR done (20 November):** 35 fix PRs merged after their gates; `pnpm qa world` clean on all five fixtures; digest on #269; summary in [`lanes/done.md`](docs/spec/audit/lanes/done.md). **Waiting for Roman: the release** (v0.19.0; live Merge still has no Workshop until then) and the items listed in done.md, each with a recommended answer. Harness spend $5.63 of $10.
 
+- **v0.19.0 (20 November, Roman said "release now"):** all of the audit harness QR fixes (#285, #380 to #443, #413). Steps as for v0.18.0: release PR, tag on its merge commit, `deploy.yml` with the tag, `/health`, then one commit to `RomanKuroptev/merge` changing only `FORKLING_REF` in its four workflows. Then `/qa` on the live world.
+
 ### Lane W (Q1, QW)
 
 - **Lane W** ([`lanes/w.md`](docs/spec/audit/lanes/w.md), plan approved, W1 to W8): **W1 (#280, merged)** the viewer's `?qa=1&now=&seed=`: frames drawn only by `window.__qa.step`, a frozen clock, seeded randomness, and `__qa` with `ready`, `scene()`, `renderer()`, `cameras`, `setCamera`, `fps`, `press`, `stick`, `visitor`, `teleport`, `look`. Normal mode pixel-identical before and after. Check `world.viewer-math-random` in `pnpm qa fast`.
