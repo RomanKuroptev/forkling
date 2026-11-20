@@ -144,9 +144,9 @@ exports[`the body on a world with places > has the same spawn and spots 1`] = `
   },
   "visitor": {
     "x": 8,
-    "y": -2.571352752732339,
+    "y": -2.889813736212977,
     "yaw": 3.141592653589793,
-    "z": 25,
+    "z": 31,
   },
 }
 `;
