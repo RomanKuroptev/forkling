@@ -31,7 +31,7 @@ export interface TrialPlan extends HostPlan {
 /**
  * Every trial-only plan. Lanes add theirs here, one line each. Lemmy's (c/memes, c/showerthoughts) and Bluesky's trending topics
  * left when their hosts joined the allowlist (20 November); their reports are `docs/spec/w2-trials/lemmy.world-c-*.md` and
- * `public.api.bsky.app-trending.md`.
+ * `public.api.bsky.app-trending.md`. Roman dropped Bluesky again on 21 November (its topics are too short to keep anything).
  */
 export const TRIAL_PLANS: readonly TrialPlan[] = []
 
