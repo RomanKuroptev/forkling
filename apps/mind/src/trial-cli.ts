@@ -129,7 +129,7 @@ async function main(): Promise<void> {
 
   // Commons is listed as an image host but its file pages are read as records, so the marks follow what was actually read.
   const kind = reads.find((r) => r.item)?.item?.kind ?? rule.kind
-  const report = evaluateTrial({ host: name, kind, tier: rule.tier, seeds, reads, robots, feed: plan.feed === true })
+  const report = evaluateTrial({ host: name, kind, tier: rule.tier, seeds, reads, robots, feed: plan.feed === true, code: plan.code === true })
   const offlineNote = values.offline ? '**Offline run: no model was called, so "Gives something" and "Not boring" are not measured.**\n\n' : ''
   const trialNote = trial?.note ? `${trial.note()}\n\n` : ''
   const text = offlineNote + trialNote + formatTrial(report, reads, Date.now() % 1_000_000)

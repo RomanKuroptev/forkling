@@ -12,6 +12,11 @@ export interface HostPlan {
   paths: string[]
   /** A feed host (spec 6.1): it only offers starting points, so the trial does not mark what a read keeps or how interesting it was. */
   feed?: boolean
+  /**
+   * A feed of code (Dwitter, Roman 20 November): its items are programs that run in the sandbox, so the trial counts one readable
+   * when its code is present and non-empty (`hasCode` in `skip.ts`), not by its words.
+   */
+  code?: true
   /** Seed number to a starting item. `offset` gives a different mix on another run. */
   start(f: Fetcher, seed: number, offset: number): Promise<Item>
 }
@@ -41,6 +46,9 @@ export const HOST_PLANS: readonly HostPlan[] = [
     host: 'www.dwitter.net',
     itemHost: 'www.dwitter.net',
     paths: ['/apiv2beta/dweets/'],
+    // A code feed (Roman, 20 November): starting points for works, judged by their code.
+    feed: true,
+    code: true,
     start: async (f, seed, offset) => {
       const hot = await dwitterHot(f, 20)
       if (hot.length === 0) throw new WebError('http', 'Dwitter has no hot dweets', 404)

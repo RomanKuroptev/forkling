@@ -3,6 +3,7 @@ import { WebError, type Fetcher } from '../src/web/fetch.ts'
 import { isAllowed } from '../src/web/allowlist.ts'
 import { dweetIdOf, dwitterDweet, dwitterHotLinks, parseDweet, unpackDweet } from '../src/web/sources/dwitter.ts'
 import { readUrl } from '../src/web/sources/index.ts'
+import { readable, skipReason } from '../src/web/skip.ts'
 import { planFor } from '../src/web/starts.ts'
 
 function fake(answers: Record<string, unknown>): Fetcher & { asked: string[] } {
@@ -64,6 +65,9 @@ describe('Dwitter', () => {
     expect(item.text).toContain('unpacked')
     expect(item.text).toContain(code)
     expect(item.text).toContain('taupelink: Wow!')
+    // The item is code: it carries the code as it runs, and no fixed line explaining what a dweet is (Roman, 20 November).
+    expect(item.code).toContain(code)
+    expect(item.text).not.toMatch(/A dweet is|1920 by 1080|Math\.sin/)
     expect(item.links.map((l) => l.url)).toEqual(['https://www.dwitter.net/d/36687', 'https://www.dwitter.net/d/36700', 'https://www.dwitter.net/d/36676', 'https://www.dwitter.net/d/40000'])
   })
 
@@ -90,5 +94,17 @@ describe('Dwitter on the list (Roman, 20 November, after its trial)', () => {
     const item = await planFor('www.dwitter.net')!.start(f, 1, 1)
     expect(item.url).toBe('https://www.dwitter.net/d/8')
     expect(item.links.map((l) => l.url)).toEqual(['https://www.dwitter.net/d/7'])
+  })
+
+  it('is trialled as a code feed (Roman, 20 November): starting points that are code, readable when the code is there', async () => {
+    expect(planFor('www.dwitter.net')).toMatchObject({ feed: true, code: true })
+    expect(planFor('api.imgflip.com')!.code).toBeUndefined()
+    const f = fake({ [`${API}9/`]: dweet(9, 'ann', 'c.width|=0'), [`${API}?username=ann&limit=6`]: { results: [] } })
+    const item = await dwitterDweet(f, 9)
+    expect(item.text.split(/\s+/).length).toBeLessThan(40)
+    expect(readable(item)).toBe(true)
+    expect(skipReason(item)).toBeNull()
+    expect(readable({ ...item, code: '' })).toBe(false)
+    expect(skipReason({ ...item, code: ' ' })).toMatch(/no code/)
   })
 })
