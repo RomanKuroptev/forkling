@@ -3,8 +3,12 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { BudgetLedger, Interests, MindState } from '@forkling/schema'
-import { FRESH_ARCHIVE, migrateFresh } from '../src/migrate-fresh.ts'
+import { BudgetLedger, Interests, MindState, POINTS_HELD_MAX } from '@forkling/schema'
+import { DAILY_POINTS } from '@forkling/sim'
+import { SESSION_LIMITS } from '../src/builds/session.ts'
+import { FRESH_ARCHIVE, freshPlanLines, migrateFresh } from '../src/migrate-fresh.ts'
+import { loadSpecies } from '../src/species.ts'
+import { runTick } from '../src/tick.ts'
 import { readWorld } from '../src/world.ts'
 
 const template = fileURLToPath(new URL('../../../templates/forkling-world', import.meta.url))
@@ -172,5 +176,84 @@ describe('migrate-fresh: Merge v1 archived, the mind starts again', () => {
   it('refuses a folder that is not a world', () => {
     const empty = mkdtempSync(join(tmpdir(), 'not-a-world-'))
     expect(() => migrateFresh(empty, template, { apply: true })).toThrow(/forkling\.json/)
+  })
+})
+
+describe('migrate-fresh --start-points: the fresh Merge starts with points in hand (Roman, 21 November)', () => {
+  // 10:00 in Stockholm on 21 November; 23:30 UTC on the 20th is already the 21st there.
+  const NOW = new Date('2026-11-21T09:00:00Z')
+  const fresh = (n: number, now = NOW) => migrateFresh(world, template, { apply: true, startPoints: n, now: () => now })
+
+  it('writes a fresh state holding the points, for today in Stockholm, with one grant saying where they came from', () => {
+    const plan = fresh(500)
+    expect(plan.startPoints).toBe(500)
+    expect(MindState.safeParse(JSON.parse(text('mind/state.json'))).success).toBe(true)
+    expect(JSON.parse(text('mind/state.json'))).toEqual({ allowance: { points: 500, day: '2026-11-21' }, grants: [{ at: '2026-11-21T09:00:00.000Z', points: 500, source: 'fresh start' }] })
+    const w = readWorld(world, () => '2026-11')
+    expect(w.mindState.allowance).toEqual({ points: 500, day: '2026-11-21' })
+    expect(MindState.parse(JSON.parse(text('archive/v1/mind/state.json'))).allowance?.points).toBe(411)
+  })
+
+  it('takes the day in Stockholm, not in UTC', () => {
+    fresh(500, new Date('2026-11-20T23:30:00Z'))
+    expect(MindState.parse(JSON.parse(text('mind/state.json'))).allowance?.day).toBe('2026-11-21')
+  })
+
+  it('500 is enough for a build session to start (a session needs 300 in hand)', () => {
+    fresh(500)
+    expect(readWorld(world, () => '2026-11').mindState.allowance!.points).toBeGreaterThanOrEqual(SESSION_LIMITS.startPoints)
+  })
+
+  it('a waking tick that day adds no daily grant; the next day adds it as usual', async () => {
+    fresh(500)
+    const cat = loadSpecies('cat')
+    const deps = (at: string) => ({ now: new Date(at), llm: null, pack: cat.pack, behaviors: cat.behaviors, speciesPersona: cat.persona })
+    await runTick(world, deps('2026-11-21T09:10:00Z'))
+    const same = MindState.parse(JSON.parse(text('mind/state.json')))
+    expect(same.allowance).toEqual({ points: 500, day: '2026-11-21' })
+    expect(same.grants!.map((g) => g.source)).toEqual(['fresh start'])
+    await runTick(world, deps('2026-11-22T09:10:00Z'))
+    const next = MindState.parse(JSON.parse(text('mind/state.json')))
+    expect(next.allowance!.day).toBe('2026-11-22')
+    expect(next.allowance!.points).toBe(500 + DAILY_POINTS)
+    expect(next.grants!.map((g) => g.source)).toEqual(['fresh start', 'daily'])
+  })
+
+  it('says the start points on a dry run and writes nothing', () => {
+    const plan = migrateFresh(world, template, { apply: false, startPoints: 500, now: () => NOW })
+    expect(plan.startPoints).toBe(500)
+    expect(plan.writes).toContain('mind/state.json')
+    const lines = freshPlanLines(plan).join('\n')
+    expect(lines).toMatch(/^Dry run/)
+    expect(lines).toContain('write  mind/state.json (500 start points for 2026-11-21)')
+    expect(MindState.parse(JSON.parse(text('mind/state.json'))).allowance?.points).toBe(411)
+  })
+
+  it('is a no-op the second time, and keeps the points already given', () => {
+    fresh(500)
+    const again = fresh(500, new Date('2026-11-22T09:00:00Z'))
+    expect(again.moves).toEqual([])
+    expect(again.writes).toEqual([])
+    expect(again.startPoints).toBeUndefined()
+    expect(MindState.parse(JSON.parse(text('mind/state.json'))).allowance).toEqual({ points: 500, day: '2026-11-21' })
+  })
+
+  it('is a no-op the second time also when Merge had no state to archive', () => {
+    rmSync(join(world, 'mind/state.json'))
+    fresh(500)
+    const again = fresh(500)
+    expect(again.moves).toEqual([])
+    expect(again.writes).toEqual([])
+  })
+
+  it('without --start-points the fresh state is the template one, as before', () => {
+    const plan = migrateFresh(world, template, { apply: true, now: () => NOW })
+    expect(plan.startPoints).toBeUndefined()
+    expect(text('mind/state.json')).toBe(readFileSync(join(template, 'mind/state.json'), 'utf8'))
+  })
+
+  it('refuses points that are not a whole number from 0 to the most that may be held', () => {
+    for (const n of [-1, 1.5, POINTS_HELD_MAX + 1, Number.NaN]) expect(() => fresh(n), String(n)).toThrow(/start points/)
+    expect(() => fresh(POINTS_HELD_MAX)).not.toThrow()
   })
 })
