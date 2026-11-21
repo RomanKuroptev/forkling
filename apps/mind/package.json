@@ -12,6 +12,7 @@
     "fast-forward": "node --env-file-if-exists=../../.env src/fast-forward-cli.ts",
     "migrate-w1": "node src/migrate-cli.ts",
     "migrate-w5": "node src/migrate-w5-cli.ts",
+    "migrate-fresh": "node src/migrate-fresh-cli.ts",
     "source-trial": "node --env-file-if-exists=../../.env src/trial-cli.ts",
     "typecheck": "tsc -p .",
     "sandbox-proof": "node src/sandbox-proof.ts",

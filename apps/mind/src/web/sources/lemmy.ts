@@ -62,15 +62,15 @@ interface Post {
 }
 export interface PostView {
   post: Post
-  community?: { name?: string }
+  community?: { name?: string; nsfw?: boolean }
   counts?: { score?: number; comments?: number }
 }
 
 const isPost = (p: unknown): p is Post => !!p && typeof (p as Post).id === 'number' && typeof (p as Post).name === 'string'
-/** A post that may be read: not NSFW, removed or deleted. */
+/** A post that may be read: not NSFW (the post or its community), removed or deleted. */
 const usable = (v: unknown): v is PostView => {
   const p = (v as PostView | null)?.post
-  return isPost(p) && !p.nsfw && !p.removed && !p.deleted
+  return isPost(p) && !p.nsfw && (v as PostView).community?.nsfw !== true && !p.removed && !p.deleted
 }
 /** A pinned post (a community's rules, an announcement) is not one of its posts. */
 const pinned = (v: PostView) => v.post.featured_community === true || v.post.featured_local === true
