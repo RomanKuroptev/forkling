@@ -40,10 +40,6 @@ export function healthyRoutes(): Routes {
       /^https:\/\/lemmy\.world\/api\/v3\/post\/list\?community_name=(memes|showerthoughts)&/,
       { body: JSON.stringify({ posts: [1, 2, 3, 4].map((id) => ({ post: { id, name: `Post ${id}`, nsfw: false, removed: false, deleted: false, featured_community: id === 1, featured_local: false }, counts: { score: 10, comments: 1 } })) }), type: 'application/json' },
     ],
-    [
-      /^https:\/\/public\.api\.bsky\.app\/xrpc\/app\.bsky\.unspecced\.getTrendingTopics/,
-      { body: JSON.stringify({ topics: ['Moss art', 'Star Wars trailer', 'Comet tonight', 'Snap election'].map((t, i) => ({ topic: t, displayName: t, description: '', link: `/profile/did:plc:abc/feed/t${i}` })) }), type: 'application/json' },
-    ],
     [/^https:\/\/(p5js\.org|tonejs\.github\.io|threejs\.org|developer\.mozilla\.org)\//, { body: `<html><head><title>Reference</title></head><body><p>${words(80, 'draw')}</p><a href="/reference/circle/">circle</a></body></html>` }],
   ]
 }

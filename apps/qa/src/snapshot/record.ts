@@ -6,8 +6,6 @@ import type { Item, ItemLink } from '@forkling/mind/src/web/item.ts'
 import { robotsAllows } from '@forkling/mind/src/web/robots.ts'
 import { recordingFetch, type SnapshotEntry, type SnapshotManifest, itemsPerSource } from '@forkling/mind/src/web/snapshot.ts'
 import {
-  blueskyTopic,
-  blueskyTrending,
   dwitterHotLinks,
   frontPageLinks,
   githubRisingRepos,
@@ -27,7 +25,7 @@ import type { SourceList } from '../sources/list.ts'
 /**
  * Records the web snapshot (QB.4, `pnpm qa web-snapshot`): the engine's own source code reads what a morning offers (the
  * Wikipedia Main Page links, the Esolang front page, the Imgflip formats, the hot dweets, the creative-coding repositories and
- * the ones rising this week, the hot posts of Lemmy c/memes and c/showerthoughts, Bluesky's trending topics), each host's own
+ * the ones rising this week, the hot posts of Lemmy c/memes and c/showerthoughts), each host's own
  * starting item (Commons, the Art Institute), the template pictures a look fetches on i.imgflip.com, the pages all those lead
  * to two steps further, and the library manuals. All through the engine's fetcher (allowlist, rates: lemmy.world is one
  * request a minute, so it is read alongside the rest), with robots.txt read first on each host and obeyed for every address.
@@ -61,7 +59,6 @@ const PER_SOURCE: Record<string, number> = {
   imgflip: 30,
   dwitter: 12,
   'lemmy-memes': 14,
-  'bluesky-trending': 16,
 }
 const DEFAULT_PER_SOURCE = 3
 /** Links followed from each page read, and how many steps from the pages a morning offers. */
@@ -70,8 +67,6 @@ const STEPS = 2
 const MORNING = { wikipedia: 4, memes: 6, github: 4, githubTopic: 'creative-coding', dweets: 4 }
 /** Hot posts read per Lemmy community: the morning shows three, a trip goes on to its neighbours (each is a minute). */
 const LEMMY_POSTS = 4
-/** Bluesky topics read: the morning shows three, a topic links to the others. */
-const BLUESKY_TOPICS = 12
 /** Template pictures kept, from the top of the Imgflip ranking (the morning shows six, a format links to its neighbours). */
 const IMGFLIP_PICTURES = 24
 /**
@@ -191,15 +186,7 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
   })()
 
   const read: Item[] = []
-  // 2. Bluesky's trending topics (the news rule leaves some out). A topic is read from the list alone (its name and
-  // summary, Roman 20 November), so this asks for no posts; it records the list and checks each topic reads.
-  const topics = (await soft('Bluesky trending', () => blueskyTrending(wander))) ?? []
-  for (const t of topics.slice(0, BLUESKY_TOPICS)) {
-    if (over()) break
-    const item = await soft(t.url, () => blueskyTopic(wander, t.url, topics))
-    if (item) read.push(item)
-  }
-  // 3. The template pictures a look fetches, from the top of the ranking the morning read.
+  // 2. The template pictures a look fetches, from the top of the ranking the morning read.
   const ranking = rec.entries.find((e) => e.url === 'https://api.imgflip.com/get_memes' && e.file)
   const formats = ranking ? ((JSON.parse(readFileSync(join(o.dir, ranking.file!), 'utf8')) as { data?: { memes?: { url?: unknown }[] } }).data?.memes ?? []) : []
   for (const m of formats.slice(0, IMGFLIP_PICTURES)) {
@@ -207,15 +194,15 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
     const url = m.url
     await soft(url, () => wander.bytes(url))
   }
-  // 4. Each host's own starting item (the trials' plans), which is how Commons and the Art Institute are reached. Lemmy and
-  // Bluesky are read above.
+  // 3. Each host's own starting item (the trials' plans), which is how Commons and the Art Institute are reached. Lemmy is
+  // read above.
   for (const plan of HOST_PLANS) {
     if (over()) break
-    if (plan.host === 'lemmy.world' || plan.host === 'public.api.bsky.app') continue
+    if (plan.host === 'lemmy.world') continue
     const item = await soft(`${plan.host} start`, () => plan.start(wander, 0, 0))
     if (item) read.push(item)
   }
-  // 5. The morning's pages, every one of them.
+  // 4. The morning's pages, every one of them.
   const asked = new Set<string>()
   for (const link of starts) {
     if (over() || asked.has(link.url)) continue
@@ -223,7 +210,7 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
     const item = await soft(link.url, () => readPage(link.url))
     if (item) read.push(item)
   }
-  // 6. The library manuals (tinker reads them), and a page of MDN they link to: small, so before the budget goes on step 7.
+  // 5. The library manuals (tinker reads them), and a page of MDN they link to: small, so before the budget goes on step 6.
   const manuals: Item[] = []
   for (const url of Object.values(MANUAL_START)) {
     if (!room(url)) continue
@@ -233,7 +220,7 @@ export async function recordWebSnapshot(o: RecordOptions): Promise<SnapshotManif
   // No manual front page links to MDN today, so its Canvas page (what a sketch draws with) stands in.
   const mdn = manuals.flatMap((m) => m.links).find((l) => l.url.startsWith('https://developer.mozilla.org/'))?.url ?? MDN_START
   if (room(mdn)) await soft(mdn, () => manualPage(tinker, mdn))
-  // 7. Further from every page read, a few links each, step by step, while the budget lasts.
+  // 6. Further from every page read, a few links each, step by step, while the budget lasts.
   read.push(...(await lemmy))
   let frontier = read
   for (let step = 0; step < STEPS && !over(); step++) {

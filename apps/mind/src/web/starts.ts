@@ -1,6 +1,6 @@
 import { WebError, type Fetcher } from './fetch.ts'
 import type { Item } from './item.ts'
-import { articRandomId, articWork, commonsFeatured, dwitterDweet, dwitterHot, esolangFeatured, githubRepo, githubTopicRepos, imgflipFormat, imgflipTopLinks, blueskyTopic, blueskyTrending, LEMMY_COMMUNITIES, lemmyHot, lemmyPost, wikipediaFeatured } from './sources/index.ts'
+import { articRandomId, articWork, commonsFeatured, dwitterDweet, dwitterHot, esolangFeatured, githubRepo, githubTopicRepos, imgflipFormat, imgflipTopLinks, LEMMY_COMMUNITIES, lemmyHot, lemmyPost, wikipediaFeatured } from './sources/index.ts'
 
 /** How a trial starts on a host: from what the host itself puts forward, never a topic picked here (spec 6.5). */
 export interface HostPlan {
@@ -65,18 +65,6 @@ export const HOST_PLANS: readonly HostPlan[] = [
       const posts = await lemmyHot(f, at(LEMMY_COMMUNITIES, seed))
       if (posts.length === 0) throw new Error(`c/${at(LEMMY_COMMUNITIES, seed)} has no hot posts`)
       return lemmyPost(f, at(posts, offset + Math.floor(seed / LEMMY_COMMUNITIES.length) * 4).post.id)
-    },
-  },
-  {
-    // Today's trending topics, those the news rule skips left out (news-skip.ts).
-    host: 'public.api.bsky.app',
-    itemHost: 'bsky.app',
-    paths: ['/xrpc/app.bsky.unspecced.getTrendingTopics'],
-    feed: true,
-    start: async (f, seed, offset) => {
-      const topics = await blueskyTrending(f)
-      if (topics.length === 0) throw new Error('no trending topic is left after the news rule')
-      return blueskyTopic(f, at(topics, offset + seed * 3).url, topics)
     },
   },
   { host: 'api.artic.edu', itemHost: 'www.artic.edu', paths: ['/api/v1/artworks/'], start: async (f, seed, offset) => articWork(f, await articRandomId(f, 1 + ((offset * 97 + seed * 331) % 900))) },

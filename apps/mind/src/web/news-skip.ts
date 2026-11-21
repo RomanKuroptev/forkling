@@ -2,7 +2,7 @@
  * The news skip rule (Roman, 20 November 2026): Merge skips news about deaths, violence, war and politics. A rail, like the
  * safety rails of spec 12: code drops such an item before Merge is offered it. It is not a topic list for Merge to follow or
  * avoid in what it reads; it only applies where the web hands over the day's news: the "In the news" box on Wikipedia's Main
- * Page and Bluesky's trending topics. An ordinary page (a history article, say) is read as it is.
+ * Page (Bluesky's trending topics, the other place it applied, left the list on 21 November). An ordinary page (a history article, say) is read as it is.
  *
  * Whole words only, any case: "war" and "killed" are caught, "Star Wars" and "award" are not. A phrase of two words matches
  * with any spaces between them.

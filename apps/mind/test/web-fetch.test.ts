@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ALLOWLIST, hostRule, isAllowed, USER_AGENT } from '../src/web/allowlist.ts'
+import { ALLOWLIST, hostRule, isAllowed, NAMED_BY_PAGE, USER_AGENT } from '../src/web/allowlist.ts'
 import { createFetcher, WebError, type FetchImpl } from '../src/web/fetch.ts'
 
 const NOW = Date.parse('2026-11-18T10:00:00Z')
@@ -68,6 +68,11 @@ describe('the allowlist', () => {
     expect(hostRule('api.github.com')!.gapMs).toBe(1000)
     expect(hostRule('api.artic.edu')!.gapMs).toBe(2000)
     expect(hostRule('api.github.com')!.gapMs).toBe(1000)
+  })
+
+  it('holds nothing of Bluesky (dropped by Roman, 21 November)', () => {
+    expect(isAllowed('https://public.api.bsky.app/xrpc/app.bsky.unspecced.getTrendingTopics?limit=25')).toBe(false)
+    expect(NAMED_BY_PAGE).not.toContain('bsky.app')
   })
 
   it('names the project and where to find it in the User-Agent, with no email address', () => {
