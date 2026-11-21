@@ -66,3 +66,19 @@ describe('buildHealthResponse (what GET /health says, and what the watchdog read
     expect(buildHealthResponse(dir, Date.parse('2026-11-12T09:00:00Z'))).toMatchObject({ up: true, lastThoughtAt: null })
   })
 })
+
+describe('the credit on /health (Roman, 21 Nov)', () => {
+  it('is ok with no back-off in the mind state', () => {
+    const r = buildHealthResponse(dir, Date.parse('2026-11-12T09:00:00Z'))
+    expect(r.credit).toBe('ok')
+    expect(r.creditEmptySince).toBeUndefined()
+  })
+
+  it('is empty, with since, next try and a warning first, while the mind state holds a back-off', () => {
+    mkdirSync(join(dir, 'mind'), { recursive: true })
+    writeFileSync(join(dir, 'mind/state.json'), JSON.stringify({ credit: { since: '2026-11-12T08:00:00.000Z', retryAt: '2026-11-12T08:40:00.000Z', waitMs: 40 * MIN } }))
+    const r = buildHealthResponse(dir, Date.parse('2026-11-12T08:30:00Z'))
+    expect(r).toMatchObject({ credit: 'empty', creditEmptySince: '2026-11-12T08:00:00.000Z', creditRetryAt: '2026-11-12T08:40:00.000Z' })
+    expect(r.warnings[0]).toBe('credit empty since 2026-11-12T08:00:00.000Z, next try 2026-11-12T08:40:00.000Z')
+  })
+})

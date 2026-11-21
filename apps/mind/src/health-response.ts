@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Forkling, MindState } from '@forkling/schema'
 import { isAsleepAt, localDate, sleepWindow } from '@forkling/sim'
+import { creditWarning } from './credit.ts'
 import { readHealth } from './ticklog.ts'
 
 /** Merge should be thinking this long after it wakes. Until then the last thought is from last night, and that is no alarm. */
@@ -20,6 +21,11 @@ export interface HealthResponse {
   warnings: string[]
   /** Spec-v4 step 3: `ok` when the self-test at start passed inside the sandbox unit; `missing` otherwise (and off the server). */
   sandbox: 'ok' | 'missing'
+  /** `empty` while the account's credit is out and the mind backs off its model calls (Roman, 21 Nov); the watchdog fails on it. */
+  credit: 'ok' | 'empty'
+  /** When the credit ran out and when the next call may go, only while `credit` is `empty`. */
+  creditEmptySince?: string
+  creditRetryAt?: string
 }
 
 const readState = (dir: string): MindState | null => {
@@ -38,14 +44,20 @@ export function buildHealthResponse(dir: string, nowMs: number, sandbox: 'ok' | 
   const asleep = isAsleepAt(nowMs, { seed: forkling.seed, timezone: forkling.timezone, lateNight: forkling.lateNight })
   const { wakeMs } = sleepWindow(today, forkling.seed, forkling.timezone, forkling.lateNight === today)
   const health = readHealth(dir)
+  const state = readState(dir)
+  const credit = state?.credit ?? null
+  // The state file is newer than health.json (written at most once a minute), so its credit line replaces the one there.
+  const warnings = (health?.warnings ?? []).filter((w) => !w.startsWith('credit empty'))
   return {
     up: true,
     now: new Date(nowMs).toISOString(),
     asleep,
     shouldBeAwake: !asleep && nowMs >= wakeMs + WATCHDOG_WAKE_GRACE_MS,
-    lastThoughtAt: readState(dir)?.thought?.lastAt ?? null,
+    lastThoughtAt: state?.thought?.lastAt ?? null,
     lastTickAt: health?.lastTick.at ?? null,
-    warnings: health?.warnings ?? [],
+    warnings: credit ? [creditWarning(credit), ...warnings] : warnings,
     sandbox,
+    credit: credit ? 'empty' : 'ok',
+    ...(credit ? { creditEmptySince: credit.since, creditRetryAt: credit.retryAt } : {}),
   }
 }

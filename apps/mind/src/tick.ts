@@ -85,6 +85,12 @@ export async function runTick(dir: string, deps: TickDeps): Promise<TickOutcome>
   advance(t)
   feel(t)
   boredomStep(t)
+  // The credit back-off (Roman, 21 Nov) is kept in the mind state, so a restarted server goes on waiting and /health can read it.
+  if (deps.credit) {
+    const credit = deps.credit.state()
+    if (credit) t.mind.credit = { ...credit }
+    else delete t.mind.credit
+  }
   const result = logTick(t, writeWorld(t))
   return { ...result, now: buildNow(t), places: t.places }
 }

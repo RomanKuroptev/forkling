@@ -2,6 +2,7 @@ import { appendFileSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { hasCredentials } from './credentials.ts'
+import { withCreditGate } from './credit.ts'
 import { anthropicClient } from './llm.ts'
 import { loadSpecies } from './species.ts'
 import { runTick } from './tick.ts'
@@ -38,7 +39,8 @@ async function main(): Promise<void> {
 
   const result = await runTick(dir, {
     now,
-    llm: values['no-llm'] || !hasCredentials(process.env) ? null : anthropicClient(),
+    // A credit or billing error makes the next ticks wait before asking again (Roman, 21 Nov); the wait is kept in mind/state.json.
+    ...withCreditGate(dir, values['no-llm'] || !hasCredentials(process.env) ? null : anthropicClient(), () => now.getTime()),
     pack: species.pack,
     behaviors: species.behaviors,
     speciesPersona: species.persona,

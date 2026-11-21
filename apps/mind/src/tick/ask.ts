@@ -5,6 +5,16 @@ import { clampText } from '../decision.ts'
 import type { Ask, Tick } from './context.ts'
 
 /**
+ * The credit back-off as this tick sees it: the wait while it holds, else null. The first tick of a window that sees it says so in
+ * the tick log, once (Roman, 21 Nov); a call that is not made is not a failed call.
+ */
+export function creditWait(t: Tick): { retryAt: string } | null {
+  const wait = t.deps.credit?.waiting(t.nowMs) ?? null
+  if (wait && t.deps.credit!.noteOnce()) t.notes.push(`credit empty: waiting until ${wait.retryAt}`)
+  return wait
+}
+
+/**
  * The output limit of a decide or morning call (Haiku at medium effort, so it thinks, and thinking is billed as output).
  * Spec 13 sizes the answer at 1.5K and keeps thinking from cutting it short. The R1 fast-forward ledgers measured the real
  * output: a morning at 2,000 to 2,300 tokens at the median with its tail at the old limit of 3,000 (4 mornings and a decide
@@ -31,6 +41,8 @@ export function makeAsk(t: Tick): Ask {
       tried(false, 'prompt too long')
     } else if (deps.dryRun) {
       notes.push(`dry run: ${kind} call to ${model}, about ${tokens} tokens, at most $${maxUsd.toFixed(4)}`)
+    } else if (creditWait(t)) {
+      // The account cannot pay: nothing is asked, and nothing is written as a failed call.
     } else if (!deps.llm) {
       notes.push('no credentials: no call')
       tried(false, 'no credentials')
@@ -58,6 +70,7 @@ export function makeAsk(t: Tick): Ask {
         notes.push(`call failed: ${(e as Error).message}`)
         if (decides) t.mind.thinkFailedAt = t.nowIso
         tried(false, (e as Error).message)
+        creditWait(t)
       }
     }
     return null

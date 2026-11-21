@@ -101,3 +101,28 @@ describe('runWatchdog (what the workflow runs)', () => {
     expect(verdict.message).toMatch(/MIND_URL/)
   })
 })
+
+describe('the credit is empty (Roman, 21 Nov)', () => {
+  const now = at('2026-11-21T03:00:00Z')
+  const empty = { shouldBeAwake: false, lastThoughtAt: '2026-11-20T21:00:00Z', credit: 'empty' as const, creditEmptySince: '2026-11-20T08:00:00.000Z', creditRetryAt: '2026-11-21T04:00:00.000Z' }
+
+  it('fails at any hour with "credit empty since <time>"', () => {
+    const verdict = judge({ health: empty, nowMs: now })
+    expect(verdict.ok).toBe(false)
+    expect(verdict.message).toMatch(/^credit empty since 2026-11-20T08:00:00.000Z/)
+    expect(verdict.message).toContain('next try 2026-11-21T04:00:00.000Z')
+  })
+
+  it('reads credit from /health; an older server that does not say is ok', () => {
+    expect(parseHealth(JSON.stringify(empty))).toMatchObject({ credit: 'empty', creditEmptySince: '2026-11-20T08:00:00.000Z' })
+    expect(parseHealth(JSON.stringify({ ...empty, credit: 'ok' }))?.credit).toBeUndefined()
+    expect(judge({ health: parseHealth(JSON.stringify({ shouldBeAwake: false, lastThoughtAt: null })), nowMs: now }).ok).toBe(true)
+  })
+
+  it('runWatchdog fails on a /health that says the credit is empty', async () => {
+    const fetchImpl = (async () => new Response(JSON.stringify(empty), { status: 200 })) as typeof fetch
+    const verdict = await runWatchdog('https://mind.example', { fetch: fetchImpl, nowMs: now })
+    expect(verdict.ok).toBe(false)
+    expect(verdict.message).toMatch(/^credit empty since/)
+  })
+})

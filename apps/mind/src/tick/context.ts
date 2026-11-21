@@ -39,6 +39,7 @@ import type { StartingPoint } from '../web/doors.ts'
 import type { Fetcher, FetcherOptions } from '../web/fetch.ts'
 import type { WanderState } from '../web/wander-state.ts'
 import type { CallKind, LlmClient, LlmResult } from '../llm.ts'
+import type { CreditGate } from '../credit.ts'
 import type { ThinkKind } from '../prompts.ts'
 import type { NewEntry } from '../stream.ts'
 import type { VisitSource } from '../visits.ts'
@@ -48,6 +49,11 @@ export interface TickDeps {
   now: Date
   /** Null when there is no API key: the tick still runs, it just never thinks. */
   llm: LlmClient | null
+  /**
+   * The back-off on an empty account (Roman, 21 Nov): while it waits, no step asks the model, no failed call is written and the tick
+   * log says so once a window. `llm` is then the same gate's client (`creditGuarded`). Absent (a test, the fast-forward), no back-off.
+   */
+  credit?: CreditGate
   pack: SpeciesPack
   behaviors: MicroBehavior[]
   /** The species `persona.md`. */

@@ -19,6 +19,10 @@ const FETCH_TIMEOUT_MS = 20_000
 export interface HealthSnapshot {
   shouldBeAwake: boolean
   lastThoughtAt: string | null
+  /** `empty` when the account's credit is out (Roman, 21 Nov). Older servers do not say, which reads as ok. */
+  credit?: 'ok' | 'empty'
+  creditEmptySince?: string | null
+  creditRetryAt?: string | null
 }
 export interface Verdict {
   ok: boolean
@@ -39,6 +43,8 @@ export function judge(a: { health: HealthSnapshot | null; nowMs: number; timezon
     if (minutes >= WATCH_FROM_MINUTES && minutes < WATCH_UNTIL_MINUTES) return { ok: false, message: 'the server did not answer on /health while Merge should be awake' }
     return { ok: true, message: 'the server did not answer, but it is the dead of night and Merge should be asleep' }
   }
+  // Nothing works until the account is topped up, awake or asleep, so this fails at any hour.
+  if (health.credit === 'empty') return { ok: false, message: `credit empty since ${health.creditEmptySince ?? 'an unknown time'}${health.creditRetryAt ? ` (next try ${health.creditRetryAt})` : ''}` }
   if (!health.shouldBeAwake) return { ok: true, message: 'Merge is asleep, or has only just woken' }
   if (!health.lastThoughtAt) return { ok: false, message: 'Merge should be awake and there has been no thought yet' }
   const age = nowMs - Date.parse(health.lastThoughtAt)
@@ -51,11 +57,13 @@ export function parseHealth(text: string): HealthSnapshot | null {
   try {
     const body: unknown = JSON.parse(text)
     if (typeof body !== 'object' || body === null || Array.isArray(body)) return null
-    const { shouldBeAwake, lastThoughtAt } = body as Record<string, unknown>
+    const { shouldBeAwake, lastThoughtAt, credit, creditEmptySince, creditRetryAt } = body as Record<string, unknown>
     if (typeof shouldBeAwake !== 'boolean') return null
-    if (lastThoughtAt === null) return { shouldBeAwake, lastThoughtAt: null }
+    const time = (v: unknown) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? v : null)
+    const money = credit === 'empty' ? { credit: 'empty' as const, creditEmptySince: time(creditEmptySince), creditRetryAt: time(creditRetryAt) } : {}
+    if (lastThoughtAt === null) return { shouldBeAwake, lastThoughtAt: null, ...money }
     if (typeof lastThoughtAt !== 'string' || Number.isNaN(Date.parse(lastThoughtAt))) return null
-    return { shouldBeAwake, lastThoughtAt }
+    return { shouldBeAwake, lastThoughtAt, ...money }
   } catch {
     return null
   }

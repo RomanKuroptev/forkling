@@ -6,6 +6,7 @@ import { stopFailure, thinkingFor } from '../llm.ts'
 import { buildSleepUser } from '../prompts/sleep.ts'
 import { renderJournal, renderSummary } from '../reflect.ts'
 import { readStream } from '../stream.ts'
+import { creditWait } from './ask.ts'
 import type { Tick } from './context.ts'
 import { applyPage } from './page.ts'
 
@@ -65,6 +66,7 @@ async function send(t: Tick): Promise<void> {
   t.prompt ??= { model: MODEL, kind: 'sleep', system, user, tokens, maxUsd }
   if (tokens > MAX_PROMPT_TOKENS) notes.push(`prompt too long (about ${tokens} tokens): no sleep rewrite`)
   else if (deps.dryRun) notes.push(`dry run: sleep rewrite on the Batch API, about ${tokens} tokens, at most $${maxUsd.toFixed(4)}`)
+  else if (creditWait(t)) notes.push('credit empty: no sleep rewrite yet')
   else if (!deps.llm) notes.push('no credentials: no sleep rewrite')
   else if (!canSpend(t.budget, maxUsd, t.credits)) notes.push(`monthly budget reached ($${t.budget.spentUsd.toFixed(2)} of $${effectiveCapUsd(t.budget, t.credits)}): no sleep rewrite`)
   else {
@@ -81,7 +83,7 @@ async function send(t: Tick): Promise<void> {
 
 async function collect(t: Tick, rw: Rewrite): Promise<void> {
   const { deps, notes, nowMs, nowIso } = t
-  if (deps.dryRun || !deps.llm) return
+  if (deps.dryRun || !deps.llm || creditWait(t)) return
   const lateFrom = t.window.wakeMs + LATE_AFTER_WAKE_MS
   const late = !t.asleep && nowMs >= lateFrom && Date.parse(rw.submittedAt) < t.window.wakeMs
 

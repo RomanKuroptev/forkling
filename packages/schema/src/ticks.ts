@@ -118,6 +118,10 @@ export const Health = z.object({
   mood: z.object({ label: z.string(), minutes: z.number().int().nonnegative() }),
   spend: z.object({ monthUsd: z.number(), capUsd: z.number(), paceUsd: z.number(), moneyInUsd: z.number().optional() }),
   openBuild: z.object({ id: z.string(), kind: z.string(), ageHours: z.number().nonnegative() }).nullable(),
+  /** `empty` while the account's credit is out and model calls are backing off (Roman, 21 Nov), with when it began and the next try. Absent in older files. */
+  credit: z.enum(['ok', 'empty']).optional(),
+  creditEmptySince: Timestamp.optional(),
+  creditRetryAt: Timestamp.optional(),
   /** What is measured about sameness, and never enforced (spec 12.3, 12.6). Only the work numbers so far; W7 adds the rest. */
   novelty: z
     .object({

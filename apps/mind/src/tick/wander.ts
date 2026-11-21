@@ -13,6 +13,7 @@ import type { Fetcher } from '../web/fetch.ts'
 import type { Item } from '../web/item.ts'
 import { resolveStart } from '../web/start.ts'
 import { MAX_READS_PER_DAY, runTrip } from '../web/trip.ts'
+import { creditWait } from './ask.ts'
 import type { Tick } from './context.ts'
 import { ownNotes } from '../prompts/page.ts'
 import { startedReadLately } from '../web/reading.ts'
@@ -153,6 +154,7 @@ export async function tripStep(t: Tick): Promise<void> {
   const llm = t.deps.llm
   if (!fetcher) return skip('there is no way to reach the web this tick')
   if (!llm) return skip('there is no model this tick')
+  if (creditWait(t)) return skip('the credit is empty: no model this tick')
   const readsLeft = MAX_READS_PER_DAY - t.trips.reads
   if (readsLeft <= 0) return skip(`the ${MAX_READS_PER_DAY} reads of the day are used`)
   // A topic is matched with the titles of pages it has really seen (no search: robots.txt allows none); nothing is guessed into an address.

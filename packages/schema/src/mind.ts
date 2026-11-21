@@ -86,6 +86,8 @@ export const MindState = z.object({
   replanAfter: Timestamp.optional(),
   /** When a call last failed or gave nothing usable, so the mind is not asked again at every tick. */
   thinkFailedAt: Timestamp.optional(),
+  /** The account's credit ran out (Roman, 21 Nov): no model call before `retryAt`; the wait doubles from 10 minutes to at most 2 hours and ends at the first call that goes through. */
+  credit: z.object({ since: Timestamp, retryAt: Timestamp, waitMs: z.number().int().positive() }).optional(),
   /** Why the mind chose to stay up late, in its own words. */
   lateNightReason: z.string().max(200).optional(),
   /** Points of the daily allowance (spec 9.8) in hand, and the local date they were last topped up for. */
