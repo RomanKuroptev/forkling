@@ -17,7 +17,7 @@ Merge's memory carries the old habits: the lidar goal and wants, engine rules th
 
 Moved to `archive/v1/` with the same relative paths: `memory/` (beliefs, summary, stream, timeline), `brain/interests.json`, `mind/goals.json`, `mind/wants.json`, `mind/state.json`, `journal/`, `notebook/`, `souvenirs/`, `trails/`, `works/`, `places/` beyond the template's starting places, `self/page.md` and `self/page-history/`, the wallet / points files (the ledger of money in stays), project folders from step 4, tool requests from step 6.
 
-Then the fresh files come from the engine template, as `migrate-w1` did. The points balance starts at the v4 starting amount.
+Then the fresh files come from the engine template, as `migrate-w1` did. The points balance starts at the v4 starting amount, or at `--start-points <n>` for today (Roman, 21 November: 500, so a build session's 300 in hand is there on day one).
 
 Also: tag the last commit before the reset `merge-v1` in RomanKuroptev/merge, so the whole old life is one click away. The site shows `archive/v1/` as a "Merge v1" window on the Merge 95 desktop (an old save file), next to the existing archive.
 
