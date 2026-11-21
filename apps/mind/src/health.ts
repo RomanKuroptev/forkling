@@ -1,6 +1,7 @@
 import { SourceStats, TOTAL_CAP_USD, type BudgetLedger, type Credit, type Goals, type Health, type MindState, type TickLine } from '@forkling/schema'
 import { DAILY_POINTS, MAX_POINTS_IN_HAND, doorStats, drawStats, placeNovelty, textNovelty, weeklyHealthWarnings, workNovelty, type DiaryLike, type DoorDay, type PlaceNudgeLike, type PlaceNudgeRequest, type PlaceNudgeStep, type TextLike, type WorkLike } from '@forkling/sim'
 import { daysInMonth, effectiveCapUsd, moneyInUsd, paceAhead, paceUsd } from './budget.ts'
+import { creditWarning } from './credit.ts'
 import { topHostShare } from './web/stats.ts'
 import { MAX_READS_PER_DAY } from './web/trip.ts'
 
@@ -134,6 +135,8 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
   const openBuild = waiting ? { id: waiting.id, kind: waiting.kind, ageHours: Math.max(0, Math.round((ctx.nowMs - Date.parse(waiting.requestedAt)) / 3_600_000)) } : null
 
   const warnings: string[] = []
+  // The account's credit is out (Roman, 21 Nov): the first warning, since nothing else works until it is topped up.
+  if (mind.credit) warnings.push(creditWarning(mind.credit))
   if (ctx.pushFailing) warnings.push('push failing')
   if (idleMinutes > WARN_MINUTES) warnings.push(`no step in progress for ${idleMinutes} minutes while awake`)
   for (const [step, n] of Object.entries(stepsStarted)) {
@@ -166,6 +169,8 @@ export function buildHealth(prev: Health | null, line: TickLine, ctx: HealthCont
     needsCritical: {},
     spend,
     openBuild,
+    credit: mind.credit ? 'empty' : 'ok',
+    ...(mind.credit ? { creditEmptySince: mind.credit.since, creditRetryAt: mind.credit.retryAt } : {}),
     novelty: {
       works: workNovelty(ctx.works ?? [], { sinceMs: ctx.nowMs - 7 * 86_400_000 }),
       texts: textNovelty({ writings: ctx.texts?.writings ?? [], diaries: ctx.texts?.diaries ?? [], sinceMs: ctx.nowMs - 7 * 86_400_000 }),

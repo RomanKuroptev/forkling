@@ -6,7 +6,7 @@ import { createMindServer, type MindServerOptions } from '../src/server.ts'
 
 const PAGES = 'https://romankuroptev.github.io'
 const now: NowJson = { updatedAt: '2026-11-12T11:00:00.000Z', asleep: false, step: null, thought: 'Hm.', mood: 'steady' }
-const health = { up: true as const, now: '2026-11-12T11:00:00.000Z', asleep: false, shouldBeAwake: true, lastThoughtAt: '2026-11-12T10:58:00.000Z', lastTickAt: '2026-11-12T10:59:00.000Z', warnings: [], sandbox: 'missing' as const }
+const health = { up: true as const, now: '2026-11-12T11:00:00.000Z', asleep: false, shouldBeAwake: true, lastThoughtAt: '2026-11-12T10:58:00.000Z', lastTickAt: '2026-11-12T10:59:00.000Z', warnings: [], sandbox: 'missing' as const, credit: 'ok' as const }
 
 let server: Server | undefined
 afterEach(async () => {

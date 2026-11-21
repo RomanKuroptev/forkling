@@ -18,6 +18,7 @@ import { hasCredentials } from './credentials.ts'
 import { createNotesIntake, type NotesIntake } from './notes-intake.ts'
 import { createPublicNotes } from './notes.ts'
 import { buildHealthResponse } from './health-response.ts'
+import { withCreditGate } from './credit.ts'
 import { anthropicClient } from './llm.ts'
 import { createMindServer, DEFAULT_PORT } from './server.ts'
 import { loadSpecies } from './species.ts'
@@ -67,7 +68,9 @@ async function main(): Promise<void> {
 
   const speciesId = (JSON.parse(readFileSync(join(dir, 'forkling.json'), 'utf8')) as { species?: string }).species ?? 'cat'
   const species = loadSpecies(speciesId)
-  const llm = values['no-llm'] || !hasCredentials(env) ? null : anthropicClient()
+  // Every model call goes through one gate: a credit or billing error stops them all for 10 minutes, doubling to 2 hours, until
+  // one goes through (Roman, 21 Nov). The tick keeps the wait in mind/state.json, so a restart goes on waiting, and /health shows it.
+  const { llm, credit } = withCreditGate(dir, values['no-llm'] || !hasCredentials(env) ? null : anthropicClient(), Date.now)
   if (!llm) console.log('no model calls: no key, or --no-llm')
   const git = values['no-git'] ? null : gitRunner(dir)
   // Every page Merge wrote runs on one path (spec-v4 4): in the sandbox unit when its socket is there, in this process otherwise.
@@ -91,6 +94,7 @@ async function main(): Promise<void> {
     git,
     deps: {
       llm,
+      ...(credit ? { credit } : {}),
       pack: species.pack,
       behaviors: species.behaviors,
       speciesPersona: species.persona,
@@ -146,7 +150,8 @@ async function main(): Promise<void> {
   })
   console.log(`listening on 127.0.0.1:${port}, answering ${pagesOrigin}`)
 
-  const buildTimer = setInterval(() => worker.tick().catch((e: unknown) => console.error('build worker:', e instanceof Error ? e.message : e)), 60_000)
+  // No build starts while the credit is empty: its calls would only fail.
+  const buildTimer = setInterval(() => (credit?.waiting(Date.now()) ? undefined : worker.tick().catch((e: unknown) => console.error('build worker:', e instanceof Error ? e.message : e))), 60_000)
   const signal = { aborted: false }
   let wake: (() => void) | undefined
   let nap: NodeJS.Timeout | undefined

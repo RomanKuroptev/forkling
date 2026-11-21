@@ -1,4 +1,5 @@
 import { canSpend } from '../budget.ts'
+import { creditWait } from './ask.ts'
 import type { Tick } from './context.ts'
 import { startStep, thinkKindFor } from './plan.ts'
 
@@ -21,7 +22,7 @@ export function route(t: Tick): void {
   const wake = failedRecently ? triggers.filter((x) => x.kind === 'newDay' || x.kind === 'stepDone') : triggers
   const reasons = wake.filter((x) => x.kind !== 'stepDone')
   const stepDone = wake.length > reasons.length
-  const canThink = !!t.deps.dryRun || (!!t.deps.llm && canSpend(t.budget, SMALLEST_CALL_USD, t.credits))
+  const canThink = !!t.deps.dryRun || (!!t.deps.llm && !creditWait(t) && canSpend(t.budget, SMALLEST_CALL_USD, t.credits))
 
   if (stepDone && t.moreSteps && (reasons.length === 0 || !canThink)) {
     startStep(t, t.nextIndex)
