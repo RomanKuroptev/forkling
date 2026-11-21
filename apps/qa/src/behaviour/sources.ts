@@ -161,10 +161,10 @@ const hostOf = (url: string): string | null => {
   }
 }
 
-/** url -> source id from qa/sources.json, with the page hosts of the APIs (github.com is read through api.github.com). */
+/** url -> source id from qa/sources.json (sources on the list only: a dropped one's host, like imgflip.com, is read through another), with the page hosts of the APIs (github.com is read through api.github.com). */
 export function sourceOfUrl(list: SourceList): (url: string) => string | null {
   const byHost = new Map<string, string>()
-  for (const s of list.sources) for (const h of s.hosts) byHost.set(h, s.id)
+  for (const s of list.sources) if (s.state === 'on the list') for (const h of s.hosts) byHost.set(h, s.id)
   for (const p of HOST_PLANS) {
     const id = byHost.get(p.host)
     if (id && !byHost.has(p.itemHost)) byHost.set(p.itemHost, id)

@@ -61,6 +61,17 @@
       "promisedBy": "Roman, 9 November (pulse sources)"
     },
     {
+      "id": "imgflip-new",
+      "name": "Imgflip Top New templates",
+      "group": "pulse",
+      "hosts": ["imgflip.com"],
+      "state": "dropped by Roman",
+      "reason": "The trial passed on its second run (20 of 20 reliable and readable, 4.0 links), but there is no API for the Top New list and Imgflip's terms say not to access the site using a method other than the interface and the instructions they provide.",
+      "trial": "docs/spec/w2-trials/imgflip.com-top-new.md",
+      "promisedBy": "Roman, 20 November (new data sources)",
+      "recommended": "drop: the terms say no to reading the page by code (Roman, 20 November)."
+    },
+    {
       "id": "p5js",
       "name": "p5.js reference",
       "group": "manual",

@@ -24,6 +24,7 @@ import { SHARE_SCRIPT, shareRow } from './share-row.ts'
 import { sharePicturePng } from './share-picture.ts'
 import { galleryBody, tiles } from './gallery.ts'
 import { diaryBody } from './diary.ts'
+import { hasV1, loadV1, v1Body } from './v1.ts'
 import { loadProjects, projectChangeLookup, projectFeedItems, publishProjects, renderProjects } from './projects.ts'
 
 /** A moment as `2026-11-03 10:05 (Europe/Stockholm)`: in the forkling's own time zone, as everything else on its site is. */
@@ -272,6 +273,8 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
     .map((f) => ({ date: f.slice(0, -3), text: readText(world, `archive/journal/${f}`) ?? '' }))
     .filter((j) => /^\d{4}-\d{2}-\d{2}$/.test(j.date))
     .sort((a, b) => b.date.localeCompare(a.date))
+  // Merge v1: the first life, kept in archive/v1/ by the fresh start.
+  const v1 = loadV1(world)
   // Trails: where it wandered and what it kept. The page and its link are there only once it has made a trip.
   const dayOf = (id: string) => /^(\d{4}-\d{2}-\d{2})-(\d+)$/.exec(id)
   const trails = files(world, 'trails', '.json')
@@ -295,7 +298,7 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
   const selfRequests = loadSelfRequests(world)
   const projects = loadProjects(world)
   const galleryTiles = tiles(projects, loadWorks(world))
-  const nav: [string, string][] = [...NAV, ...(galleryTiles.length > 0 ? [['Gallery', 'gallery/'] as [string, string]] : []), ...(projects.length > 0 ? [['Projects', 'projects/'] as [string, string]] : []), ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : [])]
+  const nav: [string, string][] = [...NAV, ...(galleryTiles.length > 0 ? [['Gallery', 'gallery/'] as [string, string]] : []), ...(projects.length > 0 ? [['Projects', 'projects/'] as [string, string]] : []), ...(places.length > 0 ? [['Places', 'places/'] as [string, string]] : []), ...(requests.length + wishes.length + selfRequests.length > 0 ? [['Requests', 'requests/'] as [string, string]] : []), ...(trails.length > 0 ? [['Trails', 'trails/'] as [string, string]] : []), ...(hasAbout(mergeAbout) ? [['About', 'about/'] as [string, string]] : []), ...(hasPage(mergePage) ? [['Page', 'page/'] as [string, string]] : []), ...(archived.length > 0 ? [['Archive', 'archive/'] as [string, string]] : []), ...(hasV1(v1) ? [[`${name} v1`, 'v1/'] as [string, string]] : [])]
   const extraFiles = new Map<string, string | Buffer>()
   const buildMs = (opts.now ?? new Date()).getTime()
   const counterCode = validCounterCode(opts.counterCode)
@@ -406,6 +409,21 @@ export function renderSite(world: string, out: string, opts: RenderOptions = {})
 <ul>${archived.map((j) => `<li><a href="journal/${esc(j.date)}.html">${esc(j.date)}</a> ${esc(titleOf(j.text))}</li>`).join('')}</ul>`,
     })
     for (const j of archived) add(`archive/journal/${j.date}.html`, { title: `${j.date} (archive)`, active: 'archive/', body: markdown(j.text) })
+  }
+
+  // Merge v1: an old save file, its first life before the fresh start. Read-only, as the archive above.
+  if (hasV1(v1)) {
+    add('v1/index.html', { title: `${name} v1`, active: 'v1/', body: v1Body(name, v1) })
+    v1.journal.forEach((j, n) => {
+      const newer = v1.journal[n - 1]
+      const older = v1.journal[n + 1]
+      add(`v1/journal/${j.date}.html`, {
+        title: `${j.date} (${name} v1)`,
+        active: 'v1/',
+        body: `${markdown(j.text)}
+<p class="pager">${older ? `<a href="${esc(older.date)}.html">← ${esc(older.date)}</a>` : ''} <a href="../">${esc(name)} v1</a> ${newer ? `<a href="${esc(newer.date)}.html">${esc(newer.date)} →</a>` : ''}</p>`,
+      })
+    })
   }
 
   if (trails.length > 0) {

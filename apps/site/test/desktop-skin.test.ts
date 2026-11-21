@@ -25,7 +25,9 @@ describe('the pixel icons (look L4b)', () => {
       expect(rows, name).toHaveLength(8)
       for (const r of rows) expect(r, name).toMatch(/^[#opchsgw.]{8}$/)
     }
-    for (const label of ['Home', 'Journal', 'Notebook', 'Obsessions', 'Notes', 'Workshop', 'Why?', 'Places', 'Projects', 'Requests', 'Trails', 'About', 'Page', 'Archive']) expect(ICONS[iconFor(label)], label).toBeDefined()
+    for (const label of ['Home', 'Journal', 'Notebook', 'Obsessions', 'Notes', 'Workshop', 'Why?', 'Places', 'Projects', 'Requests', 'Trails', 'About', 'Page', 'Archive', 'Merge v1']) expect(ICONS[iconFor(label)], label).toBeDefined()
+    expect(iconFor('Merge v1')).toBe('oldsave')
+    expect(iconFor('Archive')).toBe('archive')
     expect(iconFor('Something new')).toBe('page')
     expect(iconSvg('home')).toContain('shape-rendering="crispEdges"')
   })

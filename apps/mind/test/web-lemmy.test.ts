@@ -50,6 +50,11 @@ describe('Lemmy hot lists', () => {
     expect(f.asked.filter((u) => u === list('memes'))).toHaveLength(1)
   })
 
+  it('leave out every post of a community marked NSFW (Roman, 20 November: skip nsfw true)', async () => {
+    const f = fake({ [list('memes')]: { posts: [view(1), { ...view(2), community: { name: 'memes', nsfw: true } }] } })
+    expect((await lemmyHot(f, 'memes')).map((v) => v.post.id)).toEqual([1])
+  })
+
   it('throw on an answer that is not a list, and ask again next time', async () => {
     const f = fake({ [list('memes')]: { nothing: true } })
     await expect(lemmyHot(f, 'memes')).rejects.toBeInstanceOf(WebError)
