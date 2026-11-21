@@ -697,3 +697,16 @@ $ sudo -u forkling ffmpeg -hide_banner -version | head -1
 ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
 [exit 0]
 ```
+
+## Merge's fresh start (21 November, Roman's go)
+
+Engine v0.19.2 deployed (`deploy.yml`, success), pinned in RomanKuroptev/merge (a844d47). Then, on the server, by `docs/spec/v4/merge-fresh-start.md` with Roman's changes of 21 November (daytime, 500 start points):
+
+- 14:58Z `systemctl stop forkling-mind` (inactive; the final commit was pushed, 2922220). The server's world repo equalled `origin/main`.
+- Tag `merge-v1` on 2922220, pushed.
+- `migrate-fresh --start-points 500` dry run: 17 moves to `archive/v1/`, 16 fresh writes (the same as on the throwaway copy). Applied.
+- Checked first: the template's `mind/tools.json` has 7 tools, none of class `act`; `serverUsd` 7.4, so `capUsd` 15 makes $22.4 (at most $23). Copied `tools.json` in; `capUsd` 12.6 to 15, `spentUsd` 2.103 unchanged (the only line changed in `brain/budget.json`).
+- Commit "fresh start: Merge v1 archived" (5479a03, 270 files), pushed. `systemctl start forkling-mind`: active; `/health` up, sandbox ok, credit ok.
+- First tick 14:59:02Z: new day, first long goal and plan (eight steps: Drake on Imgflip, Deadfish, a Drake meme sketch about itself, tend Home, two dweets, a page, rest). The first plan was turned down once (its steps named the long goal set in the same answer) and the second was accepted. 500 points in hand at the start.
+
+Undo, if needed: revert 5479a03 (the tag keeps the old state), push, start the service.
