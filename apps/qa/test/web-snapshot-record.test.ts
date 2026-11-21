@@ -29,9 +29,6 @@ function fakeWeb(): FetchImpl & { asked: string[] } {
       const id = Number(u.searchParams.get('post_id'))
       return json({ comments: [{ comment: { content: 'a comment' }, post: { id, name: `post ${id}` }, community: { name: id < 200 ? 'memes' : 'showerthoughts' } }] })
     }
-    if (u.hostname === 'public.api.bsky.app' && u.pathname === '/xrpc/app.bsky.unspecced.getTrendingTopics')
-      return json({ topics: [{ topic: 'knitting', displayName: 'Knitting', description: 'Yarn', link: '/profile/did:plc:abc/feed/knit' }, { topic: 'war', displayName: 'War news', description: '', link: '/profile/did:plc:abc/feed/war' }] })
-    if (u.hostname === 'public.api.bsky.app' && u.pathname === '/xrpc/app.bsky.feed.getFeed') return json({ feed: [{ post: { author: { handle: 'a.bsky.social' }, record: { text: 'I knit a cat' } } }] })
     if (u.hostname === 'api.github.com' && u.pathname === '/search/repositories') return json({ items: [{ full_name: 'a/b' }] })
     if (u.hostname === 'api.github.com') return json({ full_name: 'a/b', description: 'a creative coding toy', html_url: 'https://github.com/a/b', topics: [] })
     if (u.hostname === 'esolangs.org' && u.pathname === '/wiki/Main_Page') return html('<div id="mw-content-text"><a href="/wiki/Forbidden">Forbidden</a> <a href="/wiki/Brainfuck">Brainfuck</a></div>')
@@ -85,16 +82,14 @@ describe('recording the web snapshot', () => {
     expect(web.asked.length).toBeLessThan(15)
   })
 
-  it("records both Lemmy communities and their hot posts, and Bluesky trending without any topic's posts", async () => {
+  it('records both Lemmy communities and their hot posts, and nothing of Bluesky (dropped by Roman, 21 November)', async () => {
     const { web, manifest } = await record()
     const urls = manifest.entries.filter((e) => e.file).map((e) => e.url)
     for (const c of ['memes', 'showerthoughts']) expect(urls).toContain(`https://lemmy.world/api/v3/post/list?community_name=${c}&sort=Hot&limit=20&page=1`)
     for (const id of [101, 102, 103, 201, 202, 203]) expect(urls.some((u) => u.includes(`/api/v3/comment/list?post_id=${id}&`))).toBe(true)
-    expect(urls).toContain('https://public.api.bsky.app/xrpc/app.bsky.unspecced.getTrendingTopics?limit=25')
-    // A topic is only Bluesky's own name and summary (Roman, 20 November): no topic's posts are ever asked for.
-    expect(web.asked.some((u) => u.includes('getFeed'))).toBe(false)
+    expect(web.asked.some((u) => u.includes('bsky'))).toBe(false)
     expect(manifest.sources['lemmy-memes']?.items).toBeGreaterThan(0)
-    expect(manifest.sources['bluesky-trending']?.items).toBeGreaterThan(0)
+    expect(manifest.sources['bluesky-trending']).toBeUndefined()
   })
 
   it('keeps the template pictures on i.imgflip.com as bytes, so a look can see them offline', async () => {

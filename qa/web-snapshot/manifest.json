@@ -186,26 +186,6 @@
       "sha256": "5232becbb9d9a722b8f558515ea8a557bdcd92eb8273a5c2283d513a51160272"
     },
     {
-      "url": "https://public.api.bsky.app/robots.txt",
-      "host": "public.api.bsky.app",
-      "source": "bluesky-trending",
-      "status": 200,
-      "contentType": "text/plain; charset=utf-8",
-      "file": "files/58cace3abee06932.txt",
-      "bytes": 203,
-      "sha256": "58cace3abee06932c5d80a0d4decf546d9c3dfa12e12eeb1880507ea83a16443"
-    },
-    {
-      "url": "https://public.api.bsky.app/xrpc/app.bsky.unspecced.getTrendingTopics?limit=25",
-      "host": "public.api.bsky.app",
-      "source": "bluesky-trending",
-      "status": 200,
-      "contentType": "application/json; charset=utf-8",
-      "file": "files/c55ffc5b2eb1c623.json",
-      "bytes": 6871,
-      "sha256": "c55ffc5b2eb1c623ea5ecaa7cc83908512816d36c02f79bad19e8bdeee6a024a"
-    },
-    {
       "url": "https://i.imgflip.com/robots.txt",
       "host": "i.imgflip.com",
       "source": "imgflip",
@@ -8220,9 +8200,6 @@
     },
     "github-creative-coding": {
       "items": 89
-    },
-    "bluesky-trending": {
-      "items": 1
     },
     "commons": {
       "items": 2
