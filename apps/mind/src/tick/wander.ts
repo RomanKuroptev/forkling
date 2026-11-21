@@ -7,7 +7,7 @@ import { MAX_LOOKS_PER_DAY, performLook } from '../web/look.ts'
 import { performRead } from '../web/readcall.ts'
 import { rememberSeen, type SeenPage } from '../web/lookup.ts'
 import { startKey } from '../web/rails.ts'
-import { blueskyMorningLinks, dweetIdOf, dwitterDweet, dwitterHotLinks, frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, lemmyMorningLinks, readUrl, risingTopicsFor, wikipediaMorningLinks, type Dweet } from '../web/sources/index.ts'
+import { dweetIdOf, dwitterDweet, dwitterHotLinks, frontPageLinks, githubRisingRepos, githubTopicRepos, imgflipTopLinks, lemmyMorningLinks, readUrl, risingTopicsFor, wikipediaMorningLinks, type Dweet } from '../web/sources/index.ts'
 import { renderDweet } from '../builds/dweet-run.ts'
 import type { Fetcher } from '../web/fetch.ts'
 import type { Item } from '../web/item.ts'
@@ -34,8 +34,6 @@ const MEME_POINTS = 6
 const DWEET_POINTS = 4
 /** And the hot posts of two Lemmy humour communities, c/memes and c/showerthoughts (feeds, Roman 20 Nov). */
 const LEMMY_POINTS = 3
-/** And what Bluesky is talking about today: its trending topics, news about deaths, violence, war and politics skipped (Roman 20 Nov). */
-const BLUESKY_POINTS = 3
 
 /** The lists dealt out one at a time, in turn, until all are empty. */
 export function interleave<T>(lists: readonly (readonly T[])[]): T[] {
@@ -76,14 +74,13 @@ export async function morningStep(t: Tick): Promise<void> {
   }
   if (!fetcher) return
   // Lemmy asks for one request a minute, so its two lists take about two minutes; the other hosts are read meanwhile.
-  const [wiki, esolangs, memes, repos, lemmyMemes, showerthoughts, bluesky] = await Promise.all([
+  const [wiki, esolangs, memes, repos, lemmyMemes, showerthoughts] = await Promise.all([
     soft(() => wikipediaMorningLinks(fetcher, WIKIPEDIA_POINTS), (why) => notes.push(`the Wikipedia front page could not be read: ${why}`)),
     soft(() => frontPageLinks(fetcher, 'esolangs.org'), (why) => notes.push(`the Esolang front page could not be read: ${why}`)),
     soft(() => imgflipTopLinks(fetcher, MEME_POINTS), (why) => notes.push(`the Imgflip meme formats could not be read: ${why}`)),
     soft(async () => (await githubTopicRepos(fetcher, GITHUB_TOPIC, GITHUB_POINTS)).map((name) => ({ title: name, url: `https://github.com/${name}` })), (why) => notes.push(`the GitHub creative-coding repositories could not be read: ${why}`)),
     soft(() => lemmyMorningLinks(fetcher, 'memes', LEMMY_POINTS), (why) => notes.push(`Lemmy c/memes could not be read: ${why}`)),
     soft(() => lemmyMorningLinks(fetcher, 'showerthoughts', LEMMY_POINTS), (why) => notes.push(`Lemmy c/showerthoughts could not be read: ${why}`)),
-    soft(() => blueskyMorningLinks(fetcher, BLUESKY_POINTS), (why) => notes.push(`the Bluesky trending topics could not be read: ${why}`)),
   ])
   const rising = await Promise.all(
     risingTopicsFor(t.forkling.seed, today).map((topic) => soft(() => githubRisingRepos(fetcher, topic, today, RISING_POINTS), (why) => notes.push(`the GitHub repositories rising this week under ${topic} could not be read: ${why}`))),
@@ -92,7 +89,7 @@ export async function morningStep(t: Tick): Promise<void> {
   const risingLinks = [...new Set(interleave(rising.map((r) => r ?? [])))].filter((name) => !shown.has(name)).slice(0, RISING_POINTS).map((name) => ({ title: name, url: `https://github.com/${name}` }))
   const dweets = await soft(() => dwitterHotLinks(fetcher, DWEET_POINTS), (why) => notes.push(`the hot dweets could not be read: ${why}`))
   // The hosts take turns, so the list does not start with a screenful of Wikipedia.
-  const links = interleave([(wiki ?? []).slice(0, WIKIPEDIA_POINTS), (esolangs ?? []).slice(0, ESOLANG_POINTS), (repos ?? []).slice(0, GITHUB_POINTS), risingLinks, memes ?? [], (dweets ?? []).slice(0, DWEET_POINTS), lemmyMemes ?? [], showerthoughts ?? [], bluesky ?? []])
+  const links = interleave([(wiki ?? []).slice(0, WIKIPEDIA_POINTS), (esolangs ?? []).slice(0, ESOLANG_POINTS), (repos ?? []).slice(0, GITHUB_POINTS), risingLinks, memes ?? [], (dweets ?? []).slice(0, DWEET_POINTS), lemmyMemes ?? [], showerthoughts ?? []])
   t.startingPoints = pickDoors(links, t.interests, createPrng((t.forkling.seed ^ Number(today.replaceAll('-', ''))) >>> 0))
   // Kept for the day, so a replan after the morning can still name them, and the links are pages it has now seen.
   mind.points = { date: today, list: t.startingPoints.map((p) => ({ title: p.title.slice(0, 200), url: p.url.slice(0, 500), door: p.door })).slice(0, 30) }

@@ -1,14 +1,12 @@
 import { isReadable } from '../allowlist.ts'
 import { WebError, type Fetcher } from '../fetch.ts'
 import type { Item } from '../item.ts'
-import { blueskyFeedOf, blueskyTopic } from './bluesky.ts'
 import { commonsFile } from './commons.ts'
 import { dweetIdOf, dwitterDweet } from './dwitter.ts'
 import { lemmyPost, lemmyPostId } from './lemmy.ts'
 import { articWork, githubRepo, imgflipFormat } from './records.ts'
 import { esolangPage, wikipediaArticle } from './wikipedia.ts'
 
-export * from './bluesky.ts'
 export * from './commons.ts'
 export * from './dwitter.ts'
 export * from './lemmy.ts'
@@ -54,9 +52,6 @@ export async function readUrl(f: Fetcher, url: string): Promise<Item> {
       if (id !== null && u.search === '') return lemmyPost(f, id)
       throw nothing()
     }
-    case 'bsky.app':
-      if (blueskyFeedOf(url)) return blueskyTopic(f, url)
-      throw nothing()
     case 'commons.wikimedia.org':
       if (parts[0] === 'wiki' && parts[1]?.startsWith('File:')) return commonsFile(f, decode(parts.slice(1).join('/')))
       throw nothing()
