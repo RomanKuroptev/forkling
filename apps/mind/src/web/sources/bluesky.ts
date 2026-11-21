@@ -1,10 +1,11 @@
 /**
  * Bluesky's trending topics, read through its public AppView API (`public.api.bsky.app`, no login; robots.txt allows
  * everything and asks only that 429 be respected). A feed (spec 6.1): the day's topics are starting points, and a topic is a
- * voices record of what people post about it. Topics about deaths, violence, war or politics are skipped (`news-skip.ts`).
+ * voices record of Bluesky's own words about it. Topics about deaths, violence, war or politics are skipped (`news-skip.ts`).
  *
- * A topic's page is its feed on bsky.app (`https://bsky.app/profile/<did>/feed/<rkey>`); the code reads it through the API.
- * Posts with any moderation label, or by an author with one, are left out, and so are their pictures (cdn.bsky.app is not read).
+ * A topic's page is its feed on bsky.app (`https://bsky.app/profile/<did>/feed/<rkey>`). Roman, 20 November: only the text
+ * Bluesky itself writes for a topic (its name and summary) is read, so only that can be quoted or kept. The topic's posts,
+ * their authors and their pictures are never asked for, so nothing a person posted can reach Merge or a souvenir.
  */
 import { cutToTokens } from '../clean.ts'
 import { WebError, type Fetcher } from '../fetch.ts'
@@ -13,8 +14,6 @@ import { isSkippedNews, newsSkipWord } from '../news-skip.ts'
 
 export const BLUESKY_API = 'public.api.bsky.app'
 const XRPC = `https://${BLUESKY_API}/xrpc`
-/** How many posts of a topic are read. */
-const POSTS = 10
 
 export interface TrendingTopic {
   topic: string
@@ -38,7 +37,7 @@ export function blueskyFeedOf(url: string): string | null {
   }
 }
 
-/** The day's trending topics, those about deaths, violence, war or politics left out. */
+/** The day's trending topics (only what Bluesky writes itself: name, summary, feed link), news Merge skips left out. */
 export async function blueskyTrending(f: Fetcher, limit = 25, skipped?: (topic: string, word: string) => void): Promise<TrendingTopic[]> {
   const r = (await f.json(`${XRPC}/app.bsky.unspecced.getTrendingTopics?limit=${limit}`)) as { topics?: unknown }
   if (!Array.isArray(r?.topics)) throw new WebError('http', 'Bluesky gave no trending topics', 502)
@@ -65,34 +64,20 @@ export async function blueskyMorningLinks(f: Fetcher, n: number): Promise<ItemLi
   return (await blueskyTrending(f)).slice(0, n).map((t) => ({ title: t.displayName, url: t.url }))
 }
 
-interface FeedPost {
-  post?: { author?: { handle?: unknown; labels?: unknown[] }; record?: { text?: unknown; langs?: unknown }; labels?: unknown[]; likeCount?: unknown }
-}
-
-const unlabelled = (p: FeedPost['post']) => (p?.labels?.length ?? 0) === 0 && (p?.author?.labels?.length ?? 0) === 0
-const english = (langs: unknown) => !Array.isArray(langs) || langs.length === 0 || langs.some((l) => typeof l === 'string' && l.toLowerCase().startsWith('en'))
-
 /**
- * A trending topic as a record: its name, what it is about, and what people post about it, with the other topics as links.
+ * A trending topic as a record: Bluesky's own name and summary for it, with the other topics as links. Nothing else is in
+ * the text (no post, no handle), so a souvenir, which must match the text word for word, can only be Bluesky's words.
  * `topics` is today's list when the caller has it (one request fewer). A topic that is not trending today is refused, and so
- * is one the skip rule catches (today's list never has one), before its posts are asked for.
+ * is one the skip rule catches (today's list never has one).
  */
 export async function blueskyTopic(f: Fetcher, url: string, topics?: readonly TrendingTopic[]): Promise<Item> {
-  const feed = blueskyFeedOf(url)
-  if (!feed) throw new WebError('not-allowed', `no adapter reads ${url}`)
+  if (!blueskyFeedOf(url)) throw new WebError('not-allowed', `no adapter reads ${url}`)
   const all = topics ?? (await blueskyTrending(f))
   const me = all.find((t) => t.url === url)
   if (!me) throw new WebError('http', `${url} is not trending on Bluesky today`, 404)
   if (isSkippedNews(`${me.topic} ${me.displayName} ${me.description}`)) throw new WebError('not-allowed', `${url} is news Merge skips`)
-  const r = (await f.json(`${XRPC}/app.bsky.feed.getFeed?feed=${encodeURIComponent(feed)}&limit=${POSTS * 2}`)) as { feed?: unknown }
-  if (!Array.isArray(r?.feed)) throw new WebError('http', `Bluesky gave no posts for ${url}`, 502)
-  const posts = (r.feed as FeedPost[])
-    .map((x) => x?.post)
-    .filter((p) => unlabelled(p) && english(p?.record?.langs) && typeof p?.record?.text === 'string' && (p.record.text as string).trim().length > 0)
-    .slice(0, POSTS)
-    .map((p) => `- ${typeof p!.author?.handle === 'string' ? `@${p!.author.handle}` : 'someone'}: ${(p!.record!.text as string).replace(/\s+/g, ' ').trim().slice(0, 400)}`)
   const title = me.displayName
-  const text = [`Trending on Bluesky today: ${title}`, me.description, posts.length ? 'What people post about it:' : 'No posts could be read.', ...posts].filter(Boolean).join('\n')
+  const text = [`Trending on Bluesky today: ${title}`, me.description.trim()].filter(Boolean).join('\n')
   const links: ItemLink[] = all.filter((t) => t.url !== url).map((t) => ({ title: t.displayName, url: t.url }))
   return { source: BLUESKY_API, kind: 'record', tier: 'voices', url, title, text: cutToTokens(text), links: capLinks(links, MAX_RECORD_LINKS), images: [] }
 }

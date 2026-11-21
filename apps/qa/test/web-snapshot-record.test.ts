@@ -85,14 +85,14 @@ describe('recording the web snapshot', () => {
     expect(web.asked.length).toBeLessThan(15)
   })
 
-  it('records both Lemmy communities and their hot posts, and Bluesky trending with its topics (the news rule obeyed)', async () => {
+  it("records both Lemmy communities and their hot posts, and Bluesky trending without any topic's posts", async () => {
     const { web, manifest } = await record()
     const urls = manifest.entries.filter((e) => e.file).map((e) => e.url)
     for (const c of ['memes', 'showerthoughts']) expect(urls).toContain(`https://lemmy.world/api/v3/post/list?community_name=${c}&sort=Hot&limit=20&page=1`)
     for (const id of [101, 102, 103, 201, 202, 203]) expect(urls.some((u) => u.includes(`/api/v3/comment/list?post_id=${id}&`))).toBe(true)
     expect(urls).toContain('https://public.api.bsky.app/xrpc/app.bsky.unspecced.getTrendingTopics?limit=25')
-    expect(urls.some((u) => u.includes('getFeed') && u.includes('knit'))).toBe(true)
-    expect(web.asked.some((u) => u.includes('getFeed') && u.includes('war'))).toBe(false)
+    // A topic is only Bluesky's own name and summary (Roman, 20 November): no topic's posts are ever asked for.
+    expect(web.asked.some((u) => u.includes('getFeed'))).toBe(false)
     expect(manifest.sources['lemmy-memes']?.items).toBeGreaterThan(0)
     expect(manifest.sources['bluesky-trending']?.items).toBeGreaterThan(0)
   })

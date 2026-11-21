@@ -159,7 +159,7 @@
       "group": "pulse",
       "hosts": ["public.api.bsky.app"],
       "state": "on the list",
-      "reason": "A feed: the morning takes 3 of today's trending topics through the public AppView API (no login); a topic is read as what people post about it, labelled posts left out. Topics about deaths, violence, war or politics are skipped by whole words (news-skip.ts; 16 of 25 on 20 November). Trial of 20 November: 20 of 20 reliable and readable, 8 links.",
+      "reason": "A feed: the morning takes 3 of today's trending topics through the public AppView API (no login); a topic is only Bluesky's own name and summary for it, never people's posts or handles (Roman, 20 November). Topics about deaths, violence, war or politics are skipped by whole words (news-skip.ts; 16 of 25 on 20 November). Trial rerun on 20 November after the change: 20 of 20 reliable, 8 links, but 0 of 20 readable (22 to 25 words, under the 40-word floor), so the trial fails and the loop skips every topic before a read; Roman decides whether it stays.",
       "trial": "docs/spec/w2-trials/public.api.bsky.app-trending.md",
       "promisedBy": "Roman, 20 November (new sources)"
     },
