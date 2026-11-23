@@ -10,6 +10,8 @@ export const STEP = 0.1
 
 /** How close to a visitor counts as having reached them, in meters. */
 const ARRIVE_DISTANCE = 1.3
+/** How far from a seat it left (meters) the body is quite off it; past this, the seat is forgotten (`leftSeat`). */
+export const SEAT_LEFT = 0.5
 /** A forkling gives up on a visitor who has wandered beyond this multiple of its notice radius. */
 const LOSE_VISITOR_FACTOR = 1.5
 const REPATH_INTERVAL = 1
@@ -79,7 +81,12 @@ export interface ForklingState {
   elapsed: number
   duration: number
   path: Point2[]
-  goal: Point2 | null
+  goal: Spot | null
+  /**
+   * The seat it is getting down from: the last goal, when that was a seat (`perch`) and the body has not yet walked
+   * `SEAT_LEFT` from it. The viewer eases the body down off it; any other seat it walks over is not climbed.
+   */
+  leftSeat?: { x: number; z: number; perch: number }
   /** The way to turn on arriving at the goal (a seat faces its desk), when the spot says. Radians, 0 facing +z. */
   face?: number
   chasing: boolean
@@ -241,6 +248,7 @@ function move(s: ForklingState, dt: number, ctx: StepContext): void {
     }
   }
 
+  if (s.leftSeat && dist(s.pos, s.leftSeat) > SEAT_LEFT) delete s.leftSeat
   if (s.path.length === 0) {
     startActing(s)
     return
@@ -369,7 +377,7 @@ function finishAction(s: ForklingState, ctx: StepContext): void {
 
 interface Resolved {
   path: Point2[]
-  goal: Point2 | null
+  goal: Spot | null
   face?: number
   chasing: boolean
   targetId?: string
@@ -439,6 +447,10 @@ function begin(s: ForklingState, action: SpeciesAction, target: Resolved): void 
     seed: s.rng.int(2147483647),
     reason: action.reason,
   }
+  // Leaving a seat it went to, or still sitting where it left one: that is the seat it gets down from.
+  const prev = s.goal
+  if (prev?.perch !== undefined) s.leftSeat = { x: prev.x, z: prev.z, perch: prev.perch }
+  else if (s.leftSeat && dist(s.pos, s.leftSeat) > SEAT_LEFT) delete s.leftSeat
   s.path = target.path
   s.goal = target.goal
   if (target.face !== undefined) s.face = target.face

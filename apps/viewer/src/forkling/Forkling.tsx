@@ -182,8 +182,8 @@ export function Forkling() {
     view.shown.x += (sim.pos.x - view.shown.x) * follow
     view.shown.z += (sim.pos.z - view.shown.z) * follow
     view.heading += wrapAngle(sim.heading - view.heading) * (1 - Math.exp(-dt * 10))
-    // Up on the seat at the desk or the workbench when that is where it is going (issue 461).
-    const lift = perchLift(seats, { ...(sim.intention.targetId ? { targetId: sim.intention.targetId } : {}), moving: sim.phase === 'moving' }, view.shown)
+    // Up on the seat at the desk or the workbench when that is where it is going, and down off the one it is leaving (issue 461).
+    const lift = perchLift(seats, { ...(sim.intention.targetId ? { targetId: sim.intention.targetId } : {}), ...(sim.leftSeat ? { from: sim.leftSeat } : {}) }, view.shown)
     const y = simWorld.heightAt(view.shown.x, view.shown.z) + lift
 
     if (scaler.current) {

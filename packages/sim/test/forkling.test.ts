@@ -3,7 +3,7 @@ import { SpeciesPack, type MicroBehavior } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import blobJson from './fixtures/blob.species.json'
 import { resolveSlot } from '../src/animation.ts'
-import { createForkling, stepForkling, STEP, toRepoIntention, type StepContext } from '../src/forkling.ts'
+import { createForkling, SEAT_LEFT, stepForkling, STEP, toRepoIntention, type StepContext } from '../src/forkling.ts'
 import { buildBodyWorld } from '../src/body-world.ts'
 import { findPath } from '../src/nav.ts'
 import { starterPlaces } from '../src/starter-places.ts'
@@ -177,5 +177,18 @@ describe('sitting at the desk (issue 461)', () => {
     expect(state.phase).toBe('acting')
     expect(state.pos).toEqual({ x: spot.x, z: spot.z })
     expect(state.heading).toBeCloseTo(spot.face!, 9)
+    expect(state.leftSeat).toBeUndefined()
+
+    // Off to something else: the seat it gets down from is the chair, until it has walked away from it.
+    state.elapsed = state.duration
+    let left: typeof state.leftSeat
+    for (let i = 0; i < 2000 && state.pos.x === spot.x && state.pos.z === spot.z; i++) {
+      stepForkling(state, STEP, ctx)
+      left ??= state.leftSeat
+    }
+    expect(left).toEqual({ x: spot.x, z: spot.z, perch: 0.5 })
+    for (let i = 0; i < 2000 && Math.hypot(state.pos.x - spot.x, state.pos.z - spot.z) <= SEAT_LEFT; i++) stepForkling(state, STEP, ctx)
+    stepForkling(state, STEP, ctx)
+    if (state.phase === 'moving') expect(state.leftSeat).toBeUndefined()
   })
 })
