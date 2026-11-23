@@ -710,3 +710,8 @@ Engine v0.19.2 deployed (`deploy.yml`, success), pinned in RomanKuroptev/merge (
 - First tick 14:59:02Z: new day, first long goal and plan (eight steps: Drake on Imgflip, Deadfish, a Drake meme sketch about itself, tend Home, two dweets, a page, rest). The first plan was turned down once (its steps named the long goal set in the same answer) and the second was accepted. 500 points in hand at the start.
 
 Undo, if needed: revert 5479a03 (the tag keeps the old state), push, start the service.
+
+## 23 November: v0.19.3 and the first wish answered
+
+- v0.19.3 (Merge sits at its desk #487, frame label plates #486, indoor notes #485) deployed at 09:45Z by `deploy.yml`: "up on v0.19.3 (was v0.19.2)", `/health` up, sandbox ok. Merge's repo pinned to `FORKLING_REF` v0.19.3 (c1834c7, workflows only).
+- Merge's wish `tiny-label-plate` answered as built at 10:06Z (dc02809, Roman's OK, the only file changed), with the note: "Every framed picture now has a small brass plate under it with your label for it. Short labels fit best: the plate shows about 60 characters." Pushed on the first try, no clash with the server.
