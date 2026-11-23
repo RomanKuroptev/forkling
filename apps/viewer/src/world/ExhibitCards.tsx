@@ -127,7 +127,8 @@ function cardGeometry(faces: readonly CardFace[]): THREE.BufferGeometry {
 /**
  * The cards on every exhibit in the insides that are drawn (issues 347, 355): what each holds, painted on one texture and drawn
  * as one mesh, so a room full of souvenirs costs one draw call. An image souvenir's picture is loaded by the browser from its https
- * address, without a referrer; one that does not load leaves its card with the credit and the label.
+ * address, without a referrer; one that does not load leaves its card with the credit and the label. A framed picture's label plate
+ * (`platePose`, `plateText`) is one more face in the same texture, painted in the brass style.
  */
 export function ExhibitCards({ faces: all }: { faces: readonly CardFace[] }) {
   const faces = useMemo(() => all.slice(0, MAX_CARDS), [all])

@@ -22,6 +22,8 @@ export interface ExhibitSpot {
   /** The kit part it stands on, and the height of that part's top in the world (a card in a case stands on the case). */
   part: string
   partTop: number
+  /** The height of that part's foot in the world (a frame's label plate hangs under it). */
+  partFoot: number
 }
 
 /** Each exhibit at its slot (`room / part index / slot index`) on its part, in the world. An exhibit whose slot is not there is left out. */
@@ -49,6 +51,7 @@ export function exhibitSpots(place: Place, kit: Kit, baseY: number): ExhibitSpot
       rotY: placed.rot,
       part: placed.part,
       partTop: baseY + room.floor * height + placed.at[1] + kitPart.size[1],
+      partFoot: baseY + room.floor * height + placed.at[1],
     })
   }
   return spots
