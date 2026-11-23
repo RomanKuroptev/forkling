@@ -26,6 +26,8 @@ export interface LoopOptions {
   git: GitRunner | null
   commitEveryMs?: number
   logEveryMs?: number
+  /** Called after a push that carried something Merge made, so the server can rebuild the site (`pages-dispatch.ts`). */
+  onProductPushed?: () => void
 }
 
 export interface RunOptions {
@@ -61,6 +63,8 @@ export function createLoop(opts: LoopOptions): Loop {
   const logEveryMs = opts.logEveryMs ?? LOG_EVERY_MS
   let lastCommitMs = opts.clock()
   let pushFailing = false
+  // Something Merge made is on disk and not yet in a push that went through.
+  let productUnsent = false
   let latest: NowJson | null = null
   let latestPlaces: { rev: string; places: Place[] } | null = null
   let queue: Promise<unknown> = Promise.resolve()
@@ -70,10 +74,16 @@ export function createLoop(opts: LoopOptions): Loop {
     const outcome = await runTick(opts.dir, { ...opts.deps, now: new Date(nowMs), thoughts: true, logEveryMs, pushFailing })
     latest = outcome.now
     latestPlaces = { rev: outcome.now.placesRev ?? placesRev(outcome.places), places: outcome.places }
+    if (isProduct(outcome.written)) productUnsent = true
     if (opts.git && (isProduct(outcome.written) || nowMs - lastCommitMs >= commitEveryMs)) {
       const message = `${outcome.changed ? 'chore(mind)' : 'tick'}: ${outcome.summary || 'sync'}`
-      pushFailing = (await commitAndPush(opts.git, message, { retryPush: pushFailing })) === 'push-failed'
+      const pushed = await commitAndPush(opts.git, message, { retryPush: pushFailing })
+      pushFailing = pushed === 'push-failed'
       lastCommitMs = nowMs
+      if (pushed === 'pushed' && productUnsent) {
+        productUnsent = false
+        opts.onProductPushed?.()
+      }
     }
     return outcome
   }

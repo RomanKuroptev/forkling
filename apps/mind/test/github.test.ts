@@ -18,7 +18,7 @@ function fakeGithub(overrides: Record<string, { status: number; json: unknown }>
     seen.push({ method, path: u.pathname, body, headers: new Headers(init?.headers) })
     const key = `${method} ${u.pathname}`
     const hit = Object.entries(overrides).find(([k]) => key.startsWith(k))
-    if (hit) return new Response(JSON.stringify(hit[1].json), { status: hit[1].status })
+    if (hit) return new Response(hit[1].status === 204 ? null : JSON.stringify(hit[1].json), { status: hit[1].status })
     const answers: [RegExp, unknown][] = [
       [/^GET \/repos\/o\/r\/git\/ref\/heads\/main$/, { object: { sha: 'base-commit' } }],
       [/^GET \/repos\/o\/r\/git\/commits\/base-commit$/, { tree: { sha: 'base-tree' } }],
@@ -126,5 +126,29 @@ describe('openWorkPullRequest (the REST Git Data API, with no local git)', () =>
       throw new Error('ECONNRESET')
     }) as typeof fetch
     await expect(createGithubClient({ token: 't', repo: 'o/r', fetch: fetchImpl }).openWorkPullRequest(args)).rejects.toThrow(/ECONNRESET/)
+  })
+})
+
+describe('dispatchWorkflow (rebuilding the site)', () => {
+  it('asks GitHub to run the workflow on main', async () => {
+    const { seen, fetchImpl } = fakeGithub({ 'POST /repos/o/r/actions/workflows/pages.yml/dispatches': { status: 204, json: null } })
+    const client = createGithubClient({ token: 't0ken', repo: 'o/r', fetch: fetchImpl })
+    await client.dispatchWorkflow('pages.yml')
+    expect(seen).toHaveLength(1)
+    expect(seen[0]).toMatchObject({ method: 'POST', path: '/repos/o/r/actions/workflows/pages.yml/dispatches', body: { ref: 'main' } })
+    expect(seen[0]!.headers.get('authorization')).toBe('Bearer t0ken')
+  })
+
+  it('throws with GitHub\'s reason and never the token when it is refused', async () => {
+    const { fetchImpl } = fakeGithub({ 'POST /repos/o/r/actions/workflows/pages.yml/dispatches': { status: 403, json: { message: 'Resource not accessible by personal access token t0ken' } } })
+    const client = createGithubClient({ token: 't0ken', repo: 'o/r', fetch: fetchImpl })
+    const error = await client.dispatchWorkflow('pages.yml').catch((e: Error) => e.message)
+    expect(error).toContain('403')
+    expect(error).not.toContain('t0ken')
+  })
+
+  it('refuses a workflow name that is not a plain file name', async () => {
+    const client = createGithubClient({ token: 't0ken', repo: 'o/r', fetch: fakeGithub().fetchImpl })
+    await expect(client.dispatchWorkflow('../pulls')).rejects.toThrow()
   })
 })

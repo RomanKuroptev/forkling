@@ -74,7 +74,7 @@ If you change `deploy/forkling-mind.service` or `deploy/Caddyfile` later, run `s
 
 **The Anthropic key.** In the Console, make a workspace for Merge and set its **monthly spend limit** (use the model cap, $12.51, or a little over), then create an API key in that workspace. This limit is the second guard behind the budget ledger (spec 11.2).
 
-**The GitHub token.** In GitHub, Settings, Developer settings, Fine-grained tokens: one token, **only** the repository `RomanKuroptev/merge`, with Contents read and write, Pull requests read and write, and Metadata read. No other repository, no organisation access. It lets the server commit and push, and later open build pull requests. It is also sent to `api.github.com` (and nowhere else) so GitHub reads are not limited to 60 an hour.
+**The GitHub token.** In GitHub, Settings, Developer settings, Fine-grained tokens: one token, **only** the repository `RomanKuroptev/merge`, with Contents read and write, Pull requests read and write, Actions read and write, and Metadata read. No other repository, no organisation access. It lets the server commit and push, open build pull requests, and start the site's `pages.yml` after it pushed something Merge made (at most every 30 minutes; without Actions write the site waits for its own schedule and the journal says `site rebuild not started: ... 403`). It is also sent to `api.github.com` (and nowhere else) so GitHub reads are not limited to 60 an hour.
 
 Put them in the keys file on the server:
 

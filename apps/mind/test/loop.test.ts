@@ -61,13 +61,14 @@ beforeEach(() => {
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-function makeLoop(start: number, llm: LlmClient | null, git: GitRunner | null) {
+function makeLoop(start: number, llm: LlmClient | null, git: GitRunner | null, onProductPushed?: () => void) {
   const clock = { ms: start }
   const loop = createLoop({
     dir,
     clock: () => clock.ms,
     deps: { llm, pack: cat.pack, behaviors: cat.behaviors, speciesPersona: cat.persona, engine: 'test' },
     git,
+    ...(onProductPushed ? { onProductPushed } : {}),
   })
   /** Runs the loop on fake time for `minutes`, one reflex tick after another, as the real loop would. */
   const runFor = async (minutes: number) => {
@@ -189,6 +190,30 @@ describe('commits (spec 2.2: every 15 minutes, and when a step produces a file)'
     expect(isProduct(['notebook/writing/a.md'])).toBe(true)
     expect(isProduct(['works/w/index.html'])).toBe(true)
     expect(isProduct(['memory/stream/2026-11-12.jsonl', 'mind/ticks/2026-11-12.jsonl', 'mind/health.json', 'mind/state.json', 'forkling.json'])).toBe(false)
+  })
+
+  it('says when something Merge made has gone out, and not for the 15-minute commits of the tick log', async () => {
+    const { llm } = fakeLlm()
+    const git = fakeGit()
+    let told = 0
+    const { runFor } = makeLoop(AWAKE, llm, git.run, () => told++)
+    await runFor(60)
+    // The morning plan is the one thing made in this hour; the other commits are the tick log and health.
+    expect(git.log.filter((c) => c === 'push').length).toBeGreaterThan(1)
+    expect(told).toBe(1)
+  })
+
+  it('holds the news while the push fails, and gives it once the push goes through', async () => {
+    const { llm } = fakeLlm()
+    let failing = true
+    const git = fakeGit((args) => (args[0] === 'diff' ? 1 : args[0] === 'push' && failing ? 1 : 0))
+    let told = 0
+    const { runFor } = makeLoop(AWAKE, llm, git.run, () => told++)
+    await runFor(10)
+    expect(told).toBe(0)
+    failing = false
+    await runFor(16)
+    expect(told).toBe(1)
   })
 
   it('keeps running when pushes fail, and says so in health.json until one goes through', async () => {

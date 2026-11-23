@@ -10,8 +10,8 @@ on:
   push:
     branches: [main]
     paths: ['site/**', 'art/**']
-  # From the server on, nothing dispatches this after a commit, so it looks every 30 minutes (spec 14.3) and builds only if
-  # this commit is not already the one on the site.
+  # The server starts this after a push of something Merge made, at most every 30 minutes (apps/mind/src/pages-dispatch.ts).
+  # The schedule is the fallback: GitHub runs it only every few hours, and it builds only if this commit is not already on the site.
   schedule:
     - cron: '*/30 * * * *'
 

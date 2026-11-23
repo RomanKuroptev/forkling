@@ -23,6 +23,7 @@ import { anthropicClient } from './llm.ts'
 import { createMindServer, DEFAULT_PORT } from './server.ts'
 import { loadSpecies } from './species.ts'
 import { commitAndPush, gitRunner } from './tick/git.ts'
+import { createPagesDispatcher, type PagesDispatcher } from './pages-dispatch.ts'
 import { createLoop } from './tick/loop.ts'
 import { createVisitCounter } from './visits.ts'
 import { cloneRunner, ensureWorld } from './world-dir.ts'
@@ -88,10 +89,13 @@ async function main(): Promise<void> {
   const web = env.GITHUB_TOKEN ? { authorization: { 'api.github.com': `Bearer ${env.GITHUB_TOKEN}` } } : {}
   // Real visits (issue #422): the viewer's poll of now.json says when a visit starts and which place it walks into; counts only.
   const visits = createVisitCounter()
+  // The site follows Merge: after a push of something Merge made, the server asks GitHub to rebuild it (at most every 30 minutes).
+  let pages: PagesDispatcher | null = null
   const loop = createLoop({
     dir,
     clock: Date.now,
     git,
+    onProductPushed: () => pages?.changed(),
     deps: {
       llm,
       ...(credit ? { credit } : {}),
@@ -113,6 +117,8 @@ async function main(): Promise<void> {
   const repo = env.FORKLING_GITHUB_REPO ?? repoFromUrl(values.repo ?? env.FORKLING_REPO_URL ?? '')
   const github = env.GITHUB_TOKEN && repo ? createGithubClient({ token: env.GITHUB_TOKEN, repo }) : null
   if (!github) console.log('full works wait: they need GITHUB_TOKEN and the world repository (FORKLING_REPO_URL or FORKLING_GITHUB_REPO)')
+  if (github && git) pages = createPagesDispatcher({ dispatch: () => github.dispatchWorkflow('pages.yml'), now: Date.now, log: (line) => console.log(line) })
+  else console.log('the site rebuilds only on its own schedule: no GITHUB_TOKEN, world repository or git')
   const timezone = (JSON.parse(readFileSync(join(dir, 'forkling.json'), 'utf8')) as { timezone?: string }).timezone ?? 'Europe/Stockholm'
   // A build session (spec-v4 3.3) runs here only inside the sandbox unit: with `sandbox: missing` it refuses, and Merge is told.
   // The site's address, for the last second of a project's timelapse (sharing S4): the Pages origin and the world repo's name.
@@ -152,6 +158,7 @@ async function main(): Promise<void> {
 
   // No build starts while the credit is empty: its calls would only fail.
   const buildTimer = setInterval(() => (credit?.waiting(Date.now()) ? undefined : worker.tick().catch((e: unknown) => console.error('build worker:', e instanceof Error ? e.message : e))), 60_000)
+  const pagesTimer = setInterval(() => void pages?.tick().then((r) => (r === 'dispatched' ? console.log('site rebuild started') : undefined)), 60_000)
   const signal = { aborted: false }
   let wake: (() => void) | undefined
   let nap: NodeJS.Timeout | undefined
@@ -165,6 +172,7 @@ async function main(): Promise<void> {
     console.log(`${name}: finishing the tick in progress, then saving`)
     signal.aborted = true
     clearInterval(buildTimer)
+    clearInterval(pagesTimer)
     clearTimeout(nap)
     wake?.()
   }

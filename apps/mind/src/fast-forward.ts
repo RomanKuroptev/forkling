@@ -260,6 +260,8 @@ export function watchedFetch(inner: FetchImpl, offList: string[], realSleep: (ms
 function localGithub(dir: string, railsBroken: string[]): GithubClient {
   let n = 0
   return {
+    // The fast-forward has no site to rebuild.
+    async dispatchWorkflow() {},
     async openWorkPullRequest({ id, files }) {
       for (const f of files) {
         if (!f.path.startsWith(`works/${id}/`) || f.path.includes('..')) {

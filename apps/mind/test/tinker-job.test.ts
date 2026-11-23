@@ -54,6 +54,7 @@ function fakeGithub(fail?: string) {
       opened.push(args)
       return { number: 3, url: 'https://github.com/o/r/pull/3' }
     },
+    async dispatchWorkflow() {},
   }
   return { client, opened }
 }
