@@ -23,6 +23,8 @@ export interface CardContent {
   picture: { url: string; credit: string; licence: string } | null
   /** In a place being built: the card is drawn as wire, its words in glowing cyan lines on no face, and no picture (issue 426). */
   wire?: true
+  /** A frame's label plate: a thin brass strip with at most two short lines (`plateText`). */
+  plate?: true
 }
 
 /**
@@ -62,6 +64,37 @@ export function cardContent(exhibit: Place['exhibits'][number], slotKind: Exhibi
     default:
       return done({ shows: 'title', style, title: '', text: label, picture: null })
   }
+}
+
+/** A frame's label plate, in meters: a thin brass strip under the frame. */
+export const PLATE = { w: 0.36, h: 0.07, gap: 0.06 } as const
+/** A plate's label is cut with "…" past this many characters, so it fits in two lines. */
+export const PLATE_CHARS = 60
+
+/**
+ * The words on the brass plate under a framed picture (Merge's wish tiny-label-plate: "so the wall can say which weird language is
+ * which"): Merge's own label, squashed and cut with "…" past about 60 characters. Null for no plate: only a card that shows a
+ * picture gets one (before its souvenir is read, the card itself shows the label), and only when the label has words.
+ */
+export function plateText(exhibit: Place['exhibits'][number], content: CardContent): string | null {
+  if (content.shows !== 'picture') return null
+  const label = squash(exhibit.label)
+  if (label === '') return null
+  return label.length > PLATE_CHARS ? `${label.slice(0, PLATE_CHARS - 1).trimEnd()}…` : label
+}
+
+/** What a plate shows: its words on brass. */
+export function plateContent(text: string): CardContent {
+  return { shows: 'text', style: 'brass', title: '', text, picture: null, plate: true }
+}
+
+/**
+ * Where a frame's plate hangs: centred under the frame part, its middle `PLATE.gap` below the part's foot (taken from the slot and the
+ * part, so it fits a small frame and a large one alike), standing out from the wall like the card. Null for any slot but a frame.
+ */
+export function platePose(spot: Pick<ExhibitSpot, 'slotKind' | 'position' | 'partFoot'>): CardPose | null {
+  if (spot.slotKind !== 'frame') return null
+  return { local: [0, spot.partFoot - spot.position[1] - PLATE.gap, 0.02], size: [PLATE.w, PLATE.h], tilt: 0 }
 }
 
 /** A card in the world: its middle, its size in meters, how far it leans back (about its own x) and its turn about y. */
@@ -175,7 +208,11 @@ export function cardFaces(spots: readonly ExhibitSpot[], souvenirs: ReadonlyMap<
     const e = spot.exhibit
     const { corners, normal } = cardCorners(spot, pose)
     const content = cardContent(e, spot.slotKind, e.ref ? souvenirs.get(e.ref) : null, workCount)
-    out.push({ key: `${spot.placeId}/${e.id}`, corners, normal, aspect: pose.size[1] / pose.size[0], content: building.has(spot.placeId) ? wireCard(content) : content })
+    const shown = building.has(spot.placeId) ? wireCard(content) : content
+    out.push({ key: `${spot.placeId}/${e.id}`, corners, normal, aspect: pose.size[1] / pose.size[0], content: shown })
+    const plate = platePose(spot)
+    const text = plate ? plateText(e, shown) : null
+    if (plate && text) out.push({ key: `${spot.placeId}/${e.id}/plate`, ...cardCorners(spot, plate), aspect: plate.size[1] / plate.size[0], content: plateContent(text) })
   }
   return out
 }
@@ -188,6 +225,8 @@ export const CARD_BAR = 30
 /** How wide a character of VT323 is, as a share of its size: an estimate that errs wide. The painter squeezes a line that is wider. */
 const CHAR = 0.5
 const SIZES: Record<CardStyle, number[]> = { paper: [36, 32, 28, 26], brass: [44, 38, 32, 28, 26], terminal: [32, 28, 26] }
+/** The type sizes on a frame's label plate, largest first: two lines of a 60-character label fit at the smallest. */
+const PLATE_SIZES = [28, 24, 20] as const
 /** The credit line under a picture. */
 export const CREDIT_PX = 18
 
@@ -240,6 +279,22 @@ export function cardLayout(content: CardContent, aspect: number): CardLayout {
   const titleMax = Math.floor((w - 2 * PAD - 40) / (12 * 0.9))
   const title = content.title.length > titleMax ? `${content.title.slice(0, titleMax - 1)}…` : content.title
   const room = (px: number) => Math.max(1, Math.floor((w - 2 * PAD) / (px * CHAR)))
+  if (content.plate) {
+    // A plate's cell is a strip (about 62 pixels tall): at most two lines, in the largest type they fit in, the last cut with "…".
+    const pad = 6
+    const fits = (px: number) => Math.max(1, Math.floor((w - 2 * pad) / (px * CHAR)))
+    const body = h - 2 * pad
+    for (const px of PLATE_SIZES) {
+      const lines = wrap(content.text, fits(px))
+      const lineHeight = Math.round(px * 1.05)
+      if (lines.length <= 2 && lines.length * lineHeight <= body) return { w, h, bar, title, lines, px, top: pad + Math.round((body - lines.length * lineHeight) / 2) + Math.round(px * 0.8), lineHeight, picture: null }
+    }
+    const px = PLATE_SIZES.at(-1)!
+    const lineHeight = Math.round(px * 1.05)
+    const lines = wrap(content.text, fits(px)).slice(0, 2)
+    lines[lines.length - 1] = `${lines.at(-1)!.slice(0, fits(px) - 1)}…`
+    return { w, h, bar, title, lines, px, top: pad + Math.round((body - lines.length * lineHeight) / 2) + Math.round(px * 0.8), lineHeight, picture: null }
+  }
   if (content.picture) {
     const lineHeight = Math.round(CREDIT_PX * 1.1)
     const lines = wrap(content.text, room(CREDIT_PX)).slice(0, 1)

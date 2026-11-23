@@ -4,7 +4,7 @@ import { kit } from '@forkling/schema/kit'
 import { starterPlaces } from '@forkling/sim'
 import { makeFixtureWorld } from '@forkling/sim/fixture'
 import { exhibitSpots, type ExhibitSpot } from '../src/world/exhibitGeometry.ts'
-import { CARD_CELL, cardAtlas, cardContent, cardFaces, cardLayout, cardPose, cardShows, MAX_CARDS } from '../src/world/exhibitCards.ts'
+import { CARD_CELL, PLATE, cardAtlas, cardContent, cardFaces, cardLayout, cardPose, cardShows, MAX_CARDS, plateContent, platePose, plateText } from '../src/world/exhibitCards.ts'
 
 type Exhibit = Place['exhibits'][number]
 const exhibit = (over: Partial<Exhibit>): Exhibit => ({ id: 'e', kind: 'souvenir', ref: 'souvenirs/2026-11-13-a', slot: 'main/0/0', label: 'Why I kept it, in my words.', added: '2026-11-13', ...over })
@@ -126,5 +126,62 @@ describe('how a card is laid out', () => {
     expect(cardAtlas(20)).toMatchObject({ width: 2560, height: 720 })
     expect(cardAtlas(10_000).height).toBeLessThanOrEqual(4096)
     expect(MAX_CARDS).toBeGreaterThan(100)
+  })
+})
+
+describe("a label plate under each framed picture (Merge's wish tiny-label-plate)", () => {
+  const framed = (label: string) => exhibit({ label })
+  it("a framed picture that has loaded gets a brass plate with Merge's own label", () => {
+    const e = framed('  Lojban,   a language   built on logic ')
+    const text = plateText(e, cardContent(e, 'frame', image, 0))
+    expect(text).toBe('Lojban, a language built on logic')
+    expect(plateContent(text!)).toMatchObject({ shows: 'text', style: 'brass', text, picture: null, plate: true })
+  })
+
+  it('no plate before the picture is read (the card shows the label then), with an empty label, or for a card that is not a picture', () => {
+    expect(plateText(framed('Lojban'), cardContent(framed('Lojban'), 'frame', undefined, 0))).toBeNull()
+    expect(plateText(framed('   '), cardContent(framed('   '), 'frame', image, 0))).toBeNull()
+    expect(plateText(framed('Lojban'), cardContent(framed('Lojban'), 'frame', quote, 0))).toBeNull()
+  })
+
+  it('a long label is cut with "…" at about 60 characters, and laid out in at most two lines inside the plate', () => {
+    const e = framed('A small language with a long name that goes on and on about how strange it is, really very strange')
+    const text = plateText(e, cardContent(e, 'frame', image, 0))!
+    expect(text.length).toBeLessThanOrEqual(60)
+    expect(text.endsWith('…')).toBe(true)
+    const l = cardLayout(plateContent(text), PLATE.h / PLATE.w)
+    expect(l.lines.length).toBeLessThanOrEqual(2)
+    expect(l.lines.join(' ').replace(/…$/, '')).not.toBe('')
+    for (const line of l.lines) expect(line.length * l.px * 0.5).toBeLessThanOrEqual(CARD_CELL.w)
+    expect(l.top + (l.lines.length - 1) * l.lineHeight).toBeLessThanOrEqual(l.h)
+  })
+
+  it('the plate hangs just under the frame, for the small frame and the large one alike, and only frames get one', () => {
+    for (const id of ['frame-small', 'frame-large']) {
+      const part = kit.parts.find((p) => p.id === id)!
+      const slot = part.slots.find((s) => s.kind === 'frame')!
+      const foot = 1.2
+      const pose = platePose({ slotKind: 'frame', position: [0, foot + slot.at[1], 0], partFoot: foot })!
+      expect(pose.size).toEqual([PLATE.w, PLATE.h])
+      const top = foot + slot.at[1] + pose.local[1] + pose.size[1] / 2
+      expect(top, id).toBeLessThan(foot)
+      expect(top, id).toBeGreaterThan(foot - 0.05)
+      expect(pose.local[2]).toBeCloseTo(0.02)
+      expect(pose.tilt).toBe(0)
+    }
+    expect(platePose({ slotKind: 'shelf', position: [0, 1, 0], partFoot: 0 })).toBeNull()
+  })
+
+  it('cardFaces draws the plate beside the framed card, and none for a place being built', () => {
+    const fixture = makeFixtureWorld(1, 10)
+    const spot = fixture.places.flatMap((p) => exhibitSpots(p, kit, 0)).find((s) => s.slotKind === 'frame')!
+    const withImage = { ...spot, exhibit: { ...spot.exhibit, kind: 'souvenir' as const, ref: 'souvenirs/x', label: 'Toki Pona' } }
+    const faces = cardFaces([withImage], new Map([['souvenirs/x', image]]), 0)
+    const plate = faces.find((f) => f.key.endsWith('/plate'))!
+    expect(plate.content.text).toBe('Toki Pona')
+    const card = faces.find((f) => !f.key.endsWith('/plate'))!
+    expect(Math.max(...plate.corners.map((c) => c[1]))).toBeLessThan(Math.min(...card.corners.map((c) => c[1])))
+    expect(cardFaces([withImage], new Map([['souvenirs/x', image]]), 0, new Set([spot.placeId])).some((f) => f.key.endsWith('/plate'))).toBe(false)
+    expect(cardFaces([withImage], new Map(), 0).some((f) => f.key.endsWith('/plate'))).toBe(false)
   })
 })
