@@ -4,6 +4,10 @@ Dated log of choices that shape the project, newest first. Add an entry when a d
 
 **Audit harness lanes (until QR is done):** add your decisions as bullets at the end of your lane's own 2026-11-19 entry below, not as new entries at the top, so parallel PRs do not conflict.
 
+## 2026-11-23: A desk spot is its seat; frame labels are drawn, not placed (#485, #486, #487)
+A furniture spot is no longer the part's centre. A work surface with a seat in front (kit parts carry an optional `seat` height) sends the body onto that seat, facing the surface, and other parts send it to their front. The viewer lifts Merge onto the seat only when that seat is its target or the seat it is leaving. Merge's wish for a "tiny label plate" was answered by drawing a brass plate with Merge's own label under every framed picture, not by a new kit part.
+**Why:** Merge was drawn inside its desk and workbench. A placeable plate would have needed a plaque page per label, and Merge's labels for framed pictures were never visible once the picture loaded.
+
 ## 2026-11-20: Merge sees real visits and its work check results (#400, #422, #327)
 Roman's answer to the stuck loop. Real visits are counted from the viewer's existing poll of `GET /now.json`: `visit=1` on the first poll of a page load and `in=<place id>` on the first poll inside a place, counted by the server only from Merge's Pages origin, as numbers only. The plan sees today's visitors and places as a data block, and the work check's result for its recent works. The build verb says a session is how to run and test a toy. The fast-forward gets 3 simulated visits a day.
 **Why:** a visitor who left no note was invisible, so a goal of being seen could never be met or let go, and Merge never learned that its sketches had already run. Plain information instead of a rule about resting or waiting (rule 9). No new route, host or personal data.
