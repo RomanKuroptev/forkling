@@ -29,6 +29,8 @@ const lookAtForkling = new URLSearchParams(location.search).get('look') === 'for
 const lookDistance = Number(new URLSearchParams(location.search).get('dist')) || 2
 /** `?camy=` changes how high the camera is above the ground, in meters (default 0.6). */
 const lookHeight = Number(new URLSearchParams(location.search).get('camy')) || 0.6
+/** `?around=` turns the camera that many degrees around the forkling (90 looks at its side), with `?look=forkling`. */
+const lookAround = ((Number(new URLSearchParams(location.search).get('around')) || 0) * Math.PI) / 180
 const clipMode = new URLSearchParams(location.search).has('clip')
 
 /**
@@ -151,7 +153,8 @@ export function Player() {
     if (lookAtForkling && pb) {
       const { pos, heading } = pb.state
       const y = simWorld.heightAt(pos.x, pos.z)
-      camera.position.set(pos.x + Math.sin(heading) * lookDistance, y + lookHeight, pos.z + Math.cos(heading) * lookDistance)
+      const at = heading + lookAround
+      camera.position.set(pos.x + Math.sin(at) * lookDistance, y + lookHeight, pos.z + Math.cos(at) * lookDistance)
       camera.lookAt(pos.x, y + 0.55, pos.z)
       return
     }

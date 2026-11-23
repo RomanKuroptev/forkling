@@ -3,7 +3,7 @@ import { SpeciesPack } from '@forkling/schema'
 import { kit } from '@forkling/schema/kit'
 import { starterPlaces } from '../src/starter-places.ts'
 import { makeFixtureWorld } from '../src/fixture-world.ts'
-import { ARRIVAL_BACK, buildBodyWorld } from '../src/body-world.ts'
+import { ARRIVAL_BACK, SEAT_FORWARD, buildBodyWorld } from '../src/body-world.ts'
 import { chunkCentre, createLand, placeCentre, toLandPlace } from '../src/land.ts'
 import { findPath, isWalkable } from '../src/nav.ts'
 import { advancePlayback, startPlayback } from '../src/playback.ts'
@@ -252,7 +252,8 @@ describe('where the body stands at a piece of furniture (issue 461)', () => {
     const [hx, hz] = centreOf('home')
     const [desk] = spots.desk!
     expect(desk!.x).toBeCloseTo(hx - 2.5, 5)
-    expect(desk!.z).toBeCloseTo(hz - 2.3, 5) // the chair, not the desk at -3.2
+    // The chair at -2.3, not the desk at -3.2; on the front of its seat, away from the backrest (issue 461, 23 Nov).
+    expect(desk!.z).toBeCloseTo(hz - 2.3 - SEAT_FORWARD, 5)
     expect(desk!.perch).toBe(0.5)
     // Facing -z, toward the desk (yaw 0 faces +z).
     expect(Math.cos(desk!.face!)).toBeCloseTo(-1, 5)
@@ -263,7 +264,7 @@ describe('where the body stands at a piece of furniture (issue 461)', () => {
     const [wx, wz] = centreOf('workshop')
     const [bench] = spots.workbench!
     expect(bench!.x).toBeCloseTo(wx - 2.5, 5)
-    expect(bench!.z).toBeCloseTo(wz - 2.2, 5)
+    expect(bench!.z).toBeCloseTo(wz - 2.2 - SEAT_FORWARD, 5)
     expect(bench!.perch).toBe(0.5)
     expect(Math.cos(bench!.face!)).toBeCloseTo(-1, 5)
   })

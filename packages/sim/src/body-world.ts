@@ -49,6 +49,11 @@ export interface BodyKit {
 
 /** How far a seat may be from a surface (centre to centre, meters) to be the place to sit at it: the chair at a desk. */
 const SEAT_REACH = 1.2
+/**
+ * How far forward of a seat's centre the body sits (meters), along the way it faces: on the front of the seat, so a long body's
+ * back half is over the seat and not in a chair's backrest (Roman, 23 Nov). Within half of the smallest seat (the stool, 0.4 m).
+ */
+export const SEAT_FORWARD = 0.15
 /** How far in front of a part's box the body stands (meters). */
 const STAND_OFF = 0.35
 
@@ -56,8 +61,8 @@ const STAND_OFF = 0.35
 const frontOf = (rot: number) => ({ x: Math.sin(rot), z: Math.cos(rot) })
 
 /**
- * Where the body goes for each part of a room, by the part's id. A seat (a part with `seat`) is sat on: the spot is the seat
- * itself, with `perch` its height. A part with no seat that has a seat within `SEAT_REACH` on its front side (the chair at a
+ * Where the body goes for each part of a room, by the part's id. A seat (a part with `seat`) is sat on: the spot is the front of
+ * the seat (`SEAT_FORWARD`), with `perch` its height. A part with no seat that has a seat within `SEAT_REACH` on its front side (the chair at a
  * desk, the stool at a workbench) is worked at from that seat, facing the part. Any other part is stood in front of, just out of
  * its box, on the first side the body can stand on (`open`). Without the kit's sizes a spot is the part's centre, as it was before issue 461.
  */
@@ -92,12 +97,17 @@ export function furnitureSpots(
     return served ? towards(seat, served) : Math.atan2(Math.sin(seat.placed.rot), Math.cos(seat.placed.rot))
   }
 
+  const sitOn = (seat: Item): Spot => {
+    const face = seatFace(seat)
+    return { x: seat.x + SEAT_FORWARD * Math.sin(face), z: seat.z + SEAT_FORWARD * Math.cos(face), perch: seat.kit!.seat!, face }
+  }
+
   return items.map((item): [string, Spot] => {
     const { kit, placed } = item
     if (!kit) return [placed.part, { x: item.x, z: item.z }]
-    if (kit.seat !== undefined) return [placed.part, { x: item.x, z: item.z, perch: kit.seat, face: seatFace(item) }]
+    if (kit.seat !== undefined) return [placed.part, sitOn(item)]
     const seat = surfaces.find((s) => s.surface === item)?.seat
-    if (seat) return [placed.part, { x: seat.x, z: seat.z, perch: seat.kit!.seat!, face: seatFace(seat) }]
+    if (seat) return [placed.part, sitOn(seat)]
     // In front of it, or beside or behind it where the front is a wall (a lamp in a corner); the first of those the body can stand on.
     const [w, , dp] = kit.size
     const c = Math.cos(placed.rot)
