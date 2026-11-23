@@ -11,6 +11,7 @@ import { disposeParts, partsGroup } from '../world/primitives.ts'
 import { useWorld } from '../world/WorldContext.tsx'
 import { live } from './live.ts'
 import { mergeSpot } from './spot.ts'
+import { perchLift } from './perch.ts'
 import { createFaceScreen } from './FaceScreen.ts'
 import { faceState, type FaceState } from './face.ts'
 import { ThoughtBubble } from './ThoughtBubble.tsx'
@@ -114,6 +115,8 @@ export function Forkling() {
     [world, species, simWorld],
   )
 
+  const seats = useMemo(() => simWorld.spots([0, 1, 0]), [simWorld])
+
   const view = useMemo(
     () => ({ shown: null as { x: number; z: number } | null, heading: 0, current: null as THREE.AnimationAction | null, currentSlot: '' }),
     [],
@@ -179,7 +182,9 @@ export function Forkling() {
     view.shown.x += (sim.pos.x - view.shown.x) * follow
     view.shown.z += (sim.pos.z - view.shown.z) * follow
     view.heading += wrapAngle(sim.heading - view.heading) * (1 - Math.exp(-dt * 10))
-    const y = simWorld.heightAt(view.shown.x, view.shown.z)
+    // Up on the seat at the desk or the workbench when that is where it is going (issue 461).
+    const lift = perchLift(seats, { ...(sim.intention.targetId ? { targetId: sim.intention.targetId } : {}), moving: sim.phase === 'moving' }, view.shown)
+    const y = simWorld.heightAt(view.shown.x, view.shown.z) + lift
 
     if (scaler.current) {
       const target = placeAt([view.shown.x, view.shown.z], world.places) ? INDOOR_SCALE : DRAW_SCALE
