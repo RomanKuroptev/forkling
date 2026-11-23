@@ -113,6 +113,23 @@ describe('the kit schema', () => {
   })
 })
 
+describe("a part's seat (issue 461: the body sits on a chair or stool at its desk)", () => {
+  it('is an optional height in meters, within the part, and positive', () => {
+    expect(KitPart.safeParse({ ...part, seat: 0.5 }).success).toBe(true)
+    expect(KitPart.safeParse(part).success).toBe(true)
+    expect(KitPart.safeParse({ ...part, seat: 0 }).success).toBe(false)
+    expect(KitPart.safeParse({ ...part, seat: 2 }).success).toBe(false) // above the part's own height (1 m)
+  })
+  it('is on the chair, the stool and the bench, at the top of each seat, and on nothing else', () => {
+    const seats = kit.parts.filter((p) => p.seat !== undefined)
+    expect(seats.map((p) => p.id).sort()).toEqual(['bench', 'chair', 'stool'])
+    for (const p of seats) {
+      const top = Math.max(...p.primitives.filter((q) => q.size[0] >= 0.3 && q.size[2] >= 0.3).map((q) => q.at[1] + q.size[1] / 2))
+      expect(p.seat, p.id).toBeCloseTo(top, 2)
+    }
+  })
+})
+
 describe("a part's model (spec 5.3: a part may be a CC0 model file, and always has its primitives as the fallback)", () => {
   it('names a .glb file in kit/models and a scale', () => {
     expect(KitPart.safeParse({ ...part, model: { file: 'tree_default.glb', scale: 2 } }).success).toBe(true)

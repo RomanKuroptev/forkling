@@ -77,8 +77,11 @@ export const KitPart = z
     primitives: z.array(KitPrimitive).min(1).max(MAX_PRIMITIVES),
     slots: z.array(KitSlot).max(3).default([]),
     model: KitModel.optional(),
+    /** The height of a seat's top in meters, for a part the body can sit on (a chair, a stool, a bench). The body's world puts a spot there. */
+    seat: z.number().positive().optional(),
   })
   .strict()
+  .refine((p) => p.seat === undefined || p.seat <= p.size[1], { message: 'a seat is no higher than the part', path: ['seat'] })
 export type KitPart = z.infer<typeof KitPart>
 
 /** An exterior style: which structure parts make the walls, windows, door and roof of a place. */

@@ -1157,6 +1157,7 @@
       "name": "Chair",
       "category": "furniture",
       "size": [0.5, 0.9, 0.5],
+      "seat": 0.5,
       "primitives": [
         {
           "shape": "box",
@@ -1202,6 +1203,7 @@
       "name": "Stool",
       "category": "furniture",
       "size": [0.4, 0.5, 0.4],
+      "seat": 0.5,
       "primitives": [
         {
           "shape": "cylinder",
@@ -1235,6 +1237,7 @@
       "name": "Bench",
       "category": "furniture",
       "size": [1.6, 0.5, 0.5],
+      "seat": 0.5,
       "primitives": [
         {
           "shape": "box",

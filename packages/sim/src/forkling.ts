@@ -1,5 +1,5 @@
 import type { AnimationSlot, Intention, MicroBehavior, SpeciesAction, SpeciesPack } from '@forkling/schema'
-import { findPath, isWalkable, lineOfSight, nearestWalkable, type NavGrid, type Point2 } from './nav.ts'
+import { findPath, isWalkable, lineOfSight, nearestWalkable, type NavGrid, type Point2, type Spot } from './nav.ts'
 import type { Feelings } from './mood.ts'
 import { createPrng, type Prng } from './prng.ts'
 import { isDusk } from './time.ts'
@@ -10,6 +10,8 @@ export const STEP = 0.1
 
 /** How close to a visitor counts as having reached them, in meters. */
 const ARRIVE_DISTANCE = 1.3
+/** How far from a seat it left (meters) the body is quite off it; past this, the seat is forgotten (`leftSeat`). */
+export const SEAT_LEFT = 0.5
 /** A forkling gives up on a visitor who has wandered beyond this multiple of its notice radius. */
 const LOSE_VISITOR_FACTOR = 1.5
 const REPATH_INTERVAL = 1
@@ -25,7 +27,7 @@ export interface StepContext {
   /** Bedtime by the sleep schedule. When absent, night hours stand in for it. */
   asleep?: boolean
   /** Spots the world offers, by kind (`food`, `perch`, `sunbeam`...). */
-  spots: Record<string, Point2[]>
+  spots: Record<string, Spot[]>
 }
 
 /**
@@ -79,7 +81,14 @@ export interface ForklingState {
   elapsed: number
   duration: number
   path: Point2[]
-  goal: Point2 | null
+  goal: Spot | null
+  /**
+   * The seat it is getting down from: the last goal, when that was a seat (`perch`) and the body has not yet walked
+   * `SEAT_LEFT` from it. The viewer eases the body down off it; any other seat it walks over is not climbed.
+   */
+  leftSeat?: { x: number; z: number; perch: number }
+  /** The way to turn on arriving at the goal (a seat faces its desk), when the spot says. Radians, 0 facing +z. */
+  face?: number
   chasing: boolean
   noticed: boolean
   repathTimer: number
@@ -239,6 +248,7 @@ function move(s: ForklingState, dt: number, ctx: StepContext): void {
     }
   }
 
+  if (s.leftSeat && dist(s.pos, s.leftSeat) > SEAT_LEFT) delete s.leftSeat
   if (s.path.length === 0) {
     startActing(s)
     return
@@ -342,6 +352,7 @@ function startMicro(s: ForklingState, behavior: MicroBehavior, resume: 'acting' 
 }
 
 function startActing(s: ForklingState): void {
+  if (s.face !== undefined) s.heading = s.face
   s.chasing = false
   s.path = []
   s.phase = 'acting'
@@ -366,7 +377,8 @@ function finishAction(s: ForklingState, ctx: StepContext): void {
 
 interface Resolved {
   path: Point2[]
-  goal: Point2 | null
+  goal: Spot | null
+  face?: number
   chasing: boolean
   targetId?: string
 }
@@ -435,8 +447,14 @@ function begin(s: ForklingState, action: SpeciesAction, target: Resolved): void 
     seed: s.rng.int(2147483647),
     reason: action.reason,
   }
+  // Leaving a seat it went to, or still sitting where it left one: that is the seat it gets down from.
+  const prev = s.goal
+  if (prev?.perch !== undefined) s.leftSeat = { x: prev.x, z: prev.z, perch: prev.perch }
+  else if (s.leftSeat && dist(s.pos, s.leftSeat) > SEAT_LEFT) delete s.leftSeat
   s.path = target.path
   s.goal = target.goal
+  if (target.face !== undefined) s.face = target.face
+  else delete s.face
   s.chasing = target.chasing
   s.repathTimer = 0
   s.progressTimer = 0
@@ -492,9 +510,11 @@ function resolveTarget(s: ForklingState, action: SpeciesAction, ctx: StepContext
       // Mostly the nearest spots, but not always the same one.
       const first = Math.floor(s.rng.next() ** 2 * n)
       for (let i = 0; i < n; i++) {
-        const goal = nearestWalkable(ctx.grid, spots[(first + i) % n]!, 3)
+        const spot = spots[(first + i) % n]!
+        const goal = nearestWalkable(ctx.grid, spot, 3)
         const path = goal ? findPath(ctx.grid, s.pos, goal) : null
-        if (goal && path) return { path, goal, chasing: false, targetId: label }
+        // A spot with a facing (a seat at a desk) turns the body that way when it gets there.
+        if (goal && path) return { path, goal, chasing: false, targetId: label, ...(spot.face !== undefined && goal === spot ? { face: spot.face } : {}) }
       }
       return null
     }

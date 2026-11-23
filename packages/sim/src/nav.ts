@@ -3,6 +3,15 @@ export interface Point2 {
   z: number
 }
 
+/**
+ * A named point the body goes to (`BodyWorld.spots`). At a seat it carries `perch`, the height of the seat top the body sits on
+ * (meters), and `face`, the yaw it turns to when it gets there (radians, 0 facing +z).
+ */
+export interface Spot extends Point2 {
+  perch?: number
+  face?: number
+}
+
 /** Walkability over the land in square cells. Cell (col, row) covers x from `originX + col * cellSize`, and likewise for z. */
 export interface NavGrid {
   cols: number

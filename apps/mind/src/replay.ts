@@ -1,4 +1,5 @@
 import type { Forkling, Goals, MicroBehavior, Place, SpeciesPack } from '@forkling/schema'
+import { kit } from '@forkling/schema/kit'
 import { bodyWorldFor, isAsleepAt, playbackStateTime, startPlayback, type BodyWorld } from '@forkling/sim'
 
 /** The repo as one commit of `forkling.json` left it: what a viewer loading that commit would have been given. */
@@ -56,7 +57,7 @@ export function replay(states: readonly ReplayState[], opts: ReplayOptions): Rep
     if (!state) continue
     let world = worlds.get(state)
     if (!world) {
-      world = bodyWorldFor({ seed: state.forkling.seed, places: state.places ?? [] })
+      world = bodyWorldFor({ seed: state.forkling.seed, places: state.places ?? [], kit })
       worlds.set(state, world)
     }
     const { forkling, goals } = state
