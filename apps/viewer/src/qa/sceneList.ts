@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { buildingModel } from '../world/building.ts'
 import { SIGN_H, SIGN_W, exhibitInstances, exhibitSpots, signSpot, type ExhibitSpot } from '../world/exhibitGeometry.ts'
 import { galleryWalls, slotOf, type GalleryWork } from '../world/galleryWall.ts'
-import { cardContent, cardPose, cardShows, cardView, wireCard, type CardPose, type CardShows } from '../world/exhibitCards.ts'
+import { cardContent, cardPose, cardShows, cardView, platePose, plateText, wireCard, type CardPose, type CardShows } from '../world/exhibitCards.ts'
 import { exteriorInstances, floorHeight, signPostInstances, siteInside, type Instance } from '../world/kitGeometry.ts'
 import { doorwayBox, partInDoorway, placedPartBox } from '../world/doorway.ts'
 import { compose } from '../world/matrix.ts'
@@ -53,6 +53,8 @@ export interface QaObject {
    * but a work screen has one. The souvenir files are read as the insides load, so before that a card shows the exhibit's label.
    */
   card?: { shows: CardShows; text: string }
+  /** For a framed picture: the words on the brass label plate under its frame (`plateText`), when it has one. */
+  plate?: string
   /**
    * For an exhibit with a card: what a visitor standing in front of it sees of the card (`cardView`), in the frame of the part it
    * stands on: the visitor's eyes, points of the card's face and the boxes of the part's pieces (`world.card-covered`, issue 453).
@@ -202,10 +204,12 @@ export function placeObjects(s: PlacesSnapshot): QaObject[] {
       // In a place being built its pieces are lines and its card is wire (issue 426), as `sceneInstances` and `ExhibitCards` draw them.
       const content = cardContent(e, spot.slotKind, e.ref ? s.souvenirs?.get(e.ref) : null, s.workCount ?? 0)
       const pose = cardPose(spot)
-      const card = pose ? cardShows(wired ? wireCard(content) : content) : null
+      const shown = wired ? wireCard(content) : content
+      const card = pose ? cardShows(shown) : null
+      const plate = platePose(spot) ? plateText(e, shown) : null
       // A card standing in or on its part (a shelf's board, a case's top) can have a board over it; one on a face (a frame, a plaque, a screen) cannot.
       const view = pose && (spot.slotKind === 'shelf' || spot.slotKind === 'case') ? viewOf(place, s.kit, spot, pose, baseY) : null
-      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, at: `${place.id}/${e.slot}`, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), ...(view ? { view } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: wired ? 'wireframe' : 'solid' })
+      out.push({ id, kind: e.kind === 'work' ? 'work' : 'exhibit', place: place.id, ref: e.ref, exhibitKind: e.kind, slot: spot.slotKind, at: `${place.id}/${e.slot}`, ...(onScreen ? { shows: s.screens?.get(id) ?? 'nothing' } : {}), ...(card ? { card } : {}), ...(plate ? { plate } : {}), ...(view ? { view } : {}), name: e.label, box: instancesBox(exhibitInstances(spot, palette.colors)), visible: inside, material: wired ? 'wireframe' : 'solid' })
     }
     // Every finished work has a tile on the gallery wall, a page at a time: listed at its tile, as the drawing places it.
     if (s.shelf?.length) {
