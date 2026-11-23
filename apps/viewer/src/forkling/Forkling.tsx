@@ -31,6 +31,8 @@ const CLIP_AT = ((): { x: number; z: number } | null => {
   return v.length === 2 && v.every(Number.isFinite) ? { x: v[0]!, z: v[1]! } : null
 })()
 const FORCED_CLIP = params.get('clip')
+/** `?clipspot=desk` puts the pinned forkling (with `?clip=`) on that spot, up on its seat and facing its way, to see how it sits. */
+const CLIP_SPOT = params.get('clipspot')
 /** Slots whose clip plays once and holds, instead of looping. */
 const ONCE_SLOTS = new Set(['stretch'])
 const FADE = 0.25
@@ -154,10 +156,11 @@ export function Forkling() {
     if (!pb) return
     const dt = Math.min(delta, 0.25)
 
+    const pinned = FORCED_CLIP && CLIP_SPOT ? seats[CLIP_SPOT]?.[0] : undefined
     if (FORCED_CLIP) {
-      // In front of the visitor spawn, facing it.
-      pb.state.pos = CLIP_AT ?? { x: spawn.x + Math.sin(spawn.yaw) * 3.5, z: spawn.z + Math.cos(spawn.yaw) * 3.5 }
-      pb.state.heading = Math.atan2(-Math.sin(spawn.yaw), -Math.cos(spawn.yaw))
+      // In front of the visitor spawn, facing it; or on the spot `?clipspot=` names.
+      pb.state.pos = pinned ? { x: pinned.x, z: pinned.z } : (CLIP_AT ?? { x: spawn.x + Math.sin(spawn.yaw) * 3.5, z: spawn.z + Math.cos(spawn.yaw) * 3.5 })
+      pb.state.heading = pinned?.face ?? Math.atan2(-Math.sin(spawn.yaw), -Math.cos(spawn.yaw))
       if (view.currentSlot !== FORCED_CLIP) {
         const clip = rig.clips.get(FORCED_CLIP)
         if (clip) fade(view, rig.mixer.clipAction(clip), FORCED_CLIP, false)
@@ -183,7 +186,7 @@ export function Forkling() {
     view.shown.z += (sim.pos.z - view.shown.z) * follow
     view.heading += wrapAngle(sim.heading - view.heading) * (1 - Math.exp(-dt * 10))
     // Up on the seat at the desk or the workbench when that is where it is going, and down off the one it is leaving (issue 461).
-    const lift = perchLift(seats, { ...(sim.intention.targetId ? { targetId: sim.intention.targetId } : {}), ...(sim.leftSeat ? { from: sim.leftSeat } : {}) }, view.shown)
+    const lift = pinned ? (pinned.perch ?? 0) : perchLift(seats, { ...(sim.intention.targetId ? { targetId: sim.intention.targetId } : {}), ...(sim.leftSeat ? { from: sim.leftSeat } : {}) }, view.shown)
     const y = simWorld.heightAt(view.shown.x, view.shown.z) + lift
 
     if (scaler.current) {
