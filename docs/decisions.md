@@ -4,6 +4,10 @@ Dated log of choices that shape the project, newest first. Add an entry when a d
 
 **Audit harness lanes (until QR is done):** add your decisions as bullets at the end of your lane's own 2026-11-19 entry below, not as new entries at the top, so parallel PRs do not conflict.
 
+## 2026-11-23: The server rebuilds the site; a seat spot is the front of the seat (#490, #491)
+After a push that carried something Merge made, the server dispatches Merge's `pages.yml`, at once and then at most every 30 minutes; the `*/30` schedule stays as the fallback. The server's fine-grained token gains Actions read and write on the world repo only. A seat spot is 0.15 m forward of the seat's centre, along the way the body faces.
+**Why:** GitHub ran the schedule only every 4 to 8 hours and the server's pushes start no workflow, so a release and Merge's new things reached the site hours late (Roman's note stayed under Home's floor after v0.19.3). Merge's body is about 1 m long, so sitting on the seat's centre put its back half in the chair's backrest.
+
 ## 2026-11-23: A desk spot is its seat; frame labels are drawn, not placed (#485, #486, #487)
 A furniture spot is no longer the part's centre. A work surface with a seat in front (kit parts carry an optional `seat` height) sends the body onto that seat, facing the surface, and other parts send it to their front. The viewer lifts Merge onto the seat only when that seat is its target or the seat it is leaving. Merge's wish for a "tiny label plate" was answered by drawing a brass plate with Merge's own label under every framed picture, not by a new kit part.
 **Why:** Merge was drawn inside its desk and workbench. A placeable plate would have needed a plaque page per label, and Merge's labels for framed pictures were never visible once the picture loaded.
