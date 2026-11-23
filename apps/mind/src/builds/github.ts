@@ -12,6 +12,8 @@ export interface GithubClient {
    * `works/<id>/` and nothing else, so `validate.yml` accepts it.
    */
   openWorkPullRequest(args: { id: string; files: readonly GithubFile[]; title: string; body: string }): Promise<{ number: number; url: string }>
+  /** Starts a workflow of the world repo on `main` (the site's `pages.yml`). Needs Actions: write on the token. */
+  dispatchWorkflow(file: string): Promise<void>
 }
 
 /** `OWNER/NAME` from a GitHub address, with or without a token in it, a `.git` or a trailing slash. Null for anything else. */
@@ -21,6 +23,7 @@ export function repoFromUrl(url: string): string | null {
 }
 
 const ID = /^[a-z0-9][a-z0-9-]{0,60}$/
+const WORKFLOW = /^[A-Za-z0-9_-]{1,60}\.ya?ml$/
 const API = 'https://api.github.com'
 const MAX_TITLE = 120
 const MAX_BODY = 4_000
@@ -94,6 +97,10 @@ export function createGithubClient(opts: GithubClientOptions): GithubClient {
       await api('POST', '/git/refs', { ref: `refs/heads/work/${id}`, sha: commit.sha })
       const pr = await api<{ number: number; html_url: string }>('POST', '/pulls', { title: clampText(title, MAX_TITLE), head: `work/${id}`, base, body: clampText(body, MAX_BODY) })
       return { number: pr.number, url: pr.html_url }
+    },
+    async dispatchWorkflow(file) {
+      if (!WORKFLOW.test(file)) throw new Error(`"${file}" is not a workflow file name`)
+      await api('POST', `/actions/workflows/${file}/dispatches`, { ref: base })
     },
   }
 }
