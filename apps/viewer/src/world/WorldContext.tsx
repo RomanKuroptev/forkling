@@ -1,3 +1,4 @@
+import { kit } from '@forkling/schema/kit'
 import { bodyWorldFor, type BodyWorld } from '@forkling/sim'
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { createWorldClock, type WorldClock } from '../clock.ts'
@@ -20,7 +21,7 @@ export function WorldProvider({ world, children }: { world: LoadedWorld; childre
       world,
       // loadWorld only accepts species from the registry, so this always exists.
       species: species[world.forkling.species]!,
-      simWorld: bodyWorldFor({ seed: world.forkling.seed, places: world.places }),
+      simWorld: bodyWorldFor({ seed: world.forkling.seed, places: world.places, kit }),
       clock: createWorldClock(world.forkling.timezone, location.search),
     }),
     [world],

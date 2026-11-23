@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SpeciesPack } from '@forkling/schema'
+import { kit } from '@forkling/schema/kit'
+import { starterPlaces } from '../src/starter-places.ts'
 import { makeFixtureWorld } from '../src/fixture-world.ts'
 import { ARRIVAL_BACK, buildBodyWorld } from '../src/body-world.ts'
 import { chunkCentre, createLand, placeCentre, toLandPlace } from '../src/land.ts'
@@ -212,5 +214,70 @@ describe('a plan step takes the body where the engine says (spec 2.7)', () => {
   it('keeps the focus on the step: the body is not doing something else when its time is not up', () => {
     const pb = play('tend', 'place-02', 'workshop')
     expect(pb.state.focus).toMatchObject({ action: 'visit', targetId: 'place-02' })
+  })
+})
+
+describe('where the body stands at a piece of furniture (issue 461)', () => {
+  const starter = buildBodyWorld(1, starterPlaces(), kit)
+  const spots = starter.spots(sun)
+  const partOf = new Map(kit.parts.map((p) => [p.id, p]))
+  const centreOf = (id: string) => placeCentre(toLandPlace(starterPlaces().find((p) => p.id === id)!))
+
+  it('never puts a spot inside the part it is named for, unless the spot is a seat to sit on', () => {
+    for (const p of [...starterPlaces(), ...fixture.places]) {
+      const w = buildBodyWorld(1, [p], kit)
+      const [px, pz] = placeCentre(toLandPlace(p))
+      for (const room of p.rooms) {
+        for (const placed of room.parts) {
+          const part = partOf.get(placed.part)!
+          const cx = px + room.at[0] + placed.at[0]
+          const cz = pz + room.at[1] + placed.at[2]
+          // The spot in the part's own frame: turned back by the part's rot.
+          const inside = (s: { x: number; z: number }) => {
+            const dx = s.x - cx
+            const dz = s.z - cz
+            const lx = dx * Math.cos(placed.rot) - dz * Math.sin(placed.rot)
+            const lz = dx * Math.sin(placed.rot) + dz * Math.cos(placed.rot)
+            return Math.abs(lx) < part.size[0] / 2 - 1e-6 && Math.abs(lz) < part.size[2] / 2 - 1e-6
+          }
+          for (const s of w.spots(sun)[placed.part] ?? []) {
+            if (s.perch === undefined) expect(inside(s), `${p.id} ${placed.part} at ${s.x},${s.z}`).toBe(false)
+          }
+        }
+      }
+    }
+  })
+
+  it('sits Merge on the chair at the desk in Home, facing the desk', () => {
+    const [hx, hz] = centreOf('home')
+    const [desk] = spots.desk!
+    expect(desk!.x).toBeCloseTo(hx - 2.5, 5)
+    expect(desk!.z).toBeCloseTo(hz - 2.3, 5) // the chair, not the desk at -3.2
+    expect(desk!.perch).toBe(0.5)
+    // Facing -z, toward the desk (yaw 0 faces +z).
+    expect(Math.cos(desk!.face!)).toBeCloseTo(-1, 5)
+    expect(spots.chair![0]).toMatchObject({ x: desk!.x, z: desk!.z, perch: 0.5 })
+  })
+
+  it('sits Merge on the stool at the workbench in the Workshop, facing the bench', () => {
+    const [wx, wz] = centreOf('workshop')
+    const [bench] = spots.workbench!
+    expect(bench!.x).toBeCloseTo(wx - 2.5, 5)
+    expect(bench!.z).toBeCloseTo(wz - 2.2, 5)
+    expect(bench!.perch).toBe(0.5)
+    expect(Math.cos(bench!.face!)).toBeCloseTo(-1, 5)
+  })
+
+  it('stands in front of a part with no seat near it, outside its box', () => {
+    // The low shelf at Home stands against the back wall, facing into the room (+z).
+    const [hx, hz] = centreOf('home')
+    const [shelf] = spots['shelf-low']!
+    expect(shelf!.perch).toBeUndefined()
+    expect(shelf!.z).toBeGreaterThan(hz - 3.6 + 0.2)
+    expect(Math.abs(shelf!.x - (hx + 2.8))).toBeLessThan(0.6)
+  })
+
+  it('keeps the part centres when no kit is given', () => {
+    expect(buildBodyWorld(1, starterPlaces()).spots(sun).desk![0]!.perch).toBeUndefined()
   })
 })

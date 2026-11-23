@@ -1,3 +1,4 @@
+import { kit } from '@forkling/schema/kit'
 import {
   bodyWorldFor,
   eveningOf,
@@ -47,7 +48,7 @@ export function createTick(dir: string, deps: TickDeps): Tick {
 
   // Where the body is now: exactly what a viewer would have seen since the last commit.
   const places = readPlaces(dir)
-  const world = bodyWorldFor({ seed: forkling.seed, places })
+  const world = bodyWorldFor({ seed: forkling.seed, places, kit })
   const playbackInput = { forkling, pack, behaviors, world, goals: w.goals, stateTime: playbackStateTime(forkling) }
   const playback = startPlayback(playbackInput, nowMs)
   // What the body really did on the plan step since the last write: the step's effect waits on it.

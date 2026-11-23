@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Forkling, Place, SpeciesPack } from '@forkling/schema'
+import { kit } from '@forkling/schema/kit'
 import homeFile from '../../../templates/forkling-world/places/home.json'
 import workshopFile from '../../../templates/forkling-world/places/workshop.json'
 import blobJson from './fixtures/blob.species.json'
@@ -37,17 +38,17 @@ function day(world: BodyWorld) {
 
 describe('the body on a world with places', () => {
   it('walks the same day on Home and the Workshop', () => {
-    const world = buildBodyWorld(1, [Place.parse(homeFile), Place.parse(workshopFile)])
+    const world = buildBodyWorld(1, [Place.parse(homeFile), Place.parse(workshopFile)], kit)
     expect(day(world)).toMatchSnapshot()
   })
 
   it('walks the same day on the 10-place fixture world', () => {
-    const world = buildBodyWorld(1, makeFixtureWorld(1, 10).places)
+    const world = buildBodyWorld(1, makeFixtureWorld(1, 10).places, kit)
     expect(day(world)).toMatchSnapshot()
   })
 
   it('has the same spawn and spots', () => {
-    const world = buildBodyWorld(1, [Place.parse(homeFile), Place.parse(workshopFile)])
+    const world = buildBodyWorld(1, [Place.parse(homeFile), Place.parse(workshopFile)], kit)
     expect({ spawn: world.spawn, visitor: world.visitorSpawn, spots: world.spots([0, 1, 0]) }).toMatchSnapshot()
   })
 })

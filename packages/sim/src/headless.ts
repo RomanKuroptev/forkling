@@ -1,6 +1,7 @@
 import { Intention, type MicroBehavior, type SpeciesPack } from '@forkling/schema'
+import { kit } from '@forkling/schema/kit'
 import { createForkling, setFocus, stepForkling, STEP, toRepoIntention, type Focus, type StepContext } from './forkling.ts'
-import { isWalkable, nearestWalkable, type Point2 } from './nav.ts'
+import { isWalkable, nearestWalkable, type Point2, type Spot } from './nav.ts'
 import { sunDirection } from './sky.ts'
 import { isNight } from './time.ts'
 import { buildBodyWorld, type BodyWorld } from './body-world.ts'
@@ -46,7 +47,7 @@ export interface HeadlessRun {
  */
 export function runHeadless(opts: HeadlessOptions): HeadlessRun {
   const { pack, behaviors = [] } = opts
-  const world = opts.world ?? buildBodyWorld(opts.seed, starterPlaces())
+  const world = opts.world ?? buildBodyWorld(opts.seed, starterPlaces(), kit)
   const start = nearestWalkable(world.grid, { x: world.spawn.x, z: world.spawn.z })!
   const state = createForkling(pack, behaviors, opts.seed, start, {
     ...(opts.focus ? { focus: opts.focus } : {}),
@@ -67,7 +68,7 @@ export function runHeadless(opts: HeadlessOptions): HeadlessRun {
   let visitor: Point2 | null = null
   let stuck = 0
   let lastMinute = -1
-  let spots: Record<string, Point2[]> = {}
+  let spots: Record<string, Spot[]> = {}
   let lastIntentionStart = -1
   const steps = Math.round(opts.seconds / STEP)
 

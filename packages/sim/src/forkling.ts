@@ -1,5 +1,5 @@
 import type { AnimationSlot, Intention, MicroBehavior, SpeciesAction, SpeciesPack } from '@forkling/schema'
-import { findPath, isWalkable, lineOfSight, nearestWalkable, type NavGrid, type Point2 } from './nav.ts'
+import { findPath, isWalkable, lineOfSight, nearestWalkable, type NavGrid, type Point2, type Spot } from './nav.ts'
 import type { Feelings } from './mood.ts'
 import { createPrng, type Prng } from './prng.ts'
 import { isDusk } from './time.ts'
@@ -25,7 +25,7 @@ export interface StepContext {
   /** Bedtime by the sleep schedule. When absent, night hours stand in for it. */
   asleep?: boolean
   /** Spots the world offers, by kind (`food`, `perch`, `sunbeam`...). */
-  spots: Record<string, Point2[]>
+  spots: Record<string, Spot[]>
 }
 
 /**
@@ -80,6 +80,8 @@ export interface ForklingState {
   duration: number
   path: Point2[]
   goal: Point2 | null
+  /** The way to turn on arriving at the goal (a seat faces its desk), when the spot says. Radians, 0 facing +z. */
+  face?: number
   chasing: boolean
   noticed: boolean
   repathTimer: number
@@ -342,6 +344,7 @@ function startMicro(s: ForklingState, behavior: MicroBehavior, resume: 'acting' 
 }
 
 function startActing(s: ForklingState): void {
+  if (s.face !== undefined) s.heading = s.face
   s.chasing = false
   s.path = []
   s.phase = 'acting'
@@ -367,6 +370,7 @@ function finishAction(s: ForklingState, ctx: StepContext): void {
 interface Resolved {
   path: Point2[]
   goal: Point2 | null
+  face?: number
   chasing: boolean
   targetId?: string
 }
@@ -437,6 +441,8 @@ function begin(s: ForklingState, action: SpeciesAction, target: Resolved): void 
   }
   s.path = target.path
   s.goal = target.goal
+  if (target.face !== undefined) s.face = target.face
+  else delete s.face
   s.chasing = target.chasing
   s.repathTimer = 0
   s.progressTimer = 0
@@ -492,9 +498,11 @@ function resolveTarget(s: ForklingState, action: SpeciesAction, ctx: StepContext
       // Mostly the nearest spots, but not always the same one.
       const first = Math.floor(s.rng.next() ** 2 * n)
       for (let i = 0; i < n; i++) {
-        const goal = nearestWalkable(ctx.grid, spots[(first + i) % n]!, 3)
+        const spot = spots[(first + i) % n]!
+        const goal = nearestWalkable(ctx.grid, spot, 3)
         const path = goal ? findPath(ctx.grid, s.pos, goal) : null
-        if (goal && path) return { path, goal, chasing: false, targetId: label }
+        // A spot with a facing (a seat at a desk) turns the body that way when it gets there.
+        if (goal && path) return { path, goal, chasing: false, targetId: label, ...(spot.face !== undefined && goal === spot ? { face: spot.face } : {}) }
       }
       return null
     }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SpeciesPack, type MicroBehavior } from '@forkling/schema'
+import { kit } from '@forkling/schema/kit'
 import blobJson from './fixtures/blob.species.json'
 import { resolveSlot } from '../src/animation.ts'
 import { createForkling, stepForkling, STEP, toRepoIntention, type StepContext } from '../src/forkling.ts'
@@ -157,5 +158,24 @@ describe('acting after a micro-behavior', () => {
     expect(sawTuck).toBe(true)
     // blob's rest lasts 10 to 20 seconds; the tuck must not cut it short.
     expect(restingSteps * STEP).toBeGreaterThanOrEqual(10)
+  })
+})
+
+describe('sitting at the desk (issue 461)', () => {
+  const seated = buildBodyWorld(1, starterPlaces(), kit)
+  const deskPack = SpeciesPack.parse({
+    ...blobJson,
+    actions: [...blobJson.actions, { id: 'work', durationSec: [60, 60], target: { type: 'spot', kind: 'desk' }, slot: 'idle', reason: 'Blob went to its desk.' }],
+  })
+
+  it('walks to the chair at the desk and turns to face the desk when it gets there', () => {
+    const spots = seated.spots([0, 1, 0])
+    const spot = spots.desk![0]!
+    const state = createForkling(deskPack, [], 1, { x: 8, z: 19 }, { firstAction: 'work' })
+    const ctx: StepContext = { grid: seated.grid, visitor: null, timeOfDay: 12, spots }
+    for (let i = 0; i < 300 && !(state.intention.type === 'work' && state.phase === 'acting'); i++) stepForkling(state, STEP, ctx)
+    expect(state.phase).toBe('acting')
+    expect(state.pos).toEqual({ x: spot.x, z: spot.z })
+    expect(state.heading).toBeCloseTo(spot.face!, 9)
   })
 })

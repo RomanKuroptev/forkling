@@ -4,11 +4,12 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { Beliefs, BudgetLedger, Credits, Forkling, forklingPackIssues, Goals, Interests, MindState, NotesHidden, SpeciesPack, Visitors } from '@forkling/schema'
 import { bodyWorldFor, isWalkable } from '@forkling/sim'
+import { kit } from '@forkling/schema/kit'
 import catSpecies from '@forkling/species-cat/species.json'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const packs: Record<string, SpeciesPack> = { cat: SpeciesPack.parse(catSpecies) }
-const { grid } = bodyWorldFor({ seed: 1, places: [] })
+const { grid } = bodyWorldFor({ seed: 1, places: [], kit })
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

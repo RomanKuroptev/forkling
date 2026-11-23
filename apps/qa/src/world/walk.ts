@@ -124,7 +124,7 @@ export async function walkChecks(page: Page, input: WalkInput): Promise<CheckRes
     out.push({ id, fingerprint: `${id}|${fixture}|${key}`, severity, title, what, causes, evidence: [], fixKind: 'code', fixture, ...(where ? { where } : {}) })
   const boxed = input.scene.filter((o): o is SceneObject & { box: Box } => o.box !== null)
   const furniture = solidParts(input.scene)
-  const grid = gridWithFurniture(bodyWorldFor({ seed: input.seed, places: input.places as Place[] }).grid, furniture.map((p) => p.box))
+  const grid = gridWithFurniture(bodyWorldFor({ seed: input.seed, places: input.places as Place[], kit }).grid, furniture.map((p) => p.box))
   const places = boxed.filter((o) => o.kind === 'place')
   const wiredPlaces = new Set(places.filter((p) => p.material === 'wireframe').map((p) => p.id))
   const where = async () => {
