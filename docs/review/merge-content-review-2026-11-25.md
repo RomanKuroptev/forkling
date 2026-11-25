@@ -135,7 +135,7 @@ Five agents each played one visitor and saw only the live site. None was told wh
 | 4 | A friend of Roman's who has never coded, told "look what my AI made" | phone | tried all 14 things |
 | 5 | An illustrator who follows art accounts | laptop | 3 minutes |
 
-Two changes from the brief. The simulated Roman was dropped, because an agent told what Roman wants hands it back as a finding. His own words stand as the owner's verdict below. The cozy-game player and the illustrator were added from a survey of who follows projects like Pino: the people who come back daily, and the eye for taste.
+Two changes from the brief. The simulated Roman was dropped, because an agent told what Roman wants hands it back as a finding. Roman's own words stand as the owner's verdict below. The cozy-game player and the illustrator were added from a survey of who follows projects like Pino: the people who come back daily, and the eye for taste.
 
 **Read the scores as five opinions, not a measurement.** Simulated visitors are more patient and more polite than real ones. Their walking in the 3D world was also clumsier than a thumb, so the world may be a little easier for a real person than it was for them.
 
@@ -416,7 +416,7 @@ The budget stays at $23. The order is: interesting first, then shared, then supp
 | Phase | What happens | The gate to pass first |
 |---|---|---|
 | **A. Interesting** (now) | The top 5 below. No visitors are invited. | |
-| **B. Shared** | Roman posts and sends the link around. The reasons to come back are built (V1, V2, V8, a stamp a day, a dream each night). | Roman's own test: twice in two weeks something Merge made got a laugh or a "huh, cool", and he sent it to a friend without explaining. The panel is run again: a non-coder can say in one sentence what Merge made today, and everyone finds the cat. The last ten things have at least four subjects, and one took more than two days. The visit counter is live. |
+| **B. Shared** | Roman posts and sends the link around. The reasons to come back are built (V1, V2, V8, a stamp a day, a dream each night). | Roman's own test: twice in two weeks something Merge made got a laugh or a "huh, cool", and Roman sent it to a friend without explaining. The panel is run again: a non-coder can say in one sentence what Merge made today, and everyone finds the cat. The last ten things have at least four subjects, and one took more than two days. The visit counter is live. |
 | **C. Supported** | A tip link, shown as thinking time, beside an open ledger. Merge chooses something to save for. | Strangers come back for three weeks running. At least ten notes from people Roman does not know, each answered the same day. The ledger has been public for a month. The questions below are settled. |
 | **D. Earning** | Merge pitches a project to fund, picks pictures for a zine or for prints. | Two months of donations with a ledger that matched. Three multi-day projects finished. A written spec for each act tool. |
 

@@ -30,7 +30,7 @@ This is the long list behind Part 4 of the [content review](merge-content-review
 | fits | No rule changes |
 | review | Needs Roman's review because it changes a prompt, the seed or a price |
 | trial | Needs a new web source, so a source trial (spec 6.5) and an engine PR |
-| later | Listed under "Later" in spec-v4 section 13 or in `docs/future.md`. The rule is "not before launch", so Roman would have to move it forward, as he did with note threads |
+| later | Listed under "Later" in spec-v4 section 13 or in `docs/future.md`. The rule is "not before launch", so Roman would have to move it forward, as happened with note threads |
 | change | Breaks a rule as written. The row names the rule |
 
 **Cost** is the extra model spend a month. Merge runs at about $0.42 a day now (about $12.50 a month against a $15 model cap), so about $2.50 a month is free. Anything paid from Merge's points costs nothing extra: it makes Merge choose between that and something else.
@@ -173,7 +173,7 @@ Income figures are guesses for a site with a few hundred to a few thousand visit
 
 ## 9. Ten rules of thumb for "a stranger gets it in 10 seconds"
 
-Drawn from web toys and explainers that spread. They are for Roman's eye when he judges a piece. They are not a prompt.
+Drawn from web toys and explainers that spread. They are for Roman's eye when judging a piece. They are not a prompt.
 
 1. The title is the whole premise.
 2. One action, and the first tap does something.
