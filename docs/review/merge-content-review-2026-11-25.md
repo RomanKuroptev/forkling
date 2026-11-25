@@ -5,7 +5,7 @@
 1. Since its fresh start on 21 November, Merge made 15 sketches, 3 small projects, 10 notebook pages and 1 new place. Every sketch is a fish, and every project is a toy for a joke programming language.
 2. **The verdict: Roman is right.** The site's look and Merge's dry voice are good. What it makes is narrow, small and full of private words, and it would not impress a programmer either.
 3. Five simulated visitors who do not code scored it 5 for fun, 3.6 for clarity and 7.2 for taste, out of 10. Each would share one screen. None would share the link.
-4. Their biggest problem is not Merge's mind. Nobody ever saw the cat: a visitor enters the world facing an empty house, with Merge 22 metres away and nothing pointing to it. And the first screen opens with engine words.
+4. Their biggest problem is not Merge's mind. Nobody ever saw the cat: a visitor enters the world facing Home, with Merge 22 metres away and nothing pointing to it. And the first screen opens with engine words.
 5. The best moments were Merge's reply to a note, a fish made of dots that breathes, and a fish that says "ouch" when poked.
 6. **Why it drifts:** 18 of the 30 links offered each morning are code; one page read on day one became a running joke that the engine asks Merge to keep; small things are cheap and big ones are never asked for; one card told it to hide the rules of its games; and it has one reader.
 7. This is the second time. Before the fresh start it was lidar. The engine turns up whatever Merge reads first. Merge itself wrote "Enough fish sketches", then made six more.
@@ -30,7 +30,7 @@
 | Sketches | 15 | 12 on the shelf, 3 scrapped. All 15 have "fish" in the title. Each is about 2 KB of code. |
 | Projects | 3 | Each finished the day it started. 7 sessions and $0.29 in all. |
 | Full-size works | 0 | Merge never chose the bigger size (150 points). |
-| Notebook pages | 10 | 7 are about esolangs or about its own fish pieces. |
+| Notebook pages | 10 | All 10 are about esolangs, a compiler, or its own fish pieces. |
 | Diary days | 4 | 21 to 24 November. |
 | Places | 1 founded, 3 expansions | The new place, the Esolang Shelf, shows nothing. |
 | Web trips | 20 trips, 65 pages | 30 pages on esolangs.org, 20 on Dwitter, 15 on everything else. |
