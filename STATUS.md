@@ -2,6 +2,10 @@
 
 Read this first. Update it before every commit and before you stop.
 
+## Content review (25 November, Roman's ask)
+
+- **Review only, nothing built: waiting for Roman to read it.** [`docs/review/merge-content-review-2026-11-25.md`](docs/review/merge-content-review-2026-11-25.md) covers what Merge made since its fresh start (15 sketches, all fish; 3 esolang projects), a panel of five simulated non-coder visitors, why it drifts (the morning's links, the running-joke slot, prices and words that favour small, one constraint card, no outside reader) and a fix plan with a top 5. The full idea pool, the path to donations and all sources are in [`docs/review/merge-feature-ideas-2026-11-25.md`](docs/review/merge-feature-ideas-2026-11-25.md). No fix or feature from it starts before Roman says which.
+
 ## Audit harness (started 19 November)
 
 Spec and steps: [`docs/spec/audit/`](docs/spec/audit/). One coordinator session builds Phase 1 (Q0 base, then lanes W, B, S, T in worktrees), then QR (run it, fix, release). Lanes write progress to `docs/spec/audit/lanes/<lane>.md`; real-run spend is tracked in `docs/spec/audit/lanes/spend.md` (harness budget $10 a month). Nothing runs on a schedule. After QR: the Merge fresh start ([`docs/spec/v4/merge-fresh-start.md`](docs/spec/v4/merge-fresh-start.md)), on Roman's go.
